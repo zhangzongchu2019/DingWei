@@ -1,0 +1,6 @@
+--- FAIL: TestReadSizeEncodingAndCompleteness (0.00s)
+    --- FAIL: TestReadSizeEncodingAndCompleteness/2097153 (0.00s)
+        service_test.go:188: size precheck missing 文件过大，请在仓库托管平台查看 1
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.005s
+FAIL

@@ -1,0 +1,26 @@
+--- FAIL: TestReadPathAndTypes (0.00s)
+    --- FAIL: TestReadPathAndTypes/../secret.md (0.00s)
+        service_test.go:158: unsafe path accepted
+    --- FAIL: TestReadPathAndTypes/openspec/../secret.md (0.00s)
+        service_test.go:158: unsafe path accepted
+    --- FAIL: TestReadPathAndTypes//openspec/spec.md (0.00s)
+        service_test.go:158: unsafe path accepted
+    --- FAIL: TestReadPathAndTypes/openspec//spec.md (0.00s)
+        service_test.go:158: unsafe path accepted
+    --- FAIL: TestReadPathAndTypes/openspec/%2e%2e/x.md (0.00s)
+        service_test.go:158: unsafe path accepted
+    --- FAIL: TestReadPathAndTypes/openspec/%252fsecret.md (0.00s)
+        service_test.go:158: unsafe path accepted
+    --- FAIL: TestReadPathAndTypes/openspec/a\b.md (0.00s)
+        service_test.go:158: unsafe path accepted
+    --- FAIL: TestReadPathAndTypes/openspec/a\x00.md (0.00s)
+        service_test.go:158: unsafe path accepted
+    --- FAIL: TestReadPathAndTypes/src/code.md (0.00s)
+        service_test.go:158: unsafe path accepted
+    --- FAIL: TestReadPathAndTypes/https://evil.invalid/a.md (0.00s)
+        service_test.go:158: unsafe path accepted
+    --- FAIL: TestReadPathAndTypes/openspec/a.md?x (0.00s)
+        service_test.go:158: unsafe path accepted
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.003s
+FAIL

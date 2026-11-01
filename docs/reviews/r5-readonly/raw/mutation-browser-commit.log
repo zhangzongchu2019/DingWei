@@ -1,0 +1,16 @@
+PASS original requirement and task IDs remain read-only
+PASS no document write controls
+PASS untrusted HTML does not execute
+PASS no executable or remote resource nodes
+PASS render and scroll make zero remote requests
+PASS dangerous schemes credentials and encoded links rejected
+PASS repository escape rejected
+PASS normalized parent link inside openspec allowed
+PASS context source link is external and same commit
+PASS external link isolates opener and referrer
+AssertionError [ERR_ASSERTION]: navigation stays at full SHA
+    at check (/data/ai-dev-data/r5-impl/view-service/openspec-read-browser-regression.js:19:427)
+    at /data/ai-dev-data/r5-impl/view-service/openspec-read-browser-regression.js:29:185
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processImmediate (node:internal/timers:452:9)
+    at process.callbackTrampoline (node:internal/async_hooks:130:17)

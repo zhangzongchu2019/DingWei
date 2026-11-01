@@ -1,0 +1,206 @@
+[
+  {
+    "guard": "subject-binding",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadAuthorizationAndCoordinates/other_principal"
+  },
+  {
+    "guard": "repository-allowlist",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadAuthorizationAndCoordinates/foreign_repository"
+  },
+  {
+    "guard": "repository-identity",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadAuthorizationAndCoordinates/repo_identity"
+  },
+  {
+    "guard": "current-read-permission",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadAuthorizationAndCoordinates/no_read|TestReadRevocationAndCrossRepository"
+  },
+  {
+    "guard": "final-permission-recheck",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadAuthorizationAndCoordinates/revoked_during_read"
+  },
+  {
+    "guard": "final-binding-recheck",
+    "rc": 1,
+    "assertion_red": false,
+    "test": "TestReadAuthorizationAndCoordinates/unbound_during_read"
+  },
+  {
+    "guard": "immutable-commit",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadAuthorizationAndCoordinates/bad_commit"
+  },
+  {
+    "guard": "tree-uses-sha",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadImmutableRef"
+  },
+  {
+    "guard": "path-scope",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadPathAndTypes"
+  },
+  {
+    "guard": "symlink-submodule",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadPathAndTypes"
+  },
+  {
+    "guard": "tree-size-precheck",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadSizeEncodingAndCompleteness/2097153"
+  },
+  {
+    "guard": "actual-size-limit",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadSizeEncodingAndCompleteness/actual_overflow"
+  },
+  {
+    "guard": "size-binding",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadSizeEncodingAndCompleteness/size_mismatch"
+  },
+  {
+    "guard": "utf8",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadSizeEncodingAndCompleteness/invalid_utf8"
+  },
+  {
+    "guard": "github-stable-id",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubRepositoryIdentityRedirect/wrong_id|TestGitHubRepositoryIdentityRedirect/same_host_wrong_id"
+  },
+  {
+    "guard": "github-redirect-host",
+    "rc": 0,
+    "assertion_red": false,
+    "test": "TestGitHubRepositoryIdentityRedirect/cross_host"
+  },
+  {
+    "guard": "github-name-reuse",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubRepositoryNameReuseAndTimeout/name_reused"
+  },
+  {
+    "guard": "github-account-id",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubPermissionIdentityAndFailure/wrong_user"
+  },
+  {
+    "guard": "github-recursive-truncation",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubTreeTruncationAndTypes/fallback"
+  },
+  {
+    "guard": "github-incomplete-fallback",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubTreeTruncationAndTypes/incomplete"
+  },
+  {
+    "guard": "github-tree-coordinate",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubTreeTruncationAndTypes/wrong_tree"
+  },
+  {
+    "guard": "github-blob-coordinate",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubBlobBinding/sha"
+  },
+  {
+    "guard": "github-blob-digest",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubBlobBinding/hash"
+  },
+  {
+    "guard": "github-rate-header",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubRateHeadersAndCredentialRotation"
+  },
+  {
+    "guard": "github-response-bound",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubResourceBoundsAndRedirectRate/response_bytes"
+  },
+  {
+    "guard": "github-tree-bound",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubResourceBoundsAndRedirectRate/tree_entries"
+  },
+  {
+    "guard": "binding-inactive-principal",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestR5BindingPersistenceIsolationAuditAndRevocation"
+  },
+  {
+    "guard": "admin-only",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestR5AdminBindingMiddlewareCannotUseManagement"
+  },
+  {
+    "guard": "binding-origin",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestR5BindingJSONOriginAndReadPage"
+  },
+  {
+    "guard": "browser-html",
+    "rc": 1,
+    "assertion_red": true
+  },
+  {
+    "guard": "browser-images",
+    "rc": 1,
+    "assertion_red": true
+  },
+  {
+    "guard": "browser-links",
+    "rc": 1,
+    "assertion_red": true
+  },
+  {
+    "guard": "browser-paths",
+    "rc": 1,
+    "assertion_red": true
+  },
+  {
+    "guard": "browser-commit",
+    "rc": 1,
+    "assertion_red": true
+  },
+  {
+    "guard": "browser-freshness",
+    "rc": 1,
+    "assertion_red": true
+  }
+]

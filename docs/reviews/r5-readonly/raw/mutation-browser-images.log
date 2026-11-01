@@ -1,0 +1,6 @@
+PASS original requirement and task IDs remain read-only
+PASS no document write controls
+PASS untrusted HTML does not execute
+AssertionError [ERR_ASSERTION]: no executable or remote resource nodes
+    at check (/data/ai-dev-data/r5-impl/view-service/openspec-read-browser-regression.js:19:427)
+    at /data/ai-dev-data/r5-impl/view-service/openspec-read-browser-regression.js:24:2

@@ -1,0 +1,5 @@
+--- FAIL: TestR5ErrorRedactsBackendDetails (0.00s)
+    console_openspec_read_test.go:173: backend details leaked
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.006s
+FAIL

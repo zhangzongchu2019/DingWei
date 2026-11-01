@@ -23,27 +23,32 @@
 
 ## Impact
 
-涉及 Console 新阅读区、服务端工蜂只读适配与授权、Markdown 输出及文件/tree 读取；不将 OpenSpec CLI 引入 Hub 构建链，不把源码送入文件服务或消息正文。依赖 prodops 提供工蜂 API 事实与用户/Agent 权限映射。规格审过之前不编写产品代码，不把待确认接口当成已可用接口。
+涉及 Console 新阅读区、服务端仓库托管提供方只读适配与授权、Markdown 输出及文件/tree 读取；不将 OpenSpec CLI 引入 Hub 构建链，不把源码送入文件服务或消息正文。依赖 prodops 提供仓库托管提供方 API 事实与用户/Agent 权限映射。规格审过之前不编写产品代码，不把待确认接口当成已可用接口。
 
 ## 来源
 
 唯一需求来源为委员会决议：[OPENSPEC-SWITCH-DECISION-20261031.md](https://git.code.tencent.com/wego-ai/dingwei/blob/c2d9c9fdd0416828739f7042d2ceb9bc71f603c6/docs/decisions/OPENSPEC-SWITCH-DECISION-20261031.md) 第 4～6、10～15、17、19～22 条。
 就绪范围：[就绪计划 R5](https://git.code.tencent.com/wego-ai/dingwei/blob/c2d9c9fdd0416828739f7042d2ceb9bc71f603c6/docs/decisions/OPENSPEC-SWITCH-READINESS-PLAN-20261101.md)。来源 commit c2d9c9fdd0416828739f7042d2ceb9bc71f603c6；实现基线 a8bb5e5847884b62ba01f6f48fbce3772e2d8b04。
 
-## 待确认假设
+## 提供方事实回写（T-03）
 
-以下是对 prodops 的接口需求，不是已获授权/已存在的 API；需回写已核文档链接、能力、限制和凭据管理位置，不发送凭据值。
+依据 prodops `review/prodops/r5-facts` / e8b14b69 的 `docs/reviews/prodops-r5-facts-20261101.md`（2026-11-01 08:37–08:43 UTC 实测）。改名、转移与超限 HTTP 行为只是该报告引用文档的推断，不冒称实测。
 
-- R5-A01 仓库发现/标识：受控工蜂实例、稳定仓库 ID 与规范 namespace/path 的对应查询；只列当前主体可见仓库。需要确认重命名、迁移、删除的行为，不接受用户提交任意 host/API URL。
-- R5-A02 身份/权限：Console principal 与工蜂用户的可信映射；查询该用户对仓库的当前 read 权限（含继承、组、撤权、停用）；后续 Agent 读取也必须能验证其独立仓库权限。服务账号读到内容不等于用户获权；尚未证实可逐主体可靠核权时不能开放该读取。
-- R5-A03 版本接口：把受控仓库的 ref/tag 解析成完整 commit SHA，并验证 commit 属于该仓库、可读取；查询响应必须回显实际 commit，不以可移动分支名作缓存身份。
-- R5-A04 内容接口：指定 commit 的 tree 列举/分页、路径类型与 blob 标识、原始 UTF-8 文件读取；必须可识别 symlink/gitlink，不能自动跨 submodule。需确认 API 编码/错误/限流/大小约束与重定向策略。
-- R5-A05 运维约束：工蜂访问凭据由谁持有、最小只读 scope、secret 管理位置、轮换/撤销与审计方式；授权检查不可用时拒绝，不跨用户使用缓存。需确定超时、并发、正文/tree 大小与缓存清理上限。
-- R5-A06 现有 Markdown 规则可被新阅读区单独收紧；不假设公共渲染器能无改动满足仓库相对链接与远程图片限制。是否展示附件不在本轮范围。
+- R5-A01：GitHub `GET /repositories/{id}` 返回数字 id 与当前 full_name；目标实测 id=1441460280。身份按数字 ID，严格核响应 id；只允许 api.github.com HTTPS，同 host 重定向亦须核坐标。当前 full_name 仅作该次 API 路径/来源链接，不是永久身份。删除、失权不回退同名仓。
+- R5-A02：`GET /repos/{owner}/{repo}/collaborators/{login}/permission` 已实测可用。绑定含 Console principal、provider/instance、GitHub 数字用户 ID 与 login；核响应 user.id/login 和有效 permission。管理员受控维护与审计；每次读取及交付前重新核绑定与权限。无绑定/无 read/不可验证一律拒绝；不把服务令牌权限当用户权限。现网尚无可信绑定，本单不写真实绑定。
+- R5-A03：实测 git/ref/heads 返回完整 object.sha；实现用同仓 `GET /repos/{owner}/{repo}/commits/{ref}` 支持 ref/tag 与完整 SHA，核完整 SHA，后续 git/commits、trees、blobs 全部只用 SHA。该 commits/ref 接口为实现选择，模拟验证，未补做真实 API 验收。实测 main=6ed4d1e8… 无 openspec，规格分支 68c178a5… 才有目标目录，不自动回退版本。
+- R5-A04：git/commits 固定 tree.sha；git/trees/{sha}?recursive=1 递归无分页，须核 truncated；截断时丢弃局部结果，逐级非递归子树读取，仍截断/越界则失败。blob 120000 symlink、commit 160000 submodule 拒绝且不跟随；仅 openspec/ 普通 Markdown。先按 tree.size 执行 2,097,152 字节上限，再按 blob SHA、size、实际长度、Git blob 摘要验证。实测 Contents raw 可取正文，实现选用 Git blob base64（模拟覆盖，非真实接口验收）。
+- R5-A05：逐次读 X-RateLimit-Remaining/Reset 与 Retry-After，含二级限速；令牌只从服务端受限文件读取，配置缺失整个功能不可用。prodops 实测凭据管理位于宿主机 /etc/dingwei/credentials/；本单不读取/复制该真实令牌。响应不能证明细粒度令牌完整授权范围或仅只读，须由所有者独立审计；工蜂专用只读令牌未建，不借 SSH。实现有界值：单文件 2 MiB、单响应 8 MiB、目录 10,000 条、截断回退至多 256 子树请求、API 并发 4、单 API 10 秒、整次读取 15 秒；不缓存内容/授权，限额是本地保护值，不冒称提供方实测容量。
+- R5-A06：独立 DOM 文本 Markdown 呈现，不复用或放宽公共渲染器。图片只显示替代文本；HTML/CSS/属性作为文本，外链只允许无凭据 HTTPS，同仓文档导航固定 SHA。工蜂 API 身份/权限/tree/撤销仍未核，适配器不可用并失败关闭；Console 主体与 GitHub 账号未绑定。上述缺口保留为 T-07/T-08 前置，不阻止本次已派默认关闭的模拟实现。
 
-## 待 PM 决策
+## 待 PM 决策（本轮全部已决）
 
-- R5-PM01 图片体验：选项 A 首期全部显示替代文本，禁止图片网络加载；B 允许同 commit 且独立授权校验的仓库图片。建议 A，最小就绪范围更易证明安全；远程图片自动加载两案均禁止。
-- R5-PM02 浏览边界：选项 A 首期仅 `openspec/` 内 Markdown 文件；B 放开仓库其他文档。建议 A；外部来源链接仍可按链接安全策略人工打开，不能成为平台任意抓取入口。
-- R5-PM03 内容/tree/时间限额：选项 A 按 prodops 实测给出有界默认值并在界面说明；B 无上限。建议 A，且单份合法 70 KiB 文档可成功读取，不能复现 64 KiB 消息截断。精确数值与配置名待 API 实测回写后冻结。
-- R5-PM04 权限映射：选项 A 可信用户身份映射后逐主体核权；B 仅凭平台项目成员关系使用服务账号内容。建议 A；B 不满足继承仓库权限，不能作为默认兜底。
+- R5-PM01 **已决 A**：业主 2026-11-01T02:23:43Z（workpulse；组长转达单 8455a73321d3）；原话要点「按建议已批」。首期所有图片仅替代文本，不自动加载。
+- R5-PM02 **已决**：业主 2026-11-01T02:3xZ（workpulse；组长补充单 cf25af1ea2f34d24a776718848d26172，原始时刻仅精确到该范围，不补造分钟）；原话要点「首期只开放 openspec/ 目录，代码经 context.md 链接到仓库托管平台查看」。平台只读取该目录允许的 Markdown；源码链接由用户主动前往提供方查看，不扩展平台抓取范围。
+- R5-PM03 **已决**：业主 2026-11-01T02:3xZ（workpulse；组长补充单 cf25af1ea2f34d24a776718848d26172，原始时刻仅精确到该范围，不补造分钟）；原话要点「单文件上限 2 MiB，至少保证 70 KB 文档完整读出」；2 MiB = 2,097,152 字节，恰好上限允许，超出拒绝，显示「文件过大，请在仓库托管平台查看」并附获权的同仓同 commit 来源链接。tree/分页/并发/超时等非单文件限额仍待提供方实测，不再把单文件上限挂为待决。
+- R5-PM04 **已决 A**：业主 2026-11-01T02:23:43Z（workpulse；组长转达单 8455a73321d3）；原话要点「首月管理员维护 Console 用户↔工蜂用户绑定表，平台以只读令牌逐主体核仓库权限」。按补充单统一改为 Console 用户↔按提供方用户绑定；受控管理员维护、可审计，平台仍须用只读令牌逐主体核权，不能以服务账号权限代替用户授权。Agent 身份另行核实，不由用户绑定表自动授予。
+- 托管迁移**未定**：业主考虑工蜂转 GitHub；不据此执行迁移或改变实现。
+
+### 实现所选补充 API 的文档核对（不是现场实测）
+
+`/commits/{ref}` 支持分支、tag 与 SHA，见 [GitHub Get a commit](https://docs.github.com/en/rest/commits/commits#get-a-commit)；`/git/blobs/{sha}` 的 JSON 提供 base64 content、sha、size，见 [GitHub Get a blob](https://docs.github.com/en/rest/git/blobs#get-a-blob)。2026-11-01 查阅官方文档；这些新增路径仅经本轮模拟 transport 覆盖，未使用真实凭据请求，不能写成 prodops 已实测接口或 T-07 权限验收。

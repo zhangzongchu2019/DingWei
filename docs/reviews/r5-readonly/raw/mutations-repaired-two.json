@@ -1,0 +1,14 @@
+[
+  {
+    "guard": "final-binding-recheck",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestReadAuthorizationAndCoordinates/unbound_during_read"
+  },
+  {
+    "guard": "github-redirect-host",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubRepositoryIdentityRedirect/cross_host"
+  }
+]

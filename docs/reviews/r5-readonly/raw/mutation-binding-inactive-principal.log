@@ -1,0 +1,5 @@
+--- FAIL: TestR5BindingPersistenceIsolationAuditAndRevocation (0.13s)
+    openspec_read_binding_test.go:57: inactive principal accepted
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.137s
+FAIL

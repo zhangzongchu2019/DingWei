@@ -1,0 +1,21 @@
+{
+  "source_commit": "0e62fcbdccb365ff036f694b79f5b756d00d997b",
+  "product_commit": "a118455e31b95685a839f944472e97d22c920a60",
+  "files": {
+    "cmd/workpulse/console_routes.go": "4b0f420c81d6e516dd2435ea4c371e89f35d19ef793be3426c9eccb7abbb3d06",
+    "internal/m8/console_openspec_read.go": "1e8e8ef4aa13746a1e139cf51f84a822a7230dc931b6121ad89ec4ff70f2d6ca",
+    "internal/m8/console_openspec_read.html": "0a008a8efe8408f3df28096ea0dab75c45ddcf84837c1e0d4be29d0320e1f113",
+    "internal/m8/console_openspec_read.js": "367333314ea1adaee6e1c27d54fbdfa023afc37bcb20ca032bdd9ca5b2d4084c",
+    "internal/m8/console_openspec_read_page.go": "9493e97536a68371efb992bcf4f6c4c94d5ecb8e47b2c064eb4cf3f2c8953cf6",
+    "internal/m8/console_platform.go": "85c4726e4e7ead5fff6d02b5d37ec1b73c280a0ef64a995f9206e9769781f9d1",
+    "internal/m8/hub.go": "57ef8918bcd2ef618ee85d9cf0108f156ce85f882ae130ab86269de286e1c3f7",
+    "internal/specread/github.go": "dcc0bf1e8712dd4e1cd3fa0ccd7b63a393f37e82e84e2c21af2183b5a7f79254",
+    "internal/specread/service.go": "d68d09656eb8ab9c1bd4d30079efa2b1ff5ed98e74d24deac4fe4c72bed89f1f",
+    "internal/store/migrations/0070_openspec_read_binding.sql": "e3cc8151aa90bebc4da5778304ec8fbd46fd741cdf4265317b57f8d6a24b1ad4",
+    "internal/store/openspec_read_binding.go": "c843fbb737606b48ff6068f50afbeac62e0635ef1b43717fcf7c1bc1bc19b672",
+    "internal/store/sqlite.go": "b330733db3f994fcd4d6325583722ddcbf891eb7eb6c8fc236db0a8c28975061",
+    "tools/run-browser-regressions.py": "7aee98bcf7f14c96f9494165c2b56c0df504be15b408b6ed65924ab8384cc8b9"
+  },
+  "final_test_source_commit": "f8112829401bfcad34f46c97441cf0e9fe1a37f8",
+  "final_test_source_tree": "a30a2ae80dfaa41137cd51a19700c5f962a4ed7c"
+}

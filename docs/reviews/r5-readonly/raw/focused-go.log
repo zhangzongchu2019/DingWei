@@ -1,0 +1,4 @@
+ok  	github.com/zhangzongchu2019/dingwei/internal/specread	0.030s
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.145s
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.554s
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.010s [no tests to run]

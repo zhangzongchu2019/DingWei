@@ -260,7 +260,7 @@ func (s *SQLite) runMigrations(ctx context.Context) error {
 			continue
 		}
 
-		if name == "0069_changeflow_evidence.sql" {
+		if name == "0069_changeflow_evidence.sql" || name == "0070_openspec_read_binding.sql" {
 			// Reuse the exact-DDL preflight: a retained aggregate table after
 			// ledger loss must be verified, never replayed or silently accepted.
 			if err := s.migrateOpenSpecConfirmation(ctx, name, string(body), digest); err != nil {

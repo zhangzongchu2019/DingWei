@@ -1,0 +1,6 @@
+--- FAIL: TestGitHubPermissionIdentityAndFailure (0.00s)
+    --- FAIL: TestGitHubPermissionIdentityAndFailure/wrong_user (0.00s)
+        github_test.go:118: permission wrong_user err <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.003s
+FAIL

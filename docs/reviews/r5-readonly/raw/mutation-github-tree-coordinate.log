@@ -1,0 +1,6 @@
+--- FAIL: TestGitHubTreeTruncationAndTypes (0.00s)
+    --- FAIL: TestGitHubTreeTruncationAndTypes/wrong_tree (0.00s)
+        github_test.go:204: invalid tree accepted
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/specread	0.003s
+FAIL

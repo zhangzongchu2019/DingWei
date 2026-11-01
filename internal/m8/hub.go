@@ -34,6 +34,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/obs"
 	"github.com/zhangzongchu2019/dingwei/internal/router"
 	"github.com/zhangzongchu2019/dingwei/internal/specconfirm"
+	"github.com/zhangzongchu2019/dingwei/internal/specread"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
@@ -66,6 +67,7 @@ type ViewPageUnlockRequest struct {
 
 type Hub struct {
 	// Startup-only R7 service. Nil keeps Git/committee operations fail-closed until trusted adapters exist.
+	SpecReader        *specread.Service
 	SpecConfirmations *specconfirm.Service
 	// Startup-only provider-neutral R1/R8 core; nil remains unavailable.
 	ChangeEvidence *changeflow.Service
@@ -407,6 +409,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 	h.sessionTouchMinInterval = envDuration("WP_SESSION_TOUCH_MIN_INTERVAL", 5*time.Second)
 	h.applyReplayGuardSettings()
 	h.startCapabilityPendingCleanup()
+	h.configureSpecRead()
 	return h
 }
 

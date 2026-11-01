@@ -20,6 +20,11 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("GET /console/change-evidence", prefixHub.RequireConsolePrincipal(prefixHub.HandleChangeEvidencePage))
 	mux.HandleFunc("GET /api/console/change-evidence", prefixHub.RequireConsolePrincipal(prefixHub.HandleChangeEvidence))
 	mux.HandleFunc("POST /api/console/change-evidence", prefixHub.RequireConsolePrincipal(prefixHub.HandleChangeEvidence))
+	mux.HandleFunc("GET /console/openspec", prefixHub.RequireConsolePrincipal(prefixHub.HandleOpenSpecReadPage))
+	mux.HandleFunc("GET /api/console/openspec-read", prefixHub.RequireConsolePrincipal(prefixHub.HandleOpenSpecRead))
+	mux.HandleFunc("GET /api/console/openspec-bindings", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(prefixHub.HandleOpenSpecBinding)))
+	mux.HandleFunc("PUT /api/console/openspec-bindings", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(prefixHub.HandleOpenSpecBinding)))
+	mux.HandleFunc("DELETE /api/console/openspec-bindings", prefixHub.RequireConsolePrincipal(prefixHub.RequireConsolePlatformAdmin(prefixHub.HandleOpenSpecBinding)))
 	// R7 requires its own committee + repository authority; platform management is not that authority.
 	mux.HandleFunc("GET /console/openspec-confirmations", prefixHub.RequireConsolePrincipal(prefixHub.HandleOpenSpecConfirmationPage))
 	mux.HandleFunc("GET /api/console/openspec-confirmations", prefixHub.RequireConsolePrincipal(prefixHub.HandleOpenSpecConfirmations))

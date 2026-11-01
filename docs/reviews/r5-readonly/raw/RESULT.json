@@ -1,0 +1,26 @@
+{
+  "source_commit": "f8112829401bfcad34f46c97441cf0e9fe1a37f8",
+  "source_tree": "a30a2ae80dfaa41137cd51a19700c5f962a4ed7c",
+  "implementation": "a118455e31b95685a839f944472e97d22c920a60",
+  "build_rc": 0,
+  "m8_final_full_rc": 0,
+  "workpulse_final_full_rc": 0,
+  "store_final_full_rc": 0,
+  "strict_passed": 12,
+  "strict_rc": 0,
+  "browser_new_final_checks": 19,
+  "browser_new_rc": 0,
+  "browser_full_suites": 26,
+  "browser_full_green": 24,
+  "browser_aggregate_rc": 2,
+  "browser_inherited_failures": [
+    "renderer_0206_file_render",
+    "renderer_flood_stress"
+  ],
+  "mutation_guards": 40,
+  "mutation_assertion_red": 40,
+  "real_provider_acceptance": "NOT_EXECUTED_T07_OUT_OF_SCOPE",
+  "staging": "NOT_EXECUTED_T08_OUT_OF_SCOPE",
+  "real_bindings_created": 0,
+  "feature_enabled": false
+}

@@ -205,6 +205,9 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	if h.ChangeEvidence != nil && h.ChangeEvidence.Store != nil && h.ChangeEvidence.Provider != nil {
 		builtins = append(builtins, model.ConsolePlatformItem{ID: "change-evidence", Kind: "change-evidence", Title: "变更风险与验收证据", Href: "/console/change-evidence", Target: "_blank", Status: "approved", Active: true})
 	}
+	if h.SpecReader != nil {
+		builtins = append(builtins, model.ConsolePlatformItem{ID: "openspec-read", Kind: "openspec-read", Title: "OpenSpec 只读文档", Href: "/console/openspec", Target: "_blank", Status: "approved", Active: true})
+	}
 	if h.openSpecConfirmationReady() {
 		builtins = append(builtins, model.ConsolePlatformItem{ID: "openspec-confirmations", Kind: "openspec-confirmations", Title: "委员会版本确认", Href: "/console/openspec-confirmations", Target: "_blank", Status: "approved", Active: true})
 	}

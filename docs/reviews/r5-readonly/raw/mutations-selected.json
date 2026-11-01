@@ -1,0 +1,14 @@
+[
+  {
+    "guard": "github-response-bound",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubResourceBoundsAndRedirectRate/response_bytes"
+  },
+  {
+    "guard": "github-tree-bound",
+    "rc": 1,
+    "assertion_red": true,
+    "test": "TestGitHubResourceBoundsAndRedirectRate/tree_entries"
+  }
+]

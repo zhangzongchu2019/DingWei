@@ -1,0 +1,8 @@
+PASS original requirement and task IDs remain read-only
+PASS no document write controls
+PASS untrusted HTML does not execute
+PASS no executable or remote resource nodes
+PASS render and scroll make zero remote requests
+AssertionError [ERR_ASSERTION]: dangerous schemes credentials and encoded links rejected
+    at check (/data/ai-dev-data/r5-impl/view-service/openspec-read-browser-regression.js:19:427)
+    at /data/ai-dev-data/r5-impl/view-service/openspec-read-browser-regression.js:27:2
