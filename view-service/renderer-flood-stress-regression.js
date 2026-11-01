@@ -221,10 +221,16 @@ async function runScenario(browser, sc) {
     await page.goto(`${base}/console`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.querySelectorAll('#a button').length === 2);
     await page.evaluate(([a, b]) => { openTab(b); openTab(a); }, [FLOOD, CALM]);   // flood 后开 ⇒ 它是可见页签
-    const frameOf = name => page.frames().find(f => f.url().endsWith(`/view/${name}`));
+    const frameOf = name => page.frames().find(f => {
+      try { const url = new URL(f.url()); return url.origin === base && url.pathname === `/view/${name}`; }
+      catch (_) { return false; }
+    });
     let floodFrame, calmFrame;
     for (let k = 0; k < 100 && !(floodFrame && calmFrame); k++) { await sleep(100); floodFrame = frameOf(FLOOD); calmFrame = frameOf(CALM); }
     assert.ok(floodFrame && calmFrame, 'iframes not found');
+    const frameMetadata = await page.locator('#panes iframe').evaluateAll(es => es.map(e => ({src:e.src,instance:e.dataset.viewRefreshInstance})));
+    for (const f of [floodFrame,calmFrame]) { const url = new URL(f.url()); const pane = frameMetadata.find(p => p.src===f.url()); assert.ok(pane && pane.instance && url.searchParams.get('view_refresh_instance')===pane.instance,'iframe refresh metadata must remain bound'); }
+    console.log('STRESS_FRAME_METADATA '+JSON.stringify({scenario:sc.name,frames:frameMetadata}));
     await floodFrame.waitForFunction(() => typeof turnGroups !== 'undefined' && typeof stats !== 'undefined');
     await floodFrame.evaluate(instrumentFlood);
     await calmFrame.waitForFunction(() => typeof turnGroups !== 'undefined' && turnGroups.has('t-c'));
