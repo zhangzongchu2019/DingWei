@@ -30,3 +30,11 @@
 - 坐标、缓存和审计身份包含提供方/实例、稳定仓库 ID、完整 commit、路径；更换提供方或同名仓库不能继承旧权限、缓存、审阅或确认，须重新核实映射及对象来源，保留旧事实坐标。
 - R6 坐标派审与后续 R10 任务坐标读取必须沿用此接口及独立主体核权，不经聊天或文件服务补源码。当前尚无独立 R10 OpenSpec 变更，不新建任务管理需求；本段是其共享读取约束。
 - 首月 Console 用户绑定由管理员维护；按提供方核权不可用仍失败关闭。工蜂转 GitHub 尚未决定；本轮不迁移、不改任何实现。
+
+## R5 T-03～T-06 实现上下文（2026-11-01）
+
+来源事实：review/prodops/r5-facts e8b14b69，实测 08:37–08:43 UTC；细项见 R5 proposal R5-A01～06。GitHub 按数字仓库 ID 核响应身份，ref 固定完整 SHA；tree recursive=1 截断逐级回退；symlink/submodule 不跟随，tree.size 先核 2 MiB，逐次读取限速头。
+
+实现位置：internal/specread、internal/store/openspec_read_binding.go 与迁移 0070、internal/m8/console_openspec_read*、cmd/workpulse/console_routes.go。读取 API /api/console/openspec-read；管理员 GET/PUT/DELETE /api/console/openspec-bindings。绑定不授予仓库权限，每次独立核权，无内容/权限缓存。新只读页面不改公共 Markdown 输出。
+
+配置：DW_OPENSPEC_READ_ENABLED 默认关闭；DW_OPENSPEC_GITHUB_CREDENTIAL_FILE 默认未配，服务端受限凭据文件路径；DW_OPENSPEC_GITHUB_REPOSITORY_IDS 受控数字 ID 列表。缺任一即服务不可用且无入口。单文件 2 MiB，API 10 秒/整次 15 秒/并发 4，单响应 8 MiB/tree 10,000 项/截断回退最多 256 子树请求。真实凭据、绑定均未创建；scope、工蜂令牌和 Console/GitHub 绑定仍属真实验收缺口，T-07/T-08 另派。

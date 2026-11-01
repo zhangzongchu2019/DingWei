@@ -1,0 +1,6 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OpenSpec 只读文档</title>
+<style>body{font:16px system-ui;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#253047}label{display:inline-block;margin:.4rem}input,select,button{font:inherit;padding:.45rem}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f8;padding:1rem}#coordinate{overflow-wrap:anywhere;background:#f4f6f8;padding:1rem}#documents{max-height:18rem;overflow:auto}article{line-height:1.8}article p{white-space:pre-wrap}button{cursor:pointer}a{color:#245fc4}</style>
+<a href="/console">返回 Console</a><h1>OpenSpec 只读文档</h1><p>勾选、归档和规格校验仅为仓库原文，不代表验收、确认或发布。</p>
+<form id="coordinates"><label>提供方<select name="provider"><option value="github">GitHub</option><option value="gongfeng">工蜂（暂不可用）</option></select></label><label>实例<input name="instance" value="github.com" required></label><label>仓库数字 ID<input name="repository" required></label><label>分支、tag 或完整 SHA<input name="version" value="main" required></label><button>读取文档目录</button></form>
+<p id="message" role="status"></p><div id="coordinate"></div><nav id="documents" aria-label="同 commit 文档"></nav><article id="document"></article>
+<script>/*READ_SCRIPT*/</script></html>

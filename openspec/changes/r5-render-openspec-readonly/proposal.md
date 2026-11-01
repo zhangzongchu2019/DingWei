@@ -30,16 +30,16 @@
 唯一需求来源为委员会决议：[OPENSPEC-SWITCH-DECISION-20261031.md](https://git.code.tencent.com/wego-ai/dingwei/blob/c2d9c9fdd0416828739f7042d2ceb9bc71f603c6/docs/decisions/OPENSPEC-SWITCH-DECISION-20261031.md) 第 4～6、10～15、17、19～22 条。
 就绪范围：[就绪计划 R5](https://git.code.tencent.com/wego-ai/dingwei/blob/c2d9c9fdd0416828739f7042d2ceb9bc71f603c6/docs/decisions/OPENSPEC-SWITCH-READINESS-PLAN-20261101.md)。来源 commit c2d9c9fdd0416828739f7042d2ceb9bc71f603c6；实现基线 a8bb5e5847884b62ba01f6f48fbce3772e2d8b04。
 
-## 待确认假设
+## 提供方事实回写（T-03）
 
-以下是对 prodops 的接口需求，不是已获授权/已存在的 API；需回写已核文档链接、能力、限制和凭据管理位置，不发送凭据值。
+依据 prodops `review/prodops/r5-facts` / e8b14b69 的 `docs/reviews/prodops-r5-facts-20261101.md`（2026-11-01 08:37–08:43 UTC 实测）。改名、转移与超限 HTTP 行为只是该报告引用文档的推断，不冒称实测。
 
-- R5-A01 仓库发现/标识：受控仓库托管提供方实例、稳定仓库 ID 与规范 namespace/path 的对应查询；只列当前主体可见仓库。需要确认重命名、迁移、删除的行为，不接受用户提交任意 host/API URL。
-- R5-A02 身份/权限：Console principal 与仓库托管提供方用户的可信映射；查询该用户对仓库的当前 read 权限（含继承、组、撤权、停用）；后续 Agent 读取也必须能验证其独立仓库权限。服务账号读到内容不等于用户获权；尚未证实可逐主体可靠核权时不能开放该读取。
-- R5-A03 版本接口：把受控仓库的 ref/tag 解析成完整 commit SHA，并验证 commit 属于该仓库、可读取；查询响应必须回显实际 commit，不以可移动分支名作缓存身份。
-- R5-A04 内容接口：指定 commit 的 tree 列举/分页、路径类型与 blob 标识、原始 UTF-8 文件读取；必须可识别 symlink/gitlink，不能自动跨 submodule。需确认 API 编码/错误/限流/大小约束与重定向策略。
-- R5-A05 运维约束：仓库托管提供方访问凭据由谁持有、最小只读 scope、secret 管理位置、轮换/撤销与审计方式；授权检查不可用时拒绝，不跨用户使用缓存。单文件正文上限已批为 2 MiB；仍需确定超时、并发、tree 大小与缓存清理上限。
-- R5-A06 现有 Markdown 规则可被新阅读区单独收紧；不假设公共渲染器能无改动满足仓库相对链接与远程图片限制。是否展示附件不在本轮范围。
+- R5-A01：GitHub `GET /repositories/{id}` 返回数字 id 与当前 full_name；目标实测 id=1441460280。身份按数字 ID，严格核响应 id；只允许 api.github.com HTTPS，同 host 重定向亦须核坐标。当前 full_name 仅作该次 API 路径/来源链接，不是永久身份。删除、失权不回退同名仓。
+- R5-A02：`GET /repos/{owner}/{repo}/collaborators/{login}/permission` 已实测可用。绑定含 Console principal、provider/instance、GitHub 数字用户 ID 与 login；核响应 user.id/login 和有效 permission。管理员受控维护与审计；每次读取及交付前重新核绑定与权限。无绑定/无 read/不可验证一律拒绝；不把服务令牌权限当用户权限。现网尚无可信绑定，本单不写真实绑定。
+- R5-A03：实测 git/ref/heads 返回完整 object.sha；实现用同仓 `GET /repos/{owner}/{repo}/commits/{ref}` 支持 ref/tag 与完整 SHA，核完整 SHA，后续 git/commits、trees、blobs 全部只用 SHA。该 commits/ref 接口为实现选择，模拟验证，未补做真实 API 验收。实测 main=6ed4d1e8… 无 openspec，规格分支 68c178a5… 才有目标目录，不自动回退版本。
+- R5-A04：git/commits 固定 tree.sha；git/trees/{sha}?recursive=1 递归无分页，须核 truncated；截断时丢弃局部结果，逐级非递归子树读取，仍截断/越界则失败。blob 120000 symlink、commit 160000 submodule 拒绝且不跟随；仅 openspec/ 普通 Markdown。先按 tree.size 执行 2,097,152 字节上限，再按 blob SHA、size、实际长度、Git blob 摘要验证。实测 Contents raw 可取正文，实现选用 Git blob base64（模拟覆盖，非真实接口验收）。
+- R5-A05：逐次读 X-RateLimit-Remaining/Reset 与 Retry-After，含二级限速；令牌只从服务端受限文件读取，配置缺失整个功能不可用。prodops 实测凭据管理位于宿主机 /etc/dingwei/credentials/；本单不读取/复制该真实令牌。响应不能证明细粒度令牌完整授权范围或仅只读，须由所有者独立审计；工蜂专用只读令牌未建，不借 SSH。实现有界值：单文件 2 MiB、单响应 8 MiB、目录 10,000 条、截断回退至多 256 子树请求、API 并发 4、单 API 10 秒、整次读取 15 秒；不缓存内容/授权，限额是本地保护值，不冒称提供方实测容量。
+- R5-A06：独立 DOM 文本 Markdown 呈现，不复用或放宽公共渲染器。图片只显示替代文本；HTML/CSS/属性作为文本，外链只允许无凭据 HTTPS，同仓文档导航固定 SHA。工蜂 API 身份/权限/tree/撤销仍未核，适配器不可用并失败关闭；Console 主体与 GitHub 账号未绑定。上述缺口保留为 T-07/T-08 前置，不阻止本次已派默认关闭的模拟实现。
 
 ## 待 PM 决策（本轮全部已决）
 
