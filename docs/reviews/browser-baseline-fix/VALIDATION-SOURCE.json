@@ -1,0 +1,20 @@
+{
+  "delivery_base": "3fd26ba67ebc90db4f35449e6968c4f22f89666b",
+  "implementation_commit": "3d99c4e8da0f1c873e61f823e4ba62ed1d3969d3",
+  "validation_commit": "afa8a0050a2f93d1410b91690e5c0ca9e265035d",
+  "validation_tree": "c2f8fd413bedabf89dbb6ef5002280624480aa09",
+  "validation_parents": [
+    "3d99c4e8da0f1c873e61f823e4ba62ed1d3969d3",
+    "a414b53dc19225f2dfedcdf3aaad5f28a6138aec"
+  ],
+  "delivery_non_docs_changes": [
+    "view-service/renderer-0206-file-render-regression.js",
+    "view-service/renderer-flood-stress-regression.js"
+  ],
+  "full26_command": "python3 tools/run-browser-regressions.py --receipt <delivery-docs>/raw/full26-receipt.txt",
+  "canonical_command": "bash scripts/run-build-tests.sh",
+  "environment": "SH_/DINGWEI_/DW_/DATAD_ variables removed; local venv Python; existing Playwright module; PW_CHANNEL=chrome; STRESS_READINGS output only; no fixture/renderer override",
+  "same_test_hashes_in_validation": true,
+  "validation_ref": "coder56solzzc/browser-baseline-fix-validation",
+  "validation_ls_remote_exact": true
+}
