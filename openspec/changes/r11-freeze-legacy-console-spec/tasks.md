@@ -34,3 +34,8 @@ OpenSpec status 的 planningComplete/isComplete 只说明规划文件齐备，�
   - 完成：T-01、T-02；基于 a8bb5e5847884b62ba01f6f48fbce3772e2d8b04 与固定来源 c2d9c9fdd0416828739f7042d2ceb9bc71f603c6 形成规格；OpenSpec 1.16.0 / Node 22.23.1 / OPENSPEC_TELEMETRY=0，`openspec validate --all --strict --no-interactive` rc=0，2 个基线与 2 个变更全部通过、零 issue。首次 R11 校验发现场景标题身份不匹配，保留原完整标题后重验通过；config 仅补引号恢复原规格规则。
   - 阻塞：R11-A01～03、R11-PM01～03 与组长独立审阅；场景仍未执行，T-03～08 均未开始；不得从 CLI planningComplete/isComplete 推断业务完成。
   - 下一步：按交件 tip 冻结审阅；先完成 T-03 并回写未决项，再由组长另派实施。当前段只新增本交接记录，未改上述内容 commit 的规格正文；最终冻结 SHA/tree 以承载本记录的提交为准。
+
+- 2026-11-01T01:39:23Z · coder56solzzc.zzc · commit 4416004d63a6f00ef41f54ef8a2903453feaf345
+  - 完成：T-03/04/06；实现组长授权的 LCS-001/003/004/005 核心阶段，默认关闭配置与持久冻结、26 表守卫、24 handler/迟到结果/排队派发拒绝、历史只读标注及在途进度隔离。m8/store 全包通过，cmd 夹具修复后全包通过，R11 race 三包通过；run-build-tests rc=0，helper 两套各1087，inventory90，Python27/shell2；OpenSpec strict 4/4，零 issue。固定来源 d1a7a686 提交前复核未变；逐格结果与日志摘要见 EVIDENCE.md。
+  - 阻塞：T-05 的 LCS-002/共享可见范围等待 R11-PM01 及后续派单，T-07 完整十格依赖该查询工作，T-08 预发未授权；R5 不开实现。当前整体5/8，核心8格PASS，查询2格未执行，不宣告全变更完成/验收/发布。
+  - 下一步：以承载本记录的最终 tip/tree 冻结交组长审实现；不启 WP_LEGACY_SPEC_FROZEN、不部署重启或 archive。审后再接后续授权；若修改规格须按新 commit 重新读取与记录。
