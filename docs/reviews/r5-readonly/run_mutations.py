@@ -8,6 +8,8 @@ ROOT=Path(__file__).resolve().parents[3]
 RAW=Path(__file__).resolve().parent/'raw'
 S='internal/specread/service.go';G='internal/specread/github.go'
 mutations=[
+ ('backend-error-redaction','internal/m8/console_openspec_read.go',[('message := specread.ErrUnavailable.Error()','message := err.Error()')],'TestR5ErrorRedactsBackendDetails'),
+ ('credential-file-permissions',G,[('st.Mode().Perm()&0077 != 0','false')],'TestGitHubCredentialPermissions'),
  ('feature-default-off','internal/m8/console_openspec_read.go',[('if os.Getenv("DW_OPENSPEC_READ_ENABLED") != "1" {','if false {')],'TestR5FeatureConfigurationAllGates/disabled'),
  ('credential-config','internal/m8/console_openspec_read.go',[('if !github.Ready() {','if false {')],'TestR5FeatureConfigurationAllGates/missing_file'),
 ('repository-config', 'internal/m8/console_openspec_read.go', [('if id == "" || strings.Trim(id, "0123456789") != "" || id[0] == \'0\' {', 'if false && (id == "" || strings.Trim(id, "0123456789") != "" || id[0] == \'0\') {')], 'TestR5FeatureConfigurationAllGates/missing_repositories'),

@@ -304,3 +304,20 @@ func TestGitHubResourceBoundsAndRedirectRate(t *testing.T) {
 		})
 	}
 }
+
+func TestGitHubCredentialPermissions(t *testing.T) {
+	calls := 0
+	g := testGitHub(t, func(r *http.Request) (*http.Response, error) {
+		calls++
+		return reply(r, 200, map[string]any{"id": 1, "full_name": "o/r"}), nil
+	})
+	if err := os.Chmod(g.CredentialFile, 0644); err != nil {
+		t.Fatal(err)
+	}
+	if g.Ready() {
+		t.Fatal("publicly readable credential accepted")
+	}
+	if _, err := g.Repository(context.Background(), "1"); err != ErrUnavailable || calls != 0 {
+		t.Fatal("unsafe credential used", err, calls)
+	}
+}

@@ -3,6 +3,7 @@ package m8
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/zhangzongchu2019/dingwei/internal/specread"
 	"net/http"
 	"net/http/httptest"
@@ -162,5 +163,13 @@ func TestR5ReadHTTPQueriesAndNoOldBodyOnDenial(t *testing.T) {
 	w = call(query)
 	if w.Code != 403 || strings.Contains(w.Body.String(), "END") || strings.Contains(w.Body.String(), "text\"") {
 		t.Fatal("denial leaked previous response", w.Code)
+	}
+}
+
+func TestR5ErrorRedactsBackendDetails(t *testing.T) {
+	w := httptest.NewRecorder()
+	specReadError(w, errors.New("simulation-private-token-and-path"), specread.Result{})
+	if w.Code != 503 || strings.Contains(w.Body.String(), "simulation-private") || !strings.Contains(w.Body.String(), "服务不可用") {
+		t.Fatal("backend details leaked")
 	}
 }
