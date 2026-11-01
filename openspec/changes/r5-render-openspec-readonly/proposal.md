@@ -48,3 +48,7 @@
 - R5-PM03 **已决**：业主 2026-11-01T02:3xZ（workpulse；组长补充单 cf25af1ea2f34d24a776718848d26172，原始时刻仅精确到该范围，不补造分钟）；原话要点「单文件上限 2 MiB，至少保证 70 KB 文档完整读出」；2 MiB = 2,097,152 字节，恰好上限允许，超出拒绝，显示「文件过大，请在仓库托管平台查看」并附获权的同仓同 commit 来源链接。tree/分页/并发/超时等非单文件限额仍待提供方实测，不再把单文件上限挂为待决。
 - R5-PM04 **已决 A**：业主 2026-11-01T02:23:43Z（workpulse；组长转达单 8455a73321d3）；原话要点「首月管理员维护 Console 用户↔工蜂用户绑定表，平台以只读令牌逐主体核仓库权限」。按补充单统一改为 Console 用户↔按提供方用户绑定；受控管理员维护、可审计，平台仍须用只读令牌逐主体核权，不能以服务账号权限代替用户授权。Agent 身份另行核实，不由用户绑定表自动授予。
 - 托管迁移**未定**：业主考虑工蜂转 GitHub；不据此执行迁移或改变实现。
+
+### 实现所选补充 API 的文档核对（不是现场实测）
+
+`/commits/{ref}` 支持分支、tag 与 SHA，见 [GitHub Get a commit](https://docs.github.com/en/rest/commits/commits#get-a-commit)；`/git/blobs/{sha}` 的 JSON 提供 base64 content、sha、size，见 [GitHub Get a blob](https://docs.github.com/en/rest/git/blobs#get-a-blob)。2026-11-01 查阅官方文档；这些新增路径仅经本轮模拟 transport 覆盖，未使用真实凭据请求，不能写成 prodops 已实测接口或 T-07 权限验收。
