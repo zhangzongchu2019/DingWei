@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -37,13 +38,41 @@ func (g *GitHub) credential() (string, error) {
 	if !filepath.IsAbs(g.CredentialFile) {
 		return "", ErrUnavailable
 	}
+	// Only the exact systemd credential directory gets the ACL-mask model.
+	// Other locations retain the original owner-only permission check.
+	directory := os.Getenv("CREDENTIALS_DIRECTORY")
+	systemd := filepath.IsAbs(directory) && filepath.Dir(filepath.Clean(g.CredentialFile)) == directory
+	var pathInfo os.FileInfo
+	if systemd {
+		info, err := os.Lstat(g.CredentialFile)
+		if err != nil || !info.Mode().IsRegular() {
+			return "", ErrUnavailable
+		}
+		pathInfo = info
+		parent, err := os.Lstat(directory)
+		if err != nil || !parent.IsDir() || parent.Mode().Perm()&0022 != 0 {
+			return "", ErrUnavailable
+		}
+		owner, ok := parent.Sys().(*syscall.Stat_t)
+		if !ok || (owner.Uid != 0 && owner.Uid != uint32(os.Geteuid())) {
+			return "", ErrUnavailable
+		}
+	}
 	f, err := os.Open(g.CredentialFile)
 	if err != nil {
 		return "", ErrUnavailable
 	}
 	defer f.Close()
 	st, err := f.Stat()
-	if err != nil || !st.Mode().IsRegular() || st.Mode().Perm()&0077 != 0 || st.Size() > 4096 {
+	if err != nil || !st.Mode().IsRegular() || st.Size() > 4096 {
+		return "", ErrUnavailable
+	}
+	if systemd {
+		owner, ok := st.Sys().(*syscall.Stat_t)
+		if !ok || (owner.Uid != 0 && owner.Uid != uint32(os.Geteuid())) || st.Mode().Perm()&0007 != 0 || !os.SameFile(pathInfo, st) {
+			return "", ErrUnavailable
+		}
+	} else if st.Mode().Perm()&0077 != 0 {
 		return "", ErrUnavailable
 	}
 	b, err := io.ReadAll(io.LimitReader(f, 4097))
