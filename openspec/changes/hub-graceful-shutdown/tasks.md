@@ -5,7 +5,7 @@
 ## 1. 提案与校验
 
 - [x] T-01 读取r46固定源、2b4b624c定位/补遗和67f55bbd现场证据，参照r5/r11编写proposal/design、新能力context/增量spec及任务；单列PM点、数值矩阵与所有未确认假设。
-- [ ] T-02 使用OpenSpec1.16.0/Node≥22.12/OPENSPEC_TELEMETRY=0严格校验、运行仓库要求的构建测试门，检查仅指定目录文档改动；推工蜂并核远端tip，提交冻结交独立审阅。校验仅证明结构，不能证明场景通过。
+- [x] T-02 使用OpenSpec1.16.0/Node≥22.12/OPENSPEC_TELEMETRY=0严格校验、运行仓库要求的构建测试门，检查仅指定目录文档改动；推工蜂并核远端tip，提交冻结交独立审阅。校验仅证明结构，不能证明场景通过。
 
 ## 2. 实施前冻结（待另单）
 
@@ -31,4 +31,7 @@ strict规划通过不代表实现/业务验收/发布完成；不archive、不�
 
 ## 交接记录
 
-待本段完成后追加实际UTC、执行者、内容commit及完成/阻塞/下一步；最终tip/tree由交件消息报告，避免自引用。
+- 2026-11-01T14:15:22Z · coder56solzzc.zzc · 内容commit 7aba4f1b6e1787e8efd35d8ae06c6b5189bcdc03（本条交接及T-02勾选为后续追加，最终tip/tree见交件消息）。
+  - 完成：T-01/02提案编写与结构/仓库检查；OpenSpec1.16.0、Node22.23.1、OPENSPEC_TELEMETRY=0，`openspec validate hub-graceful-shutdown --strict --no-interactive`及`openspec validate --all --strict --no-interactive`均rc=0，全仓13项通过、0失败。8条需求、12个唯一场景，需求正文各不足500字、spec不足30KB。`scripts/run-build-tests.sh` rc=0，helper两profile各1092项、inventory90、Python27组/shell2组；普通dev用户、隔离HOME/临时DB及loopback测试环境，无真实Feishu/生产连接。仅6个本变更目录文档，基线为2af469dd；推送后以ls-remote核同tip并冻结，不自验收。
+  - 阻塞：负责人独立审阅；HLC-PM01～04与HLC-A01～04未闭合，尤其systemd TimeoutStopSec待prodops实测。产品生命周期S001～012与变异均未执行；严格结构检查及既有仓库门不代替这些验收。
+  - 下一步：工蜂按冻结坐标交审；先另单实测并冻结PM项，再另派实现。不改r46集成分支，不apply/archive，不部署或调整systemd。
