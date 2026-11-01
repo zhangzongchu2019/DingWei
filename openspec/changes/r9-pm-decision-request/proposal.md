@@ -8,8 +8,8 @@
 
 - 新增pm-decision-request能力R9-001～009：完整识别固定版本PM点、飞书私聊与Console并行请求、明确回应和身份核验、最先有效回应与另一渠道关闭、内容变更失效重发、超时/周期催办、平台/MR写回边界、可靠通知和审计。
 - 飞书只复用当前已有私聊通道，不依赖挂起的群通知，不接Slack或新建群通知路径。普通风险提醒仍不阻塞合并，R9只处理显式PM决策点。
-- MR评论写回缺提供方写评论权限，单列前置及R9-PM01选项；首期平台写回/后置MR仅是待批准建议，不默认为委员会要求已获豁免。
-- 只写提案及最小现状主规格/context，不实施、激活、发送真实PM请求或修改R10冻结内容。
+- MR评论写回缺提供方写评论权限；R9-PM01已按rulings㉒批准原A：首期只在平台记录回应，MR写回后置，不新申请写权限，不宣称MR已写。
+- 初始单只写提案及最小现状主规格/context；本次只回写本变更已定PM，不实施、激活或发送真实PM请求；R10在同分支独立变更目录按本单另作PM回写。
 
 ## Capabilities
 
@@ -27,16 +27,28 @@
 
 ## 来源
 
-需求为S-R10-R9-PROPOSALS；固定来源commit 6a2048187be7660f1c56a85d8ad79c743702d250，工蜂review/opus50tc2k/openspec-proposal-20261031：[就绪计划R9](https://git.code.tencent.com/wego-ai/dingwei/blob/6a2048187be7660f1c56a85d8ad79c743702d250/docs/decisions/OPENSPEC-SWITCH-READINESS-PLAN-20261101.md)；[11月计划第3节五条](https://git.code.tencent.com/wego-ai/dingwei/blob/6a2048187be7660f1c56a85d8ad79c743702d250/docs/plans/DINGWEI-PLAN-2026-11.md)；[委员会决议第8、11、15条](https://git.code.tencent.com/wego-ai/dingwei/blob/6a2048187be7660f1c56a85d8ad79c743702d250/docs/decisions/OPENSPEC-SWITCH-DECISION-20261031.md)。实现基线仍为r46 2af469dd6919d8eb6064aa7da0e646f0851becf8，当前分支上R10冻结于afe4681da9f4b1ee4807939acc25bf79618b3b70；本R9提交不改该内容，不从Git作者推导PM。
+需求为S-R10-R9-PROPOSALS；固定来源commit 6a2048187be7660f1c56a85d8ad79c743702d250，工蜂review/opus50tc2k/openspec-proposal-20261031：[就绪计划R9](https://git.code.tencent.com/wego-ai/dingwei/blob/6a2048187be7660f1c56a85d8ad79c743702d250/docs/decisions/OPENSPEC-SWITCH-READINESS-PLAN-20261101.md)；[11月计划第3节五条](https://git.code.tencent.com/wego-ai/dingwei/blob/6a2048187be7660f1c56a85d8ad79c743702d250/docs/plans/DINGWEI-PLAN-2026-11.md)；[委员会决议第8、11、15条](https://git.code.tencent.com/wego-ai/dingwei/blob/6a2048187be7660f1c56a85d8ad79c743702d250/docs/decisions/OPENSPEC-SWITCH-DECISION-20261031.md)。实现基线仍为r46 2af469dd6919d8eb6064aa7da0e646f0851becf8，原R10提案冻结于afe4681da9f4b1ee4807939acc25bf79618b3b70；本次从0b707aca按㉒对R10/R9各自目录回写已定PM，不从Git作者推导PM。
 
 ## 待确认假设
 
 - R9-A01：指定PM有可信Console主体、当前仓库read与可核的既有飞书private open_id/应用绑定；多租户/应用隔离、真实回调服务证明与消息关联须实测。展示名、转发截图或普通文本作者名不证明身份。
 - R9-A02：既有私聊Gateway支持稳定RequestID/回执查询或同ID幂等重试、原消息关联及可靠入站证明；代码存在不等于当前每种transport都可用。不能核实入站的proxy/FCS路径不得降格采纳私聊回应，双渠道完整验收前须补通或保持未就绪，不能改用群通知。
-- R9-A03：当前令牌按派单事实为只读，**MR评论写权限未具备**；changeflow提供方也是未装配占位。必须核提供方MR/PR身份与head、评论写权限/最小scope、服务主体与受控凭据位置、幂等查重/回执、权限撤回行为。既有风险评论接口不证明真实写通道已经可用，不读取或输出凭据。
+- R9-A03：当前令牌按派单事实为只读，**MR评论写权限未具备，已按㉒后置，不是首期平台阶段需新申请的权限前置**；changeflow提供方也是未装配占位。必须核提供方MR/PR身份与head、评论写权限/最小scope、服务主体与受控凭据位置、幂等查重/回执、权限撤回行为。既有风险评论接口不证明真实写通道已经可用，不读取或输出凭据。
 - R9-A04：固定proposal的PM点集合可完整读取，含稳定编号、问题/选项/建议及明确负责PM；解析规则、消息容量/限速和周期容量待验证。不完整/重复编号/缺PM不能当零项。
 
-## 待 PM 决策
+## PM 决策（已定，rulings ㉒）
+
+[业主裁定rulings第㉒条](https://git.code.tencent.com/wego-ai/dingwei/blob/0659d208ce731b73206b06d587c3814649ae11d2/docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md)：业主workpulse对话，Hub收信2026-11-01T23:07:47Z，delivery dw-dlv_f5170d3c5deb6106833dc76e7c36db1e；对“r48那11项是否全部按建议定”答原话“ok”。本单S-R48-PM-WRITEBACK只回写已定值；不是实现、apply/archive、迁移、预发或发布授权。
+
+| PM编号 | 已定值 | 状态 |
+|---|---|---|
+| R9-PM01 | 选择原A：首期只在平台记录回应，MR写回后置，不新申请写权限 | 已定（rulings ㉒） |
+| R9-PM02 | 24小时未回应标超时，之后每6小时催一次；超时只停住、不自动放行 | 已定（rulings ㉒） |
+| R9-PM03 | 每决策点一个负责PM，多人事项拆点 | 已定（rulings ㉒） |
+
+### 原选项与建议（历史记录保留）
+
+下表原选项/建议逐行保留供追溯，其中“待批/候选/未批准”等文字仅描述当时状态；当前决策以上述已定表为准。
 
 | 编号 | 选项 | 建议与理由 |
 | --- | --- | --- |
@@ -44,4 +56,4 @@
 | R9-PM02 | 自定周期；或固定首轮超时与催办间隔 | 建议首轮24小时无明确回应即标超时，之后每6小时催办，服务端UTC计算、重启不重置；不明确回应不延长等待，不无限加密提醒，所有周期仍停SPEC_REVIEW |
 | R9-PM03 | 每点指定一个PM；或首期实现多人联签/自动转交 | 建议每点一个可信负责PM，明确映射后私聊；多PM事项拆成不同点，不自动选Git作者或群里先答者。负责人变更生成新请求代际，避免越权替答及迟到覆盖 |
 
-以上建议未批准。R9不自动推进状态，不将不同意/需修改改成同意，也不在本提案偷偷重写R8对明确回应的既有规则；各意见的规格落实及批准动作另按现行守卫执行。
+R9-PM01～03已按㉒定值，原选项保留；PM01已批准A且不新申请MR写权限，编号直接对应、无不匹配项。R9不自动推进状态，不将不同意/需修改改成同意，也不在本提案偷偷重写R8对明确回应的既有规则；各意见的规格落实及批准动作另按现行守卫执行。
