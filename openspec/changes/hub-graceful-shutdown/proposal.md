@@ -7,9 +7,9 @@
 ## What Changes
 
 - 新增 hub-lifecycle 能力 HLC-001～009：单次停机协调、双 server 同时停止接入、注册屏障、流取消/WS 关闭、生产者/队列/DB 顺序、预算与退出、阶段结果和切换验收。
-- 建议正常完成退出 0，超时专用非零值 2，其它关停或持久化失败 1；具体非零值与预算待 PM 决策，绝不忽略 deadline 或放宽 SuccessExitStatus。
-- 提供明确的候选预算、慢请求/活跃流/混合/超时矩阵及撤掉主动取消的反向控制；所有产品场景均尚未执行。
-- 仅写 r47 候选提案。基于 r46 2af469dd6919d8eb6064aa7da0e646f0851becf8；不改产品代码、r46 集成分支、版本、部署、systemd 或控制器。
+- 已按rulings㉒定正常完成退出0、超时退出2、其它关停或持久化失败退出1；预算按已定总15秒与原design阶段值，绝不忽略 deadline 或放宽 SuccessExitStatus。
+- 提供明确的已定预算、慢请求/活跃流/混合/超时矩阵及撤掉主动取消的反向控制；所有产品场景均尚未执行。
+- 初稿为r47候选；本次按㉒回写供r48另派实现，仍只改规格文档。基于 r46 2af469dd6919d8eb6064aa7da0e646f0851becf8；不改产品代码、r46 集成分支、版本、部署、systemd 或控制器。
 
 ## Capabilities
 
@@ -23,7 +23,7 @@
 
 ## Impact
 
-后续实现涉及 cmd/workpulse 的 run/execute/main、两个 HTTP server、Hub.Close 及连接注册、View 内网 SSE、Console mux/bridge、会话 WS、后台生产者和队列、SQLite/PG 关闭。客户端既有重连与游标协议继续使用，不增加本文自造的线上事件类型、HTTP 路由或 helper 协议。单实例 stop-then-start 必有空档；本提案不承诺零中断或可用性百分比。独立评审、PM 冻结、prodops 实测和实现派单均是后续前置。
+后续实现涉及 cmd/workpulse 的 run/execute/main、两个 HTTP server、Hub.Close 及连接注册、View 内网 SSE、Console mux/bridge、会话 WS、后台生产者和队列、SQLite/PG 关闭。客户端既有重连与游标协议继续使用，不增加本文自造的线上事件类型、HTTP 路由或 helper 协议。单实例 stop-then-start 必有空档；本提案不承诺零中断或可用性百分比。PM已由㉒定值、停止事实已独立核验；实现派单、生命周期实测与独立验收仍是后续前置。
 
 ## 来源
 
@@ -31,7 +31,7 @@
 
 补充配置事实：[prodops 预发/现网有效单位实测](https://git.code.tencent.com/wego-ai/dingwei/blob/e43100e3bdf200caaa67a925e51ca5fd82287bff/docs/reviews/prodops-r5-t08-facts-20261101/REPORT.md)，2026-11-01T14:05～14:08Z只读检查：dingwei-dw123-staging-hub.service与dingwei-dw123-hub.service有效TimeoutStopUSec均为30s，两个fragment均写TimeoutStopSec=30s，DropInPaths均为空。仅引用停机配置事实，不引入同报告的凭据交付任务。
 
-本轮T-03事实：[控制器与有效停止参数](https://git.code.tencent.com/wego-ai/dingwei/blob/c90f41c2a3e090b34ad17070f5d8beed589cbd7d/docs/reviews/prodops-public-timeout-hub-stop-facts-20261101/REPORT.md)B节；[systemd 259停止期隔离实测](https://git.code.tencent.com/wego-ai/dingwei/blob/ed797ae6de1f49cc2ad755946f1f3db2147bd8af/docs/reviews/prodops-hlc-t03-watchdog-facts-20261101/REPORT.md)及其raw。来源为prodops实测；保留HLC-009防御性要求、S013隔离监督器边界及T-03子项闭合为组长opus50tc2k.zzc本单裁定，不是PM定值，也不新增实现/部署授权。
+本轮T-03事实：[控制器与有效停止参数](https://git.code.tencent.com/wego-ai/dingwei/blob/c90f41c2a3e090b34ad17070f5d8beed589cbd7d/docs/reviews/prodops-public-timeout-hub-stop-facts-20261101/REPORT.md)B节；[systemd 259停止期隔离实测](https://git.code.tencent.com/wego-ai/dingwei/blob/ed797ae6de1f49cc2ad755946f1f3db2147bd8af/docs/reviews/prodops-hlc-t03-watchdog-facts-20261101/REPORT.md)及其raw。来源为prodops实测；保留HLC-009防御性要求、S013隔离监督器边界及T-03子项闭合为此前S-HLC-T03-WRITEBACK的组长opus50tc2k.zzc裁定，不是本次PM定值来源，也不新增实现/部署授权。
 
 ## 待确认假设
 
@@ -42,7 +42,20 @@
 
 - HLC-A05（目标停止期行为已核，Hub通知连续性待实现验证）：ed797ae6在目标systemd259复刻W=12秒、TimeoutStopSec=30秒、KillMode=control-group，A停止期不喂狗25.024786秒正常退出，B持续喂狗24.125013秒正常退出，均无SIGABRT/SIGKILL。按组长裁定，目标停止期不执行看门狗，原“模板W=12秒与15秒预算冲突”已由实测解决、不构成目标环境冲突；停止期最终兜底只有TimeoutStopSec=30s→SIGKILL，不能依赖watchdog。HLC-009继续喂狗保留为跨systemd版本可移植、成本低的防御性要求；S013隔离监督器文字不变，只验Hub自身通知连续性，不推断systemd停止期行为。Hub交接/通知轨迹与S013仍未实现或执行，A/B不是这些产品场景的通过证据。
 
-## 待 PM 决策
+## PM 决策（已定，rulings ㉒）
+
+[业主裁定rulings第㉒条](https://git.code.tencent.com/wego-ai/dingwei/blob/0659d208ce731b73206b06d587c3814649ae11d2/docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md)：业主workpulse对话，Hub收信2026-11-01T23:07:47Z，delivery dw-dlv_f5170d3c5deb6106833dc76e7c36db1e；对“r48那11项是否全部按建议定”答原话“ok”。本单S-R48-PM-WRITEBACK只回写已定值；不是实现、apply/archive、迁移、预发或发布授权。
+
+| PM编号 | 已定值 | 状态 |
+|---|---|---|
+| HLC-PM01 | 超时退出2，正常0，其它失败1 | 已定（rulings ㉒） |
+| HLC-PM02 | 总预算15秒，阶段1/8/3/1/2秒；systemd外层30秒不变 | 已定（rulings ㉒） |
+| HLC-PM03 | 只做单实例有界停机，不做双实例无感切换 | 已定（rulings ㉒） |
+| HLC-PM04 | stop→新版ready≤20秒；新ready后helper与各类推送流各≤5秒恢复 | 已定（rulings ㉒） |
+
+### 原选项与建议（历史记录保留）
+
+下表原选项/建议逐行保留供追溯，其中“待批/候选/未批准”等文字仅描述当时状态；当前决策以上述已定表为准。
 
 | 编号 | 选项 | 建议与理由 | 冻结条件 |
 | --- | --- | --- | --- |
@@ -51,4 +64,4 @@
 | HLC-PM03 | 排空期间新请求拒绝并由客户端重试；或扩大到无感滚动部署 | 建议本轮只做单实例有界停止，已接受有限请求尽量完成、长流主动断开；不引入双实例/自动业务重试，避免扩大幂等性风险 | 确认临时不可用、流重连体验及测试目标；写请求只在已有幂等协议下重投 |
 | HLC-PM04 | 本地冷启动目标 5 秒/恢复 5 秒；或据实测放宽 | 建议按 design 的 stop→ready≤20 秒、helper≤5秒重连、流≤5秒恢复作为候选验收目标；不能把现网一次约350ms回执差当作SLO | 实测启动/客户端退避，PM 定值；不满足不能删格或声称通过 |
 
-PM 冻结前，本提案的数值用于离线夹具设计与评审，不是已批准的生产参数；实施与部署均须另行派单。
+HLC-PM01～04已按㉒定值，原选项继续保留作历史；尚未实现或通过生命周期验收。T-03随本次回写闭合，T-04及以后仍未授权；实现与部署均须另行派单。

@@ -1,6 +1,6 @@
 # Tasks
 
-初始派单 S-HUB-GRACEFUL-SHUTDOWN-PROPOSAL；唯一执行者 coder56solzzc.zzc。T-01/02已完成；本次S-HLC-T03-WRITEBACK授权从4ad4ba757cd402fb959700d5294453a60fba7685只回写T-03事实闭合子项。HLC-PM01～04仍待业主定值，T-03总项保持未完成，T-04之后未授权。原固定源码基线2af469dd6919d8eb6064aa7da0e646f0851becf8，分支opus50tc2k/hub-graceful-shutdown-spec，仅写本变更目录。
+初始派单 S-HUB-GRACEFUL-SHUTDOWN-PROPOSAL；唯一执行者 coder56solzzc.zzc。T-01/02及此前T-03事实子项已完成；本次S-R48-PM-WRITEBACK授权从ae9b809b6221eb6e14ab91070357fd22edbf9aef按rulings㉒只回写PM已定值。HLC-PM01～04已定，T-03总项闭合；T-04及以后仍未授权。原固定源码基线2af469dd6919d8eb6064aa7da0e646f0851becf8，分支opus50tc2k/hub-graceful-shutdown-spec，仅写本变更目录。
 
 ## 1. 提案与校验
 
@@ -9,12 +9,12 @@
 
 ## 2. 实施前冻结（待另单）
 
-- [ ] T-03 负责人审阅与事实子项已闭合；HLC-PM01～04仍待业主定值及获批后写回，故总项未完成，不开放实现/部署。
+- [x] T-03 负责人审阅、停止事实及HLC-PM01～04定值回写已闭合（rulings㉒）；本勾选只关规格前置，不开放实现/部署。
   - [x] T-03.1 负责人已对37a414ff评审通过，4ad4ba75包含两项小改及HLC-001～009；e43100e3核预发/现网TimeoutStopSec=30s且无drop-in。
   - [x] T-03.2 c90f41c2核KillMode=control-group、SendSIGKILL=yes/FinalKillSignal=SIGKILL及有效W=12秒；ed797ae6核systemd259停止期不执行看门狗，原12秒/15秒冲突解除。HLC-009保留防御性要求，S013隔离监督器格原文不变，只验Hub通知连续性；停止期最终强制兜底为30秒→SIGKILL。
   - [x] T-03.3 c90f41c2核控制器systemctl stop命令期限40秒，返回后轮询上限30秒、间隔1秒，顺序40+30秒，覆盖外层30秒；不移作应用预算。
   - [x] T-03.4 ed797ae6核C五次停用开销0.106086～0.106635秒、TERM约+0.010秒；保守δ≈0.11秒，δ+15+5=20.11≤30。真实连接快照8793为4、443为1、临时端口28；不冒称峰值或负载验收。r44/r45指定切换10.009208/10.011406秒、status1已记context。
-  - [ ] T-03.5 HLC-PM01～04仍待业主定值；proposal四行原样保留，候选参数未获批，不把组长事实裁定当PM决策。
+  - [x] T-03.5 已独立核0659d208第㉒条：HLC-PM01超时2/正常0/其它1；PM02总15秒、阶段1/8/3/1/2、外层30秒；PM03单实例有界；PM04 stop→新版ready≤20秒、helper与推送流各≤5秒。原选项保留，业主定值与此前组长事实裁定分开追溯。
 - [ ] T-04 获实现派单后补主规格最小基线/context并冻结队列/事务确认、WS注册屏障与生命周期挂点；确保与r46及其它在途变更无冲突。
 
 ## 3. 实现（未授权）
@@ -56,3 +56,9 @@ strict规划通过不代表实现/业务验收/发布完成；不archive、不�
   - 验证：OpenSpec1.16.0/Node22.23.1/OPENSPEC_TELEMETRY=0，全仓strict13/13 rc0；本轮实际重跑bash scripts/run-build-tests.sh，2026-11-01T21:13:01.410986+00:00～2026-11-01T21:21:50.001345+00:00，rc0，helper两profile各1092/1092、inventory90、Python27组/shell2组。普通dev用户、锁helper-deps-lock-venv、环境白名单/临时HOME，未继承真实SH/DINGWEI/DW凭据。原始日志本席/tmp/hlc-t03-build.log，SHA256 b6e7e26d78e887602bbbcec75d9712be7959942417c52e4e53ff6300ac5e74cb；strict日志/tmp/hlc-t03-strict.log。已核9条需求/13场景及编号不变，正文各不足500字、仅本目录文档、diff-check；交件前对最终文档再次strict核验。既有门通过不代替HLC产品生命周期或S013验收。
   - 阻塞：本单事实回写无阻塞；HLC-PM01～04仍待业主定值，Hub实现/通知轨迹/负载排空与持久边界均未执行。历史交接的停止参数/δ待测状态由本条事实更新覆盖，不改历史提交。
   - 下一步：同分支普通push追加提交、核ls-remote后冻结；等待PM决策和另派实现，不实现、不apply/archive、不部署、不改单位/控制器/运行实例。
+
+- 2026-11-01T23:19:36.527822+00:00 · coder56solzzc.zzc · S-R48-PM-WRITEBACK，追加起点commit ae9b809b6221eb6e14ab91070357fd22edbf9aef；最终tip/tree见交件消息。
+  - 完成：独立fetch核0659d208ce731b73206b06d587c3814649ae11d2第㉒条，业主23:07:47Z答ok；HLC-PM01～04已定并逐项回写proposal/design/spec/context，原4行选项/建议逐字节保留为历史，需求/场景编号不变。T-03及T-03.5闭合，T-04起保持未授权；停止期看门狗防御要求及S013隔离边界不扩大。
+  - 验证：本分支本轮独立bash scripts/run-build-tests.sh 2026-11-01T23:10:21.786445+00:00～2026-11-01T23:19:20.011552+00:00 rc0，helper claude 1092/1092、codex 1092/1092、inventory90、Python27组/shell2组；普通dev、锁venv、独立临时HOME/环境白名单，无继承SH/DINGWEI/DW凭据。日志/tmp/r48-pm-hlc-build.log，SHA256 1107a5a187203d464db1edf95e6ee4f88beb7f41831c1cfc60fd28fd8142c8ee。全仓OpenSpec1.16.0/Node22.23.1/telemetry0 strict rc0（提交前最终文档复核），diff-check和目录外0改动检查；旧门通过不代表新产品场景已执行。
+  - 阻塞：本单PM编号对应无阻塞；原待PM记录为历史，最新㉒已定表覆盖当前口径。实现/逐格反向验证/真实运行前置仍另派，不将PM批准或T-03勾选当上线验收。
+  - 下一步：仅相应变更目录文档追加提交、普通push核ls-remote后冻结；按组长顺序等待Hub停机修复→R10→R9另单实现，均随r48。本单不实现、不apply/archive、不申请新写权限、不做部署。

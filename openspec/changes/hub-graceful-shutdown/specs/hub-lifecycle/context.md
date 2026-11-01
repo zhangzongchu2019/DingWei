@@ -22,11 +22,15 @@
 - Git锚ed797ae6de1f49cc2ad755946f1f3db2147bd8af（父4bfcca6b899665ec24b6b84033692c83742b4850），review/prodops/hlc-t03-watchdog-facts-20261101，docs/reviews/prodops-hlc-t03-watchdog-facts-20261101/REPORT.md及raw：目标dw123为systemd259（259.5-0ubuntu3），在同一systemd实例临时单元复刻W=12s、TimeoutStopSec=30s、KillMode=control-group；未停止/改写真实Hub或View。A停止期不喂狗25.024786秒、B持续喂狗24.125013秒均正常退出，无SIGABRT/SIGKILL；journal的Deactivated successfully为直接终止证据，stop后LoadState=not-found的show默认值不单独作退出码证据。临时单元已清理，journal保留。
 - 目标systemd259停止期不执行看门狗，模板W=12秒与15秒预算的目标环境冲突已由ed797ae6实测解决，不构成冲突。按组长本单裁定，HLC-009作为跨版本可移植、成本低的防御要求保留；不得把停止期watchdog当作兜底，最终强制兜底只有TimeoutStopSec=30s→SIGKILL（control-group）。A/B未触及30秒，不能冒称已实触SIGKILL边界。
 - HLC-S013“隔离监督器”格和反向控制原文不变。目标systemd不在停止期检测；S013只验Hub自身通知连续性，不从隔离监督器行为推断systemd行为，也不以A未收SIGABRT宣称Hub喂狗成功。所有Hub生命周期场景及通知交接仍未实现或执行。
-- C五次立即退出样本：stop请求→返回0.106086～0.106635秒（均值0.106244秒），TERM trap为请求后0.009721～0.010681秒；均为命令/日志观测，不是内核信号时间。按组长要求保守取整个停用开销δ≈0.11秒，δ+T+5≈0.11+15+5=20.11≤30，余量14.89秒，保留5秒后再余9.89秒。该样本不作为任意负载下δ硬上界，GO前须复核漂移；不因此批准T=15秒或其它PM候选。
+- C五次立即退出样本：stop请求→返回0.106086～0.106635秒（均值0.106244秒），TERM trap为请求后0.009721～0.010681秒；均为命令/日志观测，不是内核信号时间。按组长要求保守取整个停用开销δ≈0.11秒，δ+T+5≈0.11+15+5=20.11≤30，余量14.89秒，保留5秒后再余9.89秒。该样本不作为任意负载下δ硬上界，GO前须复核漂移；该计时样本本身不批准参数；T=15秒及其它PM值随后由rulings㉒另行批准。
 - ed797ae6/raw/READONLY.txt的2026-11-01T21:08:12Z现网Hub PID1017258快照：本地8793端口ESTABLISHED 4、443端口1、28个临时端口各1。只计套接字，不推断SSE/WS/HTTP类别、不等于请求数或峰值，不把它当100HTTP/100SSE/20mux/20WS候选负载已通过。
 - 本轮指定r44与r45切换的Stopping→Main process exited分别为10.009208秒（04:46:47.065074Z→04:46:57.074282Z）、10.011406秒（09:24:20.205647Z→09:24:30.217053Z），均status=1；依据ed797ae6/raw/READONLY.txt及VERSION-HISTORY.txt。此前01:27:53Z一轮不列作这两次切换。约10秒观测不等于控制器等待上限，亦不证明已满足拟议新停机协议。
 
-本轮仅闭合T-03事实子项，HLC-PM01～04仍待业主定值、proposal原行保持；不自开实现、apply/archive或部署。实测报告仅Git坐标引用，不向文件服务传源码。
+此前T-03事实子项已闭合；本次S-R48-PM-WRITEBACK按rulings㉒回写HLC-PM01～04：退出0/2/1、15秒总预算及1/8/3/1/2阶段、单实例有界、stop→ready≤20秒/helper及推送流各≤5秒；proposal原选项保留，T-03总项闭合。T-04及以后未授权；不自开实现、apply/archive或部署。实测报告仅Git坐标引用，不向文件服务传源码。
+
+## PM定值来源
+
+[业主裁定rulings第㉒条](https://git.code.tencent.com/wego-ai/dingwei/blob/0659d208ce731b73206b06d587c3814649ae11d2/docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md)：业主workpulse对话，Hub收信2026-11-01T23:07:47Z，delivery dw-dlv_f5170d3c5deb6106833dc76e7c36db1e；对“r48那11项是否全部按建议定”答原话“ok”。本单S-R48-PM-WRITEBACK只回写已定值；不是实现、apply/archive、迁移、预发或发布授权。
 
 ## 读取与依赖
 
