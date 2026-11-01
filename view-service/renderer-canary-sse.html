@@ -2577,6 +2577,9 @@
       if (!waitKey || !ev.turn_id) return;
       const entry = waitingDeliveries.get(waitKey);
       if (!entry) return;
+      // Raw output can race ahead of the Hub's delivery ACK. Keep canonical
+      // input identity and its card index until delivery_update promotes it.
+      if (entry.event.kind === 'input_posted') return;
       entry.node.remove();
       waitingDeliveries.delete(waitKey);
       waitingArea.hidden = waitingDeliveries.size === 0;

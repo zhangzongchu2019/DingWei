@@ -1,0 +1,24 @@
+{
+  "recorded_at": "2026-11-01T07:55:47.473072+00:00",
+  "parent_review": "d67c44216bf7216854f5bc8963f91c7059a85d41",
+  "product_changes": false,
+  "full_gate_rerun": false,
+  "incident_driver": "CLAUDE",
+  "incident_helper_version": "0.2.3.14",
+  "codex_hypothesis": "withdrawn by leader",
+  "field_event_evidence": "unavailable; do not infer ID or event ordering",
+  "historical_claude_source": "edaf40e60ac522decedefee56affe861d0545aaf",
+  "historical_source_deployment_binding": "unknown",
+  "chrome_shared_context_assertions": 16,
+  "failures": 0,
+  "field_root_cause": "unconfirmed",
+  "disposition": "same minimal renderer fix remains justified; no scope expansion",
+  "supplement_sha256": {
+    "FIELD-COMPARISON.md": "1a6a98eac6f44d26322681a18f6f48c78df38508795930912271aa4ef09eed49",
+    "claude-014-fixture.py": "1e14c49d7ec20e4e274254d322950985d7da7994c1e8848665a2aa17a8ded976",
+    "field-comparison.js": "16f4623b2b73532a9efc8dcfdfc5cf679c5761dbef88824049f53f59358ac711",
+    "raw/claude-014-fixture.json": "368a110aed3179acc25a6c32b1721cc3bd6188a58907f72c2c807086e0401cd2",
+    "raw/field-comparison.log": "40a8ae36fb1303b4e32f9a6a12b5b6e2211fb092f004b0229942bf5cbe851932",
+    "raw/field-comparison-separate-contexts.log": "40a8ae36fb1303b4e32f9a6a12b5b6e2211fb092f004b0229942bf5cbe851932"
+  }
+}

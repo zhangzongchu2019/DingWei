@@ -1,0 +1,53 @@
+{
+  "recorded_at": "2026-11-01T08:07:38.910092+00:00",
+  "base_product": "d67c44216bf7216854f5bc8963f91c7059a85d41",
+  "parent": "4e195580db955cae40a6fd99b688101fdef64c13",
+  "wording": "本地复现同类症状，修复该乱序路径；原故障对齐未证，无更多材料待补",
+  "product_renderer_unchanged": true,
+  "canonical": {
+    "fresh_run": true,
+    "rc": 0,
+    "python_unittest_total": 2486,
+    "failed": 0,
+    "helper_claude": 1092,
+    "helper_codex": 1092,
+    "other_python": 302,
+    "other_python_files": 27,
+    "shell_scripts": 2,
+    "shell_failed": 0
+  },
+  "chrome": {
+    "fixed_total": 18,
+    "fixed_failed": 0,
+    "unfixed_total": 18,
+    "unfixed_failed": 4,
+    "negative_rc": 2,
+    "negative_predicate": "turn_processed final card status; actual=null, pending=1",
+    "unchanged_ordered_noID_legacy_controls": 10,
+    "fixed_pending_keys_events": "1/1 -> 0/0",
+    "unfixed_pending_keys_events": "1/4 (including stale queued)"
+  },
+  "m8_pages": {
+    "rc": 0,
+    "top_total": 206,
+    "top_outcomes": {
+      "pass": 201,
+      "skip": 5
+    },
+    "with_subtests": {
+      "pass": 313,
+      "skip": 8
+    }
+  },
+  "raw_sha256": {
+    "acceptance-build-exit.json": "b9a9f2b527e57115b6394e4f7ca2815f12b8b015ef9d11a3cb26ab186741d5e4",
+    "acceptance-build.log": "02b224dbb77678d79d33b0d6a363b74623372b476e057ca789ca989dc6784387",
+    "acceptance-chrome-fixed-counted.log": "7fa1ef1ada3e6918b1e34a8b65ac9337884d236c0518a0dc56d06ceb6584fb7a",
+    "acceptance-chrome-fixed.log": "124ce2132a526893a8949ffe8971fbc50e324f0d907aca7c3eaa736e9ce76e28",
+    "acceptance-chrome-unfixed-counted.log": "c9bade6598a445bf203c4f8b3e270b34168f3d0917aba143f38c03480c48a202",
+    "acceptance-chrome-unfixed.log": "9d5f98f529964aed87d0e60943d3bc04d8c8eaaa00aa9d49f4a8d3d895a7ef02",
+    "acceptance-m8-exit.json": "b9a9f2b527e57115b6394e4f7ca2815f12b8b015ef9d11a3cb26ab186741d5e4",
+    "acceptance-m8.jsonl": "a9acf44a2417733abfdaca3095b4056cece5a0fb527871d4315058074498dc99",
+    "acceptance-m8.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

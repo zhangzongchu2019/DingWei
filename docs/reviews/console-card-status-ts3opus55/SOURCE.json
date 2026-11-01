@@ -1,0 +1,11 @@
+{
+  "base": "3fd26ba67ebc90db4f35449e6968c4f22f89666b",
+  "source_sha256": {
+    "view-service/renderer-canary-sse.html": "437bda022952f1b81e01d6b1a511a9258b411727b7f6aae35a4404e3d5ede270",
+    "view-service/renderer-card-status-regression.js": "9242c3df65e23aa35afcc8766365009aa4a43d9f4b12330bff4c91942ef7ce67",
+    "VERSION": "e531484b0e15ed8e433b890ce71ec6b7a53606f6ec3fded81e45775330791020",
+    "tools/sessionhelper/requirements-runtime.lock": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0"
+  },
+  "candidate_branch": "coder56solzzc/console-card-status-ts3opus55",
+  "product_delta": "renderer guard only; no helper/backend/version/lock delta"
+}

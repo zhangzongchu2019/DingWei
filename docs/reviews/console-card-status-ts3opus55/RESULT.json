@@ -1,0 +1,60 @@
+{
+  "recorded_at": "2026-11-01T07:50:40.159329+00:00",
+  "task": "S-CONSOLE-CARD-STATUS-TS3OPUS55",
+  "base": "3fd26ba67ebc90db4f35449e6968c4f22f89666b",
+  "validation": "local corrected contract PASS; pending independent review and original field trace attribution",
+  "canonical": {
+    "rc": 0,
+    "python_unittest_total": 2486,
+    "failures": 0,
+    "helper_claude": 1092,
+    "helper_codex": 1092,
+    "other_python_files": 27,
+    "other_python_cases": 302,
+    "shell_scripts": 2,
+    "shell_failures": 0
+  },
+  "new_browser": {
+    "cases": 16,
+    "failures": 0,
+    "mutation_remove_guard_rc": 2,
+    "mutation_failures": 4,
+    "mutation_latest": "served page only"
+  },
+  "existing_browser": {
+    "delivery_ack_assertions": 46,
+    "t074": "all PASS",
+    "failure_card": "5/5"
+  },
+  "m8_pages": {
+    "rc": 0,
+    "seconds": 35.716,
+    "top_level_total": 206,
+    "top_level_outcomes": {
+      "pass": 201,
+      "skip": 5
+    },
+    "with_subtests": {
+      "pass": 313,
+      "skip": 8
+    }
+  },
+  "original_incident": "not independently attributed without original trace; no-ID hypothesis not established",
+  "raw_sha256": {
+    "browser-before-corrected.log": "3eb808f6d409cc8133113227174d05431ca70126e57858537a7d103a6a7643a8",
+    "browser-before.log": "9930e3eedce43e63b3afda9ddc638bd889c934509ab80de1a32c5e6bc232f943",
+    "browser-fixed-final.log": "6f6793c83017a5a13ebbf546cfed18f025db7f5813bbf5cc58c6207f6ea7edf8",
+    "browser-fixed-native-shape.log": "6f6793c83017a5a13ebbf546cfed18f025db7f5813bbf5cc58c6207f6ea7edf8",
+    "browser-fixed.log": "26276e5cbfd47f27dfb87ac5c6307fb64d6d5812910c9dd59a9dcea57479a0de",
+    "build.log": "b8313e7862d587ca8305345f5420af0655be781bd7149f378da2b47ee058b657",
+    "delivery-ack-v2-browser-regression.log": "f04b48d99b885a7aea50f59867ee57d5237dc653d1654fd40192bedb8da85e74",
+    "initial-probe.jsonl": "a9839531bc188e41154e97f55ca241eaf1b47989f3878e778aaeeb6e89e275f0",
+    "m8-pages.jsonl": "686dcc3f1b99235bfad9bcf71188d99ba48977a37998ad329bb6d672fc85df17",
+    "m8-pages.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "mutation-native-shape.log": "02a1d4a4a666bc3ad20432f138ef5486d0d740661fe3acd9e0896b1df537c6d6",
+    "mutation-remove-guard.log": "02a1d4a4a666bc3ad20432f138ef5486d0d740661fe3acd9e0896b1df537c6d6",
+    "mutation-served-only.log": "326c1116402b0c48e86c2f4622656745095fc884bd65b31f31a31ce7be1564eb",
+    "renderer-failcard-regression.log": "8bde04396556f597968625c29ca375514a57727dc4d5293430892457a09df197",
+    "renderer-t074-delivery-id-regression.log": "50181ecb20e33a985c9d5ed133eaf002354be8c8d2d06207d49e06d6cbe25d24"
+  }
+}

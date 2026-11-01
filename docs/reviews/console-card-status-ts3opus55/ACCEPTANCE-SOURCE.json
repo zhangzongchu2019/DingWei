@@ -1,0 +1,9 @@
+{
+  "parent": "4e195580db955cae40a6fd99b688101fdef64c13",
+  "product_guard_unchanged": true,
+  "sha256": {
+    "view-service/renderer-canary-sse.html": "437bda022952f1b81e01d6b1a511a9258b411727b7f6aae35a4404e3d5ede270",
+    "view-service/renderer-card-status-regression.js": "11b44cbcfbb0da2d6d23fbd1163cb20c864a7064a101cccbb0e1448af25da9e4"
+  },
+  "note": "Canonical inventory unchanged; standalone Chrome regression executed explicitly at this final script hash."
+}

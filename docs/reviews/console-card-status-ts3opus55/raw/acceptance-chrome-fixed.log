@@ -1,0 +1,35 @@
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"assistant_text","linked":true,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=false assistant_text linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"assistant_text","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=false assistant_text linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"state_change","linked":true,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=false state_change linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"state_change","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=false state_change linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"user_input","linked":true,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=false user_input linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"user_input","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=false user_input linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"ordered","flag":false,"after":{"status":"回合已结束（完成）","content":"primary request","pending":0,"waiting":0}}
+  PASS flag=false: ordered canonical input and ACK stay unchanged
+CARD_STATUS_CASE {"scenario":"legacy","flag":false,"after":{"waiting":0,"pending":0,"requestVisible":true,"answerVisible":true}}
+  PASS flag=false: legacy pending and output still render
+  PASS flag=false: no browser errors
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"assistant_text","linked":true,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=true assistant_text linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"assistant_text","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=true assistant_text linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"state_change","linked":true,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=true state_change linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"state_change","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=true state_change linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"user_input","linked":true,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=true user_input linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"user_input","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request"},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"waiting":0}}
+  PASS flag=true user_input linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"ordered","flag":true,"after":{"status":"回合已结束（完成）","content":"primary request","pending":0,"waiting":0}}
+  PASS flag=true: ordered canonical input and ACK stay unchanged
+CARD_STATUS_CASE {"scenario":"legacy","flag":true,"after":{"waiting":0,"pending":0,"requestVisible":true,"answerVisible":true}}
+  PASS flag=true: legacy pending and output still render
+  PASS flag=true: no browser errors
+CARD_STATUS_OK cases=18 failures=0

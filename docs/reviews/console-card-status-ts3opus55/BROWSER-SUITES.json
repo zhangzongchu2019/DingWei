@@ -1,0 +1,274 @@
+{
+  "aggregate_rc": 2,
+  "suites": 26,
+  "suite_rc0": 24,
+  "nonzero_suites": {
+    "renderer_0206_file_render": 1,
+    "renderer_flood_stress": 2
+  },
+  "count_definition": "Suite-reported assertions/check groups or explicit test/sample counts; not a claim to count every nested assert() call. No cross-unit aggregate asserted.",
+  "receipt_parent_commit": "9f39810941f2b81bb3ea878ce65f5c0288271e6a",
+  "working_tree_delta": "one SUITES registry entry only; exact runner hash recorded in final report",
+  "results": [
+    {
+      "suite": "renderer_0206_file_render",
+      "rc": 1,
+      "total_reported_units": 41,
+      "passed": 39,
+      "failed": 2,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "通过 39 / 失败 2"
+    },
+    {
+      "suite": "console_browser",
+      "rc": 0,
+      "total_reported_units": 20,
+      "passed": 20,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "passed=20 failed=0"
+    },
+    {
+      "suite": "renderer_in_console_iframe",
+      "rc": 0,
+      "total_reported_units": 3,
+      "passed": 3,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "通过 3 / 失败 0"
+    },
+    {
+      "suite": "renderer_sse_reconnect",
+      "rc": 0,
+      "total_reported_units": 26,
+      "passed": 26,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "合计 26 条"
+    },
+    {
+      "suite": "renderer_failcard",
+      "rc": 0,
+      "total_reported_units": 5,
+      "passed": 5,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "ALL PASS (5/5)"
+    },
+    {
+      "suite": "renderer_t054_errorboard",
+      "rc": 0,
+      "total_reported_units": 6,
+      "passed": 6,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "ALL PASS (6/6)"
+    },
+    {
+      "suite": "renderer_t074_delivery_id",
+      "rc": 0,
+      "total_reported_units": 5,
+      "passed": 5,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "日志PASS行",
+      "evidence": "T-074 delivery-id regression: ALL PASS"
+    },
+    {
+      "suite": "renderer_card_status",
+      "rc": 0,
+      "total_reported_units": 18,
+      "passed": 18,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "CARD_STATUS_OK cases=18 failures=0"
+    },
+    {
+      "suite": "renderer_provenance_icon",
+      "rc": 0,
+      "total_reported_units": 5,
+      "passed": 5,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "5/5 通过"
+    },
+    {
+      "suite": "renderer_storage_denied",
+      "rc": 0,
+      "total_reported_units": 3,
+      "passed": 3,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "ALL PASS (3/3)"
+    },
+    {
+      "suite": "terminal_storage_denied",
+      "rc": 0,
+      "total_reported_units": 2,
+      "passed": 2,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "ALL PASS (2/2)"
+    },
+    {
+      "suite": "renderer_t086_empty_ring_e2e",
+      "rc": 0,
+      "total_reported_units": 2,
+      "passed": 2,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "ALL PASS (2/2)"
+    },
+    {
+      "suite": "renderer_replay_seq",
+      "rc": 0,
+      "total_reported_units": 13,
+      "passed": 13,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "ALL PASS (13/13)"
+    },
+    {
+      "suite": "renderer_upload_ticket_timeout",
+      "rc": 0,
+      "total_reported_units": 4,
+      "passed": 4,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "ALL PASS (4/4)"
+    },
+    {
+      "suite": "renderer_flood_stress",
+      "rc": 2,
+      "total_reported_units": 1,
+      "passed": 0,
+      "failed": 1,
+      "known_defect": 0,
+      "unit": "失败前提断言；完成压力场景0",
+      "evidence": "iframes not found"
+    },
+    {
+      "suite": "renderer_c2",
+      "rc": 0,
+      "total_reported_units": 29,
+      "passed": 25,
+      "failed": 0,
+      "known_defect": 4,
+      "unit": "检查项，4项已知T-166不计硬失败",
+      "evidence": "HARD PASS 25; KNOWN-DEFECT T-166 仍在 4"
+    },
+    {
+      "suite": "console_specs_browser",
+      "rc": 0,
+      "total_reported_units": 220,
+      "passed": 220,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "套件显式断言计数",
+      "evidence": "assertions=220 floor=220 failed=0"
+    },
+    {
+      "suite": "console_spec_workflow",
+      "rc": 0,
+      "total_reported_units": 12,
+      "passed": 12,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "passed=12 failed=0"
+    },
+    {
+      "suite": "console_task_flow_r32",
+      "rc": 0,
+      "total_reported_units": 11,
+      "passed": 11,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "\"passed\":11,\"failed\":0"
+    },
+    {
+      "suite": "pm_spec_flow",
+      "rc": 0,
+      "total_reported_units": 15,
+      "passed": 15,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "\"passed\":15,\"failed\":0"
+    },
+    {
+      "suite": "md_render_core_sync",
+      "rc": 0,
+      "total_reported_units": 12,
+      "passed": 12,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "Python测试用例",
+      "evidence": "Ran 12 tests"
+    },
+    {
+      "suite": "md_render_core_parity",
+      "rc": 0,
+      "total_reported_units": 99,
+      "passed": 99,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "输出比较样本",
+      "evidence": "PASS: 99/99"
+    },
+    {
+      "suite": "renderer_markdown_image",
+      "rc": 0,
+      "total_reported_units": 15,
+      "passed": 15,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "通过 15 / 失败 0"
+    },
+    {
+      "suite": "renderer_markdown_injection",
+      "rc": 0,
+      "total_reported_units": 11,
+      "passed": 11,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "通过 11 / 失败 0"
+    },
+    {
+      "suite": "renderer_failure_dock_embedded",
+      "rc": 0,
+      "total_reported_units": 4,
+      "passed": 4,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "ALL PASS (4/4)"
+    },
+    {
+      "suite": "renderer_failure_dock",
+      "rc": 0,
+      "total_reported_units": 3,
+      "passed": 3,
+      "failed": 0,
+      "known_defect": 0,
+      "unit": "检查项",
+      "evidence": "ALL PASS (3/3)"
+    }
+  ]
+}

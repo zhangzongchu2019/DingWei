@@ -1,0 +1,381 @@
+{
+  "fixed_cases": 18,
+  "fixed_failures": 0,
+  "unfixed_cases": 18,
+  "unfixed_failures": 4,
+  "failed_predicate": "turn_processed final card status",
+  "controls_identical": [
+    {
+      "case": [
+        "raw",
+        false,
+        "assistant_text",
+        false
+      ],
+      "fixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "unfixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "identical": true
+    },
+    {
+      "case": [
+        "raw",
+        false,
+        "state_change",
+        false
+      ],
+      "fixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "unfixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "identical": true
+    },
+    {
+      "case": [
+        "raw",
+        false,
+        "user_input",
+        false
+      ],
+      "fixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "unfixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "identical": true
+    },
+    {
+      "case": [
+        "ordered",
+        false,
+        null,
+        null
+      ],
+      "fixed": {
+        "status": "回合已结束（完成）",
+        "content": "primary request",
+        "pending": 0,
+        "waiting": 0
+      },
+      "unfixed": {
+        "status": "回合已结束（完成）",
+        "content": "primary request",
+        "pending": 0,
+        "waiting": 0
+      },
+      "identical": true
+    },
+    {
+      "case": [
+        "legacy",
+        false,
+        null,
+        null
+      ],
+      "fixed": {
+        "waiting": 0,
+        "pending": 0,
+        "requestVisible": true,
+        "answerVisible": true
+      },
+      "unfixed": {
+        "waiting": 0,
+        "pending": 0,
+        "requestVisible": true,
+        "answerVisible": true
+      },
+      "identical": true
+    },
+    {
+      "case": [
+        "raw",
+        true,
+        "assistant_text",
+        false
+      ],
+      "fixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "unfixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "identical": true
+    },
+    {
+      "case": [
+        "raw",
+        true,
+        "state_change",
+        false
+      ],
+      "fixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "unfixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "identical": true
+    },
+    {
+      "case": [
+        "raw",
+        true,
+        "user_input",
+        false
+      ],
+      "fixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "unfixed": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "identical": true
+    },
+    {
+      "case": [
+        "ordered",
+        true,
+        null,
+        null
+      ],
+      "fixed": {
+        "status": "回合已结束（完成）",
+        "content": "primary request",
+        "pending": 0,
+        "waiting": 0
+      },
+      "unfixed": {
+        "status": "回合已结束（完成）",
+        "content": "primary request",
+        "pending": 0,
+        "waiting": 0
+      },
+      "identical": true
+    },
+    {
+      "case": [
+        "legacy",
+        true,
+        null,
+        null
+      ],
+      "fixed": {
+        "waiting": 0,
+        "pending": 0,
+        "requestVisible": true,
+        "answerVisible": true
+      },
+      "unfixed": {
+        "waiting": 0,
+        "pending": 0,
+        "requestVisible": true,
+        "answerVisible": true
+      },
+      "identical": true
+    }
+  ],
+  "target_cases": [
+    {
+      "case": [
+        "raw",
+        false,
+        "assistant_text",
+        true
+      ],
+      "fixed_before": {
+        "waiting": 1,
+        "body": "delivery dw-dlv-primaryhelper 已排队，未注入",
+        "pending": 1,
+        "pendingEvents": 1
+      },
+      "fixed_after": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "unfixed_after": {
+        "card": false,
+        "sameNode": true,
+        "status": null,
+        "pending": 1,
+        "pendingEvents": 4,
+        "waiting": 0
+      }
+    },
+    {
+      "case": [
+        "raw",
+        false,
+        "state_change",
+        true
+      ],
+      "fixed_before": {
+        "waiting": 1,
+        "body": "delivery dw-dlv-primaryhelper 已排队，未注入",
+        "pending": 1,
+        "pendingEvents": 1
+      },
+      "fixed_after": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "unfixed_after": {
+        "card": false,
+        "sameNode": true,
+        "status": null,
+        "pending": 1,
+        "pendingEvents": 4,
+        "waiting": 0
+      }
+    },
+    {
+      "case": [
+        "raw",
+        true,
+        "assistant_text",
+        true
+      ],
+      "fixed_before": {
+        "waiting": 1,
+        "body": "⏳ 投递中helper 已排队，未注入primary request",
+        "pending": 1,
+        "pendingEvents": 1
+      },
+      "fixed_after": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "unfixed_after": {
+        "card": false,
+        "sameNode": true,
+        "status": null,
+        "pending": 1,
+        "pendingEvents": 4,
+        "waiting": 0
+      }
+    },
+    {
+      "case": [
+        "raw",
+        true,
+        "state_change",
+        true
+      ],
+      "fixed_before": {
+        "waiting": 1,
+        "body": "⏳ 投递中helper 已排队，未注入primary request",
+        "pending": 1,
+        "pendingEvents": 1
+      },
+      "fixed_after": {
+        "card": true,
+        "sameNode": true,
+        "content": "primary request",
+        "status": "回合已结束（完成）",
+        "pending": 0,
+        "pendingEvents": 0,
+        "waiting": 0
+      },
+      "unfixed_after": {
+        "card": false,
+        "sameNode": true,
+        "status": null,
+        "pending": 1,
+        "pendingEvents": 4,
+        "waiting": 0
+      }
+    }
+  ]
+}

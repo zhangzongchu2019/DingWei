@@ -1,0 +1,100 @@
+[
+  {
+    "Time": "2026-11-01T00:27:27.415099497-07:00",
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestChangeEvidenceConsoleBrowser",
+    "Elapsed": 0,
+    "environment_variable": "CHANGEFLOW_PLAYWRIGHT",
+    "skip_condition": "empty string",
+    "source": "internal/m8/console_change_evidence_test.go:126",
+    "separate_opt_in_result": "PASS in raw/change-evidence-browser.log at reviewed candidate"
+  },
+  {
+    "Time": "2026-11-01T00:27:28.909734451-07:00",
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestMuxProductHTTP1EightSeats",
+    "Elapsed": 0,
+    "environment_variable": "MUX_PUPPETEER",
+    "skip_condition": "empty string",
+    "source": "internal/m8/console_mux_product_test.go:32",
+    "prerequisite": "installed puppeteer-core; actual Chrome product integration and isolated primary PG"
+  },
+  {
+    "Time": "2026-11-01T00:27:30.665957876-07:00",
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestConsolePlatformPayloadDump",
+    "Elapsed": 0,
+    "environment_variable": "DW_CONSOLE_PLATFORM_PAYLOAD_OUT",
+    "skip_condition": "empty after strings.TrimSpace",
+    "source": "internal/m8/console_platform_agentgroups_test.go:131",
+    "prerequisite": "explicit output path for browser-gate platform payload fixture"
+  },
+  {
+    "Time": "2026-11-01T00:27:35.447845203-07:00",
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+    "Elapsed": 0,
+    "environment_variable": null,
+    "skip_condition": "unconditional t.Skip: K13 deferred, task case record model absent; cannot derive started state mechanically",
+    "source": "internal/m8/console_task_board_page_test.go:122"
+  },
+  {
+    "Time": "2026-11-01T00:27:36.001032533-07:00",
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+    "Elapsed": 0.13,
+    "environment_variable": "DW_ACK_V2_E2E_PYTHON",
+    "skip_condition": "empty string in startRealACKProbe",
+    "source": "internal/m8/delivery_ack_real_cli_e2e_linux_test.go:57",
+    "prerequisite": "explicit test Python plus actual corresponding claude/codex CLI; missing CLI after opt-in is Fatal not Skip"
+  },
+  {
+    "Time": "2026-11-01T00:27:36.130883826-07:00",
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+    "Elapsed": 0.13,
+    "environment_variable": "DW_ACK_V2_E2E_PYTHON",
+    "skip_condition": "empty string in startRealACKProbe",
+    "source": "internal/m8/delivery_ack_real_cli_e2e_linux_test.go:57",
+    "prerequisite": "explicit test Python plus actual corresponding claude/codex CLI; missing CLI after opt-in is Fatal not Skip"
+  },
+  {
+    "Time": "2026-11-01T00:27:36.264527088-07:00",
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+    "Elapsed": 0.13,
+    "environment_variable": "DW_ACK_V2_E2E_PYTHON",
+    "skip_condition": "empty string in startRealACKProbe",
+    "source": "internal/m8/delivery_ack_real_cli_e2e_linux_test.go:57",
+    "prerequisite": "explicit test Python plus actual corresponding claude/codex CLI; missing CLI after opt-in is Fatal not Skip"
+  },
+  {
+    "Time": "2026-11-01T00:27:36.404110039-07:00",
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestDeliveryACKActualCLILateWireTerminal",
+    "Elapsed": 0.14,
+    "environment_variable": "DW_ACK_V2_E2E_PYTHON",
+    "skip_condition": "empty string in startRealACKProbe",
+    "source": "internal/m8/delivery_ack_real_cli_e2e_linux_test.go:57",
+    "prerequisite": "explicit test Python plus actual corresponding claude/codex CLI; missing CLI after opt-in is Fatal not Skip"
+  },
+  {
+    "Time": "2026-11-01T00:27:40.459984303-07:00",
+    "Action": "skip",
+    "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "Test": "TestHelper0232MixedVersionEndToEnd",
+    "Elapsed": 0,
+    "environment_variable": "DW_HELPER_E2E_RELEASE_COMMIT",
+    "skip_condition": "empty string",
+    "source": "internal/m8/helper_update_e2e_test.go:54",
+    "prerequisite": "immutable legacy r14 release/factory/Hub pins; current r45 version is incompatible with this historical opt-in gate (version check Fatal, not Skip)"
+  }
+]

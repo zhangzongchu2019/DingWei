@@ -30,6 +30,7 @@ SUITES = (
     ("renderer_failcard", "node", ROOT / "view-service/renderer-failcard-regression.js"),
     ("renderer_t054_errorboard", "node", ROOT / "view-service/renderer-t054-errorboard-regression.js"),
     ("renderer_t074_delivery_id", "node", ROOT / "view-service/renderer-t074-delivery-id-regression.js"),
+    ("renderer_card_status", "node", ROOT / "view-service/renderer-card-status-regression.js"),
     ("renderer_provenance_icon", "node", ROOT / "view-service/renderer-provenance-icon-regression.js"),
     ("renderer_storage_denied", "node", ROOT / "view-service/renderer-storage-denied-regression.js"),
     ("terminal_storage_denied", "node", ROOT / "view-service/terminal-storage-denied-regression.js"),

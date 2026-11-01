@@ -1,0 +1,6 @@
+  PASS 基线:成功消息产正文卡且错误看板隐藏
+  PASS ① 失败不得在正文区产卡
+  PASS ② 失败不得进错误看板
+  PASS ③ 失败后的成功消息不粘连
+  PASS ④ 失败状态落在已有卡脚注
+failure-card regression: ALL PASS (5/5)

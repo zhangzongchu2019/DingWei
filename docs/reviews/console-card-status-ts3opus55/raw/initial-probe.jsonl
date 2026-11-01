@@ -1,0 +1,6 @@
+{"kind":"assistant_text","id":true,"before":{"waiting":0,"cards":1},"after":{"waiting":0,"cards":1,"text":"","pending":["msg-primary"]}}
+{"kind":"assistant_text","id":false,"before":{"waiting":1,"cards":1},"after":{"waiting":0,"cards":2,"text":"🤖✓iturn turn-fixtureanswer\n        event\n        ✓\n        \n        idelivery dw-dlv-fixture\n      primary request回合已结束（完成）","pending":[]}}
+{"kind":"state_change","id":true,"before":{"waiting":0,"cards":1},"after":{"waiting":0,"cards":1,"text":"","pending":["msg-primary"]}}
+{"kind":"state_change","id":false,"before":{"waiting":1,"cards":1},"after":{"waiting":0,"cards":2,"text":"\n        event\n        ✓\n        \n        idelivery dw-dlv-fixture\n      primary request回合已结束（完成）","pending":[]}}
+{"kind":"user_input","id":true,"before":{"waiting":1,"cards":0},"after":{"waiting":0,"cards":1,"text":"\n        event\n        ✓\n        \n        idelivery dw-dlv-fixture\n      primary request回合已结束（完成）","pending":[]}}
+{"kind":"user_input","id":false,"before":{"waiting":1,"cards":1},"after":{"waiting":0,"cards":2,"text":"👤✓iturn turn-fixtureprimary request\n        event\n        ✓\n        \n        idelivery dw-dlv-fixture\n      primary request回合已结束（完成）","pending":[]}}
