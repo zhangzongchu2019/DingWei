@@ -37,7 +37,7 @@ mutations=[
  ('github-blob-coordinate',G,[('v.SHA != e.SHA ||','false ||')],'TestGitHubBlobBinding/sha'),
  ('github-blob-digest',G,[('hex.EncodeToString(sum.Sum(nil)) != e.SHA','false && hex.EncodeToString(sum.Sum(nil)) != e.SHA')],'TestGitHubBlobBinding/hash'),
  ('github-rate-header',G,[('if resp.Header.Get("X-RateLimit-Remaining") == "0" {','if false {')],'TestGitHubRateHeadersAndCredentialRotation'),
- ('github-response-bound',G,[('if len(data) > 8<<20 {','if false {')],'TestGitHubResourceBoundsAndRedirectRate/response_bytes'),
+ ('github-response-bound',G,[('io.LimitReader(resp.Body, (8<<20)+1)','resp.Body'),('if len(data) > 8<<20 {','if false {')],'TestGitHubResourceBoundsAndRedirectRate/response_bytes'),
  ('github-tree-bound',G,[('if len(v.Entries) > 10000 {','if false {')],'TestGitHubResourceBoundsAndRedirectRate/tree_entries'),
  ('binding-inactive-principal','internal/store/openspec_read_binding.go',[(' AND p.active=1','')],'TestR5BindingPersistenceIsolationAuditAndRevocation'),
  ('admin-only','internal/m8/obs_hooks.go',[('return func(w http.ResponseWriter, r *http.Request) {','return func(w http.ResponseWriter, r *http.Request) { next(w,r); return;')],'TestR5AdminBindingMiddlewareCannotUseManagement'),

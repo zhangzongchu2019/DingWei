@@ -276,11 +276,13 @@ func TestGitHubResourceBoundsAndRedirectRate(t *testing.T) {
 				calls++
 				switch name {
 				case "response_bytes":
-					v := reply(r, 200, nil)
-					v.Body = io.NopCloser(strings.NewReader(strings.Repeat("x", (8<<20)+1)))
-					return v, nil
+					return reply(r, 200, map[string]any{"id": 1, "full_name": "owner/repo", "padding": strings.Repeat("x", 8<<20)}), nil
 				case "tree_entries":
-					return reply(r, 200, gitTree{SHA: testSHA, Entries: make([]Entry, 10001)}), nil
+					entries := make([]Entry, 10001)
+					for i := range entries {
+						entries[i] = Entry{Path: fmt.Sprintf("file-%d.md", i), SHA: testSHA, Mode: "100644", Type: "blob", Size: 4}
+					}
+					return reply(r, 200, gitTree{SHA: testSHA, Entries: entries}), nil
 				default:
 					v := reply(r, 301, nil)
 					v.Header.Set("Location", "https://api.github.com/repos/owner/repo")
