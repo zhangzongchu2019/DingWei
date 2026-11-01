@@ -11,8 +11,8 @@ import (
 
 // A coherent rollback of all three version lines must not silently turn the
 // approved release back into the prior release.
-func TestHelper02318ReleasePins(t *testing.T) {
-	const release = "0.2.3.18"
+func TestHelper02319ReleasePins(t *testing.T) {
+	const release = "0.2.3.19"
 	root, err := os.ReadFile("../../VERSION")
 	if err != nil {
 		t.Fatal(err)
@@ -23,7 +23,7 @@ func TestHelper02318ReleasePins(t *testing.T) {
 	}
 	m := regexp.MustCompile(`__version__\s*=\s*"([0-9.]+)"`).FindSubmatch(helper)
 	if strings.TrimSpace(string(root)) != release || Version != release || len(m) != 2 || string(m[1]) != release {
-		t.Fatal("0.2.3.18 r43 integration requires root/Go/helper pins; 0.2.3.16 is the prior release")
+		t.Fatal("0.2.3.19 r44 integration requires root/Go/helper pins; 0.2.3.18 is the prior release")
 	}
 	lock, err := os.ReadFile("../../tools/sessionhelper/requirements-runtime.lock")
 	if err != nil {
