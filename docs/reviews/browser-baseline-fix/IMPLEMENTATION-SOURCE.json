@@ -1,0 +1,12 @@
+{
+  "base": "3fd26ba67ebc90db4f35449e6968c4f22f89666b",
+  "changed_test_sha256": {
+    "view-service/renderer-0206-file-render-regression.js": "040743ac3a96bbe134b79c1bee562b66b2d486d1da42b632f09c773c67a2b5b4",
+    "view-service/renderer-flood-stress-regression.js": "e843e8df541e8321445a69b9061e03826ca01929e2be7a50fbb02aca38d2b7b2"
+  },
+  "cost_provenance": "COST-REMOVAL.json",
+  "product_diff_allowlist": [
+    "view-service/renderer-0206-file-render-regression.js",
+    "view-service/renderer-flood-stress-regression.js"
+  ]
+}

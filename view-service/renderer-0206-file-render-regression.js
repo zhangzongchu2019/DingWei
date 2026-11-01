@@ -21,6 +21,9 @@ const FIXTURES = process.env.FIXTURES || path.join(__dirname, 'fixtures-0206');
 const SHOTS = process.env.SHOTS || '/tmp/renderer-0206-shots';
 
 const fx = (n) => path.join(FIXTURES, n);
+// Negative control is CLI-only; no new environment override or product bypass.
+const withoutStatusQuery = process.argv.includes('--without-status-query');
+const statusURL = url => url.pathname.endsWith('/status') && (!withoutStatusQuery || !url.search);
 
 // 两个大件不入仓（820 KB / 50 MiB），改为**用时现生成**，不依赖任何人的本地残留。
 // 内容是确定性的：同一段代码在任何机器上生成同一份字节。
@@ -89,7 +92,7 @@ async function t(name, fn) {
   page.on('request', (req) => { if (req.url().endsWith('/files/upload')) uploadCalls.push(req.url()); });
   page.on('console', (m) => { if (m.type() === 'error') console.log('    [console.error]', m.text()); });
 
-  await page.route('**/status', (route) => route.fulfill({
+  await page.route(statusURL, (route) => route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: false, owner: 'fixture', model: 'fixture-model' }),
   }));
@@ -790,6 +793,7 @@ async function t(name, fn) {
   //    两层就再也分不开了。
   await t('⑯ R6-V1/V2/V3/V4:批次行计数递增、全成功后消失、有失败时留住并说清数目、单文件不出批次行', async () => {
     const six = ['sample.pdf', 'sample.png', 'sample-small.txt', 'sample.docx', 'sample.mp4', 'sample.webm'].map(fx);
+    const r6UploadStart = uploadCalls.length;
     // 🔴 淡出时长取自**产品源码里的常量**,不在测试里另写一个数字 ——
     //    两处各写一个,产品改了测试不会红,这条判据就变成摆设。
     const src = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
@@ -847,6 +851,7 @@ async function t(name, fn) {
         null, { timeout: 90000 });
       await page.screenshot({ path: path.join(SHOTS, '07-r6-batch-done.png') });
       const okRun = await readProbe();
+      assert.strictEqual(uploadCalls.length - r6UploadStart, 6, 'R6_BATCH_UPLOAD: six real upload requests required');
       assert.ok(okRun.ever, 'R6-V1：多文件上传必须出现过批次行');
       // 🔴 沿时间断言,不断言某一瞬间:1/6 … 6/6 每一格都必须**出现过**。
       //    (这正是上一轮自己更正过的那个维度问题:需求是「整批进度看得见」,是时间性质。)
@@ -877,6 +882,10 @@ async function t(name, fn) {
         'R6-V2：全部成功的批次完成态必须淡出,不得常驻');
 
       // ── R6-V4：单文件不出批次行 ───────────────────────────────────
+      const singleBefore = uploadCalls.length;
+      const singleAuth = await page.evaluate(async () => { await refreshLegacyAuthorization(); return {readonly:stats.readonly}; });
+      console.log('R6_AUTH_PRECONDITION ' + JSON.stringify(singleAuth));
+      assert.strictEqual(singleAuth.readonly, false, 'R6_AUTH_PRECONDITION: query status must keep upload authorized; actual=' + JSON.stringify(singleAuth));
       await reset();
       await installProbe();
       await page.setInputFiles('#filePicker', [fx('sample.pdf')]);
@@ -884,6 +893,8 @@ async function t(name, fn) {
         null, { timeout: 60000 });
       await page.waitForTimeout(400);
       const oneRun = await readProbe();
+      assert.strictEqual(uploadCalls.length - singleBefore, 1, 'R6_SINGLE_UPLOAD: one real upload request required');
+      console.log('R6_SINGLE_UPLOAD ' + JSON.stringify({before:singleBefore,after:uploadCalls.length,delta:uploadCalls.length-singleBefore,authorized:!singleAuth.readonly}));
       assert.strictEqual(oneRun.ever, false,
         `R6-V4：单文件上传不得出现批次行(1/1 是噪音),实测采集到 ${JSON.stringify(oneRun.seen)}`);
 
@@ -1107,7 +1118,7 @@ async function t(name, fn) {
   });
 
   await t('㉑ 只读会话粘贴文件:必须给出可读提示,不得静默', async () => {
-    await page.route('**/status', (route) => route.fulfill({
+    await page.route(statusURL, (route) => route.fulfill({
       status: 200, contentType: 'application/json',
       body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: true, owner: 'fixture', model: 'fixture-model' }),
     }));
@@ -1129,7 +1140,7 @@ async function t(name, fn) {
       assert.ok(shown.includes('只读模式'),
         '🔴 只读下必须有可读提示(「只读模式:先解锁再上传文件」),不得静默 —— 静默就是又一条「发了没反应」');
     } finally {
-      await page.route('**/status', (route) => route.fulfill({
+      await page.route(statusURL, (route) => route.fulfill({
         status: 200, contentType: 'application/json',
         body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: false, owner: 'fixture', model: 'fixture-model' }),
       }));
@@ -1221,10 +1232,11 @@ async function t(name, fn) {
       const el = document.querySelector('.statusbar');
       return { html: el ? el.innerHTML : '', text: el ? el.innerText : '' };
     });
-    for (const gone of ['lockHelp', 'headerOwner', 'sessionDot', 'sessionState', 'loadStat', 'modelStat', 'reconnectBtn']) {
+    for (const gone of ['lockHelp', 'headerOwner', 'sessionDot', 'sessionState', 'loadStat', 'modelStat', 'reconnectBtn', 'turnCost', 'totalCost']) {
       assert.ok(!bar.html.includes(`id="${gone}"`), `状态栏不得再有 ${gone}(业主点名移除)`);
     }
-    for (const kept of ['themeBtn', 'localTime', 'fileLabel', 'shotBtn', 'memStat', 'diskStat', 'turnCost', 'totalCost']) {
+    // Removal source:92acc6d02cbcad5f201da9a335381100dff01600; archived evidence under docs/reviews/browser-baseline-fix.
+    for (const kept of ['themeBtn', 'localTime', 'fileLabel', 'shotBtn', 'memStat', 'diskStat']) {
       assert.ok(bar.html.includes(`id="${kept}"`), `状态栏必须保留 ${kept}(业主保留清单)`);
     }
     // 🔴 「归属 归属」是缺陷不是设计:HTML 一次、JS 再拼一次。移除后不得再出现任何一处。
@@ -1232,11 +1244,19 @@ async function t(name, fn) {
     const src = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
     assert.ok(!/headerOwner\.textContent\s*=/.test(src), 'JS 里也不得再拼「归属」(原缺陷:标签与值各拼一次)');
     // 内存 ≥4 位数进位;磁盘去百分比
-    const fmt = await page.evaluate(() => ({
-      mem4: formatMem({ used_mb: 1687, total_mb: 15485, pct: 11 }),
-      mem3: formatMem({ used_mb: 120, total_mb: 900, pct: 13 }),
-      disk: formatDisk({ used_gb: 44.2, total_gb: 232.4, pct: 19 }),
-    }));
+    const fmt = await page.evaluate(() => {
+      // A6 contract: VS filesystem numbers never substitute for Agent disk.
+      // See docs/reviews/coder-a6-real-disk/CONTRACT.md, read/display contract.
+      agentDiskState.clear();
+      const legacyDisk = formatDisk({ used_gb:44.2,total_gb:232.4,pct:19 });
+      const now=performance.now(),wall=Date.now();
+      const accepted=agentDiskState.apply({agent_id:'fixture-agent',connection_generation:'fixture-generation',source:'helper_self_report',status:'ok',received_at_ms:wall,age_ms:0,expires_in_ms:360000,sample:{schema:'agent-disk/v1',producer:'helper',path_basis:'cli_workdir_filesystem',status:'ok',sample_instance:'1'.repeat(32),filesystem_instance:'2'.repeat(32),sample_seq:'1',sampled_at_ms:wall,used_bytes:44200000000,total_bytes:232400000000,available_bytes:188200000000}},'fixture-agent',now,now);
+      const disk=formatDisk(null);
+      agentDiskState.clear();
+      return {mem4:formatMem({used_mb:1687,total_mb:15485,pct:11}),mem3:formatMem({used_mb:120,total_mb:900,pct:13}),legacyDisk,accepted,disk};
+    });
+    assert.strictEqual(fmt.legacyDisk,'未知','VS disk fixture cannot masquerade as Agent disk');
+    assert.strictEqual(fmt.accepted,true,'bound Agent disk fixture must be accepted');
     assert.ok(/GB/.test(fmt.mem4) && !/MB/.test(fmt.mem4), `内存 ≥4 位数必须进位到 GB,实测 ${fmt.mem4}`);
     assert.ok(/MB/.test(fmt.mem3), `内存 3 位数时不进位,实测 ${fmt.mem3}`);
     assert.ok(!/%/.test(fmt.mem4) && !/%/.test(fmt.disk), `内存/磁盘都不再带百分比,实测 ${fmt.mem4} | ${fmt.disk}`);
@@ -1319,7 +1339,7 @@ async function t(name, fn) {
     try {
       const fctx = await flagged.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
       const fpage = await fctx.newPage();
-      await fpage.route('**/status', (route) => route.fulfill({
+      await fpage.route(statusURL, (route) => route.fulfill({
         status: 200, contentType: 'application/json',
         body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: false, owner: 'fixture', model: 'fixture-model' }),
       }));
@@ -1787,7 +1807,7 @@ async function t(name, fn) {
     try {
       const fctx = await flagged.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 } });
       const fpage = await fctx.newPage();
-      await fpage.route('**/status', (route) => route.fulfill({
+      await fpage.route(statusURL, (route) => route.fulfill({
         status: 200, contentType: 'application/json',
         body: JSON.stringify({ session: 'fixture-a-2642', state: 'idle', readonly: false, owner: 'fixture', model: 'fixture-model' }),
       }));

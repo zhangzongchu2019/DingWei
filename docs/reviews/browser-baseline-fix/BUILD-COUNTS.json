@@ -1,0 +1,39 @@
+{
+  "rc": 0,
+  "seconds": 529.921008348465,
+  "python_unittest_cases": 2486,
+  "python_unittest_summary_count": 31,
+  "python_failures": 0,
+  "helper_profiles": [
+    {
+      "actual": 1092,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1092,
+      "files": 90,
+      "groups": [
+        1083,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1092,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1092,
+      "files": 90,
+      "groups": [
+        1083,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "other_python_files": 27,
+  "other_python_cases": 302,
+  "shell_gates": 2,
+  "shell_gate_failures": 0,
+  "terminal_marker": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2",
+  "source_commit": "3d99c4e8da0f1c873e61f823e4ba62ed1d3969d3"
+}

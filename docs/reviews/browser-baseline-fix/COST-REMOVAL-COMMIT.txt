@@ -1,0 +1,6 @@
+tree da7ca62b9464cd4d0c6a4ee7f327979fc69ce22f
+parent 219fd487130b0dea0a8320112dcddd18c534f1d1
+author zhangzongchu2019 <tchangshark@outlook.com> 1791879580 -0700
+committer zhangzongchu2019 <tchangshark@outlook.com> 1791879580 -0700
+
+Remove View status bar cost displays
