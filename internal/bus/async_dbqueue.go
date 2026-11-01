@@ -2,10 +2,12 @@ package bus
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -50,6 +52,14 @@ type AsyncDBQueue struct {
 	flushReq   chan chan struct{}
 	mu         sync.Mutex
 	sensitive  map[string]string
+	admission  sync.RWMutex
+	sealed     bool
+	pending    atomic.Int64
+	failed     atomic.Int64
+	failureMu  sync.Mutex
+	failure    error
+	stop       chan context.Context
+	done       chan struct{}
 }
 
 func NewAsyncDBQueue(ctx context.Context, repo BatchMessageRepository, direction model.Direction, cfg AsyncDBQueueConfig) *AsyncDBQueue {
@@ -71,6 +81,7 @@ func NewAsyncDBQueue(ctx context.Context, repo BatchMessageRepository, direction
 		logger:     cfg.Logger,
 		flushReq:   make(chan chan struct{}),
 		sensitive:  map[string]string{},
+		stop:       make(chan context.Context, 1), done: make(chan struct{}),
 	}
 	go q.run(ctx)
 	return q
@@ -84,15 +95,22 @@ func NewBestEffortDBQueue(ctx context.Context, repo store.Repository, direction 
 }
 
 func (q *AsyncDBQueue) Enqueue(ctx context.Context, m model.Message) error {
+	q.admission.RLock()
+	defer q.admission.RUnlock()
+	if q.sealed {
+		return errors.New("queue sealed for shutdown")
+	}
 	m.Direction = q.direction
 	if m.Status == "" {
 		m.Status = "queued"
 	}
 	q.rememberSensitive(m)
+	q.pending.Add(1)
 	select {
 	case q.ch <- m:
 		return nil
 	case <-ctx.Done():
+		q.pending.Add(-1)
 		return ctx.Err()
 	}
 }
@@ -169,7 +187,56 @@ func (q *AsyncDBQueue) Flush(ctx context.Context) error {
 	}
 }
 
+// SealAndFlush is shutdown-only: callers first join all producers/consumers.
+// Runtime Enqueue and Flush keep their best-effort acknowledgement semantics.
+// The terminal writer drains both the channel and partial batch and reports
+// failures (including a batch already in flight when shutdown began).
+func (q *AsyncDBQueue) SealAndFlush(ctx context.Context) error {
+	// An abnormal producer may still hold admission while blocked on a full
+	// channel. Bound even that wait by the database phase deadline.
+	for !q.admission.TryLock() {
+		select {
+		case <-ctx.Done():
+			return errors.Join(q.ShutdownError(), ctx.Err())
+		case <-time.After(time.Millisecond):
+		}
+	}
+	if !q.sealed {
+		q.sealed = true
+		q.stop <- ctx
+	}
+	q.admission.Unlock()
+	select {
+	case <-q.done:
+		// A deadline and writer completion may become ready together. Do not
+		// turn that race into a successful shutdown.
+		err := errors.Join(q.ShutdownError(), ctx.Err())
+		if err == nil && q.pending.Load() != 0 {
+			err = errors.New("queue shutdown incomplete")
+		}
+		return err
+	case <-ctx.Done():
+		return errors.Join(q.ShutdownError(), ctx.Err())
+	}
+}
+func (q *AsyncDBQueue) ShutdownCounts() (int64, int64) { return q.pending.Load(), q.failed.Load() }
+func (q *AsyncDBQueue) ShutdownError() error {
+	q.failureMu.Lock()
+	defer q.failureMu.Unlock()
+	return q.failure
+}
+
+// Keep the first database cause available to errors.Is without exposing raw
+// database text (which may contain message content) in lifecycle logs.
+type batchPersistenceError struct{ cause error }
+
+func (e *batchPersistenceError) Error() string { return "async batch persistence failed" }
+func (e *batchPersistenceError) Unwrap() error { return e.cause }
+
 func (q *AsyncDBQueue) run(ctx context.Context) {
+	defer close(q.done)
+	flushParent := context.Background()
+
 	batch := make([]model.Message, 0, q.batchSize)
 	var timer *time.Timer
 	var timerC <-chan time.Time
@@ -185,6 +252,7 @@ func (q *AsyncDBQueue) run(ctx context.Context) {
 			timerC = nil
 		}
 	}
+	defer stopTimer()
 	startTimer := func() {
 		if timer == nil {
 			timer = time.NewTimer(q.flushEvery)
@@ -198,27 +266,60 @@ func (q *AsyncDBQueue) run(ctx context.Context) {
 		}
 		items := append([]model.Message(nil), batch...)
 		batch = batch[:0]
-		flushCtx, cancel := context.WithTimeout(context.Background(), defaultWriteFlushTimeout)
-		if err := q.repo.BatchEnqueueMessages(flushCtx, items); err != nil && q.logger != nil {
-			q.logger.Warn("async write batch failed; dropping batch", "direction", q.direction, "count", len(items), "error", err)
+		flushCtx, cancel := context.WithTimeout(flushParent, defaultWriteFlushTimeout)
+		if err := q.repo.BatchEnqueueMessages(flushCtx, items); err != nil {
+			q.failed.Add(int64(len(items)))
+			q.failureMu.Lock()
+			if q.failure == nil {
+				q.failure = &batchPersistenceError{cause: err}
+			}
+			q.failureMu.Unlock()
+			// Keep raw database errors out of lifecycle logs (they may contain payload).
+			if q.logger != nil {
+				q.logger.Warn("async write batch failed; dropping batch", "direction", q.direction, "count", len(items), "error", err)
+			}
+		} else {
+			q.pending.Add(-int64(len(items)))
 		}
 		cancel()
 	}
-	for {
-		select {
-		case <-ctx.Done():
-			for {
-				select {
-				case m := <-q.ch:
-					batch = append(batch, m)
-					if len(batch) >= q.batchSize {
-						flush()
-					}
-				default:
-					flush()
-					return
-				}
+	drain := func() {
+		for {
+			// Leave the unattempted items accounted for at the DB deadline.
+			if flushParent.Err() != nil {
+				return
 			}
+			select {
+			case m := <-q.ch:
+				batch = append(batch, m)
+				if len(batch) >= q.batchSize {
+					flush()
+				}
+			default:
+				flush()
+				return
+			}
+		}
+	}
+	for {
+		// Prefer an already requested shutdown to starting another runtime
+		// batch with the longer best-effort database timeout.
+		select {
+		case stopCtx := <-q.stop:
+			flushParent = stopCtx
+			drain()
+			return
+		default:
+		}
+		select {
+		case stopCtx := <-q.stop:
+			flushParent = stopCtx
+			drain()
+			return
+		case <-ctx.Done():
+			drain()
+			return
+
 		case reply := <-q.flushReq:
 			flush()
 			close(reply)
