@@ -5,7 +5,7 @@ S-R10-R9-PROPOSALS第二阶段R9；唯一执行者coder56solzzc.zzc。R10已于a
 ## 1. 提案与冻结
 
 - [x] T-01 读取固定来源6a2048187be7660f1c56a85d8ad79c743702d250的R9/11月第3节五条/委员会第8条；核既有私聊/旧澄清/R5只读/R8事实输入，补最小主规格/context、R9-001～009增量、design与前置/PM选项。
-- [ ] T-02 OpenSpec1.16.0/Node≥22.12/telemetry0单变更与全仓strict rc0；核仅R9文档新增、R10与产品字节不变，沿用同基线本任务已通过仓库门记录，推工蜂同分支后核tip并独立冻结交审。
+- [x] T-02 OpenSpec1.16.0/Node≥22.12/telemetry0单变更与全仓strict rc0；核仅R9文档新增、R10与产品字节不变，沿用同基线本任务已通过仓库门记录，推工蜂同分支后核tip并独立冻结交审。
 
 ## 2. 前置与实施（待另单）
 
@@ -20,4 +20,7 @@ S-R10-R9-PROPOSALS第二阶段R9；唯一执行者coder56solzzc.zzc。R10已于a
 
 ## 交接记录
 
-本阶段完成时追加实际UTC、执行者、内容commit、完成/阻塞/下一步；最终tip由交件报告。
+- 2026-11-01T14:50:22Z · coder56solzzc.zzc · 内容commit a4adbb68e84cadb12266fb40e63e751ee550f71a；本条记录为追加，最终冻结tip见交件。
+  - 完成：T-01/02，R9九条需求/十八个正反场景、最小主规格/context及提案/设计/任务；OpenSpec1.16.0/Node22.23.1/telemetry0，单变更strict与全仓strict rc0，全仓16/16。本单此前R10阶段scripts/run-build-tests.sh已rc0（helper两套各1092、Python27/shell2）；R9仅新增7个OpenSpec文档，产品/脚本未变，因此沿用该门记录不冒称重跑。R10两目录与afe4681da9f4b1ee4807939acc25bf79618b3b70逐字节一致。没有发送真实PM请求、评论MR或执行生命周期场景。
+  - 阻塞：R9-A01～04/PM01～03待核或待决，重点是现有只读令牌无comment-write前置、私聊可信身份/原消息关联与周期策略。首期平台写回/MR后置仅建议，未获业主阶段批准不能据此宣称完整就绪；十八个新产品场景和变异均未执行。
+  - 下一步：推同一工蜂分支并核远端后冻结R9独立交审，R10继续用原固定tip审阅；先核依赖/PM再另派实现，不动r46或其它已冻结分支，不部署/提升权限/apply/archive。
