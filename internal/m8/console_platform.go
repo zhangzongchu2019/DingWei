@@ -85,12 +85,13 @@ var consolePlatformItemID = regexp.MustCompile(`^[a-z][a-z0-9-]{1,63}$`)
 // builtin 入口占用的 id。放行同 id 提交会让页面出现两个 data-item-id 相同的项,
 // 闸与 UI 都无法唯一寻址(与既有 "agents" 保留同一理由)。
 var consolePlatformReservedItemIDs = map[string]bool{
-	"agents":          true,
-	"agent-groups":    true,
-	"specs":           true,
-	"task-board":      true,
-	"pilot-questions": true,
-	"admin":           true,
+	"agents":                 true,
+	"openspec-confirmations": true,
+	"agent-groups":           true,
+	"specs":                  true,
+	"task-board":             true,
+	"pilot-questions":        true,
+	"admin":                  true,
 }
 
 type consolePlatformItemRequest struct {
@@ -199,6 +200,9 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 			ID: "admin", Kind: "admin", Title: "旧版后台",
 			Href: "/console/admin", Target: "_blank", Status: "approved", Active: true,
 		})
+	}
+	if h.openSpecConfirmationReady() {
+		builtins = append(builtins, model.ConsolePlatformItem{ID: "openspec-confirmations", Kind: "openspec-confirmations", Title: "委员会版本确认", Href: "/console/openspec-confirmations", Target: "_blank", Status: "approved", Active: true})
 	}
 	items = append(builtins, items...)
 	w.Header().Set("Content-Type", "application/json")

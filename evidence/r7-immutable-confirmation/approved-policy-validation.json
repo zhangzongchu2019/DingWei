@@ -1,0 +1,119 @@
+{
+  "recorded_at": "2026-11-01T02:45:32.426656+00:00",
+  "scope": "R7 approved comparison exemptions follow-up; policy remains disabled; not full R7 lifecycle acceptance",
+  "base": "fb2251f925a516d07dcf872a3068418cd853f7f6",
+  "implementation_commit": "90536f7d92d789bb7d70d35ab10a965a01305e65",
+  "policy_version": "A-conservative-exemptions-v2",
+  "owner_decision_at": "2026-11-01T02:23:43Z",
+  "defaults": {
+    "PolicyApproved": false,
+    "real_provider_reader_and_committee_ACL_authority": "not wired; real record APIs fail closed and entry remains hidden",
+    "provider_migration": "undecided, no migration"
+  },
+  "go": {
+    "version": "go1.22.2",
+    "command": "go test -count=1 ./internal/specconfirm ./internal/store ./internal/m8 ./cmd/workpulse",
+    "rc": 1,
+    "package_results": {
+      "specconfirm": "PASS 0.003s",
+      "store": "PASS 40.829s",
+      "m8": "PASS 170.267s",
+      "cmd/workpulse": "FAIL 178.882s: sole failure TestAccountRegisterNoEchoAndEncrypted at temporary PostgreSQL setup, connect refused"
+    },
+    "followup": {
+      "command": "go test ./cmd/workpulse -run TestAccountRegisterNoEchoAndEncrypted|R7 -count=1 -v",
+      "matched_test": "TestAccountRegisterNoEchoAndEncrypted",
+      "rc": 0,
+      "result": "PASS 2.575s without source change; initial full run is still recorded FAIL"
+    }
+  },
+  "specconfirm_race": {
+    "command": "go test -race ./internal/specconfirm -count=1",
+    "rc": 0
+  },
+  "build_gate": {
+    "command": "PATH=<locked-helper-venv>/bin:$PATH ./scripts/run-build-tests.sh",
+    "rc": 0,
+    "profiles": {
+      "claude": 1087,
+      "codex": 1087
+    },
+    "inventory_files": 90,
+    "python_groups": 27,
+    "shell_groups": 2,
+    "summary": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2",
+    "environment": "SH_/DW_/DINGWEI_/DATAD_ and inherited PYTHONPATH removed; helper profiles use isolated HOME and IPC; venv package set identical to helper-deps-lock-venv"
+  },
+  "strict": {
+    "version": "OpenSpec1.16.0 / Node22.23.1",
+    "telemetry": 0,
+    "passed": 8,
+    "failed": 0,
+    "rc": 0
+  },
+  "mutations": [
+    {
+      "mutation": "no_checkbox_or_handoff_exemption",
+      "rc": 1,
+      "failed_tests": [
+        "--- FAIL: TestR7ApprovedTaskExemptions (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/check (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/uppercase-uncheck (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/handoff (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/combined (0.00s)"
+      ]
+    },
+    {
+      "mutation": "ignore_all_task_content",
+      "rc": 1,
+      "failed_tests": [
+        "--- FAIL: TestR7ApprovedTaskExemptions (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/task-text (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/task-added (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/task-deleted (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/new-section-after-handoff (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/parent-after-handoff (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/fenced-checkbox (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/tilde-fenced-checkbox (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/indented-checkbox (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/fake-handoff-in-fence (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/nested-fence-in-handoff (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/unclosed-fence (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/duplicate-handoff (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/setext-boundary (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/html-ambiguity (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/inline-checkbox (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/other-heading (0.00s)",
+        "--- FAIL: TestR7ApprovedTaskExemptions/format-not-exempt (0.00s)"
+      ]
+    },
+    {
+      "mutation": "normalize_archive_tasks",
+      "rc": 1,
+      "failed_tests": [
+        "--- FAIL: TestR7ArchiveExemptionPreservesContentAndIdentity (0.00s)",
+        "--- FAIL: TestR7ArchiveExemptionPreservesContentAndIdentity/move-plus-checkbox (0.00s)"
+      ]
+    }
+  ],
+  "tested_boundaries": [
+    "checkbox and handoff positive exemptions; task text/add/delete and later peer/parent sections remain material",
+    "code fences, indented code, inline examples, HTML/setext ambiguity, duplicate sections and unclosed fences remain conservative",
+    "only root tasks.md exempt; proposal/design/spec/nested tasks edits material",
+    "archive same complete inventory and bytes exempt; modified/missing/added/renamed files and move-plus-checkbox material",
+    "cross-provider/repository/change, invalid archive date, archive date rename and unarchive indeterminate",
+    "Assess default disabled performs no read; explicit enabled archive comparison retains original and current SHA; wrong-source reads unknown"
+  ],
+  "remaining": [
+    "provider selection and real identity/ACL/committee authority",
+    "archive history discovery and reconciliation: store queries remain exact original directory; no automatic aliasing",
+    "persistent comparison audit and real Git/full scenario integration",
+    "independent review and separately authorized staging/activation"
+  ],
+  "boundaries": "No migration, release controller, manifest, version, R6, R11 implementation, production config, deployment, restart or cleanup changes",
+  "log_sha256": {
+    "cmd-followup.log": "5b0a5ef3e1ae074abfc9098bb07092af545ebc62c3e8f7dc5c14926b4a131a7a",
+    "build.log": "2f1354584916f567c3e55a020a4df308b88c427cd67da61d967a2a5c49a25cf7",
+    "related-go.log": "2fe2dbc4401ced6a76cd8d29848388baddcfd629e0d66124fb8807b7e56c311e"
+  }
+}

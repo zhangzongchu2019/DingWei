@@ -1,0 +1,155 @@
+{
+  "scope": "R7 authorized partial implementation, not full R7 acceptance",
+  "base": "4b39991cf226998da9c5c85a3a9b44c235aed229",
+  "runtime_defaults": {
+    "git_commit_acl_and_committee_authority": "not wired; operations fail closed",
+    "policy_A": "candidate implementation; not approved, disabled",
+    "R6": "not implemented"
+  },
+  "go": {
+    "version": "go1.22.2",
+    "command": "go test -json ./internal/specconfirm ./internal/store ./internal/m8 ./cmd/workpulse -count=1",
+    "python_for_integration": "helper-deps-lock-venv",
+    "rc": 0,
+    "packages": [
+      {
+        "package": "specconfirm",
+        "result": "pass",
+        "elapsed_seconds": 0.004
+      },
+      {
+        "package": "store",
+        "result": "pass",
+        "elapsed_seconds": 41.77
+      },
+      {
+        "package": "m8",
+        "result": "pass",
+        "elapsed_seconds": 172.986
+      },
+      {
+        "package": "workpulse",
+        "result": "pass",
+        "elapsed_seconds": 181.543
+      }
+    ],
+    "cases": {
+      "specconfirm": {
+        "top_pass": 4,
+        "sub_pass": 4
+      },
+      "store": {
+        "top_pass": 271,
+        "sub_pass": 95,
+        "top_skip": 2
+      },
+      "m8": {
+        "top_pass": 777,
+        "sub_pass": 381,
+        "top_skip": 17,
+        "sub_skip": 18
+      },
+      "workpulse": {
+        "top_pass": 138,
+        "sub_pass": 52,
+        "top_skip": 1
+      }
+    },
+    "latest_source_followup": {
+      "command": "go test ./internal/specconfirm ./internal/store ./internal/m8 ./cmd/workpulse -run 'R7|ConsolePlatform|NewPlatformRouteSweep|MigrationLedger' -count=1",
+      "rc": 0,
+      "reason": "New navigation and strict authority callback contract added after full package launch; current-source affected regressions passed."
+    }
+  },
+  "race": {
+    "command": "go test -race ./internal/specconfirm ./internal/store ./internal/m8 -run R7 -count=1",
+    "rc": 0,
+    "packages": [
+      "specconfirm",
+      "store",
+      "m8"
+    ]
+  },
+  "browser": {
+    "result": "PASS",
+    "engine": "headless Chrome via Playwright",
+    "mode": "actual page JavaScript with mocked HTTP responses; real HTTP handlers/SQLite tested in Go, not live GongFeng",
+    "checks": [
+      "full old and current commit visible",
+      "committee and MR labels separate",
+      "HTML in meaning displayed as inert text",
+      "failed write retries same operation ID",
+      "editing coordinates clears stale display",
+      "late response discarded"
+    ]
+  },
+  "run_build_tests": {
+    "command": "PATH=<locked-helper-venv>/bin:$PATH ./scripts/run-build-tests.sh",
+    "rc": 0,
+    "helper_inventory_files": 90,
+    "helper_profiles": [
+      {
+        "actual": 1087,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1087,
+        "files": 90,
+        "groups": [
+          1078,
+          9
+        ],
+        "profile": "claude",
+        "rc": 0
+      },
+      {
+        "actual": 1087,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1087,
+        "files": 90,
+        "groups": [
+          1078,
+          9
+        ],
+        "profile": "codex",
+        "rc": 0
+      }
+    ],
+    "python_groups": 27,
+    "shell_groups": 2,
+    "summary": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2"
+  },
+  "strict": {
+    "version": "OpenSpec 1.16.0",
+    "node": "22.23.1",
+    "telemetry": 0,
+    "passed": 8,
+    "failed": 0,
+    "rc": 0
+  },
+  "migration": {
+    "new": "0068_openspec_commit_confirmation.sql",
+    "reserved_for_R11": "0067",
+    "branch_alone_ledger": "65→66",
+    "combined_R11_R7_ledger": "65→67",
+    "validated": [
+      "fresh migration",
+      "restart persistence",
+      "ledger backfill without replay",
+      "partial or altered protection refuses backfill",
+      "append-only SQL guards",
+      "two-connection concurrent retry single fact"
+    ]
+  },
+  "initial_findings_fixed": [
+    "Repeated CREATE on lost ledger: added exact schema verifier with negative tests",
+    "New routes moved out of old Spec/task route group"
+  ],
+  "environment_note": "Initial system-Python build gate could not discover helper dependency cases. Re-run uses previously validated locked virtual environment; no helper source changes.",
+  "remaining": [
+    "Trusted committee identity and per-principal Git ACL/commit adapter",
+    "Owner approval of material-change policy and exemptions",
+    "Live Git event/reconciliation and persistent comparison audit before enabling automatic policy",
+    "Full R7 scenarios and independently authorized staging"
+  ],
+  "boundaries": "No R11 branch modification, R6 implementation, activation, version bump, deployment or restart",
+  "recorded_at": "2026-11-01T02:26:13.469807+00:00"
+}
