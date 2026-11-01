@@ -72,7 +72,7 @@ func (h *Hub) coordinateReviewsHTTP(w http.ResponseWriter, r *http.Request, agen
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	if !h.coordinateReviewReady() {
-		coordinateError(w, cr.ErrUnavailable)
+		taskJSON(w, 503, map[string]any{"error": "coordinate_review_not_enabled", "retryable": false})
 		return
 	}
 	actor := platformPrincipal(r)

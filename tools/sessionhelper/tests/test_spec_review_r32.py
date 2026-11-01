@@ -188,4 +188,20 @@ class R6CoordinateReviewTest(unittest.TestCase):
             self.assertEqual(len(inputs),1);self.assertIn('dw_coordinate_review',inputs[0]['body'])
         asyncio.run(run())
 
+    def test_coordinate_disabled_and_old_hub_are_explicit_without_hiding_uncertainty(self):
+        import io
+        import urllib.error
+        from sessionhelper.spec_review import coordinate_review_request
+        rid='coordreview_'+'a'*64
+        for status,body,disabled in [(404,b'404 page not found',True),(503,b'{"error":"coordinate_review_not_enabled"}',True),(503,b'{"error":"coordinate_review_unavailable"}',False),(503,b'fixture-private-must-not-echo',False),(403,b'{"error":"coordinate_review_denied"}',False)]:
+            error=urllib.error.HTTPError('http://local',status,'closed',{},io.BytesIO(body))
+            with patch('urllib.request.OpenerDirector.open',side_effect=error) as call:
+                result=coordinate_review_request('ws://127.0.0.1/ws/agent',{}, {'action':'open','body':{'request_id':rid}})
+            self.assertEqual(call.call_count,1,'R6_COMPAT_BLIND_RETRY')
+            self.assertEqual(result['error']=='coordinate_review_not_enabled',disabled,'R6_COMPAT_EXPLICIT_DISABLED')
+            if disabled:
+                self.assertIn('坐标派审未启用',result['message']);self.assertEqual(result['outcome'],'rejected')
+            elif status>=500:self.assertEqual(result['outcome'],'unknown','R6_COMPAT_WRITE_UNCERTAINTY_SWALLOWED')
+            self.assertNotIn('fixture-private',json.dumps(result),'R6_COMPAT_UPSTREAM_BODY_ECHO')
+
 if __name__=='__main__':unittest.main()

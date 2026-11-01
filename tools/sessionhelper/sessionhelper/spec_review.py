@@ -142,6 +142,19 @@ def coordinate_review_request(ws_url,headers,args):
             if not isinstance(result,dict):raise ValueError('invalid response')
             return {'status':'ok','http_status':response.status,**result}
     except urllib.error.HTTPError as exc:
+        # Old Hubs have no route. New dark Hubs return a closed capability code.
+        # Never echo upstream bodies or turn an arbitrary 5xx write into rejection.
+        code=None
+        if exc.code==503:
+            try:
+                raw=exc.read(4097)
+                payload=json.loads(raw) if len(raw)<=4096 else None
+                if isinstance(payload,dict):code=payload.get('error')
+            except (OSError,ValueError):pass
+        if exc.code==404 or code=='coordinate_review_not_enabled':
+            return {'status':'error','http_status':exc.code,'error':'coordinate_review_not_enabled',
+                    'message':'坐标派审未启用：当前 Hub 未开放此能力、依赖未就绪或版本不支持。',
+                    'retryable':False,'outcome':'rejected'}
         return {'status':'error','http_status':exc.code,'error':'coordinate_review_rejected','retryable':False,'outcome':'unknown' if method=='POST' and exc.code>=500 else 'rejected'}
     except (OSError,ValueError):
         return {'status':'error','error':'coordinate_review_unknown','retryable':False,'outcome':'unknown'}
