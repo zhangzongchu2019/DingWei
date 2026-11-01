@@ -1,0 +1,80 @@
+[
+  {
+    "mutation": "restore-0077",
+    "rc": 1,
+    "assertion": "R5_CRED_directory_0440 accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "outside-scope",
+    "rc": 1,
+    "assertion": "R5_CRED_outside_directory_0440 accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "file-other-bits",
+    "rc": 1,
+    "assertion": "R5_CRED_other_read_0444 accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "file-symlink",
+    "rc": 1,
+    "assertion": "R5_CRED_symlink accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "parent-other-write",
+    "rc": 1,
+    "assertion": "R5_CRED_parent_other_write accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "parent-group-write",
+    "rc": 1,
+    "assertion": "R5_CRED_parent_group_write accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "environment-mismatch",
+    "rc": 1,
+    "assertion": "R5_CRED_environment_elsewhere accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "strict-fallback",
+    "rc": 1,
+    "assertion": "R5_CRED_unset_environment accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "legacy-private-normal",
+    "rc": 1,
+    "assertion": "R5_CRED_outside_private_0600 accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "parent-symlink",
+    "rc": 1,
+    "assertion": "R5_CRED_parent_symlink accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "size-cap",
+    "rc": 1,
+    "assertion": "R5_CRED_oversized_content accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "minimum-length",
+    "rc": 1,
+    "assertion": "R5_CRED_short_content accepted=",
+    "matched": true
+  },
+  {
+    "mutation": "content-whitespace",
+    "rc": 1,
+    "assertion": "R5_CRED_embedded_whitespace accepted=",
+    "matched": true
+  }
+]

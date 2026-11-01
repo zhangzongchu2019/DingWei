@@ -1,0 +1,48 @@
+{
+  "full": {
+    "rc": 0,
+    "log": "/tmp/r5-cred-full.log",
+    "sha256": "3b499bdf1e7f5681e73035bee02b2d65264f02c34eb95db8d99c8bf8b656b0be",
+    "counts": {
+      "github.com/zhangzongchu2019/dingwei/internal/specread": {
+        "pass": 96
+      },
+      "github.com/zhangzongchu2019/dingwei/internal/m8": {
+        "pass": 1206,
+        "skip": 36
+      }
+    },
+    "package_results": [
+      {
+        "Time": "2026-11-01T18:14:23.914880963Z",
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/internal/specread",
+        "Elapsed": 0.099
+      },
+      {
+        "Time": "2026-11-01T18:17:26.288688302Z",
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+        "Elapsed": 173.481
+      }
+    ]
+  },
+  "specread-final": {
+    "rc": 0,
+    "log": "/tmp/r5-cred-specread-final.log",
+    "sha256": "62ca00d20f677d609782d1dde39a099c550898da261f1e7f7e3fd2a62112d894",
+    "counts": {
+      "github.com/zhangzongchu2019/dingwei/internal/specread": {
+        "pass": 96
+      }
+    },
+    "package_results": [
+      {
+        "Time": "2026-11-01T18:17:30.300476753Z",
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/internal/specread",
+        "Elapsed": 0.079
+      }
+    ]
+  }
+}
