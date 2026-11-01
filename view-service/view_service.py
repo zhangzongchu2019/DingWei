@@ -1350,7 +1350,9 @@ class _Handler(BaseHTTPRequestHandler):
         ok = False
         mentions = _sanitize_mentions(incoming.get("mentions"))
         receipts = None
-        if isinstance(text, str) and text:
+        if isinstance(text, str):
+            text = text.replace("\r\n", "\n").replace("\r", "\n").strip("\n")
+        if isinstance(text, str) and text.strip():
             if VIEW_UNLOCK_V2:
                 page_id = str(incoming.get("page_id", ""))
                 page_token = str(incoming.get("page_token", ""))
@@ -1369,9 +1371,8 @@ class _Handler(BaseHTTPRequestHandler):
             else:
                 st = _ensure_ready(session)
                 if st.get("viewer_id") and st.get("token"):
-                    # pilot 按键式输入以末尾 CR 提交；内嵌 LF 由 adapter 保留为消息换行。
-                    payload_text = text.replace("\r\n", "\n").replace("\r", "\n") + "\r"
-                    legacy = {"viewer_id": st["viewer_id"], "token": st["token"], "text": payload_text}
+                    # HTTP input is a complete message; do not append a PTY submit key.
+                    legacy = {"viewer_id": st["viewer_id"], "token": st["token"], "text": text}
                     if mentions:
                         legacy["mentions"] = mentions
                     code, hub_body = _hub_post(HUB_INTERNAL, f"/internal/view/{session}/input", legacy)

@@ -1,0 +1,514 @@
+2026/10/31 22:04:34 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:34 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:34 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:34 amr decision=failed reason=terminal_failed
+2026/10/31 22:04:34 amr decision=incomplete reason=empty
+2026/10/31 22:04:34 amr decision=ignored reason=completed_turn counted_late=true session=source delivery_id=d turn_id=t kind=assistant_text text_len=4 aggregated=1
+2026/10/31 22:04:34 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:34 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:34 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:34 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:34 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:34 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:34 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:34 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:34 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:34 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:34 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:34 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:35 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:35 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:35 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:35 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:35 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session handshake timing key_id=u_zzc session=beta total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session handshake timing key_id=u_lbl session=gamma total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:35 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:35 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:35 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:35 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session handshake timing key_id=u_zzc session=beta total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:35 session handshake timing key_id=u_zzc session=quill total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:35 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:36 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:36 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:36 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session handshake timing key_id=u_zzc session=beta total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session handshake timing key_id=u_zzc session=nack total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session handshake timing key_id=u_lbl session=gamma total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:36 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:36 session route decision=durable_queued key_id=u_lbl session=gamma client_present=false conn_seq=0 delivery_id=dw-dlv_8c853af9abade9ca67ec99be5667043c source_message_id=cccccccccccccccccccccccccccccccc-m-b34b0bc53bd5
+2026/10/31 22:04:36 view mention decision=routed from=Kimi.zzc to=Gamma.lb online=false
+2026/10/31 22:04:36 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=2 reason=session_reconnected released=0
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=2 reason=session_disconnected released=0
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:36 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:36 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:36 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session handshake timing key_id=u_zzc session=beta total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session handshake timing key_id=u_zzc session=nack total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:36 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:36 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_5abddaac6c6bb57328e6beef70e27748 source_message_id=22222222222222222222222222222222-m-a9379876902d
+2026/10/31 22:04:36 view mention decision=routed from=Kimi.zzc to=Gamma.lb online=true
+2026/10/31 22:04:36 mention reply decision=published to=kimi from=Gamma.lb status=ok bytes=15
+2026/10/31 22:04:36 [reply-origin] lookup session=gamma delivery_id=unrelated-delivery cost=39.756µs err=<nil> found=false
+2026/10/31 22:04:36 [reply-origin] R1 回程未发生 session=gamma delivery_id=unrelated-delivery reason=本轮的来源记录已不可用,内容未自动回程
+2026/10/31 22:04:36 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/10/31 22:04:36 [reply-origin] lookup session=gamma delivery_id=dw-dlv_5abddaac6c6bb57328e6beef70e27748 cost=39.026µs err=<nil> found=true
+2026/10/31 22:04:36 [reply-origin] lookup session=beta delivery_id=dw-dlv_5abddaac6c6bb57328e6beef70e27748 cost=43.006µs err=<nil> found=true
+2026/10/31 22:04:36 [reply-origin] R1 回程未发生 session=beta delivery_id=dw-dlv_5abddaac6c6bb57328e6beef70e27748 reason=本轮来源记录不属于当前会话,内容未自动回程
+2026/10/31 22:04:36 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:36 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:36 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:36 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:36 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=beta total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:37 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_4ec840ef6d6f1c7539779d92af2bf603 source_message_id=006d7fc80354651654883b3a76a39b57-m-47788af6e378
+2026/10/31 22:04:37 view mention decision=routed from=Kimi.zzc to=Gamma.lb online=true
+2026/10/31 22:04:37 mention reply decision=skipped reason=identity session=gamma delivery_id=dw-dlv_4ec840ef6d6f1c7539779d92af2bf603
+2026/10/31 22:04:37 [reply-origin] lookup session=gamma delivery_id=dw-dlv_4ec840ef6d6f1c7539779d92af2bf603 cost=44.765µs err=<nil> found=true
+2026/10/31 22:04:37 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=2 client_present=false
+2026/10/31 22:04:37 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:37 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=beta total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session handshake timing key_id=u_lbl session=gamma total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:37 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_8ff11cee0cc4c1465be6c34669338b7a source_message_id=33f0dc1abc5ae556777c7af8d1ca4211-m-ebe58ee5133e
+2026/10/31 22:04:37 view mention decision=routed from=Kimi.zzc to=Gamma.lb online=true
+2026/10/31 22:04:37 mention reply decision=skipped reason=identity session=gamma delivery_id=dw-dlv_8ff11cee0cc4c1465be6c34669338b7a
+2026/10/31 22:04:37 [reply-origin] lookup session=gamma delivery_id=dw-dlv_8ff11cee0cc4c1465be6c34669338b7a cost=46.875µs err=<nil> found=true
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:37 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:37 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:37 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=beta total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:37 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:38 session handshake timing key_id=u_zzc session=outsider total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:38 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:38 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:38 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:38 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:38 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:38 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_1b1f3ca09dcec18c5955a31acba0a172 source_message_id=23dc3e4e71821c0e635a814dbf53774b
+2026/10/31 22:04:38 mention reply decision=skipped reason=identity session=gamma delivery_id=dw-dlv_1b1f3ca09dcec18c5955a31acba0a172
+2026/10/31 22:04:38 [reply-origin] lookup session=gamma delivery_id=dw-dlv_1b1f3ca09dcec18c5955a31acba0a172 cost=52.935µs err=<nil> found=true
+2026/10/31 22:04:38 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/31 22:04:38 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:38 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:38 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:38 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:38 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:38 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/31 22:04:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:38 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:38 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:39 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/31 22:04:39 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:39 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:39 session version warning key_id=FB-main-20261101-8c53c303 owner=aliceowner session=home version="" required=0.2.3.19: 未上报版本,要求 0.2.3.19
+2026/10/31 22:04:39 session handshake timing key_id=FB-main-20261101-8c53c303 session=aliceowner-home-c303 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:41 session name warning key_id=FB-person-20261101-a003d343 owner= session=home: 无法确认该 key 绑定成员 owner_key
+2026/10/31 22:04:41 session version warning key_id=FB-person-20261101-a003d343 owner= session=home version="" required=0.2.3.19: 未上报版本,要求 0.2.3.19
+2026/10/31 22:04:41 session handshake timing key_id=FB-person-20261101-a003d343 session=home total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:41 session name warning key_id=FB-person-20261101-3df3ba9d owner= session=home: 无法确认该 key 绑定成员 owner_key
+2026/10/31 22:04:41 session version warning key_id=FB-person-20261101-3df3ba9d owner= session=home version="" required=0.2.3.19: 未上报版本,要求 0.2.3.19
+2026/10/31 22:04:41 session handshake timing key_id=FB-person-20261101-3df3ba9d session=home total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:41 session version warning key_id=FB-person-20261101-6295f8e5 owner=alice session=home version="" required=0.2.3.19: 未上报版本,要求 0.2.3.19
+2026/10/31 22:04:41 session handshake timing key_id=FB-person-20261101-6295f8e5 session=alice-home-f8e5 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:41 terminal unlock code not found account=dev:personal:ou_bob account_owner=bob code=9193 viewers=1 exact_account_viewers=0 owner_matched_viewers=0
+2026/10/31 22:04:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:41 view_unlock_v2_audit message_id="m1" sender_open_id="" sender_owner="" target_session="alice-dev55-2642" target_owner="" route_target="legacy-xterm" code_sha256=a454f08bf29aa341 result="rejected" reason="untrusted_ingress"
+2026/10/31 22:04:41 view_unlock_v2_audit message_id="m1" sender_open_id="ou_alice" sender_owner="alice" target_session="alice-dev55-2642" target_owner="alice" route_target="legacy-xterm" code_sha256=a454f08bf29aa341 result="granted" reason=""
+2026/10/31 22:04:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:42 session version warning key_id=FB-derived-20261101-8af304fa owner=alice session=dev55 version="" required=0.2.3.19: 未上报版本,要求 0.2.3.19
+2026/10/31 22:04:42 session handshake timing key_id=FB-derived-20261101-8af304fa session=alice-dev55-04fa total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:42 view_unlock_v2_audit message_id="derived" sender_open_id="ou_alice" sender_owner="alice" target_session="alice-dev55-04fa" target_owner="alice" route_target="legacy-xterm" code_sha256=8d9c24023d83776b result="granted" reason=""
+2026/10/31 22:04:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:42 view_unlock_v2_audit message_id="ambiguous" sender_open_id="ou_alice" sender_owner="alice" target_session="alice-dev55-2642" target_owner="" route_target="legacy-xterm" code_sha256=a454f08bf29aa341 result="rejected" reason="拒绝解锁：页面会话不存在或不可用"
+2026/10/31 22:04:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:42 view_unlock_v2_audit message_id="cross-owner" sender_open_id="ou_bob" sender_owner="bob" target_session="alice-dev55-2642" target_owner="bob" route_target="legacy-xterm" code_sha256=a454f08bf29aa341 result="rejected" reason="拒绝解锁：发信人不是该会话 owner"
+2026/10/31 22:04:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:42 view_unlock_v2_audit message_id="g1" sender_open_id="" sender_owner="" target_session="alice-dev55-2642" target_owner="" route_target="legacy-xterm" code_sha256=a454f08bf29aa341 result="rejected" reason="拒绝解锁：群消息缺少可信发信人"
+2026/10/31 22:04:42 view_unlock_v2_audit message_id="g1" sender_open_id="ou_alice" sender_owner="alice" target_session="alice-dev55-2642" target_owner="alice" route_target="legacy-xterm" code_sha256=a454f08bf29aa341 result="granted" reason=""
+2026/10/31 22:04:42 view_unlock_v2_audit message_id="g1" sender_open_id="ou_bob" sender_owner="bob" target_session="alice-dev55-2642" target_owner="alice" route_target="legacy-xterm" code_sha256=a454f08bf29aa341 result="rejected" reason="拒绝解锁：发信人不是该会话 owner"
+2026/10/31 22:04:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:42 session version warning key_id=FB-person-20261101-af8f0449 owner=alice session=home version="" required=0.2.3.19: 未上报版本,要求 0.2.3.19
+2026/10/31 22:04:42 session handshake timing key_id=FB-person-20261101-af8f0449 session=alice-home-0449 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:42 session name warning key_id=FB-person-20261101-8ab89d54 owner= session=home: 无法确认该 key 绑定成员 owner_key
+2026/10/31 22:04:42 session version warning key_id=FB-person-20261101-8ab89d54 owner= session=home version="" required=0.2.3.19: 未上报版本,要求 0.2.3.19
+2026/10/31 22:04:42 session handshake timing key_id=FB-person-20261101-8ab89d54 session=home total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:43 [view-routing] target dead (http://127.0.0.1:1) unreachable, fallback to legacy for dead-one-3dd6
+2026/10/31 22:04:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:44 session name warning key_id=FB-u1-20261101-83586af7 owner= session=home: 无法确认该 key 绑定成员 owner_key
+2026/10/31 22:04:44 session version warning key_id=FB-u1-20261101-83586af7 owner= session=home version="" required=0.2.3.19: 未上报版本,要求 0.2.3.19
+2026/10/31 22:04:44 session handshake timing key_id=FB-u1-20261101-83586af7 session=home total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:44 session delivery lease release decision=requeue key_id=FB-u1-20261101-83586af7 session=home conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:44 session route decision=durable_queued key_id=FB-u1-20261101-83586af7 session=home client_present=true conn_seq=1 delivery_id=dw-dlv_5a509693ce6d3c7a9729c329e0517ecc source_message_id=7829039cd2315f3dbc2281dd7f22b166
+2026/10/31 22:04:44 session delivery lease release decision=requeue key_id=FB-u1-20261101-83586af7 session=home conn_seq=1 reason=session_disconnected released=1
+2026/10/31 22:04:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:44 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- FAIL: TestNewPlatformConsolePrincipalViewInputReachesAgent (0.16s)
+    newplat_view_login_writable_test.go:74: agent envelope: {ID:0123456789abcdef0123456789abcdef To:kimi#u_zzc From:workpulse#u_zzc Body:owner input TS:1793509484 Meta:map[auth_mode:view_page_v2 console_principal_id:zzc page_id:view-page-owned-e2e reply_policy:no_reply request_id:0123456789abcdef0123456789abcdef source_display_name:View source_kind:user]}
+2026/10/31 22:04:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:44 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:45 session delivery drain skipped decision=stale_or_offline_client key_id=FB-u1-20261101-83586af7 session=home conn_seq=1 client_present=false
+2026/10/31 22:04:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:45 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:45 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:45 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:45 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:45 session handshake timing key_id=u_lbl session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:46 amr decision=ignored reason=completed_turn counted_late=true session=src delivery_id=d1 turn_id=t1 kind=assistant_text text_len=4 aggregated=1
+2026/10/31 22:04:46 amr decision=ignored reason=completed_turn counted_late=false session=src delivery_id=d1 turn_id=t1 kind=state_change text_len=0 aggregated=1
+2026/10/31 22:04:46 amr decision=ignored reason=completed_turn counted_late=true session=src delivery_id=d1 turn_id=t1 kind=assistant_text text_len=4 aggregated=1
+2026/10/31 22:04:46 amr decision=ignored reason=completed_turn counted_late=false session=src delivery_id=d1 turn_id=t1 kind=state_change text_len=0 aggregated=1
+2026/10/31 22:04:46 amr decision=ignored reason=completed_turn counted_late=true session=src delivery_id=d1 turn_id=t1 kind=assistant_text text_len=4 aggregated=1
+2026/10/31 22:04:46 amr decision=ignored reason=completed_turn counted_late=false session=src delivery_id=d1 turn_id=t1 kind=state_change text_len=0 aggregated=1
+2026/10/31 22:04:46 amr decision=ignored reason=completed_turn counted_late=true session=src delivery_id=d000 turn_id=t kind=assistant_text text_len=4 aggregated=1
+2026/10/31 22:04:46 amr decision=ignored reason=completed_turn counted_late=false session=src delivery_id=d000 turn_id=t kind=state_change text_len=0 aggregated=1
+2026/10/31 22:04:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:46 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:46 session handshake timing key_id=u_zzc session=beta total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:46 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:46 session handshake timing key_id=u_zzc session=outsider total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:46 session handshake timing key_id=u_lbl session=gamma total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:46 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:46 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:46 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:46 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:46 session route decision=durable_queued key_id=u_zzc session=quill client_present=true conn_seq=1 delivery_id=dw-dlv_7cc82ee6926549538a200b2063c6decc source_message_id=c88943d67b40f10eca9d396b4de293b5
+2026/10/31 22:04:46 [reply-origin] lookup session=quill delivery_id=dw-dlv_7cc82ee6926549538a200b2063c6decc cost=64.494µs err=<nil> found=true
+2026/10/31 22:04:46 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:46 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:46 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=beta total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=quill total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:47 session route decision=durable_queued key_id=u_zzc session=quill client_present=true conn_seq=1 delivery_id=dw-dlv_d22620b2dc02993946c30feab0788f8a source_message_id=ab3c064a07646b44bea2879bb8f19e35
+2026/10/31 22:04:47 [reply-origin] lookup session=quill delivery_id=dw-legacy-view-76f0c2b2d32464e2 cost=45.136µs err=<nil> found=true
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=1
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=beta total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=outsider total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session handshake timing key_id=u_lbl session=gamma total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:47 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_af5441acd784b02af1eef6e9f8253fd4 source_message_id=761ef586da8383a9af83f752d60d2366
+2026/10/31 22:04:47 [reply-origin] lookup session=gamma delivery_id=dw-dlv_af5441acd784b02af1eef6e9f8253fd4 cost=45.336µs err=<nil> found=true
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=beta total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=quill conn_seq=1 client_present=false
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session handshake timing key_id=u_lbl session=gamma total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:47 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:47 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:47 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_17c61e6ed52ec900c6bbcfe042cb786f source_message_id=2891310837b6a16affdeb143329f03eb
+2026/10/31 22:04:47 [reply-origin] lookup session=gamma delivery_id=dw-legacy-view-c5476e8c5b949b25 cost=38.956µs err=<nil> found=true
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=1
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:48 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session handshake timing key_id=u_zzc session=beta total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=quill conn_seq=1 client_present=false
+2026/10/31 22:04:48 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:48 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:48 provenance claim dropped ingress=agent_session session=beta
+2026/10/31 22:04:48 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_00eacca348684683dfbae152b86a5cff source_message_id=05a7104606633bf2e12314f20223c7dd
+2026/10/31 22:04:48 [reply-origin] lookup session=gamma delivery_id=dw-dlv_00eacca348684683dfbae152b86a5cff cost=53.774µs err=<nil> found=true
+2026/10/31 22:04:48 session route decision=durable_queued key_id=u_zzc session=beta client_present=true conn_seq=1 delivery_id=dw-dlv_eb39171c59a7166c5c478b1f90671865 source_message_id=reply-origin-6867c2c2ddfd4901fb68516cf9b28467
+2026/10/31 22:04:48 [reply-origin] R1 已回程 session=gamma to=beta#u_zzc delivery_id=dw-dlv_00eacca348684683dfbae152b86a5cff in_reply_to=05a7104606633bf2e12314f20223c7dd hop=1
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:48 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session handshake timing key_id=u_zzc session=beta total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:48 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/31 22:04:48 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:48 session route decision=durable_queued key_id=u_zzc session=quill client_present=true conn_seq=1 delivery_id=dw-dlv_483962137b065084c48d78bd47568879 source_message_id=c41dbf6d887ffa1966bd5d67bf2ee29d
+2026/10/31 22:04:48 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_c745b6e4a778a657a0e76a4a49f7e31f source_message_id=amr-0d56649d8e0087e254ba143c25118e6c
+2026/10/31 22:04:48 amr decision=dispatched candidates=1
+2026/10/31 22:04:48 [reply-origin] lookup session=gamma delivery_id=dw-dlv_c745b6e4a778a657a0e76a4a49f7e31f cost=64.324µs err=<nil> found=true
+2026/10/31 22:04:48 session route decision=durable_queued key_id=u_zzc session=quill client_present=true conn_seq=1 delivery_id=dw-dlv_d230642f6d2e79f38a903c4606ffbda5 source_message_id=reply-origin-9155343bb4e8dfbf6c8c3738310d42e1
+2026/10/31 22:04:48 [reply-origin] R1 已回程 session=gamma to=quill#u_zzc delivery_id=dw-dlv_c745b6e4a778a657a0e76a4a49f7e31f in_reply_to=amr-0d56649d8e0087e254ba143c25118e6c hop=1
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:48 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:48 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/31 22:04:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:49 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/31 22:04:49 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=beta conn_seq=1 client_present=false
+2026/10/31 22:04:49 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=quill conn_seq=1 client_present=false
+2026/10/31 22:04:49 session delivery drain skipped decision=stale_or_offline_client key_id=u_lbl session=gamma conn_seq=1 client_present=false
+2026/10/31 22:04:49 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=quill conn_seq=1 client_present=false
+2026/10/31 22:04:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:52 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:52 session handshake timing key_id=u_zzc session=beta total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:52 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:52 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:52 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:52 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:52 session handshake timing key_id=u_zzc session=quill total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:52 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:52 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:52 mention reply decision=expired session=beta delivery_id=dw-dlv_fa9a0544dd880de183a6fe7f17167e85
+2026/10/31 22:04:52 mention reply decision=ignored reason=completed_turn session=beta delivery_id=dw-dlv_fa9a0544dd880de183a6fe7f17167e85 kind=state_change
+2026/10/31 22:04:52 mention reply decision=evicted session=beta delivery_id=dw-dlv_fb3f00637560e7754b10256b4308b13a
+2026/10/31 22:04:52 mention reply decision=ignored reason=completed_turn session=beta delivery_id=dw-dlv_fb3f00637560e7754b10256b4308b13a kind=state_change
+2026/10/31 22:04:52 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:52 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:52 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:52 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:52 session handshake timing key_id=u_zzc session=beta total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:53 session handshake timing key_id=u_zzc session=nack total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:53 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:53 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:53 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:53 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:53 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:53 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:53 session route decision=durable_queued key_id=u_zzc session=beta client_present=true conn_seq=1 delivery_id=dw-dlv_0b926799a1953ddbd4f4dc786f430b6a source_message_id=11111111111111111111111111111111-m-2a446de509b1
+2026/10/31 22:04:53 view mention decision=routed from=Kimi.zzc to=Beta.zzc online=true
+2026/10/31 22:04:54 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_5dda6adb83479ff47caa5d17ed77d0f7 source_message_id=55555555555555555555555555555555-m-fb95d2745770
+2026/10/31 22:04:54 view mention decision=routed from=Kimi.zzc to=Gamma.lb online=true
+2026/10/31 22:04:54 session route decision=durable_queued key_id=u_zzc session=beta client_present=true conn_seq=1 delivery_id=dw-dlv_7b7bd25348894957da397fafa2263931 source_message_id=66666666666666666666666666666666-m-2a446de509b1
+2026/10/31 22:04:54 view mention decision=routed from=Kimi.zzc to=Beta.zzc online=true
+2026/10/31 22:04:54 session route decision=durable_queued key_id=u_zzc session=beta client_present=true conn_seq=1 delivery_id=dw-dlv_e35bfd3c0ad9df487dc5874864ebe2d7 source_message_id=88888888888888888888888888888888-m-2a446de509b1
+2026/10/31 22:04:54 view mention decision=routed from=Kimi.zzc to=Beta.zzc online=true
+2026/10/31 22:04:54 session route decision=offline_rejected key_id=u_zzc session=opus50ts client_present=false reliable=true endpoint_known=false delivery_ack_v1=false reason=session_offline
+2026/10/31 22:04:54 feishu dispatch rejected reason=session_offline open_id="" target="opus50ts" bot_channel=""
+2026/10/31 22:04:54 view mention decision=failed from=Kimi.zzc to=Opus50TS.zzc online=false err=session opus50ts offline
+2026/10/31 22:04:54 session route decision=offline_rejected key_id=u_zzc session=w1 client_present=false reliable=true endpoint_known=false delivery_ack_v1=false reason=session_offline
+2026/10/31 22:04:54 feishu dispatch rejected reason=session_offline open_id="" target="w1" bot_channel=""
+2026/10/31 22:04:54 view mention decision=failed from=Kimi.zzc to=W1.zzc online=false err=session w1 offline
+2026/10/31 22:04:54 session route decision=offline_rejected key_id=u_zzc session=w2 client_present=false reliable=true endpoint_known=false delivery_ack_v1=false reason=session_offline
+2026/10/31 22:04:54 feishu dispatch rejected reason=session_offline open_id="" target="w2" bot_channel=""
+2026/10/31 22:04:54 view mention decision=failed from=Kimi.zzc to=W2.zzc online=false err=session w2 offline
+2026/10/31 22:04:54 session route decision=offline_rejected key_id=u_zzc session=w3 client_present=false reliable=true endpoint_known=false delivery_ack_v1=false reason=session_offline
+2026/10/31 22:04:54 feishu dispatch rejected reason=session_offline open_id="" target="w3" bot_channel=""
+2026/10/31 22:04:54 view mention decision=failed from=Kimi.zzc to=W3.zzc online=false err=session w3 offline
+2026/10/31 22:04:55 session route decision=durable_queued key_id=u_zzc session=quill client_present=true conn_seq=1 delivery_id=dw-dlv_128db5617a4e2aa1950b9ded0483b5de source_message_id=99999999999999999999999999999999-m-1f2a0022dfb2
+2026/10/31 22:04:55 view mention decision=routed from=Kimi.zzc to=Quill.zzc online=true
+2026/10/31 22:04:55 [reply-origin] lookup session=quill delivery_id=dw-dlv_128db5617a4e2aa1950b9ded0483b5de cost=90.871µs err=<nil> found=true
+2026/10/31 22:04:55 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:55 session route decision=durable_queued key_id=u_zzc session=quill client_present=false conn_seq=0 delivery_id=dw-dlv_34e74d9f7a6d2d8a7bd13d01fbeaf05b source_message_id=55555555555555555555555555555550-m-1f2a0022dfb2
+2026/10/31 22:04:55 view mention decision=routed from=Kimi.zzc to=Quill.zzc online=false
+2026/10/31 22:04:55 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:55 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=2 reason=session_reconnected released=0
+2026/10/31 22:04:55 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=2 reason=session_disconnected released=0
+2026/10/31 22:04:55 view mention decision=no_ack from=Kimi.zzc to=Nack.zzc online=true
+2026/10/31 22:04:55 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:55 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=beta total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=quill conn_seq=1 client_present=false
+2026/10/31 22:04:56 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=quill conn_seq=2 client_present=false
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=outsider total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:56 session route decision=durable_queued key_id=u_zzc session=beta client_present=true conn_seq=1 delivery_id=dw-dlv_733460571110d6b789ff406836289a20 source_message_id=vm-398bec12c8644a81df25c7c0420dabdf-m-1454c9edde0d
+2026/10/31 22:04:56 view mention decision=routed from=Kimi.zzc to=Beta.zzc online=true
+2026/10/31 22:04:56 session route decision=durable_queued key_id=u_lbl session=gamma client_present=true conn_seq=1 delivery_id=dw-dlv_ff3ffb310d715f9981531dbe45fc5816 source_message_id=vm-398bec12c8644a81df25c7c0420dabdf-m-b994eb49a9de
+2026/10/31 22:04:56 view mention decision=routed from=Kimi.zzc to=Gamma.lb online=true
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=beta total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=nack total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=outsider total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session handshake timing key_id=u_lbl session=gamma total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=quill total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=relink total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=relink conn_seq=1 reason=session_reconnected released=0
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=relink conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:56 session handshake timing key_id=u_zzc session=relink total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/10/31 22:04:56 session route decision=durable_queued key_id=u_zzc session=relink client_present=true conn_seq=2 delivery_id=dw-dlv_bb4d4aafa10d0f97cd3fee8a7423ad16 source_message_id=13131313131313131313131313131313-m-33a5bdd2a10a
+2026/10/31 22:04:56 view mention decision=routed from=Kimi.zzc to=Relink.zzc online=true
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=relink conn_seq=2 reason=session_reconnected released=0
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=relink conn_seq=2 reason=session_disconnected released=0
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:56 session delivery lease release decision=requeue key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected released=0
+2026/10/31 22:04:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/10/31 22:04:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/10/31 22:04:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	23.036s
+FAIL

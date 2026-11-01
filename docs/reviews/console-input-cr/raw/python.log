@@ -1,0 +1,6 @@
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/data/ai-dev-data/console-input-cr/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/nonexistent/tasks-xyz.json", "request_path": ""}
+----------------------------------------------------------------------
+Ran 47 tests in 1.110s
+
+OK

@@ -102,7 +102,7 @@ func (h *Hub) deliverViewMention(ctx context.Context, self *identity.Agent, self
 		ID:   viewMentionEnvelopeID(requestID, c.Agent.ID),
 		To:   sessionAddress(c.Agent.NameLC(), keyID),
 		From: sessionAddress("workpulse", keyID),
-		Body: terminalSubmission(text),
+		Body: normalizeViewInput(text),
 		TS:   time.Now().Unix(),
 		// 🔴 type 必须留空：reliablePrimaryEnvelope 只对空／agent_route 走可靠投递（复核 tosonnet55tc2k 必改 1）。
 		Meta: map[string]any{

@@ -5155,9 +5155,9 @@
         if (!isConsoleView()) copyUnlockInstruction();
         return;
       }
-      // 保留开头和内部换行，只清掉消息结尾的多余空白。
-      const text = humanInput.value.replace(/\s+$/u, '');
-      if (!text) return;
+      // 规范粘贴换行，去掉边界空行，保留正文中间换行和缩进。
+      const text = humanInput.value.replace(/\r\n?/g, '\n').replace(/^\n+/u, '').replace(/\s+$/u, '');
+      if (!text.trim()) return;
       try {
         const result = await submitInput(text);
         mentionPicked.length = 0;
