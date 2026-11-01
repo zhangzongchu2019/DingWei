@@ -90,3 +90,7 @@ PM执行口径出处现已核：[rulings 916a9dff34cbf53905bfa31305677d5a7922197
 ### 验证范围
 
 测试使用本地HTTP/WS、R5受控提供方夹具、SQLite和临时PG，记录正反格与目标变异；新增浏览器回归已登记SUITES。真实Git权限主体、实际飞书回执和真实浏览器验收仍由T-07独立做；T-08预发另派。本单不部署、不激活开关、不改r46或其它冻结分支。读数与跳过条件见`EVIDENCE-S-R6-IMPL.md`。
+
+## 评审后兼容反馈补充（对应R6-002/008）
+
+MCP工具清单属于helper版本，新helper的`dw_coordinate_review`不受Hub开关控制。本次只明确错误契约：新Hub既有未就绪分支HTTP503返回`coordinate_review_not_enabled`；helper对该固定503码以及旧Hub的HTTP404，给出“坐标派审未启用”类明确反馈，确定未执行，不超时等待或泛化失败。其它503写入仍保留unknown，不误称拒绝；不回显上游正文。403/核权、R5读取、提醒及迁移无改动。四格实际MCP/IPC/HTTP与WS结果及反向控制见`COMPAT-S-R6-IMPL.md/json`；旧helper不能打开时Console待办及三次有界催办照常，新helper打开后停止。总开关默认关、T-07/T-08边界不变。

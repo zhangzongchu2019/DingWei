@@ -47,3 +47,8 @@
   - 完成：S-R6-IMPL / T-04～T-06；按r46 2af469dd普通merge bf3ac8a3（0622c50ce），实现独立R5逐主体坐标派审/固定读取、R7版本策略/旧版本重审提示、追加幂等多人结果、本人可信打开、有界私聊催办、跨服务数据库操作屏障及R6/R9事件仲裁；默认关闭，0071仅元数据。每条需求正反格和18个目标变异、浏览器11格齐备。最终HUB_TEST_PG_STRICT=1七包rc0，m8/store整包及所有PG格执行；build gate锁venv并剥继承变量rc0，两helper profile各1096、Python27/shell2；strict12/12，详见EVIDENCE与SKIPS/MUTATIONS。提交前独立核远端T-03规格仍bf3ac8a3，增量spec未变。
   - 阻塞：无本单实现阻塞；真实GitHub/Agent独立权限、已验证个人身份/真实飞书回执及R5发布前置仍须T-07独立验收；工蜂API仍失败关闭，R9未来须接共用事件归属，不冒称R9运行时已实现。T-07、T-08未做，不自验收、不部署、不重启、不激活开关，未动r46或其它冻结分支。
   - 下一步：strict后同分支追加证据提交，只推工蜂、核远端tip/tree后冻结交审；质量组另行T-07，预发另派，不自行继续实现。
+
+- 2026-11-01T16:31:53.971057+00:00 · coder56solzzc.zzc · 评审后兼容补修commit f2fb5ec990ac02014d9cde215442c1cfd35e1564（父0fb9bf57），最终tip另含本证据。
+  - 完成：组长通过0fb9bf57后的唯一兼容补测。原helper将关闭503/旧Hub404泛化，按授权只改Hub既有未就绪错误码及helper固定文案/识别；四格实际MCP→IPC→HTTP＋同一WS全PASS，旧Hub用固定2af469dd/0.2.3.21真实主程序路由，旧helper真实工具25/无R6能力、创建200、get/open -32601但30/90/150三次催办、210无第四次；新helper打开后计数停1、不标已审。其它工具前后ok，MCP/WS不受影响；三个新目标变异均指定断言红。
+  - 阻塞：无本项阻塞；定向helper16、四格/三变异、锁venv完整构建门（两profile各1097、Python27/shell2）、PG严格m8 1224 PASS/36 SKIP、store 523 PASS/2 SKIP均rc0；strict12/12，38个既有skip沿原清单，未多添skip。详见COMPAT-S-R6-IMPL.md/json。真实Git/私聊T-07独立验收及T-08预发仍另派；未改R5、0071、提醒算法、VERSION或原R6增量spec，不部署/重启/激活。
+  - 下一步：本分支追加证据提交，核远端tip/tree后重新冻结，等待组长复核；不自行推进实现或上线。

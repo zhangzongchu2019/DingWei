@@ -37,3 +37,9 @@
 - `tools/sessionhelper/sessionhelper/{spec_review,app,ipc_listener,mcp_shim}.py`：新的`coordinate_review_v1`能力与`dw_coordinate_review`工具，保留旧工具；固定Hub来源、请求ID与坐标白名单，不接受正文/下载能力。
 - `view-service/coordinate-review-browser-regression.js`已登记`tools/run-browser-regressions.py` SUITES；核心/HTTP/WS/PG/SQLite测试见相邻`*_test.go`，目标变异runner为`scripts/test-r6-mutations.py`。所有测试隔离HOME、临时DB和loopback；实际构建门用helper-deps-lock-venv，不连接生产。
 - 技术决策/API/状态与需求映射写入变更design的“S-R6-IMPL实施接线”；当前结果不会自动生成委员会确认、验收、发布或合并门。T-07独立验收、T-08预发仍未完成。
+
+## 兼容补测入口
+
+- `tests/r6-compat/run.py`与`probe.py`：四格真实本地MCP/IPC/HTTP＋WS；旧Hub/旧helper固定r46 `2af469dd` / `0.2.3.21`。`legacy_hub_fixture.gotxt`临时接旧主程序真实路由，结束清理；`internal/m8/coordinate_review_compat_test.go`专用`r6_compat`测试tag。`mutations.py`覆盖明确关闭反馈及未知写入不被吞。
+- `coordinate_review_not_enabled`仅为现有R6未就绪分支的503错误码，helper兼容旧Hub404；没有新增部署环境项。`DW_R6_COMPAT_PYTHON/LEGACY_TREE/NEW_TREE/HELPER_TREE`均仅测试runner注入，不是产品配置。
+- 补测结构化读数/范围见R6变更目录`COMPAT-S-R6-IMPL.md/json`；工具可见性仍随helper版本。未改变R5、提醒预算、迁移或R9运行时边界。

@@ -1,0 +1,167 @@
+{
+  "new_source": "f2fb5ec990ac02014d9cde215442c1cfd35e1564",
+  "legacy_source": "2af469dd6919d8eb6064aa7da0e646f0851becf8",
+  "legacy_version": "0.2.3.21",
+  "cells": [
+    {
+      "result": "R6_COMPAT_PASS",
+      "case": "new-helper-old-hub",
+      "helper_version": "0.2.3.21",
+      "tools": 26,
+      "coordinate_tool": true,
+      "r6_capability": true,
+      "http_status": 404,
+      "error": "coordinate_review_not_enabled",
+      "response_ms": 17.92,
+      "other_tool_before_after": "ok",
+      "same_mcp_process": "alive",
+      "same_ws": "pong",
+      "create_http_status": null,
+      "open_error": null,
+      "notices": null,
+      "notice_minutes": null,
+      "private_sends": null,
+      "opened": false,
+      "coordinate_deliveries": 0
+    },
+    {
+      "result": "R6_COMPAT_PASS",
+      "case": "new-helper-new-off",
+      "helper_version": "0.2.3.21",
+      "tools": 26,
+      "coordinate_tool": true,
+      "r6_capability": true,
+      "http_status": 503,
+      "error": "coordinate_review_not_enabled",
+      "response_ms": 17.65,
+      "other_tool_before_after": "ok",
+      "same_mcp_process": "alive",
+      "same_ws": "pong",
+      "create_http_status": 503,
+      "open_error": null,
+      "notices": null,
+      "notice_minutes": null,
+      "private_sends": null,
+      "opened": false,
+      "coordinate_deliveries": 0
+    },
+    {
+      "result": "R6_COMPAT_PASS",
+      "case": "old-helper-new-on",
+      "helper_version": "0.2.3.21",
+      "tools": 25,
+      "coordinate_tool": false,
+      "r6_capability": false,
+      "http_status": null,
+      "error": null,
+      "response_ms": 0.2,
+      "other_tool_before_after": "ok",
+      "same_mcp_process": "alive",
+      "same_ws": "pong",
+      "create_http_status": 200,
+      "open_error": -32601,
+      "notices": 3,
+      "notice_minutes": [
+        30,
+        90,
+        150
+      ],
+      "private_sends": 3,
+      "opened": false,
+      "coordinate_deliveries": 0
+    },
+    {
+      "result": "R6_COMPAT_PASS",
+      "case": "new-helper-new-on",
+      "helper_version": "0.2.3.21",
+      "tools": 26,
+      "coordinate_tool": true,
+      "r6_capability": true,
+      "http_status": 200,
+      "error": null,
+      "response_ms": 18.96,
+      "other_tool_before_after": "ok",
+      "same_mcp_process": "alive",
+      "same_ws": "pong",
+      "create_http_status": 200,
+      "open_error": null,
+      "notices": 1,
+      "notice_minutes": [
+        30
+      ],
+      "private_sends": 1,
+      "opened": true,
+      "coordinate_deliveries": 1
+    }
+  ],
+  "mutations": [
+    {
+      "mutation": "old-hub-404",
+      "rc": 1,
+      "expected_assertion": "R6_COMPAT_CLEAR_DISABLED",
+      "matched": true
+    },
+    {
+      "mutation": "dark-hub-code",
+      "rc": 1,
+      "expected_assertion": "R6_COMPAT_CLEAR_DISABLED",
+      "matched": true
+    },
+    {
+      "mutation": "unknown-write",
+      "rc": 1,
+      "expected_assertion": "R6_COMPAT_WRITE_UNCERTAINTY_SWALLOWED",
+      "matched": true
+    }
+  ],
+  "strict_go": [
+    {
+      "package": "m8",
+      "pass": 1224,
+      "skip": 36,
+      "seconds": 181.121
+    },
+    {
+      "package": "store",
+      "pass": 523,
+      "skip": 2,
+      "seconds": 61.253
+    }
+  ],
+  "build_gate": {
+    "rc": 0,
+    "helper_profiles": [
+      {
+        "actual": 1097,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1097,
+        "files": 90,
+        "groups": [
+          1088,
+          9
+        ],
+        "profile": "claude",
+        "rc": 0
+      },
+      {
+        "actual": 1097,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1097,
+        "files": 90,
+        "groups": [
+          1088,
+          9
+        ],
+        "profile": "codex",
+        "rc": 0
+      }
+    ],
+    "python_files": 27,
+    "shell_files": 2
+  },
+  "openspec_strict": {
+    "rc": 0,
+    "passed": 12
+  },
+  "completed_at": "2026-11-01T16:31:53.971057+00:00"
+}
