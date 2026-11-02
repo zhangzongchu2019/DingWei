@@ -2732,6 +2732,8 @@ func TestPersonalMessageDefaultsToOnlyOnlineSession(t *testing.T) {
 	defer srv.Close()
 	u2 := dialSession(t, ctx, srv.URL, "u2", key.ID, secret)
 	defer u2.Close(websocket.StatusNormalClosure, "done")
+	// 引导帧先于在线发布发送；等待可路由状态，避免夹具抢跑。
+	waitSessionOnline(t, hub, key.ID, "u2")
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "default-1",
