@@ -5,7 +5,7 @@
 ## 1. 提案
 
 - [x] T-01 核对绑定接口、校验、审计及页面访问现状，完成 proposal/design/context/spec。
-- [ ] T-02 请 PM 决定全量列表、GitHub 数字 ID 查询方式、覆盖前确认交互；按决议更新并冻结提案。
+- [x] T-02 按 rulings ㉙ 回写 PM-R5-BIND-01～03：首期单条查询、管理员手填 GitHub ID 且服务端不出网、页面确认后执行现有 upsert 覆盖；原选项保留为历史。
 
 ## 2. 后续（另行授权）
 
@@ -18,3 +18,8 @@
   - 完成：以基线 c248506cf120c3af2a06eeaeeae3038f596537b1 核对接口、字段校验、页面权限和存储审计；提交 proposal、design、context、spec。
   - 阻塞：T-02 等 PM 决定；T-03/T-04 需另行授权和派单。
   - 下一步：全仓 OpenSpec strict 校验并推送提案分支；等待 PM 决议。
+
+- 2026-11-02T03:30:59Z · togpt60lunazzc.zzc · commit 待提交
+  - 完成：PM-R5-BIND-01～03 按 rulings ㉙ 定值；T-02 闭合。
+  - 阻塞：无；后续 T-03/T-04 仍需另行授权和派单。
+  - 下一步：全仓 OpenSpec strict 校验，提交并推送本分支，核对远端 tip。

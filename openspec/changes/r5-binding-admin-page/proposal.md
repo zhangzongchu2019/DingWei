@@ -9,8 +9,8 @@ R5 的 GitHub 身份绑定目前只有管理员 API，没有 Console 管理页�
 - 新增一个仅平台管理员可访问的 Console 绑定管理页，入口放在 Console 平台管理区；非管理员直接访问页面也必须被拒绝。
 - 页面以 Console principal、GitHub 登录名和数字 ID 作为表单字段；provider 固定 github、instance 固定 github.com。
 - 页面调用现有 GET/PUT/DELETE /api/console/openspec-bindings 完成单条绑定的查看、创建/更新、删除；保留现有路由权限、校验、审计和错误语义。
-- 不增加绑定列表 API、不做服务器端 GitHub 查询、不加入凭据输入或回显、不改变 R5 read 授权方式。是否增加只读的全量绑定列表接口单列为 PM 决策，本提案建议不增加。
-- 保存前显示目标 principal 和当前映射；现有 PUT 是 upsert 覆盖，页面不把重复建模成冲突。是否在覆盖前加确认框列为 PM 决策，不改变后端行为。
+- 首期不增加绑定列表 API；按 principal 查询单条。不做服务器端 GitHub 查询、不加入凭据输入或回显、不改变 R5 read 授权方式。
+- 保存前显示目标 principal 和当前映射；现有 PUT 是 upsert 覆盖，页面先显示旧值并在管理员确认后提交覆盖，不把重复建模成冲突。
 
 ## Capabilities
 
@@ -28,7 +28,7 @@ R5 的 GitHub 身份绑定目前只有管理员 API，没有 Console 管理页�
 
 ## 来源
 
-唯一需求来源为业主批准：[R5 绑定落地方式裁定](https://git.code.tencent.com/wego-ai/dingwei/blob/cf116475ebc6d40c977269be55d30d237d8b563d/docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md)，第㉘条，Hub 收信时间 2026-11-02T01:32:07Z。业主批准“r48 加一个最小绑定管理页，管理员在 Console 填好点一下即建”；该条同时限定复用现有 GET/PUT/DELETE、不改接口语义与权限，要求按 OpenSpec 先出小提案再实现。
+需求来源：[R5 绑定落地方式裁定](https://git.code.tencent.com/wego-ai/dingwei/blob/cf116475ebc6d40c977269be55d30d237d8b563d/docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md)，第㉘条，Hub 收信时间 2026-11-02T01:32:07Z。业主批准“r48 加一个最小绑定管理页，管理员在 Console 填好点一下即建”；该条同时限定复用现有 GET/PUT/DELETE、不改接口语义与权限，要求按 OpenSpec 先出小提案再实现。三项交互定值来源：[业主 rulings ㉙](https://git.code.tencent.com/wego-ai/dingwei/blob/b253543a/docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md)，第㉙条（2026-11-02）。
 
 ## 现状勘察
 
@@ -41,7 +41,7 @@ R5 的 GitHub 身份绑定目前只有管理员 API，没有 Console 管理页�
 
 ### 查询与列表能力
 
-现有 GET 只接受 principal、provider、instance 三个查询参数，并调用 SpecReadBinding 查询一条映射；没有查询全部绑定的 handler、store 方法或 API。无记录返回 JSON null。因而本提案的默认交互是输入 Console principal 后查询并显示该条映射；“全量列表”若被认为必要，须由 PM 单独批准新增只读接口，不能在 UI 里假设已有列表能力。
+现有 GET 只接受 principal、provider、instance 三个查询参数，并调用 SpecReadBinding 查询一条映射；没有查询全部绑定的 handler、store 方法或 API。无记录返回 JSON null。按业主定值，首期输入 Console principal 后查询并显示该条映射，不新增全量列表接口。
 
 ### 表单字段与既有 Valid 规则
 
@@ -59,7 +59,7 @@ PUT 重复使用同一 principal/provider/instance 时，SQLite 唯一键 upsert
 
 ### 身份 ID 查询建议
 
-本页面建议由管理员手填 GitHub login 与数字 account_id，页面给出查询提示，不由 Hub、浏览器页脚本或服务端 API 自动出网。管理员可在自己的浏览器或受控终端读取 https://api.github.com/users/{login} 的 JSON id/login 字段并核对二者对应；最终仍由服务端 Binding.Valid() 校验格式。是否需要客户端自动查询账号 ID 是 PM 决策，推荐手填以避免新增外部请求、速率依赖、错误账号自动绑定与隐私暴露。
+按业主定值，本页面由管理员手填 GitHub login 与数字 account_id，页面提示从 GitHub 公共用户资料/API 查询并核对，不由 Hub、浏览器页面脚本或服务端 API 自动出网。管理员可在自己的浏览器或受控终端读取 https://api.github.com/users/{login} 的 JSON id/login 字段并核对二者对应；最终仍由服务端 Binding.Valid() 校验格式。
 
 ### 待确认假设
 
@@ -67,8 +67,10 @@ PUT 重复使用同一 principal/provider/instance 时，SQLite 唯一键 upsert
 - 假设 Console principal 是管理员可从现有平台管理资料中复制的稳定标识；页面不新增 principal 枚举 API。
 - 不假设存在绑定全量列表、GitHub ID 自动查询、GitHub 凭据输入或服务端审计查询页面。
 
-### 待 PM 决策
+### PM 决策（已定）
 
-1. **PM-R5-BIND-01：是否要求全量绑定列表。** 选项 A：按 principal 查询单条映射，推荐；选项 B：新增只读“列出全部绑定”API 后做表格。建议 A，因为现有 GET 仅能按 principal/provider/instance 查一条，增加 API 会扩大后端和敏感映射枚举面；若选择 B，须另确认接口权限、分页/限额、审计与可见范围。
-2. **PM-R5-BIND-02：GitHub 数字 ID 获取方式。** 选项 A：管理员手填 login 与数字 ID，页面提示从 GitHub 公共用户 API 核对，推荐；选项 B：浏览器自动查询公共 API。建议 A，避免页面引入外部出网、速率依赖和登录名解析误差；无论选项均不得由 Hub 自动出网或提交 GitHub 凭据。
-3. **PM-R5-BIND-03：覆盖更新前的交互。** 现有 PUT 对同一键执行 upsert 覆盖并追加 set 审计，不能改成冲突。选项 A：仅展示当前值并要求管理员再次点击“覆盖”，推荐；选项 B：提交后立即覆盖但先明确标注。建议 A，避免误覆盖绑定；仅是页面确认，不改变 API 语义。
+1. **PM-R5-BIND-01：已定（rulings ㉙）。** 首期不增加全量绑定列表；按 principal 查询单条映射。理由：现有 GET 只支持按 principal/provider/instance 查单条，避免新增后端枚举接口。
+2. **PM-R5-BIND-02：已定（rulings ㉙）。** 管理员手填 GitHub login 与数字 ID，页面提示从 GitHub 公共用户资料/API 查询并核对；服务端不出网。理由：不引入外部请求、速率依赖或新的服务端网络依赖。
+3. **PM-R5-BIND-03：已定（rulings ㉙）。** 后端仍按现有 PUT upsert 覆盖并记录审计；页面先显示旧值，管理员明确确认后才提交覆盖。理由：保留既有 API 语义，同时降低误覆盖风险。
+
+历史选项记录（保留供决策追溯）：PM-R5-BIND-01 曾比较单条查询与新增全量只读 API；PM-R5-BIND-02 曾比较管理员手填与页面自动查询；PM-R5-BIND-03 曾比较确认后覆盖与提交即覆盖。业主定值分别为上列 A、A、A，记录依据为 rulings ㉙。
