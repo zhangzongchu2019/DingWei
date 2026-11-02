@@ -10,6 +10,14 @@
 - 目标：定义持久序号、切点、gap、单条拒收、淘汰、撤权清理、数据库写失败语义和回退处理。
 - 非目标：保存任意 terminal_output 原始帧或 Hub 日志；由 `session_delivery`／`message` 回填猜测历史；扩大读取权限；本设计授权实现之外的迁移执行、部署或环境操作。
 
+## 默认关闭开关（r49 新功能通则）
+
+开关名定为 `DW_SESSION_HISTORY_PERSIST_ENABLED`，Hub 启动时只在环境变量原始值**精确等于**字符串 `"1"` 时启用；未设置、空串、`0`、`true`、带空格的 `1` 或其它值都关闭。与 R5 的 `DW_OPENSPEC_READ_ENABLED`、R6 的 `DW_OPENSPEC_REVIEW_ENABLED` 同一关闭优先口径（R5 `openspec/changes/r5-render-openspec-readonly/design.md:48`；R6 `openspec/changes/r6-coordinate-review/design.md:78`）。开关在进程启动时采样，改变环境变量须重启 Hub 生效，不运行时热切换。
+
+关闭时，`handleSessionEventEnvelopeContext` 走 r48 原有代码路径：不向 `session_history_event` 分配持久 seq、不插入/更新历史事件数据，不改 `eventRing`、现有 event seq、mux/SSE 消息体或推送顺序；这些既有事件输出按 r48 行为逐字节一致。新历史分页接口固定返回 HTTP 503、机器码 `history_feature_disabled`、消息「未启用」，不读取历史正文、数量或 cursor。0075 迁移可以安装空 schema；独立运行状态表只记录开关状态与关闭区间，不写事件历史。R15-006 撤权/删除的强制正文清除仍执行，属于隐私义务，不受功能开关抑制；关闭时 TTL 扫描可暂停，重新启用后必须先清过期记录再开放历史读取。
+
+开—关—再开按进程重启处理：开态已存事件保留并继续受 TTL/容量/撤权规则约束；切到关态后到再开启前的事件不回填，关态期间历史接口明确未启用。单独的运行状态控制记录标注关闭起止；再开启时在旧记录和新写入间追加 `feature_disabled` gap 标记，generation 与持久 seq 均接续，不伪造缺失事件、不把关闭期解释成连续历史。gap 边界以前的历史仍可读；发生过关闭区间的分页/实时接续必须显示缺口。若从未有过历史，则开启后从空历史正常开始。
+
 ## r48 代码与数据现状
 
 - `internal/m8/terminal.go:480-503,522-558`：helper `session_event` 经校验并剥除客户端 provenance 后进入 `publishSessionEvent`；当前分配进程内 seq、写 ring、再解锁扇出 mux/SSE 消费者。持久化挂点应放在 497 行调用与发布之间。
@@ -60,9 +68,29 @@ CREATE INDEX idx_history_agent_time
   ON session_history_event(owner_key, agent_key_id, session_name, received_at_ms, seq);
 CREATE INDEX idx_history_expiry
   ON session_history_event(received_at_ms, owner_key, agent_key_id, session_name, seq);
+CREATE TABLE session_history_gap (
+  owner_key TEXT NOT NULL,
+  agent_key_id TEXT NOT NULL,
+  session_name TEXT NOT NULL,
+  generation TEXT NOT NULL,
+  after_seq INTEGER NOT NULL,
+  before_seq INTEGER,
+  started_at_ms INTEGER NOT NULL,
+  ended_at_ms INTEGER,
+  reason TEXT NOT NULL,
+  PRIMARY KEY (owner_key, agent_key_id, session_name, generation, started_at_ms)
+);
+CREATE TABLE session_history_runtime_state (
+  singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+  enabled INTEGER NOT NULL,
+  changed_at_ms INTEGER NOT NULL,
+  disabled_since_ms INTEGER
+);
 ```
 
 generation 行是当前身份/会话代际的唯一高水位和淘汰边界；撤权/删除时必须清事件正文与可关联索引，代际标记更新或移除，使同名重建获得新随机 generation。稳定排序键为 `owner_key, agent_key_id, session_name, generation, seq`；事件 ID 在接收时生成，作为幂等键。具体字段/约束与现有身份模型的映射在实现前由实现者复核，不允许以客户端自报 owner 作为键来源。
+
+`session_history_gap` 只保存非正文缺口边界；运行状态表是控制元数据，不是事件历史。Hub 启动时比较上次记录的 enabled 状态并更新当前状态：关闭启动记录 `disabled_since_ms`，再启用时将此区间收束为所有已有代际的 gap 边界，并在新事件写入后补齐 `before_seq`。这些状态行不能包含事件内容。异常关机后状态仍可从上次持久状态推断；启用进程的普通重启不产生 `feature_disabled` gap。
 
 建议同一个向前事务内：读取并锁定 generation；按序分配 `seq`；插事件；更新高水位和计量；按 TTL、Agent 配额、全局配额顺序删旧记录并推进 gap；提交。回滚则不产生已分配的持久 seq。逻辑计量不把 SQLite freelist、页碎片或 WAL 算作事件容量；主库文件可因此超过 2 GB。
 
@@ -128,6 +156,7 @@ generation 行是当前身份/会话代际的唯一高水位和淘汰边界；�
 | R15-008 分页/UI | 首屏、100 条和 4MiB 截断连续、2 秒 deadline、最早/缺口提示、锚点保持及实时 append；超预算、跨代际 cursor、越权拒绝 | API handler + 浏览器回归 | 删除 exclusive 边界、cursor 前进或锚点恢复，重复/跳过/偏移断言失败 |
 | 写失败语义 | 注入 busy/只读/超时，事件不被标记已持久、不静默进 live，客户端看到 unavailable 并可重试 | Hub/store 故障注入 | 吞掉写错误并继续发布，持久/live 对照断言失败 |
 | 性能 | 同负载旧/新分支对比 p50/p95/p99/max；多 Agent、大事件、checkpoint 和淘汰测量 | 隔离性能基准 | 禁用事务延迟采样或提前发布，延迟/持久完整性断言失败 |
+| 默认关闭开关 | unset/空/`0`/`true`/` 1` 均关闭，精确 `1` 才启用；关闭时比对 r48 事件 bytes、ring、序号及 mux/SSE 次序；新分页接口返回固定「未启用」；开—关—再开保留旧记录、关态事件不回填并出现 gap | Hub 单元 + store/HTTP 集成，重启子进程配置矩阵 | 将开关判定变异为恒 `true`，默认关闭格必须红；删除 gap 标记时切换期连续性断言必须红 |
 
 目标变异逐条留原始红测日志；本设计不声明任何实现或验收 PASS。预算数值、批量删除锁持有时间及热路径 SLO 若测量不能支持，列入待组长定，不在实现中擅改定值。
 
