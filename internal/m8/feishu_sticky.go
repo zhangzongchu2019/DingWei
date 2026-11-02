@@ -375,22 +375,22 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 	return reply("")
 }
 func (h *Hub) startFeishuStickyCleanup() {
-	if _, ok := h.Repo.(store.FeishuStickyRepository); !ok {
+	repo, ok := h.Repo.(store.FeishuStickyRepository)
+	if !ok {
 		return
 	}
 	ctx := h.lifetime().ctx
 	h.backgroundWork("owned", func() {
 		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
-		h.runFeishuStickyMaintenance(ctx, ticker.C)
+		h.runFeishuStickyMaintenance(ctx, ticker.C, repo)
 	})
 }
 
 // Pending recovery runs each minute; retention/revocation cleanup runs hourly.
 // Both use bounded store batches and join the Hub's owned background lifetime.
-func (h *Hub) runFeishuStickyMaintenance(ctx context.Context, ticks <-chan time.Time) {
-	repo, ok := h.Repo.(store.FeishuStickyRepository)
-	if !ok {
+func (h *Hub) runFeishuStickyMaintenance(ctx context.Context, ticks <-chan time.Time, repo store.FeishuStickyRepository) {
+	if repo == nil {
 		return
 	}
 	minutes := 0
@@ -405,7 +405,7 @@ func (h *Hub) runFeishuStickyMaintenance(ctx context.Context, ticks <-chan time.
 			}
 			minutes++
 			if minutes == 60 {
-				h.cleanupFeishuSticky(sweep, h.now().UTC())
+				h.cleanupFeishuStickyWithRepository(sweep, h.now().UTC(), repo)
 				minutes = 0
 			}
 			cancel()
@@ -422,7 +422,13 @@ func stickyDeliveryEvidence(o store.FeishuStickyOperation, d *model.SessionDeliv
 
 func (h *Hub) cleanupFeishuSticky(ctx context.Context, now time.Time) {
 	repo, ok := h.Repo.(store.FeishuStickyRepository)
-	if !ok || h.Identity == nil {
+	if !ok {
+		return
+	}
+	h.cleanupFeishuStickyWithRepository(ctx, now, repo)
+}
+func (h *Hub) cleanupFeishuStickyWithRepository(ctx context.Context, now time.Time, repo store.FeishuStickyRepository) {
+	if h.Identity == nil {
 		return
 	}
 	h.stickyCleanupMu.Lock()

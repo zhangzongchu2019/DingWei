@@ -551,7 +551,7 @@ func TestR14PendingMaintenanceJoinsLifetime(t *testing.T) {
 	ctx, cancel := context.WithCancel(r.ctx)
 	ticks := make(chan time.Time)
 	done := make(chan struct{})
-	go func() { defer close(done); r.hub.runFeishuStickyMaintenance(ctx, ticks) }()
+	go func() { defer close(done); r.hub.runFeishuStickyMaintenance(ctx, ticks, r.repo) }()
 	ticks <- r.now
 	waitFor(t, time.Second, "R14 pending maintenance", func() bool {
 		v, _, err := r.repo.BeginFeishuSticky(r.ctx, key, o.SourceMessageID, "explicit", r.now)
