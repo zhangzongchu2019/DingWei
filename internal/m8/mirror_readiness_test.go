@@ -83,7 +83,9 @@ func TestMirrorRegistrationRuntimeBarrier(t *testing.T) {
 	}))
 	defer srv.Close()
 	start := time.Now()
-	c := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	// 本格刻意保持在发布前，不使用等待发布的正常建连夹具。
+	c := dialSessionWithHeaderRaw(t, ctx, srv.URL, "home", key.ID, secret, nil)
+	discardInitialAgentNetworkSkill(t, ctx, c)
 	defer c.Close(websocket.StatusNormalClosure, "done")
 	select {
 	case <-reached:
