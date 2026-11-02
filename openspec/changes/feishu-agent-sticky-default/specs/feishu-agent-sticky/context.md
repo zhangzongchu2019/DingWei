@@ -75,3 +75,26 @@
 | 数据库唯一兜底 | `internal/identity/pgschema.sql:63-65`；`internal/store/migrate/migrations/0100_identity_baseline.sql:74-76`；`internal/identity/pgstore.go:616-627` | PG 索引 `np_agent_owner_name_current` 按 `(owner_lc,name_lc)` 限制 active/suspended；冲突映射 `ErrNameTaken`。前置 UI 查重只改善提示，服务端该索引仍是并发最终兜底。旧 `session_endpoint(key_id,session_name)` 是另一模型（`internal/store/migrations/0003_session_endpoint.sql:1-10`），旧平台名不在此索引内。 |
 
 以上是设计输入，不代表身份变更/并发/回滚运行格已实测。R14 当前没有稳定键、到期状态、代际或迁移表；本节只为 T-04 设计冻结提供 r48 代码证据。
+
+
+## T-05 / T-06 / T-10 当前实现与测试入口
+
+固定实现源码 `9b62531c6fb971239cda5820bd313fe22074ee63`，基线仍为 r48 `1e17255f28ced042784337903914ca8c126ef4cf`。本节为第 108 条授权的当前实现补充，历史 T-01/T-04 的只读勘察边界不替代本单授权。最终整包/变异/浏览器/strict 结果见证据分支及交接记录；本节不声明独立验收或上线。
+
+| 主题 | 当前文件:行 | 说明 |
+|---|---|---|
+| 可信入口与稳定身份 | `internal/m8/feishu_sticky.go:55`、`:97`、`:103`、`:154` | 只认可信个人入站；K 为当前 UserIDLC 与 bot；真实连接稳定 ID 核对，不能拿名字或 session_endpoint active 充作权威。 |
+| 纯解析/匹配/候选 | `internal/m8/feishu_sticky.go:58`、`:75`、`:123`、`:126` | CRLF/LF 纯候选识别、合法上次排首、实际全名逐行井号、精确与唯一前缀。 |
+| 存储事务与代际 | `internal/store/feishu_sticky.go:16`、`:25`、`:95`、`:131`、`:254` | UTC 严格边界，先意图，再既有投递，成功后 CAS；保留 source envelope ID，删除状态后代际仍由保留操作约束。 |
+| 对账不改默认 | `internal/store/feishu_sticky.go:203`、`:271`；`internal/m8/feishu_sticky.go:415` | resolved 只写 operation 终态、实际 delivery ID、完成时刻；验证源信封/目标/principal 三者，既不补目标也不续 TTL/代际或重发。 |
+| 失效/保留清理 | `internal/m8/feishu_sticky.go:377`、`:391`、`:423`；`internal/store/feishu_sticky.go:210`、`:230`、`:282` | 生命周期 owned worker；分钟 pending sweep、小时轮转清理、每批至多 200，pending/unknown 不按 30 天删。 |
+| 队列稳定目标复核 | `internal/m8/feishu_sticky.go:463` | 仅 R14 信封受限制性目标元数据核验，普通原信封语义不变；同名新连接不能取走旧目标消息。 |
+| 0072 | `internal/store/migrations/0072_feishu_agent_sticky.sql:1` | 两张 SQLite 表及索引，无旧表修改，无 PG 新表。 |
+| T-10 服务端与路由 | `internal/m8/console_agent_name.go:14`；`cmd/workpulse/console_routes.go:51` | GET 窄 boolean；Identity PG；登录态 owner、无 owner 输入；新平台才注册。 |
+| T-10 两入口 | `internal/m8/console_auth.go:923`、`:943`、`:1351` | 查重失败或 active/suspended 冲突都不提交；旧平台开关在 `:266`/`:726`。 |
+| Go 单元与 Hub 场景 | `internal/m8/feishu_sticky_unit_test.go:10`、`:25`；`internal/m8/feishu_sticky_test.go:176` | S001～S022、错误注入、重启、并发、稳定身份，以及迟到对账晚于新选择的专格。 |
+| PG / T-10 授权与索引 | `internal/m8/console_agent_name_test.go:16` | 本人 active/suspended、他人 owner、未登录、拒绝跨 owner 输入、旧平台名排除、并发唯一兜底；真实隔离 PG。 |
+| 旧 Hub 与回滚 | `internal/store/feishu_sticky_compat_test.go:31`、`:93` | `R14_OLD_HUB_BINARY` 指精确 r48 的隔离测试产物；缺该外部夹具会明确 Skip，正式本单门须先构建并提供。 |
+| 浏览器 / 总入口登记 | `view-service/r14-sticky-browser-regression.js:1`；`tools/run-browser-regressions.py:25` | 实际 Console handler 页面、localhost API mocks、两浏览器渠道与两入口变异；S018 仅 mock 文本，不是 T-08。 |
+
+组长补充裁定（2026-11-02T11:44:34Z）：迟到 durable 对账只结案，不改当前合法绑定、TTL 或代际；无证据保持 unknown。已写入 design 对账一节及上述接口实现，另配迟到 A 写回目标的语义变异。构建使用锁定 build venv、普通 dev 用户、短 HOME/TMPDIR 和环境白名单；不继承 SH/DINGWEI/DW/WP/PG DSN。实际版本号由既有构建注入，本单不改 VERSION 或写页面版本字面量。
