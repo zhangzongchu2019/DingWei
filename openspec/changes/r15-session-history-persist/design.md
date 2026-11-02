@@ -14,7 +14,7 @@
 
 开关名定为 `DW_SESSION_HISTORY_PERSIST_ENABLED`，Hub 启动时只在环境变量原始值**精确等于**字符串 `"1"` 时启用；未设置、空串、`0`、`true`、带空格的 `1` 或其它值都关闭。与 R5 的 `DW_OPENSPEC_READ_ENABLED`、R6 的 `DW_OPENSPEC_REVIEW_ENABLED` 同一关闭优先口径（R5 `openspec/changes/r5-render-openspec-readonly/design.md:48`；R6 `openspec/changes/r6-coordinate-review/design.md:78`）。开关在进程启动时采样，改变环境变量须重启 Hub 生效，不运行时热切换。
 
-关闭时，`handleSessionEventEnvelopeContext` 走 r48 原有代码路径：不向 `session_history_event` 分配持久 seq、不插入/更新历史事件数据，不改 `eventRing`、现有 event seq、mux/SSE 消息体或推送顺序；这些既有事件输出按 r48 行为逐字节一致。新历史分页接口固定返回 HTTP 503、机器码 `history_feature_disabled`、消息「未启用」，不读取历史正文、数量或 cursor。0075 迁移可以安装空 schema；独立运行状态表只记录开关状态与关闭区间，不写事件历史。R15-006 撤权/删除的强制正文清除仍执行，属于隐私义务，不受功能开关抑制；关闭时 TTL 扫描可暂停，重新启用后必须先清过期记录再开放历史读取。
+关闭时，`handleSessionEventEnvelopeContext` 走 r48 原有代码路径：不向 `session_history_event` 分配持久 seq、不插入/更新事件历史数据，不改 `eventRing`、现有 event seq、mux/SSE 消息体或推送顺序；这些既有事件输出按 r48 行为逐字节一致。新历史分页接口固定返回 HTTP 503、机器码 `history_feature_disabled`、消息「未启用」，不读取历史正文、数量或 cursor。历史库使用独立迁移目录和账本；关闭时运行状态控制表可记录开关状态与关闭区间，不写事件历史。R15-006 撤权/删除仍先撤销读取权，再异步清正文，属于隐私义务，不受功能开关抑制；关闭时 TTL 扫描可暂停，重新启用后必须先清过期记录再开放历史读取。
 
 开—关—再开按进程重启处理：开态已存事件保留并继续受 TTL/容量/撤权规则约束；切到关态后到再开启前的事件不回填，关态期间历史接口明确未启用。单独的运行状态控制记录标注关闭起止；再开启时在旧记录和新写入间追加 `feature_disabled` gap 标记，generation 与持久 seq 均接续，不伪造缺失事件、不把关闭期解释成连续历史。gap 边界以前的历史仍可读；发生过关闭区间的分页/实时接续必须显示缺口。若从未有过历史，则开启后从空历史正常开始。
 
@@ -25,7 +25,7 @@
 - `internal/m8/terminal.go:873-904,922-953,955-1003`：View SSE 在同一 `h.mu` 临界区注册 reader、取 H、复制 ring；cursor 是 epoch-seq，epoch 不同为 `epoch_changed`，ring 覆盖不足为 `overflow`。
 - `internal/m8/console_mux_frames.go:150-184`、`internal/m8/console_mux_transport.go:689-727`：mux 在锁下取得快照并注册 reader，之后按客户端 cursor 选择 replay；无 terminal source 当前无法建立该源。
 - `internal/m8/terminal.go:177-203`、`internal/m8/hub.go:1255-1265`：连接结束的清理会调用 `closeTerminalLocked`，清空 ring、关闭 reader 并删除 terminal state；R15 改为仅清热态，不删除持久历史。
-- `internal/store/sqlite.go:57-90,99-110,170-219,634-656`：主库启用 WAL、`synchronous(NORMAL)`、busy timeout 5000ms、单写连接；迁移文件按名排序并逐项记账。r48 内置迁移目前到 `0071_coordinate_review.sql`。本单编号约定 `0075_session_history.sql`；R14 的 0072、R10 的 0073、R9 的 0074 与本单冲突的发布排序需集成时统一。
+- `internal/store/sqlite.go:57-90,99-110,170-219,634-656`：主库启用 WAL、`synchronous(NORMAL)`、busy timeout 5000ms、单写连接；迁移文件按名排序并逐项记账。r48 内置主库迁移目前到 `0071_coordinate_review.sql`。R14/R10/R9 使用主库迁移号 0072～0074；R15 不进入该序列。
 - `internal/store/migrations/0027_session_delivery.sql:1-19`：`session_delivery` 存投递 envelope/状态及目标索引，不等价于每条结构化事件的完整历史。
 - `view-service/renderer-canary-sse.html:413-425,1099,1769-1792,1849-1875`：timeline 已是独立滚动容器；现有逻辑负责贴底和用户上翻后停止跟随，没有向上历史读取、prepend 锚点或到底/gap 提示。
 
@@ -33,7 +33,7 @@
 
 ### 选择 A：SQLite 专用历史表（推荐）
 
-在 `internal/store/migrations/0075_session_history.sql` 只 `CREATE TABLE`／`CREATE INDEX`，不 `ALTER` 或改写旧表。建议逻辑结构如下（字节数按 UTF-8 完整序列化事件加本表持久元数据计；1 MB=1,000,000 bytes、64 MB=64,000,000 bytes、2 GB=2,000,000,000 bytes；此计量口径是建议冻结项，物理 SQLite 开销另计）：
+在独立库 `workpulse-history.db` 中由专用迁移目录（建议 `internal/store/history_migrations/0001_session_history.sql`）只 `CREATE TABLE`／`CREATE INDEX`，不 `ALTER` 主库或其旧表；迁移账本也只存在历史库中。建议逻辑结构如下（字节数按 UTF-8 完整序列化事件加本表持久元数据计；1 MB=1,000,000 bytes、64 MB=64,000,000 bytes、2 GB=2,000,000,000 bytes；SQLite 页、索引、WAL 等物理开销不计入事件容量）：
 
 ```sql
 CREATE TABLE session_history_generation (
@@ -78,6 +78,7 @@ CREATE TABLE session_history_gap (
   started_at_ms INTEGER NOT NULL,
   ended_at_ms INTEGER,
   reason TEXT NOT NULL,
+  lost_event_count INTEGER NOT NULL DEFAULT 1,
   PRIMARY KEY (owner_key, agent_key_id, session_name, generation, started_at_ms)
 );
 CREATE TABLE session_history_runtime_state (
@@ -94,27 +95,27 @@ generation 行是当前身份/会话代际的唯一高水位和淘汰边界；�
 
 建议同一个向前事务内：读取并锁定 generation；按序分配 `seq`；插事件；更新高水位和计量；按 TTL、Agent 配额、全局配额顺序删旧记录并推进 gap；提交。回滚则不产生已分配的持久 seq。逻辑计量不把 SQLite freelist、页碎片或 WAL 算作事件容量；主库文件可因此超过 2 GB。
 
-### 主库 2 GB 与独立文件的影响（待组长定）
+### 主库容量影响与已选独立文件
 
-把全局 2 GB 历史压在现网 `workpulse.db` 上会让主库长期接近或达到该容量之外的体量；每次新增／淘汰仍经单写者和 WAL，WAL 峰值、checkpoint 写放大与磁盘临时空间需按活跃写入率实测。SQLite 备份若为在线一致性备份仍需复制/检查大主库，备份窗口和恢复耗时会随主库变大；大量逐行淘汰产生 freelist，`VACUUM` 需要长时间独占/重写并额外接近一份库大小的临时空间，可能影响主库写可用性。普通淘汰不应触发频繁全库 VACUUM；需监控 DB/WAL/free pages，维护窗口另决策。
+若把全局 2 GB 历史压在现网 `workpulse.db` 上，会明显增大主库；新增和淘汰经单写者/WAL 增加 WAL 峰值、checkpoint 写放大及临时空间。在线备份和恢复都需复制/检查更大的主库，备份窗口与恢复耗时增长；淘汰产生 freelist，`VACUUM` 可能长时间重写数据库并需要接近一份库大小的额外空间，影响主库写可用性。
 
-建议为历史使用同机、同 SQLite 实现的独立 `workpulse-history.db`，隔离 WAL、备份窗口、VACUUM 与主业务写锁；其表仍用独立迁移版本/账本或经核实的独立 schema runner。代价是跨库事务不能原子覆盖身份撤权与历史删除，需要先禁止授权/读取、再同步删除并可重试；备份与还原也要作为一组操作管理。**待组长定：**A1 主库内独立表、享有同一事务/撤权原子性，但承受主库/WAL/备份膨胀；A2 独立库文件（推荐），隔离容量影响但接受双库清理编排与备份一致性设计。批准前仅冻结“专用历史表”结构，不冻结文件位置。
+采用同机、同 SQLite 实现的独立 `workpulse-history.db`，以独立迁移目录和账本管理；隔离历史库 WAL、checkpoint、淘汰/VACUUM 与主库业务写锁。撤权/换属主不能跨库原子提交：每次读取实时核授权，先禁用旧属主读取，再异步、可重试地删除对应历史；删除失败必须可见并持续重试，恢复访问前不得有旧历史可读。备份与还原必须将主库和历史库作为一组操作，保证成对快照/恢复。最终 event_id、generation 与现有身份字段映射在实现阶段复核并写入 context。
 
 ## 写入路径、可见性与实时延迟
 
-具体事件流是 `handleSessionEventEnvelopeContext` 的 helper `session_event`，不是 `terminal_output`。在 `terminal.go:497` 清理 provenance 后、`publishSessionEvent` 之前完成序号分配和同步持久事务；成功后才调用 `publishSessionEvent`，因此顺序为：**数据库事务提交 → ring → mux/SSE/其他消费者**。持久序号随事件传入发布层；ring 的进程 epoch 保留作热态诊断，不作历史游标。
+具体事件流是 `handleSessionEventEnvelopeContext` 的 helper `session_event`，不是 `terminal_output`。在 `terminal.go:497` 清理 provenance 后、`publishSessionEvent` 之前尝试同步持久事务；提交成功则顺序为**数据库事务提交 → ring → mux/SSE/其他消费者**。持久写失败或单条超限时，先记/排队记 gap，再照常调用原 `publishSessionEvent`，不因历史写结果改变 r48 实时推送。持久序号随事件传入发布层；ring 的进程 epoch 保留作热态诊断，不作历史游标。
 
-若校验拒收（大于 1 MB），事件不进入持久表，产生只含稳定键、seq、原因码、时间的 gap 元数据；不得记录正文。数据库写失败则事务回滚、不把事件发布为成功的实时历史事件，不 ACK 该事件的持久接收；调用方按现有事件传输的失败/重试机制显式报告 `history_persist_unavailable`，客户端可见不可用/gap 状态并保留重试能力。禁止吞掉 error 后照常发 ring/SSE。若当前 helper 协议不能负向确认该消息，需先扩展可重试确认契约再实现，列为 T-03 前阻塞项。
+完整序列化记录大于 1 MB 时不截断、不入事件表，但事件仍照常进入 r48 ring 和实时推送路径；历史侧记 `oversize` 缺口区间、`lost_event_count` 及不含正文的结构化日志。SQLite 插入/淘汰事务失败时回滚历史写，事件仍照常进入 ring、mux/SSE 并保持现有推送顺序；历史侧记 `persist_error` 缺口区间、计数及结构化日志。能提交历史库事务时将 gap row 与原因/区间/计数持久化；历史库本身暂不可写时，内存合并缺口计数并逐次写结构化日志，存储恢复后优先补记 gap 再开放历史查询。首期不改 helper 协议，不要求负确认或重试，可靠确认另案处理。历史查询在缺口边界返回 gap，页面显示「这段历史未保存」。历史库不可读期间接口明确返回存储不可用；不能把区间伪装成连续历史。日志不含正文，只含脱敏身份键、时间区间、原因和计数。
 
-同步 SQLite 写使从事件接收到发布的额外延迟约等于事务、索引及必要淘汰耗时，并受 busy timeout 约束；不得假设可忽略。增加写入耗时直方图、失败计数、队列无关的 commit 延迟告警，不打正文。测试比较同一负载下写前/写后端到端 p50/p95/p99 与最大值，覆盖 1KB、近 1MB、并发多 Agent、WAL checkpoint、超时/磁盘只读；报告绝对值和增量，限值待组长结合现网 SLO 定。
+同步 SQLite 写使从事件接收到发布的额外延迟约等于事务、索引及必要淘汰耗时；历史写失败不阻止实时发布。记录写入/发布延迟直方图、失败计数与结构化 gap 日志，不记正文。隔离环境 20 个 Agent 同时推送时，开启 R15 后发布路径新增延迟 p99 必须≤10ms；测试覆盖 1KB、近 1MB、WAL checkpoint、淘汰及 busy/只读/超时。超门槛只报告读数并等待组长裁定，不自行改阈值或推迟实时事件。
 
 ## 容量、淘汰与撤权清理
 
-- 单事件按完整序列化记录校验，超过 1,000,000 bytes **拒绝整条、不截断**；记录 gap，实时流按上节失败语义处理。恰好等于限制可接收。
+- 单事件按完整序列化记录校验，超过 1,000,000 bytes **拒绝整条、不截断**；记录 gap，事件仍按 r48 实时路径推送。恰好等于限制可接收。
 - 每 Agent（同一 owner 与稳定 Agent key 下的会话合计）≤64,000,000 bytes；全局 ≤2,000,000,000 bytes；最长保留 30×24 小时，取 `received_at_ms`。逻辑字节是 `record_bytes` 汇总，SQLite 页、索引、WAL、freelist 另算存储监控。
 - 每次写事务按顺序执行：先删除所有到期记录；再若 Agent 超额，按 `received_at_ms, seq, session_name` 升序删除该 Agent 最旧记录至配额内；最后若全局超额，按 `received_at_ms, owner_key, agent_key_id, session_name, seq` 升序跨 Agent 删除至全局上限。容量与 TTL 谁先触发都只删最旧记录；同一时间戳用上述稳定键消除不确定性。每次淘汰同步推进对应代际 `gap_through_seq/oldest_seq`，不保存逐事件 gap 日志。
-- 单批最多 500 行删除；同一写事务可重复小批到恢复限制，但单事务总预算 2 秒，超出则回滚本次新事件并显式报告容量维护失败；后台 TTL 清理每批最多 500 行、批间让出写锁，至少每分钟启动一次并在启动后异步启动，不做启动时全表扫描。阈值/间隔属实施建议，若基准测量无法满足须列待组长定。
-- 撤权 / 删除的位置：在现有身份凭据吊销、账号解绑/删除的**权威 store 事务/生命周期服务**中，先令 Agent 不可授权，再同步清该身份的历史事件、代际行和索引，再提交；读取授权每次重新校验当前 active owner/key。若采用独立库导致无法跨库原子事务，则先提交权限禁用，再同步删除历史，删除失败保持禁用并进入可观测重试队列；不可先恢复访问。具体吊销入口由实现勘察确定并登记文件:行。内存 ring、mux reader 和 renderer cache 同时清理/撤销，不能只删除 SQLite 行。
+- 首期清理参数固定：每批最多 500 行；后台 TTL 清理每分钟启动一次，批间让出写锁，不做启动时全表扫描；每个清理事务最多 2 秒。容量淘汰也按该批大小有界执行，未完成的清理由后续批次继续，期间对受影响游标返回 gap/维护状态。
+- 撤权/删除或换属主：权威 store/lifecycle 先使旧属主读取立即失效，随后向历史库异步派发可重试正文删除。删除失败必须可见、计数并持续重试；旧属主在确认删除前始终不可读。换属主时旧历史一律销毁，不转给新属主。读路径每次重新核验当前 owner/key。实现阶段定位具体吊销入口并登记文件:行；同时清理 ring、mux reader 和 renderer cache。
 
 ## 序号、代际、重启与分页
 
@@ -132,13 +133,13 @@ generation 行是当前身份/会话代际的唯一高水位和淘汰边界；�
 | 平台管理员但不属于该 Agent 授权范围 | 拒绝；R15 不加跨 Agent 特权 | 不返回 | 禁止 |
 | 已吊销、已解绑或已删除身份 | 立即拒绝；旧凭据/cursor 不可重用 | 不返回旧代际信息 | 生命周期清理器可删，留非正文审计 |
 
-读取接口在 HTTP 路由层先解析登录主体，再通过现有 Console Agent ownership/auth 查询取稳定 owner 与 Agent key；请求中的路径 Agent 仅为查找键，不是授权凭据。Owner 归属变更视为撤销旧授权：先使旧 owner 对该 Agent 的读取失效并清旧代际正文；新 owner 只从新 generation 开始读，**不得将旧历史转给新 owner**。是否需要在转移后保留旧 owner 可读的历史是 **待组长定**；在裁定前按最小披露策略彻底清除旧代际。
+读取接口在 HTTP 路由层先解析登录主体，再通过现有 Console Agent ownership/auth 查询取稳定 owner 与 Agent key；请求中的路径 Agent 仅为查找键，不是授权凭据。Owner 归属变更时，旧 owner 读取立即拒绝，随后异步重试删除旧代际正文；旧历史一律销毁，不转给新 owner。删除失败对运维可见，且清理成功前持续拒绝旧 owner。
 
 ## 兼容、迁移与回退
 
-0075 只创建新表/索引；迁移正式编号在集成时协调 0072 R14、0073 R10、0074 R9。只从迁移后实际收到的合规结构化事件累计，不回填 `session_delivery` 或 `message`。应用回退不 DROP 历史表。**r48 Hub 在带 0075 库上的启动兼容性不可由代码阅读推断：必须在隔离副本上用精确 r48 二进制/源码版本和带迁移数据库做启停实测，记录启动结果、表/行是否改动、完整日志和库 hash；生产及预发不作此试验。**
+R15 使用 `workpulse-history.db` 专用迁移目录与账本，不在主库增加 0075；主库编号 0072～0074 留给 R14/R10/R9。只从迁移后实际收到的合规结构化事件累计，不回填 `session_delivery` 或 `message`。历史库不改变 r48 主库 schema；r48 不接入历史库。主库与历史库备份、还原作为一组操作。应用回退不 DROP 历史表。原“r48 Hub 在带 0075 库上的启动兼容隔离实测”因本裁定不产生主库 0075 而不适用于 R15；不得据此推断其它消费方迁移的 r48 兼容性。
 
-回退期间 r48 不写历史；再升级时沿用回退前的 generation/seq，新写事件继续累加 seq，但记录回退开始/结束时刻为显式 history gap 区间。不得把该空洞解释成连续，旧 cursor 跨过空洞时返回 gap，然后从 gap 后实际记录续读；是否在回退期间拒绝新历史读或呈现有界降级状态列为待组长定。历史表按 TTL/容量/撤权规则继续清理。
+回退期间 r48 不写历史；再升级时沿用回退前的 generation/seq，新写事件继续累加 seq，并将回退开始/结束时刻记录成显式 history gap 区间。不得把空洞解释成连续；旧 cursor 跨过空洞时返回 gap 和「这段历史未保存」，再从 gap 后实际记录续读。历史库按 TTL/容量/撤权规则继续清理。
 
 ## 测试计划（设计验收，不在本设计任务执行）
 
@@ -150,20 +151,20 @@ generation 行是当前身份/会话代际的唯一高水位和淘汰边界；�
 | R15-002 重启/重连 | Hub 重启和 helper 重连后续 seq；generation 真实改变时旧游标 gap | store+Hub 进程集成 | 启动时重置 seq 或把 epoch 改变当 gap，连续性断言失败 |
 | R15-003 切点 | 并发写入与 subscribe/query H 交错，对照源 ID 恰一次；反向注入订阅后丢事件应显 gap | Hub race 穷尽分片 `-count=3` | 把 register reader 移到查 H 之后，丢失计数断言失败 |
 | R15-004 权限 | 本人授权读取；他人、伪造 owner/session/cursor、管理员越权拒绝且无侧信道 | HTTP handler + 授权集成 | 移除服务端 ownership 检查，跨 Agent 负例变绿/敏感断言失败 |
-| R15-005 上限/TTL | 1,000,000 bytes 接受，超 1 byte 拒绝不截断；Agent/global 逐次淘汰；30 天边界虚拟时钟 | store 边界/性质测试，容量和 TTL 用虚拟时钟 | 将 `>` 改 `>=` 或删除过期条件，边界样本断言失败 |
-| R15-006 撤权 | 吊销前本人可读；后续旧凭据和旧 cursor 均不可读，表正文/索引被删；同名重建新代际 | store+HTTP 授权事务集成，撤权 race 穷尽分片 `-count=3` | 删除异步化或遗漏正文 DELETE，提交后读取/行数断言失败 |
-| R15-007 迁移/回退 | 空库及有旧业务表迁移成功、不改旧表；回退保留历史；隔离实测 r48 起动 | migration 集成 + 隔离兼容矩阵 | 在迁移加入旧表 ALTER/DROP，schema snapshot 断言失败 |
+| R15-005 上限/TTL | 1,000,000 bytes 接受，超 1 byte 拒绝持久化但照常推送；Agent/global 逐次淘汰；30 天边界虚拟时钟 | store 边界/性质测试，容量和 TTL 用虚拟时钟 | 将 `>` 改 `>=` 或删除过期条件/实时发布，边界与推送断言失败 |
+| R15-006 撤权 | 吊销/换属主后旧属主立即不可读，异步删除失败时可见并重试，最终清除正文/索引；旧历史不转给新属主 | store+HTTP 授权集成，撤权 race 穷尽分片 `-count=3` | 移除即时授权失效则旧属主读取断言失败；移除重试/正文删除则最终清除断言失败 |
+| R15-007 迁移/回退 | 独立历史库迁移成功且主库无 R15 DDL；回退期间 r48 不写历史，再升级显 gap；主库与历史库成组备份/恢复 | history migration 集成 + 隔离回退测试 | 把历史 DDL 写入主库或回退后伪造连续，schema/gap 断言失败 |
 | R15-008 分页/UI | 首屏、100 条和 4MiB 截断连续、2 秒 deadline、最早/缺口提示、锚点保持及实时 append；超预算、跨代际 cursor、越权拒绝 | API handler + 浏览器回归 | 删除 exclusive 边界、cursor 前进或锚点恢复，重复/跳过/偏移断言失败 |
-| 写失败语义 | 注入 busy/只读/超时，事件不被标记已持久、不静默进 live，客户端看到 unavailable 并可重试 | Hub/store 故障注入 | 吞掉写错误并继续发布，持久/live 对照断言失败 |
-| 性能 | 同负载旧/新分支对比 p50/p95/p99/max；多 Agent、大事件、checkpoint 和淘汰测量 | 隔离性能基准 | 禁用事务延迟采样或提前发布，延迟/持久完整性断言失败 |
+| 写失败语义 | 注入 busy/只读/超时及超大事件，事件照常进入 r48 live 路径，缺口带原因/计数/日志，恢复后读取可见 gap，页面显示「这段历史未保存」 | Hub/store 故障注入 + API/UI 集成 | 吞掉写错且不记 gap，或拦截 live 发布，缺口/字节对照断言失败 |
+| 性能 | 隔离环境 20 个 Agent 同时推送，开启 R15 后发布路径新增延迟 p99≤10ms；否则留读数上报组长 | 隔离性能基准 | 禁用发布延迟采样或把新增持久写移出计时区，p99 观测断言失败 |
 | 默认关闭开关 | unset/空/`0`/`true`/` 1` 均关闭，精确 `1` 才启用；关闭时比对 r48 事件 bytes、ring、序号及 mux/SSE 次序；新分页接口返回固定「未启用」；开—关—再开保留旧记录、关态事件不回填并出现 gap | Hub 单元 + store/HTTP 集成，重启子进程配置矩阵 | 将开关判定变异为恒 `true`，默认关闭格必须红；删除 gap 标记时切换期连续性断言必须红 |
 
-目标变异逐条留原始红测日志；本设计不声明任何实现或验收 PASS。预算数值、批量删除锁持有时间及热路径 SLO 若测量不能支持，列入待组长定，不在实现中擅改定值。
+目标变异逐条留原始红测日志；本设计不声明任何实现或验收 PASS。清理参数与 10ms p99 性能门已按组长裁定冻结；若性能测量不达标，报告原始读数并暂停放行，等组长另行决定，不擅改阈值。
 
-## 待组长定
+## 待组长定（本节事项均已裁定，逐项原文保留并标注）
 
-1. 历史数据落 `workpulse.db` 专用表还是独立 `workpulse-history.db`（建议独立文件，见上节）；兼容清理的跨库事务方案。
-2. 主库写入失败/单条超大时当前 helper 协议能否提供可靠负确认和重试；否则先定协议升级窗口。
-3. 每次清理 500 行、后台每分钟、事务 2 秒建议值及生产实时延迟 SLO。
-4. Owner 归属变更旧历史一律销毁的临时默认策略，及回退期间历史读的呈现策略。
-5. 逻辑容量按十进制字节且不计 SQLite 页开销、event_id/generation 与现有身份字段的最终 schema 对照。
+1. 历史数据落 `workpulse.db` 专用表还是独立 `workpulse-history.db`（建议独立文件，见上节）；兼容清理的跨库事务方案。**已定（组长 2026-11-02）：原文保留。**采用同机独立 `workpulse-history.db`，独立迁移目录与账本，不进入主库 0075 序列；主库编号留给 R14/R10/R9。撤权/换属主先拒绝读取，再异步、可重试删除；失败可见并重试；主库与历史库备份/还原成组。
+2. 主库写入失败/单条超大时当前 helper 协议能否提供可靠负确认和重试；否则先定协议升级窗口。**已定（组长 2026-11-02）：原文保留。**首期不改 helper 协议，不要求负确认/重试；事件照常实时推送，历史侧记录缺口区间、计数与日志；读接口返回 gap，页面显示「这段历史未保存」。可靠确认后续再做。
+3. 每次清理 500 行、后台每分钟、事务 2 秒建议值及生产实时延迟 SLO。**已定（组长 2026-11-02）：原文保留。**采纳每批 500 行、后台每分钟、单事务 2 秒；隔离环境 20 Agent 同时推送时，开启 R15 后发布路径新增延迟 p99≤10ms；不达标只报读数，等待组长再定，不擅改门槛。
+4. Owner 归属变更旧历史一律销毁的临时默认策略，及回退期间历史读的呈现策略。**已定（组长 2026-11-02）：原文保留。**换属主时旧历史一律销毁；回退期间 r48 不写历史，再升级显式呈现 gap，不当作连续历史。
+5. 逻辑容量按十进制字节且不计 SQLite 页开销、event_id/generation 与现有身份字段的最终 schema 对照。**已定（组长 2026-11-02）：原文保留。**容量按十进制字节计，不计 SQLite 页开销；event_id、generation 和身份字段最终 schema 对照在实现阶段完成并写进 context。
