@@ -19,7 +19,7 @@
   - 阻塞：T-02 等 PM 决定；T-03/T-04 需另行授权和派单。
   - 下一步：全仓 OpenSpec strict 校验并推送提案分支；等待 PM 决议。
 
-- 2026-11-02T03:30:59Z · togpt60lunazzc.zzc · commit 待提交
+- 2026-11-02T03:30:59Z · togpt60lunazzc.zzc · commit 8868d77e348879a3bd64f772c9abffb57b632cb1
   - 完成：PM-R5-BIND-01～03 按 rulings ㉙ 定值；T-02 闭合。
   - 阻塞：无；后续 T-03/T-04 仍需另行授权和派单。
-  - 下一步：全仓 OpenSpec strict 校验，提交并推送本分支，核对远端 tip。
+  - 下一步：strict 已通过；推送本分支并核对远端 tip/tree。
