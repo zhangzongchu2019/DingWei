@@ -10,7 +10,7 @@ import (
 )
 
 func TestR10ServiceMonitorPolicySharedPollAndUnknown(t *testing.T) {
-	for _, kind := range []string{"task_definition", "requirements", "proposal", "other_markdown", "checkbox", "handoff_section", "archive_identical", "unknown"} {
+	for _, kind := range []string{"task_definition", "requirements", "proposal", "other_markdown", "scenarios", "scope", "checkbox", "handoff_section", "archive_identical", "unknown"} {
 		t.Run(kind, func(t *testing.T) {
 			e := setup(t)
 			ctx := context.Background()
@@ -27,6 +27,10 @@ func TestR10ServiceMonitorPolicySharedPollAndUnknown(t *testing.T) {
 				e.change(c2, dir+"/proposal.md", "# Proposal\nchanged\n")
 			case "other_markdown":
 				e.change(c2, dir+"/context.md", "# Context\nnew contract\n")
+			case "scenarios":
+				e.change(c2, dir+"/specs/one/spec.md", "# Requirements\n#### Scenario: additional contract\n- WHEN new condition\n- THEN new behavior\n")
+			case "scope":
+				e.change(c2, dir+"/proposal.md", "# Proposal\n## Scope\nAdd a new API consumer\n")
 			case "checkbox":
 				e.change(c2, dir+"/tasks.md", strings.Replace(e.p.files[c1][dir+"/tasks.md"], "[ ]", "[x]", 1))
 			case "handoff_section":
@@ -54,7 +58,7 @@ func TestR10ServiceMonitorPolicySharedPollAndUnknown(t *testing.T) {
 				t.Fatal("R10_AUTOMATIC_REBIND")
 			}
 			expected := "clean"
-			if kind == "task_definition" || kind == "requirements" || kind == "proposal" || kind == "other_markdown" {
+			if kind == "task_definition" || kind == "requirements" || kind == "proposal" || kind == "other_markdown" || kind == "scenarios" || kind == "scope" {
 				expected = "needs_sync"
 			}
 			if kind == "unknown" {

@@ -40,6 +40,8 @@ type provider struct {
 	polls, prPolls int
 	onBlob         func()
 	waitRef        map[string]chan struct{}
+	foreignCommit  map[string]map[string]bool
+	truncateTasks  bool
 }
 
 func (p *provider) Repository(_ context.Context, id string) (specread.Repository, error) {
@@ -72,11 +74,11 @@ func (p *provider) Resolve(ctx context.Context, _ specread.Repository, ref strin
 	}
 	return head, nil
 }
-func (p *provider) Tree(_ context.Context, _ specread.Repository, c string) ([]specread.Entry, error) {
+func (p *provider) Tree(_ context.Context, repo specread.Repository, c string) ([]specread.Entry, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	files, ok := p.files[c]
-	if !ok {
+	if !ok || p.foreignCommit[repo.ID][c] {
 		return nil, specread.ErrNotFound
 	}
 	entries := []specread.Entry{}
@@ -95,6 +97,9 @@ func (p *provider) Blob(_ context.Context, _ specread.Repository, e specread.Ent
 	for _, files := range p.files {
 		for _, text := range files {
 			if blob(text) == e.SHA {
+				if p.truncateTasks && e.Path == dir+"/tasks.md" {
+					return []byte("- [ ] T-01 build\n"), nil
+				}
 				return []byte(text), nil
 			}
 		}
@@ -191,7 +196,7 @@ func (e *env) change(sha, path, text string) {
 }
 
 func TestR10ServiceCurrentGroupAndBothRead(t *testing.T) {
-	for _, name := range []string{"valid", "dispatcher_not_qualified", "target_not_member", "inactive_user", "inactive_agent", "target_binding_removed", "dispatcher_read_revoked", "holder_read_revoked", "wrong_provider", "missing_ref", "duplicate_task", "completed_task", "fixed_commit_not_ref"} {
+	for _, name := range []string{"valid", "dispatcher_not_qualified", "target_not_member", "inactive_user", "inactive_agent", "missing_agent_mapping", "short_sha", "foreign_commit", "truncated_task_read", "target_binding_removed", "dispatcher_read_revoked", "holder_read_revoked", "wrong_provider", "missing_ref", "duplicate_task", "completed_task", "fixed_commit_not_ref"} {
 		t.Run(name, func(t *testing.T) {
 			e := setup(t)
 			ctx := context.Background()
@@ -210,6 +215,17 @@ func TestR10ServiceCurrentGroupAndBothRead(t *testing.T) {
 				if _, err := e.ids.RetireAgent(ctx, "agent-holder", "holder", e.now); err != nil {
 					t.Fatal(err)
 				}
+			case "missing_agent_mapping":
+				e.r.HolderAgentID = "agent-missing"
+			case "short_sha":
+				e.r.Commit = "aaaaaaaa"
+			case "foreign_commit":
+				e.r.Commit = c2
+				e.p.files[c2] = e.p.files[c1]
+				e.p.foreignCommit = map[string]map[string]bool{"1": {c2: true}}
+			case "truncated_task_read":
+				e.p.files[c1][dir+"/tasks.md"] = "- [ ] T-01 build\n- [ ] T-01 hidden duplicate\n"
+				e.p.truncateTasks = true
 			case "target_binding_removed":
 				if err := e.db.DeleteSpecReadBinding(ctx, "admin", "holder", "github", "github.com"); err != nil {
 					t.Fatal(err)
@@ -354,7 +370,7 @@ func TestR10ServiceReplayCrossRepositoryReleaseAndOwnerFence(t *testing.T) {
 }
 
 func TestR10ServiceHandoffReadsSuccessorAndFixedRecoveryPointer(t *testing.T) {
-	for _, name := range []string{"valid", "successor_read_revoked", "pointer_unreadable", "holder_cannot_transfer"} {
+	for _, name := range []string{"valid", "successor_read_revoked", "pointer_unreadable", "unverified_recovery", "holder_cannot_transfer"} {
 		t.Run(name, func(t *testing.T) {
 			e := setup(t)
 			l := e.grant(t)
@@ -371,6 +387,8 @@ func TestR10ServiceHandoffReadsSuccessorAndFixedRecoveryPointer(t *testing.T) {
 				e.p.denied["next"] = true
 			case "pointer_unreadable":
 				r.Handoff.Path = dir + "/missing.md"
+			case "unverified_recovery":
+				r.Handoff.RecoveryState = ""
 			case "holder_cannot_transfer":
 				actor = td.Actor{AgentID: "agent-holder"}
 			}
@@ -397,18 +415,37 @@ func TestR10ServiceHandoffReadsSuccessorAndFixedRecoveryPointer(t *testing.T) {
 }
 
 func TestR10NonholderWithReadablePointerCannotRelease(t *testing.T) {
-	e := setup(t)
-	l := e.grant(t)
-	record := fmt.Sprintf("# Recovery\n%s\n%s\n", l.TaskID, l.CommitSHA)
-	e.p.files[c1][dir+"/handoff.md"] = record
-	r := e.holder(l, "release")
-	r.Handoff = td.Handoff{Commit: c1, Path: dir + "/handoff.md", BlobSHA: blob(record), ExecutionCommit: c1, TaskID: l.TaskID, RecoveryState: "unknown"}
-	if _, err := e.s.Execute(context.Background(), td.Actor{AgentID: "agent-next"}, r); err == nil {
-		t.Fatal("R10_NONHOLDER_WITH_POINTER_RELEASED")
-	}
-	current, _ := e.db.TaskDispatchLock(context.Background(), l.Key)
-	if current == nil || current.Generation != l.Generation || current.HolderAgentID != l.HolderAgentID {
-		t.Fatal("R10_NONHOLDER_CHANGED_CURRENT_LOCK")
+	for _, name := range []string{"nonholder", "missing", "unreadable", "stale_generation"} {
+		t.Run(name, func(t *testing.T) {
+			e := setup(t)
+			l := e.grant(t)
+			record := fmt.Sprintf("# Recovery\n%s\n%s\n", l.TaskID, l.CommitSHA)
+			e.p.files[c1][dir+"/handoff.md"] = record
+			r := e.holder(l, "release")
+			r.Handoff = td.Handoff{Commit: c1, Path: dir + "/handoff.md", BlobSHA: blob(record), ExecutionCommit: c1, TaskID: l.TaskID, RecoveryState: "unknown"}
+			actor := td.Actor{AgentID: "agent-holder"}
+			expected := td.ErrForbidden
+			switch name {
+			case "nonholder":
+				actor = td.Actor{AgentID: "agent-next"}
+			case "missing":
+				r.Handoff = td.Handoff{}
+				expected = td.ErrInvalid
+			case "unreadable":
+				r.Handoff.Path = dir + "/missing.md"
+				expected = td.ErrComparison
+			case "stale_generation":
+				r.Generation++
+				expected = td.ErrConflict
+			}
+			if _, err := e.s.Execute(context.Background(), actor, r); !errors.Is(err, expected) {
+				t.Fatal("R10_NONHOLDER_WITH_POINTER_RELEASED", name, err)
+			}
+			current, _ := e.db.TaskDispatchLock(context.Background(), l.Key)
+			if current == nil || current.Generation != l.Generation || current.HolderAgentID != l.HolderAgentID || current.LeaseToken != l.LeaseToken {
+				t.Fatal("R10_NONHOLDER_CHANGED_CURRENT_LOCK", name)
+			}
+		})
 	}
 }
 

@@ -466,25 +466,36 @@ func TestR10HandoffEventFailureCannotPartiallyTransfer(t *testing.T) {
 }
 
 func TestR10ExactExpiryAndWrongTokenCannotRenew(t *testing.T) {
-	for _, name := range []string{"exact_expiry", "wrong_token"} {
+	for _, name := range []string{"exact_expiry", "after_expiry", "wrong_token", "wrong_generation"} {
 		t.Run(name, func(t *testing.T) {
-			s, m, now := r10DB(t)
-			first, err := r10Apply(t, s, m, now)
-			if err != nil {
-				t.Fatal(err)
-			}
-			renew := r10Holder(m, first.Lock, "renew", "boundary_renew_operation_0001")
-			at := first.Lock.ExpiresAt
-			if name == "wrong_token" {
-				at = now.Add(time.Minute)
-				renew.ExpectedToken = strings.Repeat("f", 64)
-			}
-			if _, err = r10Apply(t, s, renew, at); !errors.Is(err, td.ErrConflict) {
-				t.Fatal("R10_BOUNDARY_OR_TOKEN_RENEWED", name, err)
-			}
-			current, _ := s.TaskDispatchLock(context.Background(), m.Key)
-			if current == nil || !current.ExpiresAt.Equal(first.Lock.ExpiresAt) {
-				t.Fatal("R10_REFUSED_RENEW_CHANGED_EXPIRY", name)
+			for _, kind := range []string{"renew", "release", "continue"} {
+				t.Run(kind, func(t *testing.T) {
+					s, m, now := r10DB(t)
+					first, err := r10Apply(t, s, m, now)
+					if err != nil {
+						t.Fatal(err)
+					}
+					operation := r10Holder(m, first.Lock, kind, "boundary_operation_0001")
+					operation.Handoff = r10Handoff(first.Lock)
+					at := first.Lock.ExpiresAt
+					switch name {
+					case "after_expiry":
+						at = at.Add(time.Second)
+					case "wrong_token":
+						at = now.Add(time.Minute)
+						operation.ExpectedToken = strings.Repeat("f", 64)
+					case "wrong_generation":
+						at = now.Add(time.Minute)
+						operation.ExpectedGeneration++
+					}
+					if _, err = r10Apply(t, s, operation, at); !errors.Is(err, td.ErrConflict) {
+						t.Fatal("R10_BOUNDARY_OR_TOKEN_RENEWED", name, kind, err)
+					}
+					current, _ := s.TaskDispatchLock(context.Background(), m.Key)
+					if current == nil || !current.ExpiresAt.Equal(first.Lock.ExpiresAt) || current.Generation != first.Lock.Generation || current.State != "active" {
+						t.Fatal("R10_REFUSED_RENEW_CHANGED_EXPIRY", name, kind)
+					}
+				})
 			}
 		})
 	}
