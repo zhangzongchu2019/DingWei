@@ -1,0 +1,7 @@
+{
+  "home": "/tmp/hlc-drain-final-enms4j33/home",
+  "tmp": "/tmp/hlc-drain-final-enms4j33/tmp",
+  "ipc": "/tmp/hlc-drain-final-enms4j33/test-ipc.sock",
+  "ports": "isolated per-test loopback; no inherited service settings",
+  "external_pg_dsn": false
+}

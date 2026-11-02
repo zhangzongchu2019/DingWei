@@ -99,3 +99,13 @@ strict规划通过不代表实现/业务验收/发布完成；不archive、不�
   - 完成：隔离真实Hub装配/临时PG及3个Python VS负载夹具已运行；S006 100HTTP/100SSE/5mux+15bridge/20会话WS/飞书回调完整首轮rc0，停2131ms退出0、阶段0/2119/0/7/0ms、持久HTTP100、迟到DB0/拒绝1、所有业务owned计数0。S011首轮rc1，补齐时间点后仍红：stop→READY2202ms、20helper36ms、SSE/WS46ms；mux明确epoch_changed gap后5秒缺失2、重复0，未自动reset凑绿。证据docs/reviews/hlc-process-first/REPORT.md。
   - 阻塞：新增S011与现有mux显式resync协议的口径疑点已报组长dw-dlv_30213f93175447ed7db62ae303ac584e；其它验证可继续，不阻塞S006随机50轮。
   - 下一步：S006混合随机50/race已起，随后其余反向控制→PG严格相关整包→仓库门，暂估04:30Z须据S011裁定/实测校准；不据局部读数勾选总项、不提前执行预告任务。
+
+- 2026-11-02T02:17:17.095880+00:00 · coder56solzzc.zzc · HLC-010/S014 独立缺陷片段，基线bdac3593，分支opus50tc2k/hlc-drain-exit1；提交坐标待验证后追加。
+  - 完成：对端已关闭类型分类、逐连接原错快照、客户端先断及Hub先停／活连接关闭失败／撤分类测试已实现。
+  - 阻塞：等待单路测试窗口，当前不把未运行验证记为通过；S006原8轮无SIGTERM及409绝对时间，保持缺项，不加ready屏障。
+  - 下一步：独立资源逐格验证、变异、仓库门及严格规格核验后只交坐标／读数；唯一写者复核合入，不部署、不apply/archive。
+
+- 2026-11-02T02:47:01.064768+00:00 · coder56solzzc.zzc · HLC-010/S014片段验证完成；独立分支opus50tc2k/hlc-drain-exit1，直接基线bdac3593，坐标以本提交及交接回执为准。
+  - 完成：真实完整Hub对端先断退0/already_closed20、Hub先停退0、存活连接写超时退1/failed20，各race3轮；原错逐条保留。撤分类3轮真实退1且断言目标红；相关Go race与OpenSpec strict rc0。最终完整run-build-tests rc0（helper各1097/Python27/shell2），首轮长TMPDIR致Unix socket超长的rc1与短根shell复核rc0一并保留。
+  - 阻塞：本片段无待测项，等待唯一写者独立核证与合入；整单HLC及S006完整回归不据此关闭。S006原8轮未发SIGTERM/409绝对UTC缺项，r47对照22/100、bdac9/30，新对照不冒充旧时差。
+  - 下一步：只交工蜂仓库/ref/commit/tree与读数，释放单路窗口给主流；不自合入、部署、apply/archive，不改原树或S006 ready屏障。

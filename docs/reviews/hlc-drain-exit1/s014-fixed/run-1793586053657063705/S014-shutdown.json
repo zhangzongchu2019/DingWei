@@ -1,0 +1,936 @@
+{
+  "exit_utc": "2026-11-02T02:21:02.79895408Z",
+  "fixture": {
+    "callback": {
+      "business_db_calls": 0,
+      "late_db_calls": 0
+    },
+    "http_active": 0,
+    "http_committed": 0
+  },
+  "process_error": "\u003cnil\u003e",
+  "report": {
+    "shutdown_id": "hlc-1793586061579133955",
+    "reason": "terminated",
+    "started_utc": "2026-11-02T02:21:01.579133955Z",
+    "ended_utc": "2026-11-02T02:21:01.788307197Z",
+    "total_elapsed_ms": 209,
+    "stages": [
+      {
+        "name": "access",
+        "started_utc": "2026-11-02T02:21:01.579196289Z",
+        "ended_utc": "2026-11-02T02:21:01.702744767Z",
+        "elapsed_ms": 123,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": null,
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": false,
+            "rejected_after_seal": 0,
+            "sdk_start_not_joined": 1,
+            "sealed": false
+          },
+          "http_overlaps_streams": {
+            "public_http": 9
+          },
+          "hub": {
+            "background_owned": 4,
+            "registration_session_ws": 0,
+            "session_ws": 9
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {},
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "drain",
+        "started_utc": "2026-11-02T02:21:01.702797402Z",
+        "ended_utc": "2026-11-02T02:21:01.756761689Z",
+        "elapsed_ms": 53,
+        "budget_ms": 8000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": null,
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 1,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "registration_session_ws": 0,
+            "session_ws": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 20,
+            "failed": 0,
+            "records": [
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to write frame header: write tcp 127.0.0.1:46251-\u003e127.0.0.1:52404: write: broken pipe",
+                "kind": "session_ws",
+                "result": "already_closed"
+              }
+            ]
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T02:21:01.702931909Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T02:21:01.579359663Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T02:21:01.702945408Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T02:21:01.579379441Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "queue",
+        "started_utc": "2026-11-02T02:21:01.756803345Z",
+        "ended_utc": "2026-11-02T02:21:01.757817426Z",
+        "elapsed_ms": 1,
+        "budget_ms": 3000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {},
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 1,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "registration_session_ws": 0,
+            "session_ws": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 20,
+            "failed": 0,
+            "records": [
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to write frame header: write tcp 127.0.0.1:46251-\u003e127.0.0.1:52404: write: broken pipe",
+                "kind": "session_ws",
+                "result": "already_closed"
+              }
+            ]
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T02:21:01.702931909Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T02:21:01.579359663Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T02:21:01.702945408Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T02:21:01.579379441Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "storage",
+        "started_utc": "2026-11-02T02:21:01.757866892Z",
+        "ended_utc": "2026-11-02T02:21:01.788127945Z",
+        "elapsed_ms": 30,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {},
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 1,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "registration_session_ws": 0,
+            "session_ws": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 20,
+            "failed": 0,
+            "records": [
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to write frame header: write tcp 127.0.0.1:46251-\u003e127.0.0.1:52404: write: broken pipe",
+                "kind": "session_ws",
+                "result": "already_closed"
+              }
+            ]
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T02:21:01.702931909Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T02:21:01.579359663Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T02:21:01.702945408Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T02:21:01.579379441Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "finalize",
+        "started_utc": "2026-11-02T02:21:01.788216206Z",
+        "ended_utc": "2026-11-02T02:21:01.788250833Z",
+        "elapsed_ms": 0,
+        "budget_ms": 2000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {},
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 1,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "registration_session_ws": 0,
+            "session_ws": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 20,
+            "failed": 0,
+            "records": [
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: use of closed network connection",
+                "kind": "session_ws",
+                "result": "already_closed"
+              },
+              {
+                "error": "failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to write frame header: write tcp 127.0.0.1:46251-\u003e127.0.0.1:52404: write: broken pipe",
+                "kind": "session_ws",
+                "result": "already_closed"
+              }
+            ]
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T02:21:01.702931909Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T02:21:01.579359663Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T02:21:01.702945408Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T02:21:01.579379441Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      }
+    ],
+    "exit_class": "graceful",
+    "exit_code": 0,
+    "snapshot": {
+      "consumers": {
+        "inbound": 0,
+        "outbound": 0
+      },
+      "durable_counts": {},
+      "feishu_ingress": {
+        "active_callbacks": 0,
+        "close_completed": true,
+        "rejected_after_seal": 1,
+        "sdk_start_not_joined": 1,
+        "sealed": true
+      },
+      "http_overlaps_streams": {
+        "public_http": 0
+      },
+      "hub": {
+        "background_owned": 0,
+        "registration_session_ws": 0,
+        "session_ws": 0
+      },
+      "hub_ws_close": {
+        "already_closed": 20,
+        "failed": 0,
+        "records": [
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: use of closed network connection",
+            "kind": "session_ws",
+            "result": "already_closed"
+          },
+          {
+            "error": "failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to write frame header: write tcp 127.0.0.1:46251-\u003e127.0.0.1:52404: write: broken pipe",
+            "kind": "session_ws",
+            "result": "already_closed"
+          }
+        ]
+      },
+      "persistence": "snapshot_captured",
+      "producers": {
+        "cron_reload": 0,
+        "receiver": 0,
+        "reminders": 0
+      },
+      "queue": {
+        "inbound": {
+          "error": "nil",
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        },
+        "outbound": {
+          "error": "nil",
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        }
+      },
+      "servers": {
+        "internal": {
+          "drained_utc": "2026-11-02T02:21:01.702931909Z",
+          "error": "nil",
+          "listener_closed_utc": "2026-11-02T02:21:01.579359663Z"
+        },
+        "public": {
+          "drained_utc": "2026-11-02T02:21:01.702945408Z",
+          "error": "nil",
+          "listener_closed_utc": "2026-11-02T02:21:01.579379441Z"
+        }
+      },
+      "watchdog_enabled": false,
+      "watchdog_window_ms": 0
+    }
+  },
+  "signal_utc": "2026-11-02T02:21:01.578897388Z",
+  "stop_ms": 1220
+}

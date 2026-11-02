@@ -1,0 +1,12 @@
+[
+  {
+    "path": "/tmp/hlc-drain-final-enms4j33/tmp/TestDesktopMCPRoundTripAcrossRealHubenrolled_leader_only1234567890/001/mcp.sock",
+    "bytes": 113,
+    "result": "OSError: AF_UNIX path too long"
+  },
+  {
+    "path": "/tmp/h-1uq0ie_n/TestDesktopMCPRoundTripAcrossRealHubenrolled_leader_only1234567890/001/mcp.sock",
+    "bytes": 95,
+    "result": "bound"
+  }
+]

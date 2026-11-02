@@ -1,0 +1,11 @@
+{
+  "command": [
+    "sh",
+    "scripts/test-desktop-hub-roundtrip.sh"
+  ],
+  "started_utc": "2026-11-02T02:36:38.251471+00:00",
+  "ended_utc": "2026-11-02T02:37:07.426506+00:00",
+  "rc": 0,
+  "home": "/tmp/g-0o7as22g/h",
+  "tmp": "/tmp/g-0o7as22g"
+}

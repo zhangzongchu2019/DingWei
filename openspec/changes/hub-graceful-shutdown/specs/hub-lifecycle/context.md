@@ -59,3 +59,7 @@ FINDING附录记录基线overlay新增虚拟测试文件：第一次vet无法打
 internal/feishu/lifecycle.go新增可选ReceiverLifecycle与SDK连接所有权、Close→回调Seal→Wait顺序及安全快照；feishu.go在规范化前登记回调，封口后拒绝计数。SDKStart运行帧单列sdk_start_not_joined，不进入Hub业务goroutine归零断言；v3.9.7 Start的select{}及其它SDK内部残余随进程回收，**不冒称所有SDK goroutine已join**。cmd/workpulse/main.go在drain阶段接入；远端FCS订阅类和协议未改，测试另核。
 
 internal/feishu/lifecycle_test.go包含S006回调在途/迟到/真实临时SQLite计数、在途超时、Close阻塞、重复Close、停止后启动及多网关计数；tests/hlc/s006_mutations.py撤掉拒绝保护，须在DB访问断言红。lifecycle_sdk_process_test.go独立进程使用真实钉版SDK与loopback连接，默认skip但显式独立运行有读数；只排除明确SDK所有权的残余，不放宽业务回调归零。完整Hub混合流量与恢复验收仍需独立逐格，当前单测不能替代。
+
+## drain 对端先断修复位置
+
+独立分支 opus50tc2k/hlc-drain-exit1 基于bdac3593；按组长本次产品缺陷裁定实施，不改原实现树。internal/m8/lifecycle.go保存逐连接WSCloseSnapshot，与存活计数分开；cmd/workpulse/main.go将hub_ws_close放入每阶段及最终停机快照。新增internal/m8/lifecycle_close_test.go和tests/hlc/ws_close_mutation.py；process_matrix新增S014/S014-hub-first，S014仅在overlay固定跟踪集合以稳定覆盖注销竞争。证据目录docs/reviews/hlc-drain-exit1；临时HOME/IPC/SQLite/PG与端口均由独立runner记录。未改S006逐席ready屏障，42/8的历史409绝对时间缺项不可伪造。

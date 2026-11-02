@@ -3,8 +3,12 @@ package m8
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/coder/websocket"
@@ -25,6 +29,7 @@ type hubLifecycle struct {
 	closeOnce     sync.Once
 	closeDone     chan struct{}
 	closeErr      error
+	closeRecords  []WSCloseRecord
 }
 
 func (h *Hub) lifetime() *hubLifecycle {
@@ -82,6 +87,69 @@ func (h *Hub) LifecycleCounts() map[string]int {
 	}
 	return out
 }
+
+// WSCloseRecord retains each close outcome without mixing historical outcomes
+// into the live-handler counters used to decide whether storage can be closed.
+type WSCloseRecord struct {
+	Kind   string `json:"kind"`
+	Result string `json:"result"`
+	Error  string `json:"error"`
+}
+type WSCloseSnapshot struct {
+	AlreadyClosed int             `json:"already_closed"`
+	Failed        int             `json:"failed"`
+	Records       []WSCloseRecord `json:"records"`
+}
+
+func (h *Hub) WSCloseSnapshot() WSCloseSnapshot {
+	l := h.lifetime()
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	out := WSCloseSnapshot{Records: append([]WSCloseRecord{}, l.closeRecords...)}
+	for _, r := range out.Records {
+		switch r.Result {
+		case "already_closed":
+			out.AlreadyClosed++
+		case "failed":
+			out.Failed++
+		}
+	}
+	return out
+}
+
+func websocketAlreadyClosed(err error) bool {
+	if err == nil {
+		return false
+	}
+	// A timeout/cancellation remains a failure even if an aggregate also wraps a
+	// closed sentinel. Never turn a failed write to a live peer into success.
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) || websocketCloseTimeout(err) {
+		return false
+	}
+	var peerClose websocket.CloseError
+	return errors.Is(err, io.EOF) || errors.Is(err, net.ErrClosed) ||
+		errors.Is(err, syscall.EPIPE) || errors.Is(err, syscall.ECONNRESET) || errors.As(err, &peerClose)
+}
+
+// Walk all branches: errors.As alone can stop at a non-timeout net.ErrClosed
+// in errors.Join and miss a later timeout that must retain failure precedence.
+func websocketCloseTimeout(err error) bool {
+	if err == nil {
+		return false
+	}
+	if e, ok := err.(net.Error); ok && e.Timeout() {
+		return true
+	}
+	if joined, ok := err.(interface{ Unwrap() []error }); ok {
+		for _, child := range joined.Unwrap() {
+			if websocketCloseTimeout(child) {
+				return true
+			}
+		}
+	}
+	return websocketCloseTimeout(errors.Unwrap(err))
+}
+
 func (h *Hub) backgroundWork(kind string, fn func()) bool {
 	done, ok := h.lifetime().background.Enter(kind)
 	if !ok {
@@ -139,17 +207,28 @@ func (h *Hub) CloseContext(ctx context.Context) error {
 				return nil
 			})
 			l.mu.Lock()
-			sockets := make([]*websocket.Conn, 0, len(l.sockets))
-			for c := range l.sockets {
-				sockets = append(sockets, c)
+			sockets := make(map[*websocket.Conn]string, len(l.sockets))
+			for c, kind := range l.sockets {
+				sockets[c] = kind
 			}
 			l.mu.Unlock()
-			for _, conn := range sockets {
-				c := conn
+			for conn, kind := range sockets {
+				c, socketKind := conn, kind
 				launch("ws", func() error {
 					err := c.Close(websocket.StatusGoingAway, "hub shutdown")
+					record := WSCloseRecord{Kind: socketKind, Result: "closed"}
 					if err != nil {
-						return errors.New("websocket close handshake failed")
+						record.Error = err.Error()
+						record.Result = "failed"
+						if websocketAlreadyClosed(err) {
+							record.Result = "already_closed"
+						}
+					}
+					l.mu.Lock()
+					l.closeRecords = append(l.closeRecords, record)
+					l.mu.Unlock()
+					if err != nil && record.Result == "failed" {
+						return fmt.Errorf("websocket close handshake failed: %w", err)
 					}
 					return nil
 				})

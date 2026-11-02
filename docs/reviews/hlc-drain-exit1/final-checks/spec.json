@@ -1,0 +1,13 @@
+{
+  "command": [
+    "node",
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/@fission-ai/openspec/bin/openspec.js",
+    "validate",
+    "hub-graceful-shutdown",
+    "--strict"
+  ],
+  "started_utc": "2026-11-02T02:24:41.867653+00:00",
+  "ended_utc": "2026-11-02T02:24:42.068470+00:00",
+  "rc": 0,
+  "log_sha256": "28a49579680b05449338e1f158a6a6dd7c13562ff726a18f94b7558bcea11ca5"
+}

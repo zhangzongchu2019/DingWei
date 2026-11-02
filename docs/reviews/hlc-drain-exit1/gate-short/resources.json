@@ -1,0 +1,7 @@
+{
+  "home": "/tmp/g-f072iq6r/h",
+  "tmp": "/tmp/g-f072iq6r",
+  "ipc": "/tmp/g-f072iq6r/i.sock",
+  "external_pg_dsn": false,
+  "competing_flows": []
+}
