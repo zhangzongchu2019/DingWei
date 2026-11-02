@@ -308,14 +308,17 @@ func TestR10ServiceReplayCrossRepositoryReleaseAndOwnerFence(t *testing.T) {
 		t.Fatal("R10_CROSS_REPO_LOCK_COLLISION", err)
 	}
 	rel := e.holder(l, "release")
+	rel.OperationID = "release_nonholder_operation_01"
 	if _, err = e.s.Execute(ctx, td.Actor{AgentID: "agent-next"}, rel); err == nil {
 		t.Fatal("R10_NONHOLDER_RELEASE")
 	}
-	if _, err = e.s.Execute(ctx, td.Actor{AgentID: "agent-holder"}, rel); err == nil {
-		t.Fatal("R10_RELEASE_WITHOUT_HANDOFF")
+	rel.OperationID = "release_missing_pointer_operation_01"
+	if _, err = e.s.Execute(ctx, td.Actor{AgentID: "agent-holder"}, rel); !errors.Is(err, td.ErrInvalid) {
+		t.Fatal("R10_RELEASE_WITHOUT_HANDOFF", err)
 	}
 	record := fmt.Sprintf("# Handoff\n%s\n%s\nstopped\n", l.TaskID, l.CommitSHA)
 	e.p.files[c1][dir+"/handoff.md"] = record
+	rel.OperationID = "release_valid_pointer_operation_01"
 	rel.Handoff = td.Handoff{Commit: c1, Path: dir + "/handoff.md", BlobSHA: blob(record), ExecutionCommit: c1, TaskID: l.TaskID, RecoveryState: "stopped"}
 	if _, err = e.s.Execute(ctx, td.Actor{AgentID: "agent-holder"}, rel); err != nil {
 		t.Fatal("R10_VALID_RELEASE", err)
@@ -384,5 +387,44 @@ func TestR10NonholderWithReadablePointerCannotRelease(t *testing.T) {
 	current, _ := e.db.TaskDispatchLock(context.Background(), l.Key)
 	if current == nil || current.Generation != l.Generation || current.HolderAgentID != l.HolderAgentID {
 		t.Fatal("R10_NONHOLDER_CHANGED_CURRENT_LOCK")
+	}
+}
+
+func TestR10ServiceMaterialDriftBlocksEveryProtectedActionUntilExplicitSync(t *testing.T) {
+	for _, kind := range []string{"continue", "renew", "submit"} {
+		t.Run(kind, func(t *testing.T) {
+			e := setup(t)
+			l := e.grant(t)
+			ctx := context.Background()
+			reg := e.holder(l, "register_pr")
+			reg.PullRequestID = 7
+			registered, err := e.s.Execute(ctx, td.Actor{AgentID: "agent-holder"}, reg)
+			if err != nil {
+				t.Fatal(err)
+			}
+			l = registered.Lock
+			e.change(c2, dir+"/proposal.md", "# Proposal\nnew material requirement\n")
+			e.now = e.now.Add(time.Minute)
+			blocked := e.holder(l, kind)
+			if _, err = e.s.Execute(ctx, td.Actor{AgentID: "agent-holder"}, blocked); !errors.Is(err, td.ErrNeedsSync) {
+				t.Fatal("R10_MATERIAL_DRIFT_ACTION_ACCEPTED", kind, err)
+			}
+			current, _ := e.db.TaskDispatchLock(ctx, l.Key)
+			if current == nil || !current.SyncRequired || current.CommitSHA != c1 || !current.ExpiresAt.Equal(l.ExpiresAt) {
+				t.Fatal("R10_MATERIAL_DRIFT_REBOUND_OR_EXTENDED", kind, current)
+			}
+			e.p.pr.HeadSHA = c2
+			sync := e.holder(l, "sync")
+			sync.Commit = c2
+			result, err := e.s.Execute(ctx, td.Actor{AgentID: "agent-holder"}, sync)
+			if err != nil || result.Lock.CommitSHA != c2 || result.Lock.SyncRequired || result.Lock.Generation <= l.Generation {
+				t.Fatal("R10_EXPLICIT_SYNC_FAILED", kind, err, result)
+			}
+			next := e.holder(result.Lock, kind)
+			next.OperationID = "after_sync_" + kind + "_operation_01"
+			if _, err = e.s.Execute(ctx, td.Actor{AgentID: "agent-holder"}, next); err != nil {
+				t.Fatal("R10_SYNCED_ACTION_REJECTED", kind, err)
+			}
+		})
 	}
 }
