@@ -67,3 +67,7 @@ internal/feishu/lifecycle_test.go包含S006回调在途/迟到/真实临时SQLit
 ## drain 对端先断修复位置
 
 独立分支 opus50tc2k/hlc-drain-exit1 基于bdac3593；按组长本次产品缺陷裁定实施，不改原实现树。internal/m8/lifecycle.go保存逐连接WSCloseSnapshot，与存活计数分开；cmd/workpulse/main.go将hub_ws_close放入每阶段及最终停机快照。新增internal/m8/lifecycle_close_test.go和tests/hlc/ws_close_mutation.py；process_matrix新增S014/S014-hub-first，S014仅在overlay固定跟踪集合以稳定覆盖注销竞争。证据目录docs/reviews/hlc-drain-exit1；临时HOME/IPC/SQLite/PG与端口均由独立runner记录。未改S006逐席ready屏障，42/8的历史409绝对时间缺项不可伪造。
+
+## S007-full 完整混合故障测试位置
+
+按组长87b10d9a新增cmd/workpulse/shutdown_mixed_fault_process_test.go与tests/hlc/s007_full.py；复用S006的真实Hub/VS/PG与正常负载，另加真实登记的不响应取消内网SSE/公网HTTP各1。两个故障处理器在子进程退出前不返回；其客户端由实际强制网络关闭断开。没有固定计数、替换生产Close或改预算。internal_http的1与同一internal_sse重叠，唯一未完成请求是两条；100条正常HTTP在waitpid后重开SQLite核持久化。旧局部S007及S006/ready/resync不改。

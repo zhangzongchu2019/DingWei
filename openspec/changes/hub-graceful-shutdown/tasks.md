@@ -123,3 +123,8 @@ strict规划通过不代表实现/业务验收/发布完成；不archive、不�
   - 补充：c248506c隔离目标格race3次通过，属于本单生命周期挂点暴露的测试构造回归。产品registry唯一构造console_mux.go:129绑定Hub、:133使用Hub；补封口后到期回调拒绝记录expiryRejected及对应断言，不新增nil放行路径，不启动未登记工作；完整重验待执行。
 
   - 2026-11-02T03:00:41.570166+00:00：两目标格race各3轮rc0；撤后台准入保护后新增格在MUX_TIMER_AFTER_SEAL拒绝记录断言红（rc1），未改产品准入语义。原整包panic、r47目标格绿、修正后目标格及变异原始日志见docs/reviews/hlc-primary-precheck；整包与最终门仍待执行。
+
+- 2026-11-02T04:51:52.486056+00:00 · coder56solzzc.zzc · 按组长87b10d9ad08a4d41a15c236370c00da0补S007-full，基于d8e737a4，仅测试与测试说明。
+  - 完成：保留原局部S007不改，新增完整混合负载另加内网SSE/公网HTTP各1的真实卡住处理器；首轮实际8005ms退2，正常HTTP100条落库，SSE100/mux5/bridge15/helperWS20/回调全部收尾，超时剩余internal_sse1、公网HTTP1（internal_http1与同一SSE重叠）。产品字节未改；首次漏strings导入编译红另存，修正后才实际执行产品路径。
+  - 阻塞：T08保持未勾，尚需新tip上普通10轮/race3轮/撤超时退出码分类目标红，以及cmd/workpulse普通/race与仓库门。
+  - 下一步：单独测试提交；同一源码串行完成上述检查。d8的完整门、m8 race既有时限失败与40次基线对照均保留为历史证据，不修改阈值或冒报全绿。

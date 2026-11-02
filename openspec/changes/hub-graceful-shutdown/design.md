@@ -164,3 +164,7 @@ S006回调扩展夹具使用真实事件dispatcher与临时SQLite：初始回调
 ## HLC-010 对端已关闭分类
 
 依据组长drain退1缺陷裁定：真实客户端先断不是无效夹具。仅WS关闭结果链中的io.EOF、net.ErrClosed、syscall.EPIPE／ECONNRESET、websocket.CloseError归already_closed，context取消／截止和net.Error超时优先失败；不使用错误字符串。关闭集合中逐条kind/result/error持久进入原停机JSON快照，失败原错用%w保留；already_closed累计与存活工作计数分开，避免非零历史计数阻止关库。closeOnce仍保持单次执行，快照与追加共用互斥锁。S014确定性夹具只固定跟踪集合，不调整客户端先关次序；另以Hub先停作对照、撤分类作变异和真实net.Conn写超时验证存活连接关闭失败。
+
+## S007-full 完整混合故障补测
+
+依87b10d9a，保留S007局部诊断格，另在S006完整正常100HTTP/100SSE/5mux+15bridge/20WS/回调在途基础上额外加入两个真实卡住请求。15秒内真实退出2、drain超时及强关、逐项剩余可见，正常负载持久化与收尾不得丢失；普通10轮、race3轮及撤超时退出码分类反证单列。夹具装配与负向变异仅在隔离overlay，产品源码不改；新tip重跑受影响包与仓库门，原d8读数保留。
