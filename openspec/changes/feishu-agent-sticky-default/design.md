@@ -98,3 +98,111 @@ PM06已定为SQLite持久化小元数据。逻辑字段只需K、稳定Agent ID�
 ## Follow-up Verification
 
 时钟、失效目标反馈、离线候选、群聊范围、井号切换、重启保留、整段回贴与单Agent/旧身份边界按proposal PM01～08定值。身份/在线枚举的源码事实已核，真实飞书格式和持久更新原子性仍待后续验证。短名唯一性入口任务与前缀验收见PM05及R14-S021～023。
+
+## T-04 Implementation Design Freeze (r48 baseline)
+
+This section freezes a proposed implementation design for review only. The cited code facts are from `1e17255f28ced042784337903914ca8c126ef4cf`; detailed inventory is in `specs/feishu-agent-sticky/context.md`. It does not authorize implementation, migration, apply/archive, or real Feishu probing. Any item marked pending group-lead decision must be resolved before T-05/T-06.
+
+### Stable identity and field changes
+
+- Use `K = (resolved np_user.user_id_lc, BotChannelID)` for the sticky key. Resolve every inbound private Feishu message through `(provider="feishu", issuer=BotChannelID, subject=SenderOpenID)` first; `SenderOpenID` is an authenticated lookup input, not an independent/global key. Apply R14 only when ingress provenance is trusted (`IngressFeishuWSAuthenticated` or `IngressWebhookVerified`); the current identity resolver itself only checks non-empty IDs and mapping, so the R14 entry point must enforce provenance. The current Console principal is the same new-platform user ID; do not use legacy `console_principal.id`. Evidence: `internal/model/model.go:16-31,80-96`, `internal/feishu/feishu.go:319-332,444-485`, `internal/m8/newplat_feishu_inbound.go:12-18`, `internal/m8/newplat_view.go:223-244`, `internal/identity/pgschema.sql:6-25`.
+- Store the chosen target as stable `np_agent.id`, never as short/full name, `session_endpoint`, or `mirror_to`. On every use, resolve that ID and verify its current `owner_lc` equals K's principal, its state is `active`, and its actual Hub connection is still online. Current connection enumeration uses owner plus names and rechecks active state; implementation must bridge it to stable IDs rather than trusting a stale name. Evidence: `internal/identity/model.go:135-155`, `internal/identity/pgschema.sql:45-65`, `internal/m8/newplat_feishu_inbound.go:21-41`, `internal/identity/service.go:286-295,416-435`.
+- Display name/short name may change without changing agent ID; refresh display from Identity. A changed owner, revoked/suspended state, missing ID, inactive user, or failed identity lookup invalidates use and must fail closed. If an open_id is remapped to the same user, the K remains; if it maps to a different user, that user has a separate K and must not inherit the old one. A changed BotChannelID is a distinct K; do not copy state. Require an explicit new selection when a key has no valid binding. No fallback through old account identity. Evidence: `internal/identity/pgschema.sql:6-25,45-65`; `internal/m8/newplat_feishu_inbound.go:12-18,33-40`.
+- Only private chats read/write K. Do not treat `session_endpoint(key_id,session_name)` as a sticky record: its key is an Agent endpoint and its `last_seen_at` is connection activity; do not infer conversation intent from `mirror_to`. Evidence: `internal/m8/hub.go:4048-4053`; `internal/store/migrations/0003_session_endpoint.sql:1-10`.
+
+### Time, restart, and generation
+
+- PM01 fixes the validity window at 30 minutes from Hub acceptance of the owner's last successfully accepted business message to that target, or a successful explicit switch; Agent replies do not renew it. Store `selected_at_utc` and `expires_at_utc = selected_at_utc + 30m` using the Hub's `h.now().UTC()` value at the accepted event. The production source is the process wall clock (`time.Now()`), with `NowFunc` only a test seam; it is not a DB clock or persistent monotonic clock. Evidence: `internal/m8/console_auth.go:53-58`; `internal/m8/hub.go:119-124`; frozen requirement R14-004 / PM01.
+- On restart, compare current UTC wall time to the persisted absolute expiry; never add 30 minutes at startup. Revalidate the principal and the current target/connection before routing. If current time is earlier than the persisted selection time or clock consistency cannot be established, do not use the sticky target; return a visible re-selection response. The baseline has no persistent clock watermark, so this safeguard must be implemented and tested; exact response/clock-skew tolerance is **待组长定**.
+- Each successful key-state change increments an integer `generation` in the same SQLite transaction as the state update. Each operation records its observed generation and uses compare-and-set; an older completion whose expected generation no longer matches cannot overwrite a newer binding. Agent replies, ACKs, duplicate source messages, and candidate responses never increment generation or renew the expiry. Use persisted source message identity for idempotence, not event timestamps or in-memory order alone. Evidence of current source message fields and dedup constraint: `internal/model/model.go:80-96`; `internal/store/migrations/0001_init.sql:34-50`.
+
+### Same-key concurrency and trace order
+
+Serialize each `(user_id_lc, bot_channel_id)` decision through one durable per-key operation lane. The transaction that allocates the next `operation_seq` and captures `base_generation` is the linearization point; record source message ID, operation kind (explicit/select-only/no-prefix), resolved target Agent ID, base/result generation, decision, and terminal status, but never message body. Do not use Feishu timestamps to order concurrent messages. The SQLite write/compare-and-set result defines the order and is inspectable after restart.
+
+| Serial order | Expected behavior |
+|---|---|
+| Explicit `#A body` succeeds, then an unprefixed message | First operation routes only to A and commits A as the next generation; second reads that generation, rechecks A, and routes to A. |
+| Unprefixed message precedes explicit `#A body` | The first uses the previously valid target only if the current generation is valid; with no valid target it returns candidates and sends no business message. The later explicit operation may then select A. The first result is not replayed. |
+| No-prefix and explicit message overlap, or an earlier route has unknown outcome | The operation-sequence winner is processed first. The other waits; it rereads the committed generation after the first terminal result. If the first remains unresolved, do not route by sticky default or silently choose another Agent. Log both IDs and the blocking outcome. |
+| Late completion / duplicate delivery | Apply only if `base_generation` still matches; otherwise record `stale_completion` and do not change the new generation. Duplicate `(BotChannelID, FeishuMsgID)` returns the recorded operation outcome and must not send again or renew TTL. |
+
+The code currently has no R14 per-key operation lane or persistent generation. SQLite WAL plus a single connection pool serializes writes within this Hub process, but does not by itself provide a cross-Hub shared authority or a source-message ordering contract. Evidence: `internal/store/sqlite.go:57-66`; `internal/store/migrations/0001_init.sql:34-50`. Whether deployment guarantees exactly one Hub against one authoritative SQLite file, and the behavior if it does not, is **待组长定** before implementation.
+
+### Delivery, state, and failure reconciliation
+
+Do not claim a cross-action transaction between sticky state and Agent delivery. The existing `RouteEnvelope` can enqueue a durable `session_delivery` and drain it, or use direct WebSocket write; successful return means accepted/queued or written, not helper injection or Agent execution. Evidence: `internal/m8/hub.go:4201-4219,4267-4346,4357-4373`.
+
+Recommended state machine:
+
+1. In a short SQLite transaction, insert a metadata-only operation row keyed by inbound identity and source message ID, assign `operation_seq` and `base_generation`, and mark it `pending`. Do not update the active sticky state yet.
+2. Resolve the requested/current stable Agent ID and current authorization/online state. If invalid, fail visibly and terminally reject; leave state and expiry unchanged.
+3. Send the business envelope through the existing route path once. For a selection-only message, skip business delivery entirely. A successful business route or successful selection-only action may then complete a transaction that compare-and-sets the new state/generation/expiry and records terminal `accepted`; route failure records `rejected` and leaves the old state unchanged.
+4. If routing returned success but the state commit fails, or a crash leaves the operation `pending`, mark/interpret the outcome as `unknown`; reconcile by source message and durable delivery ID where available. Never blindly resend the body. Until reconciled, block implicit sticky routing for K and present a visible temporary/confirmation response. If reconciliation cannot establish the result, require a fresh explicit action; do not silently route to the old or another Agent.
+
+Persist the intent before routing so a crash cannot erase the fact that a route may have occurred. Where the existing route is direct/non-durable, source-message reconciliation may be insufficient; T-05 must either require a durable delivery ID for this path or preserve `unknown` and fail closed. No design language here promises exactly-once cross-system delivery. Whether a durable-only route is acceptable for all R14 messages, and the exact user-facing treatment of an unresolved operation, are **待组长定**. Existing route paths and receipts must remain otherwise unchanged.
+
+### Persistence schema, migration, cleanup, and rollback
+
+PM06 explicitly selects SQLite persistence, so the recommendation is to store R14 state in the Hub's existing SQLite main database; do not create a PG mirror/table. The Identity PG store remains authoritative for user/Agent lookup, but it is a separate database and cannot provide a cross-database foreign key or atomic transaction. Evidence: `internal/store/sqlite.go:57-66`; `internal/identity/pgschema.sql:6-65`.
+
+Proposed additive migration: `internal/store/migrations/0072_feishu_agent_sticky.sql`, after current `0071_coordinate_review.sql`. Draft tables (final names/types/checks to be reviewed before implementation):
+
+| Table | Proposed columns/keys |
+|---|---|
+| `r14_feishu_sticky_state` | `user_id_lc TEXT`, `bot_channel_id TEXT`, `agent_id TEXT`, `generation INTEGER`, `selected_at_utc TEXT`, `expires_at_utc TEXT`, `last_source_message_id TEXT`, `updated_at_utc TEXT`; primary key `(user_id_lc,bot_channel_id)`. No cross-database FK; no message body, open_id, credential, or mirror/session fields. Index `r14_sticky_state_expiry(expires_at_utc)` for bounded cleanup. |
+| `r14_feishu_sticky_operation` | `operation_seq INTEGER PRIMARY KEY AUTOINCREMENT`, `user_id_lc`, `bot_channel_id`, `source_message_id`, `operation_kind`, `base_generation`, `result_generation`, `target_agent_id`, `decision`, `status`, `created_at_utc`, `completed_at_utc`; unique `(bot_channel_id,source_message_id)`, index `(user_id_lc,bot_channel_id,operation_seq)`. Metadata only, no body/open_id. |
+
+Migration is additive `CREATE TABLE`/`CREATE INDEX` only; do not alter existing tables or migrate existing messages into sticky state. The runner sorts migrations, runs a migration transactionally with its digest ledger, and returns an error through `Migrate` on failure; the Hub startup caller must propagate it rather than run with half the schema. Evidence: `internal/store/sqlite.go:99-103,180-219,335-350,636-652,732-747`; current r48 migration `internal/store/migrations/0071_coordinate_review.sql:1-40`.
+
+30 minutes is routing validity, not automatically a data-retention policy: an expired target may still be needed to place the last available target first in the candidate list. Proposed cleanup: retain only one state row per key; purge completed operation metadata after 30 days; preserve pending/unknown operations until reconciled; purge state after 30 days without activity, with immediate invalidation on confirmed principal/Agent revocation. **The 30-day retention and identity-removal cleanup trigger are recommendations, not PM decisions; 待组长定.** If approved, expiry index supports periodic bounded cleanup. Do not delete a row at the 30-minute TTL if doing so changes the PM03 previous-target candidate ordering.
+
+Older Hub compatibility is code-inferred, not runtime-tested: an additive new table and a future `schema_migrations` ledger row are not read by a binary whose embedded migration list ends at 0071; the migration runner iterates its embedded files and reads the ledger without rejecting unknown future rows. Evidence: `internal/store/sqlite.go:180-219,732-747`. A downgraded Hub would use old routing and ignore sticky state. Rollback must not drop migration objects; before returning to the new binary, stale bindings must be cleared or allowed to expire, and pending/unknown operations must be handled explicitly. **The approved rollback runbook/cleanup method is 待组长定; old-binary startup compatibility still needs a later isolated test.**
+
+### T-10 short-name duplicate preflight
+
+| Entry | Pre-submit check insertion point | Required behavior and current fallback |
+|---|---|---|
+| Self-host enrollment approval | `internal/m8/console_auth.go:922-930`, after `name` is read at 923 and before approve POST at 927-929 | Check the normalized short name under the current owner against both active and suspended `np_agent` rows. On collision, show a clear message and do not send the approve request. |
+| Hosted Agent creation | `internal/m8/console_auth.go:1324-1338`, after `body.name` is read at 1326 and before create POST at 1334-1336 | Same owner-scoped check and behavior; do not block a different owner's same name. |
+
+The authoritative fallback is the existing PG partial unique index `(owner_lc,name_lc) WHERE state IN ('active','suspended')`; `insertAgent` maps its conflict to `ErrNameTaken`. Evidence: `internal/identity/pgschema.sql:63-65`; `internal/store/migrate/migrations/0100_identity_baseline.sql:74-76`; `internal/identity/pgstore.go:616-627`. Legacy `session_endpoint(key_id,session_name)` names are outside this identity index and remain outside R14/T-10. The current `HandleConsoleAgents` implementation reads `Repo.ListConsoleAgents` and returns only `id/session/online`; it does not itself prove owner-scoped PG `np_agent` short-name/state coverage. Evidence: `internal/m8/console_auth.go:1654-1682`. It must not be assumed authoritative for the PG index unless implementation proves its rows and suspended-state coverage. Whether T-10 may add a narrow owner-scoped name lookup or must reuse a verified Identity-backed read is **待组长定**. The index remains the final concurrent-race protection regardless of UI preflight.
+
+### T-07 isolated test plan for R14-S001–S023
+
+Use Go unit tests for pure matching/time/format decisions; Hub plus isolated SQLite/Identity fixtures for state, restart, authorization and failures; browser tests only for Console short-name preflight and local mocked Feishu text rendering. Mutations below must fail at the named semantic assertion, not merely produce a syntax/build error. Real Feishu desktop/mobile copy-and-return remains R14 T-08 and is not part of this task.
+
+| Scenario | Test layer | One required semantic mutation (must turn this row red) |
+|---|---|---|
+| S001 | Hub/SQLite integration | Remove `bot_channel_id` from the state key; a second bot inherits the first bot's Agent. |
+| S002 | Hub identity integration | On identity lookup failure, fall back to the previous/default Agent; assert business delivery is zero. |
+| S003 | Go unit + Hub integration | Include same-group other-owner Agent in the personal set; assert it never becomes implicit target. |
+| S004 | Hub + Identity integration | Trust stale `session_endpoint.active` or skip current Agent-state check; assert suspended/offline target is rejected. |
+| S005 | Hub/SQLite integration with route fault | Commit explicit selection before rejected route; assert no default/expiry change on failure. |
+| S006 | Go unit + Hub integration | On explicit target error, fall through to old sticky target; assert no business delivery. |
+| S007 | Go unit with fake clock | Change `<30m` to `<=30m`; exact 30:00 case must fail. |
+| S008 | Hub/SQLite integration | Permit an older generation to commit after a newer explicit switch; assert target remains newer. |
+| S009 | Hub/Identity integration | If old Agent is unavailable and another is sole online Agent, auto-route to the latter; assert zero delivery until explicit choice. |
+| S010 | Store failure integration | On state-read error, treat as empty/one-Agent state; assert visible failure and zero delivery. |
+| S011 | Go unit | Remove prior-valid-target-first ordering or use unstable sort; assert exact candidate order and `#full.name` format. |
+| S012 | Go parser + Hub integration | Parse a pasted multi-line candidate block as first target plus body; assert target delivery and state mutation are both zero. |
+| S013 | Hub integration | Remove the exactly-one-current-online path; assert the single-owner available Agent remains prefix-free. |
+| S014 | Hub + Identity integration | Count registered/offline or another owner’s Agent; assert only the current owner’s online-active set determines this path. |
+| S015 | Restart integration with temp SQLite | Reset expiry to `now+30m` during startup; assert original absolute expiry is preserved. |
+| S016 | Concurrent Hub/SQLite integration + race | Remove generation CAS or source-message uniqueness; assert stale overwrite or duplicate route is detected. |
+| S017 | Hub regression integration | Put sticky handling before command/selector dispatch; assert system, sync, group and explicit routes retain their existing path. |
+| S018 | Go text/parser test + browser against local mock only | Feed system candidate text into AMR/Agent routing or strip `#`/line breaks; assert neither occurs. Real Feishu copy is deferred to T-08. |
+| S019 | Hub/SQLite fault-injection integration | Hide a post-route sticky-commit failure as success or auto-replay; assert visible `unknown`/blocked-key outcome and no duplicate. |
+| S020 | Identity/Hub integration | Key by mutable Agent name rather than stable ID; assert revoked/recreated same-name Agent does not inherit old binding. |
+| S021 | Go unit using fixed names | Prefer prefix over exact match; `#ts3dev55` must choose exact and `#ts3dev` must return both candidates. |
+| S022 | Go parser + Hub authorization integration | Accept middle-of-body selector, send blank-body business envelope, or skip cross-owner authorization; assert each is rejected/selection-only as specified. |
+| S023 | Browser + Identity API integration | Remove either entry's pre-submit check; duplicate active/suspended name must stop request before POST, while DB index still rejects a concurrent bypass. |
+
+### Pending group-lead decisions
+
+1. Confirm one authoritative Hub/SQLite writer for the R14 key space; otherwise define shared-store/coordination before implementation.
+2. Approve retention duration and purge semantics for expired previous-target state, terminal operation rows, and identity/Agent revocation.
+3. Set wall-clock rollback/skew handling beyond the fail-closed proposal, including whether a trusted external clock is required.
+4. Decide handling when Feishu supplies no stable `FeishuMsgID`, and the exact user-visible recovery for `pending/unknown` delivery/state outcomes.
+5. Approve the T-10 authoritative short-name preflight lookup source (existing Identity-backed API vs a narrow read endpoint); the legacy Console list is not presumed equivalent.
+6. Approve whether older-Hub rollback requires an explicit state cleanup command or a defined wait/expiry procedure. Migration is additive and old-binary compatibility remains to be tested in an isolated future task.

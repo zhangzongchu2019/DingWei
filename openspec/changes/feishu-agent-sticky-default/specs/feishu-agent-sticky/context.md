@@ -57,3 +57,21 @@
 ## 新提案与实施边界
 
 业主原始功能来源为proposal中的7d376639第⑳条；PM01～08按review/opus50tc2k/rulings 2f9ddaf0第㉔～㉖条已定，短名唯一性按㉗勘察。本轮只改本变更目录内Markdown，不修改上述源码/现有主规格/迁移/配置/通道。真实飞书回环、持久化与并发、群聊不受影响、AMR不误触发都列为未来验收；不apply/archive、不自行实施或发布。
+
+## T-04 实施设计前置勘察（r48 基线）
+
+本节实现挂点与当前能力以派单指定的 r48 `1e17255f28ced042784337903914ca8c126ef4cf` 为准；上文 T-01 旧行为记录仍以 r46 `2af469dd` 为准，不将它们冒充 r48 行号。只读代码，无真实飞书探测。
+
+| 核对主题 | r48 文件:行 | 基线事实与设计约束 |
+|---|---|---|
+| 私聊身份输入 | `internal/model/model.go:16-31,80-96`；`internal/feishu/feishu.go:319-332,444-485`；`internal/m8/newplat_feishu_inbound.go:12-18` | 入站消息分别携带 `BotChannelID`、`SenderOpenID`、`ChatType`、`FeishuMsgID` 与 `IngressProvenance`；Feishu SDK 长连接事件适配标为 `IngressFeishuWSAuthenticated`。新平台 resolver 严格用 `(provider=feishu, issuer=BotChannelID, subject=SenderOpenID)` 查身份，但自身不检查 provenance。R14 实施必须只对 `NormalizeIngressProvenance` 认可的可信来源读写 K；不可信来源失败关闭。仅 `ChatPersonal` 纳入 R14（`internal/m8/hub.go:4048-4053`）。open_id 是身份查找输入，不是已实现的粘滞键。 |
+| Console principal 与身份字段 | `internal/m8/newplat_view.go:223-244`；`internal/identity/model.go:33-45,53-58`；`internal/identity/pgschema.sql:6-25`；`internal/store/migrations/0033_console_auth.sql:1-18` | 当前身份解析到 `np_user.user_id_lc`（`UserIDLC()`），它与新平台 Console principal 同源；旧 `console_principal.id` 是另一套历史表，不应混用。`np_identity` 对 `(provider,issuer,subject)` 唯一。 |
+| Agent 稳定身份与可变显示字段 | `internal/identity/model.go:135-155`；`internal/identity/pgschema.sql:45-65`；`internal/identity/service.go:286-295,416-435` | `np_agent.id` 是稳定主键；`owner_lc`、`name/name_lc`、state、owner 的 short_name 展示后缀均可能影响可见/可路由性。FullName 是 `name + "." + user.ShortName`，不是稳定键。每次使用须按 ID 核 owner、active 与当前在线连接；仅靠旧名字或 `session_endpoint` 不够。 |
+| 当前在线枚举 | `internal/m8/newplat_feishu_inbound.go:21-41`；`internal/m8/hub.go:4048-4076` | 当前 helper 从 Hub 连接表按 owner 下名字枚举，再向身份库复核 Agent active；R14 实施须将粘滞保存的 `agent_id` 解析回当前 owner/name，并核对该 ID 对应连接仍在线，不能直接复用名字映射为 ID 的假设。 |
+| 时间来源 | `internal/m8/console_auth.go:53-58`；`internal/m8/hub.go:119-124` | `h.now()` 默认 `time.Now()`，`NowFunc` 是测试注入点。该值可转 UTC 持久化，但生产时是系统墙钟，不是 DB 时钟或跨重启单调钟；现有代码没有粘滞专用时钟高水位/漂移检测。 |
+| 消息去重与投递 | `internal/store/migrations/0001_init.sql:34-50`；`internal/model/model.go:80-96`；`internal/m8/hub.go:4201-4219,4267-4346,4357-4373` | `message` 有 `(bot_channel_id,feishu_msg_id)` 唯一约束。可靠信封可先入 `session_delivery` 持久队列再 drain；非可靠路径可直接写 WebSocket。`RouteEnvelope` 成功最多说明接受/排队或 WebSocket 写成功，不证明 helper 已注入或 Agent 已执行。粘滞库操作与现有 route 并非同一个事务。 |
+| SQLite 事务与迁移 | `internal/store/sqlite.go:57-66,99-103,180-219,264-269,335-350,636-652,732-747`；`internal/store/migrations/0071_coordinate_review.sql:1-40` | Hub SQLite 启用 WAL、busy_timeout=5000ms、单连接池写者；迁移按文件名排序、内容 digest 记账，常规迁移在事务中执行 DDL 并记账，失败返回 `Migrate` 调用方。现有最新文件为 `0071_coordinate_review.sql`。Identity/Agent 权威表在 PG（`internal/identity/pgschema.sql:6-65`），并非 Hub SQLite 的外键目标。 |
+| 两个短名入口 | `internal/m8/console_auth.go:922-930,1367-1378`（自备审核表单）；`internal/m8/console_auth.go:1324-1338,1367-1379`（托管生成表单）；`internal/m8/console_auth.go:1654-1682`（现有 Agent 列表handler） | 自备审核的 `enrollApprove()` 读取 `enrollName` 后直接 POST 批准；托管 `hostedCreate()` 读取 `hostedName` 后直接 POST 创建。两处当前均没有提交前重名查询。现有列表handler调 `Repo.ListConsoleAgents` 并只输出 id/session/online，不能据此假定它能权威覆盖 PG 中 active/suspended 短名。 |
+| 数据库唯一兜底 | `internal/identity/pgschema.sql:63-65`；`internal/store/migrate/migrations/0100_identity_baseline.sql:74-76`；`internal/identity/pgstore.go:616-627` | PG 索引 `np_agent_owner_name_current` 按 `(owner_lc,name_lc)` 限制 active/suspended；冲突映射 `ErrNameTaken`。前置 UI 查重只改善提示，服务端该索引仍是并发最终兜底。旧 `session_endpoint(key_id,session_name)` 是另一模型（`internal/store/migrations/0003_session_endpoint.sql:1-10`），旧平台名不在此索引内。 |
+
+以上是设计输入，不代表身份变更/并发/回滚运行格已实测。R14 当前没有稳定键、到期状态、代际或迁移表；本节只为 T-04 设计冻结提供 r48 代码证据。
