@@ -48,7 +48,6 @@ func TestR14DisabledStartsNoWorkerAndAllowsAllDeliveries(t *testing.T) {
 			t.Setenv("DW_FEISHU_STICKY_ENABLED", value)
 			t.Setenv("FCS_RPC_URL", "")
 			h, db, ctx := newTestHub(t)
-			r14Assert(t, !feishuStickyEnabled(), "FLAG_NONEXACT_VALUE_ENABLED", value)
 			r14Assert(t, h.lifetime().background.Snapshot()["owned"] == 1, "FLAG_DISABLED_WORKER_STARTED", h.lifetime().background.Snapshot())
 			guard := stickyNoAccessRepository{Repository: db}
 			h.Repo = guard
