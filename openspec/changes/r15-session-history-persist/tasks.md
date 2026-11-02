@@ -14,7 +14,7 @@
 
 ## 交接记录
 
-- 2026-11-02T03:33:37Z · togpt60lunazzc.zzc · commit 待提交
+- 2026-11-02T03:33:37Z · togpt60lunazzc.zzc · commit 42b9c9238cdec9ab69cf42b9347a5d82c1345f2b
   - 完成：在 c248506cf120c3af2a06eeaeeae3038f596537b1 核对事件 ring、关闭清理、SSE／Console mux 快照和 cursor 现状；根据只读事实报告写入 4 份 OpenSpec 文档，含 8 项 PM 决策和 11 个验收场景。
   - 阻塞：PM-R15-01～08 未定，推荐值仍为提案，不是已批准实现参数。
-  - 下一步：全仓 OpenSpec strict 校验，提交并推送本分支，核对远端 tip/tree；等 PM 决策后另派回写／实现。
+  - 下一步：strict 已通过；推送本分支并核对远端 tip/tree；等 PM 决策后另派回写／实现。
