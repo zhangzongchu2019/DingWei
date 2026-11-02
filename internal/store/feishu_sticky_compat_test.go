@@ -3,6 +3,7 @@ package store
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"net"
 	"net/http"
@@ -138,9 +139,45 @@ func TestFeishuStickyOldHubMigrationRollbackCompatibility(t *testing.T) {
 	if err = db.db.QueryRow(`SELECT count(*) FROM schema_migrations WHERE version='0072_feishu_agent_sticky.sql'`).Scan(&count); err != nil || count != 0 {
 		t.Fatal("NOT_R48_DB_COPY", count, err)
 	}
+	// 精确旧 Hub 创建的现网同构库副本：保留旧账逐行值，不能只验新表。
+	ledger := func() string {
+		rows, e := db.db.Query(`SELECT version,digest,applied_at FROM schema_migrations WHERE version<>'0072_feishu_agent_sticky.sql' ORDER BY version`)
+		if e != nil {
+			t.Fatal(e)
+		}
+		defer rows.Close()
+		var snapshot strings.Builder
+		n := 0
+		for rows.Next() {
+			var v, d, a string
+			if e = rows.Scan(&v, &d, &a); e != nil {
+				t.Fatal(e)
+			}
+			fmt.Fprintf(&snapshot, "%s|%s|%s\n", v, d, a)
+			n++
+		}
+		if e = rows.Err(); e != nil {
+			t.Fatal(e)
+		}
+		if n != 70 {
+			t.Fatalf("R48_LEDGER_ROWS got=%d want=70", n)
+		}
+		return fmt.Sprintf("%x", sha256.Sum256([]byte(snapshot.String())))
+	}
+	before := ledger()
 	if err = db.Migrate(ctx); err != nil {
 		t.Fatal(err)
 	}
+	if after := ledger(); after != before {
+		t.Fatal("R48_LEDGER_REWRITTEN", before, after)
+	}
+	if err = db.db.QueryRow(`SELECT count(*) FROM schema_migrations`).Scan(&count); err != nil || count != 71 {
+		t.Fatal("UPGRADE_LEDGER_COUNT", count, err)
+	}
+	if err = db.Migrate(ctx); err != nil {
+		t.Fatal("UPGRADE_RESTART", err)
+	}
+	t.Logf("R48_UPGRADE old_rows=70 new_rows=71 added=0072 old_ledger_sha256=%s unchanged=true restart=ok", before)
 	now := time.Now().UTC()
 	for i := 0; i < 2; i++ {
 		k := FeishuStickyKey{"owner", fmt.Sprint(i)}
