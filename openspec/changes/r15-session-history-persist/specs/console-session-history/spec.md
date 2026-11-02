@@ -6,19 +6,19 @@
 
 ## ADDED Requirements
 
-### Requirement: R15-001 按消息或回合保留有限历史
+### Requirement: R15-001 以结构化会话事件为存储单元
 
-Hub SHALL 按 PM-R15-01 定义的逻辑消息／回合单位保存每个 Agent 最近 N 条结构化会话历史；存储单位 SHALL NOT 是 SSE/WebSocket 帧数量。若维持 owner 默认口径，N 为 1000；不同定义及 N 必须由 PM 明确后冻结。
+Hub SHALL 以每条结构化会话事件为持久化存储单元，且 SHALL NOT 设置固定条数上限；保留量只受 PM-R15-02 容量限制与 PM-R15-03 最长 30 天时限约束，任一先到即淘汰最旧记录并提示缺口。Console 需要回合视图时 SHALL 在读取层聚合，不得把聚合回合数当作持久化条数。
 
 #### Scenario: R15-S001 回放一条已持久化历史
 
 - **WHEN** 已授权 Console 请求某 Agent 的历史游标范围，且该范围内存在已提交记录
 - **THEN** 系统按逻辑序号升序返回这些记录及可继续读取的 cursor，记录数按逻辑单位计数
 
-#### Scenario: R15-S002 超出 N 时淘汰最旧记录
+#### Scenario: R15-S002 超容量时淘汰最旧记录
 
-- **WHEN** 某 Agent 新增第 N+1 条逻辑记录
-- **THEN** 系统保留最近 N 条、淘汰最旧记录，并让从已淘汰位置继续的 cursor 收到可检查的 history gap 标记
+- **WHEN** 新事件写入将使单 Agent 64 MB 或全局 2 GB 持久化容量超限
+- **THEN** 系统按该 Agent 或全局既定淘汰顺序删除最旧记录，直到回到容量上限内；受影响 Agent 的旧 cursor 收到可检查的 history gap 标记
 
 ### Requirement: R15-002 Hub 重启和 helper 重连后延续持久历史
 
@@ -52,27 +52,27 @@ Hub SHALL 按 PM-R15-01 定义的逻辑消息／回合单位保存每个 Agent �
 - **WHEN** 主体 B 请求主体 A 的 Agent 历史，即使 B 提交 A 的名称、session key 或 cursor
 - **THEN** 服务端按现有授权拒绝或返回不泄露存在性的空拒绝结果，且不返回 A 的正文、条数或可枚举游标
 
-### Requirement: R15-005 容量、过期和单条体积均有硬上限
+### Requirement: R15-005 持久化容量与保留时长有硬上限
 
-持久历史 SHALL 同时受 PM 决定的每 Agent 条数、单条字节、每 Agent 总字节、Hub 全局字节和保留时长上限约束；淘汰／过期 SHOULD 通过有界工作执行，任何超限都 MUST 保留足以报告 history gap 的最小元数据且不得输出正文到日志。
+持久历史 SHALL 同时满足单条 ≤1 MB、每 Agent ≤64 MB、全局 ≤2 GB 和最长 30 天限制；不得增加固定条数上限。完整序列化历史记录（事件正文及持久化元数据）超单条限制时 MUST 整条拒绝持久化且不得静默截断；容量或时长超限 SHALL 从最旧记录开始淘汰并给受影响 Agent 报告 gap。淘汰／过期 SHOULD 通过有界工作执行，且不得输出正文到日志。
 
-#### Scenario: R15-S007 超过单条体积上限
+#### Scenario: R15-S007 单条事件超过 1 MB
 
-- **WHEN** 新事件超过已定单条字节上限
-- **THEN** 系统拒绝持久化完整记录或按已批准的明确策略处理，并发出可观测的大小限制结果；不得静默截断后当作完整历史返回
+- **WHEN** 完整序列化历史记录超过 1 MB
+- **THEN** 系统拒绝该事件的持久化、保留不含正文的缺口证据，并且不得将截断内容作为完整记录返回
 
-#### Scenario: R15-S008 TTL 到期后清理
+#### Scenario: R15-S008 超过 30 天时淘汰最旧记录
 
-- **WHEN** 记录超过 PM 定义的保留时长且清理器运行
-- **THEN** 过期正文被删除，清理批次有界，旧 cursor 得到可检查的 gap／expired 结果
+- **WHEN** 持久记录达到 30 天保留期限且清理器运行
+- **THEN** 到期记录按最旧接收时间优先删除，清理批次有界，受影响 Agent 的旧 cursor 得到可检查的 gap／expired 结果
 
 ### Requirement: R15-006 撤权或身份删除后清除历史正文
 
-在 PM-R15-05 定值的撤权／删除事件发生后，系统 SHALL 按确定时限使相关历史不可再读取并删除对应正文、索引及可关联缓存；仅保留 PM 批准的最小非正文审计／gap 元数据。重新授予同名身份时 SHALL NOT 暴露旧代际正文。
+Agent 被吊销或删除时，系统 SHALL 立即使相关历史不可再读取并删除对应正文与索引；审计仅留非正文元数据。重新授予同名身份时 SHALL NOT 暴露旧代际正文。
 
 #### Scenario: R15-S009 撤销后历史不可读取
 
-- **WHEN** Agent credential 被撤销或 owner 删除／解绑并达到规定清理时限
+- **WHEN** Agent credential 被撤销或 owner 删除／解绑
 - **THEN** 所有历史读取入口拒绝旧身份，正文和关联索引已清理，使用旧 cursor 的请求不能取回正文
 
 ### Requirement: R15-007 迁移和回退不伪造历史或意外销毁数据
