@@ -114,3 +114,12 @@ strict规划通过不代表实现/业务验收/发布完成；不archive、不�
   - 完成：真实完整Hub对端先断退0/already_closed20、Hub先停退0、存活连接写超时退1/failed20，各race3轮；原错逐条保留。撤分类3轮真实退1且断言目标红；相关Go race与OpenSpec strict rc0。最终完整run-build-tests rc0（helper各1097/Python27/shell2），首轮长TMPDIR致Unix socket超长的rc1与短根shell复核rc0一并保留。
   - 阻塞：本片段无待测项，等待唯一写者独立核证与合入；整单HLC及S006完整回归不据此关闭。S006原8轮未发SIGTERM/409绝对UTC缺项，r47对照22/100、bdac9/30，新对照不冒充旧时差。
   - 下一步：只交工蜂仓库/ref/commit/tree与读数，释放单路窗口给主流；不自合入、部署、apply/archive，不改原树或S006 ready屏障。
+
+- 2026-11-02T02:56:55.524177+00:00 · coder56solzzc.zzc · 合并后整包前置检查，源码起点3d8941214。
+  - 完成：四个独立提交已推送并核远端；vet通过。普通整包触发旧mux过期夹具nil Hub panic，定位ee7be94d引入后台生命周期登记后，旧测试直接构造registry未绑定Hub；仅将夹具改用newTestHub绑定所有者，原过期时限/metadata清除断言全部保留，无产品修改。
+  - 阻塞：普通整包rc1原日志保留，尚未启动最终50轮；该修正后的目标格及完整门仍须重跑，不记通过。
+  - 下一步：先复核目标格，再提交测试修正，在干净精确源锚重跑vet/相关整包和既定单路矩阵及仓库门。
+
+  - 补充：c248506c隔离目标格race3次通过，属于本单生命周期挂点暴露的测试构造回归。产品registry唯一构造console_mux.go:129绑定Hub、:133使用Hub；补封口后到期回调拒绝记录expiryRejected及对应断言，不新增nil放行路径，不启动未登记工作；完整重验待执行。
+
+  - 2026-11-02T03:00:41.570166+00:00：两目标格race各3轮rc0；撤后台准入保护后新增格在MUX_TIMER_AFTER_SEAL拒绝记录断言红（rc1），未改产品准入语义。原整包panic、r47目标格绿、修正后目标格及变异原始日志见docs/reviews/hlc-primary-precheck；整包与最终门仍待执行。

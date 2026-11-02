@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "vet",
+    "./cmd/workpulse",
+    "./internal/m8",
+    "./internal/feishu",
+    "./internal/bus",
+    "./internal/lifecycle"
+  ],
+  "started": "2026-11-02T02:52:31.496321+00:00",
+  "ended": "2026-11-02T02:52:37.600950+00:00",
+  "rc": 0
+}

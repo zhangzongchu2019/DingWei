@@ -102,6 +102,8 @@ type consoleMuxFeed struct {
 	Bridges     map[string]*consoleMuxBridge
 	Scratch     chan struct{}
 	expiryTimer *time.Timer
+	// Retained metadata records timer admission refusal after shutdown seals work.
+	expiryRejected bool
 }
 
 func (h *Hub) ConfigureConsoleMux(a consolemux.Authorizer, slots consolemux.Slots, b *consolemux.Budget) error {
@@ -788,8 +790,9 @@ func (m *consoleMuxRegistry) expireLater(f *consoleMuxFeed) {
 	if delay < 0 {
 		delay = 0
 	}
+	f.expiryRejected = false
 	f.expiryTimer = time.AfterFunc(delay, func() {
-		m.h.backgroundWork("mux_timer", func() {
+		admitted := m.h.backgroundWork("mux_timer", func() {
 			m.mu.Lock()
 			defer m.mu.Unlock()
 			f.mu.Lock()
@@ -802,6 +805,11 @@ func (m *consoleMuxRegistry) expireLater(f *consoleMuxFeed) {
 				f.expiryTimer = nil
 			}
 		})
+		if !admitted {
+			f.mu.Lock()
+			f.expiryRejected = true
+			f.mu.Unlock()
+		}
 	})
 	f.mu.Unlock()
 }

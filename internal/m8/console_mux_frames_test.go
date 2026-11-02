@@ -113,8 +113,9 @@ func TestMuxRawByteBackpressure(t *testing.T) {
 	}
 }
 func TestMuxRecoveryMetadataExpiresWithoutAnotherRequest(t *testing.T) {
+	h, _, _ := newTestHub(t)
 	f := &consoleMuxFeed{ID: "f", RecoverUntil: time.Now().Add(20 * time.Millisecond), Scopes: map[string]*consoleMuxScope{"a": {Generation: "g"}}, Requests: map[string]consoleMuxResult{"r": {Status: 200}}}
-	m := &consoleMuxRegistry{feeds: map[string]*consoleMuxFeed{"f": f}}
+	m := &consoleMuxRegistry{h: h, feeds: map[string]*consoleMuxFeed{"f": f}}
 	m.expireLater(f)
 	deadline := time.Now().Add(time.Second)
 	for time.Now().Before(deadline) {
@@ -189,4 +190,33 @@ func TestMuxMaximumFramesPendingAndSentLedger(t *testing.T) {
 		t.Fatal("applied did not release charge")
 	}
 	t.Log("8 seats x 2 exact F: pending=16MiB sent/unapplied=16MiB rejected-overrun=true applied=0")
+}
+
+// The callback still runs after the deadline, but sealed lifecycle admission
+// must reject its metadata-cleanup job without launching untracked work.
+func TestMuxRecoveryExpiryAfterHubShutdownRejectsBackgroundWork(t *testing.T) {
+	h, _, _ := newTestHub(t)
+	h.Close()
+	f := &consoleMuxFeed{ID: "sealed", RecoverUntil: time.Now().Add(20 * time.Millisecond), Scopes: map[string]*consoleMuxScope{"a": {Generation: "g"}}, Requests: map[string]consoleMuxResult{"r": {Status: 200}}}
+	m := &consoleMuxRegistry{h: h, feeds: map[string]*consoleMuxFeed{f.ID: f}}
+	m.expireLater(f)
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		f.mu.Lock()
+		rejected := f.expiryRejected
+		retained := f.Scopes != nil && f.Requests != nil
+		f.mu.Unlock()
+		if rejected {
+			m.mu.Lock()
+			unchanged := m.feeds[f.ID] == f
+			m.mu.Unlock()
+			if !retained || !unchanged || h.LifecycleCounts()["background_mux_timer"] != 0 {
+				t.Fatal("MUX_TIMER_AFTER_SEAL: rejected timer started metadata work")
+			}
+			t.Log("MUX_TIMER_AFTER_SEAL: timer_rejected=true background_mux_timer=0 metadata_unchanged=true")
+			return
+		}
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatal("MUX_TIMER_AFTER_SEAL: expiry callback did not record admission refusal")
 }

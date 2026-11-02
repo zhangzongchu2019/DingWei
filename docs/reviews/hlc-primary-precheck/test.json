@@ -1,0 +1,17 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./cmd/workpulse",
+    "./internal/m8",
+    "./internal/feishu",
+    "./internal/bus",
+    "./internal/lifecycle",
+    "-count=1",
+    "-timeout=5m",
+    "-v"
+  ],
+  "started": "2026-11-02T02:52:37.601265+00:00",
+  "ended": "2026-11-02T02:55:56.354160+00:00",
+  "rc": 1
+}
