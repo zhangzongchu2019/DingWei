@@ -25,7 +25,7 @@
   - 阻塞：无；T-03 实现仍未授权。
   - 下一步：strict 已通过；提交、推送并核对远端 tip/tree；等待后续授权。
 
-- 2026-11-02T04:33:30Z · togpt60lunazzc.zzc · commit 待提交
+- 2026-11-02T04:33:30Z · togpt60lunazzc.zzc · commit 8746611baf410d242db9ca84bcc99e356ed62f4d
   - 完成：按 rulings ㉝ 补充 Console 向上分页、游标、页面／请求预算建议、锚点保持、到底／gap 提示与实时／重启衔接；勘察 renderer 确认现有滚动容器只有贴底跟随，向上加载属新增前端工作。新增 R15-S012～S016；R15-S006 已覆盖他人不可见。
   - 阻塞：PM-R15-09 页大小及单次请求预算待业主确认；T-03 实现未授权。
-  - 下一步：全仓 OpenSpec strict 校验，提交并推送本分支，核对远端 tip/tree。
+  - 下一步：strict 已通过；推送本分支并核对远端 tip/tree。
