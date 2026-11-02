@@ -93,6 +93,7 @@ func newR14Env(t *testing.T, names ...string) *r14Env {
 
 func newR14EnvWithStore(t *testing.T, wrap func(identity.Store) identity.Store, names ...string) *r14Env {
 	t.Helper()
+	t.Setenv("DW_FEISHU_STICKY_ENABLED", "1")
 	e := newAgentEnv(t)
 	bindFeishuForAgentEnv(t, e, "ou_alice")
 	if wrap != nil {

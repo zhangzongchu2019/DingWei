@@ -55,6 +55,9 @@ func (s *stickyLanes) acquire(k store.FeishuStickyKey) func() {
 }
 
 // FCS RPC 的枚举来自跨进程字符串；未有 Hub 可核验的服务证明前不能作 R14 信任根。
+// 灰度开关只认精确值 1；默认关闭，避免改变现有私聊默认投递。
+func feishuStickyEnabled() bool { return os.Getenv("DW_FEISHU_STICKY_ENABLED") == "1" }
+
 func feishuStickyInProcess() bool { return strings.TrimSpace(os.Getenv("FCS_RPC_URL")) == "" }
 
 func stickyTrusted(msg model.Message) bool {
@@ -157,6 +160,9 @@ func stickyMatch(agents []identity.Agent, full map[string]string, requested stri
 // Hook only at the existing explicit selector and final default decisions.
 // Commands, configured prefixes, member mentions and group routing retain order.
 func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text string, explicit bool) (model.PrefixDispatchResult, bool, error) {
+	if !feishuStickyEnabled() {
+		return model.PrefixDispatchResult{}, false, nil
+	}
 	if h.Identity == nil || msg.ChatType != model.ChatPersonal || msg.SenderOpenID == "" {
 		return model.PrefixDispatchResult{}, false, nil
 	}
@@ -396,7 +402,7 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 	return reply("")
 }
 func (h *Hub) startFeishuStickyCleanup() {
-	if !feishuStickyInProcess() {
+	if !feishuStickyEnabled() || !feishuStickyInProcess() {
 		return
 	}
 	repo, ok := h.Repo.(store.FeishuStickyRepository)
@@ -414,7 +420,7 @@ func (h *Hub) startFeishuStickyCleanup() {
 // Pending recovery runs each minute; retention/revocation cleanup runs hourly.
 // Both use bounded store batches and join the Hub's owned background lifetime.
 func (h *Hub) runFeishuStickyMaintenance(ctx context.Context, ticks <-chan time.Time, repo store.FeishuStickyRepository) {
-	if repo == nil || !feishuStickyInProcess() {
+	if repo == nil || !feishuStickyEnabled() || !feishuStickyInProcess() {
 		return
 	}
 	minutes := 0
@@ -423,7 +429,7 @@ func (h *Hub) runFeishuStickyMaintenance(ctx context.Context, ticks <-chan time.
 		case <-ctx.Done():
 			return
 		case <-ticks:
-			if !feishuStickyInProcess() {
+			if !feishuStickyEnabled() || !feishuStickyInProcess() {
 				return
 			}
 			sweep, cancel := context.WithTimeout(ctx, time.Minute)
@@ -448,6 +454,9 @@ func stickyDeliveryEvidence(o store.FeishuStickyOperation, d *model.SessionDeliv
 }
 
 func (h *Hub) cleanupFeishuSticky(ctx context.Context, now time.Time) {
+	if !feishuStickyEnabled() || !feishuStickyInProcess() {
+		return
+	}
 	repo, ok := h.Repo.(store.FeishuStickyRepository)
 	if !ok {
 		return
@@ -455,7 +464,7 @@ func (h *Hub) cleanupFeishuSticky(ctx context.Context, now time.Time) {
 	h.cleanupFeishuStickyWithRepository(ctx, now, repo)
 }
 func (h *Hub) cleanupFeishuStickyWithRepository(ctx context.Context, now time.Time, repo store.FeishuStickyRepository) {
-	if h.Identity == nil || !feishuStickyInProcess() {
+	if h.Identity == nil || !feishuStickyEnabled() || !feishuStickyInProcess() {
 		return
 	}
 	h.stickyCleanupMu.Lock()
@@ -494,7 +503,7 @@ func (h *Hub) cleanupFeishuStickyWithRepository(ctx context.Context, now time.Ti
 // and their receipts retain their existing behavior. A queued R14 message must
 // not be delivered to a new Agent which later reuses the same display name.
 func (h *Hub) stickyDeliveryAllowed(ctx context.Context, c *sessionClient, env model.Envelope) bool {
-	if !feishuStickyInProcess() {
+	if !feishuStickyEnabled() || !feishuStickyInProcess() {
 		return true
 	}
 	id := metaString(env.Meta, "r14_target_agent_id")
