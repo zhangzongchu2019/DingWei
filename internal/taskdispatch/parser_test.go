@@ -14,7 +14,7 @@ func TestR10FixedTaskParser(t *testing.T) {
 	if _, e = SelectTask(good, "T-02"); !errors.Is(e, ErrCompleted) {
 		t.Fatal("R10_COMPLETED_TASK_GRANTED", e)
 	}
-	for _, text := range []string{"- [ ] T-01 a\n- [x] T-01 b", "- [ ] T-01 ", "```\n- [ ] T-01 fake", "<!--\n- [ ] T-01 fake\n-->", "- [ ] T-01 a\x00", "- [ ] T-01 a\xff"} {
+	for _, text := range []string{"- [ ] T-01 a\n- [x] T-01 b", "- [ ] T-01 ", "```\n- [ ] T-01 fake", "```bad`info\n- [ ] T-01 hidden\n```", "<!--\n- [ ] T-01 fake\n-->", "- [ ] T-01 a\x00", "- [ ] T-01 a\xff"} {
 		if _, e := ParseTasks(text); e == nil {
 			t.Fatalf("R10_AMBIGUOUS_TASK_ACCEPTED %q", text)
 		}

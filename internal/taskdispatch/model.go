@@ -165,10 +165,11 @@ type Mutation struct {
 }
 
 type Result struct {
-	OperationID string `json:"operation_id"`
-	Outcome     string `json:"outcome"`
-	Lock        Lock   `json:"lock"`
-	Replay      bool   `json:"replay"`
+	OperationID  string `json:"operation_id"`
+	Outcome      string `json:"outcome"`
+	Lock         Lock   `json:"lock"`
+	Replay       bool   `json:"replay"`
+	CurrentLease bool   `json:"current_lease"`
 }
 
 type Operation struct {

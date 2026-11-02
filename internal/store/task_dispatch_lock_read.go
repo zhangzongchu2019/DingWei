@@ -3,9 +3,11 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	td "github.com/zhangzongchu2019/dingwei/internal/taskdispatch"
@@ -58,6 +60,10 @@ func scanTaskDispatchLock(row taskDispatchScanner) (*td.Lock, error) {
 	}
 	if err = json.Unmarshal([]byte(handoff), &l.Handoff); err != nil {
 		return nil, fmt.Errorf("r10 persisted handoff: %w", err)
+	}
+	token, tokenErr := hex.DecodeString(l.LeaseToken)
+	if l.Key.Validate() != nil || !td.ValidSHA(l.CommitSHA) || !td.ValidSHA(l.TasksBlobSHA) || l.Generation < 1 || tokenErr != nil || len(token) != 32 || strings.ToLower(l.LeaseToken) != l.LeaseToken || l.TaskLine < 1 || l.HolderAgentID == "" || l.HolderOwnerLC == "" || l.AssignedByUserLC == "" || l.AuthorizationGroup == "" || strings.TrimSpace(l.MonitorRef) == "" || l.GrantedAt.IsZero() || !l.ExpiresAt.After(l.GrantedAt) || l.LastRenewedAt.Before(l.GrantedAt) || l.UpdatedAt.Before(l.GrantedAt) || (l.PullRequestID == 0 && l.PRDimension != "pr_not_opened") || (l.PullRequestID > 0 && l.PRDimension == "readable" && !td.ValidSHA(l.PRHeadSHA)) {
+		return nil, td.ErrUnknown
 	}
 	return &l, nil
 }

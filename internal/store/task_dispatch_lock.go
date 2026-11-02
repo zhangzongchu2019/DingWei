@@ -57,7 +57,10 @@ func taskDispatchOutcomeError(s string) error {
 	return td.ErrUnknown
 }
 func taskDispatchBindings(ctx context.Context, tx *sql.Tx, m td.Mutation) error {
-	if m.ActorKind == "system" {
+	if m.ActorKind == "system" && len(m.Bindings) == 0 {
+		if m.Kind == "observe" && m.ComparisonState != "comparison_unknown" {
+			return td.ErrForbidden
+		}
 		return nil
 	}
 	required := map[string]bool{}
@@ -65,7 +68,7 @@ func taskDispatchBindings(ctx context.Context, tx *sql.Tx, m td.Mutation) error 
 		required[m.ActorUserLC] = false
 	} else if m.ActorKind == "agent" {
 		required[m.ActorOwnerLC] = false
-	} else {
+	} else if m.ActorKind != "system" {
 		return td.ErrForbidden
 	}
 	if m.HolderOwnerLC != "" {
@@ -122,6 +125,14 @@ func (s *SQLite) ApplyTaskDispatch(ctx context.Context, m td.Mutation, clock fun
 		var r td.Result
 		if err = json.Unmarshal([]byte(stored), &r); err != nil {
 			return empty, err
+		}
+		current, e := scanTaskDispatchLock(tx.QueryRowContext(ctx, `SELECT `+taskDispatchColumns+` FROM r10_task_lock WHERE `+taskDispatchWhere, taskDispatchKeyArgs(m.Key)...))
+		if e != nil {
+			return empty, e
+		}
+		r.CurrentLease = current != nil && current.Generation == r.Lock.Generation && current.LeaseToken == r.Lock.LeaseToken && current.Effective(now)
+		if !r.CurrentLease {
+			r.Lock.LeaseToken = ""
 		}
 		if err = check(); err != nil {
 			return empty, err
@@ -192,7 +203,10 @@ func (s *SQLite) ApplyTaskDispatch(ctx context.Context, m td.Mutation, clock fun
 	if !write && old != nil {
 		next = *old
 	}
-	result := td.Result{OperationID: m.OperationID, Outcome: taskDispatchOutcome(decision), Lock: next}
+	result := td.Result{OperationID: m.OperationID, Outcome: taskDispatchOutcome(decision), Lock: next, CurrentLease: next.Effective(now)}
+	if !result.CurrentLease {
+		result.Lock.LeaseToken = ""
+	}
 	encoded, err := json.Marshal(result)
 	if err != nil {
 		return empty, err
@@ -204,7 +218,8 @@ func (s *SQLite) ApplyTaskDispatch(ctx context.Context, m td.Mutation, clock fun
 		return empty, err
 	}
 	eventArgs := append([]any{m.OperationID}, taskDispatchKeyArgs(m.Key)...)
-	eventArgs = append(eventArgs, next.Generation, m.Kind, m.ActorKind, m.ActorUserLC, m.ActorAgentID, m.ActorOwnerLC, taskDispatchTime(now), result.Outcome+";pr="+next.PRDimension)
+	detail, _ := json.Marshal(map[string]any{"outcome": result.Outcome, "pr_dimension": next.PRDimension, "holder_agent_id": next.HolderAgentID, "holder_owner_lc": next.HolderOwnerLC, "commit_sha": next.CommitSHA, "tasks_blob_sha": next.TasksBlobSHA, "observed_commit_sha": next.ObservedCommitSHA, "pr_head_sha": next.PRHeadSHA, "comparison_state": next.ComparisonState, "comparison_error_class": next.ComparisonError, "policy_version": td.ComparisonPolicyVersion(), "handoff": next.Handoff})
+	eventArgs = append(eventArgs, next.Generation, m.Kind, m.ActorKind, m.ActorUserLC, m.ActorAgentID, m.ActorOwnerLC, taskDispatchTime(now), string(detail))
 	_, err = tx.ExecContext(ctx, `INSERT INTO r10_task_lock_event(operation_id,provider,instance,repository_id,change_directory,task_id,generation,event_type,actor_kind,actor_user_id_lc,actor_agent_id,actor_owner_lc,at_utc,detail) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, eventArgs...)
 	if err != nil {
 		return empty, err

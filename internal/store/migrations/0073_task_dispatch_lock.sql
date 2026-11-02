@@ -34,6 +34,7 @@ CREATE TABLE r10_task_lock (
  comparison_error_class TEXT NOT NULL DEFAULT '',
  handoff_json TEXT NOT NULL DEFAULT '{}',
  sync_required INTEGER NOT NULL DEFAULT 0 CHECK(sync_required IN (0,1)),
+ CHECK((pull_request_id=0 AND pr_dimension='pr_not_opened') OR (pull_request_id>0 AND pr_dimension IN ('readable','comparison_unknown'))),
  PRIMARY KEY(provider,instance,repository_id,change_directory,task_id)
 );
 CREATE INDEX r10_task_lock_expiry ON r10_task_lock(state,expires_at_utc);

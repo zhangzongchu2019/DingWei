@@ -20,3 +20,20 @@ A01～A04的源码事实盘点完成，状态均为「部分具备」，T-03.2�
 首期设计只启用已具备只读接口的GitHub provider；工蜂provider明确列后续。Agent映射按认证Bearer的 `np_agent.id` → 当前Identity PG `np_agent.owner_lc` → 同值 `np_user.user_id_lc` → R5授权检查设计；该路径是Agent所属用户授权委托，不是Agent独立GitHub身份，需组长确认是否满足“受派者独立read”。provider每60秒轮询ref和新增只读PR元数据；异常记录comparison_unknown并关闭继续/续租的成功证明，不作无变化结论。基线能力锚点：`internal/identity/model.go:135-155`、`internal/identity/pgschema.sql:45-65`、`internal/specread/service.go:72-79,181-194`、`internal/specread/github.go:258-269`。
 
 待组长定：Agent使用owner R5权限是否满足受派者read语义；部署是否保证单Hub/单SQLite锁权威，若不是则另定共享锁协调。此交接是设计，不表示新增表、provider方法或轮询器已实现。
+
+## 当前实施挂点（S-R49-R10-IMPL，2026-11-02）
+
+本轮唯一写者01a19c8c，从r48普通merge冻结设计e229c671，分支coder56solzzc/r49-r10-impl；产品归r50，版本不抬。上方r46/r48技术前置与原“待实现”是历史快照，当前已获T04～09实施授权，尚未自验收或部署。
+
+- `internal/taskdispatch/service.go:120`：`func (s *Service) Execute`。
+- `internal/specread/dispatch_read.go:55`：`func (s *Service) ReadPullRequest`。
+- `internal/specread/dispatch_read.go:86`：`func (s *Service) ReadDispatchSnapshot`。
+- `internal/taskdispatch/source_compare.go:41`：`func (s *Service) observe`。
+- `internal/store/task_dispatch_lock.go:104`：`func (s *SQLite) ApplyTaskDispatch`。
+- `internal/taskdispatch/read.go:18`：`func (s *Service) Inspect`。
+
+现实现：可信Console用户/专属Agent上下文→当前np用户/Agent/owner→预投影R5 principal→WithTaskAuthorization当前编组/状态/owner锁→每个角色分别现核R5固定tasks/read，不能借另一个角色的服务令牌。PG回调不能再调MemStore身份getter；实际PG与SQLite非分布式事务，SQLite失败/PG释放结果未知不报成功，另走失败审计。R5绑定非秘密快照在SQLite事务内再核，unbind/替换不能借之前读取结果授予。
+
+R5现有GitHub GET扩展只读PR元数据，核stable base repo ID，仍由同一服务AuthorizeRead前后现核；没有新凭据或Git写/SSH通道。固定任务SHA/UTF8/size与tasks唯一编号校验，完整Markdown快照拒symlink/module/坏文件，比较只用原R7 ConservativePolicyA。未开PR显式pr_not_opened；提交必须已登记可读PR，登记后未知阻断。
+
+当前锁/operation/event/outbox为0073独立四表；原70个迁移SQL未改。operation重放保留原结果但重核当前身份/绑定和current_lease，旧代际不返回旧令牌充当前许可。事件只存坐标/哈希/主体/状态及指针，不写正文或提供方凭据。阶段三开发态相关store/parser/服务/PG反测已实际通过；监测启动/提醒、完整逐格变异与最终门尚待收口，T04～09保持未勾。

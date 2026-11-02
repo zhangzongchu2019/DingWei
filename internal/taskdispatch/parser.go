@@ -46,9 +46,12 @@ func ParseTasks(text string) (map[string]Task, error) {
 			for width < len(trimmed) && trimmed[width] == fence {
 				width++
 			}
+			if fence == '`' && strings.Contains(trimmed[width:], "`") {
+				return nil, ErrInvalid
+			}
 			continue
 		}
-		if strings.ContainsAny(line, "<>") {
+		if strings.Contains(line, "<") {
 			return nil, ErrInvalid
 		}
 		matches := checklist.FindStringSubmatch(line)

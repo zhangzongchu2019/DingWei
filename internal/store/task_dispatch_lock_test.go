@@ -275,3 +275,68 @@ func TestR10LockRenewPRUnknownSyncHandoffAndBinding(t *testing.T) {
 		t.Fatal("R10_REVOKED_BINDING_ACCEPTED", e)
 	}
 }
+
+func TestR10ReplayAfterHandoffCannotIssueOldPermission(t *testing.T) {
+	s, m, now := r10DB(t)
+	ctx := context.Background()
+	first, err := r10Apply(t, s, m, now)
+	if err != nil || !first.CurrentLease {
+		t.Fatal(err)
+	}
+	transfer := m
+	transfer.Kind = "handoff"
+	transfer.OperationID = "handoff_for_replay_001"
+	transfer.ExpectedGeneration = first.Lock.Generation
+	transfer.ExpectedToken = first.Lock.LeaseToken
+	transfer.HolderAgentID = "agent-2"
+	transfer.HolderOwnerLC = "next"
+	transfer.Handoff = r10Handoff(first.Lock)
+	moved, err := r10Apply(t, s, transfer, now.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	old, err := r10Apply(t, s, m, now.Add(2*time.Minute))
+	if err != nil || !old.Replay || old.CurrentLease || old.Lock.LeaseToken != "" {
+		t.Fatal("R10_REPLAY_REACTIVATED_OLD_GENERATION", old, err)
+	}
+	current, err := s.TaskDispatchLock(ctx, m.Key)
+	if err != nil || current.Generation != moved.Lock.Generation || current.HolderAgentID != "agent-2" || current.LeaseToken != moved.Lock.LeaseToken {
+		t.Fatal("R10_REPLAY_CHANGED_CURRENT_HOLDER", current, err)
+	}
+	events, _ := s.TaskDispatchEvents(ctx, m.Key, 0)
+	notices, _ := s.TaskDispatchNotices(ctx, "pending", 100)
+	if len(events) != 2 || len(notices) != 2 {
+		t.Fatal("R10_REPLAY_DUPLICATED_HANDOFF_NOTICE", len(events), len(notices))
+	}
+}
+func TestR10CorruptPersistedCoordinatesFailClosed(t *testing.T) {
+	for _, column := range []string{"commit_sha", "lease_token", "monitor_ref"} {
+		t.Run(column, func(t *testing.T) {
+			s, m, now := r10DB(t)
+			r, err := r10Apply(t, s, m, now)
+			if err != nil {
+				t.Fatal(err)
+			}
+			value := "bad"
+			if column == "lease_token" {
+				value = strings.Repeat("z", 64)
+			}
+			if column == "monitor_ref" {
+				value = ""
+			}
+			if _, err = s.db.Exec(`UPDATE r10_task_lock SET `+column+`=?`, value); err != nil {
+				t.Fatal(err)
+			}
+			if _, err = s.TaskDispatchLock(context.Background(), m.Key); !errors.Is(err, td.ErrUnknown) {
+				t.Fatal("R10_CORRUPT_AUTHORITY_ACCEPTED", column, err)
+			}
+			if _, err = s.TaskDispatchActive(context.Background()); !errors.Is(err, td.ErrUnknown) {
+				t.Fatal("R10_CORRUPT_MONITOR_ACCEPTED", column, err)
+			}
+			renew := r10Holder(m, r.Lock, "renew", "corrupt_renew_operation")
+			if _, err = r10Apply(t, s, renew, now.Add(time.Minute)); !errors.Is(err, td.ErrUnknown) {
+				t.Fatal("R10_CORRUPT_LEASE_RENEWED", column, err)
+			}
+		})
+	}
+}
