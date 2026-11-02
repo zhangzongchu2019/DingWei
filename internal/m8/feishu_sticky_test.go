@@ -648,3 +648,31 @@ func TestR14LateReconciliationPreservesNewerBinding(t *testing.T) {
 	r14Assert(t, err == nil && !fresh && op.Status == "resolved" && op.DeliveryID != "" && op.CompletedAt.Equal(r.now), "LATE_RECONCILE_NOT_CLOSED", op, err)
 	r14Assert(t, after.AgentID == selected.AgentID && after.Generation == selected.Generation && after.SelectedAt.Equal(selected.SelectedAt) && after.ExpiresAt.Equal(selected.ExpiresAt) && r.repo.count() == before, "LATE_RECONCILE_OVERWROTE_BINDING", selected, after)
 }
+
+type stickyReplyQueue chan model.Message
+
+func (q stickyReplyQueue) Enqueue(ctx context.Context, m model.Message) error {
+	select {
+	case q <- m:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+func TestR14S008ActualAgentLateReplyDoesNotRenew(t *testing.T) {
+	r := newR14Env(t, "Beta")
+	r.dispatch("#opus50ts original-A")
+	r.now = r.now.Add(time.Minute)
+	r.choose("Beta")
+	before := r.state()
+	q := make(stickyReplyQueue, 2)
+	r.hub.Outbound = q
+	if err := r.repo.UpsertBotChannel(r.ctx, model.BotChannel{ID: "devplatform", Name: "devplatform", CanSend: true, Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	r.now = r.now.Add(time.Minute)
+	r.sendEnv(r.peers["opus50ts"], model.Envelope{ID: "late-agent-A", From: sessionAddress("opus50ts", AgentKeyID("zzc")), To: feishuAddress("ou_alice", AgentKeyID("zzc"), "devplatform"), Body: "late Agent A reply in local fixture"})
+	waitFor(t, time.Second, "local fake Feishu outbound", func() bool { return len(q) > 0 })
+	after := r.state()
+	r14Assert(t, after.AgentID == before.AgentID && after.Generation == before.Generation && after.SelectedAt.Equal(before.SelectedAt) && after.ExpiresAt.Equal(before.ExpiresAt), "S008_AGENT_REPLY_RENEWED_OR_OVERWROTE", before, after)
+}
