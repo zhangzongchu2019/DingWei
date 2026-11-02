@@ -170,13 +170,25 @@ func TestR14S002IdentityFailure(t *testing.T) {
 }
 func TestR14S003OtherOwnerExcluded(t *testing.T) {
 	r := newR14Env(t)
-	r.svc.Store.CreateUser(r.ctx, identity.User{UserID: "bob", ShortName: "bob", State: identity.UserActive})
-	r.hub.mu.Lock()
-	r.hub.sessionClients[AgentKeyID("bob")] = map[string]*sessionClient{"other": {metricsAgentID: "foreign"}}
-	r.hub.mu.Unlock()
+	if err := r.svc.Store.CreateUser(r.ctx, identity.User{UserID: "bob", ShortName: "bob", State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	cred := r.enrollForOwner("bob", "other-default", "Other")
+	conn, status, body := r.dial(cred, "")
+	if conn == nil {
+		t.Fatal(status, body)
+	}
+	defer conn.CloseNow()
+	waitSessionOnline(t, r.hub, AgentKeyID("bob"), "other")
+	other, _ := r.svc.Store.FindAgentByName(r.ctx, "bob", "other")
+	groups, _ := r.svc.Store.ListAgentGroups(r.ctx, r.agID)
+	if err := r.svc.JoinGroup(r.ctx, "bob", groups[0], other.ID); err != nil {
+		t.Fatal(err)
+	}
 	r.dispatch("plain")
 	r14Assert(t, r.repo.count() == 1 && r.repo.last().To == sessionAddress("opus50ts", AgentKeyID("zzc")), "S003_OTHER_OWNER_TARGET")
 }
+
 func TestR14S004CurrentStateAndOffline(t *testing.T) {
 	r := newR14Env(t, "Beta")
 	r.choose("Beta")
@@ -354,7 +366,8 @@ func TestR14S020SameNameNewStableID(t *testing.T) {
 }
 func TestR14S021ExactBeforePrefix(t *testing.T) {
 	r := newR14Env(t, "ts3dev55", "ts3dev5520")
-	r.choose("ts3dev55")
+	res := r.dispatch("#ts3dev55")
+	r14Assert(t, strings.Contains(res.Reply, "已选择") && r.state() != nil, "S021_EXACT_NOT_PRIORITIZED", res)
 	r14Assert(t, r.state().AgentID == r.agents["ts3dev55"], "S021_EXACT_NOT_PRIORITIZED")
 	s := r.state()
 	r.dispatch("#ts3dev body")
@@ -373,4 +386,98 @@ func TestR14S022SelectorPositionAndSelectOnly(t *testing.T) {
 	s := r.state()
 	r.dispatchMsg(msg, "plain")
 	r14Assert(t, r.repo.count() == before && r.state().Generation == s.Generation, "S022_NO_SOURCE_ID_STICKY")
+}
+
+func TestR14S020QueuedTargetIDCannotBeReused(t *testing.T) {
+	r := newR14Env(t, "Beta")
+	old, err := r.svc.Store.GetAgent(r.ctx, r.agID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := model.Envelope{ID: "old-r14-queue", From: feishuAddress("ou_alice", AgentKeyID("zzc"), "devplatform"), To: sessionAddress("opus50ts", AgentKeyID("zzc")), Body: "queued-before-revoke", Meta: map[string]any{"r14_target_agent_id": old.ID, "r14_principal_lc": "zzc"}}
+	if _, err = r.svc.Revoke(r.ctx, "zzc", old.ID); err != nil {
+		t.Fatal(err)
+	}
+	cred, id := r.enroll("queued-replacement", "Opus50TS")
+	r.online(cred, "opus50ts")
+	before := r.repo.count()
+	err = r.hub.RouteEnvelope(r.ctx, env)
+	r14Assert(t, err != nil && r.repo.count() == before && id != old.ID, "S020_QUEUED_NAME_REBOUND", err, r.repo.count())
+}
+
+func TestR14S022CrossOwnerFullNameUsesExistingAuthorization(t *testing.T) {
+	r := newR14Env(t, "Beta")
+	r.choose("Beta")
+	before := r.state()
+	if err := r.svc.Store.CreateUser(r.ctx, identity.User{UserID: "lbl", ShortName: "lb", State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	cred := r.enrollForOwner("lbl", "cross-full", "Foreign")
+	conn, status, body := r.dial(cred, "")
+	if conn == nil {
+		t.Fatal(status, body)
+	}
+	defer conn.CloseNow()
+	waitSessionOnline(t, r.hub, AgentKeyID("lbl"), "foreign")
+	target, err := r.svc.Store.FindAgentByName(r.ctx, "lbl", "foreign")
+	if err != nil {
+		t.Fatal(err)
+	}
+	res := r.dispatch("#Foreign.lb forbidden")
+	r14Assert(t, res.Reply == groupAgentNotFoundText && r.state().Generation == before.Generation, "S022_CROSS_OWNER_AUTH_SKIPPED", res)
+	groups, err := r.svc.Store.ListAgentGroups(r.ctx, r.agID)
+	if err != nil || len(groups) == 0 {
+		t.Fatal(groups, err)
+	}
+	if err = r.svc.JoinGroup(r.ctx, "lbl", groups[0], target.ID); err != nil {
+		t.Fatal(err)
+	}
+	res = r.dispatch("#Foreign.lb permitted")
+	got := r.readEnvUntil(conn, time.Second, func(e model.Envelope) bool { return e.Body == "permitted" })
+	r14Assert(t, res.Reply == "" && got != nil && r.state().AgentID == before.AgentID && r.state().Generation == before.Generation, "S022_CROSS_OWNER_NOT_EXPLICIT_OR_CHANGED_DEFAULT", res, got)
+}
+
+type stickyIdentityFailure struct{ identity.Store }
+
+func (s stickyIdentityFailure) ResolveIdentity(context.Context, identity.Identity) (*identity.User, error) {
+	return nil, errors.New("injected identity lookup failure")
+}
+func TestR14S002IdentityLookupError(t *testing.T) {
+	r := newR14Env(t)
+	r.choose("opus50ts")
+	s := r.state()
+	r.svc.Store = stickyIdentityFailure{r.svc.Store}
+	res := r.dispatch("plain")
+	r14Assert(t, r.repo.count() == 0 && res.Reply != "" && r.state().Generation == s.Generation, "S002_IDENTITY_ERROR_FALLBACK")
+}
+
+func TestR14CleanupRevocationAndBoundedCursor(t *testing.T) {
+	r := newR14Env(t)
+	now := r.now
+	// More than one page of valid keys must not starve a later revoked key.
+	for i := 0; i < store.FeishuStickyCleanupBatch+1; i++ {
+		key := store.FeishuStickyKey{"zzc", fmt.Sprintf("bot-%03d", i)}
+		o, _, err := r.repo.BeginFeishuSticky(r.ctx, key, "seed", "select-only", now)
+		if err != nil {
+			t.Fatal(err)
+		}
+		target := r.agID
+		if i == store.FeishuStickyCleanupBatch {
+			target = "missing-revoked-agent"
+		}
+		if err = r.repo.FinishFeishuSticky(r.ctx, o, "accepted", target, "seed", now); err != nil {
+			t.Fatal(err)
+		}
+	}
+	r.hub.cleanupFeishuSticky(r.ctx, now)
+	key := store.FeishuStickyKey{"zzc", fmt.Sprintf("bot-%03d", store.FeishuStickyCleanupBatch)}
+	first, err := r.repo.GetFeishuSticky(r.ctx, key)
+	if err != nil || first == nil {
+		t.Fatal("CLEANUP_SCAN_NOT_BOUNDED", err)
+	}
+	r.hub.cleanupFeishuSticky(r.ctx, now)
+	second, err := r.repo.GetFeishuSticky(r.ctx, key)
+	if err != nil || second != nil {
+		t.Fatal("CLEANUP_CURSOR_STARVED_REVOKED", second, err)
+	}
 }

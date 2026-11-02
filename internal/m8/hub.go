@@ -4224,6 +4224,10 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		}
 		capabilityAdmission = h.capabilityPendingAdmissions[terminalKey(keyID, sessionName)]
 	}()
+	if !h.stickyDeliveryAllowed(ctx, c, env) {
+		h.unclaimEnvelope(env.ID, sig)
+		return errors.New("R14 target identity unavailable")
+	}
 	wantReceipt := outboundReceiptRequested(env) || inboxReceiptRequested(env)
 	receiptNonce := metaString(env.Meta, outboundReceiptNonceKey)
 	reliable := reliablePrimaryEnvelope(env)
@@ -4739,6 +4743,14 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 				return
 			}
 			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", "malformed_envelope")
+			continue
+		}
+		if !h.stickyDeliveryAllowed(ctx, c, env) {
+			if h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", "r14_target_unavailable", time.Now().UTC()) != nil {
+				return
+			}
+			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", "r14_target_unavailable")
+			h.drainDurableFailureNotice(ctx, *d)
 			continue
 		}
 		if legacySpecGenerationEnvelope(env) {

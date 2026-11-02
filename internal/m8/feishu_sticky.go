@@ -151,6 +151,21 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 		}
 		return reply(stickyCandidates(agents, full, ""))
 	}
+	if explicit {
+		requested, body, _ := h.parseSelector(msg.BotChannelID, text)
+		if strings.Contains(requested, ".") {
+			target, owner, e := h.Identity.ResolveFullName(ctx, requested)
+			if e == nil && target != nil && owner != nil && target.OwnerLC != u.UserIDLC() {
+				if target.State != identity.AgentActive || owner.State != identity.UserActive || !h.stickyAgentOnline(target) || !h.newPlatformUsersShareAgentGroup(ctx, u.UserIDLC(), target) {
+					return reply(groupAgentNotFoundText)
+				}
+				if strings.TrimSpace(body) == "" {
+					return reply("跨成员目标不能设为本人默认 Agent")
+				}
+				return h.dispatchMemberMention(ctx, msg, "@"+owner.ShortName+"#"+target.Name+" "+body)
+			}
+		}
+	}
 	repo, ok := h.Repo.(store.FeishuStickyRepository)
 	if !ok {
 		return reply(stickyUnavailable)
@@ -256,24 +271,7 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 	decision := ""
 	if explicit {
 		if strings.Contains(requested, ".") {
-			// Foreign full names reuse the existing cross-member authorization path,
-			// and must never replace the caller's personal default.
-			target, owner, e := h.Identity.ResolveFullName(ctx, requested)
-			if e == nil && target != nil && owner != nil && target.OwnerLC != k.UserIDLC {
-				if target.State != identity.AgentActive || owner.State != identity.UserActive || !h.stickyAgentOnline(target) || !h.newPlatformUsersShareAgentGroup(ctx, k.UserIDLC, target) {
-					return refuse(groupAgentNotFoundText, "cross_owner_denied")
-				}
-				if strings.TrimSpace(body) == "" {
-					return refuse("跨成员目标不能设为本人默认 Agent", "cross_owner_select")
-				}
-				// No R14 state write for an explicit cross-member message.
-				result, handled, e := h.dispatchMemberMention(ctx, msg, "@"+owner.ShortName+"#"+target.Name+" "+body)
-				status := "rejected" // terminal metadata only; no sticky acceptance
-				if !finish(status, "", "cross_member") {
-					return reply(stickyUnconfirmed)
-				}
-				return result, handled, e
-			}
+
 			for i := range agents {
 				if strings.EqualFold(full[agents[i].ID], requested) {
 					chosen = &agents[i]
@@ -343,7 +341,7 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 	}
 	if kind != "select-only" {
 		keyID := AgentKeyID(k.UserIDLC)
-		env := model.Envelope{ID: op.SourceEnvelopeID, To: sessionAddress(current.NameLC(), keyID), From: feishuAddress(feishuOpenIDFromAccount(sourceAccount(msg)), keyID, h.botName(msg.BotChannelID)), Body: body, TS: h.now().Unix(), Meta: map[string]any{"chat_type": string(msg.ChatType), "raw": msg.Content, "bot_channel_id": msg.BotChannelID, "reply_prefix": fmt.Sprintf("【%s】", current.NameLC())}}
+		env := model.Envelope{ID: op.SourceEnvelopeID, To: sessionAddress(current.NameLC(), keyID), From: feishuAddress(feishuOpenIDFromAccount(sourceAccount(msg)), keyID, h.botName(msg.BotChannelID)), Body: body, TS: h.now().Unix(), Meta: map[string]any{"chat_type": string(msg.ChatType), "raw": msg.Content, "bot_channel_id": msg.BotChannelID, "reply_prefix": fmt.Sprintf("【%s】", current.NameLC()), "r14_target_agent_id": current.ID, "r14_principal_lc": k.UserIDLC}}
 		h.annotateSourceContext(ctx, env.Meta, msg)
 		if e = h.RouteEnvelope(ctx, env); e != nil {
 			return refuse("该消息投递失败，请显式选择后重试", "route_rejected")
@@ -416,4 +414,24 @@ func (h *Hub) cleanupFeishuSticky(ctx context.Context, now time.Time) {
 	if _, err = repo.CleanupFeishuSticky(ctx, now, store.FeishuStickyCleanupBatch-removed); err != nil {
 		log.Printf("r14 cleanup failed: %v", err)
 	}
+}
+
+// Only R14 envelopes carry these restrictive identity checks. Legacy envelopes
+// and their receipts retain their existing behavior. A queued R14 message must
+// not be delivered to a new Agent which later reuses the same display name.
+func (h *Hub) stickyDeliveryAllowed(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+	id := metaString(env.Meta, "r14_target_agent_id")
+	if id == "" {
+		return true
+	}
+	principal := metaString(env.Meta, "r14_principal_lc")
+	if h.Identity == nil || c == nil || c.metricsAgentID != id || principal == "" {
+		return false
+	}
+	a, err := h.Identity.Store.GetAgent(ctx, id)
+	if err != nil || a.State != identity.AgentActive || a.OwnerLC != principal || AgentKeyID(principal) != c.keyID || a.NameLC() != c.sessionName {
+		return false
+	}
+	u, err := h.Identity.Store.GetUser(ctx, principal)
+	return err == nil && u.State == identity.UserActive
 }
