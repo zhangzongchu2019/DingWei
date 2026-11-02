@@ -1278,6 +1278,11 @@ func TestDispatchWildcardStripPrefix(t *testing.T) {
 		t.Fatalf("Dial: %v", err)
 	}
 	defer conn.Close(websocket.StatusNormalClosure, "done")
+	waitFor(t, envelopeReadTimeout, "service connection published", func() bool {
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		return hub.serviceClients["svc1"] != nil
+	})
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
@@ -1534,6 +1539,7 @@ func TestFeishuIngressNewChannelAutoBindingAndReplyToSender(t *testing.T) {
 	managerName := "zzc-manager-" + keyTail(key.ID)
 	manager := dialSession(t, ctx, srv.URL, managerName, key.ID, secret)
 	defer manager.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, hub, key.ID, managerName)
 
 	selector := "#" + managerName + " ping"
 	result, err := hub.Dispatch(ctx, model.Message{ID: "feishu-in", ChatEntityID: "dev:personal:ou_zzc", BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"` + selector + `"}`}, selector)
@@ -2354,6 +2360,9 @@ func TestShortSessionSelectorRejectsAmbiguousOwnerMatch(t *testing.T) {
 	secondDev := dialSession(t, ctx, srv.URL, "dev55", secondKey.ID, secondSecret)
 	defer secondDev.Close(websocket.StatusNormalClosure, "done")
 
+	waitSessionOnline(t, hub, firstKey.ID, "u1-home-"+keyTail(firstKey.ID))
+	waitSessionOnline(t, hub, firstKey.ID, "u1-dev55-"+keyTail(firstKey.ID))
+	waitSessionOnline(t, hub, secondKey.ID, "u1-dev55-"+keyTail(secondKey.ID))
 	homeName := "u1-home-" + keyTail(firstKey.ID)
 	if err := writeEnvelope(ctx, home, model.Envelope{ID: "ambiguous", To: "#dev55", From: homeName + "#" + firstKey.ID, Body: "ping"}); err != nil {
 		t.Fatal(err)
@@ -3477,8 +3486,15 @@ func TestSessionNameReconnectKeepsNameAndReleaseReuses(t *testing.T) {
 	defer srv.Close()
 
 	first := dialSession(t, ctx, srv.URL, "developer", key1.ID, secret1)
+	waitSessionOnline(t, hub, key1.ID, "u1-developer-"+keyTail(key1.ID))
 	reconnect := dialSession(t, ctx, srv.URL, "developer", key1.ID, secret1)
 	defer reconnect.Close(websocket.StatusNormalClosure, "done")
+	waitFor(t, envelopeReadTimeout, "replacement connection published", func() bool {
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		c := hub.sessionClients[key1.ID]["u1-developer-"+keyTail(key1.ID)]
+		return c != nil && c.connSeq >= 2
+	})
 	_ = first.Close(websocket.StatusNormalClosure, "replaced")
 	endpoints, err := db.ListSessionEndpoints(ctx)
 	if err != nil {
