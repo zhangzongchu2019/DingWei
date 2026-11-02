@@ -19,7 +19,7 @@
   - 阻塞：PM-R15-01～08 未定，推荐值仍为提案，不是已批准实现参数。
   - 下一步：strict 已通过；推送本分支并核对远端 tip/tree；等 PM 决策后另派回写／实现。
 
-- 2026-11-02T04:30:43Z · togpt60lunazzc.zzc · commit 待提交
+- 2026-11-02T04:30:43Z · togpt60lunazzc.zzc · commit 03e3cf3be242bdfcb95af7a597cffe1385e2b6cd
   - 完成：依 rulings ㉚～㉜ 将 PM-R15-01～08 标记已定；修订持久化容量与最旧淘汰／公平性建议，明确 eventRing 独立预算和不调整建议；更新规格淘汰验收并删除固定 1000 条场景。
   - 阻塞：无；T-03 实现仍未授权。
   - 下一步：strict 已通过；提交、推送并核对远端 tip/tree；等待后续授权。
