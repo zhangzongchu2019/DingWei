@@ -1,0 +1,348 @@
+{
+  "case": "S003",
+  "elapsed_ms": 8003,
+  "exit_utc": "2026-11-02T02:08:07.840046766Z",
+  "ports": [
+    "127.0.0.1:35205",
+    "127.0.0.1:34341"
+  ],
+  "process_error": "exit status 2",
+  "process_exit_code": 2,
+  "report": {
+    "shutdown_id": "hlc-1793585279836921506",
+    "reason": "terminated",
+    "started_utc": "2026-11-02T02:07:59.836921506Z",
+    "ended_utc": "2026-11-02T02:08:07.837308163Z",
+    "total_elapsed_ms": 8000,
+    "stages": [
+      {
+        "name": "access",
+        "started_utc": "2026-11-02T02:07:59.836929865Z",
+        "ended_utc": "2026-11-02T02:07:59.837006147Z",
+        "elapsed_ms": 0,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 1,
+            "outbound": 1
+          },
+          "durable_counts": null,
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {
+            "internal_http": 1,
+            "public_http": 1
+          },
+          "hub": {
+            "background_owned": 1
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {},
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "drain",
+        "started_utc": "2026-11-02T02:07:59.837017316Z",
+        "ended_utc": "2026-11-02T02:08:07.837269717Z",
+        "elapsed_ms": 8000,
+        "budget_ms": 8000,
+        "timeout": true,
+        "forced_close": true,
+        "result": "failed",
+        "error": "deadline_exceeded",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": null,
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T02:08:07.837096984Z",
+              "error": "context deadline exceeded",
+              "listener_closed_utc": "2026-11-02T02:07:59.837003618Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T02:08:07.837102403Z",
+              "error": "context deadline exceeded",
+              "listener_closed_utc": "2026-11-02T02:07:59.837003467Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "queue",
+        "started_utc": "2026-11-02T02:08:07.837285325Z",
+        "ended_utc": "2026-11-02T02:08:07.837291785Z",
+        "elapsed_ms": 0,
+        "budget_ms": 3000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "not_attempted_live_users",
+        "error": "operation_failed",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": null,
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T02:08:07.837096984Z",
+              "error": "context deadline exceeded",
+              "listener_closed_utc": "2026-11-02T02:07:59.837003618Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T02:08:07.837102403Z",
+              "error": "context deadline exceeded",
+              "listener_closed_utc": "2026-11-02T02:07:59.837003467Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "storage",
+        "started_utc": "2026-11-02T02:08:07.837296055Z",
+        "ended_utc": "2026-11-02T02:08:07.837296844Z",
+        "elapsed_ms": 0,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "not_attempted_live_users",
+        "error": "operation_failed",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": null,
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T02:08:07.837096984Z",
+              "error": "context deadline exceeded",
+              "listener_closed_utc": "2026-11-02T02:07:59.837003618Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T02:08:07.837102403Z",
+              "error": "context deadline exceeded",
+              "listener_closed_utc": "2026-11-02T02:07:59.837003467Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "finalize",
+        "started_utc": "2026-11-02T02:08:07.837300034Z",
+        "ended_utc": "2026-11-02T02:08:07.837304594Z",
+        "elapsed_ms": 0,
+        "budget_ms": 2000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": null,
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T02:08:07.837096984Z",
+              "error": "context deadline exceeded",
+              "listener_closed_utc": "2026-11-02T02:07:59.837003618Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T02:08:07.837102403Z",
+              "error": "context deadline exceeded",
+              "listener_closed_utc": "2026-11-02T02:07:59.837003467Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      }
+    ],
+    "exit_class": "timeout",
+    "exit_code": 2,
+    "snapshot": {
+      "consumers": {
+        "inbound": 0,
+        "outbound": 0
+      },
+      "durable_counts": null,
+      "feishu_ingress": "remote_or_no_sdk",
+      "http_overlaps_streams": {
+        "internal_http": 0,
+        "public_http": 0
+      },
+      "hub": {
+        "background_owned": 0
+      },
+      "persistence": "unknown",
+      "producers": {
+        "cron_reload": 0,
+        "reminders": 0
+      },
+      "queue": {
+        "inbound": {
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        },
+        "outbound": {
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        }
+      },
+      "servers": {
+        "internal": {
+          "drained_utc": "2026-11-02T02:08:07.837096984Z",
+          "error": "context deadline exceeded",
+          "listener_closed_utc": "2026-11-02T02:07:59.837003618Z"
+        },
+        "public": {
+          "drained_utc": "2026-11-02T02:08:07.837102403Z",
+          "error": "context deadline exceeded",
+          "listener_closed_utc": "2026-11-02T02:07:59.837003467Z"
+        }
+      },
+      "watchdog_enabled": false,
+      "watchdog_window_ms": 0
+    }
+  },
+  "signal": "",
+  "signal_utc": "2026-11-02T02:07:59.83687583Z",
+  "supervisor_sent_sigabrt": false,
+  "temporary_home": "/tmp/TestHLCFaultProcessMatrix4148135428/001",
+  "watchdog_max_gap_ms": 8003,
+  "watchdog_trace": null
+}

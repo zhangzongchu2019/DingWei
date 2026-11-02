@@ -1,0 +1,19 @@
+{
+  "profile": "queue-runtime-boundary",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./internal/bus",
+    "-run",
+    "^TestShutdownQueueRuntimeAcknowledgementRemainsBestEffort$",
+    "-count=1",
+    "-v"
+  ],
+  "started_utc": "2026-11-01T23:56:37.957140+00:00",
+  "finished_utc": "2026-11-01T23:56:39.893062+00:00",
+  "rc": 0,
+  "log": "docs/reviews/hlc-s008-queue/queue-runtime-boundary.log",
+  "sha256": "6b078fb6165f6c752355391b7a7dc7a157984a52a19bb73dc057c22f1a3c429c",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

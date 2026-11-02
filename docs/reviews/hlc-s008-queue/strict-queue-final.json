@@ -1,0 +1,16 @@
+{
+  "profile": "strict-queue-final",
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict",
+    "--no-interactive"
+  ],
+  "started_utc": "2026-11-01T23:53:09.454682+00:00",
+  "finished_utc": "2026-11-01T23:53:09.692861+00:00",
+  "rc": 0,
+  "log": "docs/reviews/hlc-s008-queue/strict-queue-final.log",
+  "sha256": "0899b27eaabb0adbd38916ec3daafda0491329c84c2ca893051e4e396ad7eb67",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

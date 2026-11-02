@@ -1,0 +1,20 @@
+{
+  "profile": "queue-s008-complete",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./internal/bus",
+    "./cmd/workpulse",
+    "-run",
+    "^TestShutdown",
+    "-count=1",
+    "-v"
+  ],
+  "started_utc": "2026-11-01T23:49:45.509691+00:00",
+  "finished_utc": "2026-11-01T23:50:06.164973+00:00",
+  "rc": 0,
+  "log": "docs/reviews/hlc-s008-queue/queue-s008-complete.log",
+  "sha256": "dcf3334fe508a3c17eeb4825add7d3d13053efdc641e14bfc9e413e647702242",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

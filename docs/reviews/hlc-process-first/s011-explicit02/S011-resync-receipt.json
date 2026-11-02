@@ -1,0 +1,31 @@
+{
+  "case": "S011-resync",
+  "command": [
+    "go",
+    "test",
+    "-overlay",
+    "/tmp/hlc-matrix-dv1ax9nx/overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCLoadMatrix$",
+    "-count=1",
+    "-shuffle=on",
+    "-timeout=20m",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T01:52:59.431753+00:00",
+  "ended_utc": "2026-11-02T01:53:10.478404+00:00",
+  "rc": 1,
+  "log": "S011-resync-first.log",
+  "log_sha256": "1953025bfd1dcc2f9c82ef806da8750e0997807b3b78488e40df2b38ead02c78",
+  "overlays": "Only fixture setup injection + test SDK transport; shutdown coordinator/handlers/queues unchanged",
+  "race": false,
+  "repetitions": 1,
+  "sources": {
+    "cmd/workpulse/main.go": "bb9b1c9c2e76a73294287c525153d6aede24964778af972d5a4955bd60cc1265",
+    "internal/feishu/lifecycle.go": "52c8bcbbee78cacb930e1e971c729dee897d9d41f18d747f1ffc294c88fc048e",
+    "cmd/workpulse/shutdown_load_test.go": "3b3e2a8a8ac3ac781fc2f8cc16b73aee2cfcb837f0a75353f882df6abb4cc657",
+    "tests/hlc/sdk_fixture.go.txt": "13520d21e8ef84fe8d254af8630f95ffd884760d9ddeed671ea570d7970d475f",
+    "tests/hlc/process_matrix.py": "ffc4fe4827f983cf2ec556c6f27b392fef08baf3f52842e40b2a83312fba1730"
+  }
+}

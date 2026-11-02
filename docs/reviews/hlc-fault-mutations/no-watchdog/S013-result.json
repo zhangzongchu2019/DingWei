@@ -1,0 +1,33 @@
+{
+  "case": "S013",
+  "elapsed_ms": 12699,
+  "exit_utc": "2026-11-02T02:10:04.58971048Z",
+  "ports": [
+    "127.0.0.1:43937",
+    "127.0.0.1:46567"
+  ],
+  "process_error": "signal: aborted (core dumped)",
+  "process_exit_code": -1,
+  "report": {
+    "shutdown_id": "",
+    "reason": "",
+    "started_utc": "0001-01-01T00:00:00Z",
+    "ended_utc": "0001-01-01T00:00:00Z",
+    "total_elapsed_ms": 0,
+    "stages": null,
+    "exit_class": "",
+    "exit_code": 0,
+    "snapshot": null
+  },
+  "signal": "aborted",
+  "signal_utc": "2026-11-02T02:09:51.88997395Z",
+  "supervisor_sent_sigabrt": true,
+  "temporary_home": "/tmp/TestHLCFaultProcessMatrix1721013144/001",
+  "watchdog_max_gap_ms": 12699,
+  "watchdog_trace": [
+    {
+      "at_utc": "2026-11-02T02:09:51.890126456Z",
+      "value": "WATCHDOG=1"
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "recorded_utc": "2026-11-02T02:22:45.612843+00:00",
+  "status": "not_full_submission; test window assigned to repair lane; primary launches no tests until explicit return",
+  "first_S006": {
+    "rc": 0,
+    "process_exit": 0,
+    "stop_ms": 2131,
+    "stage_ms": [
+      0,
+      2119,
+      0,
+      7,
+      0
+    ],
+    "http_commits": 100,
+    "late_DB": 0,
+    "late_rejects": 1
+  },
+  "first_S011_auto": {
+    "rc": 1,
+    "old_process_exit": 0,
+    "stop_to_ready_ms": 2202,
+    "helpers_ms": 36,
+    "SSE_ms": 46,
+    "WS_ms": 46,
+    "gap_frames": [
+      {
+        "type": "gap",
+        "agent_id": "hlcagent00",
+        "full_name": "hlcagent00.hlcowner0",
+        "iframe_instance": "00000000000000000000000000000064",
+        "generation": "260aa3822cab12f14df4d5b4905cd5cc",
+        "replay_round": "1",
+        "epoch": "7a42c1194a458833",
+        "floor": "1",
+        "H": "2",
+        "reason": "resync_required",
+        "cause": "epoch_changed",
+        "observed_utc": "2026-11-02T01:46:32.620052812Z",
+        "from_stop_ms": 2251
+      }
+    ],
+    "mux_missing": 2,
+    "mux_duplicates": 0
+  },
+  "S011_explicit_observation": {
+    "click_to_output_ms": 248,
+    "stop_to_output_ms": 7462,
+    "missing_after": 0,
+    "duplicates_after": 0,
+    "fates": [
+      {
+        "after_resync_count": 1,
+        "before_resync_count": 0,
+        "delivery_id": "hlc-after-00",
+        "fate": "显式重新同步后补回",
+        "mux_cursor": "9825396f4ccddae6-1",
+        "mux_observed_utc": "2026-11-02T01:52:01.201550567Z",
+        "new_hub_sse_cursor": "9825396f4ccddae6-1",
+        "old_hub_memory_loss": false,
+        "published_after_new_ready_ms": 1,
+        "published_after_stop_ms": 2206,
+        "published_send_started_utc": "2026-11-02T01:51:55.945432845Z",
+        "session_event_envelope_id": "hlc-after-00-event",
+        "sse_observed_utc": "2026-11-02T01:51:55.980097938Z"
+      },
+      {
+        "after_resync_count": 1,
+        "before_resync_count": 0,
+        "delivery_id": "hlc-after-verify",
+        "fate": "显式重新同步后补回",
+        "mux_cursor": "9825396f4ccddae6-2",
+        "mux_observed_utc": "2026-11-02T01:52:01.201949158Z",
+        "new_hub_sse_cursor": "9825396f4ccddae6-2",
+        "old_hub_memory_loss": false,
+        "published_after_new_ready_ms": 44,
+        "published_after_stop_ms": 2248,
+        "published_send_started_utc": "2026-11-02T01:51:55.987844152Z",
+        "session_event_envelope_id": "hlc-after-verify-event",
+        "sse_observed_utc": "2026-11-02T01:51:55.988249772Z"
+      }
+    ],
+    "whole_test_rc": 1,
+    "remaining_product_defect": "peer-first new Hub cleanup drain failure; fix reserved to opus50tc2k/hlc-drain-exit1; no primary product edit"
+  },
+  "readiness_evidence_commit": "3f73f80afd1c01d1ee78282cd8625a9969cadbd4",
+  "readiness_report": "docs/reviews/hlc-readiness-comparison/REPORT.md",
+  "pending": [
+    "receive repair source and explicit test-window return",
+    "sole-primary inspect and integrate",
+    "single-flow S00650 + S011 + strict PG related whole suite + run-build-tests",
+    "independent acceptance; no deployment/apply/archive"
+  ],
+  "estimated_submission": "04:30Z tentative, pending repair and test window; not a guarantee"
+}

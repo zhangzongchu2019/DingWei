@@ -1,0 +1,17 @@
+{
+  "profile": "queue-final",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./internal/bus",
+    "-count=1",
+    "-v"
+  ],
+  "started_utc": "2026-11-01T23:47:54.418978+00:00",
+  "finished_utc": "2026-11-01T23:48:17.762064+00:00",
+  "rc": 0,
+  "log": "docs/reviews/hlc-s008-queue/queue-final.log",
+  "sha256": "e5ed1a36d09353f9188c2dcd465e5b8c38dc4bc0bdbe9a8c4cb2eef6ca39e262",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

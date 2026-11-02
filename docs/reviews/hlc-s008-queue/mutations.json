@@ -1,0 +1,52 @@
+[
+  {
+    "mutation": "no-channel-drain",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "-overlay",
+      "/tmp/hlc-s008-mutation-8c0_g_72/overlay.json",
+      "./internal/bus",
+      "-run",
+      "^TestShutdownQueueS008BufferedMultipleBatches$",
+      "-count=1",
+      "-timeout=30s",
+      "-v"
+    ],
+    "started_utc": "2026-11-01T23:52:29.791050+00:00",
+    "finished_utc": "2026-11-01T23:52:30.789088+00:00",
+    "rc": 1,
+    "target_assertion": "S008_ALL_BUFFERED_COMMITTED",
+    "target_red": true,
+    "source_sha256": "55380f3d8a10a69924008f7817fa25659f98c4a934aece4e67a4215243af7280",
+    "mutant_sha256": "09a266f8298ba1e0c224e5323ca6ec2f4ba6b29171579ae8500d740533ec565a",
+    "log": "no-channel-drain.log",
+    "log_sha256": "c2dd120df6ca556d3bec5f8167167cc4582e1adbaa923250cdfbb2cc8abb596c"
+  },
+  {
+    "mutation": "overwrite-first-error",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "-overlay",
+      "/tmp/hlc-s008-mutation-kk60eptq/overlay.json",
+      "./internal/bus",
+      "-run",
+      "^TestShutdownQueueS008FirstFailureAndUncommittedCount$",
+      "-count=1",
+      "-timeout=30s",
+      "-v"
+    ],
+    "started_utc": "2026-11-01T23:52:30.789897+00:00",
+    "finished_utc": "2026-11-01T23:52:31.788303+00:00",
+    "rc": 1,
+    "target_assertion": "S008_FIRST_ERROR_AND_REMAINDER",
+    "target_red": true,
+    "source_sha256": "55380f3d8a10a69924008f7817fa25659f98c4a934aece4e67a4215243af7280",
+    "mutant_sha256": "6fe99f9dbe9ff487aaa9dac440070f4f21dd801a423ae232db807b5d8d41118d",
+    "log": "overwrite-first-error.log",
+    "log_sha256": "d38b8406f4495c87f243af3b355aebcdf9f71e999492aa2c4f43848dd56cd3d4"
+  }
+]

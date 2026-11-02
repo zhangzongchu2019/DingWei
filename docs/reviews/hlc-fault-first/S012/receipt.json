@@ -1,0 +1,21 @@
+{
+  "case": "S012",
+  "command": [
+    "go",
+    "test",
+    "-overlay",
+    "/tmp/hlc-fault-cyep0n5d/overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCFaultProcessMatrix$",
+    "-count=1",
+    "-timeout=60s",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T02:08:18.890545+00:00",
+  "ended_utc": "2026-11-02T02:08:22.008592+00:00",
+  "rc": 0,
+  "withhold_watchdog": false,
+  "log": "S012-test.log",
+  "sha256": "8cecdef649d8795c17503949f3e168ab22f9113c9ab9aa35dc039cdc90b06531"
+}

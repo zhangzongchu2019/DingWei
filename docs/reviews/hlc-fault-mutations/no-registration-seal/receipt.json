@@ -1,0 +1,23 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-overlay",
+    "/tmp/hlc-registration-mutation-kptov9w3/overlay.json",
+    "./internal/m8",
+    "-run",
+    "^TestHLCRegistrationBarrierTwentyWebSockets$",
+    "-count=1",
+    "-timeout=40s",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T02:15:02.131446+00:00",
+  "ended_utc": "2026-11-02T02:15:24.350699+00:00",
+  "rc": 1,
+  "source_sha256": "f5e8826976aeaabd0c3f5f0f9bbecd0569fe0230ec1efdb340671667a2e13ab0",
+  "mutant_sha256": "4ac1a1dabe145cdb193cabdcce89c6395bce44ea1923726d3e68da06ef76d7d8",
+  "log_sha256": "436c604b3e5ec33f5b8999e5ef8734e35e7b94fe09a5343ff363e28a36e962fd",
+  "target_assertion": "S005_REGISTRATION_AFTER_SEAL",
+  "target_red": true
+}

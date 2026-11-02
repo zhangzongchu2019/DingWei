@@ -1,0 +1,22 @@
+{
+  "case": "S013",
+  "command": [
+    "go",
+    "test",
+    "-overlay",
+    "/tmp/hlc-fault-khb_u_n3/overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCFaultProcessMatrix$",
+    "-count=1",
+    "-timeout=60s",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T02:09:49.125794+00:00",
+  "ended_utc": "2026-11-02T02:10:04.631242+00:00",
+  "rc": 1,
+  "withhold_watchdog": true,
+  "log": "S013-test.log",
+  "sha256": "ad40dfc3503d7a8355daa6ffd11ae425fb3e761b8523a126a2f1780676d68205",
+  "target_red": true
+}

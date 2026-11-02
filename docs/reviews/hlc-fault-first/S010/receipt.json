@@ -1,0 +1,21 @@
+{
+  "case": "S010",
+  "command": [
+    "go",
+    "test",
+    "-overlay",
+    "/tmp/hlc-fault-2yalyzne/overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCFaultProcessMatrix$",
+    "-count=1",
+    "-timeout=60s",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T02:08:38.489551+00:00",
+  "ended_utc": "2026-11-02T02:08:43.534615+00:00",
+  "rc": 0,
+  "withhold_watchdog": false,
+  "log": "S010-test.log",
+  "sha256": "d8bf709b5073f6a81c126d994ec05215a477419c846726eafc02e54104a87cdd"
+}

@@ -1,0 +1,13 @@
+{
+  "profile": "build-queue-final",
+  "command": [
+    "bash",
+    "scripts/run-build-tests.sh"
+  ],
+  "started_utc": "2026-11-01T23:47:56.747385+00:00",
+  "finished_utc": "2026-11-01T23:56:46.303832+00:00",
+  "rc": 0,
+  "log": "docs/reviews/hlc-s008-queue/build-queue-final.log",
+  "sha256": "736e555d5ad7410db869503d98d22bd93f124affebc4da923efcb6065bf41dbb",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

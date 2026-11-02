@@ -1,0 +1,19 @@
+{
+  "profile": "queue-stage-final",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./cmd/workpulse",
+    "-run",
+    "^TestShutdown",
+    "-count=1",
+    "-v"
+  ],
+  "started_utc": "2026-11-01T23:47:55.581175+00:00",
+  "finished_utc": "2026-11-01T23:48:10.336494+00:00",
+  "rc": 0,
+  "log": "docs/reviews/hlc-s008-queue/queue-stage-final.log",
+  "sha256": "41f0caaa12fbd379ef2d2e4f635be21883867adaf99f1154ee5f8cd848fdf7b3",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

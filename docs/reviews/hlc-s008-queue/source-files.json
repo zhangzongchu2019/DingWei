@@ -1,0 +1,12 @@
+{
+  "base": "ffaa6b27fb4f02660863e0ecc4e8bed41f4be387",
+  "status": "uncommitted HLC draft; hashes are not a Git commit",
+  "sha256": {
+    "internal/bus/async_dbqueue.go": "55380f3d8a10a69924008f7817fa25659f98c4a934aece4e67a4215243af7280",
+    "internal/bus/shutdown_test.go": "29b034a9a9544ad67ab2742ed59c0d618b53cd4b46d2fcf4011ba4de54608bef",
+    "cmd/workpulse/shutdown.go": "5ba93b1284e19cc11caa906718442d677a25e24afacc32a7191638a4d122cc9b",
+    "cmd/workpulse/shutdown_queue_test.go": "5ca081da9aebfddd2038a5074b36add19fc7964b39f6a7f8dae1a8b4cb21e7df",
+    "cmd/workpulse/main.go": "c333e18e7ee43ef1b92024673673ca7b80a3f79b86fe5ee9e8615e696bf1c3ff",
+    "tests/hlc/s008_mutations.py": "aa5ee628e4db079b7a4b8e512267dddeb80344a7662941c25c1f8f97f15b00d7"
+  }
+}

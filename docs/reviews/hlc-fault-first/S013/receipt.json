@@ -1,0 +1,21 @@
+{
+  "case": "S013",
+  "command": [
+    "go",
+    "test",
+    "-overlay",
+    "/tmp/hlc-fault-dbo1lw93/overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCFaultProcessMatrix$",
+    "-count=1",
+    "-timeout=60s",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T02:08:22.050516+00:00",
+  "ended_utc": "2026-11-02T02:08:38.447216+00:00",
+  "rc": 0,
+  "withhold_watchdog": false,
+  "log": "S013-test.log",
+  "sha256": "0f50d8f5b71e40c04c564e03f3ea95c7492d0e4c2704dd9aa2bdc818866b46a7"
+}
