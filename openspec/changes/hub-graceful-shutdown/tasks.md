@@ -1,5 +1,12 @@
 # Tasks
 
+## r48 集成交接（2026-11-02）
+
+- 2026-11-02T06:16:16Z · coder56solzzc.zzc · S-R48-INTEGRATION，依组长 a78e308e 接管令于06:15:12Z接任唯一写者；源码基于81849a388d28bec732848227b548be9a894addc3，普通合并04f7deb0d128a19ff45fb2bceb5f76d9ca40c399，合并提交cabeedab68a19b05d9ca10afcacbe8d6ab7f7664。
+  - 完成：无冲突；merge-tree复算为615e28be484d7a63afedacba715d541e5a4394d5，与合并树一致。三处版本同步0.2.3.23、lastReleased为0.2.3.22，固定发布钉版测试同步；页面源码不写版本。View运行件与迁移对比见docs/reviews/r48-integration/PREFLIGHT.json。R5绑定页、R10、R9、R14、R15不在集成范围。
+  - 阻塞：本轮新源码门尚未执行，不挪用81849a38门作新tip通过；m8 race既有时限finding、S011自动恢复红继续保留，T-10/11待预发/现网验收，不自验收。
+  - 下一步：干净提交后以精确源码串行运行canonical仓库门、版本与Go相关包/整包race（m8 45m）、PG严格整包逐条SKIP、浏览器总runner两渠道、全仓OpenSpec strict；推送核ls-remote后冻结。无部署授权。
+
 初始派单 S-HUB-GRACEFUL-SHUTDOWN-PROPOSAL；唯一执行者 coder56solzzc.zzc。T-01/02及此前T-03事实子项已完成；本次S-R48-PM-WRITEBACK授权从ae9b809b6221eb6e14ab91070357fd22edbf9aef按rulings㉒只回写PM已定值。HLC-PM01～04已定，T-03总项闭合；后续S-HLC-IMPL已授权，当前T-04～09开发与本地执行完成，T-10/11待独立验收和门例外处置。原固定源码基线2af469dd6919d8eb6064aa7da0e646f0851becf8，分支opus50tc2k/hub-graceful-shutdown-spec，仅写本变更目录。
 
 ## 1. 提案与校验

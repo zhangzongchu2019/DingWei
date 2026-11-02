@@ -1,0 +1,45 @@
+{
+  "task": "S-R48-INTEGRATION",
+  "utc": "2026-11-02T06:16:51.092953+00:00",
+  "release": "0.2.3.23",
+  "last_released": "0.2.3.22",
+  "base": "c248506cf120c3af2a06eeaeeae3038f596537b1",
+  "hlc": "81849a388d28bec732848227b548be9a894addc3",
+  "browser": "04f7deb0d128a19ff45fb2bceb5f76d9ca40c399",
+  "merge_commit": "cabeedab68a19b05d9ca10afcacbe8d6ab7f7664",
+  "merge_tree": "615e28be484d7a63afedacba715d541e5a4394d5",
+  "merge_conflicts": [],
+  "view_runtime_changed": false,
+  "view_runtime_blobs": [
+    {
+      "path": "view-service/view_service.py",
+      "r47_blob": "e94a68009d16761343dfc88f36232b0da8a18082",
+      "integration_blob": "e94a68009d16761343dfc88f36232b0da8a18082"
+    },
+    {
+      "path": "view-service/view_page_store.py",
+      "r47_blob": "c73f03e5deada818a14b7db483e7f11b979fe133",
+      "integration_blob": "c73f03e5deada818a14b7db483e7f11b979fe133"
+    },
+    {
+      "path": "view-service/renderer-canary-sse.html",
+      "r47_blob": "cdc89b535facbe5daa02aeb9f5a4565309fd250a",
+      "integration_blob": "cdc89b535facbe5daa02aeb9f5a4565309fd250a"
+    }
+  ],
+  "migration_directories": [
+    "internal/store/migrations",
+    "internal/store/migrate/migrations"
+  ],
+  "migration_diff": "",
+  "migrations_added": false,
+  "excluded": [
+    "R5 binding page",
+    "R10",
+    "R9",
+    "R14",
+    "R15"
+  ],
+  "tests_status": "pending on version commit",
+  "deployment_authorized": false
+}
