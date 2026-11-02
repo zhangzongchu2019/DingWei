@@ -1,0 +1,7 @@
+=== RUN   TestHubWSCloseProcessChild
+HLC_WS_READY mode=live-write-failure address=127.0.0.1:38953 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseslive-write-failure1916874284/001
+HLC_WS_SIGTERM 2026-11-02T02:18:14.518991347Z
+{"already_closed":0,"failed":3,"records":[{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"}]}
+HLC_WS_ERROR websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout

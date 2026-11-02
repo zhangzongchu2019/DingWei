@@ -1,0 +1,130 @@
+=== RUN   TestHubCloseWaitsForCapabilityPendingCleanup
+2026/11/02 02:23:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:23:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestHubCloseWaitsForCapabilityPendingCleanup (3.50s)
+=== RUN   TestHubCloseStopsAMRGoroutine
+2026/11/02 02:23:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:23:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestHubCloseStopsAMRGoroutine (0.00s)
+=== RUN   TestHubCloseToleratesLiteralAMRProcessor
+--- PASS: TestHubCloseToleratesLiteralAMRProcessor (0.00s)
+=== RUN   TestHubCloseWaitsForRunToExit
+2026/11/02 02:23:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:23:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestHubCloseWaitsForRunToExit (0.20s)
+=== RUN   TestHubCloseWaitsForSessionHandlers
+2026/11/02 02:23:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:23:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:23:49 session name warning key_id=FB-person-20261102-7db2ba53 owner= session=closer: 无法确认该 key 绑定成员 owner_key
+2026/11/02 02:23:49 session version warning key_id=FB-person-20261102-7db2ba53 owner= session=closer version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:23:49 session handshake timing key_id=FB-person-20261102-7db2ba53 session=closer total=12ms auth=1ms accounts=0s owner=1ms register=5ms accept=0s conn_seq=1ms onboard=2ms register_lock=0s
+--- PASS: TestHubCloseWaitsForSessionHandlers (3.41s)
+=== RUN   TestWebsocketAlreadyClosed
+=== RUN   TestWebsocketAlreadyClosed/EOF
+=== RUN   TestWebsocketAlreadyClosed/closed_network
+=== RUN   TestWebsocketAlreadyClosed/peer_close_frame
+=== RUN   TestWebsocketAlreadyClosed/peer_broken_pipe
+=== RUN   TestWebsocketAlreadyClosed/peer_reset
+=== RUN   TestWebsocketAlreadyClosed/write_timeout
+=== RUN   TestWebsocketAlreadyClosed/deadline
+=== RUN   TestWebsocketAlreadyClosed/canceled
+=== RUN   TestWebsocketAlreadyClosed/joined_timeout_closed
+=== RUN   TestWebsocketAlreadyClosed/untyped_text
+=== RUN   TestWebsocketAlreadyClosed/other_failure
+=== RUN   TestWebsocketAlreadyClosed/nil
+--- PASS: TestWebsocketAlreadyClosed (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/EOF (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/closed_network (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/peer_close_frame (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/peer_broken_pipe (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/peer_reset (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/write_timeout (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/deadline (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/canceled (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/joined_timeout_closed (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/untyped_text (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/other_failure (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/nil (0.00s)
+=== RUN   TestHubWSCloseProcesses
+=== RUN   TestHubWSCloseProcesses/peer-first
+    lifecycle_close_test.go:157: RESOURCE address=127.0.0.1:39315 home=/tmp/hlc-drain-final-enms4j33/tmp/TestHubWSCloseProcessespeer-first2186603340/001 database=none
+    lifecycle_close_test.go:217: signal_utc=2026-11-02T02:23:49.810649292Z exit=0 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=peer-first address=127.0.0.1:39315 home=/tmp/hlc-drain-final-enms4j33/tmp/TestHubWSCloseProcessespeer-first2186603340/001
+        HLC_WS_SIGTERM 2026-11-02T02:23:49.810688668Z
+        {"already_closed":3,"failed":0,"records":[{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"}]}
+=== RUN   TestHubWSCloseProcesses/hub-first
+    lifecycle_close_test.go:157: RESOURCE address=127.0.0.1:33935 home=/tmp/hlc-drain-final-enms4j33/tmp/TestHubWSCloseProcesseshub-first497417249/001 database=none
+    lifecycle_close_test.go:217: signal_utc=2026-11-02T02:23:50.84314916Z exit=0 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=hub-first address=127.0.0.1:33935 home=/tmp/hlc-drain-final-enms4j33/tmp/TestHubWSCloseProcesseshub-first497417249/001
+        HLC_WS_SIGTERM 2026-11-02T02:23:50.843179817Z
+        {"already_closed":0,"failed":0,"records":[{"kind":"fixture_ws","result":"closed","error":""},{"kind":"fixture_ws","result":"closed","error":""},{"kind":"fixture_ws","result":"closed","error":""}]}
+=== RUN   TestHubWSCloseProcesses/live-write-failure
+    lifecycle_close_test.go:157: RESOURCE address=127.0.0.1:38933 home=/tmp/hlc-drain-final-enms4j33/tmp/TestHubWSCloseProcesseslive-write-failure3310460771/001 database=none
+    lifecycle_close_test.go:217: signal_utc=2026-11-02T02:23:51.875361546Z exit=1 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=live-write-failure address=127.0.0.1:38933 home=/tmp/hlc-drain-final-enms4j33/tmp/TestHubWSCloseProcesseslive-write-failure3310460771/001
+        HLC_WS_SIGTERM 2026-11-02T02:23:51.875407731Z
+        {"already_closed":0,"failed":3,"records":[{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"}]}
+        HLC_WS_ERROR websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+        websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+        websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+--- PASS: TestHubWSCloseProcesses (2.09s)
+    --- PASS: TestHubWSCloseProcesses/peer-first (1.03s)
+    --- PASS: TestHubWSCloseProcesses/hub-first (1.03s)
+    --- PASS: TestHubWSCloseProcesses/live-write-failure (0.03s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	10.252s
+=== RUN   TestShutdownFeishuCloseBeforeRootSealAndWait
+--- PASS: TestShutdownFeishuCloseBeforeRootSealAndWait (0.01s)
+=== RUN   TestShutdownFeishuUsesEightSecondDrainAndExitTwo
+    shutdown_feishu_test.go:79: SDK drain_budget_ms=8000 elapsed_ms=8006 exit_code=2 db_closed=false
+--- PASS: TestShutdownFeishuUsesEightSecondDrainAndExitTwo (8.01s)
+=== RUN   TestShutdownFeishuRemoteReceiverUsesExistingRootGate
+--- PASS: TestShutdownFeishuRemoteReceiverUsesExistingRootGate (0.00s)
+=== RUN   TestShutdownFeishuAdmittedCallbackKeepsWorkBudget
+--- PASS: TestShutdownFeishuAdmittedCallbackKeepsWorkBudget (0.00s)
+=== RUN   TestShutdownS008QueueProcessChild
+--- PASS: TestShutdownS008QueueProcessChild (0.00s)
+=== RUN   TestShutdownS008QueueProcessExitCodes
+=== RUN   TestShutdownS008QueueProcessExitCodes/success
+    shutdown_queue_test.go:94: S008 actual_process_exit=0 elapsed_ms=1031 queue=map[failed:0 first_error:nil remaining:0]
+=== RUN   TestShutdownS008QueueProcessExitCodes/commit_failure
+    shutdown_queue_test.go:94: S008 actual_process_exit=1 elapsed_ms=28 queue=map[failed:5 first_error:operation_failed remaining:5]
+=== RUN   TestShutdownS008QueueProcessExitCodes/db_deadline
+    shutdown_queue_test.go:94: S008 actual_process_exit=2 elapsed_ms=3032 queue=map[failed:5 first_error:deadline_exceeded remaining:5]
+=== RUN   TestShutdownS008QueueProcessExitCodes/failure_then_deadline
+    shutdown_queue_test.go:94: S008 actual_process_exit=2 elapsed_ms=3031 queue=map[failed:1 first_error:operation_failed remaining:5]
+--- PASS: TestShutdownS008QueueProcessExitCodes (7.13s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/success (1.03s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/commit_failure (0.03s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/db_deadline (3.03s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/failure_then_deadline (3.03s)
+=== RUN   TestShutdownS008QueueStageResults
+=== RUN   TestShutdownS008QueueStageResults/success
+    shutdown_queue_test.go:177: S008 exit=0 db_budget_ms=3000 db_elapsed_ms=0 timeout=false remaining=0 failed=0 db_closed=true first_commit_error=false
+=== RUN   TestShutdownS008QueueStageResults/commit_failure
+    shutdown_queue_test.go:177: S008 exit=1 db_budget_ms=3000 db_elapsed_ms=0 timeout=false remaining=5 failed=5 db_closed=true first_commit_error=true
+=== RUN   TestShutdownS008QueueStageResults/db_deadline
+    shutdown_queue_test.go:177: S008 exit=2 db_budget_ms=3000 db_elapsed_ms=3000 timeout=true remaining=5 failed=5 db_closed=false first_commit_error=false
+=== RUN   TestShutdownS008QueueStageResults/failure_then_deadline
+    shutdown_queue_test.go:177: S008 exit=2 db_budget_ms=3000 db_elapsed_ms=3001 timeout=true remaining=5 failed=2 db_closed=false first_commit_error=true
+--- PASS: TestShutdownS008QueueStageResults (6.01s)
+    --- PASS: TestShutdownS008QueueStageResults/success (0.00s)
+    --- PASS: TestShutdownS008QueueStageResults/commit_failure (0.00s)
+    --- PASS: TestShutdownS008QueueStageResults/db_deadline (3.00s)
+    --- PASS: TestShutdownS008QueueStageResults/failure_then_deadline (3.01s)
+=== RUN   TestShutdownRecordsBothServersAndExitClassification
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/graceful
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/failure
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/timeout
+--- PASS: TestShutdownRecordsBothServersAndExitClassification (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/graceful (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/failure (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/timeout (0.00s)
+=== RUN   TestShutdownDoesNotCloseDBWithLiveUsers
+--- PASS: TestShutdownDoesNotCloseDBWithLiveUsers (0.00s)
+=== RUN   TestShutdownBlockingFinalizerIsBounded
+--- PASS: TestShutdownBlockingFinalizerIsBounded (2.00s)
+=== RUN   TestShutdownTimeoutHasPriority
+--- PASS: TestShutdownTimeoutHasPriority (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	24.191s

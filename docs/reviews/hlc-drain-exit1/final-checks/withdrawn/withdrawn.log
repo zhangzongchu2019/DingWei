@@ -1,0 +1,42 @@
+=== RUN   TestHubWSCloseProcesses
+=== RUN   TestHubWSCloseProcesses/peer-first
+    lifecycle_close_test.go:157: RESOURCE address=127.0.0.1:32887 home=/tmp/hlc-drain-final-enms4j33/tmp/hlc-ws-mutation-du40hmkt/tmp/TestHubWSCloseProcessespeer-first2724186487/001 database=none
+    lifecycle_close_test.go:217: signal_utc=2026-11-02T02:24:41.755980829Z exit=1 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=peer-first address=127.0.0.1:32887 home=/tmp/hlc-drain-final-enms4j33/tmp/hlc-ws-mutation-du40hmkt/tmp/TestHubWSCloseProcessespeer-first2724186487/001
+        HLC_WS_SIGTERM 2026-11-02T02:24:41.756023395Z
+        {"already_closed":0,"failed":3,"records":[{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"}]}
+        HLC_WS_ERROR websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF
+        websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF
+        websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF
+    lifecycle_close_test.go:222: S014_EXIT: got 1 want 0
+--- FAIL: TestHubWSCloseProcesses (0.03s)
+    --- FAIL: TestHubWSCloseProcesses/peer-first (0.03s)
+=== RUN   TestHubWSCloseProcesses
+=== RUN   TestHubWSCloseProcesses/peer-first
+    lifecycle_close_test.go:157: RESOURCE address=127.0.0.1:39063 home=/tmp/hlc-drain-final-enms4j33/tmp/hlc-ws-mutation-du40hmkt/tmp/TestHubWSCloseProcessespeer-first512247458/001 database=none
+    lifecycle_close_test.go:217: signal_utc=2026-11-02T02:24:41.788498812Z exit=1 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=peer-first address=127.0.0.1:39063 home=/tmp/hlc-drain-final-enms4j33/tmp/hlc-ws-mutation-du40hmkt/tmp/TestHubWSCloseProcessespeer-first512247458/001
+        HLC_WS_SIGTERM 2026-11-02T02:24:41.788535998Z
+        {"already_closed":0,"failed":3,"records":[{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"}]}
+        HLC_WS_ERROR websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF
+        websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF
+        websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF
+    lifecycle_close_test.go:222: S014_EXIT: got 1 want 0
+--- FAIL: TestHubWSCloseProcesses (0.03s)
+    --- FAIL: TestHubWSCloseProcesses/peer-first (0.03s)
+=== RUN   TestHubWSCloseProcesses
+=== RUN   TestHubWSCloseProcesses/peer-first
+    lifecycle_close_test.go:157: RESOURCE address=127.0.0.1:38705 home=/tmp/hlc-drain-final-enms4j33/tmp/hlc-ws-mutation-du40hmkt/tmp/TestHubWSCloseProcessespeer-first1571832177/001 database=none
+    lifecycle_close_test.go:217: signal_utc=2026-11-02T02:24:41.822675193Z exit=1 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=peer-first address=127.0.0.1:38705 home=/tmp/hlc-drain-final-enms4j33/tmp/hlc-ws-mutation-du40hmkt/tmp/TestHubWSCloseProcessespeer-first1571832177/001
+        HLC_WS_SIGTERM 2026-11-02T02:24:41.822717539Z
+        {"already_closed":0,"failed":3,"records":[{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"}]}
+        HLC_WS_ERROR websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF
+        websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF
+        websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF
+    lifecycle_close_test.go:222: S014_EXIT: got 1 want 0
+--- FAIL: TestHubWSCloseProcesses (0.03s)
+    --- FAIL: TestHubWSCloseProcesses/peer-first (0.03s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.132s
+FAIL
