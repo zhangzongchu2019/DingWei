@@ -30,6 +30,7 @@ var (
 	ErrNeedsSync   = errors.New("r10_needs_sync")
 	ErrComparison  = errors.New("comparison_unknown")
 	ErrNotFound    = errors.New("r10_not_found")
+	ErrPRRequired  = errors.New("r10_register_pr_first")
 	ErrCompleted   = errors.New("r10_task_completed")
 	shaRE          = regexp.MustCompile(`^[0-9a-f]{40}$`)
 	repositoryRE   = regexp.MustCompile(`^[1-9][0-9]{0,19}$`)
@@ -106,6 +107,7 @@ type Lock struct {
 	PRHeadRef          string    `json:"pr_head_ref"`
 	PRUpdatedAt        time.Time `json:"pr_updated_at_utc"`
 	ComparisonState    string    `json:"comparison_state"`
+	SyncRequired       bool      `json:"sync_required"`
 	ObservedCommitSHA  string    `json:"observed_commit_sha"`
 	LastAttemptAt      time.Time `json:"last_attempt_at_utc"`
 	LastCheckedAt      time.Time `json:"last_checked_at_utc"`

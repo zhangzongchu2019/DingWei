@@ -12,7 +12,7 @@ import (
 )
 
 const taskDispatchWhere = `provider=? AND instance=? AND repository_id=? AND change_directory=? AND task_id=?`
-const taskDispatchColumns = `provider,instance,repository_id,change_directory,task_id,state,generation,lease_token,holder_agent_id,holder_owner_lc,assigned_by_user_id_lc,authorization_group_code,commit_sha,tasks_blob_sha,task_line,granted_at_utc,expires_at_utc,last_renewed_at_utc,updated_at_utc,monitor_ref,pull_request_id,pr_dimension,pr_head_sha,pr_remote_state,pr_base_ref,pr_head_ref,pr_updated_at_utc,comparison_state,observed_commit_sha,last_attempt_at_utc,last_checked_at_utc,comparison_error_class,handoff_json`
+const taskDispatchColumns = `provider,instance,repository_id,change_directory,task_id,state,generation,lease_token,holder_agent_id,holder_owner_lc,assigned_by_user_id_lc,authorization_group_code,commit_sha,tasks_blob_sha,task_line,granted_at_utc,expires_at_utc,last_renewed_at_utc,updated_at_utc,monitor_ref,pull_request_id,pr_dimension,pr_head_sha,pr_remote_state,pr_base_ref,pr_head_ref,pr_updated_at_utc,comparison_state,observed_commit_sha,last_attempt_at_utc,last_checked_at_utc,comparison_error_class,handoff_json,sync_required`
 const taskDispatchNoticeColumns = `id,operation_id,provider,instance,repository_id,change_directory,task_id,generation,recipient_kind,recipient_id,recipient_owner_lc,event_type,delivery_state,source_envelope_id,delivery_id,created_at_utc,completed_at_utc,reason`
 const taskDispatchTimeLayout = "2006-01-02T15:04:05.000000000Z"
 
@@ -40,7 +40,7 @@ func scanTaskDispatchLock(row taskDispatchScanner) (*td.Lock, error) {
 	err := row.Scan(&l.Provider, &l.Instance, &l.Repository, &l.ChangeDir, &l.TaskID,
 		&l.State, &l.Generation, &l.LeaseToken, &l.HolderAgentID, &l.HolderOwnerLC, &l.AssignedByUserLC,
 		&l.AuthorizationGroup, &l.CommitSHA, &l.TasksBlobSHA, &l.TaskLine, &granted, &expires, &renewed, &updated,
-		&l.MonitorRef, &l.PullRequestID, &l.PRDimension, &l.PRHeadSHA, &l.PRRemoteState, &l.PRBaseRef, &l.PRHeadRef, &prUpdated, &l.ComparisonState, &l.ObservedCommitSHA, &attempted, &checked, &l.ComparisonError, &handoff)
+		&l.MonitorRef, &l.PullRequestID, &l.PRDimension, &l.PRHeadSHA, &l.PRRemoteState, &l.PRBaseRef, &l.PRHeadRef, &prUpdated, &l.ComparisonState, &l.ObservedCommitSHA, &attempted, &checked, &l.ComparisonError, &handoff, &l.SyncRequired)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
