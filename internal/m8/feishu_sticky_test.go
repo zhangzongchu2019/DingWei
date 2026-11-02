@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -87,9 +88,18 @@ type r14Env struct {
 }
 
 func newR14Env(t *testing.T, names ...string) *r14Env {
+	return newR14EnvWithStore(t, nil, names...)
+}
+
+func newR14EnvWithStore(t *testing.T, wrap func(identity.Store) identity.Store, names ...string) *r14Env {
 	t.Helper()
 	e := newAgentEnv(t)
 	bindFeishuForAgentEnv(t, e, "ou_alice")
+	if wrap != nil {
+		// Install before opening any Agent connection; never replace Store
+		// while connection teardown or another handler can read it.
+		e.svc.Store = wrap(e.svc.Store)
+	}
 	r := &r14Env{agentEnv: e, repo: &stickyFaultRepo{SQLite: e.hub.Repo.(*store.SQLite)}, now: time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC), agents: map[string]string{"opus50ts": e.agID}, peers: make(map[string]*websocket.Conn)}
 	e.hub.Repo = r.repo
 	e.hub.NowFunc = func() time.Time { return r.now }
@@ -495,16 +505,26 @@ func TestR14S022CrossOwnerFullNameUsesExistingAuthorization(t *testing.T) {
 	r14Assert(t, res.Reply == "" && got != nil && r.state().AgentID == before.AgentID && r.state().Generation == before.Generation, "S022_CROSS_OWNER_NOT_EXPLICIT_OR_CHANGED_DEFAULT", res, got)
 }
 
-type stickyIdentityFailure struct{ identity.Store }
+type stickyIdentityFailure struct {
+	identity.Store
+	fail atomic.Bool
+}
 
-func (s stickyIdentityFailure) ResolveIdentity(context.Context, identity.Identity) (*identity.User, error) {
-	return nil, errors.New("injected identity lookup failure")
+func (s *stickyIdentityFailure) ResolveIdentity(ctx context.Context, id identity.Identity) (*identity.User, error) {
+	if s.fail.Load() {
+		return nil, errors.New("injected identity lookup failure")
+	}
+	return s.Store.ResolveIdentity(ctx, id)
 }
 func TestR14S002IdentityLookupError(t *testing.T) {
-	r := newR14Env(t)
+	var fault *stickyIdentityFailure
+	r := newR14EnvWithStore(t, func(s identity.Store) identity.Store {
+		fault = &stickyIdentityFailure{Store: s}
+		return fault
+	})
 	r.choose("opus50ts")
 	s := r.state()
-	r.svc.Store = stickyIdentityFailure{r.svc.Store}
+	fault.fail.Store(true)
 	res := r.dispatch("plain")
 	r14Assert(t, r.repo.count() == 0 && res.Reply != "" && r.state().Generation == s.Generation, "S002_IDENTITY_ERROR_FALLBACK")
 }
