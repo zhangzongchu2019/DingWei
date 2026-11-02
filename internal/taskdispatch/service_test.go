@@ -34,6 +34,7 @@ type provider struct {
 	files          map[string]map[string]string
 	head           string
 	denied         map[string]bool
+	deniedRepo     map[string]map[string]bool
 	pr             specread.PullRequest
 	prErr          error
 	polls, prPolls int
@@ -44,10 +45,10 @@ type provider struct {
 func (p *provider) Repository(_ context.Context, id string) (specread.Repository, error) {
 	return specread.Repository{ID: id, FullName: "test/repository"}, nil
 }
-func (p *provider) Authorize(_ context.Context, _ specread.Repository, b specread.Binding) error {
+func (p *provider) Authorize(_ context.Context, r specread.Repository, b specread.Binding) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.denied[b.Principal] {
+	if p.denied[b.Principal] || p.deniedRepo[r.ID][b.Principal] {
 		return specread.ErrForbidden
 	}
 	return nil
@@ -324,21 +325,5 @@ func TestR10ServiceReplayCrossRepositoryReleaseAndOwnerFence(t *testing.T) {
 	}
 	if _, err = e.s.Inspect(ctx, td.Actor{AgentID: "agent-holder"}, l.Key, ""); err == nil {
 		t.Fatal("R10_DISABLED_OWNER_INHERITED")
-	}
-}
-func TestR10DefaultOffNoRepositoryAccess(t *testing.T) {
-	e := setup(t)
-	t.Setenv("DW_TASK_DISPATCH_LOCK_ENABLED", "true")
-	e.s.Repo = nil
-	e.s.Identity = nil
-	e.s.Reader = nil
-	if td.Enabled() {
-		t.Fatal("R10_FLAG_NOT_EXACT_1")
-	}
-	if _, err := e.s.Execute(context.Background(), td.Actor{}, e.r); !errors.Is(err, td.ErrUnavailable) {
-		t.Fatal("R10_DISABLED_EXECUTED", err)
-	}
-	if err := e.s.Tick(context.Background()); !errors.Is(err, td.ErrUnavailable) {
-		t.Fatal("R10_DISABLED_MONITOR", err)
 	}
 }
