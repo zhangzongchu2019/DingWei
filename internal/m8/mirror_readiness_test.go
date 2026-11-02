@@ -60,6 +60,7 @@ func awaitSessionRuntime(t *testing.T, h *Hub, key, name string) {
 	}
 }
 func TestMirrorRegistrationRuntimeBarrier(t *testing.T) {
+	t.Setenv("DW_FEISHU_STICKY_ENABLED", "1") // 开启时也必须保留r48的发布前路由屏障。
 	h, db, ctx := newTestHub(t)
 	if e := h.UpsertService(ctx, model.RegisteredService{ID: "mirror-barrier", Name: "mirror-barrier", DeliveryType: "ws", Enabled: true}); e != nil {
 		t.Fatal(e)
