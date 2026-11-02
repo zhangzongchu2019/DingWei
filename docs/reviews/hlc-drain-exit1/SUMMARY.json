@@ -1,0 +1,143 @@
+{
+  "scope": "independent product defect slice; no merge/deploy; S006 barrier unchanged",
+  "base": "bdac3593c8a578eb5002b8df9418dc93b2cb93c9",
+  "cases": {
+    "S014": [
+      {
+        "evidence": "s014-fixed/run-1793586053657063705/S014-shutdown.json",
+        "signal_utc": "2026-11-02T02:21:01.578897388Z",
+        "process_error": "<nil>",
+        "exit_code": 0,
+        "stop_ms": 1220,
+        "already_closed": 20,
+        "failed": 0,
+        "records": 20
+      },
+      {
+        "evidence": "s014-fixed/run-1793586063438271194/S014-shutdown.json",
+        "signal_utc": "2026-11-02T02:21:09.213299205Z",
+        "process_error": "<nil>",
+        "exit_code": 0,
+        "stop_ms": 1212,
+        "already_closed": 20,
+        "failed": 0,
+        "records": 20
+      },
+      {
+        "evidence": "s014-fixed/run-1793586071061757548/S014-shutdown.json",
+        "signal_utc": "2026-11-02T02:21:16.876860453Z",
+        "process_error": "<nil>",
+        "exit_code": 0,
+        "stop_ms": 1213,
+        "already_closed": 20,
+        "failed": 0,
+        "records": 20
+      }
+    ],
+    "S014-hub-first": [
+      {
+        "evidence": "hub-first/run-1793586111163514364/S014-hub-first-shutdown.json",
+        "signal_utc": "2026-11-02T02:21:59.162535705Z",
+        "process_error": "<nil>",
+        "exit_code": 0,
+        "stop_ms": 1218,
+        "already_closed": 0,
+        "failed": 0,
+        "records": 20
+      },
+      {
+        "evidence": "hub-first/run-1793586121019056230/S014-hub-first-shutdown.json",
+        "signal_utc": "2026-11-02T02:22:06.82837852Z",
+        "process_error": "<nil>",
+        "exit_code": 0,
+        "stop_ms": 1217,
+        "already_closed": 0,
+        "failed": 0,
+        "records": 20
+      },
+      {
+        "evidence": "hub-first/run-1793586128682898361/S014-hub-first-shutdown.json",
+        "signal_utc": "2026-11-02T02:22:14.524301766Z",
+        "process_error": "<nil>",
+        "exit_code": 0,
+        "stop_ms": 1218,
+        "already_closed": 0,
+        "failed": 0,
+        "records": 20
+      }
+    ],
+    "S014-live-failure": [
+      {
+        "evidence": "live-failure/run-1793586154841245922/S014-live-failure-shutdown.json",
+        "signal_utc": "2026-11-02T02:22:42.729799757Z",
+        "process_error": "exit status 1",
+        "exit_code": 1,
+        "stop_ms": 220,
+        "already_closed": 0,
+        "failed": 20,
+        "records": 20
+      },
+      {
+        "evidence": "live-failure/run-1793586163592401325/S014-live-failure-shutdown.json",
+        "signal_utc": "2026-11-02T02:22:49.390189862Z",
+        "process_error": "exit status 1",
+        "exit_code": 1,
+        "stop_ms": 223,
+        "already_closed": 0,
+        "failed": 20,
+        "records": 20
+      },
+      {
+        "evidence": "live-failure/run-1793586170252914688/S014-live-failure-shutdown.json",
+        "signal_utc": "2026-11-02T02:22:56.106715681Z",
+        "process_error": "exit status 1",
+        "exit_code": 1,
+        "stop_ms": 217,
+        "already_closed": 0,
+        "failed": 20,
+        "records": 20
+      }
+    ]
+  },
+  "final_product_hashes": {
+    "internal/m8/lifecycle.go": "a39cb795c019b5707e02f20b8fd0c7e77ebb8b52b590e811e389b21be1adab61",
+    "cmd/workpulse/main.go": "ffbd50053b61ead27306fff55ad840fa686cd38b166095312ef3f1f4a1ef3612"
+  },
+  "build_gate": {
+    "command": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "started_utc": "2026-11-02T02:37:33.771472+00:00",
+    "ended_utc": "2026-11-02T02:46:16.764989+00:00",
+    "rc": 0,
+    "log_sha256": "fdf649c0f44d6f0a0d8f354bca20396c1e265e9fabc5dedd6539a56d818388f6"
+  },
+  "first_build_gate": {
+    "command": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "started_utc": "2026-11-02T02:24:42.068717+00:00",
+    "ended_utc": "2026-11-02T02:34:23.052799+00:00",
+    "rc": 1,
+    "log_sha256": "fa4a345f8de2c68837ce504a6f47cd6b24d72df2af401d517b50e40b3c4c6df3"
+  },
+  "s006": {
+    "original_rounds": 50,
+    "original_passed": 42,
+    "original_failed": 8,
+    "original_failed_rounds_sent_sigterm": false,
+    "historical_409_utc_available": false,
+    "delta": "not applicable: no SIGTERM",
+    "r47_control": {
+      "rounds": 100,
+      "409": 22
+    },
+    "bdac_control": {
+      "rounds": 30,
+      "409": 9
+    },
+    "barrier_changed_in_this_slice": false
+  }
+}

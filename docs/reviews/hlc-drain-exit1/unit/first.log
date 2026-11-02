@@ -1,0 +1,150 @@
+=== RUN   TestWebsocketAlreadyClosed
+=== RUN   TestWebsocketAlreadyClosed/EOF
+=== RUN   TestWebsocketAlreadyClosed/closed_network
+=== RUN   TestWebsocketAlreadyClosed/peer_close_frame
+=== RUN   TestWebsocketAlreadyClosed/write_timeout
+=== RUN   TestWebsocketAlreadyClosed/deadline
+=== RUN   TestWebsocketAlreadyClosed/canceled
+=== RUN   TestWebsocketAlreadyClosed/joined_timeout_closed
+    lifecycle_close_test.go:42: closed=true want=false
+=== RUN   TestWebsocketAlreadyClosed/untyped_text
+=== RUN   TestWebsocketAlreadyClosed/other_failure
+=== RUN   TestWebsocketAlreadyClosed/nil
+--- FAIL: TestWebsocketAlreadyClosed (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/EOF (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/closed_network (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/peer_close_frame (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/write_timeout (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/deadline (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/canceled (0.00s)
+    --- FAIL: TestWebsocketAlreadyClosed/joined_timeout_closed (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/untyped_text (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/other_failure (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/nil (0.00s)
+=== RUN   TestHubWSCloseProcesses
+=== RUN   TestHubWSCloseProcesses/peer-first
+    lifecycle_close_test.go:155: RESOURCE address=127.0.0.1:39059 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcessespeer-first3237153218/001 database=none
+    lifecycle_close_test.go:215: signal_utc=2026-11-02T02:18:07.806010441Z exit=0 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=peer-first address=127.0.0.1:39059 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcessespeer-first3237153218/001
+        HLC_WS_SIGTERM 2026-11-02T02:18:07.806048937Z
+        {"already_closed":3,"failed":0,"records":[{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"}]}
+=== RUN   TestHubWSCloseProcesses/hub-first
+    lifecycle_close_test.go:155: RESOURCE address=127.0.0.1:46027 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseshub-first144061209/001 database=none
+    lifecycle_close_test.go:215: signal_utc=2026-11-02T02:18:08.840487086Z exit=0 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=hub-first address=127.0.0.1:46027 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseshub-first144061209/001
+        HLC_WS_SIGTERM 2026-11-02T02:18:08.840525102Z
+        {"already_closed":0,"failed":0,"records":[{"kind":"fixture_ws","result":"closed","error":""},{"kind":"fixture_ws","result":"closed","error":""},{"kind":"fixture_ws","result":"closed","error":""}]}
+=== RUN   TestHubWSCloseProcesses/live-write-failure
+    lifecycle_close_test.go:155: RESOURCE address=127.0.0.1:41621 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseslive-write-failure1548845492/001 database=none
+    lifecycle_close_test.go:215: signal_utc=2026-11-02T02:18:09.877018769Z exit=1 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=live-write-failure address=127.0.0.1:41621 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseslive-write-failure1548845492/001
+        HLC_WS_SIGTERM 2026-11-02T02:18:09.877064895Z
+        {"already_closed":0,"failed":3,"records":[{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"}]}
+        HLC_WS_ERROR websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+        websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+        websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+--- PASS: TestHubWSCloseProcesses (2.10s)
+    --- PASS: TestHubWSCloseProcesses/peer-first (1.03s)
+    --- PASS: TestHubWSCloseProcesses/hub-first (1.04s)
+    --- PASS: TestHubWSCloseProcesses/live-write-failure (0.03s)
+=== RUN   TestWebsocketAlreadyClosed
+=== RUN   TestWebsocketAlreadyClosed/EOF
+=== RUN   TestWebsocketAlreadyClosed/closed_network
+=== RUN   TestWebsocketAlreadyClosed/peer_close_frame
+=== RUN   TestWebsocketAlreadyClosed/write_timeout
+=== RUN   TestWebsocketAlreadyClosed/deadline
+=== RUN   TestWebsocketAlreadyClosed/canceled
+=== RUN   TestWebsocketAlreadyClosed/joined_timeout_closed
+    lifecycle_close_test.go:42: closed=true want=false
+=== RUN   TestWebsocketAlreadyClosed/untyped_text
+=== RUN   TestWebsocketAlreadyClosed/other_failure
+=== RUN   TestWebsocketAlreadyClosed/nil
+--- FAIL: TestWebsocketAlreadyClosed (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/EOF (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/closed_network (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/peer_close_frame (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/write_timeout (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/deadline (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/canceled (0.00s)
+    --- FAIL: TestWebsocketAlreadyClosed/joined_timeout_closed (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/untyped_text (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/other_failure (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/nil (0.00s)
+=== RUN   TestHubWSCloseProcesses
+=== RUN   TestHubWSCloseProcesses/peer-first
+    lifecycle_close_test.go:155: RESOURCE address=127.0.0.1:35543 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcessespeer-first2689952632/001 database=none
+    lifecycle_close_test.go:215: signal_utc=2026-11-02T02:18:09.918275569Z exit=0 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=peer-first address=127.0.0.1:35543 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcessespeer-first2689952632/001
+        HLC_WS_SIGTERM 2026-11-02T02:18:09.918331173Z
+        {"already_closed":3,"failed":0,"records":[{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"}]}
+=== RUN   TestHubWSCloseProcesses/hub-first
+    lifecycle_close_test.go:155: RESOURCE address=127.0.0.1:40983 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseshub-first2381321795/001 database=none
+    lifecycle_close_test.go:215: signal_utc=2026-11-02T02:18:10.996217606Z exit=0 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=hub-first address=127.0.0.1:40983 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseshub-first2381321795/001
+        HLC_WS_SIGTERM 2026-11-02T02:18:10.996270081Z
+        {"already_closed":0,"failed":0,"records":[{"kind":"fixture_ws","result":"closed","error":""},{"kind":"fixture_ws","result":"closed","error":""},{"kind":"fixture_ws","result":"closed","error":""}]}
+=== RUN   TestHubWSCloseProcesses/live-write-failure
+    lifecycle_close_test.go:155: RESOURCE address=127.0.0.1:34509 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseslive-write-failure3633469601/001 database=none
+    lifecycle_close_test.go:215: signal_utc=2026-11-02T02:18:12.414070502Z exit=1 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=live-write-failure address=127.0.0.1:34509 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseslive-write-failure3633469601/001
+        HLC_WS_SIGTERM 2026-11-02T02:18:12.414113428Z
+        {"already_closed":0,"failed":3,"records":[{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"}]}
+        HLC_WS_ERROR websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+        websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+        websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+--- PASS: TestHubWSCloseProcesses (2.53s)
+    --- PASS: TestHubWSCloseProcesses/peer-first (1.08s)
+    --- PASS: TestHubWSCloseProcesses/hub-first (1.42s)
+    --- PASS: TestHubWSCloseProcesses/live-write-failure (0.03s)
+=== RUN   TestWebsocketAlreadyClosed
+=== RUN   TestWebsocketAlreadyClosed/EOF
+=== RUN   TestWebsocketAlreadyClosed/closed_network
+=== RUN   TestWebsocketAlreadyClosed/peer_close_frame
+=== RUN   TestWebsocketAlreadyClosed/write_timeout
+=== RUN   TestWebsocketAlreadyClosed/deadline
+=== RUN   TestWebsocketAlreadyClosed/canceled
+=== RUN   TestWebsocketAlreadyClosed/joined_timeout_closed
+    lifecycle_close_test.go:42: closed=true want=false
+=== RUN   TestWebsocketAlreadyClosed/untyped_text
+=== RUN   TestWebsocketAlreadyClosed/other_failure
+=== RUN   TestWebsocketAlreadyClosed/nil
+--- FAIL: TestWebsocketAlreadyClosed (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/EOF (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/closed_network (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/peer_close_frame (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/write_timeout (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/deadline (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/canceled (0.00s)
+    --- FAIL: TestWebsocketAlreadyClosed/joined_timeout_closed (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/untyped_text (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/other_failure (0.00s)
+    --- PASS: TestWebsocketAlreadyClosed/nil (0.00s)
+=== RUN   TestHubWSCloseProcesses
+=== RUN   TestHubWSCloseProcesses/peer-first
+    lifecycle_close_test.go:155: RESOURCE address=127.0.0.1:46299 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcessespeer-first2904613293/001 database=none
+    lifecycle_close_test.go:215: signal_utc=2026-11-02T02:18:12.452828066Z exit=0 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=peer-first address=127.0.0.1:46299 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcessespeer-first2904613293/001
+        HLC_WS_SIGTERM 2026-11-02T02:18:12.452887949Z
+        {"already_closed":3,"failed":0,"records":[{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"already_closed","error":"failed to close WebSocket: failed to read frame header: EOF"}]}
+=== RUN   TestHubWSCloseProcesses/hub-first
+    lifecycle_close_test.go:155: RESOURCE address=127.0.0.1:38597 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseshub-first3472314372/001 database=none
+    lifecycle_close_test.go:215: signal_utc=2026-11-02T02:18:13.487651506Z exit=0 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=hub-first address=127.0.0.1:38597 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseshub-first3472314372/001
+        HLC_WS_SIGTERM 2026-11-02T02:18:13.487692562Z
+        {"already_closed":0,"failed":0,"records":[{"kind":"fixture_ws","result":"closed","error":""},{"kind":"fixture_ws","result":"closed","error":""},{"kind":"fixture_ws","result":"closed","error":""}]}
+=== RUN   TestHubWSCloseProcesses/live-write-failure
+    lifecycle_close_test.go:155: RESOURCE address=127.0.0.1:38953 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseslive-write-failure1916874284/001 database=none
+    lifecycle_close_test.go:215: signal_utc=2026-11-02T02:18:14.51896094Z exit=1 raw==== RUN   TestHubWSCloseProcessChild
+        HLC_WS_READY mode=live-write-failure address=127.0.0.1:38953 home=/tmp/hlc-drain-check-tug0fv_0/tmp/TestHubWSCloseProcesseslive-write-failure1916874284/001
+        HLC_WS_SIGTERM 2026-11-02T02:18:14.518991347Z
+        {"already_closed":0,"failed":3,"records":[{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout"}]}
+        HLC_WS_ERROR websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+        websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+        websocket close handshake failed: failed to close WebSocket: failed to write control frame opClose: failed to write frame: failed to flush: i/o timeout
+--- PASS: TestHubWSCloseProcesses (2.10s)
+    --- PASS: TestHubWSCloseProcesses/peer-first (1.04s)
+    --- PASS: TestHubWSCloseProcesses/hub-first (1.03s)
+    --- PASS: TestHubWSCloseProcesses/live-write-failure (0.03s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	6.773s
+FAIL

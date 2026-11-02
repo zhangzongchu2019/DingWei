@@ -160,3 +160,7 @@ S006回调扩展夹具使用真实事件dispatcher与临时SQLite：初始回调
 ## S011 现有显式重同步协议补充裁定（2026-11-02）
 
 已读组长request_id 3f698b77d848。固定r47客户端console_mux_broker.js route(gap)/notify只提示并停止对应scope；console_auth.go closeTab调用remove(name,true)，openTab注册新iframe_instance，sync在同feed带原reset_scope发PUT。不能为停机验收加自动reset或改前端。S011拆成自动恢复红（标现有设计、记录gap停机起送达耗时）和显式resync后恢复两格；mux≤5秒按显式操作后计，同时保留stop→输出总时长，不能混算。helper/SSE/普通WS仍按ready后5秒。两条missing若为新Hub生成且显式重同步后各补回一次，就不是旧Hub内存历史不可恢复的直接证据；逐ID与生成/发送观察时刻单列，不替R15作未经证实的结论。原自动红和修正前夹具日志保留，编号/预算/其它判据不变。
+
+## HLC-010 对端已关闭分类
+
+依据组长drain退1缺陷裁定：真实客户端先断不是无效夹具。仅WS关闭结果链中的io.EOF、net.ErrClosed、syscall.EPIPE／ECONNRESET、websocket.CloseError归already_closed，context取消／截止和net.Error超时优先失败；不使用错误字符串。关闭集合中逐条kind/result/error持久进入原停机JSON快照，失败原错用%w保留；already_closed累计与存活工作计数分开，避免非零历史计数阻止关库。closeOnce仍保持单次执行，快照与追加共用互斥锁。S014确定性夹具只固定跟踪集合，不调整客户端先关次序；另以Hub先停作对照、撤分类作变异和真实net.Conn写超时验证存活连接关闭失败。

@@ -1,0 +1,4 @@
+RESOURCE tmp=/tmp/hlc-matrix-6emri_nm/tmp/TestHLCLoadMatrix3943127527/001 sqlite=/tmp/hlc-matrix-6emri_nm/tmp/TestHLCLoadMatrix3943127527/001/hub.db public=127.0.0.1:46251 internal=127.0.0.1:36537 pg=127.0.0.1:44161 database=/hubtest
+view=hlc-vs0 address=127.0.0.1:45897 directory=/tmp/hlc-matrix-6emri_nm/tmp/TestHLCLoadMatrix3943127527/001
+view=hlc-vs1 address=127.0.0.1:39129 directory=/tmp/hlc-matrix-6emri_nm/tmp/TestHLCLoadMatrix3943127527/001
+view=hlc-vs2 address=127.0.0.1:42229 directory=/tmp/hlc-matrix-6emri_nm/tmp/TestHLCLoadMatrix3943127527/001

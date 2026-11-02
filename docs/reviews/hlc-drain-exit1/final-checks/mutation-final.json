@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python3",
+    "tests/hlc/ws_close_mutation.py",
+    "--output",
+    "docs/reviews/hlc-drain-exit1/final-checks/withdrawn"
+  ],
+  "started_utc": "2026-11-02T02:24:23.333144+00:00",
+  "ended_utc": "2026-11-02T02:24:41.867417+00:00",
+  "rc": 0,
+  "log_sha256": "c630f3e593d57aad456275d2637afb2b94b26f424fa0e5547e62f9b733af20ec"
+}

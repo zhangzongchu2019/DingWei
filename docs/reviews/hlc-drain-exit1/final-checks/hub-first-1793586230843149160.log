@@ -1,0 +1,4 @@
+=== RUN   TestHubWSCloseProcessChild
+HLC_WS_READY mode=hub-first address=127.0.0.1:33935 home=/tmp/hlc-drain-final-enms4j33/tmp/TestHubWSCloseProcesseshub-first497417249/001
+HLC_WS_SIGTERM 2026-11-02T02:23:50.843179817Z
+{"already_closed":0,"failed":0,"records":[{"kind":"fixture_ws","result":"closed","error":""},{"kind":"fixture_ws","result":"closed","error":""},{"kind":"fixture_ws","result":"closed","error":""}]}

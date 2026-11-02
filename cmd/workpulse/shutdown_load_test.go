@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -100,6 +101,26 @@ func (b *hlcLockedBuffer) Bytes() []byte {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	return append([]byte(nil), b.b.Bytes()...)
+}
+
+// Test-only transport: fail actual close-frame writes to otherwise live peers.
+type hlcCloseWriteFailConn struct{ net.Conn }
+
+func (c hlcCloseWriteFailConn) Write(p []byte) (int, error) {
+	if len(p) > 0 && p[0] == 0x88 {
+		return 0, os.ErrDeadlineExceeded
+	}
+	return c.Conn.Write(p)
+}
+
+type hlcCloseWriteFailListener struct{ net.Listener }
+
+func (l hlcCloseWriteFailListener) Accept() (net.Conn, error) {
+	c, e := l.Listener.Accept()
+	if e != nil {
+		return nil, e
+	}
+	return hlcCloseWriteFailConn{c}, nil
 }
 
 type hlcChild struct {
@@ -403,6 +424,13 @@ func hlcRoutingAndVS(t *testing.T, root, internal string) string {
 			t.Fatal(err)
 		}
 		targets[name] = m8.ViewTarget{URL: "http://" + addr, ViewUnlockV2: true, HubToVSSecretFile: forward, VSToHubSecretFile: reverse}
+		t.Logf("RESOURCE view=%s port=%s directory=%s", name, addr, root)
+		resourceFile, resourceErr := os.OpenFile(filepath.Join(os.Getenv("HLC_MATRIX_EVIDENCE"), "RESOURCES.txt"), os.O_APPEND|os.O_WRONLY, 0644)
+		if resourceErr != nil {
+			t.Fatal(resourceErr)
+		}
+		fmt.Fprintf(resourceFile, "view=%s address=%s directory=%s\n", name, addr, root)
+		resourceFile.Close()
 		cmd := exec.Command("python3", "view_service.py")
 		cmd.Dir = filepath.Join(os.Getenv("HLC_REPO"), "view-service")
 		cmd.Env = []string{"PATH=" + os.Getenv("PATH"), "HOME=" + root, "TZ=UTC", "VS_PORT=" + strings.Split(addr, ":")[1], "VS_HUB_INTERNAL=http://" + internal, "VS_VIEW_UNLOCK_V2=1", "VS_TARGET_NAME=" + name, "VS_HUB_TO_VS_SECRET_FILE=" + forward, "VS_TO_HUB_SECRET_FILE=" + reverse, "VS_PAGE_DB=" + filepath.Join(root, name+".db"), "VS_STATE_FILE=" + filepath.Join(root, name+".json")}
@@ -477,8 +505,20 @@ func hlcStop(t *testing.T, c *hlcChild, out, tag string) (shutdownReport, time.T
 	if callback["late_db_calls"] != float64(0) {
 		t.Fatalf("S006_POST_SEAL_DB_ZERO: %v", callback)
 	}
-	if processErr != nil || report.ExitCode != 0 || len(report.Stages) != 5 {
-		t.Fatalf("%s EXPECT_EXIT0: process=%v report=%+v", tag, processErr, report)
+	expectedExit := 0
+	if os.Getenv("HLC_CASE") == "S014-live-failure" {
+		expectedExit = 1
+	}
+	actualExit := 0
+	if processErr != nil {
+		if e, ok := processErr.(*exec.ExitError); ok {
+			actualExit = e.ExitCode()
+		} else {
+			t.Fatal(processErr)
+		}
+	}
+	if actualExit != expectedExit || report.ExitCode != expectedExit || len(report.Stages) != 5 {
+		t.Fatalf("%s UNEXPECTED_EXIT: process=%v report=%+v", tag, processErr, report)
 	}
 	if ended.Sub(start) > 15500*time.Millisecond {
 		t.Fatal("stop total budget exceeded")
@@ -530,7 +570,15 @@ func TestHLCLoadMatrix(t *testing.T) {
 	dsn := pgtest.DSN(t)
 	hlcSeed(t, dsn)
 	public, internal := hlcFreeAddress(t), hlcFreeAddress(t)
+	pgURL, parseErr := url.Parse(dsn)
+	if parseErr != nil {
+		t.Fatal("invalid private PG fixture DSN")
+	}
+	resource := fmt.Sprintf("RESOURCE tmp=%s sqlite=%s public=%s internal=%s pg=%s database=%s", root, filepath.Join(root, "hub.db"), public, internal, pgURL.Host, pgURL.Path)
+	t.Log(resource)
+	os.WriteFile(filepath.Join(out, "RESOURCES.txt"), []byte(resource+"\n"), 0644)
 	routing := hlcRoutingAndVS(t, root, internal)
+	t.Logf("RESOURCE home=%s sqlite=%s public=%s internal=%s pg=private-pgtest notify=%s", root, filepath.Join(root, "hub.db"), public, internal, root)
 	c := hlcStart(t, root, dsn, routing, public, internal)
 	agents := make([]*hlcAgent, 20)
 	seed := time.Now().UnixNano()
@@ -539,6 +587,39 @@ func TestHLCLoadMatrix(t *testing.T) {
 	for _, i := range random.Perm(len(agents)) {
 		agents[i] = hlcDialAgent(t, c, i)
 		hlcPublish(t, agents[i], i, fmt.Sprintf("hlc-before-%02d", i))
+	}
+	if mode := os.Getenv("HLC_CASE"); mode == "S014" || mode == "S014-hub-first" || mode == "S014-live-failure" {
+		hlcUntil(t, "20 helper handlers", func() bool { return hlcReadStatus(t, c)["hub"].(map[string]any)["session_ws"] == float64(20) })
+		if mode == "S014" {
+			for _, a := range agents {
+				_ = a.conn.CloseNow()
+			}
+		}
+		report, _, _ := hlcStop(t, c, out, mode)
+		snapshot := report.Snapshot.(map[string]any)["hub_ws_close"].(map[string]any)
+		expected := float64(0)
+		if mode == "S014" {
+			expected = 20
+		}
+		failed := float64(0)
+		if mode == "S014-live-failure" {
+			failed = 20
+		}
+		if snapshot["already_closed"] != expected || snapshot["failed"] != failed {
+			t.Fatalf("S014_COUNTS: %v", snapshot)
+		}
+		records := snapshot["records"].([]any)
+		if len(records) != 20 {
+			t.Fatalf("S014_RECORD_COUNT: %d", len(records))
+		}
+		if mode == "S014" || mode == "S014-live-failure" {
+			for _, raw := range records {
+				if raw.(map[string]any)["error"] == "" {
+					t.Fatal("S014_RAW_ERROR_MISSING")
+				}
+			}
+		}
+		return
 	}
 	for i := 0; i < 20; i++ {
 		i := i

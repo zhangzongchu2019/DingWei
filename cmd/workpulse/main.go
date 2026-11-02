@@ -522,7 +522,7 @@ func run(logger *slog.Logger) error {
 		if receiver, ok := feishuReceiver.(feishu.ReceiverLifecycle); ok {
 			ingress = receiver.IngressSnapshot()
 		}
-		return map[string]any{"servers": results.snapshot(), "hub": prefixHub.LifecycleCounts(), "http_overlaps_streams": access.group.Snapshot(), "producers": runJobs.Snapshot(), "consumers": consumerJobs.Snapshot(), "feishu_ingress": ingress, "queue": q, "persistence": state, "durable_counts": durable, "watchdog_enabled": watchdog.enabled, "watchdog_window_ms": watchdog.window.Milliseconds()}
+		return map[string]any{"servers": results.snapshot(), "hub": prefixHub.LifecycleCounts(), "hub_ws_close": prefixHub.WSCloseSnapshot(), "http_overlaps_streams": access.group.Snapshot(), "producers": runJobs.Snapshot(), "consumers": consumerJobs.Snapshot(), "feishu_ingress": ingress, "queue": q, "persistence": state, "durable_counts": durable, "watchdog_enabled": watchdog.enabled, "watchdog_window_ms": watchdog.window.Milliseconds()}
 	}
 	return coordinateShutdown(t0, sig.String(), shutdownPlan{
 		Stop: func(stopCtx context.Context) error {

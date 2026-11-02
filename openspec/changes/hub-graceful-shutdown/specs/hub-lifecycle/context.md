@@ -63,3 +63,7 @@ internal/feishu/lifecycle_test.go包含S006回调在途/迟到/真实临时SQLit
 ## S011 现有显式重同步协议补充裁定（2026-11-02）
 
 已读组长request_id 3f698b77d848。固定r47客户端console_mux_broker.js route(gap)/notify只提示并停止对应scope；console_auth.go closeTab调用remove(name,true)，openTab注册新iframe_instance，sync在同feed带原reset_scope发PUT。不能为停机验收加自动reset或改前端。S011拆成自动恢复红（标现有设计、记录gap停机起送达耗时）和显式resync后恢复两格；mux≤5秒按显式操作后计，同时保留stop→输出总时长，不能混算。helper/SSE/普通WS仍按ready后5秒。两条missing若为新Hub生成且显式重同步后各补回一次，就不是旧Hub内存历史不可恢复的直接证据；逐ID与生成/发送观察时刻单列，不替R15作未经证实的结论。原自动红和修正前夹具日志保留，编号/预算/其它判据不变。
+
+## drain 对端先断修复位置
+
+独立分支 opus50tc2k/hlc-drain-exit1 基于bdac3593；按组长本次产品缺陷裁定实施，不改原实现树。internal/m8/lifecycle.go保存逐连接WSCloseSnapshot，与存活计数分开；cmd/workpulse/main.go将hub_ws_close放入每阶段及最终停机快照。新增internal/m8/lifecycle_close_test.go和tests/hlc/ws_close_mutation.py；process_matrix新增S014/S014-hub-first，S014仅在overlay固定跟踪集合以稳定覆盖注销竞争。证据目录docs/reviews/hlc-drain-exit1；临时HOME/IPC/SQLite/PG与端口均由独立runner记录。未改S006逐席ready屏障，42/8的历史409绝对时间缺项不可伪造。

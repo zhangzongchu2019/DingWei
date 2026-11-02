@@ -1,0 +1,28 @@
+{
+  "started_utc": "2026-11-02T02:19:20.126470+00:00",
+  "ended_utc": "2026-11-02T02:19:38.684966+00:00",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-overlay",
+    "/tmp/hlc-ws-mutation-s3n2wkr1/overlay.json",
+    "./internal/m8",
+    "-run",
+    "^TestHubWSCloseProcesses$/^peer-first$",
+    "-count=3",
+    "-v",
+    "-timeout=2m"
+  ],
+  "rc": 1,
+  "target_red": true,
+  "expected_exit1_occurrences": 3,
+  "source_sha256": "9365e766d97d87def3d9e386a4a42c447e462e843576f1739ecf388b70083970",
+  "raw_log_sha256": "b9aaafcbd50b6a50984cdcd634b1962150f7c69d047f581228199a0b515bf143",
+  "resources": {
+    "home": "/tmp/hlc-ws-mutation-s3n2wkr1/home",
+    "tmp": "/tmp/hlc-ws-mutation-s3n2wkr1/tmp",
+    "database": "none; m8 socket lifecycle only",
+    "ports": "loopback kernel-assigned; raw log"
+  }
+}

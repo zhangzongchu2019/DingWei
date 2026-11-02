@@ -1,0 +1,33 @@
+{
+  "case": "S014-live-failure",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-overlay",
+    "/tmp/hlc-matrix-kroyondh/overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCLoadMatrix$",
+    "-count=3",
+    "-shuffle=on",
+    "-timeout=20m",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T02:22:30.172689+00:00",
+  "ended_utc": "2026-11-02T02:22:57.990160+00:00",
+  "rc": 0,
+  "log": "S014-live-failure-first.log",
+  "log_sha256": "7ceed26538f99c35b8d17970a63aa8464894c9a671a7a237a870e1d92d39363d",
+  "overlays": "Fixture setup + SDK transport; S014 additionally pins tracked socket snapshot; S014-live-failure injects real listener close-frame write timeout; classification/coordinator unchanged",
+  "race": true,
+  "repetitions": 3,
+  "sources": {
+    "cmd/workpulse/main.go": "ffbd50053b61ead27306fff55ad840fa686cd38b166095312ef3f1f4a1ef3612",
+    "internal/feishu/lifecycle.go": "52c8bcbbee78cacb930e1e971c729dee897d9d41f18d747f1ffc294c88fc048e",
+    "cmd/workpulse/shutdown_load_test.go": "e4cf7ec54f294fe9214cc8acb8ea66dd882a6a5bd01f939fab16f3262958a6f9",
+    "tests/hlc/sdk_fixture.go.txt": "13520d21e8ef84fe8d254af8630f95ffd884760d9ddeed671ea570d7970d475f",
+    "internal/m8/lifecycle.go": "a39cb795c019b5707e02f20b8fd0c7e77ebb8b52b590e811e389b21be1adab61",
+    "tests/hlc/process_matrix.py": "73d774c3b569822a65d70fcc262b5dbcda82174bfe2418c09b5b55539dec5edd"
+  }
+}

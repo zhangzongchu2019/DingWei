@@ -1,0 +1,20 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-p",
+    "1",
+    "./internal/m8",
+    "./cmd/workpulse",
+    "-run",
+    "^Test(WebsocketAlreadyClosed|HubWSCloseProcesses|HubClose|Shutdown)",
+    "-count=1",
+    "-v",
+    "-timeout=5m"
+  ],
+  "started_utc": "2026-11-02T02:23:19.360585+00:00",
+  "ended_utc": "2026-11-02T02:24:23.332850+00:00",
+  "rc": 0,
+  "log_sha256": "a15053f20caac01293bb7cd6d797f4379729b1a932e9b629b1b2f54c323b68b6"
+}

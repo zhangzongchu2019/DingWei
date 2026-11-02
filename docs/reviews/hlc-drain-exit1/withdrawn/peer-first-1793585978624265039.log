@@ -1,0 +1,7 @@
+=== RUN   TestHubWSCloseProcessChild
+HLC_WS_READY mode=peer-first address=127.0.0.1:43305 home=/tmp/hlc-ws-mutation-s3n2wkr1/tmp/TestHubWSCloseProcessespeer-first695014647/001
+HLC_WS_SIGTERM 2026-11-02T02:19:38.624301156Z
+{"already_closed":0,"failed":3,"records":[{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"},{"kind":"fixture_ws","result":"failed","error":"failed to close WebSocket: failed to read frame header: EOF"}]}
+HLC_WS_ERROR websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF
+websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF
+websocket close handshake failed: failed to close WebSocket: failed to read frame header: EOF

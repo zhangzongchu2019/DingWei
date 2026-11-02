@@ -1,0 +1,10 @@
+{
+  "command": [
+    "sh",
+    "scripts/run-build-tests.sh"
+  ],
+  "started_utc": "2026-11-02T02:37:33.771472+00:00",
+  "ended_utc": "2026-11-02T02:46:16.764989+00:00",
+  "rc": 0,
+  "log_sha256": "fdf649c0f44d6f0a0d8f354bca20396c1e265e9fabc5dedd6539a56d818388f6"
+}
