@@ -240,6 +240,7 @@ type hlcStream struct {
 	frames []hlcFrame
 	done   chan struct{}
 	status int
+	feed   map[string]any
 }
 
 func (s *hlcStream) snapshot() []hlcFrame {
@@ -380,7 +381,9 @@ func hlcOpenMux(t *testing.T, c *hlcChild, owner int, after map[string]string) *
 		subs = append(subs, d)
 	}
 	feed := hlcJSON(t, "POST", base+"/api/console/event-feeds", base, token, map[string]any{"request_id": fmt.Sprintf("%032x", owner+200), "auth_context": ac, "console_instance": fmt.Sprintf("%032x", owner+300), "subscriptions": subs})
-	return hlcOpenSSE(t, base+"/api/console/event-feeds/"+feed["feed_id"].(string)+"/events", token)
+	stream := hlcOpenSSE(t, base+"/api/console/event-feeds/"+feed["feed_id"].(string)+"/events", token)
+	stream.feed = feed
+	return stream
 }
 
 func hlcRoutingAndVS(t *testing.T, root, internal string) string {
@@ -467,12 +470,6 @@ func hlcStop(t *testing.T, c *hlcChild, out, tag string) (shutdownReport, time.T
 	b, _ := json.MarshalIndent(result, "", "  ")
 	os.WriteFile(filepath.Join(out, tag+"-shutdown.json"), b, 0644)
 	t.Logf("%s stop_ms=%d process_error=%v report_exit=%d stages=%+v", tag, ended.Sub(start).Milliseconds(), processErr, report.ExitCode, report.Stages)
-	if processErr != nil || report.ExitCode != 0 || len(report.Stages) != 5 {
-		t.Fatalf("%s EXPECT_EXIT0: process=%v report=%+v", tag, processErr, report)
-	}
-	if ended.Sub(start) > 15500*time.Millisecond {
-		t.Fatal("stop total budget exceeded")
-	}
 	if finalFixture == nil {
 		t.Fatal("missing fixture DB call counts")
 	}
@@ -480,6 +477,13 @@ func hlcStop(t *testing.T, c *hlcChild, out, tag string) (shutdownReport, time.T
 	if callback["late_db_calls"] != float64(0) {
 		t.Fatalf("S006_POST_SEAL_DB_ZERO: %v", callback)
 	}
+	if processErr != nil || report.ExitCode != 0 || len(report.Stages) != 5 {
+		t.Fatalf("%s EXPECT_EXIT0: process=%v report=%+v", tag, processErr, report)
+	}
+	if ended.Sub(start) > 15500*time.Millisecond {
+		t.Fatal("stop total budget exceeded")
+	}
+
 	snap := report.Snapshot.(map[string]any)
 	servers := snap["servers"].(map[string]any)
 	closed := []time.Time{}
@@ -536,14 +540,19 @@ func TestHLCLoadMatrix(t *testing.T) {
 		agents[i] = hlcDialAgent(t, c, i)
 		hlcPublish(t, agents[i], i, fmt.Sprintf("hlc-before-%02d", i))
 	}
-	hlcUntil(t, "terminal states", func() bool {
-		res, e := http.Get("http://" + internal + "/internal/view/" + hlcFull(0) + "/events")
-		if e != nil {
-			return false
-		}
-		res.Body.Close()
-		return res.StatusCode == 200
-	})
+	for i := 0; i < 20; i++ {
+		i := i
+		hlcUntil(t, fmt.Sprintf("terminal source %d", i), func() bool {
+			client := &http.Client{Timeout: time.Second}
+			res, e := client.Get("http://" + internal + "/internal/view/" + hlcFull(i) + "/events")
+			if e != nil {
+				return false
+			}
+			res.Body.Close()
+			return res.StatusCode == 200
+		})
+	}
+
 	streams := []*hlcStream{}
 	for i := 0; i < 100; i++ {
 		streams = append(streams, hlcOpenSSE(t, "http://"+internal+"/internal/view/"+hlcFull(i%20)+"/events", ""))
@@ -669,10 +678,13 @@ func TestHLCLoadMatrix(t *testing.T) {
 	c2 := hlcStart(t, root, dsn, routing, public, internal)
 	ready := c2.ready
 	helpersReady := time.Now()
+	published := map[string]time.Time{}
 	agents2 := make([]*hlcAgent, 20)
 	for i := range agents2 {
 		agents2[i] = hlcDialAgent(t, c2, i)
-		hlcPublish(t, agents2[i], i, fmt.Sprintf("hlc-after-%02d", i))
+		id := fmt.Sprintf("hlc-after-%02d", i)
+		published[id] = time.Now()
+		hlcPublish(t, agents2[i], i, id)
 	}
 	helpersReady = time.Now()
 	oldCursor := ""
@@ -703,6 +715,7 @@ func TestHLCLoadMatrix(t *testing.T) {
 			wsFrames <- wsObservation{time.Now(), string(p)}
 		}
 	}()
+	published["hlc-after-verify"] = time.Now()
 	hlcPublish(t, agents2[0], 0, "hlc-after-verify")
 	sseReady, muxReady, wsReady := time.Time{}, time.Time{}, time.Time{}
 	first := func(stream *hlcStream) time.Time {
@@ -784,11 +797,100 @@ func TestHLCLoadMatrix(t *testing.T) {
 		"sse_from_ready_ms": elapsed(sseReady), "mux_from_ready_ms": elapsed(muxReady), "ws_from_ready_ms": elapsed(wsReady), "old_cursor": oldCursor, "sse_gap_count": gap, "mux_gap_count": muxGap,
 		"sse_duplicate_cursors": duplicates, "sse_id_counts": sseCounts, "sse_missing": sseMissing, "sse_duplicate_messages": sseDups, "mux_id_counts": muxCounts, "mux_missing": muxMissing, "mux_duplicate_messages": muxDups,
 		"sse_frames": resumed.snapshot(), "mux_frames": muxResumed.snapshot(), "automatic_reset_performed": false, "helper_count": 20}
+	for _, frame := range muxResumed.snapshot() {
+		var row map[string]any
+		json.Unmarshal([]byte(frame.Data), &row)
+		if row["type"] == "gap" {
+			result["mux_gap_from_stop_ms"] = frame.At.Sub(stopped).Milliseconds()
+			break
+		}
+	}
+	if !muxReady.IsZero() {
+		result["mux_from_stop_ms"] = muxReady.Sub(stopped).Milliseconds()
+	}
 	b, _ = json.MarshalIndent(result, "", "  ")
 	os.WriteFile(filepath.Join(out, "S011-recovery.json"), b, 0644)
 	t.Logf("S011 recovery=%s", b)
-	if ready.Sub(stopped) > 20500*time.Millisecond || helpersReady.Sub(ready) > 5*time.Second || sseReady.IsZero() || muxReady.IsZero() || wsReady.IsZero() || gap == 0 || muxGap == 0 || duplicates+sseDups+muxDups+sseMissing+muxMissing != 0 {
-		t.Fatal("S011_RECOVERY_LIMIT_OR_GAP_OR_DUPLICATES: existing mux epoch_changed requires explicit resync; no automatic reset injected")
+	// Preserve automatic recovery as a red observation. Explicit reset is a separate
+	// user action, matching closeTab(remove(..., true)) + openTab in the real broker.
+	if ready.Sub(stopped) > 20500*time.Millisecond || helpersReady.Sub(ready) > 5*time.Second || sseReady.IsZero() || wsReady.IsZero() || gap == 0 || muxGap != 1 || duplicates+sseDups+muxDups+sseMissing != 0 || muxMissing != 2 {
+		t.Fatal("S011_AUTO_OBSERVATION_CHANGED: inspect raw evidence before reset")
+	}
+	base := "http://" + c2.public
+	feed := muxResumed.feed
+	subscriptions := []map[string]string{}
+	var reset map[string]any
+	for _, raw := range feed["subscriptions"].([]any) {
+		scope := raw.(map[string]any)
+		name := scope["full_name"].(string)
+		desired := map[string]string{"full_name": name, "iframe_instance": scope["iframe_instance"].(string)}
+		if name == hlcFull(0) {
+			reset = map[string]any{"full_name": name, "iframe_instance": scope["iframe_instance"], "generation": scope["generation"], "replay_round": scope["replay_round"]}
+			desired["iframe_instance"] = fmt.Sprintf("%032x", 900)
+		} else {
+			// Other panes keep their applied cursor when the closed pane is reopened.
+			for _, f := range muxResumed.snapshot() {
+				var row map[string]any
+				json.Unmarshal([]byte(f.Data), &row)
+				if row["type"] == "event" && row["full_name"] == name {
+					desired["after"] = row["epoch"].(string) + "-" + row["seq"].(string)
+				}
+			}
+		}
+		subscriptions = append(subscriptions, desired)
+	}
+	click := time.Now()
+	meta := hlcJSON(t, "PUT", base+"/api/console/event-feeds/"+feed["feed_id"].(string), base, hlcToken(0), map[string]any{
+		"request_id": fmt.Sprintf("%032x", 901), "reset_request_id": fmt.Sprintf("%032x", 902),
+		"auth_context":      hlcJSON(t, "GET", base+"/api/console/event-context", base, hlcToken(0), nil)["auth_context"],
+		"expected_revision": feed["revision"], "subscriptions": subscriptions, "reset": reset,
+	})
+	var output time.Time
+	for time.Now().Before(click.Add(5 * time.Second)) {
+		output = first(muxResumed)
+		if !output.IsZero() {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	countsAfter, missingAfter, dupsAfter := countIDs(muxResumed, []string{"hlc-after-00", "hlc-after-01", "hlc-after-02", "hlc-after-03", "hlc-after-verify"})
+	fates := []map[string]any{}
+	for _, id := range []string{"hlc-after-00", "hlc-after-verify"} {
+		item := map[string]any{"delivery_id": id, "session_event_envelope_id": id + "-event", "published_send_started_utc": published[id].UTC(),
+			"published_after_stop_ms": published[id].Sub(stopped).Milliseconds(), "published_after_new_ready_ms": published[id].Sub(ready).Milliseconds(),
+			"before_resync_count": muxCounts[id], "after_resync_count": countsAfter[id], "old_hub_memory_loss": false}
+		for _, f := range resumed.snapshot() {
+			var row map[string]any
+			json.Unmarshal([]byte(f.Data), &row)
+			if row["delivery_id"] == id {
+				item["new_hub_sse_cursor"] = f.ID
+				item["sse_observed_utc"] = f.At.UTC()
+			}
+		}
+		for _, f := range muxResumed.snapshot() {
+			var row map[string]any
+			json.Unmarshal([]byte(f.Data), &row)
+			if payload, ok := row["payload"].(map[string]any); ok && payload["delivery_id"] == id {
+				item["mux_cursor"] = row["epoch"].(string) + "-" + row["seq"].(string)
+				item["mux_observed_utc"] = f.At.UTC()
+			}
+		}
+		if countsAfter[id] == 1 {
+			item["fate"] = "显式重新同步后补回"
+		} else {
+			item["fate"] = "未补回，需核查，不据此推断旧Hub内存丢失"
+		}
+		fates = append(fates, item)
+	}
+	explicit := map[string]any{"automatic_recovery_pass": false, "gap_informed": muxGap, "click_utc": click.UTC(), "output_utc": output.UTC(),
+		"click_to_output_ms": output.Sub(click).Milliseconds(), "stop_to_output_ms": output.Sub(stopped).Milliseconds(),
+		"missing_before": muxMissing, "missing_after": missingAfter, "duplicates_after": dupsAfter, "id_counts_after": countsAfter,
+		"fates": fates, "reset_response": meta, "frames_after": muxResumed.snapshot(),
+		"method": "真实Hub/VS；按console_auth.go closeTab remove(true)与console_mux_broker.js resetIntents/sync协议模拟显式操作；非浏览器点击读数"}
+	b, _ = json.MarshalIndent(explicit, "", "  ")
+	os.WriteFile(filepath.Join(out, "S011-explicit-resync.json"), b, 0644)
+	if output.IsZero() || output.Sub(click) > 5*time.Second || missingAfter != 0 || dupsAfter != 0 {
+		t.Fatal("S011_EXPLICIT_RESYNC_MISSING_OR_TIMING: see fate evidence")
 	}
 	for _, s := range []*hlcStream{resumed, muxResumed} {
 		s.body.Close()

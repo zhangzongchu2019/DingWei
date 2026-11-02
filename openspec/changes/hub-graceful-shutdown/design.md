@@ -156,3 +156,7 @@ S006回调扩展夹具使用真实事件dispatcher与临时SQLite：初始回调
 另以独立进程令钉版SDK真实连接loopback WebSocket，观测Close后对端断开、实际Start等待帧仍1、业务回调0，进程结束回收残余。TestReceiverPinnedSDKProcess默认明确SKIP，原因是SDK残余只由进程回收，须单独运行HLC_PINNED_SDK_PROCESS=1；独立运行的实际结果单列，不把默认skip算通过。业务适配层/门及FCS兼容跑默认vet/race，钉版SDK实际连接夹具的普通go test结果不冒称SDK全生命周期race认证。
 
 已准入Hub根回调的数据库工作使用callbackWorkContext：保留SDK入站context值，脱离接收器t0取消，改由独立workCtx约束；排空超时Force取消workCtx。此只服务已获准入的工作，迟到回调在创建该context前就被拒绝，不因脱离取消而延长8秒阶段或总预算。Hub接线测试覆盖Close先于根门封口、在途根回调等待、8秒超时退出2且不关DB，以及remote保持既有根门。
+
+## S011 现有显式重同步协议补充裁定（2026-11-02）
+
+已读组长request_id 3f698b77d848。固定r47客户端console_mux_broker.js route(gap)/notify只提示并停止对应scope；console_auth.go closeTab调用remove(name,true)，openTab注册新iframe_instance，sync在同feed带原reset_scope发PUT。不能为停机验收加自动reset或改前端。S011拆成自动恢复红（标现有设计、记录gap停机起送达耗时）和显式resync后恢复两格；mux≤5秒按显式操作后计，同时保留stop→输出总时长，不能混算。helper/SSE/普通WS仍按ready后5秒。两条missing若为新Hub生成且显式重同步后各补回一次，就不是旧Hub内存历史不可恢复的直接证据；逐ID与生成/发送观察时刻单列，不替R15作未经证实的结论。原自动红和修正前夹具日志保留，编号/预算/其它判据不变。

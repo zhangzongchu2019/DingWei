@@ -59,3 +59,7 @@ FINDING附录记录基线overlay新增虚拟测试文件：第一次vet无法打
 internal/feishu/lifecycle.go新增可选ReceiverLifecycle与SDK连接所有权、Close→回调Seal→Wait顺序及安全快照；feishu.go在规范化前登记回调，封口后拒绝计数。SDKStart运行帧单列sdk_start_not_joined，不进入Hub业务goroutine归零断言；v3.9.7 Start的select{}及其它SDK内部残余随进程回收，**不冒称所有SDK goroutine已join**。cmd/workpulse/main.go在drain阶段接入；远端FCS订阅类和协议未改，测试另核。
 
 internal/feishu/lifecycle_test.go包含S006回调在途/迟到/真实临时SQLite计数、在途超时、Close阻塞、重复Close、停止后启动及多网关计数；tests/hlc/s006_mutations.py撤掉拒绝保护，须在DB访问断言红。lifecycle_sdk_process_test.go独立进程使用真实钉版SDK与loopback连接，默认skip但显式独立运行有读数；只排除明确SDK所有权的残余，不放宽业务回调归零。完整Hub混合流量与恢复验收仍需独立逐格，当前单测不能替代。
+
+## S011 现有显式重同步协议补充裁定（2026-11-02）
+
+已读组长request_id 3f698b77d848。固定r47客户端console_mux_broker.js route(gap)/notify只提示并停止对应scope；console_auth.go closeTab调用remove(name,true)，openTab注册新iframe_instance，sync在同feed带原reset_scope发PUT。不能为停机验收加自动reset或改前端。S011拆成自动恢复红（标现有设计、记录gap停机起送达耗时）和显式resync后恢复两格；mux≤5秒按显式操作后计，同时保留stop→输出总时长，不能混算。helper/SSE/普通WS仍按ready后5秒。两条missing若为新Hub生成且显式重同步后各补回一次，就不是旧Hub内存历史不可恢复的直接证据；逐ID与生成/发送观察时刻单列，不替R15作未经证实的结论。原自动红和修正前夹具日志保留，编号/预算/其它判据不变。
