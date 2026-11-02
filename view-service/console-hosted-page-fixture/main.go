@@ -9,11 +9,15 @@ import (
 	"net/http/httptest"
 	"os"
 
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 )
 
 func main() {
 	hub := &m8.Hub{}
+	if os.Getenv("DW_CONSOLE_NAME_CHECK_FIXTURE") == "1" {
+		hub.Identity = identity.NewService(identity.NewMemStore(), nil, nil)
+	}
 	// Synthetic browser-only grant; production injects the real N3 session fence.
 	hub.SetConsoleHostedAccessCheck(func(*http.Request) bool { return os.Getenv("DW_CONSOLE_HOSTED_ACCESS_FIXTURE") != "0" })
 	hub.SetConsoleHostedPageEnabled(os.Getenv("DW_CONSOLE_HOSTED_FIXTURE") != "0")

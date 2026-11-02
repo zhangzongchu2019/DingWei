@@ -218,3 +218,31 @@ func TestMigrationLedger_DataVerifierJudgesByStableSignature(t *testing.T) {
 		t.Fatal("旧 key 仍在，verifier 却判「已生效」—— 它是个恒真的摆设")
 	}
 }
+
+// 0072 已存在但丢账时只能精确核验补账，缺索引或同名异构必须拒绝。
+func TestMigrationLedger_R14RejectsPartialOrChangedSchema(t *testing.T) {
+	for _, tc := range []struct{ name, sql string }{
+		{"missing_index", `DROP INDEX r14_sticky_operation_pending`},
+		{"changed_table", `ALTER TABLE r14_feishu_sticky_state ADD COLUMN unexpected TEXT`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := openMigrated(t, filepath.Join(t.TempDir(), "r14.db"))
+			defer s.Close()
+			ctx := context.Background()
+			if _, err := s.db.ExecContext(ctx, `DELETE FROM schema_migrations WHERE version='0072_feishu_agent_sticky.sql'`); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := s.db.ExecContext(ctx, tc.sql); err != nil {
+				t.Fatal(err)
+			}
+			err := s.Migrate(ctx)
+			if err == nil || !strings.Contains(err.Error(), "0072_feishu_agent_sticky.sql") {
+				t.Fatalf("R14_INVALID_SCHEMA_ACCEPTED: %v", err)
+			}
+			var n int
+			if err = s.db.QueryRowContext(ctx, `SELECT count(*) FROM schema_migrations WHERE version='0072_feishu_agent_sticky.sql'`).Scan(&n); err != nil || n != 0 {
+				t.Fatal("R14_INVALID_SCHEMA_BACKFILLED", n, err)
+			}
+		})
+	}
+}

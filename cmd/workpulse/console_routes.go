@@ -49,6 +49,7 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 		mux.HandleFunc("GET /api/console/agents", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgents))
 	}
 	if newplat {
+		mux.HandleFunc("GET /api/console/agent-name-used", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentNameUsed))
 		mux.HandleFunc("GET /api/console/helper-updates", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleHelperUpdates))
 		mux.HandleFunc("POST /api/console/helper-updates", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleHelperUpdates))
 	}

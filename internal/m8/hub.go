@@ -67,6 +67,10 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
+	stickyLanes         stickyLanes
+	stickyCleanupMu     sync.Mutex
+	stickyCleanupCursor store.FeishuStickyKey
+
 	lifecycle hubLifecycle
 	// Startup-only R7 service. Nil keeps Git/committee operations fail-closed until trusted adapters exist.
 	SpecReader               *specread.Service
@@ -419,6 +423,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 	h.applyReplayGuardSettings()
 	h.startCapabilityPendingCleanup()
 	h.configureSpecRead()
+	h.startFeishuStickyCleanup()
 	return h
 }
 
@@ -3986,6 +3991,9 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 	if !ok {
 		return model.PrefixDispatchResult{}, false, nil
 	}
+	if result, handled, err := h.dispatchFeishuSticky(ctx, msg, text, true); handled || err != nil {
+		return result, handled, err
+	}
 	source := sourceAccount(msg)
 	keyID, found := h.lookupKeyIDForSession(source, sessionName)
 	if user, ok := h.newPlatformFeishuUser(ctx, msg); ok {
@@ -4046,6 +4054,9 @@ func (h *Hub) dispatchSelector(ctx context.Context, msg model.Message, text stri
 }
 
 func (h *Hub) dispatchDefaultPersonalSession(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, bool, error) {
+	if result, handled, err := h.dispatchFeishuSticky(ctx, msg, text, false); handled || err != nil {
+		return result, handled, err
+	}
 	if msg.ChatType != model.ChatPersonal {
 		return model.PrefixDispatchResult{}, false, nil
 	}
@@ -4213,6 +4224,10 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		}
 		capabilityAdmission = h.capabilityPendingAdmissions[terminalKey(keyID, sessionName)]
 	}()
+	if !h.stickyDeliveryAllowed(ctx, c, env) {
+		h.unclaimEnvelope(env.ID, sig)
+		return errors.New("R14 target identity unavailable")
+	}
 	wantReceipt := outboundReceiptRequested(env) || inboxReceiptRequested(env)
 	receiptNonce := metaString(env.Meta, outboundReceiptNonceKey)
 	reliable := reliablePrimaryEnvelope(env)
@@ -4728,6 +4743,14 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 				return
 			}
 			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", "malformed_envelope")
+			continue
+		}
+		if !h.stickyDeliveryAllowed(ctx, c, env) {
+			if h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", "r14_target_unavailable", time.Now().UTC()) != nil {
+				return
+			}
+			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", "r14_target_unavailable")
+			h.drainDurableFailureNotice(ctx, *d)
 			continue
 		}
 		if legacySpecGenerationEnvelope(env) {

@@ -2,6 +2,7 @@ package m8
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"strings"
 	"testing"
@@ -24,7 +25,8 @@ func bindFeishuForAgentEnv(t *testing.T, e *agentEnv, subject string) {
 }
 
 func feishuInboundMessage(id, text string) model.Message {
-	return model.Message{ID: id, ChatEntityID: "devplatform:personal:ou_alice", BotChannelID: "devplatform", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice", IngressProvenance: model.IngressFeishuWSAuthenticated, Content: `{"text":"` + text + `"}`}
+	content, _ := json.Marshal(map[string]string{"text": text})
+	return model.Message{ID: id, FeishuMsgID: id, ChatEntityID: "devplatform:personal:ou_alice", BotChannelID: "devplatform", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice", IngressProvenance: model.IngressFeishuWSAuthenticated, Content: string(content)}
 }
 
 func TestNewPlatformFeishuInboundSelectorAndDefaultUseIdentityBucket(t *testing.T) {
@@ -102,35 +104,52 @@ func TestNewPlatformFullNameRejectsSuspendedAgentWithStaleSocket(t *testing.T) {
 }
 
 func TestNewPlatformFeishuFullNameOwnerMismatchLooksMissing(t *testing.T) {
-	v := newViewEnv(t)
-	bindFeishuForAgentEnv(t, v.agentEnv, "ou_alice")
-	v.hub.mu.Lock()
-	v.hub.sessionClients[AgentKeyID("lbl")] = map[string]*sessionClient{"kimi": {keyID: AgentKeyID("lbl"), sessionName: "kimi"}}
-	v.hub.mu.Unlock()
-	text := "#Kimi.lb must-not-cross-owner"
-	res, handled, err := v.hub.dispatchSelector(v.ctx, feishuInboundMessage("foreign-full-name", text), text)
-	want := "未找到你名下在线且可用的 Agent：Kimi.lb"
-	if err != nil || !handled || res.Reply != want {
-		t.Fatalf("foreign full_name did not use missing-target response: handled=%v reply=%q want=%q err=%v", handled, res.Reply, want, err)
+	for _, enabled := range []string{"", "1"} {
+		t.Run("sticky="+enabled, func(t *testing.T) {
+			t.Setenv("DW_FEISHU_STICKY_ENABLED", enabled)
+			v := newViewEnv(t)
+			bindFeishuForAgentEnv(t, v.agentEnv, "ou_alice")
+			v.hub.mu.Lock()
+			v.hub.sessionClients[AgentKeyID("lbl")] = map[string]*sessionClient{"kimi": {keyID: AgentKeyID("lbl"), sessionName: "kimi"}}
+			v.hub.mu.Unlock()
+			text := "#Kimi.lb must-not-cross-owner"
+			res, handled, err := v.hub.dispatchSelector(v.ctx, feishuInboundMessage("foreign-full-name", text), text)
+			want := groupAgentNotFoundText
+			if enabled == "" {
+				want = "未找到你名下在线且可用的 Agent：Kimi.lb"
+			}
+			if err != nil || !handled || res.Reply != want {
+				t.Fatalf("foreign full_name did not use missing-target response: handled=%v reply=%q want=%q err=%v", handled, res.Reply, want, err)
+			}
+		})
 	}
 }
 
 func TestNewPlatformFeishuInboundMultipleSessionsRequireSelector(t *testing.T) {
-	e := newAgentEnv(t)
-	bindFeishuForAgentEnv(t, e, "ou_alice")
-	cred2, _ := e.enroll("dev-2", "Kimi")
-	a, _, _ := e.dial(e.cred, "")
-	b, _, _ := e.dial(cred2, "")
-	if a == nil || b == nil {
-		t.Fatal("agent websocket did not connect")
-	}
-	defer a.Close(websocket.StatusNormalClosure, "done")
-	defer b.Close(websocket.StatusNormalClosure, "done")
-	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
-	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "kimi")
-	res, err := e.hub.Dispatch(e.ctx, feishuInboundMessage("multiple", "do-not-guess"), "do-not-guess")
-	if err != nil || !strings.Contains(res.Reply, "多个在线会话") || !strings.Contains(res.Reply, "kimi") || !strings.Contains(res.Reply, "opus50ts") {
-		t.Fatalf("multiple sessions: reply=%q err=%v", res.Reply, err)
+	for _, enabled := range []string{"", "1"} {
+		t.Run("sticky="+enabled, func(t *testing.T) {
+			t.Setenv("DW_FEISHU_STICKY_ENABLED", enabled)
+			e := newAgentEnv(t)
+			bindFeishuForAgentEnv(t, e, "ou_alice")
+			cred2, _ := e.enroll("dev-2", "Kimi")
+			a, _, _ := e.dial(e.cred, "")
+			b, _, _ := e.dial(cred2, "")
+			if a == nil || b == nil {
+				t.Fatal("agent websocket did not connect")
+			}
+			defer a.Close(websocket.StatusNormalClosure, "done")
+			defer b.Close(websocket.StatusNormalClosure, "done")
+			waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+			waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "kimi")
+			res, err := e.hub.Dispatch(e.ctx, feishuInboundMessage("multiple", "do-not-guess"), "do-not-guess")
+			validReply := strings.Contains(res.Reply, "请选择一个 Agent") && strings.Contains(strings.ToLower(res.Reply), "kimi") && strings.Contains(strings.ToLower(res.Reply), "opus50ts")
+			if enabled == "" {
+				validReply = res.Reply == "你有多个在线会话（kimi、opus50ts），请用 #会话名 内容 指定"
+			}
+			if err != nil || !validReply {
+				t.Fatalf("multiple sessions: reply=%q err=%v", res.Reply, err)
+			}
+		})
 	}
 }
 
