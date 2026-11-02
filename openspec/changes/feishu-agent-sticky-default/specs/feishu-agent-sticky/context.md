@@ -30,7 +30,7 @@
 
 - 当前默认/歧义候选沿用排序后的会话名，使用“、”串成一行（internal/m8/newplat_feishu_inbound.go:40、51–78；internal/m8/hub.go:2390–2394、4040）。全名不是拼旧后缀：identity.FullName返回`ag.Name + "." + user.ShortName`，ResolveFullName按最后一个点解析并查当前身份（internal/identity/service.go:285–295、418–435）。候选将来应从身份权威取实际全名。
 - `#全名 正文`在Hub解析层可以指定目标：parseSelector要求`#`后紧跟非空白token，首token不能再含`#`，余下文本是body（internal/m8/hub.go:6427–6449）；全名随后须通过当前owner/在线/active检查，点号全名不成功时不尝试猜其它对象（internal/m8/newplat_session_name.go:10–35；internal/m8/newplat_feishu_inbound.go:44–49）。`# 名字`不是合法selector；原parseSelector允许空body，但这不等于已经实现“只选择、不发空消息”的切换指令。
-- **整段候选不能原样当多选投递。** `#a.owner\n#b.owner`今天会把a当目标、`#b.owner`当body（internal/m8/hub.go:6436–6445、3988–4005）。候选本身可以整体复制，但粘贴回Hub后如何处理须PM07冻结；建议纯多行候选块只返回“请选择一行”，不选首项、不广播、不更新粘滞。
+- **整段候选不能原样当多选投递。** `#a.owner\n#b.owner`今天会把a当目标、`#b.owner`当body（internal/m8/hub.go:6436–6445、3988–4005）。候选本身可以整体复制；PM07已定粘贴回Hub后只提示“请选择一行”，不选首项、不广播、不更新粘滞。
 - AMR也支持legacy井号selector（internal/m8/amr.go:1548–1564），`# `、`## `等Markdown标题被排除，`#全名`不属于这类标题；输出转发/IPC正文的AMR入口是另一条路径（internal/m8/amr.go:33–46、1420–1467）。因此井号语法确有复用，不能泛称完全无冲突，更不能让系统候选回文当Agent正文进入AMR。R14只改私聊默认选择，不改AMR规则或授予群发。
 - 代码侧Feishu回复是纯text：worker保留原BotChannelID与ChatType（internal/worker/schedule_worker.go:390–408），SDK把原字符串编码进`{"text":...}`并以MsgType text发送（internal/feishu/feishu.go:283–291）；回入extractText只做JSON取值和首尾TrimSpace（internal/worker/schedule_worker.go:491–500），不会主动剥掉每行`#`。这支持代码层井号往返，但未实测真实飞书桌面/手机复制、富文本粘贴和换行格式，不把代码勘察当客户端回环已通过。
 
@@ -43,8 +43,17 @@
 | 消息/投递/控制任务历史 | internal/store/migrations/0001_init.sql:34–48；internal/m8/hub.go:1579–1595、4274–4281；internal/m8/amr.go:1058–1070 | SQLite有消息及投递信封，AMR据deliveryID恢复原信封；这是单条消息回程关联，不是可靠的owner+channel最近选择索引，也不能从最后一条mirror/系统通知推定上次对话 |
 | 通用SQLite app_config/CAS | internal/store/migrations/0001_init.sql:182–186；internal/store/store.go:133–139；internal/store/sqlite.go:3625–3678 | 有持久JSON、CAS及删除能力，可作存储能力参照；没有现成R14键/状态契约。建议专用小记录，不能本单先写真实app_config或借用mirror_to |
 
-所查入站函数/模型/仓库接口未见已接线的“账号+BotChannelID→上次Agent+过期时间”状态；当前多Agent始终提示不使用历史。不能说“现成粘滞会跨重启保留”，因为该能力尚不存在；若后续只加内存map则必随Hub重启丢失。建议PM06批准持久元数据后使用SQLite保存目标稳定ID和原绝对到期时间，恢复先重核身份/在线，不重置30分钟。没有读取或写入生产数据库。
+所查入站函数/模型/仓库接口未见已接线的“账号+BotChannelID→上次Agent+过期时间”状态；当前多Agent始终提示不使用历史。不能说“现成粘滞会跨重启保留”，因为该能力尚不存在；若后续只加内存map则必随Hub重启丢失。PM06已定使用SQLite保存目标稳定ID和原绝对到期时间，恢复先重核身份/在线，不重置30分钟。没有读取或写入生产数据库。
+
+## 5. Agent 短名、命名入口与旧平台边界（㉗勘察）
+
+- 新平台Identity中的 `Agent.Name` 是短名；`FullName` 由 `Agent.Name + "." + User.ShortName` 组成（internal/identity/service.go:285–295，418–435）。私聊选择候选枚举本人在线Agent短名，`ownerSessionExactMatch`／`ownerSessionFuzzyMatch` 对该集合匹配（internal/m8/newplat_feishu_inbound.go:23–78）；Agent短名与井号短名匹配字段一致，不应把全名后缀或旧平台名混入短名比较。
+- 当前新平台全名解析器只接受 `full.ownerLC == ownerLC`（internal/m8/newplat_feishu_inbound.go:44–50）；因此PM05允许全名指向其他用户Agent时，实施必须衔接既有跨成员授权与归属核验路径，不能把本人的全名解析器当成已支持跨属主，也不能绕过授权直接投递。该点列入R14-S022验收。
+- 自备Agent入口在 Console 审核表单 `enrollName`（internal/m8/console_auth.go:1367），请求送到 `/api/console/enroll/applications/{id}/approve`（同文件:783、924–928）；Hosted生成入口为 `hostedName`（同文件:978 起），调用托管创建流程。服务端分别经 `Onboarding.ApplyDeviceClaim` 的名称校验（internal/identity/claims.go:90–116）、`Service.Approve`（internal/identity/service.go:331–385）和 `Service.IssueHostedAgent`（internal/identity/hosted.go:47–78）校验格式；目前 UI 表单可直接提交，未见提交前查重和明确重名提示，需实现任务在两入口补齐。
+- 身份库已有唯一索引 `np_agent_owner_name_current`，按 `(owner_lc,name_lc)` 对 `active`／`suspended` 唯一，吊销后释放名称（internal/identity/pgschema.sql:63–65；internal/store/migrate/migrations/0100_identity_baseline.sql:74–76）。`insertAgent` 将该索引冲突映射为 `ErrNameTaken`（internal/identity/pgstore.go:616–628）；它是最终并发保护，不替代交互提交前检查和可理解提示。新增实现任务：两入口提交前查重、提示短名已占用，并保留服务端索引兜底。
+- 旧平台会话名走 `session_endpoint(key_id,session_name)`（internal/store/migrations/0003_session_endpoint.sql:2–10），注册名由请求名与key/owner组合派生（internal/m8/hub.go:957–998、1540–1553）；这不是 `np_agent` 身份库，既有唯一索引不覆盖旧平台会话名。PM08已定旧平台维持既有行为，R14粘滞和本次短名唯一性要求不扩到旧平台。
+- 存量只读证据 `review/prodops/r14-shortname-dup-20261102` commit `f44ca5e6a09b2ea6d4dbb61cf869a7e1670a50ca`：生产与预发同属主大小写不敏感短名重复均为0；生产有一个严格前缀组 `ts3dev55.zzc`／`ts3dev5520.zzc`，预发无该组。该快照用于固定验收输入，不代表未来线上数据状态；对应精确优先和多候选反例见R14-S021。
 
 ## 新提案与实施边界
 
-业主来源仅引用proposal中的7d376639第⑳条；PM01～08均为本次建议，未获确认。本轮只新增本变更5份Markdown，不修改上述源码/现有主规格/迁移/配置/通道。真实飞书回环、持久化与并发、群聊不受影响、AMR不误触发都列为未来验收；不apply/archive、不自行实施或发布。
+业主原始功能来源为proposal中的7d376639第⑳条；PM01～08按review/opus50tc2k/rulings 2f9ddaf0第㉔～㉖条已定，短名唯一性按㉗勘察。本轮只改本变更目录内Markdown，不修改上述源码/现有主规格/迁移/配置/通道。真实飞书回环、持久化与并发、群聊不受影响、AMR不误触发都列为未来验收；不apply/archive、不自行实施或发布。
