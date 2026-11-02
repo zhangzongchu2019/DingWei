@@ -1,0 +1,203 @@
+-test.shuffle 1793578225805069836
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:10:28 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.20s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:10:32 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.16s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:10:35 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.18s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:10:38 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.18s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:10:41 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.20s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:10:44 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.17s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:10:48 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.21s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:10:51 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.17s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:10:54 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.21s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:10:57 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.21s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:00 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.29s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:04 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.34s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:07 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.29s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:10 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.22s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:13 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.19s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:17 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.20s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:20 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.16s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:23 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.16s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:26 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.26s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:30 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.25s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:33 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.14s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:36 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.15s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:39 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.17s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:42 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.24s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:45 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.19s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:49 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.15s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:52 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.19s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:55 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.17s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:11:58 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.29s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:01 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.29s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:05 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.20s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:08 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.22s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:11 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.29s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:14 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.19s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:18 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.23s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:21 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.18s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:24 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.23s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:27 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.19s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:30 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.18s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:34 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.14s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:37 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.16s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:40 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.15s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:43 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.16s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:46 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.21s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:49 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.25s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:53 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.18s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:56 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.19s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:12:59 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.16s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:13:02 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.18s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:13:05 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.19s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishu	161.118s

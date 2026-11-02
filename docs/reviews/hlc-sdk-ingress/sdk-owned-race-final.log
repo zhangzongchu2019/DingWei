@@ -1,0 +1,146 @@
+=== RUN   TestFakeGatewayRecordsSentMessages
+--- PASS: TestFakeGatewayRecordsSentMessages (0.00s)
+=== RUN   TestLarkGatewayMessageFromEventPersonal
+--- PASS: TestLarkGatewayMessageFromEventPersonal (0.00s)
+=== RUN   TestLarkGatewayMessageFromEventGroup
+--- PASS: TestLarkGatewayMessageFromEventGroup (0.00s)
+=== RUN   TestLarkGatewayIngressObservabilityStagesWithoutChangingDelivery
+--- PASS: TestLarkGatewayIngressObservabilityStagesWithoutChangingDelivery (0.00s)
+=== RUN   TestLarkGatewayIngressObservabilitySeparatesRejectAndEnqueueError
+--- PASS: TestLarkGatewayIngressObservabilitySeparatesRejectAndEnqueueError (0.00s)
+=== RUN   TestLarkGatewayWSLifecycleCountersCoverAllTransitions
+--- PASS: TestLarkGatewayWSLifecycleCountersCoverAllTransitions (0.00s)
+=== RUN   TestReceiveIDType
+--- PASS: TestReceiveIDType (0.00s)
+=== RUN   TestReceiverPinnedSDKProcess
+    lifecycle_sdk_process_test.go:28: process-reaped SDK fixture: run alone with HLC_PINNED_SDK_PROCESS=1
+--- SKIP: TestReceiverPinnedSDKProcess (0.00s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:08:40 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (3.16s)
+=== RUN   TestReceiverInflightTimeoutIsVisible
+2026/11/02 00:08:40 [Info] [event-dispatch is ready]
+--- PASS: TestReceiverInflightTimeoutIsVisible (0.03s)
+=== RUN   TestReceiverCannotStartAfterStop
+2026/11/02 00:08:40 [Info] [event-dispatch is ready]
+--- PASS: TestReceiverCannotStartAfterStop (0.00s)
+=== RUN   TestReceiverBlockedCloseIsBounded
+2026/11/02 00:08:40 [Info] [event-dispatch is ready]
+--- PASS: TestReceiverBlockedCloseIsBounded (0.03s)
+=== RUN   TestReceiverMultiGatewayAggregatesSeals
+2026/11/02 00:08:40 [Info] [event-dispatch is ready]
+2026/11/02 00:08:40 [Info] [event-dispatch is ready]
+--- PASS: TestReceiverMultiGatewayAggregatesSeals (0.00s)
+=== RUN   TestPilotQuestionNativeSDKPrivateRecipientAndUUID
+2026/11/02 00:08:40 [Info] [client ready]
+--- PASS: TestPilotQuestionNativeSDKPrivateRecipientAndUUID (0.00s)
+=== RUN   TestProxyGatewaySend
+--- PASS: TestProxyGatewaySend (0.00s)
+=== RUN   TestProxyGatewaySendErrorStatus
+--- PASS: TestProxyGatewaySendErrorStatus (0.00s)
+=== RUN   TestDeriveRequestIDDeterministicV5
+--- PASS: TestDeriveRequestIDDeterministicV5 (0.00s)
+=== RUN   TestProxyGatewaySendCustodyAndLegacy
+--- PASS: TestProxyGatewaySendCustodyAndLegacy (0.00s)
+=== RUN   TestProxyGatewayResolvePassthrough
+--- PASS: TestProxyGatewayResolvePassthrough (0.00s)
+=== RUN   TestClarificationSDKPreservesAuthenticatedReplyMetadata
+--- PASS: TestClarificationSDKPreservesAuthenticatedReplyMetadata (0.00s)
+=== RUN   TestClarificationSDKRejectsApplicationAndTenantDrift
+--- PASS: TestClarificationSDKRejectsApplicationAndTenantDrift (0.00s)
+=== RUN   TestClarificationWebhookNeverClaimsReplyAuthority
+--- PASS: TestClarificationWebhookNeverClaimsReplyAuthority (0.00s)
+=== RUN   TestSingleTenantSDKPreservesSenderTenantForAudit
+--- PASS: TestSingleTenantSDKPreservesSenderTenantForAudit (0.00s)
+=== RUN   TestTenantTaskUpdateIgnoredAtRealDispatcher
+2026/11/02 00:08:40 [Info] [event-dispatch is ready]
+--- PASS: TestTenantTaskUpdateIgnoredAtRealDispatcher (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishu	4.256s
+=== RUN   TestSealExcludesConcurrentAdmission
+--- PASS: TestSealExcludesConcurrentAdmission (0.01s)
+=== RUN   TestWaitObservesCompletionNotCancellation
+--- PASS: TestWaitObservesCompletionNotCancellation (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/lifecycle	1.015s
+=== RUN   TestRPCSendRoundtrip
+--- PASS: TestRPCSendRoundtrip (0.00s)
+=== RUN   TestRPCSendPropagatesError
+--- PASS: TestRPCSendPropagatesError (0.00s)
+=== RUN   TestRPCResolveRoundtrip
+--- PASS: TestRPCResolveRoundtrip (0.00s)
+=== RUN   TestRPCSubscribeReportsServerRejectionBeforeStreamEstablished
+--- PASS: TestRPCSubscribeReportsServerRejectionBeforeStreamEstablished (0.00s)
+=== RUN   TestRPCInboundReconnectsAfterStreamEOF
+--- PASS: TestRPCInboundReconnectsAfterStreamEOF (0.25s)
+=== RUN   TestRPCInboundFanoutThroughHubAdapters
+2026/11/02 00:08:37 fcs subscribe hub_id="hub-A" hub_version="vtest" subscription=1 active_sinks=1
+2026/11/02 00:08:37 INFO fcs hub subscribed to inbound stream hub=hub-A
+2026/11/02 00:08:37 INFO fcs hub inbound stream closed hub=hub-A
+--- PASS: TestRPCInboundFanoutThroughHubAdapters (0.01s)
+=== RUN   TestEnvToMessageRejectsUnknownWireProvenance
+--- PASS: TestEnvToMessageRejectsUnknownWireProvenance (0.00s)
+=== RUN   TestFanoutBroadcastsToAllDistinctHubs
+2026/11/02 00:08:37 fcs subscribe hub_id="hub-a" hub_version="vtest" subscription=1 active_sinks=1
+2026/11/02 00:08:37 fcs subscribe hub_id="hub-b" hub_version="vtest" subscription=2 active_sinks=2
+2026/11/02 00:08:37 fcs subscribe warning=duplicate_hub_id hub_id="hub-a" previous_subscription=1 new_subscription=3 effect=previous_subscription_replaced hint=每个 Hub 实例需配置全局唯一的 WP_HUB_ID
+2026/11/02 00:08:37 fcs subscribe hub_id="hub-a" hub_version="vtest" subscription=3 active_sinks=2
+--- PASS: TestFanoutBroadcastsToAllDistinctHubs (0.00s)
+=== RUN   TestOutboundStampsHubAndVersion
+2026/11/02 00:08:37 fcs subscribe hub_id="hub-dw2-a" hub_version="0.1.2.9" subscription=1 active_sinks=1
+--- PASS: TestOutboundStampsHubAndVersion (0.00s)
+=== RUN   TestSendDelegatesToGateway
+--- PASS: TestSendDelegatesToGateway (0.00s)
+=== RUN   TestInboundFanoutToAllHubs
+2026/11/02 00:08:37 fcs subscribe hub_id="hub-A" hub_version="vtest" subscription=1 active_sinks=1
+2026/11/02 00:08:37 fcs subscribe hub_id="hub-B" hub_version="vtest" subscription=2 active_sinks=2
+--- PASS: TestInboundFanoutToAllHubs (0.01s)
+=== RUN   TestIngressDedupDropsDuplicate
+2026/11/02 00:08:37 fcs subscribe hub_id="hub-A" hub_version="vtest" subscription=1 active_sinks=1
+--- PASS: TestIngressDedupDropsDuplicate (0.16s)
+=== RUN   TestSubscribeStaleCancelDoesNotDeleteReplacement
+2026/11/02 00:08:37 fcs subscribe hub_id="hub-A" hub_version="vtest" subscription=1 active_sinks=1
+2026/11/02 00:08:37 fcs subscribe warning=duplicate_hub_id hub_id="hub-A" previous_subscription=1 new_subscription=2 effect=previous_subscription_replaced hint=每个 Hub 实例需配置全局唯一的 WP_HUB_ID
+2026/11/02 00:08:37 fcs subscribe hub_id="hub-A" hub_version="vtest" subscription=2 active_sinks=1
+--- PASS: TestSubscribeStaleCancelDoesNotDeleteReplacement (0.00s)
+=== RUN   TestClarificationFCSUnverifiedServiceCannotAssertReplyTrust
+--- PASS: TestClarificationFCSUnverifiedServiceCannotAssertReplyTrust (0.00s)
+=== RUN   TestStampVersionNotLinkifiedAsIP
+--- PASS: TestStampVersionNotLinkifiedAsIP (0.00s)
+=== RUN   TestRawVersionWouldBeLinkified
+--- PASS: TestRawVersionWouldBeLinkified (0.00s)
+=== RUN   TestSeedBootstrapBackfillsMissingSecretOnly
+--- PASS: TestSeedBootstrapBackfillsMissingSecretOnly (3.18s)
+=== RUN   TestSeedBootstrapWithoutSecretKeyLeavesSecretUnset
+2026/11/02 00:08:44 WARN bootstrap feishu app secret cannot be stored without WP_SECRET_KEY bot_channel=dev app_id=cli_x
+--- PASS: TestSeedBootstrapWithoutSecretKeyLeavesSecretUnset (3.25s)
+=== RUN   TestNewSeedsEncryptedBootstrapBot
+2026/11/02 00:08:47 [Info] [client ready]
+2026/11/02 00:08:47 INFO fcs feishu gateway configured transport=ws bot_channel=dev app_id=cli_x
+--- PASS: TestNewSeedsEncryptedBootstrapBot (3.20s)
+=== RUN   TestNewFakeTransportHasNoReceiver
+2026/11/02 00:08:50 INFO fcs feishu gateway configured transport=fake
+--- PASS: TestNewFakeTransportHasNoReceiver (3.21s)
+=== RUN   TestWebhookIngressUnsignedFeedsIngest
+--- PASS: TestWebhookIngressUnsignedFeedsIngest (0.00s)
+=== RUN   TestWebhookIngressVerifiedTokenPreservesProvenance
+--- PASS: TestWebhookIngressVerifiedTokenPreservesProvenance (0.00s)
+=== RUN   TestWebhookIngressAnswersChallenge
+--- PASS: TestWebhookIngressAnswersChallenge (0.00s)
+=== RUN   TestWebhookIngressTokenMismatchFailsClosed
+--- PASS: TestWebhookIngressTokenMismatchFailsClosed (0.00s)
+=== RUN   TestVerifyEncryptedRoundtrip
+--- PASS: TestVerifyEncryptedRoundtrip (0.00s)
+=== RUN   TestVerifyUnsignedPlaintextIsUntrusted
+--- PASS: TestVerifyUnsignedPlaintextIsUntrusted (0.00s)
+=== RUN   TestVerifyTokenMatchIsWebhookVerified
+--- PASS: TestVerifyTokenMatchIsWebhookVerified (0.00s)
+=== RUN   TestVerifyTokenMismatchFailsClosed
+--- PASS: TestVerifyTokenMismatchFailsClosed (0.00s)
+=== RUN   TestVerifyTokenInHeader
+--- PASS: TestVerifyTokenInHeader (0.00s)
+=== RUN   TestWebhookChallenge
+--- PASS: TestWebhookChallenge (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/fcs	14.309s

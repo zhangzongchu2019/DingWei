@@ -789,24 +789,26 @@ func (m *consoleMuxRegistry) expireLater(f *consoleMuxFeed) {
 		delay = 0
 	}
 	f.expiryTimer = time.AfterFunc(delay, func() {
-		m.mu.Lock()
-		defer m.mu.Unlock()
-		f.mu.Lock()
-		defer f.mu.Unlock()
-		if f.Cancel == nil && !time.Now().Before(f.RecoverUntil) && m.feeds[f.ID] == f {
-			delete(m.feeds, f.ID)
-			f.Scopes = nil
-			f.Requests = nil
-			f.RequestOrder = nil
-			f.expiryTimer = nil
-		}
+		m.h.backgroundWork("mux_timer", func() {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+			f.mu.Lock()
+			defer f.mu.Unlock()
+			if f.Cancel == nil && !time.Now().Before(f.RecoverUntil) && m.feeds[f.ID] == f {
+				delete(m.feeds, f.ID)
+				f.Scopes = nil
+				f.Requests = nil
+				f.RequestOrder = nil
+				f.expiryTimer = nil
+			}
+		})
 	})
 	f.mu.Unlock()
 }
-func (h *Hub) closeConsoleMux() {
+func (h *Hub) closeConsoleMuxContext(ctx context.Context) error {
 	m := h.consoleMux
 	if m == nil {
-		return
+		return nil
 	}
 	m.mu.Lock()
 	var feeds []*consoleMuxFeed
@@ -814,11 +816,13 @@ func (h *Hub) closeConsoleMux() {
 		feeds = append(feeds, f)
 	}
 	m.mu.Unlock()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	var errs []error
 	for _, f := range feeds {
-		_ = m.stop(f, ctx)
+		if err := m.stop(f, ctx); err != nil {
+			errs = append(errs, err)
+		}
 	}
+	return errors.Join(errs...)
 }
 
 // Only bounded scope metadata survives a stop; never payload or positive leases.
@@ -855,4 +859,10 @@ func muxWriteScopeError(w http.ResponseWriter, code int, err error) {
 		return
 	}
 	writeAgentWSError(w, code, err.Error())
+}
+
+func (h *Hub) closeConsoleMux() {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_ = h.closeConsoleMuxContext(ctx)
 }

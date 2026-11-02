@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -119,6 +121,9 @@ func sdNotify(state string) error {
 		return err
 	}
 	defer conn.Close()
+	if err := conn.SetWriteDeadline(time.Now().Add(100 * time.Millisecond)); err != nil {
+		return err
+	}
 	_, err = conn.Write([]byte(state))
 	return err
 }
@@ -132,14 +137,47 @@ func watchdogInterval() (time.Duration, bool) {
 	return time.Duration(usec) * time.Microsecond, true
 }
 
-func startSystemdWatchdog(ctx context.Context, logger *slog.Logger, hub *m8.Hub) {
-	window, enabled := watchdogInterval()
-	if !enabled {
-		return
+type systemdWatchdog struct {
+	draining    atomic.Bool
+	deadline    atomic.Int64
+	wake        chan struct{}
+	mu          sync.Mutex
+	failure     error
+	probeCancel context.CancelFunc
+	window      time.Duration
+	enabled     bool
+}
+
+func (w *systemdWatchdog) begin(t0 time.Time) {
+	w.deadline.Store(t0.Add(shutdownBudget).UnixNano())
+	w.draining.Store(true)
+	w.mu.Lock()
+	if w.probeCancel != nil {
+		w.probeCancel()
 	}
-	interval := envDuration("WP_HUB_LOCK_WATCHDOG_INTERVAL", window/3)
-	if interval <= 0 || interval >= window {
-		interval = window / 3
+	w.mu.Unlock()
+	select {
+	case w.wake <- struct{}{}:
+	default:
+	}
+}
+func (w *systemdWatchdog) notify() {
+	if err := sdNotify("WATCHDOG=1"); err != nil {
+		w.mu.Lock()
+		w.failure = errors.New("watchdog notification failed")
+		w.mu.Unlock()
+	}
+}
+func (w *systemdWatchdog) Err() error { w.mu.Lock(); defer w.mu.Unlock(); return w.failure }
+func startSystemdWatchdog(ctx context.Context, logger *slog.Logger, hub *m8.Hub) *systemdWatchdog {
+	window, enabled := watchdogInterval()
+	w := &systemdWatchdog{wake: make(chan struct{}, 1), window: window, enabled: enabled}
+	if !enabled {
+		return w
+	}
+	interval := envDuration("WP_HUB_LOCK_WATCHDOG_INTERVAL", window/4)
+	if interval <= 0 || interval > window/4 {
+		interval = window / 4
 	}
 	probeTimeout := envDuration("WP_HUB_LOCK_WATCHDOG_PROBE_TIMEOUT", 200*time.Millisecond)
 	confirmations := envInt("WP_HUB_LOCK_WATCHDOG_CONFIRMATIONS", envInt("WP_HUB_LOCK_WATCHDOG_FAILURES", 3))
@@ -154,21 +192,56 @@ func startSystemdWatchdog(ctx context.Context, logger *slog.Logger, hub *m8.Hub)
 			select {
 			case <-ctx.Done():
 				return
+			case <-w.wake:
+				if w.draining.Load() {
+					w.notify()
+				}
 			case <-ticker.C:
-				if hub.ProbeLock(ctx, probeTimeout, 50*time.Millisecond) {
-					if err := sdNotify("WATCHDOG=1"); err != nil {
-						logger.Warn("sd_notify watchdog failed", "error", err)
+				if w.draining.Load() {
+					if time.Now().UnixNano() <= w.deadline.Load() {
+						w.notify()
 					}
 					continue
 				}
+				probeCtx, probeCancel := context.WithCancel(ctx)
+				w.mu.Lock()
+				w.probeCancel = probeCancel
+				if w.draining.Load() {
+					probeCancel()
+				}
+				w.mu.Unlock()
+				if hub.ProbeLock(probeCtx, probeTimeout, 50*time.Millisecond) {
+					if err := sdNotify("WATCHDOG=1"); err != nil {
+						w.mu.Lock()
+						w.failure = errors.New("watchdog notification failed")
+						w.mu.Unlock()
+						logger.Warn("sd_notify watchdog failed", "error", err)
+					}
+					probeCancel()
+					continue
+				}
+				if w.draining.Load() {
+					probeCancel()
+					w.notify()
+					continue
+				}
 				logger.Warn("hub lock watchdog probe failed; starting fast confirmation", "confirmations", confirmations, "interval", confirmInterval)
-				if watchdogFastConfirm(ctx, confirmations, confirmInterval, func() bool {
-					return hub.ProbeLock(ctx, probeTimeout, 50*time.Millisecond)
+				if watchdogFastConfirm(probeCtx, confirmations, confirmInterval, func() bool {
+					return hub.ProbeLock(probeCtx, probeTimeout, 50*time.Millisecond)
 				}) {
 					logger.Info("hub lock watchdog recovered during fast confirmation")
 					if err := sdNotify("WATCHDOG=1"); err != nil {
+						w.mu.Lock()
+						w.failure = errors.New("watchdog notification failed")
+						w.mu.Unlock()
 						logger.Warn("sd_notify watchdog recovery failed", "error", err)
 					}
+					probeCancel()
+					continue
+				}
+				probeCancel()
+				if w.draining.Load() {
+					w.notify()
 					continue
 				}
 				// Do not renew the lease after a confirmed failure. The loop keeps
@@ -177,6 +250,7 @@ func startSystemdWatchdog(ctx context.Context, logger *slog.Logger, hub *m8.Hub)
 			}
 		}
 	}()
+	return w
 }
 
 func watchdogFastConfirm(ctx context.Context, attempts int, interval time.Duration, probe func() bool) bool {

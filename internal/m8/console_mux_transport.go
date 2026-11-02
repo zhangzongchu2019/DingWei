@@ -47,6 +47,11 @@ func muxNames(scopes map[string]*consoleMuxScope) []string {
 
 // One cancellation tree owns the public writer, target bridges, readers and payloads.
 func (h *Hub) HandleConsoleMuxEvents(w http.ResponseWriter, r *http.Request) {
+	r, finish, admitted := h.streamRequest(w, r, "public_mux")
+	if !admitted {
+		return
+	}
+	defer finish()
 	m := h.consoleMux
 	if m == nil {
 		http.NotFound(w, r)
@@ -608,6 +613,11 @@ func muxReadPackets(r io.Reader, consume func([]byte) error) error {
 
 // VS is the only consumer permitted to open this feed's raw source bridge.
 func (h *Hub) HandleInternalConsoleMuxEvents(w http.ResponseWriter, r *http.Request) {
+	r, finish, admitted := h.streamRequest(w, r, "internal_bridge")
+	if !admitted {
+		return
+	}
+	defer finish()
 	m := h.consoleMux
 	if m == nil {
 		http.NotFound(w, r)

@@ -1,0 +1,19 @@
+{
+  "profile": "sdk-hub-wiring-corrected",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./cmd/workpulse",
+    "-run",
+    "^TestShutdownFeishu",
+    "-count=1",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T00:12:22.601311+00:00",
+  "finished_utc": "2026-11-02T00:12:36.136766+00:00",
+  "rc": 0,
+  "log": "sdk-hub-wiring-corrected.log",
+  "sha256": "b91e015714badc07245738af8ddcc12f1af2a38c10977b3a582bb691bf052bb3",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

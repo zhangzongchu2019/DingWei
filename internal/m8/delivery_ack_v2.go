@@ -83,6 +83,6 @@ func (h *Hub) handleDeliveryACKV2(ctx context.Context, c *sessionClient, env mod
 	if result.SourceMessageID != "" {
 		_ = h.Repo.AckMessage(ctx, result.SourceMessageID)
 	}
-	go h.drainSessionDeliveries(context.Background(), c)
+	h.backgroundWork("owned", func() { h.drainSessionDeliveries(context.Background(), c) })
 	return true
 }

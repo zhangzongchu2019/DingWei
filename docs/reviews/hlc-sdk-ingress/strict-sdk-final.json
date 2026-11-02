@@ -1,0 +1,16 @@
+{
+  "profile": "strict-sdk-final",
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict",
+    "--no-interactive"
+  ],
+  "started_utc": "2026-11-02T00:14:17.552442+00:00",
+  "finished_utc": "2026-11-02T00:14:17.810705+00:00",
+  "rc": 0,
+  "log": "strict-sdk-final.log",
+  "sha256": "0899b27eaabb0adbd38916ec3daafda0491329c84c2ca893051e4e396ad7eb67",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

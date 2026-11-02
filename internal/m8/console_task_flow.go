@@ -438,25 +438,27 @@ func (h *Hub) dispatchTaskNotifications(ctx context.Context) {
 // StartTaskFlow follows the Hub lifetime; no detached loop is started by tests
 // or construction. Every tick retries outbox and reconciles invalid membership.
 func (h *Hub) StartTaskFlow(ctx context.Context) {
-	go func() {
-		ticker := time.NewTicker(5 * time.Second)
-		defer ticker.Stop()
-		for {
-			h.reconcileTaskFlow(ctx)
-			h.reconcileSpecAgent(ctx)
-			h.reconcileBlockers(ctx)
-			h.dispatchTaskNotifications(ctx)
-			h.dispatchBlockerWakes(ctx)
-			h.processQuestions(ctx)
-			h.processCoordinateReviews(ctx)
-			h.reconcileClarificationReplies(ctx)
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
+	h.backgroundWork("owned", func() {
+		func() {
+			ticker := time.NewTicker(5 * time.Second)
+			defer ticker.Stop()
+			for {
+				h.reconcileTaskFlow(ctx)
+				h.reconcileSpecAgent(ctx)
+				h.reconcileBlockers(ctx)
+				h.dispatchTaskNotifications(ctx)
+				h.dispatchBlockerWakes(ctx)
+				h.processQuestions(ctx)
+				h.processCoordinateReviews(ctx)
+				h.reconcileClarificationReplies(ctx)
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+				}
 			}
-		}
-	}()
+		}()
+	})
 }
 func (h *Hub) reconcileTaskFlow(ctx context.Context) {
 	repo, ok := h.Repo.(interface {

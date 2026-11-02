@@ -67,6 +67,7 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
+	lifecycle hubLifecycle
 	// Startup-only R7 service. Nil keeps Git/committee operations fail-closed until trusted adapters exist.
 	SpecReader               *specread.Service
 	CoordinateReviews        *coordinatereview.Service
@@ -446,7 +447,7 @@ func (h *Hub) StartL2Workers(ctx context.Context) {
 	cfg := h.effectiveL2Config()
 	for i := 0; i < cfg.Workers; i++ {
 		workerID := fmt.Sprintf("l2-%d-%s", i+1, randomHex(4))
-		go h.runL2Worker(ctx, workerID, cfg)
+		h.backgroundWork("owned", func() { h.runL2Worker(ctx, workerID, cfg) })
 	}
 }
 
@@ -880,6 +881,12 @@ func (h *Hub) AddPrefixRule(ctx context.Context, rule model.RoutingRule) error {
 }
 
 func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
+	registrationDone, handlerDone, ok := h.beginRegistration(w, "service_ws")
+	if !ok {
+		return
+	}
+	defer registrationDone()
+	defer handlerDone()
 	if h.AgentCredentialOnly && !isInternalSource(r) {
 		writeAgentWSError(w, http.StatusForbidden, "internal_only")
 		return
@@ -898,6 +905,7 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	defer h.trackSocket(conn, "service_ws")()
 	obsConn := obs.Default.OpenWS("service")
 	var obsReadErr, svcReadErr error
 	defer func() { obsConn.Closed(obsReadErr) }()
@@ -924,23 +932,26 @@ func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
 	}()
 	// 🔴 建连后必须一直有人读（组长 lead-m8-flake-findings ③）：原先只有 forward 在途时才 Read，
 	//    空闲时对端发来的关闭帧／ping 无人处理 —— 对端优雅关闭必等满 5 秒，Hub 也察觉不到对端已走。
-	go func() {
-		defer close(c.readDone)
-		for {
-			_, data, err := conn.Read(context.Background())
-			if err != nil {
-				svcReadErr = obsWSReadErr(context.Background(), err) // 只在 readDone 关闭后由主协程读取
-				return
+	h.backgroundWork("owned", func() {
+		func() {
+			defer close(c.readDone)
+			for {
+				_, data, err := conn.Read(context.Background())
+				if err != nil {
+					svcReadErr = obsWSReadErr(context.Background(), err) // 只在 readDone 关闭后由主协程读取
+					return
+				}
+				// 🔴 签注（组长 R-HUB-WSB-COMMENT）：服务只许应答，不得主动发帧。c.resp 容量 1：无请求在途时的主动帧会进缓冲，
+				//    被下一次调用当成答案（之后整体错位）。缓冲 1 是为了接住 forward 写完请求、尚未进入接收时就先到的快回复；
+				//    缓冲已满（不合协议的多余帧）才丢弃。超时的调用已关掉连接，迟到回复不会留到下一次调用。
+				select {
+				case c.resp <- data:
+				default:
+				}
 			}
-			// 🔴 签注（组长 R-HUB-WSB-COMMENT）：服务只许应答，不得主动发帧。c.resp 容量 1：无请求在途时的主动帧会进缓冲，
-			//    被下一次调用当成答案（之后整体错位）。缓冲 1 是为了接住 forward 写完请求、尚未进入接收时就先到的快回复；
-			//    缓冲已满（不合协议的多余帧）才丢弃。超时的调用已关掉连接，迟到回复不会留到下一次调用。
-			select {
-			case c.resp <- data:
-			default:
-			}
-		}
-	}()
+		}()
+	})
+	registrationDone()
 	select {
 	case <-r.Context().Done():
 		obsReadErr = obs.ContextDone()
@@ -1072,6 +1083,12 @@ type sessionAdmission struct {
 
 // serveSession 的函数体是从 HandleSessionWS 原样搬来的（逐字未改），开头只做同名解包。
 func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmission) {
+	registrationDone, handlerDone, ok := h.beginRegistration(w, "session_ws")
+	if !ok {
+		return
+	}
+	defer registrationDone()
+	defer handlerDone()
 	h.sessionWG.Add(1)
 	defer h.sessionWG.Done()
 	keyID, ownerKey, requestedSessionName, sessionName, fullSessionName := a.keyID, a.ownerKey, a.requestedSessionName, a.sessionName, a.fullSessionName
@@ -1127,14 +1144,14 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		OnPingReceived: func(ctx context.Context, payload []byte) bool {
 			if c != nil {
 				c.recordActivity(h.now().UTC())
-				go h.touchSessionEndpoint(context.Background(), c)
+				h.backgroundWork("owned", func() { h.touchSessionEndpoint(context.Background(), c) })
 			}
 			return true
 		},
 		OnPongReceived: func(ctx context.Context, payload []byte) {
 			if c != nil {
 				c.recordActivity(h.now().UTC())
-				go h.touchSessionEndpoint(context.Background(), c)
+				h.backgroundWork("owned", func() { h.touchSessionEndpoint(context.Background(), c) })
 			}
 		},
 	})
@@ -1142,6 +1159,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		return
 	}
 	markTiming("accept")
+	defer h.trackSocket(conn, "session_ws")()
 	obsConn := obs.Default.OpenWS("session")
 	var obsReadErr error
 	defer func() { obsConn.Closed(obsReadErr) }()
@@ -1164,8 +1182,8 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	c.metricsGeneration = randomHex(16)
 	c.obsConn = obsConn
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
-	go h.watchSessionIdle(idleWatchdogCtx, c)
-	go h.watchSessionKeepalive(idleWatchdogCtx, c)
+	h.backgroundWork("owned", func() { h.watchSessionIdle(idleWatchdogCtx, c) })
+	h.backgroundWork("owned", func() { h.watchSessionKeepalive(idleWatchdogCtx, c) })
 	skillCtx, skillCancel := context.WithCancel(context.Background())
 	c.skillCancel = skillCancel
 	// Send onboarding before publishing the client to directory broadcasters, so
@@ -1213,10 +1231,10 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		_ = oldConn.Close(websocket.StatusPolicyViolation, "replaced")
 	}
 	if a.onRegistered != nil {
-		go a.onRegistered()
+		h.backgroundWork("owned", func() { a.onRegistered() })
 	}
 	if c.metricsAgentID != "" {
-		go h.resumeHelperUpdateOffer(context.Background(), c)
+		h.backgroundWork("owned", func() { h.resumeHelperUpdateOffer(context.Background(), c) })
 	}
 	if h.markSessionSeen(ownerKey, sessionName) {
 		h.notifyNewSession(r.Context(), ownerKey, sessionName)
@@ -1233,6 +1251,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		})
 	}
 	h.scheduleOnlineBroadcastForSession(r.Context(), keyID, sessionName)
+	registrationDone()
 	defer func() {
 		stopIdleWatchdog()
 		if c.skillCancel != nil {
@@ -3065,7 +3084,7 @@ func (h *Hub) queueFeishuSyncItem(keyID, sessionName string, target feishuSyncTa
 	buffer.items = append(buffer.items, item)
 	if buffer.timer == nil {
 		buffer.timer = time.AfterFunc(time.Second, func() {
-			h.flushFeishuSyncBuffer(bufferKey)
+			h.backgroundWork("sync_timer", func() { h.flushFeishuSyncBuffer(bufferKey) })
 		})
 	}
 	h.mu.Unlock()
@@ -3422,21 +3441,23 @@ func (h *Hub) startAgentNetworkSkillPush(ctx context.Context, c *sessionClient) 
 		return
 	}
 	h.pushAgentNetworkSkill(ctx, c)
-	go func() {
-		ticker := time.NewTicker(agentNetworkSkillRetryWait)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				if h.agentNetworkSkillInstalled(c) {
+	h.backgroundWork("owned", func() {
+		func() {
+			ticker := time.NewTicker(agentNetworkSkillRetryWait)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
 					return
+				case <-ticker.C:
+					if h.agentNetworkSkillInstalled(c) {
+						return
+					}
+					h.pushAgentNetworkSkill(ctx, c)
 				}
-				h.pushAgentNetworkSkill(ctx, c)
 			}
-		}
-	}()
+		}()
+	})
 }
 
 func (h *Hub) pushAgentNetworkSkillResume(ctx context.Context, c *sessionClient) {
@@ -4450,12 +4471,12 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 		if !wasDeliveryACKV1 {
 			h.releaseSessionDeliveryLeases(c, "session_reconnected")
 		}
-		go h.drainSessionDeliveries(context.Background(), c)
+		h.backgroundWork("owned", func() { h.drainSessionDeliveries(context.Background(), c) })
 	}
 	if h.sessionSupportsHelperUpdate(c) {
-		go h.resumeHelperUpdateOffer(context.Background(), c)
+		h.backgroundWork("owned", func() { h.resumeHelperUpdateOffer(context.Background(), c) })
 	}
-	go h.dispatchTaskNotifications(context.Background())
+	h.backgroundWork("owned", func() { h.dispatchTaskNotifications(context.Background()) })
 	return true
 }
 
@@ -4536,7 +4557,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 		if metaString(env.Meta, "result") == "cancelled" && messageID != "" && messageID == d.SourceMessageID {
 			if cancelled, err := h.Repo.ConfirmSessionDeliveryCancelled(ctx, messageID, id, c.keyID, c.sessionName); err == nil && cancelled {
 				h.publishDeliveryCancelled(c.keyID, c.sessionName, messageID, id, "helper_received")
-				go h.drainSessionDeliveries(context.Background(), c)
+				h.backgroundWork("owned", func() { h.drainSessionDeliveries(context.Background(), c) })
 			}
 		}
 		return true
@@ -4578,7 +4599,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
 		}
-		go h.drainSessionDeliveries(context.Background(), c)
+		h.backgroundWork("owned", func() { h.drainSessionDeliveries(context.Background(), c) })
 		return true
 	}
 	if state == "processed" {
@@ -4593,7 +4614,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 		if d.SourceMessageID != "" {
 			_ = h.Repo.AckMessage(ctx, d.SourceMessageID)
 		}
-		go h.drainSessionDeliveries(context.Background(), c)
+		h.backgroundWork("owned", func() { h.drainSessionDeliveries(context.Background(), c) })
 	} else if state == "busy" {
 		_ = h.Repo.UpdateSessionDeliveryBusy(ctx, id, metaString(env.Meta, "reason"), time.Now().UTC().Add(15*time.Second))
 		h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", metaString(env.Meta, "reason"))
@@ -4614,7 +4635,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 				log.Printf("session delivery dead reason=retry_exhausted delivery_id=%s failed=%d last_reason=%s", id, failed, reason)
 				h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", reason)
 				h.notifyDeliveryRetryExhausted(ctx, *d, failed, reason)
-				go h.drainSessionDeliveries(context.Background(), c)
+				h.backgroundWork("owned", func() { h.drainSessionDeliveries(context.Background(), c) })
 			} else {
 				h.publishDeliveryUpdateForDelivery(*d, "queued", "helper_received", "", reason)
 				h.scheduleSessionDeliveryDrain(c, next.Sub(now))
@@ -4622,7 +4643,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 		} else {
 			_ = h.Repo.UpdateSessionDelivery(ctx, id, "dead", metaString(env.Meta, "reason"), time.Now().UTC())
 			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", metaString(env.Meta, "reason"))
-			go h.drainSessionDeliveries(context.Background(), c)
+			h.backgroundWork("owned", func() { h.drainSessionDeliveries(context.Background(), c) })
 		}
 	} else if d.State != "processed" {
 		_ = h.Repo.UpdateSessionDelivery(ctx, id, "delivered", "", time.Now().UTC().Add(2*time.Minute))
@@ -4818,7 +4839,9 @@ func (h *Hub) scheduleSessionDeliveryDrain(c *sessionClient, delay time.Duration
 	if delay < 10*time.Millisecond {
 		delay = 10 * time.Millisecond
 	}
-	time.AfterFunc(delay, func() { h.drainSessionDeliveries(context.Background(), c) })
+	time.AfterFunc(delay, func() {
+		h.backgroundWork("delivery_timer", func() { h.drainSessionDeliveries(context.Background(), c) })
+	})
 }
 
 // 可重试 failed 的退避与上限（组长取甲）。实例字段为 0 ⇒ 默认：2 秒起翻倍、封顶 300 秒、连续 30 次转 dead。
@@ -5203,14 +5226,16 @@ func (h *Hub) scheduleOnlineBroadcast(ctx context.Context, keyID string) {
 		old.Stop()
 	}
 	h.onlineTimers[ownerKey] = time.AfterFunc(delay, func() {
-		bctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		h.mu.Lock()
-		if h.onlineTimers[ownerKey] != nil {
-			delete(h.onlineTimers, ownerKey)
-		}
-		h.mu.Unlock()
-		_ = h.broadcastOnlineDirectory(bctx, ownerKey)
+		h.backgroundWork("directory_timer", func() {
+			bctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			h.mu.Lock()
+			if h.onlineTimers[ownerKey] != nil {
+				delete(h.onlineTimers, ownerKey)
+			}
+			h.mu.Unlock()
+			_ = h.broadcastOnlineDirectory(bctx, ownerKey)
+		})
 	})
 	h.mu.Unlock()
 }
@@ -6876,44 +6901,4 @@ func randomDigits(n int) string {
 		out[i] = '0' + b[i]%10
 	}
 	return string(out)
-}
-
-// Close 收掉 Hub 自己起的后台 goroutine：amr 处理器的心跳与路由循环，以及在线会话的处理 goroutine（先断连、再等收尾）；幂等。
-// 生产进程随退出一并回收，不必调；测试里每建一个 Hub 都应 t.Cleanup(hub.Close)，否则泄漏的心跳会污染全局 log。
-// 🔴 调用前提：调用时不应再有新连接进来（先关监听或测试服务器，再 Close）。serveSession 里的 sessionWG.Add 与这里的
-// Wait 并发时属 WaitGroup 的未定义用法（Wait 已开始后再 Add），可能漏等刚进来的会话（组长 13:22:28Z 复验意见）。
-func (h *Hub) Close() {
-	if h == nil {
-		return
-	}
-	h.closeConsoleMux()
-	if h.amr != nil {
-		h.amr.close()
-	}
-	if h.capabilityPendingCleanupStop != nil {
-		close(h.capabilityPendingCleanupStop)
-		h.capabilityPendingCleanupStop = nil
-		h.capabilityPendingCleanupWG.Wait()
-	}
-	// 关掉所有在线会话连接，并等各自的收尾跑完（最多 5 秒，防测试里有连接卡住时 Close 挂死）。
-	h.mu.Lock()
-	var conns []*websocket.Conn
-	for _, sessions := range h.sessionClients {
-		for _, c := range sessions {
-			if c != nil && c.conn != nil {
-				conns = append(conns, c.conn)
-			}
-		}
-	}
-	h.mu.Unlock()
-	for _, c := range conns {
-		_ = c.CloseNow()
-	}
-	done := make(chan struct{})
-	go func() { h.sessionWG.Wait(); close(done) }()
-	select {
-	case <-done:
-	case <-time.After(5 * time.Second):
-		log.Printf("hub close: session handlers still running after 5s")
-	}
 }

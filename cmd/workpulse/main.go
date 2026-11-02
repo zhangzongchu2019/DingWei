@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -35,6 +36,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/datad"
 	"github.com/zhangzongchu2019/dingwei/internal/fcs"
 	"github.com/zhangzongchu2019/dingwei/internal/feishu"
+	"github.com/zhangzongchu2019/dingwei/internal/lifecycle"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -54,8 +56,11 @@ var unsignedWebhookWarned sync.Map
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	if err := execute(os.Args, os.Stdout, logger, run); err != nil {
-		logger.Error("workpulse exited", "error", err)
-		os.Exit(1)
+		var stopErr *shutdownError
+		if !errors.As(err, &stopErr) {
+			logger.Error("workpulse exited", "error", err)
+		}
+		os.Exit(exitCode(err))
 	}
 }
 
@@ -123,9 +128,23 @@ func run(logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
-	defer st.Close()
+	storageOwned := true
+	defer func() {
+		if storageOwned {
+			_ = st.Close()
+		}
+	}()
 
-	ctx, cancelRun := context.WithCancel(context.Background())
+	var runJobs lifecycle.Group
+	var claims lifecycle.Group
+	ctx, cancelRun := context.WithCancel(context.WithValue(context.Background(), runTasksKey{}, &runJobs))
+	queueCtx, cancelQueues := context.WithCancel(context.Background())
+	defer cancelQueues()
+	workCtx, cancelWork := context.WithCancel(context.Background())
+	defer cancelWork()
+	var consumerJobs lifecycle.Group
+	access := &httpAdmission{}
+	inboundGate := &lifecycle.Group{}
 	defer cancelRun()
 	if err := st.Migrate(ctx); err != nil {
 		return err
@@ -156,8 +175,8 @@ func run(logger *slog.Logger) error {
 
 	mux := http.NewServeMux()
 	writeQueueConfig := bus.AsyncDBQueueConfigFromEnv(logger)
-	inbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionIn, writeQueueConfig)
-	outbound := bus.NewBestEffortDBQueue(ctx, st, model.DirectionOut, writeQueueConfig)
+	inbound := bus.NewBestEffortDBQueue(queueCtx, st, model.DirectionIn, writeQueueConfig)
+	outbound := bus.NewBestEffortDBQueue(queueCtx, st, model.DirectionOut, writeQueueConfig)
 	prefixHub := m8.New(st, consoleAuthMode)
 	prefixHub.Outbound = outbound
 	fileIssuerURL := strings.TrimSpace(os.Getenv("WP_FILE_ISSUER_URL"))
@@ -223,6 +242,7 @@ func run(logger *slog.Logger) error {
 	prefixHub.System = schedulerSvc
 	scheduleSvc := schedule.New(st, clock.Real{}, nil)
 	scheduleSvc.Coordinator = schedulerSvc
+	var stopNotifyEndpoint func()
 	var feishuGateway feishu.Gateway
 	var feishuReceiver feishu.Receiver
 	if rpcURL := strings.TrimSpace(os.Getenv("FCS_RPC_URL")); rpcURL != "" {
@@ -298,6 +318,7 @@ func run(logger *slog.Logger) error {
 	mux.HandleFunc("GET /ws/service/{serviceID}", prefixHub.HandleWS)
 	mux.HandleFunc("GET /ws/session/{sessionName}", prefixHub.HandleSessionWS)
 	// 新平台（G3）：身份存储与新平台路由；其余 console／view 路由见 registerConsoleRoutes。
+	var closePlatformStore func() error
 	newplatCfg, newplatOn, newplatErr := newPlatformConfigFromEnv()
 	if newplatErr != nil {
 		return fmt.Errorf("newplat config: %w", newplatErr)
@@ -307,7 +328,12 @@ func run(logger *slog.Logger) error {
 		if err != nil {
 			return fmt.Errorf("newplat identity store: %w", err)
 		}
-		defer closeNPStore()
+		defer func() {
+			if storageOwned {
+				closeNPStore()
+			}
+		}()
+		closePlatformStore = func() error { return npPool.Close() }
 		if err := wireNewPlatform(ctx, mux, prefixHub, newplatCfg, npStore, npPool); err != nil {
 			return fmt.Errorf("newplat wiring refused to start: %w", err)
 		}
@@ -340,7 +366,7 @@ func run(logger *slog.Logger) error {
 	if internalAddr == "" {
 		internalAddr = "127.0.0.1:8792"
 	}
-	internalSrv := &http.Server{Addr: internalAddr, Handler: obs.Default.Middleware("internal", internalMux), ReadHeaderTimeout: 5 * time.Second}
+	internalSrv := &http.Server{Addr: internalAddr, Handler: access.Wrap("internal_http", obs.Default.Middleware("internal", internalMux)), ReadHeaderTimeout: 5 * time.Second}
 
 	// 🔴 D(0.2.0.4)告警出口:**只挂 Unix socket,不挂 TCP**。
 	//    首版挂 127.0.0.1:8792 并声称「宿主不可达」—— prodops 实测从宿主得到 400,该假设被证伪。
@@ -348,10 +374,11 @@ func run(logger *slog.Logger) error {
 	//    **既不依赖网络拓扑,也不新增凭据**。未配置 WP_NOTIFY_SOCKET ⇒ 整个出口不存在。
 	if sock := strings.TrimSpace(os.Getenv("WP_NOTIFY_SOCKET")); sock != "" {
 		notifyMux := http.NewServeMux()
-		notifyMux.HandleFunc("POST /internal/notify", makeInternalNotifyHandler(outbound, logger))
+		notifyMux.HandleFunc("POST /internal/notify", access.Wrap("notify_http", makeInternalNotifyHandler(outbound, logger)).ServeHTTP)
 		if stopNotify, err := serveNotifySocket(sock, notifyMux, logger); err != nil {
 			return fmt.Errorf("notify socket %s: %w", sock, err)
 		} else {
+			stopNotifyEndpoint = stopNotify
 			defer stopNotify()
 		}
 	}
@@ -365,16 +392,20 @@ func run(logger *slog.Logger) error {
 		ConfigScope:  "sha256 of effective_config line (workpulseEffectiveConfig observed keys only), not full config",
 		DeployID:     obs.SanitizeDeployID(strings.TrimSpace(os.Getenv("WP_DEPLOY_ID"))),
 	})
-	srv := &http.Server{Addr: bs.Addr, Handler: obs.Default.Middleware("public", mux), ReadHeaderTimeout: 5 * time.Second}
+	srv := &http.Server{Addr: bs.Addr, Handler: access.Wrap("public_http", obs.Default.Middleware("public", mux)), ReadHeaderTimeout: 5 * time.Second}
 	publicListener, publicAccept, err := listenWithHeartbeat(bs.Addr)
 	if err != nil {
 		return fmt.Errorf("listen public %s: %w", bs.Addr, err)
 	}
+	publicShutdownListener := &shutdownListener{Listener: publicListener}
+	publicListener = publicShutdownListener
 	defer publicListener.Close()
 	internalListener, internalAccept, err := listenWithHeartbeat(internalAddr)
 	if err != nil {
 		return fmt.Errorf("listen internal %s: %w", internalAddr, err)
 	}
+	internalShutdownListener := &shutdownListener{Listener: internalListener}
+	internalListener = internalShutdownListener
 	defer internalListener.Close()
 	mux.HandleFunc("GET /livez", livezHandler(prefixHub, st, publicAccept, internalAccept))
 
@@ -405,41 +436,239 @@ func run(logger *slog.Logger) error {
 	}()
 	startAcceptPulse(ctx, publicListener.Addr().String(), 5*time.Second)
 	startAcceptPulse(ctx, internalListener.Addr().String(), 5*time.Second)
-	if err := sdNotify("READY=1"); err != nil {
-		return fmt.Errorf("sd_notify READY: %w", err)
-	}
-	startSystemdWatchdog(ctx, logger, prefixHub)
-	go processor.Run(ctx, 200*time.Millisecond)
+	watchdogCtx, cancelWatchdog := context.WithCancel(context.Background())
+	defer cancelWatchdog()
+	watchdog := startSystemdWatchdog(watchdogCtx, logger, prefixHub)
+	consumerDone, _ := consumerJobs.Enter("inbound")
+	go func() {
+		defer consumerDone()
+		runInboundUntil(workCtx, &claims, processor.ProcessOne, 200*time.Millisecond)
+	}()
 	prefixHub.StartL2Workers(ctx)
 	prefixHub.StartTaskFlow(ctx)
-	go runOutboundLoop(ctx, logger, outbound, feishuGateway, 200*time.Millisecond)
+	outDone, _ := consumerJobs.Enter("outbound")
+	go func() {
+		defer outDone()
+		runOutboundLoopUntil(workCtx, logger, outbound, feishuGateway, 200*time.Millisecond, &claims)
+	}()
 	if feishuReceiver != nil {
-		go func() {
+		startRunTask(ctx, "receiver", func() {
 			err := feishuReceiver.Start(ctx, func(ctx context.Context, m model.Message) error {
-				if err := upsertInboundEntity(ctx, st, m); err != nil {
+				done, ok := inboundGate.Enter("receiver_callback")
+				if !ok {
+					return errors.New("hub draining")
+				}
+				defer done()
+				callbackCtx, cancelCallback := callbackWorkContext(ctx, workCtx)
+				defer cancelCallback()
+				if err := upsertInboundEntity(callbackCtx, st, m); err != nil {
 					return err
 				}
-				return inbound.Enqueue(ctx, m)
+				return inbound.Enqueue(callbackCtx, m)
 			})
 			if err != nil && ctx.Err() == nil {
 				logger.Error("feishu receiver stopped", "error", err)
 			}
-		}()
+		})
 	}
-	go runReminderLoop(ctx, logger, reminders, time.Minute)
+	startRunTask(ctx, "reminders", func() { runReminderLoop(ctx, logger, reminders, time.Minute) })
 	schedulerCron := startSchedulerCron(ctx, logger, schedulerSvc)
 	defer schedulerCron.Stop()
 
-	stop := make(chan os.Signal, 1)
+	stop := make(chan os.Signal, 4)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-	<-stop
+	defer signal.Stop(stop)
+	if err := sdNotify("READY=1"); err != nil {
+		return fmt.Errorf("sd_notify READY: %w", err)
+	}
 
-	shutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	cancelRun()
-	logger.Info("shutting down")
-	_ = internalSrv.Shutdown(shutCtx)
-	return srv.Shutdown(shutCtx)
+	sig := <-stop
+	t0 := time.Now()
+	storageOwned = false // coordinator owns storage from this point, including failures
+	// Keep this armed through return/defer/logging until the actual process exits.
+	// Repeated signals remain captured and never reset the single deadline.
+	time.AfterFunc(shutdownBudget, func() { os.Exit(2) })
+	watchdog.begin(t0)
+	results := &serverResults{}
+	var queueMu sync.Mutex
+	queueCounts := map[string]any{}
+	persistenceState := "unknown"
+	var durableCounts map[string]int64
+	safeUsers := false
+	var barrierReady atomic.Bool
+	var stoppedCron context.Context
+	drainDone := make(chan struct{})
+	snapshot := func() any {
+		queueMu.Lock()
+		q := map[string]any{}
+		for k, v := range queueCounts {
+			q[k] = v
+		}
+		state := persistenceState
+		durable := durableCounts
+		queueMu.Unlock()
+		// Read live counters even if the phase deadline beat SealAndFlush's
+		// return. Preserve a prior commit failure separately from the timeout.
+		for name, queue := range map[string]bus.Queue{"inbound": inbound, "outbound": outbound} {
+			if async, ok := queue.(*bus.AsyncDBQueue); ok {
+				counts := shutdownQueueCounts(async)
+				if previous, ok := q[name].(map[string]any); ok {
+					counts["error"] = previous["error"]
+				}
+				q[name] = counts
+			}
+		}
+		var ingress any = "remote_or_no_sdk"
+		if receiver, ok := feishuReceiver.(feishu.ReceiverLifecycle); ok {
+			ingress = receiver.IngressSnapshot()
+		}
+		return map[string]any{"servers": results.snapshot(), "hub": prefixHub.LifecycleCounts(), "http_overlaps_streams": access.group.Snapshot(), "producers": runJobs.Snapshot(), "consumers": consumerJobs.Snapshot(), "feishu_ingress": ingress, "queue": q, "persistence": state, "durable_counts": durable, "watchdog_enabled": watchdog.enabled, "watchdog_window_ms": watchdog.window.Milliseconds()}
+	}
+	return coordinateShutdown(t0, sig.String(), shutdownPlan{
+		Stop: func(stopCtx context.Context) error {
+			access.group.Seal()
+			if _, managed := feishuReceiver.(feishu.ReceiverLifecycle); !managed {
+				inboundGate.Seal()
+			}
+			claims.Seal()
+			runJobs.Seal()
+			prefixHub.SealRegistrations()
+			cancelRun()
+			if stopNotifyEndpoint != nil {
+				stopNotifyEndpoint()
+			}
+			stoppedCron = schedulerCron.Stop()
+			// Close both actual listeners concurrently before waiting on registration.
+			var listeners sync.WaitGroup
+			listeners.Add(2)
+			go func() { defer listeners.Done(); _ = publicListener.Close() }()
+			go func() { defer listeners.Done(); _ = internalListener.Close() }()
+			listeners.Wait()
+
+			err := prefixHub.WaitRegistrations(stopCtx)
+			if err == nil {
+				barrierReady.Store(true)
+			}
+			return err
+		},
+		Drain: func(drainCtx context.Context) error {
+			defer close(drainDone)
+			var waits sync.WaitGroup
+			errs := make(chan error, 7)
+			launch := func(fn func() error) { waits.Add(1); go func() { defer waits.Done(); errs <- fn() }() }
+			launch(func() error {
+				err := srv.Shutdown(drainCtx)
+				results.record("public", publicShutdownListener, err)
+				return err
+			})
+			launch(func() error {
+				err := internalSrv.Shutdown(drainCtx)
+				results.record("internal", internalShutdownListener, err)
+				return err
+			})
+			launch(func() error {
+				if !barrierReady.Load() {
+					return errors.New("registration barrier incomplete")
+				}
+				return prefixHub.CloseContext(drainCtx)
+			})
+			launch(func() error { return runJobs.Wait(drainCtx) })
+			launch(func() error { return consumerJobs.Wait(drainCtx) })
+			launch(func() error {
+				return stopFeishuIngress(drainCtx, feishuReceiver, inboundGate)
+			})
+			launch(func() error {
+				select {
+				case <-stoppedCron.Done():
+					return nil
+				case <-drainCtx.Done():
+					return drainCtx.Err()
+				}
+			})
+			waits.Wait()
+			close(errs)
+			var all []error
+			for err := range errs {
+				all = append(all, err)
+			}
+			if err := access.group.Wait(drainCtx); err != nil {
+				all = append(all, err)
+			}
+			joined := errors.Join(all...)
+			safeUsers = drainCtx.Err() == nil && barrierReady.Load()
+			for _, counts := range []map[string]int{access.group.Snapshot(), prefixHub.LifecycleCounts(), runJobs.Snapshot(), consumerJobs.Snapshot(), inboundGate.Snapshot()} {
+				for _, n := range counts {
+					if n != 0 {
+						safeUsers = false
+					}
+				}
+			}
+			return joined
+		},
+		Flush: func(queueStage context.Context) error {
+			if !safeUsers {
+				return errors.New("storage users not joined")
+			}
+			var waits sync.WaitGroup
+			var mu sync.Mutex
+			var all []error
+			for _, entry := range []struct {
+				name string
+				q    bus.Queue
+			}{{"inbound", inbound}, {"outbound", outbound}} {
+				entry := entry
+				waits.Add(1)
+				go func() {
+					defer waits.Done()
+					if q, ok := entry.q.(*bus.AsyncDBQueue); ok {
+						err := q.SealAndFlush(queueStage)
+						remaining, failed := q.ShutdownCounts()
+						queueMu.Lock()
+						queueCounts[entry.name] = map[string]any{"remaining": remaining, "failed": failed, "error": shutdownErrorClass(err)}
+						queueMu.Unlock()
+						mu.Lock()
+						all = append(all, err)
+						mu.Unlock()
+					}
+				}()
+			}
+			waits.Wait()
+			counts, err := st.ShutdownSnapshot(queueStage)
+			if err != nil {
+				all = append(all, errors.New("durable queue snapshot failed"))
+			}
+			queueMu.Lock()
+			durableCounts = counts
+			if err == nil {
+				persistenceState = "snapshot_captured"
+			}
+			queueMu.Unlock()
+			return errors.Join(all...)
+		},
+		Storage: func(context.Context) error {
+			if !safeUsers {
+				return errors.New("storage users not joined")
+			}
+			var errs []error
+			if closePlatformStore != nil {
+				errs = append(errs, closePlatformStore())
+			}
+			errs = append(errs, st.Close())
+			return errors.Join(errs...)
+		},
+		Finalize: func(finalCtx context.Context) error {
+			select {
+			case <-drainDone:
+				return watchdog.Err()
+			case <-finalCtx.Done():
+				return errors.Join(watchdog.Err(), finalCtx.Err())
+			}
+		},
+		Force:    func() { cancelWork(); prefixHub.ForceCloseSockets(); _ = srv.Close(); _ = internalSrv.Close() },
+		Snapshot: snapshot,
+		Emit:     func(r shutdownReport) error { return emitShutdown(logger, r) },
+	})
+
 }
 
 func workpulseEffectiveConfig() []config.Observed {
@@ -561,7 +790,7 @@ func startSchedulerCron(ctx context.Context, logger *slog.Logger, svc *scheduler
 	runCtx, cancel := context.WithCancel(ctx)
 	m := &schedulerCronManager{cancel: cancel}
 	m.reload(runCtx, logger, svc)
-	go func() {
+	startRunTask(ctx, "cron_reload", func() {
 		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
 		for {
@@ -572,7 +801,7 @@ func startSchedulerCron(ctx context.Context, logger *slog.Logger, svc *scheduler
 				m.reload(runCtx, logger, svc)
 			}
 		}
-	}()
+	})
 	return m
 }
 
@@ -594,6 +823,14 @@ func (m *schedulerCronManager) reload(ctx context.Context, logger *slog.Logger, 
 		entry := entry
 		spec := cronSpecWithTZ(entry.Spec, entry.TZ)
 		if _, err := c.AddFunc(spec, func() {
+			group, _ := ctx.Value(runTasksKey{}).(*lifecycle.Group)
+			if group != nil {
+				done, ok := group.Enter("cron_job")
+				if !ok {
+					return
+				}
+				defer done()
+			}
 			switch entry.Kind {
 			case "group":
 				if err := svc.RunGroupNotifications(ctx, "定时群通知"); err != nil {
@@ -625,8 +862,12 @@ func (m *schedulerCronManager) reload(ctx context.Context, logger *slog.Logger, 
 			return
 		}
 	}
-	c.Start()
 	m.mu.Lock()
+	if ctx.Err() != nil {
+		m.mu.Unlock()
+		return
+	}
+	c.Start()
 	old := m.current
 	m.current = c
 	m.key = key
@@ -764,6 +1005,9 @@ func upsertInboundEntity(ctx context.Context, repo store.Repository, m model.Mes
 }
 
 func runOutboundLoop(ctx context.Context, logger *slog.Logger, outbound bus.Queue, gateway feishu.Gateway, idle time.Duration) {
+	runOutboundLoopUntil(ctx, logger, outbound, gateway, idle, nil)
+}
+func runOutboundLoopUntil(ctx context.Context, logger *slog.Logger, outbound bus.Queue, gateway feishu.Gateway, idle time.Duration, claims *lifecycle.Group) {
 	if outbound == nil || gateway == nil {
 		return
 	}
@@ -771,25 +1015,41 @@ func runOutboundLoop(ctx context.Context, logger *slog.Logger, outbound bus.Queu
 		idle = 200 * time.Millisecond
 	}
 	for {
-		msg, err := outbound.Dequeue(ctx)
-		if err != nil {
-			logger.Warn("outbound dequeue failed", "error", err)
+		finish := func() {}
+		if claims != nil {
+			var ok bool
+			finish, ok = claims.Enter("outbound_job")
+			if !ok {
+				return
+			}
 		}
-		if msg != nil {
-			out := feishu.OutMessage{
-				BotChannelID: msg.BotChannelID,
-				ToID:         feishuIDFromEntity(*msg),
-				ToType:       string(chatTypeFromMessage(*msg)),
-				Text:         messageText(msg.Content),
-			}
-			msgID, err := gateway.Send(ctx, out)
+		process := func() bool {
+			msg, err := outbound.Dequeue(ctx)
 			if err != nil {
-				_ = outbound.Fail(ctx, msg.ID, err.Error())
-				logger.Warn("outbound send failed", "message_id", msg.ID, "bot_channel", msg.BotChannelID, "error", err)
-				continue
+				logger.Warn("outbound dequeue failed", "error", err)
 			}
-			_ = outbound.Ack(ctx, msg.ID)
-			logger.Info("outbound sent", "message_id", msg.ID, "feishu_msg_id", msgID, "bot_channel", msg.BotChannelID)
+			if msg != nil {
+				out := feishu.OutMessage{
+					BotChannelID: msg.BotChannelID,
+					ToID:         feishuIDFromEntity(*msg),
+					ToType:       string(chatTypeFromMessage(*msg)),
+					Text:         messageText(msg.Content),
+				}
+				msgID, err := gateway.Send(ctx, out)
+				if err != nil {
+					_ = outbound.Fail(ctx, msg.ID, err.Error())
+					logger.Warn("outbound send failed", "message_id", msg.ID, "bot_channel", msg.BotChannelID, "error", err)
+					return true
+				}
+				_ = outbound.Ack(ctx, msg.ID)
+				logger.Info("outbound sent", "message_id", msg.ID, "feishu_msg_id", msgID, "bot_channel", msg.BotChannelID)
+				return true
+			}
+			return false
+		}
+		processed := process()
+		finish()
+		if processed {
 			continue
 		}
 		select {

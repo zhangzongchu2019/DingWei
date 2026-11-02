@@ -1,0 +1,7 @@
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 00:09:10 [Info] [event-dispatch is ready]
+    lifecycle_test.go:116: S006_POST_SEAL_DB_ZERO: error=<nil> rejected=0 total_db=2 after_seal_db=1
+--- FAIL: TestReceiverS006InflightAndLateCallbackNoDB (3.19s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishu	3.208s
+FAIL

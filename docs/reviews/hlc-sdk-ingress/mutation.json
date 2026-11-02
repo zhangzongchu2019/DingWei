@@ -1,0 +1,25 @@
+{
+  "mutation": "no-ingress-seal",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-overlay",
+    "/tmp/hlc-s006-mutation-fiig71h6/overlay.json",
+    "./internal/feishu",
+    "-run",
+    "^TestReceiverS006InflightAndLateCallbackNoDB$",
+    "-count=1",
+    "-timeout=30s",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T00:09:05.387610+00:00",
+  "finished_utc": "2026-11-02T00:09:10.241604+00:00",
+  "rc": 1,
+  "target_assertion": "S006_POST_SEAL_DB_ZERO",
+  "target_red": true,
+  "source_sha256": "04521e09a6b4dd9868396c2157ff96a4d49e9169a8af9b831995eacf4c7dd5f1",
+  "mutant_sha256": "d3e4abd839bd1a470d51a89719a70cbb8e161da9f74d05cb3afb349ef89e7279",
+  "log": "no-ingress-seal.log",
+  "log_sha256": "409884969bd068d2631f02922e05a1f813485fd14a1a29bba110b93f6fbcc358"
+}

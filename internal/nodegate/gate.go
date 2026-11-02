@@ -114,10 +114,13 @@ func (g *Gate) serve(ctx context.Context, nodeID string, conn *websocket.Conn) {
 	//    destroy_seat 并【等结果】，而结果帧要靠下面这个读循环来收。同步调用 ⇒ 读循环没起来 ⇒ Send 等满 sendMax
 	//    超时 ⇒ reconcile_done 永远写不下（节点其实已执行），且每个待对账席位卡住本连接的读循环。
 	//    连接一断 connCtx 即取消，回调里尚未完成的 Send 随之返回。
-	connCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	connCtx, cancel := context.WithCancel(ctx)
+	callbackDone := make(chan struct{})
+	defer func() { cancel(); <-callbackDone }()
 	if g.OnConnect != nil {
-		go g.OnConnect(connCtx, nodeID)
+		go func() { defer close(callbackDone); g.OnConnect(connCtx, nodeID) }()
+	} else {
+		close(callbackDone)
 	}
 
 	for {

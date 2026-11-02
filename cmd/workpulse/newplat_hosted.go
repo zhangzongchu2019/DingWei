@@ -77,15 +77,20 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 	backups := hosted.NewHubBackuper(hst, gate, cfg.publicOrigin, backupDir)
 	orch.SetBackuper(backups) // 离线销毁的席位在重连对账时先备份、成功才删（lead-g4-t53-review 第 4 条）
 	mux.HandleFunc("POST /api/node/backup/{id}", backups.BackupHandler().ServeHTTP)
-	go func() { // 到期清扫（每小时一轮；失败记日志不炸进程）
+	startRunTask(ctx, "hosted_backup_sweep", func() { // 到期清扫（每小时一轮；失败记日志不炸进程）
 		t := time.NewTicker(time.Hour)
 		defer t.Stop()
-		for range t.C {
-			if err := backups.SweepExpiredBackups(context.Background(), time.Now()); err != nil {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+			}
+			if err := backups.SweepExpiredBackups(ctx, time.Now()); err != nil {
 				log.Printf("hosted backup sweep: %v", err)
 			}
 		}
-	}()
+	})
 	life := hosted.NewLifecycle(hst, poolSvc, idp, idp, gate, images, backups)
 	if err := life.RecoverJobs(ctx); err != nil {
 		return false, err
@@ -97,14 +102,14 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 	}
 	(hostedQuotaRoutes{access: access, store: hst, gw: gate, identity: svc, actor: actor, owner: quotaOwner, ops: quotaOps, origin: cfg.publicOrigin}).register(mux)
 	if quotaOwner != "" {
-		go runQuotaNotices(ctx, hst, hub, quotaOwner, quotaOps)
+		startRunTask(ctx, "hosted_quota", func() { runQuotaNotices(ctx, hst, hub, quotaOwner, quotaOps) })
 	}
 	gate.OnConnect = orch.ReconcileNode // 节点重连对账（离线销毁补清——组长 7fabddb0 ⑤）
 	// 0.2.1.101 账号登录（R-V2-ACCOUNT-LOGIN-FLOW）：上次进程留下的进行中会话一律 expired；周期到期清扫
 	if err := loginSvc.RecoverOnStart(ctx); err != nil {
 		return false, err
 	}
-	go func() {
+	startRunTask(ctx, "hosted_login_sweep", func() {
 		t := time.NewTicker(hostedSweepEvery)
 		defer t.Stop()
 		for {
@@ -117,9 +122,9 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 				}
 			}
 		}
-	}()
+	})
 
-	mux.HandleFunc("GET /api/node/connect", gate.Handler().ServeHTTP) // 节点代理拨入（Bearer 节点凭据）
+	mux.HandleFunc("GET /api/node/connect", hub.TrackLongHandler("node_ws", gate.Handler()).ServeHTTP) // 节点代理拨入（Bearer 节点凭据）
 	registerHostedRoutes(mux, hostedDeps{
 		access: access,
 		store:  hst,
@@ -166,7 +171,7 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 			log.Printf("newplat hosted: MarkOnline agent=%s: %v", agentID, err)
 		}
 	}
-	go runHostedSweeper(ctx, orch, hostedSweepEvery)
+	startRunTask(ctx, "hosted_sweeper", func() { runHostedSweeper(ctx, orch, hostedSweepEvery) })
 	return true, nil
 }
 

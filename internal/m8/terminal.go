@@ -274,6 +274,12 @@ func (h *Hub) HandleTerminalViewCookie(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
+	registrationDone, handlerDone, admitted := h.beginRegistration(w, "view_ws")
+	if !admitted {
+		return
+	}
+	defer registrationDone()
+	defer handlerDone()
 	sessionName := strings.TrimSpace(r.PathValue("sessionName"))
 	if sessionName == "" || strings.Contains(sessionName, "#") {
 		http.Error(w, "invalid session name", http.StatusBadRequest)
@@ -283,6 +289,8 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	defer h.trackSocket(conn, "view_ws")()
+	registrationDone()
 	obsConn := obs.Default.OpenWS("view")
 	var obsReadErr error
 	defer func() { obsConn.Closed(obsReadErr) }()
@@ -378,25 +386,27 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		h.restoreTerminalInputFromCookie(viewer, st.keyID, st.sessionName, token)
 	}
 	if needsRefresh {
-		go h.requestTerminalRefreshAfterInitialResize(r.Context(), st.keyID, st.sessionName, viewer.id)
+		h.backgroundWork("owned", func() { h.requestTerminalRefreshAfterInitialResize(r.Context(), st.keyID, st.sessionName, viewer.id) })
 	}
 	// 保活:每 30s 发一次 WS ping,防止 nginx/浏览器在空闲(无终端输出)时断连,并及时发现死连接
-	go func() {
-		t := time.NewTicker(30 * time.Second)
-		defer t.Stop()
-		for {
-			select {
-			case <-r.Context().Done():
-				return
-			case <-t.C:
-				// 通过串行化的写路径(terminalWrite 用 viewer.mu)发心跳消息,
-				// 不用 conn.Ping —— 否则会与输出转发的 conn.Write 并发写、coder/websocket 崩连接
-				if err := terminalWrite(r.Context(), viewer, map[string]any{"type": "ping"}); err != nil {
+	h.backgroundWork("owned", func() {
+		func() {
+			t := time.NewTicker(30 * time.Second)
+			defer t.Stop()
+			for {
+				select {
+				case <-r.Context().Done():
 					return
+				case <-t.C:
+					// 通过串行化的写路径(terminalWrite 用 viewer.mu)发心跳消息,
+					// 不用 conn.Ping —— 否则会与输出转发的 conn.Write 并发写、coder/websocket 崩连接
+					if err := terminalWrite(r.Context(), viewer, map[string]any{"type": "ping"}); err != nil {
+						return
+					}
 				}
 			}
-		}
-	}()
+		}()
+	})
 	for {
 		_, data, err := conn.Read(r.Context())
 		if err != nil {
@@ -945,6 +955,11 @@ func selectSSEReplay(epoch string, replay []sessionSeqEvent, after string, hasAf
 // HandleInternalViewEvents(C2):内网 SSE 口,View Service 订阅某会话的结构化事件流。
 // 先回放 eventRing,再挂实时流。**仅内网监听**(部署时绑 127.0.0.1,不上公网 mux)。
 func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
+	r, finish, admitted := h.streamRequest(w, r, "internal_sse")
+	if !admitted {
+		return
+	}
+	defer finish()
 	sessionName := strings.TrimSpace(r.PathValue("session"))
 	if sessionName == "" || strings.Contains(sessionName, "#") {
 		http.Error(w, "invalid session name", http.StatusBadRequest)
@@ -1677,25 +1692,27 @@ func (h *Hub) requestTerminalRefreshAfterInitialResize(ctx context.Context, keyI
 		_ = h.requestTerminalRefresh(context.Background(), keyID, sessionName)
 		// 5 s timeout: if session client didn't respond with terminal output,
 		// notify the viewer so the page doesn't stay black indefinitely.
-		go func() {
-			time.Sleep(5 * time.Second)
-			h.mu.Lock()
-			st := h.terminals[terminalKey(keyID, sessionName)]
-			var viewer *terminalViewer
-			stillEmpty := false
-			if st != nil {
-				viewer = st.viewers[viewerID]
-				stillEmpty = st.buffer == ""
-			}
-			h.mu.Unlock()
-			if viewer != nil && stillEmpty {
-				_ = terminalWrite(context.Background(), viewer, map[string]any{
-					"type":     "status",
-					"readonly": true,
-					"message":  "等待会话活动...",
-				})
-			}
-		}()
+		h.backgroundWork("owned", func() {
+			func() {
+				time.Sleep(5 * time.Second)
+				h.mu.Lock()
+				st := h.terminals[terminalKey(keyID, sessionName)]
+				var viewer *terminalViewer
+				stillEmpty := false
+				if st != nil {
+					viewer = st.viewers[viewerID]
+					stillEmpty = st.buffer == ""
+				}
+				h.mu.Unlock()
+				if viewer != nil && stillEmpty {
+					_ = terminalWrite(context.Background(), viewer, map[string]any{
+						"type":     "status",
+						"readonly": true,
+						"message":  "等待会话活动...",
+					})
+				}
+			}()
+		})
 	}
 }
 

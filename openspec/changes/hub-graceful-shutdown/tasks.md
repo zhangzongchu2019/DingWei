@@ -17,7 +17,7 @@
   - [x] T-03.5 已独立核0659d208第㉒条：HLC-PM01超时2/正常0/其它1；PM02总15秒、阶段1/8/3/1/2、外层30秒；PM03单实例有界；PM04 stop→新版ready≤20秒、helper与推送流各≤5秒。原选项保留，业主定值与此前组长事实裁定分开追溯。
 - [ ] T-04 获实现派单后补主规格最小基线/context并冻结队列/事务确认、WS注册屏障与生命周期挂点；确保与r46及其它在途变更无冲突。
 
-## 3. 实现（未授权）
+## 3. 实现（S-HLC-IMPL已授权，尚未交审）
 
 - [ ] T-05 实施HLC-001/002双端并发停止、单次协调和注册屏障，run显式调用Hub.Close；不以已有无限等待和5秒日志假定结果成功。
 - [ ] T-06 实施HLC-003/004长流取消、WS关闭、生产者/队列/存储顺序；保持持久恢复与确认语义，补事务失败证据。
@@ -62,3 +62,35 @@ strict规划通过不代表实现/业务验收/发布完成；不archive、不�
   - 验证：本分支本轮独立bash scripts/run-build-tests.sh 2026-11-01T23:10:21.786445+00:00～2026-11-01T23:19:20.011552+00:00 rc0，helper claude 1092/1092、codex 1092/1092、inventory90、Python27组/shell2组；普通dev、锁venv、独立临时HOME/环境白名单，无继承SH/DINGWEI/DW凭据。日志/tmp/r48-pm-hlc-build.log，SHA256 1107a5a187203d464db1edf95e6ee4f88beb7f41831c1cfc60fd28fd8142c8ee。全仓OpenSpec1.16.0/Node22.23.1/telemetry0 strict rc0（提交前最终文档复核），diff-check和目录外0改动检查；旧门通过不代表新产品场景已执行。
   - 阻塞：本单PM编号对应无阻塞；原待PM记录为历史，最新㉒已定表覆盖当前口径。实现/逐格反向验证/真实运行前置仍另派，不将PM批准或T-03勾选当上线验收。
   - 下一步：仅相应变更目录文档追加提交、普通push核ls-remote后冻结；按组长顺序等待Hub停机修复→R10→R9另单实现，均随r48。本单不实现、不apply/archive、不申请新写权限、不做部署。
+
+- 2026-11-01T23:43:51.359072+00:00 · coder56solzzc.zzc · S-HLC-IMPL开发中，当前HEAD ffaa6b27fb4f02660863e0ecc4e8bed41f4be387为r47 c248506c与冻结规格3a73c794的非快进merge；以下产品草稿尚未提交或推送，不作为交审锚。
+  - 完成：T-04队列/注册屏障技术裁定已读；运行期best-effort边界、S008限定及queue-ack-durability FINDING已落工作树；未来控制器expected_sigterm_exit1须按0/2区分已记context，不改控制器。生命周期勘察覆盖HTTP、SSE/mux/bridge、三类Hub WS、node WS、Hub后台/定时回调、hosted/cron/Unix notify、队列与SQLite/PG。已起草单次15秒分阶段协调、实例注册门/处理器计数、独立长流取消、专用封口Flush、存储关闭顺序和独立watchdog；尚非完成或验收结论。
+  - 局部验证：queue/group/coordinator核心race命令rc0（/tmp/hlc-core-race.log）；现有Hub Close与queue等目标复验rc0（/tmp/hlc-local-step.log）；实际生产装配子进程S001首轮stop 217ms、rc0、监听差16us、五阶段/双server原始结果已记录（/tmp/hlc-evidence/S001-process.log与/tmp/hlc-idle-process-second.log）。首版夹具解析非JSON行停滞而非Hub不退出，已停止该测试父进程并修复逐行解析；首轮/tmp/hlc-idle-process.log保留。上述局部读数不代替50轮/反向变异/PG整包或独立验收。
+  - 阻塞：钉版飞书SDK v3.9.7 ws/client.go:206–230的Start成功后永久select{}，ctx取消不使内层Start返回；外层MultiGateway.Start返回不足以证明内部接收器/连接结束。已先报组长，建议停机显式Close连接、封口并等待全部入站回调，纯SDK等待帧注明随进程回收；未改SDK/依赖版本或作此适配，等待裁定。T-04暂不勾选，T-05～11全部保持未完成。
+  - 下一步：接SDK边界裁定后继续实现/真实矩阵与反向控制；初步相关包race+PG strict整包正在隔离HOME/环境白名单运行，/tmp/hlc-impl-preliminary-go-race.log及-result.json（完成后生成）。本轮运行中又修过watchdog交接/cron/结果汇总，不能将其结果当最终源码冻结门，完成实现后须重跑最终相关门。全仓strict/run-build-tests、S002～013、50轮、变异、S011恢复尚未完成；不部署、不apply/archive、不自验收、不进入R10/R9。
+
+- 2026-11-01T23:53:09.359773+00:00 · coder56solzzc.zzc · S-HLC-IMPL T-04补充，当前HEAD仍ffaa6b27fb4f02660863e0ecc4e8bed41f4be387；本段产品/测试/证据为未提交草稿，非交审锚。
+  - 完成：已从delivery_inbox补读23:23:58Z原裁定及排尽补充；停机专用SealAndFlush封入队、排尽多批及部分batch、保留首错和未提交计数，准入锁/写协程等待受DB阶段约束。实时队列快照在超时竞争时仍记录first_error/failed，运行期Enqueue/Flush保持best-effort。FINDING只记已证两点，业务出站/已发送回执区分，overlay诊断与vet=off原因单列附录。
+  - 局部验证：S008确定性23条六批全提交；两批失败时首错保留、未提交8；第二批超时保留19未提交/15未尝试。真实队列接协调器测试0/1/2/2，队列/协调器隔离子进程实际退出0/1/2/2（不冒称完整Hub混合流量验收）；默认vet/race目标格rc0，队列随机顺序50轮rc0。撤排尽/覆盖首错均rc1且红在对应持久性/首错断言；可复跑入口tests/hlc/s008_mutations.py，原始读数docs/reviews/hlc-s008-queue。全仓OpenSpec strict rc0；仓库构建门在跑，结果随后补记。
+  - 阻塞：T-04总项仍不勾选，SDK实际运行在Hub还是独立FCS未取得当前实例证据，已向组长请求非敏感Git证据坐标；此前SDK裁定已补读，未修改SDK/独立FCS。完整Hub S006/S011等矩阵、负载随机50轮及独立验收未完成；队列50轮不充当完整矩阵。
+  - 下一步：等仓库门结果、证据落盘后继续HLC实现；取得运行拓扑证据再进入获准SDK适配，不进入R10/R9，不部署、不apply/archive、不自验收。
+
+- 2026-11-01T23:57:06.839336+00:00 · coder56solzzc.zzc · T-04排尽补充的最终检查记录，HEAD仍ffaa6b27；本地草稿未提交／推送。
+  - 完成：本轮实际bash scripts/run-build-tests.sh rc0，helper两profile各1097、inventory90、Python27组／shell2组；精确UTC与日志SHA见docs/reviews/hlc-s008-queue/build-queue-final.json。运行期边界回归默认vet/race rc0，异步提交失败后Enqueue/Flush仍nil，停机专用SealAndFlush返回首错。全仓strict rc0及diff-check通过；报告/日志/可复跑变异入口均已落盘。
+  - 阻塞／下一步：保持T-04总项与后续任务未完成，仍需SDK运行拓扑与完整Hub矩阵、交独立复核；本轮局部自测不构成交件或发布锚。无部署、apply/archive、运行期队列语义或SDK/FCS变更。
+
+- 2026-11-01T23:58:52.335308+00:00 · coder56solzzc.zzc · 队列独立片段已提交并普通push工蜂：opus50tc2k/hub-graceful-shutdown-impl，commit b0f07f377f8f489af64b52c8c2c329244f53e56c，tree 9cf65bf29448770c938f36468eb8307d0c2a40c6；ls-remote一致。仅4件：AsyncDBQueue、队列测试、S008变异runner和FINDING。
+  - 完成：停机专用封口排尽及首错/计数片段可独立fetch复核；仓库门/strict/race与上述局部读数保持。
+  - 阻塞：Hub协调器／生命周期其它草稿、全矩阵及本地报告尚未提交；协调器子进程读数明确来自本地HLC草稿，不能冒充该队列提交包含完整Hub实现。T-04及后续总项保持未完成。
+  - 下一步：等SDK实际拓扑证据，继续既定HLC实现，完成后再交全量Git锚及独立验收；不部署、不apply/archive。
+
+- 2026-11-02T00:14:17.496148+00:00 · coder56solzzc.zzc · SDK裁定落实，起点b0f07f377f8f489af64b52c8c2c329244f53e56c；实现与证据仍待本轮追加Git锚，不自验收。
+  - 完成：独立fetch核c15d6d7884f8452bf7717818f329ec192bca5094/tree2ca8a513ee5e7d1255069a235aa419c0eed783d8，现网SDK属Hub、预发fake、无独立FCS；位置前置解除。SDK适配Close→Seal→Wait、迟到拒绝计数/零DB与在途真实返回、可选接线到8秒drain及安全快照已起草；保留SDKStart残余并明确不冒称全部SDK goroutine已join，不改依赖/协议/FCS进程。根回调已准入工作保留context值，改受workCtx/强制截止而非t0接收器cancel约束。
+  - 局部读数：真实dispatcher+临时SQLite回调扩展active0/rejected1/totalDB1/afterSealDB0/Close1/SDKStartNotJoined1；撤封口变异afterSealDB1且S006_POST_SEAL_DB_ZERO目标红；回调扩展race随机顺序50轮rc0，不充作完整混合负载50轮。feishu/lifecycle/fcs默认vet/race rc0；SDK实际loopback连接独立进程Close后真实对端断开，Start等待帧1单列，普通go test rc0。默认套件TestReceiverPinnedSDKProcess因必须独立进程回收残余而skip，已显式运行，不计skip为通过。Hub接线race格8秒超时/退出2/不关DB通过；默认fake空载等最终目标复核与仓库构建门仍运行，完成后补记。
+  - 夹具修正：钉版SDK首轮把pingLoop的created-by归因误计为第二个Start等待帧，改为匹配实际栈帧后通过；main抽接线函数首轮多一层指针导致编译失败，修正后race通过。原失败日志保留，不当产品故障或有效变异。
+  - 阻塞：SDK位置已解除；完整S006混合HTTP/SSE/mux/WS与其它S002～013/恢复/全量反证仍未完成，T-04及T-05～11总项不据局部格勾选，当前不是完整HLC交件。
+  - 下一步：冻结本轮源码和逐格证据，待门结束后追加Git并报告；继续完整矩阵，独立验收与部署另走原门，不apply/archive/改独立FCS或R10/R9。
+
+- 2026-11-02T00:16:24.111519+00:00 · coder56solzzc.zzc · SDK本轮门完成，中途源锚拟追加；不是整单交件。
+  - 完成：本轮run-build-tests rc0，00:06:09.412389Z～00:14:57.970021Z，helper各1097、Python27／shell2；最终main目标race rc0，含SDK8秒超时分类2／DB不关闭、当前实际Hub fake S001退出0／1227ms／listener差20us及S008。全仓strict rc0、9需求13场景；SDK回调扩展50轮及明确默认skip/独立SDK进程读数均见docs/reviews/hlc-sdk-ingress。
+  - 阻塞／下一步：主规格基线和完整HLC矩阵/全量50轮/恢复/独立复核仍未完成，不依据本轮局部格勾选T-04～11；保存实施中途Git锚后继续原单，不把中途锚请作验收或上线。

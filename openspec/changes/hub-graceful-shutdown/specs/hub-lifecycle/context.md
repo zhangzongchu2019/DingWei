@@ -35,3 +35,27 @@
 ## 读取与依赖
 
 先读本context、同目录spec、proposal/design/tasks；相关进行中r5/r11只作格式和范围参照。当前基线无已实现的平台能力时间线入口，不虚构时间线证据。本变更来源链接集中proposal。仓库只经Git交换，日志不包含凭据、正文或用户内容；本单没有生产连接、数据库写入或部署授权。
+
+## S-HLC-IMPL 当前实施基线与边界
+
+实现分支 opus50tc2k/hub-graceful-shutdown-impl 直接基于r47 c248506cf120c3af2a06eeaeeae3038f596537b1，通过非快进merge引入冻结规格3a73c794f2b2b321079a109e84adfd281088ab2d（本地引入提交ffaa6b27fb4f02660863e0ecc4e8bed41f4be387）；不是在r46产品上直接实现。T-04～T-11由S-HLC-IMPL另单授权，不部署、不apply/archive；此前未授权字样为历史。
+
+按T-04组长裁定，运行期Enqueue语义与延迟不变，仍是best-effort，入站可能先于派生出站落库被确认；不声称跨动作原子提交。S008只验停机落库失败不被吞、退出1/超时2及计数/记录。既有运行期缺口单列docs/findings/queue-ack-durability-c248506c.md，不在本单修复。停机专用封口Flush须等待channel/批全部提交，失败或未知不能当成功，存储使用者未全部退出不得先关库。
+
+未来切换控制器必须将 expected_sigterm_exit1 改为按正常退出0／超时退出2区分，其它失败1；控制器修改另单交prodops，本单只记录兼容条件，不修改其脚本或有效停止配置。
+
+### T-04排尽实现与诊断边界
+
+internal/bus/async_dbqueue.go的SealAndFlush为停机专用接口：封入队、逐批排尽channel及部分batch，保存首个提交原因；ShutdownCounts独立输出remaining/failed，包含未尝试项。等待准入锁也受调用截止约束。运行期Enqueue/Flush确认语义不变。cmd/workpulse/shutdown.go、main.go在3秒queue阶段调用它，实时队列计数和first_error分类在阶段超时竞争时仍可观测；未结束的写协程阻止DB关闭。
+
+internal/bus/shutdown_test.go涵盖停机前多批仍在channel、首错/未提交计数、超时未尝试项及准入锁等待上限。cmd/workpulse/shutdown_queue_test.go涵盖真实队列接协调器的3秒阶段/关闭顺序和独立子进程实际0/1/2/2退出；只验证队列子范围，不代替完整Hub负载矩阵。撤排尽与覆盖首错用Go overlay替换已有源文件，默认vet/race开启，目标断言必须红。
+
+FINDING附录记录基线overlay新增虚拟测试文件：第一次vet无法打开不存在路径而未执行，第二次仅诊断设vet=off，观察Enqueue=nil/Flush=nil。该诊断不是HLC验收，不能作为业务消息已丢失证明；业务出站与已发送回执区分处理。
+
+## 当前SDK运行归属与适配边界
+
+运行证据c15d6d7884f8452bf7717818f329ec192bca5094（tree2ca8a513ee5e7d1255069a235aa419c0eed783d8）已独立fetch核：现网FCS_RPC_URL不存在／FEISHU_TRANSPORT=ws／三次连接1且属于Hub单元，预发fake／0连接，无独立fcs单元；准确命令与UTC见同commit的docs/reviews/prodops-fcs-runtime-facts-20261101/REPORT.md。不报env原文、地址或凭据。
+
+internal/feishu/lifecycle.go新增可选ReceiverLifecycle与SDK连接所有权、Close→回调Seal→Wait顺序及安全快照；feishu.go在规范化前登记回调，封口后拒绝计数。SDKStart运行帧单列sdk_start_not_joined，不进入Hub业务goroutine归零断言；v3.9.7 Start的select{}及其它SDK内部残余随进程回收，**不冒称所有SDK goroutine已join**。cmd/workpulse/main.go在drain阶段接入；远端FCS订阅类和协议未改，测试另核。
+
+internal/feishu/lifecycle_test.go包含S006回调在途/迟到/真实临时SQLite计数、在途超时、Close阻塞、重复Close、停止后启动及多网关计数；tests/hlc/s006_mutations.py撤掉拒绝保护，须在DB访问断言红。lifecycle_sdk_process_test.go独立进程使用真实钉版SDK与loopback连接，默认skip但显式独立运行有读数；只排除明确SDK所有权的残余，不放宽业务回调归零。完整Hub混合流量与恢复验收仍需独立逐格，当前单测不能替代。

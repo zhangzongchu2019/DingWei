@@ -1,0 +1,33 @@
+HELPER_INVENTORY_OK files=90
+HELPER_GATE_RESULT {"actual": 1097, "actual_SH_DRIVER": "claude", "expected": 1097, "files": 90, "groups": [1088, 9], "profile": "claude", "rc": 0}
+HELPER_GATE_RESULT {"actual": 1097, "actual_SH_DRIVER": "codex", "expected": 1097, "files": 90, "groups": [1088, 9], "profile": "codex", "rc": 0}
+TEST python deploy/image/supervisord/test_verify_supervisor_template.py
+TEST python deploy/ops/hosted-image/test_start.py
+TEST python deploy/ops/hosted-image/test_build_definition.py
+TEST python deploy/ops/hosted-claude-image/test_claude_start.py
+TEST python deploy/test_build_entrypoints.py
+TEST python deploy/test_file_service_deploy.py
+TEST python deploy/test_generate_console_seed.py
+TEST python deploy/test_invariants_alert_route.py
+TEST python deploy/test_invariants_expected_hashes.py
+TEST python deploy/test_preview_console.py
+TEST python deploy/test_validate_console_seed.py
+TEST python view-service/test_check_public_view_deploy.py
+TEST python view-service/test_md_render_core.py
+TEST python view-service/test_provenance_flag_injection.py
+TEST python view-service/test_renderer_iter2.py
+TEST python view-service/test_view_page_store.py
+TEST python view-service/test_view_service.py
+TEST python view-service/test_view_error_logging.py
+TEST python view-service/test_health_auth.py
+TEST python view-service/test_agent_disk_resource.py
+TEST python view-service/test_inbox_lag_resource.py
+TEST python view-service/test_view_refresh.py
+TEST python view-service/test_mux_projection.py
+TEST python view-service/test_mux_projection_failure.py
+TEST python view-service/test_cost_paused.py
+TEST python view-service/test_mux_cost_seed.py
+TEST python view-service/test_view_unlock_v2_integration.py
+TEST shell deploy/test-view-service-release.sh
+TEST shell scripts/test-desktop-hub-roundtrip.sh
+BUILD_TESTS_OK helper_profiles=2 python=27 shell=2

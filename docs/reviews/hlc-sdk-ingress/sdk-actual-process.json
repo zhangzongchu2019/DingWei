@@ -1,0 +1,21 @@
+{
+  "profile": "sdk-actual-process",
+  "command": [
+    "env",
+    "HLC_PINNED_SDK_PROCESS=1",
+    "go",
+    "test",
+    "./internal/feishu",
+    "-run",
+    "^TestReceiverPinnedSDKProcess$",
+    "-count=1",
+    "-timeout=15s",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T00:05:53.184169+00:00",
+  "finished_utc": "2026-11-02T00:05:54.347499+00:00",
+  "rc": 1,
+  "log": "sdk-actual-process.log",
+  "sha256": "a78c258686c347d48738acf4cbb7b58b5c7b8369e3edff4cadd49c262e19feb5",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

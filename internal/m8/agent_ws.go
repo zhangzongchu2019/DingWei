@@ -172,11 +172,13 @@ func (h *Hub) disconnectAgentSession(keyID, sessionName, reason string) {
 		return
 	}
 	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		c.obsConn.SetLocalReason("revoked")
-		_ = c.conn.Close(StatusCredentialRevoked, reason)
-	}()
+	h.backgroundWork("owned", func() {
+		func() {
+			defer close(done)
+			c.obsConn.SetLocalReason("revoked")
+			_ = c.conn.Close(StatusCredentialRevoked, reason)
+		}()
+	})
 	t := time.NewTimer(agentDisconnectWait)
 	defer t.Stop()
 	select {

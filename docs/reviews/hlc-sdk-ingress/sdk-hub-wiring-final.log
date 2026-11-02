@@ -1,0 +1,4 @@
+# github.com/zhangzongchu2019/dingwei/cmd/workpulse [github.com/zhangzongchu2019/dingwei/cmd/workpulse.test]
+cmd/workpulse/main.go:578:56: cannot use &inboundGate (value of type **lifecycle.Group) as *lifecycle.Group value in argument to stopFeishuIngress
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse [build failed]
+FAIL

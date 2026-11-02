@@ -1,0 +1,19 @@
+{
+  "profile": "sdk-owned-race-final",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./internal/feishu",
+    "./internal/lifecycle",
+    "./internal/fcs",
+    "-count=1",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T00:08:35.574597+00:00",
+  "finished_utc": "2026-11-02T00:08:51.589321+00:00",
+  "rc": 0,
+  "log": "sdk-owned-race-final.log",
+  "sha256": "dd9c05b6b36f0932148576b78dfef9fdde2fd4b3079418f590519d81110cd716",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

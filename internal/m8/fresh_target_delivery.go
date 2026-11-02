@@ -117,11 +117,13 @@ func (h *Hub) startCapabilityPendingCleanup() {
 		h.capabilityPendingCleanupStop = stop
 		ticker := time.NewTicker(capabilityPendingSweepEvery)
 		h.capabilityPendingCleanupWG.Add(1)
-		go func() {
-			defer h.capabilityPendingCleanupWG.Done()
-			defer ticker.Stop()
-			h.runCapabilityPendingCleanup(context.Background(), stop, ticker.C)
-		}()
+		h.backgroundWork("owned", func() {
+			func() {
+				defer h.capabilityPendingCleanupWG.Done()
+				defer ticker.Stop()
+				h.runCapabilityPendingCleanup(context.Background(), stop, ticker.C)
+			}()
+		})
 	})
 }
 
@@ -213,7 +215,7 @@ func (h *Hub) drainDurableFailureNotice(ctx context.Context, d model.SessionDeli
 	}
 	h.mu.Unlock()
 	if c != nil && h.sessionSupportsDeliveryACK(c) {
-		go h.drainSessionDeliveries(context.Background(), c)
+		h.backgroundWork("owned", func() { h.drainSessionDeliveries(context.Background(), c) })
 	}
 	return true
 }

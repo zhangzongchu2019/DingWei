@@ -1,0 +1,20 @@
+{
+  "profile": "sdk-hub-final",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./cmd/workpulse",
+    "-run",
+    "^Test(Shutdown|HLCActualProcessIdle)",
+    "-count=1",
+    "-timeout=90s",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T00:14:16.365271+00:00",
+  "finished_utc": "2026-11-02T00:14:47.186451+00:00",
+  "rc": 0,
+  "log": "sdk-hub-final.log",
+  "sha256": "7008f6ec394a82d0617c2b7191f10e3ba78518f9179d0f637e0ef863ed167847",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

@@ -1,0 +1,21 @@
+{
+  "profile": "sdk-s006-repeat50",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./internal/feishu",
+    "-run",
+    "^TestReceiverS006InflightAndLateCallbackNoDB$",
+    "-count=50",
+    "-shuffle=on",
+    "-timeout=5m",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T00:10:24.160242+00:00",
+  "finished_utc": "2026-11-02T00:13:06.915112+00:00",
+  "rc": 0,
+  "log": "sdk-s006-repeat50.log",
+  "sha256": "8d4ea39c5750c129ad60c178c2e4d6b4c7c4e7d8b5fb70b28b4068a8ec18529a",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials"
+}

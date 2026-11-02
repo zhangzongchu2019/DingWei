@@ -91,9 +91,9 @@ HLC-A05的目标systemd停止期行为子项由ed797ae6闭合；Hub交接/通知
 | HLC-S003 不释放HTTP | 公网/内网各1个部分body或阻塞handler，直到排空截止仍不释放 | 2 | ≤15秒；9秒截止触发forced_close，两个server错误保留；阻塞类别/数量与夹具一致 |
 | HLC-S004 活跃SSE | 100个内网View SSE持续心跳，无客户端主动断开 | 0 | ≤10秒；由停机取消退出，无强制关闭；客户端EOF/重连记录齐全 |
 | HLC-S005 活跃WS | 20个真实会话WS及注册竞争请求，客户端正常读关闭 | 0 | ≤10秒；Hub.Close收尾完成，无屏障后注册或WG竞争 |
-| HLC-S006 混合 | 100个有限HTTP（内外各50，2秒完成）、100个内网SSE、20个Console mux/bridge、20个WS | 0 | ≤15秒；每类归零、持久未完成项可重启恢复、无错误吞并 |
+| HLC-S006 混合 | 100个有限HTTP（内外各50，2秒完成）、100个内网SSE、20个Console mux/bridge、20个WS；飞书回调在途和封口后迟到两格 | 0 | ≤15秒；业务处理器/回调归零，迟到拒绝可计数且封口后DB访问0；撤回调封口在DB断言红，SDK等待帧另列排除 |
 | HLC-S007 混合故障 | 混合格中留1个不响应取消的内网SSE与1个公网HTTP；其余正常 | 2 | ≤15秒；超时快照精确指出这两类和数量，强制关闭不改成0 |
-| HLC-S008 持久化失败 | 注入队列确认/事务提交失败，无阶段超时 | 1 | ≤15秒；未提交项不得已确认，故障与队列状态可见，DB不先关 |
+| HLC-S008 持久化失败 | 封口时channel仍有多批；另格注入提交失败/3秒超时/失败后超时 | 0/1/2/2 | 排尽后剩余0；失败保留首错与未提交数，超时不关仍在使用的DB；撤排尽须红在未全部提交断言 |
 | HLC-S009 反向控制 | 在S004/S006夹具仅撤掉SSE/mux主动取消，保持网络连接与ping存活，其余不变 | 2（变异运行） | ≤15秒；原格期望0/无强关必须红在长流未排空断言，不能仅因命令报错判红；恢复取消后同格0 |
 | HLC-S010 启动与重复信号 | 独立启动绑定失败；另以混合格t0+0.1秒重复SIGTERM | 启动1；重复信号格0 | 启动失败≤2秒；重复信号格≤15秒，不重置deadline、不重复Close |
 | HLC-S011 切换恢复 | 隔离控制器stop旧/start新、20个假helper及SSE/mux/WS重连，保留测试消息ID | 旧0、新保持运行 | stop→ready≤20秒，ready后helper全回≤5秒、各流恢复≤5秒；无静默gap、重复显示0/可验证消息缺失0 |
@@ -120,3 +120,39 @@ PM01～04已按rulings㉒定值，T-03回写闭合；e43100e3/c90f41c2/ed797ae6�
 ## Open Questions
 
 HLC-PM01～04的退出码、预算、单实例范围及恢复目标已按rulings㉒定值，proposal保留原选项并追加逐项已定表。停止配置、控制器期限、目标systemd停止期行为、δ样本与当时连接规模已核；峰值负载/客户端退避、队列持久边界及所有Hub生命周期格仍待实施后验证。技术前置未核/实现未获派时不转成生产行为。
+
+## S-HLC-IMPL T-04 技术裁定与生命周期挂点
+
+组长对队列确认/注册屏障的技术裁定只收紧停机路径，非新PM值。运行期 AsyncDBQueue.Enqueue 仍为 best-effort：入内存即返回，入站可能先于派生出站落库被确认；本单不声称处理与派生出站跨动作原子提交。S008限定为停机期落库失败不被吞、剩余条数/原因可见、退出1；阶段超时退出2并优先，全部原因保留。运行期缺口见 docs/findings/queue-ack-durability-c248506c.md，只记录不修。
+
+停机先封新HTTP/外部回调及消费者领取；已获消费者令牌的在途工作使用独立上下文，在8秒排空阶段完成。HTTP有限请求保留原请求上下文，不在t0取消事务。写队列使用独立上下文，生产者与在途处理全部退出后才封口；停机专用SealAndFlush在3秒阶段冲刷channel和部分batch、等待真实写协程完成，传回失败及剩余计数。已有运行期批丢失无法凭停机补写保证恢复；该未知/失败不得清零洗白。
+
+注册门由Hub实例持有，封口与计数Add共用互斥门。登记计数只覆盖准备/Upgrade/发布，不覆盖WS整条处理器；后者独立计数，CloseContext接入后发送关闭帧并等待实际退出。屏障阶段失败不能无防护进入Hub.Close。Hub的独立长流取消树覆盖内网View SSE、public mux与internal bridge；service/view/session WS有显式登记。node WS处理器纳入同一长流生命周期。Hub派生后台工作与实际执行的定时回调独立计数；停止后不再新启动存储回调。
+
+勘察清单：cmd/workpulse/main.go的processor/outbound/receiver/reminder/cron；newplat_hosted.go的backup/login/quota/hosted扫尾；internal_notify.go的Unix listener；internal/m8的AMR、capability cleanup、L2/task-flow、session保活/skill/delivery/directory/refresh回调、Console mux子工作及三类WS；新平台PG与SQLite。取消信号不等于已退出，任何尚存储使用者都阻止DB关闭并保持非成功。看门狗使用单一独立循环，与业务ctx分离，t0唤醒通知，停止期不再做已经拆除的服务健康探测；实际总截止不延长。
+
+控制器兼容提醒：未来切换控制器必须将 expected_sigterm_exit1 改为按正常0／超时2区分（其它失败1），由prodops另单修改；本分支不修改控制器、systemd单元或SuccessExitStatus。目标systemd259停止期不检测watchdog的边界与S013隔离监督器要求保持不变。
+
+### T-04排尽补充裁定（2026-11-01）
+
+已读组长23:23:58Z原裁定（eb859dcad4b1；收信dw-dlv_65f174857d2674b47ade53e0febb2003）及本次补充（dw-dlv_b9197076fd0dc513f7639f24344526cf）：仅收紧停机路径。SealAndFlush以准入门封口，封口后Enqueue返回明确错误；再逐批取尽channel和部分batch。返回首个提交错误，ShutdownCounts给出未提交remaining与失败failed；成功提交才递减remaining，未尝试项继续计入remaining，已失败项不自动重试。后续失败不得覆盖首错，原始DB原因仅留内部供errors.Is核验，日志输出安全分类。
+
+等待锁、在途写协程及排尽都使用DB阶段的3秒截止；队列完成和deadline同时就绪也不能洗成成功。超时2优先于其它故障1；阶段结果与实时队列快照分别保留deadline与首个提交失败分类，避免超时竞争导致Flush尚未返回就丢掉故障计数。写协程未结束不得关闭DB。运行期Enqueue/Flush仍best-effort；本单不建立跨动作原子提交，也不把已发送回执未落库推断为业务未发送。
+
+S008的确定性多批夹具在writer启动前缓冲23条、每批4条，封口后才启动writer；应形成4/4/4/4/4/3六批并全部提交。分别注入第二/第四批不同错误验证首错与8条未提交，第二批超时验证未尝试15条仍计入剩余。移除停机排尽只留当前批flush的变异必须在S008_ALL_BUFFERED_COMMITTED断言失败；覆盖首错变异须在S008_FIRST_ERROR_AND_REMAINDER断言失败。队列/协调器隔离子进程另记录真实0/1/2/2退出码；该子进程不冒充完整Hub混合流量验收，S006/S011及其余生命周期矩阵仍未完成。
+
+## 飞书SDK生命周期裁定与Hub归属（2026-11-02）
+
+已独立fetch核prodops运行态证据review/prodops/fcs-runtime-facts-20261101，commit c15d6d7884f8452bf7717818f329ec192bca5094，tree 2ca8a513ee5e7d1255069a235aa419c0eed783d8，REPORT路径docs/reviews/prodops-fcs-runtime-facts-20261101/REPORT.md。23:53～23:55Z的现网Hub PID1344160无FCS_RPC_URL、枚举ws，三次飞书域名套接字均1且归属dingwei-dw123-hub.service；无独立fcs单元。预发PID1284661为fake且0连接。该证据证明本次在Hub内实施，不将源码装配分支当运行态；不在独立FCS进程动手，不冒称预发实际Close了真实飞书长连接。
+
+组长原裁定request_id 68d69f8ce9c3（delivery dw-dlv_2741db145ed41de256148b9e78ce8bee）落实到HLC-004/006及S006。LarkGateway/MultiGateway实现可选内部ReceiverLifecycle；StopIngress在8秒drain上下文中显式Close，随后封回调准入，等待所有已准入回调真实返回；封口后的消息事件在规范化/业务处理前拒绝并计数，不访问DB。已准入回调仍可完成其提交／回滚；DB只在全部返回后关闭，不把已接受工作粗暴取消当完成。close阻塞、启动未完成或回调未返回均按阶段截止返回，不能报正常。
+
+回调封口与计数Add复用实例lifecycle.Group，迟到拒绝数用独立原子计数；内部快照含active_callbacks/rejected_after_seal/sealed/close_completed/sdk_start_not_joined，对应HLC-006，不新增外部协议。关闭完成仅指Close调用已经返回，不代表SDK内部协程全部退出。Hub直接路径在drain接StopIngress并等待根入站门；远端FCS receiver不实现此可选接口，维持原订阅取消和根回调门，相关FCS包单测复验。
+
+**不冒称所有SDK goroutine已join。** 钉版v3.9.7的ws/client.go:206～230成功后进入固定select{}，Close不解除该Start帧；SDK内部ping/cache等也不归Hub业务工作组所有。该Start帧记sdk_start_not_joined，独立于业务处理器/回调归零计数；不以runtime.NumGoroutine总数减一冒充所有SDK工作退出。SDK残余随真实进程退出回收；本单不改SDK、依赖版本或协议。若另修依赖，另立任务。
+
+S006回调扩展夹具使用真实事件dispatcher与临时SQLite：初始回调在封口前完成一次入库后保持在途，Close后封口，随后从同一dispatcher注入迟到回调；记录总DB调用及封口后调用（期望0）、拒绝数、活跃数及Close次数。这个受控格证明迟到回调不触DB；它不声称任意已准入事务的后续DB步骤都发生在封口前。撤封口变异在S006_POST_SEAL_DB_ZERO断言应出现after_seal_db=1。完整HTTP/SSE/mux/WS混合矩阵仍须连同此扩展交件，回调扩展单测不替代完整S006。
+
+另以独立进程令钉版SDK真实连接loopback WebSocket，观测Close后对端断开、实际Start等待帧仍1、业务回调0，进程结束回收残余。TestReceiverPinnedSDKProcess默认明确SKIP，原因是SDK残余只由进程回收，须单独运行HLC_PINNED_SDK_PROCESS=1；独立运行的实际结果单列，不把默认skip算通过。业务适配层/门及FCS兼容跑默认vet/race，钉版SDK实际连接夹具的普通go test结果不冒称SDK全生命周期race认证。
+
+已准入Hub根回调的数据库工作使用callbackWorkContext：保留SDK入站context值，脱离接收器t0取消，改由独立workCtx约束；排空超时Force取消workCtx。此只服务已获准入的工作，迟到回调在创建该context前就被拒绝，不因脱离取消而延长8秒阶段或总预算。Hub接线测试覆盖Close先于根门封口、在途根回调等待、8秒超时退出2且不关DB，以及remote保持既有根门。

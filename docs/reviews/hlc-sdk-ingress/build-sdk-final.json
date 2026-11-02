@@ -1,0 +1,15 @@
+{
+  "profile": "build-sdk-final",
+  "command": [
+    "bash",
+    "scripts/run-build-tests.sh"
+  ],
+  "started_utc": "2026-11-02T00:06:09.412389+00:00",
+  "finished_utc": "2026-11-02T00:14:57.970021+00:00",
+  "rc": 0,
+  "sha256": "114e9a4d70468f4685b266efa38df090b8217b7e9481af8f94fa4009b5ef97f3",
+  "environment": "allowlist; temporary HOME; locked venv; no inherited SH/DINGWEI/DW/WP credentials",
+  "raw_log_local_only": "/tmp/hlc-impl-preliminary-build-sdk-final.log",
+  "summary_log": "build-summary.txt",
+  "summary_sha256": "90bcaeb2459bddc99a8c4c24fc35ebd9c48c617ce1f624230844542bca45e1c4"
+}

@@ -95,6 +95,8 @@ type LarkGateway struct {
 	api          *lark.Client
 	logger       *slog.Logger
 	ingress      feishuIngressCounters
+	receiver     receiverLifecycle
+	wsFactory    func(*dispatcher.EventDispatcher, func()) sdkConnection
 }
 
 type feishuIngressCounters struct {
@@ -311,16 +313,22 @@ func (g *LarkGateway) Start(ctx context.Context, onInbound func(ctx context.Cont
 		return errors.New("missing inbound callback")
 	}
 	disp := g.eventDispatcher(onInbound)
-	wsClient := larkws.NewClient(g.appID, g.appSecret,
+	return g.startReceiver(ctx, disp)
+}
+
+func (g *LarkGateway) newWSClient(disp *dispatcher.EventDispatcher, ready func()) sdkConnection {
+	return larkws.NewClient(g.appID, g.appSecret,
 		larkws.WithEventHandler(disp),
 		larkws.WithLogLevel(larkcore.LogLevelError),
 		larkws.WithOnReady(func() {
+			ready()
 			g.observeWSLifecycle("ready", nil)
 		}),
 		larkws.WithOnReconnecting(func() {
 			g.observeWSLifecycle("reconnecting", nil)
 		}),
 		larkws.WithOnReconnected(func() {
+			ready()
 			g.observeWSLifecycle("reconnected", nil)
 		}),
 		larkws.WithOnDisconnected(func() {
@@ -330,7 +338,6 @@ func (g *LarkGateway) Start(ctx context.Context, onInbound func(ctx context.Cont
 			g.observeWSLifecycle("error", err)
 		}),
 	)
-	return wsClient.Start(ctx)
 }
 
 // eventDispatcher is shared by the real WebSocket client and raw-event tests.
@@ -356,6 +363,12 @@ func (g *LarkGateway) observeInboundEvent(
 	ev *larkim.P2MessageReceiveV1,
 	onInbound func(context.Context, model.Message) error,
 ) error {
+	done, ok := g.receiver.callbacks.Enter("inbound")
+	if !ok {
+		g.receiver.rejected.Add(1)
+		return ErrReceiverDraining
+	}
+	defer done()
 	msgID := feishuEventMessageID(ev)
 	received := g.ingress.eventReceived.Add(1)
 	g.log().Info("feishu ingress event_received",
