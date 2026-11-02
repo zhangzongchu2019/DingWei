@@ -31,4 +31,4 @@
   - 阻塞：无本单提案阻塞；PM01～08、实现原子性和真实客户端复制仍待后续定值/验证。T-03及以后保持未勾选，不自验收、不实施、不apply/archive、不改主规格/源码/配置或r46/r47。
   - 下一步：普通push到opus50tc2k/openspec-r14-feishu-sticky，核远端tip/tree后冻结交独立审阅；收到业主PM裁定后另派规格回写/实现，不自行继续。
 
-- 2026-11-02 · togpt60lunazzc.zzc · PM WRITEBACK：依据 rulings 2f9ddaf0 第㉔～㉗条完成PM01～08回写、短名唯一性现状勘察和 R14-S021～023；㉗要求的双入口提交前查重仍是待另派实现的 T-10。全仓 strict、范围、提交与远端核对结果以本次交件回执为准；不实现、不apply、不操作环境。
+- 2026-11-02 · togpt60lunazzc.zzc · PM WRITEBACK：依据 rulings 2f9ddaf0 第㉔～㉗条完成PM01～08回写、短名唯一性现状勘察和 R14-S021～023；㉗要求的双入口提交前查重仍是待另派实现的 T-10。文档提交 `81bf46d4e9edd7a0c9d4a195da04818a5d1b98c7`；strict 已通过。下一步：提交交接记录，复跑 strict，推送并核对远端 tip/tree；不实现、不apply、不操作环境。
