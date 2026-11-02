@@ -1,0 +1,23 @@
+{
+  "step": "pinned-sdk-process",
+  "command": [
+    "env",
+    "HLC_PINNED_SDK_PROCESS=1",
+    "go",
+    "test",
+    "./internal/feishu",
+    "-run",
+    "^TestReceiverPinnedSDKProcess$",
+    "-count=1",
+    "-v",
+    "-timeout=2m"
+  ],
+  "started_utc": "2026-11-02T05:19:19.171975+00:00",
+  "ended_utc": "2026-11-02T05:19:20.269294+00:00",
+  "rc": 0,
+  "sha256": "a7b942d689faa776d1d036442d7fa8b8c8929dddc86d15ea0c053e29d5a8d444",
+  "home": "/tmp/h-s4cgtwn6",
+  "tmp": "/tmp/h-s4cgtwn6",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

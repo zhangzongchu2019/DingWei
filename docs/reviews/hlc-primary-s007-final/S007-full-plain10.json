@@ -1,0 +1,19 @@
+{
+  "step": "S007-full-plain10",
+  "command": [
+    "python3",
+    "tests/hlc/s007_full.py",
+    "--repeat",
+    "10",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-s007-final/plain10"
+  ],
+  "started_utc": "2026-11-02T04:53:05.299841+00:00",
+  "ended_utc": "2026-11-02T04:55:00.241383+00:00",
+  "rc": 0,
+  "sha256": "f7d1bce7dd1f82ba5e0c7f84120b2d2499348b8cd4d7d0f572c84e2ebd844c80",
+  "home": "/tmp/h-mj3je_lj",
+  "tmp": "/tmp/h-mj3je_lj",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

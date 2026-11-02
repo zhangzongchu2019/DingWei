@@ -1,0 +1,19 @@
+{
+  "step": "cmd-plain",
+  "command": [
+    "go",
+    "test",
+    "./cmd/workpulse",
+    "-count=1",
+    "-timeout=10m",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T04:56:09.081277+00:00",
+  "ended_utc": "2026-11-02T04:59:21.997956+00:00",
+  "rc": 0,
+  "sha256": "2e12180348e3d355fa38f261e81c5ac660267dbbc71c11f2c2a3d1cdf32d1c56",
+  "home": "/tmp/h-ns06pkxo",
+  "tmp": "/tmp/h-ns06pkxo",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

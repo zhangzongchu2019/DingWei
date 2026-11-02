@@ -1,0 +1,7 @@
+=== RUN   TestReceiverPinnedSDKProcess
+2026/11/02 05:19:20 [Info] [event-dispatch is ready]
+[Error] 2026/11/02 05:19:20.258331 receive message failed, err: read tcp 127.0.0.1:43750->127.0.0.1:41729: use of closed network connection [conn_id=synthetic]
+    lifecycle_sdk_process_test.go:101: pinned_sdk=v3.9.7 actual_websocket_closed=true active_callbacks=0 sdk_start_frames_excluded=1; process reaps SDK residuals, not all SDK goroutines joined
+--- PASS: TestReceiverPinnedSDKProcess (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishu	0.008s

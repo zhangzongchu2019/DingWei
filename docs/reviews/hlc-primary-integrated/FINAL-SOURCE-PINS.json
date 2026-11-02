@@ -1,0 +1,19 @@
+{
+  "executed_tip": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "executed_tree": "21a867bf6eb362fe143db6db3cfaa4316f97d4dd",
+  "source_pins": {
+    "cmd/workpulse/main.go": "199daa55214d2ab1751c9ffe2ed8b1ba616f069b",
+    "cmd/workpulse/shutdown.go": "d0cf4eaab5fdfe759a7571ae048075efb39a053a",
+    "internal/m8/lifecycle.go": "bf263e32d80a87357733cfccaead78588789a8dd",
+    "internal/m8/console_mux.go": "b4a75ed1492b567cb31097c9746128bebb8a7396",
+    "cmd/workpulse/shutdown_load_test.go": "6bd2d80d12d8c642f26ffa40c2f5f5be48dd05dd",
+    "tests/hlc/process_matrix.py": "59240944e7c15fd19f64e2eb9f45176b219e2d81",
+    "cmd/workpulse/shutdown_mixed_fault_process_test.go": "35c15800db03087bb33fc8a88b1faa4c656402b4",
+    "tests/hlc/s007_full.py": "3dd1e04dd1af943fbc488ca32ea1f8bdae615896"
+  },
+  "d8_to_executed_product_and_existing_fixture_diff": "",
+  "no_source_changes_after_execution": true,
+  "final_commit_scope": "docs/reviews evidence + openspec tasks only",
+  "local_validation_finished_utc": "2026-11-02T05:19:20.269294+00:00",
+  "generated_utc": "2026-11-02T05:25:09.187972+00:00"
+}

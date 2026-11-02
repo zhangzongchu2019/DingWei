@@ -1,0 +1,20 @@
+{
+  "step": "no-internal-result",
+  "command": [
+    "python3",
+    "tests/hlc/fault_matrix.py",
+    "--case",
+    "S012",
+    "--omit-internal-result",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated-extra/no-internal-result"
+  ],
+  "started_utc": "2026-11-02T05:18:03.283626+00:00",
+  "ended_utc": "2026-11-02T05:18:06.384308+00:00",
+  "rc": 0,
+  "sha256": "b7646ee666c3802d416d3838ad1b9c5948fc48cea74bbdf9ef204597987e3b45",
+  "home": "/tmp/h-gfjb_led",
+  "tmp": "/tmp/h-gfjb_led",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

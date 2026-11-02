@@ -1,0 +1,18 @@
+{
+  "step": "S007-full-mutant",
+  "command": [
+    "python3",
+    "tests/hlc/s007_full.py",
+    "--mutant-timeout-code",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-s007-final/mutant"
+  ],
+  "started_utc": "2026-11-02T04:55:52.788666+00:00",
+  "ended_utc": "2026-11-02T04:56:08.715780+00:00",
+  "rc": 0,
+  "sha256": "fd6d0e37fdc166df5a5557f15c5c873ff59cbd1078825e4231a6603a42abe67b",
+  "home": "/tmp/h-c325b1hf",
+  "tmp": "/tmp/h-c325b1hf",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

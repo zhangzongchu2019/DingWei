@@ -1,0 +1,19 @@
+{
+  "step": "S010-bind",
+  "command": [
+    "python3",
+    "tests/hlc/fault_matrix.py",
+    "--case",
+    "S010-bind",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated-extra/S010-bind"
+  ],
+  "started_utc": "2026-11-02T05:17:25.372421+00:00",
+  "ended_utc": "2026-11-02T05:17:28.203988+00:00",
+  "rc": 0,
+  "sha256": "b481fb41f956a931e33ebb31fc57b3a794e5a742919472edf3af61426abec822",
+  "home": "/tmp/h-3fthzs5e",
+  "tmp": "/tmp/h-3fthzs5e",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

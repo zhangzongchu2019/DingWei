@@ -1,0 +1,780 @@
+=== RUN   TestBackupRealNodeAgentToRealHub
+--- PASS: TestBackupRealNodeAgentToRealHub (4.95s)
+=== RUN   TestBootstrapAdminEndToEnd
+2026/11/02 04:59:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 04:59:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestBootstrapAdminEndToEnd (8.03s)
+=== RUN   TestBootstrapAdminRefusesBadInvocation
+2026/11/02 04:59:41 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+--- PASS: TestBootstrapAdminRefusesBadInvocation (6.58s)
+=== RUN   TestResetPasswordEndToEnd
+--- PASS: TestResetPasswordEndToEnd (6.50s)
+=== RUN   TestConsoleHostedFeatureHasSingleProductionWiringSource
+--- PASS: TestConsoleHostedFeatureHasSingleProductionWiringSource (0.04s)
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/registered_routes_render_true
+2026/11/02 04:59:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 04:59:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 04:59:57 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/11/02 04:59:57 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/configured_but_not_assembled_renders_false
+2026/11/02 05:00:01 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:01 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:00:01 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/old_platform_renders_false
+2026/11/02 05:00:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/failed_assembly_never_renders_true
+2026/11/02 05:00:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:00:10 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestConsoleHostedFeatureFollowsRealAssembly (17.95s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/registered_routes_render_true (5.71s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/configured_but_not_assembled_renders_false (3.18s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/old_platform_renders_false (3.20s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/failed_assembly_never_renders_true (5.86s)
+=== RUN   TestMonitorSnapshotOnlyActivePlatformAdmin
+2026/11/02 05:00:14 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:14 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:00:14 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorSnapshotOnlyActivePlatformAdmin (3.27s)
+=== RUN   TestMonitorGuardFailsClosedOnItsOwnLookup
+2026/11/02 05:00:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:00:17 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/11/02 05:00:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:00:20 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorGuardFailsClosedOnItsOwnLookup (6.49s)
+=== RUN   TestMonitorSnapshotIsGetOnly
+2026/11/02 05:00:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:00:23 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorSnapshotIsGetOnly (3.32s)
+=== RUN   TestMonitorRouteLabelsAreRegisteredPatternsOnly
+2026/11/02 05:00:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:00:27 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorRouteLabelsAreRegisteredPatternsOnly (3.23s)
+=== RUN   TestMonitorPageSameGuardAsSnapshot
+2026/11/02 05:00:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:00:30 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorPageSameGuardAsSnapshot (3.25s)
+=== RUN   TestConsolePlatformRoutesAreAssembledWithServerGuards
+--- PASS: TestConsolePlatformRoutesAreAssembledWithServerGuards (0.02s)
+=== RUN   TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry
+--- PASS: TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry (0.02s)
+=== RUN   TestAgentTaskDriverRouteRequiresAgentCapability
+--- PASS: TestAgentTaskDriverRouteRequiresAgentCapability (0.02s)
+=== RUN   TestSpecDirectRoutesAndRetiredApprovals
+--- PASS: TestSpecDirectRoutesAndRetiredApprovals (0.02s)
+=== RUN   TestNewPlatformRouteSweep
+2026/11/02 05:00:33 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:33 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:00:33 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/11/02 05:00:37 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:37 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    console_routes_test.go:274: routes recorded=183 exempt=16 requests checked=544
+--- PASS: TestNewPlatformRouteSweep (7.39s)
+=== RUN   TestConsoleTasksCompatibilityRoute
+2026/11/02 05:00:38 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:00:38 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:00:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:00:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:00:41 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestConsoleTasksCompatibilityRoute (3.27s)
+=== RUN   TestValidateConsoleSeedCommandNeverStartsServer
+--- PASS: TestValidateConsoleSeedCommandNeverStartsServer (0.00s)
+=== RUN   TestValidateConsoleSeedCommandRejectsProductionTypeErrorWithoutStartingServer
+--- PASS: TestValidateConsoleSeedCommandRejectsProductionTypeErrorWithoutStartingServer (0.00s)
+=== RUN   TestConsoleSeedIsExplicitAndSeparatesSharedKey
+--- PASS: TestConsoleSeedIsExplicitAndSeparatesSharedKey (3.23s)
+=== RUN   TestConsoleSeedRejectsDuplicateShortNamesBeforeAnyWrite
+--- PASS: TestConsoleSeedRejectsDuplicateShortNamesBeforeAnyWrite (0.00s)
+=== RUN   TestConsoleSeedRequiresExplicitActive
+--- PASS: TestConsoleSeedRequiresExplicitActive (3.15s)
+=== RUN   TestConsoleSeedFailsClosedWithoutGrant
+--- PASS: TestConsoleSeedFailsClosedWithoutGrant (3.24s)
+=== RUN   TestTwoOwnerIdentitiesEachSeeTheCompleteGrantSet
+--- PASS: TestTwoOwnerIdentitiesEachSeeTheCompleteGrantSet (3.23s)
+=== RUN   TestE2E_MainPath_AddConfirmQuery
+2026/11/02 05:00:56 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:00:56 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestE2E_MainPath_AddConfirmQuery (3.28s)
+=== RUN   TestE2E_Permission_CollaboratorCannotModify
+--- PASS: TestE2E_Permission_CollaboratorCannotModify (3.26s)
+=== RUN   TestE2E_PendingConcurrency_SinglePendingPerOwner
+2026/11/02 05:01:01 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:01 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestE2E_PendingConcurrency_SinglePendingPerOwner (3.28s)
+=== RUN   TestE2E_Cleanup_DryRunAndConfirmStore
+2026/11/02 05:01:04 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:04 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestE2E_Cleanup_DryRunAndConfirmStore (3.20s)
+=== RUN   TestE2E_AdminCleanup_RejectsRecentCutoff
+--- PASS: TestE2E_AdminCleanup_RejectsRecentCutoff (0.00s)
+=== RUN   TestE2E_Redaction_BeforeStorage
+2026/11/02 05:01:08 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:08 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestE2E_Redaction_BeforeStorage (3.24s)
+=== RUN   TestE2E_PrefixWildcardOverlap
+--- PASS: TestE2E_PrefixWildcardOverlap (3.24s)
+=== RUN   TestE2E_DualLLM_Failover
+--- PASS: TestE2E_DualLLM_Failover (0.00s)
+=== RUN   TestE2E_Evidence_OptOut
+2026/11/02 05:01:14 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:14 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestE2E_Evidence_OptOut (3.22s)
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources/default_warn_is_visibly_risky
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_enforce
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_warn_differs_from_default
+--- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources (0.00s)
+    --- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources/default_warn_is_visibly_risky (0.00s)
+    --- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_enforce (0.00s)
+    --- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_warn_differs_from_default (0.00s)
+=== RUN   TestLivezChecksLockDBAndAcceptHeartbeats
+2026/11/02 05:01:16 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:01:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestLivezChecksLockDBAndAcceptHeartbeats (0.02s)
+=== RUN   TestSDNotifyWritesUnixDatagram
+--- PASS: TestSDNotifyWritesUnixDatagram (0.00s)
+=== RUN   TestWatchdogInterval
+--- PASS: TestWatchdogInterval (0.00s)
+=== RUN   TestWatchdogFastConfirmRecoversOnAnySuccessfulProbe
+--- PASS: TestWatchdogFastConfirmRecoversOnAnySuccessfulProbe (0.00s)
+=== RUN   TestWatchdogFastConfirmRequiresAllConfiguredFailures
+--- PASS: TestWatchdogFastConfirmRequiresAllConfiguredFailures (0.00s)
+=== RUN   TestHelperUpdateRegisterIsOperatorOnlyCLI
+2026/11/02 05:01:17 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:17 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:01:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:01:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:01:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:01:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestHelperUpdateRegisterIsOperatorOnlyCLI (3.54s)
+=== RUN   TestHostedAccessConfiguration
+--- PASS: TestHostedAccessConfiguration (0.00s)
+=== RUN   TestHostedAccessEveryHumanRouteRejectsBeforeBusiness
+--- PASS: TestHostedAccessEveryHumanRouteRejectsBeforeBusiness (0.02s)
+=== RUN   TestHostedAccessAllowedRealSessionReachesEveryBusinessRoute
+2026/11/02 05:01:20 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:20 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedAccessAllowedRealSessionReachesEveryBusinessRoute (2.58s)
+=== RUN   TestHostedAccessFreshIdentityAndStartupSnapshot
+--- PASS: TestHostedAccessFreshIdentityAndStartupSnapshot (0.00s)
+=== RUN   TestHostedAccessEmptyListPreservesOnlyRegisteredOpsBearer
+2026/11/02 05:01:23 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:23 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedAccessEmptyListPreservesOnlyRegisteredOpsBearer (2.59s)
+=== RUN   TestHostedAccessRegistrationCannotActivateHostedAccess
+--- PASS: TestHostedAccessRegistrationCannotActivateHostedAccess (0.00s)
+=== RUN   TestHostedAccessMustChangeExpiredAndMissingIdentity
+--- PASS: TestHostedAccessMustChangeExpiredAndMissingIdentity (0.00s)
+=== RUN   TestHostedAccessRealAssemblyUnsetEmptyAndNamed
+=== RUN   TestHostedAccessRealAssemblyUnsetEmptyAndNamed/<unset>
+2026/11/02 05:01:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:27 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:01:28 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:01:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:01:30 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:30 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:01:30 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+=== RUN   TestHostedAccessRealAssemblyUnsetEmptyAndNamed/explicit-empty
+2026/11/02 05:01:33 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:33 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:01:34 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:01:34 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:01:36 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+=== RUN   TestHostedAccessRealAssemblyUnsetEmptyAndNamed/owner
+2026/11/02 05:01:37 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:37 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:01:38 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:38 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:01:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:01:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:01:41 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:41 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:01:42 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+--- PASS: TestHostedAccessRealAssemblyUnsetEmptyAndNamed (17.91s)
+    --- PASS: TestHostedAccessRealAssemblyUnsetEmptyAndNamed/<unset> (5.98s)
+    --- PASS: TestHostedAccessRealAssemblyUnsetEmptyAndNamed/explicit-empty (5.95s)
+    --- PASS: TestHostedAccessRealAssemblyUnsetEmptyAndNamed/owner (5.98s)
+=== RUN   TestAccountRegisterNoEchoAndEncrypted
+--- PASS: TestAccountRegisterNoEchoAndEncrypted (2.61s)
+=== RUN   TestAccountCrossUserMatrix
+--- PASS: TestAccountCrossUserMatrix (2.62s)
+=== RUN   TestAccountNameAndLimitOverHTTP
+--- PASS: TestAccountNameAndLimitOverHTTP (2.57s)
+=== RUN   TestHostedWriteRoutesRequireOrigin
+--- PASS: TestHostedWriteRoutesRequireOrigin (2.61s)
+=== RUN   TestAccountRegisterValidationOverHTTP
+2026/11/02 05:01:56 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:01:56 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestAccountRegisterValidationOverHTTP (2.57s)
+=== RUN   TestAdminAccountRoutes
+--- PASS: TestAdminAccountRoutes (2.61s)
+=== RUN   TestRefreshCredRoute
+--- PASS: TestRefreshCredRoute (2.59s)
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize
+2026/11/02 05:02:01 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:01 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:02:03 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/default-hard
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/unknown-mode
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/missing-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/invalid-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/uppercase-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/labels-cannot-enable-soft
+--- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize (2.76s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/default-hard (0.02s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/unknown-mode (0.02s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/missing-revision (0.02s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/invalid-revision (0.02s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/uppercase-revision (0.02s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/labels-cannot-enable-soft (0.02s)
+=== RUN   TestHostedAdminScenarios
+2026/11/02 05:02:04 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:04 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:02:06 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+--- PASS: TestHostedAdminScenarios (2.75s)
+=== RUN   TestHostedAdminVersionFlagsAndDefaults
+2026/11/02 05:02:08 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:08 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:02:09 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+--- PASS: TestHostedAdminVersionFlagsAndDefaults (2.62s)
+=== RUN   TestHostedCapacityReasonsActualHTTP
+=== RUN   TestHostedCapacityReasonsActualHTTP/cpu
+=== RUN   TestHostedCapacityReasonsActualHTTP/memory
+=== RUN   TestHostedCapacityReasonsActualHTTP/disk
+=== RUN   TestHostedCapacityReasonsActualHTTP/load_unknown
+=== RUN   TestHostedCapacityReasonsActualHTTP/stale
+--- PASS: TestHostedCapacityReasonsActualHTTP (2.65s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/cpu (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/memory (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/disk (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/load_unknown (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/stale (0.01s)
+=== RUN   TestHostedFinalNodeGateJobHTTP
+2026/11/02 05:02:14 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:14 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedFinalNodeGateJobHTTP (2.66s)
+=== RUN   TestHostedClaudeModelActualHTTP
+2026/11/02 05:02:16 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:17 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:17 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedClaudeModelActualHTTP (2.63s)
+=== RUN   TestB1StagesRealAndAgentListed
+--- PASS: TestB1StagesRealAndAgentListed (2.63s)
+=== RUN   TestB2AllNodeActionsFromHub
+2026/11/02 05:02:20 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:20 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestB2AllNodeActionsFromHub (2.63s)
+=== RUN   TestB3PullFailureCleanup
+2026/11/02 05:02:23 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:23 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestB3PullFailureCleanup (2.61s)
+=== RUN   TestB4B5ComboAndPlanGuards
+2026/11/02 05:02:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:27 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestB4B5ComboAndPlanGuards (2.66s)
+=== RUN   TestB9AutoNodeCapacity
+2026/11/02 05:02:28 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:28 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:02:30 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:30 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestB9AutoNodeCapacity (2.61s)
+=== RUN   TestB7CredentialExposureSurface
+--- PASS: TestB7CredentialExposureSurface (2.65s)
+=== RUN   TestB8DecryptAuditExactlyOnce
+2026/11/02 05:02:33 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:33 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:02:34 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:34 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestB8DecryptAuditExactlyOnce (2.65s)
+=== RUN   TestB11NoLoginCommandInChain
+2026/11/02 05:02:37 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:37 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:02:38 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:38 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestB11NoLoginCommandInChain (2.60s)
+=== RUN   TestB6NameInvalidRejected
+2026/11/02 05:02:40 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:40 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:02:41 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:41 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestB6NameInvalidRejected (2.56s)
+=== RUN   TestB7PlaintextExactlyOnceInCreateSeat
+--- PASS: TestB7PlaintextExactlyOnceInCreateSeat (2.60s)
+=== RUN   TestHostedAuthCodes
+--- PASS: TestHostedAuthCodes (2.56s)
+=== RUN   TestHostedJobOwnerBySeat
+--- PASS: TestHostedJobOwnerBySeat (2.62s)
+=== RUN   TestHostedErrorsAreMachineCodes
+2026/11/02 05:02:49 hosted: internal error: pq: connection refused at 10.0.0.1
+--- PASS: TestHostedErrorsAreMachineCodes (0.00s)
+=== RUN   TestHostedCreateNameInvalidCode
+--- PASS: TestHostedCreateNameInvalidCode (2.59s)
+=== RUN   TestHostedDestroyBackupFailed
+--- PASS: TestHostedDestroyBackupFailed (2.61s)
+=== RUN   TestHostedAdminQuotasShape
+2026/11/02 05:02:56 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:02:56 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedAdminQuotasShape (2.64s)
+=== RUN   TestHostedQuotaCodesOverHTTP
+2026/11/02 05:03:01 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:01 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedQuotaCodesOverHTTP (5.42s)
+=== RUN   TestHostedLifecycleNodeDown
+--- PASS: TestHostedLifecycleNodeDown (2.66s)
+=== RUN   TestLoginHTTPFlow
+2026/11/02 05:03:04 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:04 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestLoginHTTPFlow (2.64s)
+=== RUN   TestLoginHTTPGuards
+2026/11/02 05:03:08 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:08 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestLoginHTTPGuards (2.63s)
+=== RUN   TestAdminListCarriesNoKeyTail
+--- PASS: TestAdminListCarriesNoKeyTail (2.61s)
+=== RUN   TestHostedMinimumPlanHTTPOptionsCreateAndQuota
+2026/11/02 05:03:14 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:14 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedMinimumPlanHTTPOptionsCreateAndQuota (2.59s)
+=== RUN   TestHostedCreateWithNewGroup
+2026/11/02 05:03:16 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:17 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:17 delivery expiry sweep failed: sql: database is closed
+=== RUN   TestHostedCreateWithNewGroup/new_group_is_created_with_the_new_seat_as_leader
+=== RUN   TestHostedCreateWithNewGroup/both_group_id_and_new_group_name_is_ambiguous
+=== RUN   TestHostedCreateWithNewGroup/invalid_new_group_names_are_refused_with_group_name_invalid
+=== RUN   TestHostedCreateWithNewGroup/taken_group_name_is_409_and_leaves_the_agent_name_free
+=== RUN   TestHostedCreateWithNewGroup/hosted_new_group_name_is_normalized_before_validation_and_storage
+=== RUN   TestHostedCreateWithNewGroup/seat_insert_failure_leaves_no_new_group
+2026/11/02 05:03:17 hosted: internal error: ERROR: injected seat insert failure (SQLSTATE P0001)
+=== RUN   TestHostedCreateWithNewGroup/seat_insert_failure_with_an_existing_group_keeps_that_group
+2026/11/02 05:03:17 hosted: internal error: ERROR: injected seat insert failure (SQLSTATE P0001)
+=== RUN   TestHostedCreateWithNewGroup/async_create_failure_also_reclaims_the_new_group
+--- PASS: TestHostedCreateWithNewGroup (2.73s)
+    --- PASS: TestHostedCreateWithNewGroup/new_group_is_created_with_the_new_seat_as_leader (0.03s)
+    --- PASS: TestHostedCreateWithNewGroup/both_group_id_and_new_group_name_is_ambiguous (0.00s)
+    --- PASS: TestHostedCreateWithNewGroup/invalid_new_group_names_are_refused_with_group_name_invalid (0.01s)
+    --- PASS: TestHostedCreateWithNewGroup/taken_group_name_is_409_and_leaves_the_agent_name_free (0.03s)
+    --- PASS: TestHostedCreateWithNewGroup/hosted_new_group_name_is_normalized_before_validation_and_storage (0.03s)
+    --- PASS: TestHostedCreateWithNewGroup/seat_insert_failure_leaves_no_new_group (0.04s)
+    --- PASS: TestHostedCreateWithNewGroup/seat_insert_failure_with_an_existing_group_keeps_that_group (0.01s)
+    --- PASS: TestHostedCreateWithNewGroup/async_create_failure_also_reclaims_the_new_group (0.03s)
+=== RUN   TestHostedQuotaRealIdentityOwnerOnlyAndOpsReadOnly
+2026/11/02 05:03:20 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:20 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedQuotaRealIdentityOwnerOnlyAndOpsReadOnly (2.65s)
+=== RUN   TestHostedRoutesContractCodes
+--- PASS: TestHostedRoutesContractCodes (2.59s)
+=== RUN   TestInternalNotify
+=== RUN   TestInternalNotify/入队成功返回_202_且正文落到队列
+=== RUN   TestInternalNotify/未配置目标_⇒_404_而非静默成功
+=== RUN   TestInternalNotify/队列为_nil_⇒_404_而非_panic_或静默成功
+=== RUN   TestInternalNotify/入队失败_⇒_503,不得回_202
+=== RUN   TestInternalNotify/空正文与未知字段一律拒
+--- PASS: TestInternalNotify (0.00s)
+    --- PASS: TestInternalNotify/入队成功返回_202_且正文落到队列 (0.00s)
+    --- PASS: TestInternalNotify/未配置目标_⇒_404_而非静默成功 (0.00s)
+    --- PASS: TestInternalNotify/队列为_nil_⇒_404_而非_panic_或静默成功 (0.00s)
+    --- PASS: TestInternalNotify/入队失败_⇒_503,不得回_202 (0.00s)
+    --- PASS: TestInternalNotify/空正文与未知字段一律拒 (0.00s)
+=== RUN   TestNotifyMustNotBeOnTCPMux
+--- PASS: TestNotifyMustNotBeOnTCPMux (0.00s)
+=== RUN   TestNotifySocketPermissions
+--- PASS: TestNotifySocketPermissions (0.00s)
+=== RUN   TestNotifySocketChmodENOENTExplainsLateUnlink
+--- PASS: TestNotifySocketChmodENOENTExplainsLateUnlink (0.00s)
+=== RUN   TestNotifySocketStopCannotDeleteNewListenerAtSamePath
+--- PASS: TestNotifySocketStopCannotDeleteNewListenerAtSamePath (0.00s)
+=== RUN   TestNotifySocketFirstStopPreservesNewListenerAtReboundPath
+--- PASS: TestNotifySocketFirstStopPreservesNewListenerAtReboundPath (0.00s)
+=== RUN   TestR11FreezeStartupConfig
+=== RUN   TestR11FreezeStartupConfig/unset
+2026/11/02 05:03:23 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:23 delivery expiry sweep failed: sql: database is closed
+=== RUN   TestR11FreezeStartupConfig/0
+2026/11/02 05:03:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:27 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:03:28 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:28 delivery expiry sweep failed: sql: database is closed
+=== RUN   TestR11FreezeStartupConfig/false
+2026/11/02 05:03:30 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:30 delivery expiry sweep failed: sql: database is closed
+=== RUN   TestR11FreezeStartupConfig/1
+2026/11/02 05:03:33 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:33 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:03:34 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:34 delivery expiry sweep failed: sql: database is closed
+=== RUN   TestR11FreezeStartupConfig/true
+2026/11/02 05:03:37 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:37 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:03:38 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:38 delivery expiry sweep failed: sql: database is closed
+=== RUN   TestR11FreezeStartupConfig/garbage
+2026/11/02 05:03:40 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:40 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:03:41 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:41 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestR11FreezeStartupConfig (19.53s)
+    --- PASS: TestR11FreezeStartupConfig/unset (3.26s)
+    --- PASS: TestR11FreezeStartupConfig/0 (3.23s)
+    --- PASS: TestR11FreezeStartupConfig/false (3.23s)
+    --- PASS: TestR11FreezeStartupConfig/1 (3.27s)
+    --- PASS: TestR11FreezeStartupConfig/true (3.29s)
+    --- PASS: TestR11FreezeStartupConfig/garbage (3.24s)
+=== RUN   TestVersionCommandReportsBuildProvenance
+--- PASS: TestVersionCommandReportsBuildProvenance (0.00s)
+=== RUN   TestRunWiresAdminFileBrowserConfiguration
+--- PASS: TestRunWiresAdminFileBrowserConfiguration (0.01s)
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_URL
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_PUBLIC_URL
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_TOKEN
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_AUDIT_TOKEN
+--- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_URL (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_PUBLIC_URL (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_TOKEN (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_AUDIT_TOKEN (0.00s)
+=== RUN   TestHandleFeishuWebhookURLVerification
+--- PASS: TestHandleFeishuWebhookURLVerification (3.30s)
+=== RUN   TestProvisionDownloadRetiredEvenWhenArtifactExists
+--- PASS: TestProvisionDownloadRetiredEvenWhenArtifactExists (0.00s)
+=== RUN   TestHandleFeishuWebhookEnqueuesInboundMessage
+--- PASS: TestHandleFeishuWebhookEnqueuesInboundMessage (3.27s)
+=== RUN   TestHandleFeishuWebhookEnqueuesCCConnectorInboundMessage
+--- PASS: TestHandleFeishuWebhookEnqueuesCCConnectorInboundMessage (3.28s)
+=== RUN   TestHandleFeishuWebhookVerifiesTokenWhenConfigured
+--- PASS: TestHandleFeishuWebhookVerifiesTokenWhenConfigured (3.27s)
+=== RUN   TestHandleFeishuWebhookPlaintextWithoutTokenWarnsOnce
+2026/11/02 05:03:56 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:03:56 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHandleFeishuWebhookPlaintextWithoutTokenWarnsOnce (3.29s)
+=== RUN   TestHandleFeishuWebhookRejectsMissingEntity
+2026/11/02 05:04:01 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:01 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHandleFeishuWebhookRejectsMissingEntity (3.30s)
+=== RUN   TestRunOutboundLoopSendsAndAcks
+2026/11/02 05:04:04 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:04 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestRunOutboundLoopSendsAndAcks (3.35s)
+=== RUN   TestBuildFeishuGatewaySeedsEncryptedBootstrapBot
+2026/11/02 05:04:08 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:08 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:04:09 [Info] [client ready]
+--- PASS: TestBuildFeishuGatewaySeedsEncryptedBootstrapBot (3.41s)
+=== RUN   TestBuildFeishuGatewayConfiguresMultipleBotChannels
+2026/11/02 05:04:12 [Info] [client ready]
+2026/11/02 05:04:12 [Info] [client ready]
+--- PASS: TestBuildFeishuGatewayConfiguresMultipleBotChannels (3.33s)
+=== RUN   TestSeedBootstrapBotChannelBackfillsMissingSecretOnly
+2026/11/02 05:04:14 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:14 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestSeedBootstrapBotChannelBackfillsMissingSecretOnly (3.34s)
+=== RUN   TestSeedBootstrapBotChannelWithoutSecretKeyLeavesSecretUnset
+2026/11/02 05:04:16 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:17 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:17 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestSeedBootstrapBotChannelWithoutSecretKeyLeavesSecretUnset (3.29s)
+=== RUN   TestSchedulerCronPlanR16NotificationTiers
+2026/11/02 05:04:20 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:20 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestSchedulerCronPlanR16NotificationTiers (3.28s)
+=== RUN   TestRunWiresConsoleAdminDoor
+--- PASS: TestRunWiresConsoleAdminDoor (0.01s)
+=== RUN   TestRunSetsAdminNewPlatformBeforeMount
+--- PASS: TestRunSetsAdminNewPlatformBeforeMount (0.01s)
+=== RUN   TestEmptyDBHubEntryMigratesAndCreatesNoAccount
+2026/11/02 05:04:23 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:23 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:04:24 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+--- PASS: TestEmptyDBHubEntryMigratesAndCreatesNoAccount (2.61s)
+=== RUN   TestMigrateFailureRefusesHubEntryAndBootstrap
+2026/11/02 05:04:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:27 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:04:27 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+--- PASS: TestMigrateFailureRefusesHubEntryAndBootstrap (2.58s)
+=== RUN   TestBrokenLedgerTableRefuses
+2026/11/02 05:04:28 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:28 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestBrokenLedgerTableRefuses (2.42s)
+=== RUN   TestHostedIdentityIssue
+--- PASS: TestHostedIdentityIssue (0.00s)
+=== RUN   TestHostedIdentityListByOwner
+--- PASS: TestHostedIdentityListByOwner (0.00s)
+=== RUN   TestHostedIdentityLifecycle
+--- PASS: TestHostedIdentityLifecycle (0.00s)
+=== RUN   TestWireHostedOnlineHookAndSweeper
+2026/11/02 05:04:30 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:30 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:04:33 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:33 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:04:34 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:34 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:04:35 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:04:35 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:04:35 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+--- PASS: TestWireHostedOnlineHookAndSweeper (6.03s)
+=== RUN   TestWireNewPlatformHostedOverlay
+2026/11/02 05:04:37 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:37 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:04:38 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:38 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:04:39 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:04:39 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:04:39 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestWireNewPlatformHostedOverlay (3.30s)
+=== RUN   TestNewPlatformRegistrationCodeKeyWired
+2026/11/02 05:04:40 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:40 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:04:41 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:41 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:04:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:04:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:04:42 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestNewPlatformRegistrationCodeKeyWired (3.31s)
+=== RUN   TestNewPlatformConfigFromEnv
+--- PASS: TestNewPlatformConfigFromEnv (0.00s)
+=== RUN   TestWireNewPlatformCreatesNoUser
+2026/11/02 05:04:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:04:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:04:46 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestWireNewPlatformCreatesNoUser (3.27s)
+=== RUN   TestWireNewPlatformRoutes
+2026/11/02 05:04:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:04:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:04:49 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestWireNewPlatformRoutes (3.31s)
+=== RUN   TestRegisterNewPlatformLoginPage
+2026/11/02 05:04:49 newplat login page not built into this binary: GET /console/login not registered
+--- PASS: TestRegisterNewPlatformLoginPage (0.00s)
+=== RUN   TestUpgradeRotationKeepsNewCredentialOnSharedWork
+2026/11/02 05:04:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:04:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:04:52 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/11/02 05:04:53 session handshake timing key_id=u_zzc session=seat1 total=15ms register=11ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+2026/11/02 05:04:53 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=1
+2026/11/02 05:04:53 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=1 reason=session_reconnected released=0
+2026/11/02 05:04:53 session handshake timing key_id=u_zzc session=seat1 total=58ms register=6ms accept=0s conn_seq=1ms onboard=0s register_lock=51ms
+2026/11/02 05:04:53 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=2
+2026/11/02 05:04:53 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=2 reason=session_reconnected released=0
+2026/11/02 05:04:53 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=2 reason=session_disconnected released=0
+2026/11/02 05:04:54 session handshake timing key_id=u_zzc session=seat1 total=7ms register=6ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/11/02 05:04:54 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=3
+2026/11/02 05:04:54 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=3 reason=session_reconnected released=0
+--- PASS: TestUpgradeRotationKeepsNewCredentialOnSharedWork (4.70s)
+=== RUN   TestPilotQuestionFeishuStartupSwitch
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=0
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=false
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=true
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=garbage
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=1
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=_1_
+--- PASS: TestPilotQuestionFeishuStartupSwitch (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value= (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=0 (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=false (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=true (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=garbage (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=1 (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=_1_ (0.00s)
+=== RUN   TestPilotQuestionFeishuFakeStubRemainUnwired
+--- PASS: TestPilotQuestionFeishuFakeStubRemainUnwired (0.00s)
+=== RUN   TestPilotQuestionFeishuInboundOutboundFlagsIndependent
+--- PASS: TestPilotQuestionFeishuInboundOutboundFlagsIndependent (0.00s)
+=== RUN   TestPromoteAdminEndToEnd
+2026/11/02 05:04:54 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=3 reason=session_disconnected released=0
+2026/11/02 05:04:56 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:04:56 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestPromoteAdminEndToEnd (4.99s)
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing
+2026/11/02 05:05:01 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:01 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:05:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:05:04 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+2026/11/02 05:05:04 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:04 delivery expiry sweep failed: sql: database is closed
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-hosted-tables
+2026/11/02 05:05:08 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:08 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:10 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:05:10 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:05:10 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-seat-table
+2026/11/02 05:05:14 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:14 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:16 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:05:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:05:16 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+2026/11/02 05:05:16 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-node-table
+2026/11/02 05:05:17 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:17 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:20 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:20 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:22 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:05:22 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:05:22 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/unrelated-query-error
+2026/11/02 05:05:23 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:23 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:27 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:27 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:05:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 05:05:27 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+--- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring (29.43s)
+    --- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing (5.88s)
+    --- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-hosted-tables (5.96s)
+    --- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-seat-table (5.96s)
+    --- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-node-table (5.82s)
+    --- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/unrelated-query-error (5.81s)
+=== RUN   TestR31HostedAccessModes
+--- PASS: TestR31HostedAccessModes (0.00s)
+=== RUN   TestR31AllActiveHTTPReachesQuotaAndDisableIsLive
+2026/11/02 05:05:28 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:28 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:30 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:30 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestR31AllActiveHTTPReachesQuotaAndDisableIsLive (2.59s)
+=== RUN   TestR31AdminNodeAPIAndOneTimeCredential
+2026/11/02 05:05:33 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:33 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestR31AdminNodeAPIAndOneTimeCredential (2.62s)
+=== RUN   TestR31OldBinarySchemaReadCompatibility
+    r31_rollback_compat_test.go:23: requires independently built R30 binary via R31_R30_BINARY
+--- SKIP: TestR31OldBinarySchemaReadCompatibility (0.00s)
+=== RUN   TestLifecycleRecoveryIsWiredAtHostedStartup
+--- PASS: TestLifecycleRecoveryIsWiredAtHostedStartup (0.00s)
+=== RUN   TestRootTasksRouteIsRegistered
+2026/11/02 05:05:34 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:34 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:35 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:35 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:37 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 05:05:37 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestRootTasksRouteIsRegistered (3.39s)
+=== RUN   TestHLCFaultProcessMatrix
+    shutdown_fault_process_test.go:94: isolated fault/watchdog runner tests/hlc/fault_matrix.py
+--- SKIP: TestHLCFaultProcessMatrix (0.00s)
+=== RUN   TestHLCBindFailure
+    shutdown_fault_process_test.go:329: isolated startup failure runner
+--- SKIP: TestHLCBindFailure (0.00s)
+=== RUN   TestShutdownFeishuCloseBeforeRootSealAndWait
+--- PASS: TestShutdownFeishuCloseBeforeRootSealAndWait (0.01s)
+=== RUN   TestShutdownFeishuUsesEightSecondDrainAndExitTwo
+2026/11/02 05:05:37 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:37 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:38 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:38 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:39 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:39 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:40 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:40 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:41 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:41 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:42 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:42 delivery expiry sweep failed: sql: database is closed
+    shutdown_feishu_test.go:79: SDK drain_budget_ms=8000 elapsed_ms=8002 exit_code=2 db_closed=false
+--- PASS: TestShutdownFeishuUsesEightSecondDrainAndExitTwo (8.00s)
+=== RUN   TestShutdownFeishuRemoteReceiverUsesExistingRootGate
+--- PASS: TestShutdownFeishuRemoteReceiverUsesExistingRootGate (0.00s)
+=== RUN   TestShutdownFeishuAdmittedCallbackKeepsWorkBudget
+--- PASS: TestShutdownFeishuAdmittedCallbackKeepsWorkBudget (0.00s)
+=== RUN   TestHLCLoadProcessChild
+--- PASS: TestHLCLoadProcessChild (0.00s)
+=== RUN   TestHLCLoadMatrix
+    shutdown_load_test.go:560: isolated actual-process matrix: tests/hlc/process_matrix.py
+--- SKIP: TestHLCLoadMatrix (0.00s)
+=== RUN   TestHLCS007Full
+    shutdown_mixed_fault_process_test.go:164: isolated full mixed fault: tests/hlc/s007_full.py
+--- SKIP: TestHLCS007Full (0.00s)
+=== RUN   TestHLCProcessChild
+--- PASS: TestHLCProcessChild (0.00s)
+=== RUN   TestHLCActualProcessIdle
+2026/11/02 05:05:46 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:46 delivery expiry sweep failed: sql: database is closed
+2026/11/02 05:05:49 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:49 delivery expiry sweep failed: sql: database is closed
+    shutdown_process_test.go:136: S001 raw process rc=0 stop_ms=1200 listener_delta_us=3 stages=5
+--- PASS: TestHLCActualProcessIdle (4.44s)
+=== RUN   TestShutdownS008QueueProcessChild
+--- PASS: TestShutdownS008QueueProcessChild (0.00s)
+=== RUN   TestShutdownS008QueueProcessExitCodes
+=== RUN   TestShutdownS008QueueProcessExitCodes/success
+    shutdown_queue_test.go:94: S008 actual_process_exit=0 elapsed_ms=1034 queue=map[failed:0 first_error:nil remaining:0]
+=== RUN   TestShutdownS008QueueProcessExitCodes/commit_failure
+    shutdown_queue_test.go:94: S008 actual_process_exit=1 elapsed_ms=29 queue=map[failed:5 first_error:operation_failed remaining:5]
+=== RUN   TestShutdownS008QueueProcessExitCodes/db_deadline
+2026/11/02 05:05:52 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:52 delivery expiry sweep failed: sql: database is closed
+    shutdown_queue_test.go:94: S008 actual_process_exit=2 elapsed_ms=3032 queue=map[failed:5 first_error:deadline_exceeded remaining:5]
+=== RUN   TestShutdownS008QueueProcessExitCodes/failure_then_deadline
+2026/11/02 05:05:56 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:05:56 delivery expiry sweep failed: sql: database is closed
+    shutdown_queue_test.go:94: S008 actual_process_exit=2 elapsed_ms=3031 queue=map[failed:1 first_error:operation_failed remaining:5]
+--- PASS: TestShutdownS008QueueProcessExitCodes (7.13s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/success (1.04s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/commit_failure (0.03s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/db_deadline (3.03s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/failure_then_deadline (3.03s)
+=== RUN   TestShutdownS008QueueStageResults
+=== RUN   TestShutdownS008QueueStageResults/success
+    shutdown_queue_test.go:177: S008 exit=0 db_budget_ms=3000 db_elapsed_ms=0 timeout=false remaining=0 failed=0 db_closed=true first_commit_error=false
+=== RUN   TestShutdownS008QueueStageResults/commit_failure
+    shutdown_queue_test.go:177: S008 exit=1 db_budget_ms=3000 db_elapsed_ms=0 timeout=false remaining=5 failed=5 db_closed=true first_commit_error=true
+=== RUN   TestShutdownS008QueueStageResults/db_deadline
+    shutdown_queue_test.go:177: S008 exit=2 db_budget_ms=3000 db_elapsed_ms=3000 timeout=true remaining=5 failed=5 db_closed=false first_commit_error=false
+=== RUN   TestShutdownS008QueueStageResults/failure_then_deadline
+2026/11/02 05:06:01 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:06:01 delivery expiry sweep failed: sql: database is closed
+    shutdown_queue_test.go:177: S008 exit=2 db_budget_ms=3000 db_elapsed_ms=3000 timeout=true remaining=5 failed=2 db_closed=false first_commit_error=true
+--- PASS: TestShutdownS008QueueStageResults (6.01s)
+    --- PASS: TestShutdownS008QueueStageResults/success (0.01s)
+    --- PASS: TestShutdownS008QueueStageResults/commit_failure (0.00s)
+    --- PASS: TestShutdownS008QueueStageResults/db_deadline (3.00s)
+    --- PASS: TestShutdownS008QueueStageResults/failure_then_deadline (3.00s)
+=== RUN   TestShutdownRecordsBothServersAndExitClassification
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/graceful
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/failure
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/timeout
+--- PASS: TestShutdownRecordsBothServersAndExitClassification (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/graceful (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/failure (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/timeout (0.00s)
+=== RUN   TestShutdownDoesNotCloseDBWithLiveUsers
+--- PASS: TestShutdownDoesNotCloseDBWithLiveUsers (0.00s)
+=== RUN   TestShutdownBlockingFinalizerIsBounded
+2026/11/02 05:06:04 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:06:04 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestShutdownBlockingFinalizerIsBounded (2.00s)
+=== RUN   TestShutdownTimeoutHasPriority
+--- PASS: TestShutdownTimeoutHasPriority (0.00s)
+=== RUN   TestClarificationStartupFlagsIndependent
+--- PASS: TestClarificationStartupFlagsIndependent (0.00s)
+=== RUN   TestClarificationReplyRequiresPinnedTenantAndNativeCapability
+--- PASS: TestClarificationReplyRequiresPinnedTenantAndNativeCapability (0.00s)
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/#00
+2026/11/02 05:06:04 [Info] [client ready]
+2026/11/02 05:06:04 [Info] [client ready]
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/{"native":"tenant-one"}
+2026/11/02 05:06:04 [Info] [client ready]
+2026/11/02 05:06:04 [Info] [client ready]
+--- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping (0.00s)
+    --- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/#00 (0.00s)
+    --- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/{"native":"tenant-one"} (0.00s)
+=== RUN   TestVerifyVersionedDelivery
+--- PASS: TestVerifyVersionedDelivery (0.00s)
+PASS
+2026/11/02 05:06:04 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 05:06:04 delivery expiry sweep failed: sql: database is closed
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	399.057s

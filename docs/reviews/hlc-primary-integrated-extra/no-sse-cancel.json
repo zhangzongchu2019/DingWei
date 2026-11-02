@@ -1,0 +1,21 @@
+{
+  "step": "no-sse-cancel",
+  "command": [
+    "python3",
+    "tests/hlc/process_matrix.py",
+    "--case",
+    "S006",
+    "--mutant",
+    "no-sse-cancel",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated-extra/no-sse-cancel"
+  ],
+  "started_utc": "2026-11-02T05:18:06.388703+00:00",
+  "ended_utc": "2026-11-02T05:18:24.623130+00:00",
+  "rc": 0,
+  "sha256": "7526ce4944ac68ae81ca434cf18dfca7159c968f616ad6cd2e3d29f0d50f7232",
+  "home": "/tmp/h-qlgd3_7i",
+  "tmp": "/tmp/h-qlgd3_7i",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

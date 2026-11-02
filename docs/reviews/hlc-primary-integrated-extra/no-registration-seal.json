@@ -1,0 +1,17 @@
+{
+  "step": "no-registration-seal",
+  "command": [
+    "python3",
+    "tests/hlc/registration_mutation.py",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated-extra/no-registration-seal"
+  ],
+  "started_utc": "2026-11-02T05:18:55.169421+00:00",
+  "ended_utc": "2026-11-02T05:19:17.299926+00:00",
+  "rc": 0,
+  "sha256": "96ef35c6e54ca1661bb31db6a7ebffef8ba46ed9f0f2999e8e2cf9170dc4a129",
+  "home": "/tmp/h-r_vgxp8_",
+  "tmp": "/tmp/h-r_vgxp8_",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

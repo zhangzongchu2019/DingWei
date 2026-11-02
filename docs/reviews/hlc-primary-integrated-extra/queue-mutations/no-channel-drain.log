@@ -1,0 +1,6 @@
+=== RUN   TestShutdownQueueS008BufferedMultipleBatches
+    shutdown_test.go:109: S008_ALL_BUFFERED_COMMITTED: error=queue shutdown incomplete committed=0 remaining=23 failed=0
+--- FAIL: TestShutdownQueueS008BufferedMultipleBatches (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/bus	0.019s
+FAIL

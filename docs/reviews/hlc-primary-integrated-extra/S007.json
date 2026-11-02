@@ -1,0 +1,19 @@
+{
+  "step": "S007",
+  "command": [
+    "python3",
+    "tests/hlc/fault_matrix.py",
+    "--case",
+    "S007",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated-extra/S007"
+  ],
+  "started_utc": "2026-11-02T05:17:09.566863+00:00",
+  "ended_utc": "2026-11-02T05:17:20.380986+00:00",
+  "rc": 0,
+  "sha256": "5006d93cf298d6b57a6b4b9a2ebffd076818e6fddd03fa34ba608b5d1bc10b7b",
+  "home": "/tmp/h-hqzmeknd",
+  "tmp": "/tmp/h-hqzmeknd",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

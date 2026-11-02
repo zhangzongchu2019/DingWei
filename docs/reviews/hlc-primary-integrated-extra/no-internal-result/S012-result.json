@@ -1,0 +1,343 @@
+{
+  "case": "S012",
+  "elapsed_ms": 219,
+  "exit_utc": "2026-11-02T05:18:06.278053964Z",
+  "ports": [
+    "127.0.0.1:43307",
+    "127.0.0.1:43891"
+  ],
+  "process_error": "exit status 1",
+  "process_exit_code": 1,
+  "report": {
+    "shutdown_id": "hlc-1793596686058396996",
+    "reason": "terminated",
+    "started_utc": "2026-11-02T05:18:06.058396996Z",
+    "ended_utc": "2026-11-02T05:18:06.275973808Z",
+    "total_elapsed_ms": 217,
+    "stages": [
+      {
+        "name": "access",
+        "started_utc": "2026-11-02T05:18:06.058424364Z",
+        "ended_utc": "2026-11-02T05:18:06.058517295Z",
+        "elapsed_ms": 0,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 1,
+            "outbound": 1
+          },
+          "durable_counts": null,
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {},
+          "hub": {
+            "background_owned": 1
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {},
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "drain",
+        "started_utc": "2026-11-02T05:18:06.058531323Z",
+        "ended_utc": "2026-11-02T05:18:06.25896431Z",
+        "elapsed_ms": 200,
+        "budget_ms": 8000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "failed",
+        "error": "operation_failed",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": null,
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {},
+          "hub": {
+            "background_owned": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "public": {
+              "drained_utc": "2026-11-02T05:18:06.058555281Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:06.058513605Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "queue",
+        "started_utc": "2026-11-02T05:18:06.258979848Z",
+        "ended_utc": "2026-11-02T05:18:06.25926703Z",
+        "elapsed_ms": 0,
+        "budget_ms": 3000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {},
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {},
+          "hub": {
+            "background_owned": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "public": {
+              "drained_utc": "2026-11-02T05:18:06.058555281Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:06.058513605Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "storage",
+        "started_utc": "2026-11-02T05:18:06.259286998Z",
+        "ended_utc": "2026-11-02T05:18:06.275941161Z",
+        "elapsed_ms": 16,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {},
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {},
+          "hub": {
+            "background_owned": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "public": {
+              "drained_utc": "2026-11-02T05:18:06.058555281Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:06.058513605Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "finalize",
+        "started_utc": "2026-11-02T05:18:06.27595197Z",
+        "ended_utc": "2026-11-02T05:18:06.275963038Z",
+        "elapsed_ms": 0,
+        "budget_ms": 2000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {},
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {},
+          "hub": {
+            "background_owned": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "public": {
+              "drained_utc": "2026-11-02T05:18:06.058555281Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:06.058513605Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      }
+    ],
+    "exit_class": "failure",
+    "exit_code": 1,
+    "snapshot": {
+      "consumers": {
+        "inbound": 0,
+        "outbound": 0
+      },
+      "durable_counts": {},
+      "feishu_ingress": "remote_or_no_sdk",
+      "http_overlaps_streams": {},
+      "hub": {
+        "background_owned": 0
+      },
+      "hub_ws_close": {
+        "already_closed": 0,
+        "failed": 0,
+        "records": []
+      },
+      "persistence": "snapshot_captured",
+      "producers": {
+        "cron_reload": 0,
+        "reminders": 0
+      },
+      "queue": {
+        "inbound": {
+          "error": "nil",
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        },
+        "outbound": {
+          "error": "nil",
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        }
+      },
+      "servers": {
+        "public": {
+          "drained_utc": "2026-11-02T05:18:06.058555281Z",
+          "error": "nil",
+          "listener_closed_utc": "2026-11-02T05:18:06.058513605Z"
+        }
+      },
+      "watchdog_enabled": false,
+      "watchdog_window_ms": 0
+    }
+  },
+  "signal": "",
+  "signal_utc": "2026-11-02T05:18:06.058366649Z",
+  "supervisor_sent_sigabrt": false,
+  "temporary_home": "/tmp/TestHLCFaultProcessMatrix3761193686/001",
+  "watchdog_max_gap_ms": 219,
+  "watchdog_trace": null
+}

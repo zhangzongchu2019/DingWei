@@ -1,0 +1,20 @@
+{
+  "step": "cmd-race",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./cmd/workpulse",
+    "-count=1",
+    "-timeout=15m",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T04:59:22.022721+00:00",
+  "ended_utc": "2026-11-02T05:06:05.843669+00:00",
+  "rc": 0,
+  "sha256": "ac8de3c355c4c939eda6cb78933637e68ad44a71d383cd9122cbc598bc2e61a6",
+  "home": "/tmp/h-02sjnjnc",
+  "tmp": "/tmp/h-02sjnjnc",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

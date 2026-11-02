@@ -1,0 +1,21 @@
+{
+  "step": "no-callback-seal",
+  "command": [
+    "python3",
+    "tests/hlc/process_matrix.py",
+    "--case",
+    "S006",
+    "--mutant",
+    "no-callback-seal",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated-extra/no-callback-seal"
+  ],
+  "started_utc": "2026-11-02T05:18:42.983919+00:00",
+  "ended_utc": "2026-11-02T05:18:55.164960+00:00",
+  "rc": 0,
+  "sha256": "2f5fc02589a9ee2180189fcbcc0a68c5b25364b9499ae6a1e7561c41f694eb22",
+  "home": "/tmp/h-tiul6x8y",
+  "tmp": "/tmp/h-tiul6x8y",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

@@ -1,0 +1,407 @@
+{
+  "case": "S013",
+  "elapsed_ms": 13521,
+  "exit_utc": "2026-11-02T05:17:47.622522057Z",
+  "ports": [
+    "127.0.0.1:41679",
+    "127.0.0.1:41023"
+  ],
+  "process_error": "\u003cnil\u003e",
+  "process_exit_code": 0,
+  "report": {
+    "shutdown_id": "hlc-1793596654100734688",
+    "reason": "terminated",
+    "started_utc": "2026-11-02T05:17:34.100734688Z",
+    "ended_utc": "2026-11-02T05:17:47.620417622Z",
+    "total_elapsed_ms": 13519,
+    "stages": [
+      {
+        "name": "access",
+        "started_utc": "2026-11-02T05:17:34.100753256Z",
+        "ended_utc": "2026-11-02T05:17:34.901519435Z",
+        "elapsed_ms": 800,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 1,
+            "outbound": 1
+          },
+          "durable_counts": null,
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {
+            "internal_http": 1,
+            "public_http": 1
+          },
+          "hub": {
+            "background_owned": 1
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {},
+          "watchdog_enabled": true,
+          "watchdog_window_ms": 12000
+        }
+      },
+      {
+        "name": "drain",
+        "started_utc": "2026-11-02T05:17:34.901533824Z",
+        "ended_utc": "2026-11-02T05:17:42.805009611Z",
+        "elapsed_ms": 7903,
+        "budget_ms": 8000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": null,
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T05:17:42.710801555Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:17:34.901514936Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T05:17:42.804973014Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:17:34.901514116Z"
+            }
+          },
+          "watchdog_enabled": true,
+          "watchdog_window_ms": 12000
+        }
+      },
+      {
+        "name": "queue",
+        "started_utc": "2026-11-02T05:17:42.805026049Z",
+        "ended_utc": "2026-11-02T05:17:45.506452991Z",
+        "elapsed_ms": 2701,
+        "budget_ms": 3000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {},
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T05:17:42.710801555Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:17:34.901514936Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T05:17:42.804973014Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:17:34.901514116Z"
+            }
+          },
+          "watchdog_enabled": true,
+          "watchdog_window_ms": 12000
+        }
+      },
+      {
+        "name": "storage",
+        "started_utc": "2026-11-02T05:17:45.506470459Z",
+        "ended_utc": "2026-11-02T05:17:46.319673084Z",
+        "elapsed_ms": 813,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {},
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T05:17:42.710801555Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:17:34.901514936Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T05:17:42.804973014Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:17:34.901514116Z"
+            }
+          },
+          "watchdog_enabled": true,
+          "watchdog_window_ms": 12000
+        }
+      },
+      {
+        "name": "finalize",
+        "started_utc": "2026-11-02T05:17:46.31971257Z",
+        "ended_utc": "2026-11-02T05:17:47.620388195Z",
+        "elapsed_ms": 1300,
+        "budget_ms": 2000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {},
+          "feishu_ingress": "remote_or_no_sdk",
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T05:17:42.710801555Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:17:34.901514936Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T05:17:42.804973014Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:17:34.901514116Z"
+            }
+          },
+          "watchdog_enabled": true,
+          "watchdog_window_ms": 12000
+        }
+      }
+    ],
+    "exit_class": "graceful",
+    "exit_code": 0,
+    "snapshot": {
+      "consumers": {
+        "inbound": 0,
+        "outbound": 0
+      },
+      "durable_counts": {},
+      "feishu_ingress": "remote_or_no_sdk",
+      "http_overlaps_streams": {
+        "internal_http": 0,
+        "public_http": 0
+      },
+      "hub": {
+        "background_owned": 0
+      },
+      "hub_ws_close": {
+        "already_closed": 0,
+        "failed": 0,
+        "records": []
+      },
+      "persistence": "snapshot_captured",
+      "producers": {
+        "cron_reload": 0,
+        "reminders": 0
+      },
+      "queue": {
+        "inbound": {
+          "error": "nil",
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        },
+        "outbound": {
+          "error": "nil",
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        }
+      },
+      "servers": {
+        "internal": {
+          "drained_utc": "2026-11-02T05:17:42.710801555Z",
+          "error": "nil",
+          "listener_closed_utc": "2026-11-02T05:17:34.901514936Z"
+        },
+        "public": {
+          "drained_utc": "2026-11-02T05:17:42.804973014Z",
+          "error": "nil",
+          "listener_closed_utc": "2026-11-02T05:17:34.901514116Z"
+        }
+      },
+      "watchdog_enabled": true,
+      "watchdog_window_ms": 12000
+    }
+  },
+  "signal": "",
+  "signal_utc": "2026-11-02T05:17:34.100694721Z",
+  "supervisor_sent_sigabrt": false,
+  "temporary_home": "/tmp/TestHLCFaultProcessMatrix3282165221/001",
+  "watchdog_max_gap_ms": 3000,
+  "watchdog_trace": [
+    {
+      "at_utc": "2026-11-02T05:17:34.100823429Z",
+      "value": "WATCHDOG=1"
+    },
+    {
+      "at_utc": "2026-11-02T05:17:37.089738162Z",
+      "value": "WATCHDOG=1"
+    },
+    {
+      "at_utc": "2026-11-02T05:17:40.089320512Z",
+      "value": "WATCHDOG=1"
+    },
+    {
+      "at_utc": "2026-11-02T05:17:43.089376896Z",
+      "value": "WATCHDOG=1"
+    },
+    {
+      "at_utc": "2026-11-02T05:17:46.090014453Z",
+      "value": "WATCHDOG=1"
+    }
+  ]
+}

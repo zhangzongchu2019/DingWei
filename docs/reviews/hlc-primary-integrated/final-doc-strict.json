@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/usr/local/bin/node",
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/@fission-ai/openspec/bin/openspec.js",
+    "validate",
+    "--all",
+    "--strict",
+    "--no-interactive"
+  ],
+  "started_utc": "2026-11-02T05:24:53.568412+00:00",
+  "ended_utc": "2026-11-02T05:24:53.805455+00:00",
+  "rc": 0
+}

@@ -1,0 +1,11 @@
+    PID    PPID COMMAND
+      1       0 tini
+      7       1 python
+      8       7 python
+     59       1 codex
+    163       1 codex
+    271      59 codex-code-mode
+ 925625      59 python3
+ 972525      59 python3
+1040782      59 python3
+1045589 1040782 ps

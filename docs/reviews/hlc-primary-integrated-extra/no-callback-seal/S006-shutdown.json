@@ -1,0 +1,1023 @@
+{
+  "exit_utc": "2026-11-02T05:18:54.587108411Z",
+  "fixture": {
+    "callback": {
+      "business_db_calls": 2,
+      "late_db_calls": 1
+    },
+    "http_active": 0,
+    "http_committed": 100
+  },
+  "process_error": "exit status 1",
+  "report": {
+    "shutdown_id": "hlc-1793596732440131446",
+    "reason": "terminated",
+    "started_utc": "2026-11-02T05:18:52.440131446Z",
+    "ended_utc": "2026-11-02T05:18:54.582771465Z",
+    "total_elapsed_ms": 2142,
+    "stages": [
+      {
+        "name": "access",
+        "started_utc": "2026-11-02T05:18:52.440140755Z",
+        "ended_utc": "2026-11-02T05:18:52.440185131Z",
+        "elapsed_ms": 0,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 1,
+            "outbound": 1
+          },
+          "durable_counts": null,
+          "feishu_ingress": {
+            "active_callbacks": 1,
+            "close_completed": false,
+            "rejected_after_seal": 0,
+            "sdk_start_not_joined": 1,
+            "sealed": false
+          },
+          "http_overlaps_streams": {
+            "internal_http": 165,
+            "public_http": 77
+          },
+          "hub": {
+            "background_owned": 62,
+            "internal_bridge": 15,
+            "internal_sse": 100,
+            "public_mux": 5,
+            "registration_internal_bridge": 0,
+            "registration_internal_sse": 0,
+            "registration_public_mux": 0,
+            "registration_session_ws": 0,
+            "registration_view_ws": 0,
+            "session_ws": 20,
+            "view_ws": 1
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": []
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 1
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {},
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "drain",
+        "started_utc": "2026-11-02T05:18:52.440211038Z",
+        "ended_utc": "2026-11-02T05:18:54.576539664Z",
+        "elapsed_ms": 2136,
+        "budget_ms": 8000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "failed",
+        "error": "operation_failed",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": null,
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 0,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "internal_bridge": 0,
+            "internal_sse": 0,
+            "public_mux": 0,
+            "registration_internal_bridge": 0,
+            "registration_internal_sse": 0,
+            "registration_public_mux": 0,
+            "registration_session_ws": 0,
+            "registration_view_ws": 0,
+            "session_ws": 0,
+            "view_ws": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": [
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "view_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              }
+            ]
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T05:18:54.576494148Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:52.440178081Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T05:18:54.524344424Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:52.440181011Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "queue",
+        "started_utc": "2026-11-02T05:18:54.576558422Z",
+        "ended_utc": "2026-11-02T05:18:54.576798049Z",
+        "elapsed_ms": 0,
+        "budget_ms": 3000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {
+            "message_queued": 2
+          },
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 0,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "internal_bridge": 0,
+            "internal_sse": 0,
+            "public_mux": 0,
+            "registration_internal_bridge": 0,
+            "registration_internal_sse": 0,
+            "registration_public_mux": 0,
+            "registration_session_ws": 0,
+            "registration_view_ws": 0,
+            "session_ws": 0,
+            "view_ws": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": [
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "view_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              }
+            ]
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T05:18:54.576494148Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:52.440178081Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T05:18:54.524344424Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:52.440181011Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "storage",
+        "started_utc": "2026-11-02T05:18:54.576831866Z",
+        "ended_utc": "2026-11-02T05:18:54.582713901Z",
+        "elapsed_ms": 5,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {
+            "message_queued": 2
+          },
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 0,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "internal_bridge": 0,
+            "internal_sse": 0,
+            "public_mux": 0,
+            "registration_internal_bridge": 0,
+            "registration_internal_sse": 0,
+            "registration_public_mux": 0,
+            "registration_session_ws": 0,
+            "registration_view_ws": 0,
+            "session_ws": 0,
+            "view_ws": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": [
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "view_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              }
+            ]
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T05:18:54.576494148Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:52.440178081Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T05:18:54.524344424Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:52.440181011Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "finalize",
+        "started_utc": "2026-11-02T05:18:54.582756417Z",
+        "ended_utc": "2026-11-02T05:18:54.582763216Z",
+        "elapsed_ms": 0,
+        "budget_ms": 2000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {
+            "message_queued": 2
+          },
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 0,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "internal_bridge": 0,
+            "internal_sse": 0,
+            "public_mux": 0,
+            "registration_internal_bridge": 0,
+            "registration_internal_sse": 0,
+            "registration_public_mux": 0,
+            "registration_session_ws": 0,
+            "registration_view_ws": 0,
+            "session_ws": 0,
+            "view_ws": 0
+          },
+          "hub_ws_close": {
+            "already_closed": 0,
+            "failed": 0,
+            "records": [
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "view_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              },
+              {
+                "error": "",
+                "kind": "session_ws",
+                "result": "closed"
+              }
+            ]
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T05:18:54.576494148Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:52.440178081Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T05:18:54.524344424Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T05:18:52.440181011Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      }
+    ],
+    "exit_class": "failure",
+    "exit_code": 1,
+    "snapshot": {
+      "consumers": {
+        "inbound": 0,
+        "outbound": 0
+      },
+      "durable_counts": {
+        "message_queued": 2
+      },
+      "feishu_ingress": {
+        "active_callbacks": 0,
+        "close_completed": true,
+        "rejected_after_seal": 0,
+        "sdk_start_not_joined": 1,
+        "sealed": true
+      },
+      "http_overlaps_streams": {
+        "internal_http": 0,
+        "public_http": 0
+      },
+      "hub": {
+        "background_owned": 0,
+        "internal_bridge": 0,
+        "internal_sse": 0,
+        "public_mux": 0,
+        "registration_internal_bridge": 0,
+        "registration_internal_sse": 0,
+        "registration_public_mux": 0,
+        "registration_session_ws": 0,
+        "registration_view_ws": 0,
+        "session_ws": 0,
+        "view_ws": 0
+      },
+      "hub_ws_close": {
+        "already_closed": 0,
+        "failed": 0,
+        "records": [
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "view_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          },
+          {
+            "error": "",
+            "kind": "session_ws",
+            "result": "closed"
+          }
+        ]
+      },
+      "persistence": "snapshot_captured",
+      "producers": {
+        "cron_reload": 0,
+        "receiver": 0,
+        "reminders": 0
+      },
+      "queue": {
+        "inbound": {
+          "error": "nil",
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        },
+        "outbound": {
+          "error": "nil",
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        }
+      },
+      "servers": {
+        "internal": {
+          "drained_utc": "2026-11-02T05:18:54.576494148Z",
+          "error": "nil",
+          "listener_closed_utc": "2026-11-02T05:18:52.440178081Z"
+        },
+        "public": {
+          "drained_utc": "2026-11-02T05:18:54.524344424Z",
+          "error": "nil",
+          "listener_closed_utc": "2026-11-02T05:18:52.440181011Z"
+        }
+      },
+      "watchdog_enabled": false,
+      "watchdog_window_ms": 0
+    }
+  },
+  "signal_utc": "2026-11-02T05:18:52.440096419Z",
+  "stop_ms": 2147
+}

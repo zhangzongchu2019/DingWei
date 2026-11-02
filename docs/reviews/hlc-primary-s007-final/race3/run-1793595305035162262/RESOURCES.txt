@@ -1,0 +1,4 @@
+RESOURCE tmp=/tmp/h7-t_xy1azf/tmp/TestHLCS007Full3168522790/001 sqlite=/tmp/h7-t_xy1azf/tmp/TestHLCS007Full3168522790/001/hub.db public=127.0.0.1:44073 internal=127.0.0.1:40351 pg=127.0.0.1:33667 database=/hubtest
+view=hlc-vs0 address=127.0.0.1:43395 directory=/tmp/h7-t_xy1azf/tmp/TestHLCS007Full3168522790/001
+view=hlc-vs1 address=127.0.0.1:33473 directory=/tmp/h7-t_xy1azf/tmp/TestHLCS007Full3168522790/001
+view=hlc-vs2 address=127.0.0.1:43597 directory=/tmp/h7-t_xy1azf/tmp/TestHLCS007Full3168522790/001

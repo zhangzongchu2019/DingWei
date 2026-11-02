@@ -1,0 +1,21 @@
+{
+  "step": "no-ws-close",
+  "command": [
+    "python3",
+    "tests/hlc/process_matrix.py",
+    "--case",
+    "S006",
+    "--mutant",
+    "no-ws-close",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated-extra/no-ws-close"
+  ],
+  "started_utc": "2026-11-02T05:18:24.627697+00:00",
+  "ended_utc": "2026-11-02T05:18:42.979303+00:00",
+  "rc": 0,
+  "sha256": "ec5f1f268dcc806ef03334ed6d727c50b27f9100a5698176ea0778657d6a8f9f",
+  "home": "/tmp/h-eggryodc",
+  "tmp": "/tmp/h-eggryodc",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

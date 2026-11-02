@@ -1,0 +1,17 @@
+{
+  "step": "queue-mutations",
+  "command": [
+    "python3",
+    "tests/hlc/s008_mutations.py",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated-extra/queue-mutations"
+  ],
+  "started_utc": "2026-11-02T05:19:17.304761+00:00",
+  "ended_utc": "2026-11-02T05:19:19.167679+00:00",
+  "rc": 0,
+  "sha256": "e8417457219b530edcd5e53a3f55ea7b000cdc7a4db40155cfbdc2851da43e18",
+  "home": "/tmp/h-yc_qip7y",
+  "tmp": "/tmp/h-yc_qip7y",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}

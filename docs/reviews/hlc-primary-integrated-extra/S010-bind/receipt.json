@@ -1,0 +1,21 @@
+{
+  "case": "S010-bind",
+  "command": [
+    "go",
+    "test",
+    "-overlay",
+    "/tmp/h-3fthzs5e/hlc-fault-6wza7pcr/overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCBindFailure$",
+    "-count=1",
+    "-timeout=60s",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T05:17:25.403985+00:00",
+  "ended_utc": "2026-11-02T05:17:28.197304+00:00",
+  "rc": 0,
+  "withhold_watchdog": false,
+  "log": "S010-bind-test.log",
+  "sha256": "64ccc429e3fabeb1c3ae5c3b31960db002e120f07dd01d38ac193d41ce3299df"
+}

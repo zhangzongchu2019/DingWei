@@ -1,0 +1,20 @@
+{
+  "step": "no-watchdog",
+  "command": [
+    "python3",
+    "tests/hlc/fault_matrix.py",
+    "--case",
+    "S013",
+    "--withhold-watchdog",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated-extra/no-watchdog"
+  ],
+  "started_utc": "2026-11-02T05:17:47.723112+00:00",
+  "ended_utc": "2026-11-02T05:18:03.279477+00:00",
+  "rc": 0,
+  "sha256": "aaff57f75e1c24a2a9ad6c6ea3cb3364fb590057f97cb52a488ef5fde57a3714",
+  "home": "/tmp/h-61v8x_bk",
+  "tmp": "/tmp/h-61v8x_bk",
+  "source_commit": "d0c294c8ea2863bb9ddeb5838f4ead8c074e0140",
+  "untracked_source_present": false
+}
