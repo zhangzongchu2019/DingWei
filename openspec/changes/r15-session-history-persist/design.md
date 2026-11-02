@@ -20,6 +20,8 @@
 - `internal/m8/hub.go:1241-1255` 与 `internal/m8/terminal.go:177-202`：当前 helper 连接结束时删除 session client 并调用 `closeTerminalLocked`；该路径清理 ring、关闭 mux readers 并标记 `epoch_changed`。
 - `internal/m8/console_mux.go:345-388`、`internal/m8/console_mux_broker.js:24`：cursor 不可直接继续时 Hub 返回 `resync_required` 等控制结果；浏览器收到后提示历史需显式重新同步。
 - `internal/store/migrations/0027_session_delivery.sql`：`session_delivery` 是投递状态表；`message` 是聊天消息存储。只读报告确认两表虽有数据，但当前回放路径不读它们，且不存在持久化 terminal event-ring 表。
+- `view-service/renderer-canary-sse.html:1099`：Console 对话通过 `section.timeline#timeline` 呈现；`:413-425` 将 `.timeline` 设为独立 `overflow-y:auto` 滚动容器。
+- `view-service/renderer-canary-sse.html:1769-1792,1849-1870`：现有前端计算是否接近底部、追加内容后保持贴底，并根据真实用户手势释放自动跟随；滚动监听没有向上取历史请求、较早页加载状态或“没有更早记录”处理。向上分页加载是新增前端工作量。
 
 ## 存储候选
 
@@ -50,6 +52,27 @@
 
 按 PM-R15-08，Hub 进程 epoch 与持久历史代际分离：单纯 Hub 重启且身份代际未变时沿用持久 cursor，不要求显式 resync；helper 重连也不清除已存历史。发生 TTL／容量淘汰、删除／撤权、数据库不可用、代际变化或 cursor 早于最旧记录时，发出可识别的 history gap，并按明确恢复流程要求 resync。当前 `epoch_changed`、`overflow`、`resync_required` 的 Console mux 与 View SSE 语义需兼容升级；不应在实现中仅删除旧通知来制造“连续”的假象。
 
+## Console 历史分页与实时衔接
+
+### 交互
+
+- 打开对话时只请求并显示最近一页，同时从该页的持久化高水位 H 继续实时流；页面不预取全部历史。
+- 当 `.timeline` 滚动到顶端且没有同会话的旧页请求在途时，按最早已显示逻辑序号之前的 exclusive cursor 请求更早一页；用户继续上拉可重复，直到 API 声明没有更早记录。
+- 请求前记录首个可见历史条目的稳定事件 ID／逻辑序号和其相对滚动容器的像素偏移；将旧页 prepend 并完成布局后，恢复该锚点偏移。若事件实时追加到列表底部，不改变这次 prepend 的锚点，也不把已上翻用户拉回底部。
+- `has_older=false` 时在列表顶部给出明确文案「没有更早的记录」。容量或 TTL 淘汰形成的 gap 在对应 cursor 边界处显示缺口提示，不伪装成“最早记录”。
+
+### 读取接口候选与游标
+
+建议提供只读分页读取路径，例如 `GET /api/console/agents/{agent}/history`；首屏不带 cursor 返回最新一页，继续向前用 `before_seq=<exclusive logical sequence>` 请求。响应按逻辑序号升序返回 `events`、可选 `next_before_seq`、`has_older`、历史高水位 `high_water_seq` 和边界 `gap_before` 元数据。Cursor 是该 Agent 持久历史代际内的单调逻辑序号，不使用进程 epoch；旧代际 cursor 不匹配时返回可见 gap／resync 状态。每次请求必须从认证身份解析 Agent 并执行 PM-R15-04 所定的同一 Console 所属账号授权，不能把路径中的 Agent 字段当授权凭据。
+
+页面大小尚未由业主明确，列 PM-R15-09 待定；推荐每页最多 50 个事件、序列化响应总字节不超过 4 MiB，单请求服务端 deadline 2 秒。达到条数或字节上限时只返回已连续读取的前缀及下一条之前的 cursor，不跳过记录；返回记录为 0 且边界无更早事件时才标记 `has_older=false`。单条持久记录最大 1 MB，因此响应字节预算必须允许至少一条最大合法记录和协议元数据。具体字节计量口径随实现协议写明。
+
+### 与实时流切点
+
+首屏请求在一个可证明的切点取得高水位 H：首屏仅含 `seq ≤ H` 的最近页，实时订阅从 `seq > H` 开始；历史翻页只取小于当前最早已显示序号的记录，不重置 H，也不重复订阅。若采用 subscribe-first，Hub 先建立实时 reader 并取得同一历史高水位，再缓冲 H 之后事件直到页面应用首屏；实现必须证明不存在“先查完历史、后订阅 live”的漏帧窗口。页内与 SSE 并发抵达的相同事件按持久事件 ID／逻辑序号幂等合并，不能按 assistant delta 共用的客户端 item cursor 去重。
+
+Hub 重启后，持久序号与历史代际继续使用：首屏请求返回的 H 和 `before_seq` 均不受进程 epoch 改变；实时订阅按新 Hub 的稳定持久序号从 H 后接续。只有 cursor 早于容量／30 天淘汰形成的边界、撤权或真实存储缺口时才显示 gap／要求 resync。分页窗口中的 gap 与当前实时 SSE 的 gap 需要共用可解释的边界标识，避免把重启误报为丢失。
+
 ## 容量、清理与隐私定值
 
 - 持久化硬界按 PM-R15-02：单条 ≤1 MB；每 Agent ≤64 MB；全局 ≤2 GB。单位的精确字节换算应在实现规格中写明。持久化上限与 Hub 内存 eventRing 预算（每会话 16 MiB／全局 128 MiB）彼此独立。
@@ -74,4 +97,4 @@
 
 ## PM Decisions
 
-PM-R15-01～08 已按 rulings ㉚～㉜ 定值，逐项见 proposal。存储算法、游标切点及全局淘汰细节仍属于本 design 的实现方案，需在实现前评审冻结；不得把未评审的内部算法描述成业主裁定。
+PM-R15-01～08 已按 rulings ㉚～㉜ 定值；㉝ 已定向上滚动加载更早历史、保持位置并提示到底／缺口，逐项见 proposal。PM-R15-09 页大小和请求预算尚未由业主定值，推荐值见分页接口段。存储算法、游标切点及全局淘汰细节仍属于本 design 的实现方案，需在实现前评审冻结；不得把未评审的内部算法描述成业主裁定。
