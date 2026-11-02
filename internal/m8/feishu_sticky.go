@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -52,8 +53,12 @@ func (s *stickyLanes) acquire(k store.FeishuStickyKey) func() {
 		s.mu.Unlock()
 	}
 }
+
+// FCS RPC 的枚举来自跨进程字符串；未有 Hub 可核验的服务证明前不能作 R14 信任根。
+func feishuStickyInProcess() bool { return strings.TrimSpace(os.Getenv("FCS_RPC_URL")) == "" }
+
 func stickyTrusted(msg model.Message) bool {
-	return msg.ChatType == model.ChatPersonal && (msg.IngressProvenance == model.IngressFeishuWSAuthenticated || msg.IngressProvenance == model.IngressWebhookVerified)
+	return feishuStickyInProcess() && msg.ChatType == model.ChatPersonal && (msg.IngressProvenance == model.IngressFeishuWSAuthenticated || msg.IngressProvenance == model.IngressWebhookVerified)
 }
 func stickyCandidateBlock(text string) bool {
 	lines := strings.Split(strings.ReplaceAll(strings.TrimSpace(text), "\r\n", "\n"), "\n")
@@ -157,6 +162,22 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 	}
 	reply := func(s string) (model.PrefixDispatchResult, bool, error) {
 		return model.PrefixDispatchResult{Matched: true, Reply: s}, true, nil
+	}
+	// 远端 FCS 模式不读写粘滞。显式选择交回原路由；隐式输入只给当前候选。
+	if !feishuStickyInProcess() {
+		log.Printf("r14 bypass reason=fcs_rpc_mode explicit=%t", explicit)
+		if explicit {
+			return model.PrefixDispatchResult{}, false, nil
+		}
+		u, ok := h.newPlatformFeishuUser(ctx, msg)
+		if !ok || u == nil || u.State != identity.UserActive {
+			return reply(stickyUnavailable)
+		}
+		agents, full, err := h.stickyAgents(ctx, u.UserIDLC())
+		if err != nil {
+			return reply(stickyUnavailable)
+		}
+		return reply(stickyCandidates(agents, full, ""))
 	}
 	// An untrusted inbound cannot consume even the single-agent default.
 	if !stickyTrusted(msg) {
@@ -375,6 +396,9 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 	return reply("")
 }
 func (h *Hub) startFeishuStickyCleanup() {
+	if !feishuStickyInProcess() {
+		return
+	}
 	repo, ok := h.Repo.(store.FeishuStickyRepository)
 	if !ok {
 		return
@@ -390,7 +414,7 @@ func (h *Hub) startFeishuStickyCleanup() {
 // Pending recovery runs each minute; retention/revocation cleanup runs hourly.
 // Both use bounded store batches and join the Hub's owned background lifetime.
 func (h *Hub) runFeishuStickyMaintenance(ctx context.Context, ticks <-chan time.Time, repo store.FeishuStickyRepository) {
-	if repo == nil {
+	if repo == nil || !feishuStickyInProcess() {
 		return
 	}
 	minutes := 0
@@ -399,6 +423,9 @@ func (h *Hub) runFeishuStickyMaintenance(ctx context.Context, ticks <-chan time.
 		case <-ctx.Done():
 			return
 		case <-ticks:
+			if !feishuStickyInProcess() {
+				return
+			}
 			sweep, cancel := context.WithTimeout(ctx, time.Minute)
 			if _, err := repo.SweepFeishuStickyPending(sweep, h.now().UTC(), store.FeishuStickyCleanupBatch); err != nil {
 				log.Printf("r14 pending recovery failed: %v", err)
@@ -428,7 +455,7 @@ func (h *Hub) cleanupFeishuSticky(ctx context.Context, now time.Time) {
 	h.cleanupFeishuStickyWithRepository(ctx, now, repo)
 }
 func (h *Hub) cleanupFeishuStickyWithRepository(ctx context.Context, now time.Time, repo store.FeishuStickyRepository) {
-	if h.Identity == nil {
+	if h.Identity == nil || !feishuStickyInProcess() {
 		return
 	}
 	h.stickyCleanupMu.Lock()
@@ -467,6 +494,9 @@ func (h *Hub) cleanupFeishuStickyWithRepository(ctx context.Context, now time.Ti
 // and their receipts retain their existing behavior. A queued R14 message must
 // not be delivered to a new Agent which later reuses the same display name.
 func (h *Hub) stickyDeliveryAllowed(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+	if !feishuStickyInProcess() {
+		return true
+	}
 	id := metaString(env.Meta, "r14_target_agent_id")
 	if id == "" {
 		return true
