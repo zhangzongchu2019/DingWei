@@ -1,0 +1,12 @@
+diff --git a/tools/run-browser-regressions.py b/tools/run-browser-regressions.py
+index 12d02cb9d..7e30f6119 100755
+--- a/tools/run-browser-regressions.py
++++ b/tools/run-browser-regressions.py
+@@ -24,6 +24,7 @@ import time
+ ROOT = Path(__file__).resolve().parents[1]
+ SUITES = (
+     ("openspec_binding_admin", "node", ROOT / "view-service/openspec-binding-admin-regression.js"),
++    ("r14_sticky_browser", "node", ROOT / "view-service/r14-sticky-browser-regression.js"),
+     ("coordinate_review_browser", "node", ROOT / "view-service/coordinate-review-browser-regression.js"),
+     ("openspec_read_browser", "node", ROOT / "view-service/openspec-read-browser-regression.js"),
+     ("renderer_0206_file_render", "node", ROOT / "view-service/renderer-0206-file-render-regression.js"),

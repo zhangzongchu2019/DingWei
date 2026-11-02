@@ -1,0 +1,35 @@
+{
+  "base": "1e17255f28ced042784337903914ca8c126ef4cf",
+  "merges": [
+    "a5d27200ee5ecd616d27bce5f0cba96223a038fb",
+    "93ff3e0d72698647e011507de570bfcb7399149b",
+    "da9c47093d259e258c0faca4e2e6b48d60d836fc"
+  ],
+  "view_blobs": [
+    {
+      "path": "view-service/view_service.py",
+      "baseline_blob": "e94a68009d16761343dfc88f36232b0da8a18082",
+      "integration_blob": "e94a68009d16761343dfc88f36232b0da8a18082",
+      "equal": true
+    },
+    {
+      "path": "view-service/view_page_store.py",
+      "baseline_blob": "c73f03e5deada818a14b7db483e7f11b979fe133",
+      "integration_blob": "c73f03e5deada818a14b7db483e7f11b979fe133",
+      "equal": true
+    },
+    {
+      "path": "view-service/renderer-canary-sse.html",
+      "baseline_blob": "cdc89b535facbe5daa02aeb9f5a4565309fd250a",
+      "integration_blob": "cdc89b535facbe5daa02aeb9f5a4565309fd250a",
+      "equal": true
+    }
+  ],
+  "migrations": [
+    "A\tinternal/store/migrations/0072_feishu_agent_sticky.sql"
+  ],
+  "pg_migrations": "unchanged",
+  "planned_version": "0.2.3.24",
+  "deployment": "not authorized or performed",
+  "R10_R9_R15": "excluded"
+}
