@@ -12,3 +12,11 @@
 ## 结论与边界
 
 A01～A04的源码事实盘点完成，状态均为「部分具备」，T-03.2核实工作可关闭；R10执行前还需补上工蜂provider、Agent到R5授权主体的可信映射、可证明的锁表唯一性/租约事务/权威时间方案，以及明确选择轮询或回调并实现监测。本文不表示R10锁已实现，不证明50并发性质，不批准任何产品或真实托管操作。
+
+## S-R49 实施设计交接（仍未实现）
+
+设计以SQLite新表 `r10_task_lock` 的K联合主键＋generation/token CAS为单任务唯一权威；建议迁移0073只建表/索引，新增审计、operation与通知outbox同事务提交。60分钟租期、每15分钟续租、到期只回收、每60秒监测、变化后5秒提醒、逐仓隔离沿用㉒ PM值。SQLite单连接池只说明当前Hub内单写者，不证明多进程/跨主机互斥。基线证据仍为 `internal/store/sqlite.go:57-66`、`internal/store/console_task_flow.go:98-114,250-261`。
+
+首期设计只启用已具备只读接口的GitHub provider；工蜂provider明确列后续。Agent映射按认证Bearer的 `np_agent.id` → 当前Identity PG `np_agent.owner_lc` → 同值 `np_user.user_id_lc` → R5授权检查设计；该路径是Agent所属用户授权委托，不是Agent独立GitHub身份，需组长确认是否满足“受派者独立read”。provider每60秒轮询ref和新增只读PR元数据；异常记录comparison_unknown并关闭继续/续租的成功证明，不作无变化结论。基线能力锚点：`internal/identity/model.go:135-155`、`internal/identity/pgschema.sql:45-65`、`internal/specread/service.go:72-79,181-194`、`internal/specread/github.go:258-269`。
+
+待组长定：Agent使用owner R5权限是否满足受派者read语义；部署是否保证单Hub/单SQLite锁权威，若不是则另定共享锁协调。此交接是设计，不表示新增表、provider方法或轮询器已实现。

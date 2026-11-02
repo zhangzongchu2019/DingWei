@@ -11,3 +11,11 @@
 ## 结论与边界
 
 B01～B03的基线事实盘点完成，均为「部分具备」，可关闭T-03.2核实子项；R9实现前需明确PM权威字段与身份映射、把可信私聊回复核验接入R9请求/代际、为R9的请求/提醒建立独立持久状态及按24小时/6小时运行的周期唯一键。PM01已定的平台记录、MR后置只表示首期不请求MR写权限；本文不执行真实私聊，不验证当前飞书服务可达性，也不声称完整双渠道闭环已就绪。
+
+## S-R49 实施设计交接（仍未实现）
+
+设计把逐point唯一负责人的规范字段定为R9 responsibility mapping中的 `pm_user_id_lc`，必须对应Identity PG `np_user.user_id_lc` active用户；Console session的 `identity.User.UserIDLC()`须匹配该值，飞书 `(provider,issuer,subject)`解析到 `np_identity.user_id_lc` 后也须精确匹配。既有 `np_user.type`没有PM枚举，`spec_clarification_policy.pm_user`仅是旧Console Spec每Spec配置，不能自动作为R9映射；不得从Git作者、显示名或proposal自由文本猜PM。映射写入来源/谁有权修改在现有代码中未知，设计列为组长待定。证据：`internal/m8/newplat_view.go:223-244`、`internal/m8/newplat_feishu_inbound.go:12-18`、`internal/identity/pgschema.sql:6-25`、`internal/store/migrations/0061_spec_clarification_thread.sql:3-14`。
+
+设计拟用0074新增责任映射、request、append-only response、跨渠道delivery/outbox、Feishu inbound去重键和审计表；request与两个渠道待办同事务，提醒due/period持久化，重启扫描恢复；唯一键防同一请求、事件和提醒period重复。可信回复只接已认证native WS、原始personal reply、可核provider parent message与当前request generation，沿用App/tenant/PM/current read复核。基线支撑与限制见 `internal/store/migrations/0062_spec_clarification_transport.sql:11-38`、`internal/m8/spec_clarification_reply.go:41-59,186-217`。
+
+待组长定：谁是每point PM映射的权威配置者/导入源；映射新增修改是否采用现有R7责任映射或新增受控配置入口。PM的身份主键、Console和Feishu映射链及防旧代际规则已在本设计写明。此设计不表示真实飞书通道或周期闭环已运行。

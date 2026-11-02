@@ -36,3 +36,7 @@ S-R10-R9-PROPOSALS第一阶段R10；唯一执行者coder56solzzc.zzc；初始单
 - 2026-11-02T11:19:04Z · togpt60lunazzc.zzc · 技术前置复核内容commit 7d0d8ab6ca762e48a48ec6ea5cfdfa7738eb9582。
   - 完成：按r48基线核R10-A01～04，四项均部分具备，证据见context.md；不把工蜂交件或未实现适配当产品能力。OpenSpec全仓strict 16/16、scripts/run-build-tests.sh在HUB_TEST_PG_STRICT=1下rc0；仅更新本变更文档。
   - 边界：技术前置事实核实完成，不代表R10实现就绪或授权；产品场景、并发锁证明及真实托管操作仍未执行。
+
+## S-R49-R10-R9-DESIGN 交接（2026-11-02）
+
+本次只冻结实施设计，不改变T-04～T-10实现勾选状态。设计覆盖0073增量锁表、逐操作SQLite事务与代际/token CAS、60/15分钟租约、到期只回收、逐仓轮询与unknown、GitHub首期范围、Agent→R5身份链和待组长确认项。验收计划保留9行正反共18格，每格注明测试层及目标变异；并发/边界/重启计划含50轮与race。当前没有实现/测试/真实仓库读写执行结论；实现任务仍须组长另派唯一写者。

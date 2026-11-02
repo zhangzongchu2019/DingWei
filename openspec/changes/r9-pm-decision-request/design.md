@@ -17,7 +17,11 @@
 
 ### 1. 固定PM点集合与请求身份（R9-001）
 
-从R5读取授权仓库/变更/完整C的proposal，完整解析「待 PM 决策」节中的固定编号及问题、选项、建议，再按rulings㉒的R9-PM03关联可信平台责任映射中的唯一负责PM，多人事项拆成不同点；不要求现有proposal表新增PM账号字段，不从作者或自由文本猜账号，无责任映射就不能发送。代码块/HTML里的伪点不算，重复编号、缺必填、读取截断或未知集合阻止“全部已答/零项”的判断。无点必须是完整读取且明确空集合，不从网络失败推零。
+从R5读取授权仓库/变更/完整C的proposal，完整解析「待 PM 决策」节中的固定编号及问题、选项、建议。PM的权威身份不是 `np_user.type`（它只有platform_admin/manager/member），也不是Git作者、proposal自由文本或旧 `console_principal.id`。R9请求创建时须从持久责任映射取唯一 `pm_user_id_lc`，其值是 `np_user.user_id_lc`；该映射逐仓库/变更/point配置，且请求记录对该值和mapping generation做不可变快照。多人事项拆成不同点，每个point仅一人；映射缺失/多值/用户非active就拒绝建请求，不发送。
+
+身份对应链为：Console登录session → `identity.User.UserIDLC()`/`np_user.user_id_lc`；飞书回复则用 `(provider='feishu',issuer=BotChannelID,subject=SenderOpenID)` 解析 `np_identity.user_id_lc`，必须等于请求快照 `pm_user_id_lc` 且用户active。全局PM角色不存在；“PM”角色来自R9责任映射中的每point指派，不是新用户类型。现有 `spec_clarification_policy.pm_user` 是Console Spec澄清策略，不自动成为OpenSpec R9的映射来源。提案解析仍必须完整，代码块/HTML伪点不算；重复编号、缺必填、读取截断或未知集合阻止“全部已答/零项”判断。无点必须是完整读取且明确空集合，不从网络失败推零。
+
+基线没有R9按GitHub仓库/变更/PM点存储的责任映射表。因此0074草案包含 `r9_pm_responsibility`，只作为可信指派的规范化存储；谁有权创建/修改此映射、初次值从何处权威导入，列为「待组长定」。未定前不可把Git作者、Owner或Console Manager自动设成PM。证据：`internal/m8/newplat_view.go:223-244`；`internal/m8/newplat_feishu_inbound.go:12-18`；`internal/identity/pgschema.sql:6-25`；现有逐Spec澄清PM字段 `internal/store/migrations/0061_spec_clarification_thread.sql:3-14`；旧principal独立表 `internal/store/migrations/0033_console_auth.sql:1-18`。
 
 请求逻辑身份为提供方/实例/稳定仓库ID/变更目录/C/point_id/generation，另保留MR稳定ID及固定C来源链接、负责PM、内容指纹（问题、选项、建议和负责PM的规范结构）。平台保存必要决策摘要和回应，不复制整个仓库文档/源码为上下文。请求代际只代表该点/版本的问答轮次，不是R8阶段。ref仅选版与监测，不代替完整C。
 
@@ -29,7 +33,9 @@ Console和私聊共享同一请求身份，关联消息ID/稳定RequestID、负�
 
 ### 3. 明确回应、身份与关联（R9-003）
 
-Console用受认证PM主体和显式枚举“同意/不同意/需修改”，附意见可选；私聊仅接受当前配置应用的可信入站服务证明、精确PM主体映射、personal会话及可核原消息/请求代际关联，重新核当前仓库read。不依赖发送者名字、客户端自填身份、转发或群消息。无法证明入站的transport不接受回应，不因“已在私聊发出”放宽回程校验。
+Console用受认证PM主体和显式枚举“同意/不同意/需修改”，附意见可选；服务端从登录session取 `np_user.user_id_lc`，必须等于request的PM快照并重核active状态及当前仓库read。私聊沿用既有 `clarificationReplyAuthority` 校验：native Feishu WS authenticated provenance、配置BotChannelID对应AppID与tenant、authenticated metadata、个人会话、SenderOpenID→np_identity→active np_user映射。再以Feishu `ParentID` 精确查R9 outbox已发送/已对账的 `provider_message_id`，其request_id和generation必须仍为当前待答代际；只接收原始用户消息ID，转发/群聊/非认证Webhook不接受。持久化事件唯一键后再核当前request generation、责任PM、仓库权限；代际已过期的旧提醒回复只记late，不产生回应事实。客户端、正文、昵称和消息转发均不能自报发送者或request。
+
+证据：Feishu WS事件形成native `IngressFeishuWSAuthenticated`及reply metadata `internal/feishu/feishu.go:444-485`；统一authority检查 `internal/m8/spec_clarification_reply.go:41-59`；持久通知与原消息映射 `internal/store/migrations/0062_spec_clarification_transport.sql:11-23`；处理时重新映射active身份并匹配通知PM/issuer/subject `internal/m8/spec_clarification_reply.go:186-217`。这些是复用基线，不代表R9已接线。
 
 “收到”“看看”“可以研究”“同意吗？”、表情/沉默不算；自由文本有歧义或前后意见矛盾须澄清。私聊明确命令只接受独立“同意”“不同意”“需修改”或该枚举加分隔后的附言；不能用包含词或LLM猜测。若问题含多方案，摘要需明确“同意”对应哪个建议选项；无法明确选项含义时不采纳笼统同意。R9只记录明确意见，不把不同意/需修改写成同意，不自动推进SPEC_APPROVED。
 
@@ -67,19 +73,40 @@ R9-PM01已按rulings㉒选择原A：首期只在平台记录业主回应，标mr
 
 ## 验收矩阵与反向控制
 
+### 9. 持久模型、幂等键与周期恢复（R9-001～009）
+
+新增 `internal/store/migrations/0074_pm_decision_request.sql`，在0073之后，只新增SQLite表与索引，不改旧 `pilot_question*`、outbox或spec表；迁移顺序最终由集成维护者复核。字段草案如下：
+
+| 表 | 责任/字段及唯一约束 |
+|---|---|
+| `r9_pm_responsibility` | 可信PM映射：`provider,instance,repository_id,change_directory,point_id` 联合主键；`pm_user_id_lc`、`mapping_generation`、`set_by_user_id_lc`、`updated_at_utc`。仅当来源明确的可信配置动作授权后写；写权限来源目前不存在，列待组长定。值必须是Identity PG active `np_user.user_id_lc`。 |
+| `r9_pm_request` | `request_id PRIMARY KEY`、固定仓库/变更/C/point、规范内容SHA、PM `pm_user_id_lc`和mapping generation快照、request generation、status (`open/answered/timed_out/superseded/cancelled/unknown`)、首次请求/24h截止/下次提醒/回应时间、版本号。UNIQUE `(provider,instance,repository_id,change_directory,commit_sha,point_id,content_sha256,pm_user_id_lc,generation)`；唯一活动请求由事务检查，不因新建operation绕过。只保存必要决策摘要，不存整个proposal或源码。 |
+| `r9_pm_response` | append-only response ID、request/generation、principal、channel、enum意见、附言/证据引用、server received sequence/UTC、Feishu issuer/tenant/message ID或Console request ID、acceptance/late状态；UNIQUE `(issuer,tenant,message_id)`并UNIQUE `(request_id,generation,accepted_slot)`使当前代际只有首个有效回应获权，其余追加late。附言限长并拒绝凭据字段。 |
+| `r9_pm_delivery` | 每个Console/Feishu投递/提醒一个outbox行：`operation_id`、request/generation/channel/kind/period_index、recipient identity、state、provider message ID、attempt/receipt times、reason；UNIQUE `(request_id,generation,channel,kind,period_index)`。有效回应关闭尚未发送的另一渠道行并停止后续周期；已送达消息不声称可撤回。 |
+| `r9_pm_inbound_key` | Feishu native事件去重键 `(issuer,tenant,key_kind,event_or_message_id)`主键、payload SHA、request/generation、received time/处理状态；同ID异内容冲突隔离。Console command在delivery/request表用稳定 `operation_id` 幂等。 |
+| `r9_pm_audit` | append-only身份、请求坐标、generation、动作、UTC及结果；不记凭据或完整proposal。 |
+
+首发创建request、Console待办和私聊outbox须同一SQLite事务；每个发送用持久operation_id，回执未知保留unknown并用同ID查证，不更换ID盲重发。PM回应落库、第一有效回应CAS、关闭对侧待办、停止提醒在一个事务完成。源事件message_id/event_id至少保留24小时的去重tombstone；设计建议保留至请求审计清理期结束，不能因24小时后到期删除而允许旧消息重放。语义级重复请求采用稳定dedupe SHA `(repo/change/C/point/contentSHA/pm_user)`：有open请求时永远返回该请求；终态后24小时内重试返回原结果；24小时后仅由新的明确操作创建下一代。内容/PM变更生成新generation，不复用旧回应。
+
+Hub当前任务周期器每5秒唤醒且重启后从持久outbox继续扫描；R9采用独立持久due字段而非在内存维护deadline。R9 scheduler每60秒扫描 `status IN ('open','timed_out') AND next_reminder_at_utc<=now_utc`，用Hub UTC作为唯一时钟。首次请求时持久写 `due_at=created_at+24h`、`next_reminder=due_at`；首轮到期仍无有效回应时标记 `timed_out`并保持等待状态，生成period 0提醒；此后每6小时更新下次到期并按 `period_index`插入双渠道提醒，唯一约束防重复。重启从due字段续跑；宕机跨过多个周期时只建当前到期slot，不回补多条提醒洪水，保留明确missed_periods统计。成功或待对账回应后不再产生新slot；未知投递状态保留并单路对账，不新造逻辑请求。每个请求、channel、generation、reminder period只一条业务outbox。
+
+**PM02的24小时首轮超时/催办与“24小时去重”是两种时钟语义**：前者从服务端首次请求起算；后者是上述request内容指纹的重复抑制窗，不重置首次请求/提醒截止。实现不得把同一个重复API调用当作新请求而重新获得24小时，亦不得将去重窗当成回应超时。证据：现有Hub循环每5秒 `internal/m8/console_task_flow.go:438-460`；旧任务outbox唯一键/重启扫描 `internal/store/migrations/0055_console_task_flow_r32.sql:18-24`、`internal/store/console_task_flow.go:84-93,376-394`；现有单次提醒唯一索引和outbox `internal/store/migrations/0059_pilot_questions.sql:46-56`；已有请求/事件键 `internal/store/migrations/0059_pilot_questions.sql:36-44`。
+
+当前主key结构按文档提案仍属草案；0073/0074不得假装现有 R5/GitHub、飞书或PM角色能力已实现。
+
 以下均未执行；用固定C/C2假仓库适配、假私聊通道/可信入站夹具、隔离DB和可控UTC，不调用真实飞书/MR或读取真实凭据。每行正反两格，撤保护必须红在对应断言再恢复绿；并发/重启/去重随机50轮。发送时差和周期用虚拟时钟验证，不等真实24小时。
 
-| 固定场景 | 正向格 | 反向格/目标变异 |
-| --- | --- | --- |
-| R9-001-S01/S02 决策点集合 | C的proposal完整PM点/选项/建议/PM/MR身份可核 | 重复/伪点/缺字段/截断不得当零项；撤完整集合核验红 |
-| R9-002-S01/S02 双渠道同时请求 | 一事务双outbox，健康夹具≤5秒均首投、差≤1秒 | 私聊失败显示部分投递，禁群兜底；改为等回应后才发第二路或漏一渠道红 |
-| R9-003-S01/S02 明确回应 | 分别从Console/私聊以正确PM/关联提交三种明确意见 | “收到/同意吗/表情”、伪PM、群/跨应用/旧关联不计；撤明确性或身份核验红 |
-| R9-004-S01/S02 最先有效 | 两路并发只有最先有效一份，另一待办关闭/停催办 | 后到相反意见不覆盖；撤CAS/另一待办关闭红，不能仅以历史私聊未删除判失败 |
-| R9-005-S01/S02 内容改动 | 改问题/选项/建议/负责PM后旧回应失效且两路新代际重发 | 旧代际迟到回应或比较失败不能放行；撤指纹/代际核验红；无关变更不误报且不改绑SHA |
-| R9-006-S01/S02 超时催办 | 24小时无明确答复仍SPEC_REVIEW，后每6小时每渠道至多一催办 | 沉默/含糊/投递失败不默认同意；撤阻塞或去重周期保护红 |
-| R9-007-S01/S02 写回权限 | A获批只平台且MR后置；B有comment-write并核回执才标MR成功（独立格） | 只读/失权/回执未知不报MR成功，A未批不报完整就绪；撤scope/回执守卫红 |
-| R9-008-S01/S02 重启与重复 | 相同事件/operation/周期重试只一事实，重启已答仍关闭 | 丢回执不换ID重发、已关闭不重开；撤持久去重红 |
-| R9-009-S01/S02 审计与ACL | 指定PM/渠道/C/时刻/意见与失效历史可核 | 撤仓库read后Console/私聊旧链接/MR操作拒绝；撤当前ACL或把作者当PM红 |
+| 固定场景 | 测试层 | 正向格 | 反向格/目标变异 |
+| --- | --- | --- | --- |
+| R9-001-S01/S02 决策点集合 | Parser单元＋R5假provider集成 | C的proposal完整PM点/选项/建议/责任映射/MR身份可核 | 重复/伪点/缺字段/截断不得当零项；撤完整集合核验红 |
+| R9-002-S01/S02 双渠道同时请求 | SQLite outbox集成＋fake Console/Feishu通道 | 一事务双outbox，健康夹具≤5秒均首投、差≤1秒 | 私聊失败显示部分投递，禁群兜底；改为等回应后才发第二路或漏一渠道必须红 |
+| R9-003-S01/S02 明确回应 | HTTP权限＋authenticated inbound集成 | Console/私聊正确PM对请求代际提交三种明确意见 | “收到/同意吗/表情”、伪PM、群/跨应用/旧代际不计；撤provenance/PM/CAS核验必须红 |
+| R9-004-S01/S02 最先有效 | SQLite并发集成＋`-race`，50轮 | 两路并发只有最先有效一份，另一待办关闭/停催办 | 后到相反意见不覆盖；撤首回应CAS/关闭outbox必须红；不以历史私聊未删除判失败 |
+| R9-005-S01/S02 内容改动 | Fake R5 provider＋request generation集成 | 改问题/选项/建议/负责PM后旧回应失效且两路新代际重发 | 旧代际迟到回应/比较失败不能放行；撤指纹/代际核验必须红；无关变更不误报且不改绑SHA |
+| R9-006-S01/S02 超时催办 | Fake clock＋scheduler/outbox重启集成 | 24小时无明确答复仍SPEC_REVIEW，后每6小时每渠道至多一催办 | 沉默/含糊/投递失败不默认同意；撤阻塞/slot唯一约束必须红 |
+| R9-007-S01/S02 写回权限 | 平台store集成＋隔离只读provider | A只平台且MR后置；不请求或模拟写入（B仍属后置） | 只读/失权/未知不得伪称MR成功，A明确显示未完成；撤阶段标识必须红 |
+| R9-008-S01/S02 重启与重复 | SQLite恢复＋inbound/outbox并发race，50轮 | 相同事件/operation/周期重试只一事实，重启已答仍关闭 | 丢回执不换ID重发、已关闭不重开；撤持久去重必须红 |
+| R9-009-S01/S02 审计与ACL | SQLite审计＋HTTP/Feishu authority集成 | 指定PM/渠道/C/时刻/意见与失效历史可核 | 撤仓库read后Console/私聊旧关联拒绝；撤当前ACL或把作者当PM必须红 |
 
 矩阵中的“A未批”仅是隔离撤除批准守卫的反向格，B评论/回执格只保留后置边界验证；不表示本次A仍待批，也不授权首期申请写权限或真实评论。
 
@@ -92,11 +119,11 @@ R9-PM01已按rulings㉒选择原A：首期只在平台记录业主回应，标mr
 
 ## Migration Plan
 
-先严格校验并冻结R9独立交审，PM01～03已按㉒定值；继续核R9-A01/02/04与可信私聊接线，A03的MR写权限后置不新申请，由组长另派实现。同步主规格/context及逐格证据/反向读数、race/50轮和仓库门，交独立验收。真实私聊闭环、评论写入、预发/生产均另授权；本提案不发送实际PM请求、不补scope、不部署、不archive/apply。
+先严格校验并冻结R9独立交审，迁移草案0074仅新建R9表和索引；PM01～03已按㉒定值。由组长先定责任映射的权威配置者/来源，再另派实现。实现后同步context及逐格证据/反向读数、race/50轮和仓库门，交独立验收。真实私聊闭环、评论写入、预发/生产均另授权；本提案不发送实际PM请求、不补scope、不部署、不archive/apply。
 
 ## Open Questions
 
-见proposal；PM01～03已定，无编号不匹配；首期MR写回后置，不新申请写权限。R9-B01～03已完成基线事实盘点，细节与文件:行见context.md：Feishu身份与新平台用户有存储映射、每Spec PM绑定及可信私聊澄清回复校验存在，但没有全局PM角色；既有可靠outbox/事件去重仅覆盖已有流程，提醒周期不同且没有R9决策请求的专属闭环。全仓strict只是结构可校验，不能宣称真实双渠道闭环已完成。
+见proposal；PM01～03已定，无编号不匹配；首期MR写回后置，不新申请写权限。R9-B01～03已完成基线事实盘点，细节与文件:行见context.md：Feishu身份与新平台用户有存储映射、每Spec PM绑定及可信私聊澄清回复校验存在，但没有全局PM角色；既有可靠outbox/事件去重仅覆盖已有流程，提醒周期不同且没有R9决策请求的专属闭环。待组长定：R9 responsibility mapping初始可信来源、维护角色与变更授权；在裁定前缺失/多值PM映射一律拒绝建请求。全仓strict只是结构可校验，不能宣称真实双渠道闭环已完成。
 
 ## 基线技术前置核实（r48 `1e17255f28ced042784337903914ca8c126ef4cf`）
 

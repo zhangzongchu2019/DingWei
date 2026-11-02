@@ -36,3 +36,7 @@ S-R10-R9-PROPOSALS第二阶段R9；唯一执行者coder56solzzc.zzc。R10原提�
 - 2026-11-02T11:19:04Z · togpt60lunazzc.zzc · 技术前置复核内容commit 7d0d8ab6ca762e48a48ec6ea5cfdfa7738eb9582。
   - 完成：按r48基线核R9-B01～03，三项均部分具备，证据见context.md；既有澄清身份链、outbox与周期器不等同于R9决策闭环。OpenSpec全仓strict 16/16、scripts/run-build-tests.sh在HUB_TEST_PG_STRICT=1下rc0；仅更新本变更文档。
   - 边界：技术前置事实核实完成，不代表R9实现就绪或授权；真实飞书身份、私聊与周期场景未执行。
+
+## S-R49-R10-R9-DESIGN 交接（2026-11-02）
+
+本次只冻结R9实施设计，不改变T-04～T-10实现勾选状态。已明确每point的权威字段、Console/Feishu身份映射、native私聊provenance与原消息/request代际校验，提出0074持久表、事件/请求/24小时语义去重、同事务双渠道outbox及重启恢复周期。验收计划9行正反共18格，每格有测试层和目标变异，竞争/重启/去重含50轮与race；仅假provider/隔离DB/fake Feishu，不做真实外部操作。PM责任映射的可信配置者/导入来源待组长定；该条件明确前不实施身份填充或真实请求。
