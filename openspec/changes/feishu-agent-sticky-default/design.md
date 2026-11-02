@@ -247,3 +247,20 @@ Additional isolated T-07 migration/rollback test (not an S024): apply 0072 to a 
 ### T-07 implementation handoff
 
 开发侧完成 T-05/T-06/T-10/T-07，测试补充锚 `e7d7e6ca35d612f5671a57ea584ee74633bee608`；所有最终命令/源码锚与日志 SHA256 在证据分支记录。相关场景 race 覆盖 m8/store/workpulse，m8 另全包 -v；同键不同消息的显式切换/无前缀并发专格持久记录 operation_seq、base/result generation 和实际目标。旧 r48 Hub 兼容夹具等待原进程 READY 后才发送退出信号；这仅修测试同步，不修改旧 Hub 启动/退出。T-08 真实飞书与 T-09 独立验收保持后续另派。
+
+
+### 返修追加：进程内来源与默认关闭（已定（组长 2026-11-02））
+
+裁定 431d53d3223c（F-01）、2386dfd99fd5（开关）：`DW_FEISHU_STICKY_ENABLED` 只认精确 `1`，默认关闭；另以与 main 相同的 `TrimSpace(FCS_RPC_URL)` 判定是否跨进程。两条件同时成立才允许R14粘滞。对应 R14-001 / S024～025，不改 FCS、newplat_feishu、spec_clarification_reply、terminal 等既有消费者的来源处理。FCS来源认证仍是另项风险，不声称本件修复RPC身份认证。
+
+关闭时入口立即返回未处理、投递检查对任何元数据放行；清理worker不启动，直接/定时清理也在R14存取前返回。0072照常迁移；T-10与本开关无关（R14-009 / S026）。开启但FCS模式时记录 reason=fcs_rpc_mode；显式交回旧路由，无前缀只回本人当前候选，不按单Agent或旧绑定默认投递，不读写粘滞；worker也不启动。
+
+### 返修：共享依赖与迁移补账
+
+S002 是测试在存续连接中替换 Identity.Store、与断线清理读并发：包装器在连接建立前装配，故障以atomic.Bool切换。生产唯一Identity装配发生在wireNewPlatform、监听Serve之前，未发现运行期替换入口；身份业务状态变化不替换Store指针。0072因0068～0071补账分支清除legacy标志而重放CREATE；改为复用精确DDL核验，完整匹配只记账、全缺事务建表+账、部分或异构拒绝。旧70个迁移文件字节不变，r48同构库副本的70行旧账version/digest/applied_at排序哈希不变，升级只加0072一行，重复迁移及旧Hub启动核验另附日志。
+
+### 返修：旧连接用例的基线与测试同步
+
+a0c97a2a1322要求的九格及镜像在r48同命令race count=3均绿，原文保留，不称基线红。其Hub.Identity均nil，未进入R14路由；serveSession连接注册、初始引导帧与发布顺序对r48未改。原R14唯一新增全局时序副作用是New启动sticky维护worker；本轮默认关闭时已不启动。r48镜像屏障用例证明引导帧先到、运行时连接尚未发布是已有允许状态。正常建连夹具补等同代连接发布，刻意测试发布前的镜像用例使用raw建连；这是测试准备条件，不把引导帧当ready协议，也不改产品发布时刻。
+
+6921ce22db01裁定：helper offer CAS冲突属于r48同代码的既有产品并发，另单S-R49-HELPER-OFFER-RACE修，在R14交件后、R10前执行；本件不改helper_update.go。两格保留两边原文及r48同命令三轮读数，未复现也如实报告；其余race仍须通过，不扩大既有豁免。

@@ -101,3 +101,13 @@
 
 
 最终补充测试锚 `e7d7e6ca35d612f5671a57ea584ee74633bee608`：`internal/m8/feishu_sticky_lane_test.go:12` 同时启动不同 provider ID 的显式切换与无前缀消息，按持久操作序号核对目标及代际 1→2→3；两种合法先后均按实际序号解释，不以飞书时间戳推断顺序。m8 最终全包及该格5次 race 在独立干净树 ba628912398b06080d39989452bfade079aa551c 执行；该树与最终测试锚仅 store 兼容性测试有差别，m8 产品/测试字节相同。旧 Hub 夹具在 `:40` 建本地 unixgram READY 监听、`:68` 等真实 READY 后才测退出，规避健康接口先于信号处理器的测试竞态。最终 gate/SKIP/变异原件与源码文件 blob 清单见证据分支。
+
+
+## 01a19c8c 返修当前入口（覆盖上方交件状态）
+
+- 唯一执行者：01a19c8c-6b8b-7f23-8a6a-f7b69fd0aafb。原共享树只读；从远端fc7de19d新建coder56solzzc/r49-r14-repair，自有候选树/data/ai-dev-data/r49-r14-repair-ready-01a19c8c。fc7de19d/11b2d545交件作废，不冻结。
+- F-01 / 默认关闭已定：入口、worker、投递检查在internal/m8/feishu_sticky.go；开关两态和两种来源测试在feishu_sticky_modes_test.go；共享的关闭态r48对照夹具r14_disabled_compatibility_test.go，两边同一字节，只有包ID和墙钟归零。T-10不受开关影响。
+- S002预装原子故障夹具在feishu_sticky_test.go；0072精确核验在internal/store/sqlite.go；70→71旧账哈希与旧Hub兼容在feishu_sticky_compat_test.go；损坏schema反测仅保留migration_ledger_test.go一份。
+- 正常legacy建连测试在hub_test.go携带本测试Hub context并等待同代连接发布；有意停在发布前的mirror_readiness_test.go改用raw。生产serveSession与r48字节一致，实际产品时序结论和基线原文见返修报告。
+- 收件纪律：每次发进度前只读扫描本席delivery_inbox中opus50tc2k的新来信，逐封读取并在进度第二行列已读ID，避免其他会话收走来信后丢失追加裁定。
+- 正在重跑最终固定源码的全门；最终tip/tree、分片清单、覆盖核对、SKIP和原文见后续交件。不得用早期局部绿代替本轮整包结论。T-08/T-09仍非开发自验收；无部署/重启/真实飞书。
