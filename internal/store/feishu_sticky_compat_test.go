@@ -31,11 +31,22 @@ func stickyFreeAddress(t *testing.T) string {
 func stickyRunOldHub(t *testing.T, binary, dbpath, stage string) {
 	t.Helper()
 	root := t.TempDir()
+	readyRoot, err := os.MkdirTemp("/tmp", "r14-ready-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(readyRoot)
+	readyPath := filepath.Join(readyRoot, "notify")
+	ready, err := net.ListenUnixgram("unixgram", &net.UnixAddr{Name: readyPath, Net: "unixgram"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ready.Close()
 	addr := stickyFreeAddress(t)
 	internal := stickyFreeAddress(t)
 	var out bytes.Buffer
 	cmd := exec.Command(binary)
-	cmd.Env = []string{"PATH=/usr/bin:/bin", "HOME=" + root, "TMPDIR=" + root, "TZ=UTC", "WP_DATA_DIR=" + root, "WP_DB_PATH=" + dbpath, "WP_ADDR=" + addr, "WP_INTERNAL_ADDR=" + internal, "FEISHU_TRANSPORT=fake", "WP_CONSOLE_AUTH_ENABLED=false", "WP_SCHEDULE_TEAM_FILE=" + filepath.Join(root, "none"), "WP_SCHEDULE_PERSONAL_DIR=" + root, "WP_ADMIN_INIT_PASSWORD=isolated-fixture-only"}
+	cmd.Env = []string{"NOTIFY_SOCKET=" + readyPath, "PATH=/usr/bin:/bin", "HOME=" + root, "TMPDIR=" + root, "TZ=UTC", "WP_DATA_DIR=" + root, "WP_DB_PATH=" + dbpath, "WP_ADDR=" + addr, "WP_INTERNAL_ADDR=" + internal, "FEISHU_TRANSPORT=fake", "WP_CONSOLE_AUTH_ENABLED=false", "WP_SCHEDULE_TEAM_FILE=" + filepath.Join(root, "none"), "WP_SCHEDULE_PERSONAL_DIR=" + root, "WP_ADMIN_INIT_PASSWORD=isolated-fixture-only"}
 	cmd.Stdout = &out
 	cmd.Stderr = &out
 	if err := cmd.Start(); err != nil {
@@ -50,6 +61,14 @@ func stickyRunOldHub(t *testing.T, binary, dbpath, stage string) {
 			<-done
 		}
 	}()
+	// HTTP health can precede signal.Notify in r48. Wait for its real READY
+	// notification before testing graceful shutdown; never race startup with SIGTERM.
+	ready.SetReadDeadline(time.Now().Add(20 * time.Second))
+	buf := make([]byte, 4096)
+	n, _, err := ready.ReadFromUnix(buf)
+	if err != nil || !strings.Contains(string(buf[:n]), "READY=1") {
+		t.Fatal("OLD_HUB_READY_TIMEOUT", stage, err)
+	}
 	client := &http.Client{Timeout: 200 * time.Millisecond}
 	healthy := false
 	deadline := time.Now().Add(20 * time.Second)
