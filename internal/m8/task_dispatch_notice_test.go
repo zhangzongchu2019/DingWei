@@ -174,6 +174,13 @@ func TestR10NoticeReliableFrameIsQueuedNotOpenedAndOldHelperWaits(t *testing.T) 
 	if err != nil || len(queued) != 1 || queued[0].Reason != "hub_queued_not_opened" {
 		t.Fatal("R10_QUEUED_FALSE_OPENED", len(queued), err)
 	}
+	if queued[0].DeliveryID != metaString(delivery.Meta, "delivery_id") || queued[0].DeliveryID == queued[0].SourceEnvelopeID {
+		t.Fatal("R10_QUEUE_DELIVERY_ID_NOT_REAL", queued[0].DeliveryID, metaString(delivery.Meta, "delivery_id"))
+	}
+	persisted, persistErr := db.GetSessionDelivery(ctx, queued[0].DeliveryID)
+	if persistErr != nil || persisted == nil || persisted.SourceMessageID != queued[0].SourceEnvelopeID {
+		t.Fatal("R10_QUEUE_RECEIPT_NOT_PERSISTED", persistErr)
+	}
 	events, err := db.TaskDispatchEvents(ctx, m.Key, 0)
 	if err != nil || len(events) != 1 || events[0].Type != "grant" {
 		t.Fatal("R10_NOTICE_CREATED_EXECUTION_OR_COMPLETION_FACT", len(events), err)

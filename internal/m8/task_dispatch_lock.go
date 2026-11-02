@@ -234,11 +234,19 @@ func (h *Hub) dispatchTaskLockNotices(ctx context.Context, svc *td.Service) {
 			env := model.Envelope{ID: n.SourceEnvelopeID, From: sessionAddress(systemAddressName, key), To: sessionAddress(name, key), TS: h.now().Unix(), Body: body, Meta: map[string]any{"kind": "r10_task_notice", "r10_notice_id": n.ID, "r10_key": n.Key, "reply_policy": "no_reply", "conversation_terminal": true}}
 			e = h.RouteEnvelope(context.WithValue(ctx, taskDispatchContextKey{}, n.ID), env)
 			state, reason := "queued", "hub_queued_not_opened"
-			if e != nil {
+			// RouteEnvelope publishes the real reliable transport ID into this
+			// Hub-owned metadata map. The source envelope ID is a different key.
+			deliveryID := metaString(env.Meta, "delivery_id")
+			var persisted *model.SessionDelivery
+			if e == nil && strings.HasPrefix(deliveryID, deliveryIDPrefix) {
+				persisted, e = h.Repo.GetSessionDelivery(ctx, deliveryID)
+			}
+			if e != nil || persisted == nil || persisted.SourceMessageID != n.SourceEnvelopeID || persisted.KeyID != key || persisted.SessionName != name {
 				state = "unknown"
 				reason = "route_outcome_unknown"
+				deliveryID = ""
 			}
-			_, _ = svc.Repo.UpdateTaskDispatchNotice(ctx, n.ID, "attempting", state, n.SourceEnvelopeID, reason, h.now())
+			_, _ = svc.Repo.UpdateTaskDispatchNotice(ctx, n.ID, "attempting", state, deliveryID, reason, h.now())
 		}
 	}
 }

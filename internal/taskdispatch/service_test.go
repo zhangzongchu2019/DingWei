@@ -304,8 +304,17 @@ func TestR10ServiceReplayCrossRepositoryReleaseAndOwnerFence(t *testing.T) {
 	other := e.r
 	other.Key.Repository = "2"
 	other.OperationID = "grant_other_repo_0001"
-	if r, err := e.s.Execute(ctx, td.Actor{UserLC: "dispatcher"}, other); err != nil || r.Lock.Repository != "2" {
+	// The consumer task references the provider's exact fixed version in Git.
+	// Its independent blob/C is retained, without copying the description to DB.
+	consumerTasks := "# Tasks\n- [ ] T-01 consume provider github:github.com:1@" + c1 + "\n"
+	e.change(c2, dir+"/tasks.md", consumerTasks)
+	other.Commit = c2
+	if r, err := e.s.Execute(ctx, td.Actor{UserLC: "dispatcher"}, other); err != nil || r.Lock.Repository != "2" || r.Lock.CommitSHA != c2 || r.Lock.TasksBlobSHA != blob(consumerTasks) {
 		t.Fatal("R10_CROSS_REPO_LOCK_COLLISION", err)
+	}
+	providerLock, providerErr := e.db.TaskDispatchLock(ctx, l.Key)
+	if providerErr != nil || providerLock == nil || providerLock.CommitSHA != c1 || providerLock.LeaseToken != l.LeaseToken {
+		t.Fatal("R10_CONSUMER_CHANGED_PROVIDER_AUTHORITY", providerErr)
 	}
 	rel := e.holder(l, "release")
 	rel.OperationID = "release_nonholder_operation_01"
