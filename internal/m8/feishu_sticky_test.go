@@ -21,6 +21,7 @@ type stickyFaultRepo struct {
 	mu                              sync.Mutex
 	sent                            []model.SessionDelivery
 	failRead, failRoute, failCommit bool
+	hideEvidence                    bool
 }
 
 func (r *stickyFaultRepo) GetFeishuSticky(ctx context.Context, k store.FeishuStickyKey) (*store.FeishuStickyState, error) {
@@ -46,6 +47,24 @@ func (r *stickyFaultRepo) FinishFeishuSticky(ctx context.Context, o store.Feishu
 		return errors.New("injected post-route commit failure")
 	}
 	return r.SQLite.FinishFeishuSticky(ctx, o, status, target, decision, now)
+}
+func (r *stickyFaultRepo) GetSessionDelivery(ctx context.Context, id string) (*model.SessionDelivery, error) {
+	r.mu.Lock()
+	hide := r.hideEvidence
+	r.mu.Unlock()
+	if hide {
+		return nil, errors.New("durable evidence not yet available")
+	}
+	return r.SQLite.GetSessionDelivery(ctx, id)
+}
+func (r *stickyFaultRepo) FindFeishuStickyDelivery(ctx context.Context, o store.FeishuStickyOperation) (string, error) {
+	r.mu.Lock()
+	hide := r.hideEvidence
+	r.mu.Unlock()
+	if hide {
+		return "", nil
+	}
+	return r.SQLite.FindFeishuStickyDelivery(ctx, o)
 }
 func (r *stickyFaultRepo) count() int { r.mu.Lock(); defer r.mu.Unlock(); return len(r.sent) }
 func (r *stickyFaultRepo) last() model.Envelope {
@@ -343,6 +362,7 @@ func TestR14S017CommandsAndGroupBypass(t *testing.T) {
 	}
 	s := r.state()
 	r.dispatch("#在线")
+	r.dispatch("#unsync opus50ts")
 	msg := feishuInboundMessage("group", "group plain")
 	msg.ChatType = model.ChatGroup
 	r.dispatchMsg(msg, "group plain")
@@ -351,7 +371,25 @@ func TestR14S017CommandsAndGroupBypass(t *testing.T) {
 	msg.IngressProvenance = model.IngressUntrusted
 	r.dispatchMsg(msg, "plain")
 	r14Assert(t, r.repo.count() == 0, "S017_UNTRUSTED_ROUTED")
+	svc := sessionServiceID(AgentKeyID("zzc"), "opus50ts")
+	if err := r.repo.UpsertRegisteredService(r.ctx, model.RegisteredService{ID: svc, Name: "local-prefix", DeliveryType: "session", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.hub.BindAccount(r.ctx, AgentKeyID("zzc"), "devplatform:personal:ou_alice"); err != nil {
+		t.Fatal(err)
+	}
+	if err := r.repo.InsertRoutingRule(r.ctx, model.RoutingRule{ID: "r14-existing-prefix", ServiceID: svc, MatchType: "prefix", MatchExpr: "pfx:", StripPrefix: true, Enabled: true, AccountScopeJSON: `["devplatform:personal:ou_alice"]`}); err != nil {
+		t.Fatal(err)
+	}
+	r.dispatch("pfx: configured-route")
+	r14Assert(t, r.repo.count() == 1 && r.repo.last().To == sessionAddress("opus50ts", AgentKeyID("zzc")) && r.state().AgentID == s.AgentID && r.state().Generation == s.Generation, "S017_CONFIGURED_PREFIX_SWALLOWED", r.repo.last(), r.state())
+	other := feishuInboundMessage("other-channel", "other channel")
+	other.SenderOpenID = ""
+	other.BotChannelID = "sessionhelper"
+	_, handled, err = r.hub.dispatchFeishuSticky(r.ctx, other, "other channel", false)
+	r14Assert(t, err == nil && !handled && r.state().Generation == s.Generation, "S017_OTHER_CHANNEL_ENTERED_STICKY")
 }
+
 func TestR14S018TextCandidateIsolation(t *testing.T) {
 	r := newR14Env(t, "Beta")
 	res := r.dispatch("plain")
@@ -412,6 +450,9 @@ func TestR14S020QueuedTargetIDCannotBeReused(t *testing.T) {
 		t.Fatal(err)
 	}
 	env := model.Envelope{ID: "old-r14-queue", From: feishuAddress("ou_alice", AgentKeyID("zzc"), "devplatform"), To: sessionAddress("opus50ts", AgentKeyID("zzc")), Body: "queued-before-revoke", Meta: map[string]any{"r14_target_agent_id": old.ID, "r14_principal_lc": "zzc"}}
+	env.Meta["bot_channel_id"] = "devplatform"
+	env.Meta["chat_type"] = "personal"
+	r.hub.annotateSourceContext(r.ctx, env.Meta, feishuInboundMessage("queued-old-target", "queued-before-revoke"))
 	if _, err = r.svc.Revoke(r.ctx, "zzc", old.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -580,4 +621,30 @@ func TestR14S019DirectUnknownNeverBlindlyReplays(t *testing.T) {
 	r.choose("opus50ts")
 	res = r.dispatch("still-explicit-only")
 	r14Assert(t, res.Reply == stickyUnconfirmed, "S019_EXPLICIT_CLEARED_UNRECONCILED")
+}
+
+func TestR14LateReconciliationPreservesNewerBinding(t *testing.T) {
+	r := newR14Env(t, "Beta")
+	r.repo.failCommit = true
+	msg := feishuInboundMessage("late-A", "#opus50ts old-A")
+	res := r.dispatchMsg(msg, "#opus50ts old-A")
+	r14Assert(t, res.Reply == stickyUnconfirmed && r.repo.count() == 1, "LATE_RECONCILE_FIXTURE_A", res)
+	r.repo.failCommit = false
+	r.repo.mu.Lock()
+	r.repo.hideEvidence = true
+	r.repo.mu.Unlock()
+	r.now = r.now.Add(11 * time.Minute)
+	r.choose("Beta")
+	selected := r.state()
+	before := r.repo.count()
+	r.repo.mu.Lock()
+	r.repo.hideEvidence = false
+	r.repo.mu.Unlock()
+	r.now = r.now.Add(time.Minute)
+	// A pure candidate paste reconciles but does not renew B as a business action.
+	r.dispatch("#Opus50TS.zzc\n#Beta.zzc")
+	after := r.state()
+	op, fresh, err := r.repo.BeginFeishuSticky(r.ctx, store.FeishuStickyKey{"zzc", "devplatform"}, "late-A", "explicit", r.now)
+	r14Assert(t, err == nil && !fresh && op.Status == "resolved" && op.DeliveryID != "" && op.CompletedAt.Equal(r.now), "LATE_RECONCILE_NOT_CLOSED", op, err)
+	r14Assert(t, after.AgentID == selected.AgentID && after.Generation == selected.Generation && after.SelectedAt.Equal(selected.SelectedAt) && after.ExpiresAt.Equal(selected.ExpiresAt) && r.repo.count() == before, "LATE_RECONCILE_OVERWROTE_BINDING", selected, after)
 }

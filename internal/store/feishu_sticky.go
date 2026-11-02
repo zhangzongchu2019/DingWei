@@ -39,7 +39,7 @@ type FeishuStickyRepository interface {
 	BeginFeishuSticky(context.Context, FeishuStickyKey, string, string, time.Time) (FeishuStickyOperation, bool, error)
 	FinishFeishuSticky(context.Context, FeishuStickyOperation, string, string, string, time.Time) error
 	ListFeishuStickyUnresolved(context.Context, FeishuStickyKey, time.Time) ([]FeishuStickyOperation, error)
-	ResolveFeishuSticky(context.Context, int64, time.Time) error
+	ResolveFeishuSticky(context.Context, int64, string, time.Time) error
 	FindFeishuStickyDelivery(context.Context, FeishuStickyOperation) (string, error)
 	SweepFeishuStickyPending(context.Context, time.Time, int) (int64, error)
 	RecordFeishuStickyIntent(context.Context, FeishuStickyOperation, string, string, string) error
@@ -200,8 +200,11 @@ func (s *SQLite) ListFeishuStickyUnresolved(ctx context.Context, k FeishuStickyK
 	}
 	return out, rows.Err()
 }
-func (s *SQLite) ResolveFeishuSticky(ctx context.Context, seq int64, now time.Time) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE r14_feishu_sticky_operation SET status='resolved',completed_at_utc=? WHERE operation_seq=? AND status IN ('pending','unknown')`, stickyTime(now), seq)
+func (s *SQLite) ResolveFeishuSticky(ctx context.Context, seq int64, deliveryID string, now time.Time) error {
+	if deliveryID == "" {
+		return errors.New("sticky reconciliation requires durable evidence")
+	}
+	_, err := s.db.ExecContext(ctx, `UPDATE r14_feishu_sticky_operation SET status='resolved',delivery_id=?,completed_at_utc=? WHERE operation_seq=? AND status IN ('pending','unknown')`, deliveryID, stickyTime(now), seq)
 	return err
 }
 func (s *SQLite) ListFeishuStickyStates(ctx context.Context, limit int, after FeishuStickyKey) ([]FeishuStickyState, error) {

@@ -10,10 +10,14 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
 func TestR14S023PGNameCheckAuthorizationAndUniqueIndex(t *testing.T) {
 	e := newShimEnv(t)
+	if err := e.db.UpsertSessionEndpoint(e.ctx, model.SessionEndpoint{KeyID: "legacy-fixture", SessionName: "LegacyOnly", Active: true}); err != nil {
+		t.Fatal(err)
+	}
 	pg := r32UsePGIdentity(t, e)
 	for owner, tok := range map[string]string{"zzc": e.tokZZC, "lbl": e.tokLBL} {
 		if err := pg.CreateSession(e.ctx, identity.Session{TokenHash: identity.HashSecret(tok), UserIDLC: owner, ExpiresAt: e.svc.Now().Add(identity.SessionTTL)}); err != nil {
@@ -47,6 +51,7 @@ func TestR14S023PGNameCheckAuthorizationAndUniqueIndex(t *testing.T) {
 		{"own-active", e.tokZZC, "name_lc=kimi", 200, "true"},
 		{"own-suspended", e.tokZZC, "name_lc=sleeping", 200, "true"},
 		{"other-owner-same-name", e.tokZZC, "name_lc=foreignonly", 200, "false"},
+		{"legacy-name-excluded", e.tokZZC, "name_lc=legacyonly", 200, "false"},
 		{"foreign-owner-checks-own", e.tokLBL, "name_lc=sleeping", 200, "false"},
 		{"cross-owner-input", e.tokLBL, "name_lc=sleeping&owner_lc=zzc", 400, ""},
 		{"unauthenticated", "", "name_lc=kimi", 401, ""},

@@ -91,7 +91,7 @@ func TestFeishuStickyRejectedPendingUnknownRetentionAndBatch(t *testing.T) {
 	if err != nil || len(unresolved) != 1 || unresolved[0].Seq != pending.Seq {
 		t.Fatal("UNKNOWN_PURGED", unresolved, err)
 	}
-	if err = db.ResolveFeishuSticky(ctx, pending.Seq, now.Add(31*24*time.Hour)); err != nil {
+	if err = db.ResolveFeishuSticky(ctx, pending.Seq, "fixture-durable-evidence", now.Add(31*24*time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	unresolved, err = db.ListFeishuStickyUnresolved(ctx, k, now.Add(31*24*time.Hour))

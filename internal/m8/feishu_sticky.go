@@ -234,7 +234,7 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 		if o.DeliveryID != "" {
 			d, e := h.Repo.GetSessionDelivery(ctx, o.DeliveryID)
 			if e == nil && stickyDeliveryEvidence(o, d) {
-				if e = repo.ResolveFeishuSticky(ctx, o.Seq, now); e == nil {
+				if e = repo.ResolveFeishuSticky(ctx, o.Seq, o.DeliveryID, now); e == nil {
 					continue
 				}
 			}
