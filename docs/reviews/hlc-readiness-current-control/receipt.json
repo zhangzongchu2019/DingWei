@@ -1,0 +1,20 @@
+{
+  "base": "bdac3593c8a578eb5002b8df9418dc93b2cb93c9",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCStartupReadinessControl$",
+    "-count=1",
+    "-timeout=10m",
+    "-v"
+  ],
+  "rc": 0,
+  "started_utc": "2026-11-02T02:14:26.255252+00:00",
+  "ended_utc": "2026-11-02T02:16:44.922904+00:00",
+  "log_sha256": "2450e332dc42b9eed1fec58c45ff115868b75e034bbd987d925c105d72512aaf",
+  "fixture_sha256": "fbf300503ed60479c1cad4afefcd5bc35a041bbcb5e1bd2f756ad29327886eb7",
+  "source_changes": "one untracked test fixture only; product tree unchanged"
+}

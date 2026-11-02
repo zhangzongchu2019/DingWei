@@ -1,0 +1,195 @@
+{
+  "completed_rounds": 50,
+  "passed_rounds": 42,
+  "failed_rounds": 8,
+  "original_timestamps_available": false,
+  "all_eight_before_sigterm": "The failure aborts before hlcStop; no SIGTERM is sent in these rounds; test cleanup uses owned Process.Kill, not planned stop.",
+  "failures": [
+    {
+      "seed": "1793584081884674943",
+      "409_observed_utc": null,
+      "signal_sent": false,
+      "sigterm_utc": null,
+      "delta_ms": null,
+      "phase": "hlcOpenSSE setup before hlcStop",
+      "timing_limit": "Original parent logger did not timestamp this assertion; no historical timestamp invented."
+    },
+    {
+      "seed": "1793584160079217694",
+      "409_observed_utc": null,
+      "signal_sent": false,
+      "sigterm_utc": null,
+      "delta_ms": null,
+      "phase": "hlcOpenSSE setup before hlcStop",
+      "timing_limit": "Original parent logger did not timestamp this assertion; no historical timestamp invented."
+    },
+    {
+      "seed": "1793584248502327245",
+      "409_observed_utc": null,
+      "signal_sent": false,
+      "sigterm_utc": null,
+      "delta_ms": null,
+      "phase": "hlcOpenSSE setup before hlcStop",
+      "timing_limit": "Original parent logger did not timestamp this assertion; no historical timestamp invented."
+    },
+    {
+      "seed": "1793584275251877992",
+      "409_observed_utc": null,
+      "signal_sent": false,
+      "sigterm_utc": null,
+      "delta_ms": null,
+      "phase": "hlcOpenSSE setup before hlcStop",
+      "timing_limit": "Original parent logger did not timestamp this assertion; no historical timestamp invented."
+    },
+    {
+      "seed": "1793584281860789677",
+      "409_observed_utc": null,
+      "signal_sent": false,
+      "sigterm_utc": null,
+      "delta_ms": null,
+      "phase": "hlcOpenSSE setup before hlcStop",
+      "timing_limit": "Original parent logger did not timestamp this assertion; no historical timestamp invented."
+    },
+    {
+      "seed": "1793584370426768648",
+      "409_observed_utc": null,
+      "signal_sent": false,
+      "sigterm_utc": null,
+      "delta_ms": null,
+      "phase": "hlcOpenSSE setup before hlcStop",
+      "timing_limit": "Original parent logger did not timestamp this assertion; no historical timestamp invented."
+    },
+    {
+      "seed": "1793584449700338032",
+      "409_observed_utc": null,
+      "signal_sent": false,
+      "sigterm_utc": null,
+      "delta_ms": null,
+      "phase": "hlcOpenSSE setup before hlcStop",
+      "timing_limit": "Original parent logger did not timestamp this assertion; no historical timestamp invented."
+    },
+    {
+      "seed": "1793584477503220371",
+      "409_observed_utc": null,
+      "signal_sent": false,
+      "sigterm_utc": null,
+      "delta_ms": null,
+      "phase": "hlcOpenSSE setup before hlcStop",
+      "timing_limit": "Original parent logger did not timestamp this assertion; no historical timestamp invented."
+    }
+  ],
+  "failed_round_artifacts": [
+    {
+      "directory": "run-1793584076040180089",
+      "native_logs": [
+        "run-1793584076040180089/child-841159.log"
+      ],
+      "child_start_utc": [
+        "2026-11-02T01:48:01.875685431Z"
+      ],
+      "shutdown_record_exists": false,
+      "sigterm_sent": false,
+      "original_409_exact_utc": null,
+      "sigterm_minus_409_ms": null,
+      "observation": "Go assertion aborted setup; Process.Signal is only in hlcStop, which was never entered. Cleanup uses Process.Kill."
+    },
+    {
+      "directory": "run-1793584154416059393",
+      "native_logs": [
+        "run-1793584154416059393/child-842382.log"
+      ],
+      "child_start_utc": [
+        "2026-11-02T01:49:20.069589435Z"
+      ],
+      "shutdown_record_exists": false,
+      "sigterm_sent": false,
+      "original_409_exact_utc": null,
+      "sigterm_minus_409_ms": null,
+      "observation": "Go assertion aborted setup; Process.Signal is only in hlcStop, which was never entered. Cleanup uses Process.Kill."
+    },
+    {
+      "directory": "run-1793584242717955987",
+      "native_logs": [
+        "run-1793584242717955987/child-843600.log"
+      ],
+      "child_start_utc": [
+        "2026-11-02T01:50:48.493117385Z"
+      ],
+      "shutdown_record_exists": false,
+      "sigterm_sent": false,
+      "original_409_exact_utc": null,
+      "sigterm_minus_409_ms": null,
+      "observation": "Go assertion aborted setup; Process.Signal is only in hlcStop, which was never entered. Cleanup uses Process.Kill."
+    },
+    {
+      "directory": "run-1793584269580405784",
+      "native_logs": [
+        "run-1793584269580405784/child-844035.log"
+      ],
+      "child_start_utc": [
+        "2026-11-02T01:51:15.243434317Z"
+      ],
+      "shutdown_record_exists": false,
+      "sigterm_sent": false,
+      "original_409_exact_utc": null,
+      "sigterm_minus_409_ms": null,
+      "observation": "Go assertion aborted setup; Process.Signal is only in hlcStop, which was never entered. Cleanup uses Process.Kill."
+    },
+    {
+      "directory": "run-1793584276246530798",
+      "native_logs": [
+        "run-1793584276246530798/child-844114.log"
+      ],
+      "child_start_utc": [
+        "2026-11-02T01:51:21.84969669Z"
+      ],
+      "shutdown_record_exists": false,
+      "sigterm_sent": false,
+      "original_409_exact_utc": null,
+      "sigterm_minus_409_ms": null,
+      "observation": "Go assertion aborted setup; Process.Signal is only in hlcStop, which was never entered. Cleanup uses Process.Kill."
+    },
+    {
+      "directory": "run-1793584364845108955",
+      "native_logs": [
+        "run-1793584364845108955/child-846644.log"
+      ],
+      "child_start_utc": [
+        "2026-11-02T01:52:50.416871586Z"
+      ],
+      "shutdown_record_exists": false,
+      "sigterm_sent": false,
+      "original_409_exact_utc": null,
+      "sigterm_minus_409_ms": null,
+      "observation": "Go assertion aborted setup; Process.Signal is only in hlcStop, which was never entered. Cleanup uses Process.Kill."
+    },
+    {
+      "directory": "run-1793584443863819849",
+      "native_logs": [
+        "run-1793584443863819849/child-848411.log"
+      ],
+      "child_start_utc": [
+        "2026-11-02T01:54:09.683811587Z"
+      ],
+      "shutdown_record_exists": false,
+      "sigterm_sent": false,
+      "original_409_exact_utc": null,
+      "sigterm_minus_409_ms": null,
+      "observation": "Go assertion aborted setup; Process.Signal is only in hlcStop, which was never entered. Cleanup uses Process.Kill."
+    },
+    {
+      "directory": "run-1793584471620183654",
+      "native_logs": [
+        "run-1793584471620183654/child-848776.log"
+      ],
+      "child_start_utc": [
+        "2026-11-02T01:54:37.488619148Z"
+      ],
+      "shutdown_record_exists": false,
+      "sigterm_sent": false,
+      "original_409_exact_utc": null,
+      "sigterm_minus_409_ms": null,
+      "observation": "Go assertion aborted setup; Process.Signal is only in hlcStop, which was never entered. Cleanup uses Process.Kill."
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+package main
+
+import (
+ "bytes"
+ "context"
+ "encoding/json"
+ "fmt"
+ "io"
+ "log/slog"
+ "math/rand"
+ "net"
+ "net/http"
+ "os"
+ "os/exec"
+ "path/filepath"
+ "strconv"
+ "strings"
+ "sync"
+ "testing"
+ "time"
+
+ "github.com/coder/websocket"
+ "github.com/zhangzongchu2019/dingwei/internal/identity"
+ "github.com/zhangzongchu2019/dingwei/internal/model"
+ "github.com/zhangzongchu2019/dingwei/internal/repo"
+ "github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
+)
+
+type readinessBuffer struct{mu sync.Mutex;b bytes.Buffer}
+func(b *readinessBuffer)Write(p []byte)(int,error){b.mu.Lock();defer b.mu.Unlock();return b.b.Write(p)}
+func TestHLCReadinessChild(t *testing.T){if os.Getenv("HLC_STARTUP_CHILD")!="1"{return};if err:=run(slog.New(slog.NewJSONHandler(os.Stdout,nil)));err!=nil{os.Exit(1)};os.Exit(0)}
+func readinessAddress(t *testing.T)string{t.Helper();ln,e:=net.Listen("tcp","127.0.0.1:0");if e!=nil{t.Fatal(e)};s:=ln.Addr().String();ln.Close();return s}
+func readinessName(i int)string{return fmt.Sprintf("hlcagent%02d",i)}
+func readinessOwner(i int)string{return fmt.Sprintf("hlcowner%d",i/4)}
+func readinessFull(i int)string{return readinessName(i)+"."+readinessOwner(i)}
+func readinessCred(i int)string{return fmt.Sprintf("hlc-isolated-synthetic-agent-credential-%02d",i)}
+
+func TestHLCStartupReadinessControl(t *testing.T){
+ if os.Getenv("HLC_READINESS_ENABLED")!="1"{t.Skip("explicit startup-only control")}
+ ctx:=context.Background();dsn:=pgtest.DSN(t);ids,pool,closePool,err:=openNewPlatformStore(ctx,dsn);if err!=nil{t.Fatal(err)};defer closePool();ac,_:=repo.NewAccessCtx("test","hlc-startup-control")
+ for i:=0;i<5;i++{u:=fmt.Sprintf("hlcowner%d",i);if err:=ids.CreateUser(ctx,identity.User{UserID:u,ShortName:u,Type:identity.UserMember,State:identity.UserActive,CreatedAt:time.Now()});err!=nil{t.Fatal(err)}}
+ for i:=0;i<20;i++{n:=readinessName(i);if _,err:=pool.Exec(ctx,ac,`INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,credential_hash,created_at) VALUES($1,$2,$3,$3,'selfhost','active',$4,clock_timestamp())`,n,readinessOwner(i),n,identity.HashSecret(readinessCred(i)));err!=nil{t.Fatal(err)}}
+ out:=os.Getenv("HLC_READINESS_OUTPUT");os.MkdirAll(out,0755);rounds,_:=strconv.Atoi(os.Getenv("HLC_READINESS_ROUNDS"));if rounds<1{rounds=100}
+ observations:=[]map[string]any{};failed:=0
+ for round:=0;round<rounds;round++{
+  root:=t.TempDir();pub,intl:=readinessAddress(t),readinessAddress(t);sock:=filepath.Join(root,"notify.sock");notify,err:=net.ListenUnixgram("unixgram",&net.UnixAddr{Name:sock,Net:"unixgram"});if err!=nil{t.Fatal(err)}
+  cmd:=exec.Command(os.Args[0],"-test.run=^TestHLCReadinessChild$","-test.count=1");cmd.Dir=root
+  cmd.Env=[]string{"PATH="+os.Getenv("PATH"),"HOME="+root,"TZ=UTC","HLC_STARTUP_CHILD=1","NOTIFY_SOCKET="+sock,"WP_DATA_DIR="+root,"WP_DB_PATH="+filepath.Join(root,"hub.db"),"WP_ADDR="+pub,"WP_INTERNAL_ADDR="+intl,"FEISHU_TRANSPORT=fake","WP_CONSOLE_AUTH_ENABLED=false","DW_NEWPLAT=1","DW_PUBLIC_ORIGIN=http://"+pub,"DW_NEWPLAT_PG_DSN="+dsn,"WP_SCHEDULE_TEAM_FILE="+filepath.Join(root,"none"),"WP_SCHEDULE_PERSONAL_DIR="+root}
+  log:=&readinessBuffer{};cmd.Stdout=log;cmd.Stderr=log;if err:=cmd.Start();err!=nil{t.Fatal(err)}
+  notify.SetReadDeadline(time.Now().Add(10*time.Second));buffer:=make([]byte,1024);for{n,_,err:=notify.ReadFromUnix(buffer);if err!=nil{cmd.Process.Kill();cmd.Wait();t.Fatal(err)};if strings.Contains(string(buffer[:n]),"READY=1"){break}};notify.Close()
+  ready:=time.Now();seed:=time.Now().UnixNano();r:=rand.New(rand.NewSource(seed));clients:=[]*websocket.Conn{}
+  for _,i:=range r.Perm(20){conn,_,err:=websocket.Dial(ctx,"ws://"+pub+"/ws/agent?tool=hlc-fixture&version=0.3.0",&websocket.DialOptions{HTTPHeader:http.Header{"Authorization":[]string{"Bearer "+readinessCred(i)}}});if err!=nil{cmd.Process.Kill();cmd.Wait();t.Fatal(err)};clients=append(clients,conn)
+   go func(conn *websocket.Conn){for{if _,_,err:=conn.Read(ctx);err!=nil{return}}}(conn)
+   body:=fmt.Sprintf(`{"kind":"assistant_text","text":"hlc-before-%02d","delivery_id":"hlc-before-%02d","turn_id":"hlc-turn"}`,i,i)
+   for _,env:=range []model.Envelope{{ID:fmt.Sprintf("hlc-before-%02d-event",i),Body:body,Meta:map[string]any{"type":"session_event"}},{ID:fmt.Sprintf("hlc-before-%02d-terminal",i),Body:fmt.Sprintf("hlc-before-%02d",i),Meta:map[string]any{"type":"terminal_output"}}}{b,_:=json.Marshal(env);if err:=conn.Write(ctx,websocket.MessageText,b);err!=nil{t.Fatal(err)}}
+  }
+  client:=&http.Client{Timeout:time.Second}
+  // The original fixture waited only for source0, then opened 100 streams.
+  for until:=time.Now().Add(5*time.Second);;{res,e:=client.Get("http://"+intl+"/internal/view/"+readinessFull(0)+"/events");if e==nil{res.Body.Close();if res.StatusCode==200{break}};if time.Now().After(until){cmd.Process.Kill();cmd.Wait();t.Fatal("source0 readiness timeout")};time.Sleep(10*time.Millisecond)}
+  row:=map[string]any{"round":round,"seed":seed,"ready_utc":ready.UTC(),"phase":"load_setup_before_signal","sigterm_sent":false,"sigterm_utc":nil,"sigterm_minus_409_ms":nil}
+  status409:=false
+  for i:=0;i<100;i++{res,err:=client.Get("http://"+intl+"/internal/view/"+readinessFull(i%20)+"/events");at:=time.Now();if err!=nil{cmd.Process.Kill();cmd.Wait();t.Fatal(err)}
+   if res.StatusCode!=200{body,_:=io.ReadAll(res.Body);res.Body.Close();row["observed_utc"]=at.UTC();row["status"]=res.StatusCode;row["reason"]=strings.TrimSpace(string(body));row["source_index"]=i%20;row["since_ready_ms"]=at.Sub(ready).Milliseconds();status409=res.StatusCode==409;break};res.Body.Close()
+  }
+  if status409{failed++};row["observed_409"]=status409;observations=append(observations,row)
+  // No SIGTERM is sent: this is solely the pre-signal startup sequence. Kill
+  // only this owned child after recording, then wait before the next round.
+  for _,conn:=range clients{conn.CloseNow()};cmd.Process.Kill();cmd.Wait()
+  b,_:=json.MarshalIndent(map[string]any{"base_commit":os.Getenv("HLC_READINESS_BASE"),"rounds_completed":round+1,"pre_signal_409_rounds":failed,"observations":observations},"","  ");os.WriteFile(filepath.Join(out,"readiness.json"),b,0644)
+ }
+ t.Logf("STARTUP_READINESS rounds=%d 409_before_SIGTERM=%d SIGTERM_sent=0",rounds,failed)
+}
