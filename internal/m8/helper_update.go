@@ -415,6 +415,10 @@ func (h *Hub) recordHelperUpdateOfferConnection(ctx context.Context, c *sessionC
 	if stored.JobID != job.JobID || helperUpdateTerminal(stored.Stage) {
 		return stored, fmt.Errorf("helper update offer no longer active")
 	}
+	// 另一路已经冻结首次连接；陈旧快照不能再写或增加 Revision。
+	if stored.OfferConnSeq > 0 {
+		return stored, nil
+	}
 	updated := *stored
 	updated.OfferConnSeq = c.connSeq
 	ok, err := h.updateHelperUpdateJob(ctx, raw, updated)
@@ -422,6 +426,11 @@ func (h *Hub) recordHelperUpdateOfferConnection(ctx context.Context, c *sessionC
 		return stored, err
 	}
 	if !ok {
+		// CAS 竞争者只认同一活动 job 的持久首边界，不能覆盖后续回执。
+		current, _, readErr := h.helperUpdateJob(ctx, job.AgentID)
+		if readErr == nil && current != nil && current.JobID == job.JobID && !helperUpdateTerminal(current.Stage) && current.OfferConnSeq > 0 {
+			return current, nil
+		}
 		return stored, fmt.Errorf("helper update offer changed concurrently")
 	}
 	return &updated, nil
