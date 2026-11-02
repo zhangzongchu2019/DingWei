@@ -152,8 +152,10 @@ func (s *Service) Execute(ctx context.Context, actor Actor, r Request) (result R
 	expectedOwners := map[string]string{}
 	if existing != nil {
 		group = existing.AuthorizationGroup
-		ids = append(ids, existing.HolderAgentID)
-		expectedOwners[existing.HolderAgentID] = existing.HolderOwnerLC
+		if r.Kind != "grant" {
+			ids = append(ids, existing.HolderAgentID)
+			expectedOwners[existing.HolderAgentID] = existing.HolderOwnerLC
+		}
 	}
 	if actor.AgentID != "" {
 		ids = append(ids, actor.AgentID)

@@ -181,6 +181,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	api.Register(mux)
 	mux.HandleFunc("GET /ws/agent", hub.HandleAgentWS)
 	registerNewPlatformLoginPage(mux, hub)
+	hub.StartTaskDispatchLockMonitor(ctx)
 	return nil
 }
 

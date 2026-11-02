@@ -3232,6 +3232,9 @@ func feishuDispatchLogSource(addr address) (openID, botChannel string) {
 }
 
 func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
+	if err := h.taskDispatchEnvelopeAllowed(ctx, env); err != nil {
+		return err
+	}
 	if legacySpecGenerationEnvelope(env) {
 		guarded, release, err := h.beginLegacySpecWrite(ctx)
 		if err != nil {

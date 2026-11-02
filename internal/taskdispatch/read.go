@@ -12,15 +12,20 @@ type View struct {
 	Operation     *Operation `json:"operation,omitempty"`
 	Notices       []Notice   `json:"notices"`
 	Effective     bool       `json:"effective"`
+	NextEventID   int64      `json:"next_event_id"`
+	HasMoreEvents bool       `json:"has_more_events"`
 	MonitoringLag bool       `json:"monitoring_lag"`
 }
 
 func (s *Service) Inspect(ctx context.Context, actor Actor, k Key, operationID string) (View, error) {
+	return s.InspectAfter(ctx, actor, k, operationID, 0)
+}
+func (s *Service) InspectAfter(ctx context.Context, actor Actor, k Key, operationID string, after int64) (View, error) {
 	out := View{}
 	if !s.ready() {
 		return out, ErrUnavailable
 	}
-	if k.Validate() != nil {
+	if k.Validate() != nil || after < 0 {
 		return out, ErrInvalid
 	}
 	owner, e := s.actorOwner(ctx, actor)
@@ -66,9 +71,13 @@ func (s *Service) Inspect(ctx context.Context, actor Actor, k Key, operationID s
 			}
 		}
 	}
-	out.Events, e = s.Repo.TaskDispatchEvents(ctx, k, 0)
+	out.Events, e = s.Repo.TaskDispatchEvents(ctx, k, after)
 	if e != nil {
 		return View{}, e
+	}
+	if len(out.Events) > 0 {
+		out.NextEventID = out.Events[len(out.Events)-1].ID
+		out.HasMoreEvents = len(out.Events) == 100
 	}
 	if operationID != "" {
 		op, err := s.Repo.TaskDispatchOperation(ctx, k, operationID)

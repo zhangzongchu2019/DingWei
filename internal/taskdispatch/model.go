@@ -222,6 +222,7 @@ type Repository interface {
 	TaskDispatchActive(context.Context) ([]Lock, error)
 	TaskDispatchEvents(context.Context, Key, int64) ([]Event, error)
 	TaskDispatchNotices(context.Context, string, int) ([]Notice, error)
+	TaskDispatchNoticesAfter(context.Context, string, int, time.Time, string) ([]Notice, error)
 	TaskDispatchNotice(context.Context, string) (*Notice, error)
 	TaskDispatchOperation(context.Context, Key, string) (*Operation, error)
 	ApplyTaskDispatch(context.Context, Mutation, func() time.Time, func() error) (Result, error)

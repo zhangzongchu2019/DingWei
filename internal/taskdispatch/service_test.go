@@ -327,3 +327,62 @@ func TestR10ServiceReplayCrossRepositoryReleaseAndOwnerFence(t *testing.T) {
 		t.Fatal("R10_DISABLED_OWNER_INHERITED")
 	}
 }
+
+func TestR10ServiceHandoffReadsSuccessorAndFixedRecoveryPointer(t *testing.T) {
+	for _, name := range []string{"valid", "successor_read_revoked", "pointer_unreadable", "holder_cannot_transfer"} {
+		t.Run(name, func(t *testing.T) {
+			e := setup(t)
+			l := e.grant(t)
+			record := fmt.Sprintf("# Recovery\n%s\n%s\nunknown\n", l.TaskID, l.CommitSHA)
+			e.p.files[c1][dir+"/handoff.md"] = record
+			r := e.holder(l, "handoff")
+			r.HolderAgentID = "agent-next"
+			r.Commit = c1
+			r.MonitorRef = "main"
+			r.Handoff = td.Handoff{Commit: c1, Path: dir + "/handoff.md", BlobSHA: blob(record), ExecutionCommit: c1, TaskID: l.TaskID, RecoveryState: "unknown"}
+			actor := td.Actor{UserLC: "dispatcher"}
+			switch name {
+			case "successor_read_revoked":
+				e.p.denied["next"] = true
+			case "pointer_unreadable":
+				r.Handoff.Path = dir + "/missing.md"
+			case "holder_cannot_transfer":
+				actor = td.Actor{AgentID: "agent-holder"}
+			}
+			result, err := e.s.Execute(context.Background(), actor, r)
+			if name == "valid" {
+				if err != nil || result.Lock.HolderAgentID != "agent-next" || result.Lock.Generation != l.Generation+1 || result.Lock.Handoff.RecoveryState != "unknown" {
+					t.Fatal("R10_SERVICE_HANDOFF_FAILED_OR_FALSE_STOPPED", result, err)
+				}
+				old := e.holder(l, "renew")
+				if _, err = e.s.Execute(context.Background(), td.Actor{AgentID: "agent-holder"}, old); err == nil {
+					t.Fatal("R10_HANDOFF_OLD_HOLDER_RENEWED")
+				}
+			} else {
+				if err == nil {
+					t.Fatal("R10_HANDOFF_AUTHORITY_OR_POINTER_BYPASSED", name)
+				}
+				current, _ := e.db.TaskDispatchLock(context.Background(), l.Key)
+				if current == nil || current.Generation != l.Generation || current.HolderAgentID != l.HolderAgentID {
+					t.Fatal("R10_DENIED_HANDOFF_CHANGED_HOLDER", name)
+				}
+			}
+		})
+	}
+}
+
+func TestR10NonholderWithReadablePointerCannotRelease(t *testing.T) {
+	e := setup(t)
+	l := e.grant(t)
+	record := fmt.Sprintf("# Recovery\n%s\n%s\n", l.TaskID, l.CommitSHA)
+	e.p.files[c1][dir+"/handoff.md"] = record
+	r := e.holder(l, "release")
+	r.Handoff = td.Handoff{Commit: c1, Path: dir + "/handoff.md", BlobSHA: blob(record), ExecutionCommit: c1, TaskID: l.TaskID, RecoveryState: "unknown"}
+	if _, err := e.s.Execute(context.Background(), td.Actor{AgentID: "agent-next"}, r); err == nil {
+		t.Fatal("R10_NONHOLDER_WITH_POINTER_RELEASED")
+	}
+	current, _ := e.db.TaskDispatchLock(context.Background(), l.Key)
+	if current == nil || current.Generation != l.Generation || current.HolderAgentID != l.HolderAgentID {
+		t.Fatal("R10_NONHOLDER_CHANGED_CURRENT_LOCK")
+	}
+}

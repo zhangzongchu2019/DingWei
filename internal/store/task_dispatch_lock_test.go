@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -61,16 +62,19 @@ func r10Handoff(l td.Lock) td.Handoff {
 func TestR10LockConcurrent50RoundsRestartAndExpiry(t *testing.T) {
 	s, m, now := r10DB(t)
 	ctx := context.Background()
+	rng := rand.New(rand.NewSource(20261102))
 	for round := 0; round < 50; round++ {
 		m.Key.TaskID = fmt.Sprintf("T-%02d", round)
 		var wg sync.WaitGroup
 		var mu sync.Mutex
 		wins := []td.Result{}
 		fail := []error{}
-		for i := 0; i < 50; i++ {
+		start := make(chan struct{})
+		for _, i := range rng.Perm(50) {
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
+				<-start
 				attempt := m
 				attempt.OperationID = fmt.Sprintf("round_%03d_attempt_%03d", round, i)
 				if i%2 == 1 {
@@ -86,6 +90,7 @@ func TestR10LockConcurrent50RoundsRestartAndExpiry(t *testing.T) {
 				}
 			}(i)
 		}
+		close(start)
 		wg.Wait()
 		if len(wins) != 1 || len(fail) != 0 {
 			t.Fatalf("R10_SINGLE_WINNER round=%d wins=%d unexpected=%v", round, len(wins), fail)
@@ -109,18 +114,50 @@ func TestR10LockConcurrent50RoundsRestartAndExpiry(t *testing.T) {
 		if e != nil || persisted == nil || persisted.LeaseToken != l.LeaseToken {
 			t.Fatal("R10_RESTART_LOST", e)
 		}
-		renew := r10Holder(m, l, "renew", fmt.Sprintf("renew_round_%03d_0001", round))
-		if _, e = r10Apply(t, s, renew, l.ExpiresAt); !errors.Is(e, td.ErrConflict) {
-			t.Fatalf("R10_EXPIRY_BOUNDARY %v", e)
+		replay := m
+		replay.OperationID = wins[0].OperationID
+		replay.CommitSHA = l.CommitSHA
+		repeated, replayErr := r10Apply(t, s, replay, now)
+		if replayErr != nil || !repeated.Replay || !repeated.CurrentLease || repeated.Lock.LeaseToken != l.LeaseToken {
+			t.Fatal("R10_ROUND_RETRY_CHANGED_AUTHORITY", round, replayErr)
 		}
+		renew := r10Holder(m, l, "renew", fmt.Sprintf("renew_round_%03d_0001", round))
 		expire := renew
 		expire.Kind = "expire"
 		expire.ActorKind = "system"
 		expire.OperationID = fmt.Sprintf("expire_round_%03d_0001", round)
-		expired, e := r10Apply(t, s, expire, l.ExpiresAt)
-		if e != nil || expired.Lock.State != "expired" || expired.Lock.HolderAgentID != l.HolderAgentID {
-			t.Fatalf("R10_EXPIRE_REASSIGNED %v %+v", e, expired)
+		type boundaryResult struct {
+			kind   string
+			result td.Result
+			err    error
 		}
+		boundary := make(chan boundaryResult, 2)
+		barrier := make(chan struct{})
+		requests := []td.Mutation{renew, expire}
+		for _, index := range rng.Perm(2) {
+			request := requests[index]
+			go func() {
+				<-barrier
+				r, err := s.ApplyTaskDispatch(ctx, request, func() time.Time { return l.ExpiresAt }, func() error { return nil })
+				boundary <- boundaryResult{request.Kind, r, err}
+			}()
+		}
+		close(barrier)
+		var expired td.Result
+		for i := 0; i < 2; i++ {
+			b := <-boundary
+			if b.kind == "renew" {
+				if !errors.Is(b.err, td.ErrConflict) {
+					t.Fatal("R10_EXPIRY_BOUNDARY", round, b.err)
+				}
+			} else {
+				if b.err != nil || b.result.Lock.State != "expired" || b.result.Lock.HolderAgentID != l.HolderAgentID {
+					t.Fatal("R10_EXPIRE_REASSIGNED", round, b.err)
+				}
+				expired = b.result
+			}
+		}
+
 		regrant := m
 		regrant.ExpectedGeneration = expired.Lock.Generation
 		regrant.Handoff = r10Handoff(l)
@@ -336,6 +373,118 @@ func TestR10CorruptPersistedCoordinatesFailClosed(t *testing.T) {
 			renew := r10Holder(m, r.Lock, "renew", "corrupt_renew_operation")
 			if _, err = r10Apply(t, s, renew, now.Add(time.Minute)); !errors.Is(err, td.ErrUnknown) {
 				t.Fatal("R10_CORRUPT_LEASE_RENEWED", column, err)
+			}
+		})
+	}
+}
+
+func TestR10NoticeCursorDoesNotStarveLaterPendingEntries(t *testing.T) {
+	s, m, now := r10DB(t)
+	ctx := context.Background()
+	if _, err := r10Apply(t, s, m, now); err != nil {
+		t.Fatal(err)
+	}
+	first, err := s.TaskDispatchNotices(ctx, "pending", 1000)
+	if err != nil || len(first) != 1 {
+		t.Fatal(err)
+	}
+	base := first[0]
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	for i := 0; i < 1001; i++ {
+		n := base
+		n.ID = fmt.Sprintf("offline_%04d", i)
+		n.SourceEnvelopeID = n.ID
+		n.RecipientID = n.ID
+		_, err = tx.Exec(`INSERT INTO r10_task_lock_outbox(`+taskDispatchNoticeColumns+`) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, n.ID, n.OperationID, n.Key.Provider, n.Key.Instance, n.Key.Repository, n.Key.ChangeDir, n.Key.TaskID, n.Generation, n.RecipientKind, n.RecipientID, n.RecipientOwnerLC, n.Type, n.State, n.SourceEnvelopeID, n.DeliveryID, taskDispatchTime(n.CreatedAt), "", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	var at time.Time
+	id := ""
+	pages := 0
+	for {
+		items, e := s.TaskDispatchNoticesAfter(ctx, "pending", 1000, at, id)
+		if e != nil {
+			t.Fatal(e)
+		}
+		if len(items) == 0 {
+			break
+		}
+		pages++
+		for _, n := range items {
+			if seen[n.ID] {
+				t.Fatal("R10_NOTICE_CURSOR_DUPLICATE", n.ID)
+			}
+			seen[n.ID] = true
+		}
+		last := items[len(items)-1]
+		at, id = last.CreatedAt, last.ID
+	}
+	if len(seen) != 1002 || pages != 2 {
+		t.Fatal("R10_PENDING_NOTICE_STARVED", len(seen), pages)
+	}
+}
+
+func TestR10HandoffEventFailureCannotPartiallyTransfer(t *testing.T) {
+	s, m, now := r10DB(t)
+	first, err := r10Apply(t, s, m, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hand := m
+	hand.OperationID = "handoff_atomic_failure_0001"
+	hand.Kind = "handoff"
+	hand.ExpectedGeneration = first.Lock.Generation
+	hand.ExpectedToken = first.Lock.LeaseToken
+	hand.HolderAgentID = "agent-next"
+	hand.HolderOwnerLC = "next"
+	hand.Handoff = r10Handoff(first.Lock)
+	if _, err = s.db.Exec(`CREATE TRIGGER r10_handoff_fail BEFORE INSERT ON r10_task_lock_event WHEN NEW.event_type='handoff' BEGIN SELECT RAISE(ABORT,'injected handoff event failure'); END`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = r10Apply(t, s, hand, now.Add(time.Minute)); err == nil {
+		t.Fatal("R10_HANDOFF_HALF_COMMIT_SUCCESS")
+	}
+	current, err := s.TaskDispatchLock(context.Background(), m.Key)
+	if err != nil || current == nil || current.HolderAgentID != first.Lock.HolderAgentID || current.Generation != first.Lock.Generation || current.LeaseToken != first.Lock.LeaseToken {
+		t.Fatal("R10_HANDOFF_HALF_COMMIT_AUTHORITY", current, err)
+	}
+	events, _ := s.TaskDispatchEvents(context.Background(), m.Key, 0)
+	notices, _ := s.TaskDispatchNotices(context.Background(), "pending", 100)
+	if len(events) != 1 || len(notices) != 1 {
+		t.Fatal("R10_HANDOFF_HALF_COMMIT_AUDIT", len(events), len(notices))
+	}
+}
+
+func TestR10ExactExpiryAndWrongTokenCannotRenew(t *testing.T) {
+	for _, name := range []string{"exact_expiry", "wrong_token"} {
+		t.Run(name, func(t *testing.T) {
+			s, m, now := r10DB(t)
+			first, err := r10Apply(t, s, m, now)
+			if err != nil {
+				t.Fatal(err)
+			}
+			renew := r10Holder(m, first.Lock, "renew", "boundary_renew_operation_0001")
+			at := first.Lock.ExpiresAt
+			if name == "wrong_token" {
+				at = now.Add(time.Minute)
+				renew.ExpectedToken = strings.Repeat("f", 64)
+			}
+			if _, err = r10Apply(t, s, renew, at); !errors.Is(err, td.ErrConflict) {
+				t.Fatal("R10_BOUNDARY_OR_TOKEN_RENEWED", name, err)
+			}
+			current, _ := s.TaskDispatchLock(context.Background(), m.Key)
+			if current == nil || !current.ExpiresAt.Equal(first.Lock.ExpiresAt) {
+				t.Fatal("R10_REFUSED_RENEW_CHANGED_EXPIRY", name)
 			}
 		})
 	}

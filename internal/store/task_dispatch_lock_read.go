@@ -140,10 +140,21 @@ func scanTaskDispatchNotice(row taskDispatchScanner) (*td.Notice, error) {
 }
 
 func (s *SQLite) TaskDispatchNotices(ctx context.Context, state string, limit int) ([]td.Notice, error) {
-	if limit < 1 || limit > 1000 {
+	return s.TaskDispatchNoticesAfter(ctx, state, limit, time.Time{}, "")
+}
+func (s *SQLite) TaskDispatchNoticesAfter(ctx context.Context, state string, limit int, after time.Time, afterID string) ([]td.Notice, error) {
+	if limit < 1 || limit > 1000 || (after.IsZero() != (afterID == "")) || len(afterID) > 128 {
 		return nil, td.ErrInvalid
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT `+taskDispatchNoticeColumns+` FROM r10_task_lock_outbox WHERE delivery_state=? ORDER BY created_at_utc,id LIMIT ?`, state, limit)
+	query := `SELECT ` + taskDispatchNoticeColumns + ` FROM r10_task_lock_outbox WHERE delivery_state=?`
+	args := []any{state}
+	if !after.IsZero() {
+		query += ` AND (created_at_utc>? OR (created_at_utc=? AND id>?))`
+		args = append(args, taskDispatchTime(after), taskDispatchTime(after), afterID)
+	}
+	query += ` ORDER BY created_at_utc,id LIMIT ?`
+	args = append(args, limit)
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

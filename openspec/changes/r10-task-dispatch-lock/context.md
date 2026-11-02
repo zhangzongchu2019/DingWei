@@ -37,3 +37,13 @@ A01～A04的源码事实盘点完成，状态均为「部分具备」，T-03.2�
 R5现有GitHub GET扩展只读PR元数据，核stable base repo ID，仍由同一服务AuthorizeRead前后现核；没有新凭据或Git写/SSH通道。固定任务SHA/UTF8/size与tasks唯一编号校验，完整Markdown快照拒symlink/module/坏文件，比较只用原R7 ConservativePolicyA。未开PR显式pr_not_opened；提交必须已登记可读PR，登记后未知阻断。
 
 当前锁/operation/event/outbox为0073独立四表；原70个迁移SQL未改。operation重放保留原结果但重核当前身份/绑定和current_lease，旧代际不返回旧令牌充当前许可。事件只存坐标/哈希/主体/状态及指针，不写正文或提供方凭据。阶段三开发态相关store/parser/服务/PG反测已实际通过；监测启动/提醒、完整逐格变异与最终门尚待收口，T04～09保持未勾。
+
+
+### 阶段四：运行期接线与恢复（2026-11-02）
+
+- `cmd/workpulse/console_routes.go` 新增独立 Console/Agent 锁和 batch 路由，沿用已有认证中间件；`cmd/workpulse/newplat.go` 在身份/R5装配完成后显式启动。`internal/m8/task_dispatch_lock.go` 将远端轮询和 outbox 投递分为两个受管循环，避免慢轮询阻塞已发现变化的提醒；默认关闭入口无R10依赖访问。
+- `internal/taskdispatch/monitor.go` 按 repo/ref/PR 分组并行，一组共享一次可变坐标读取、每个holder重核权限；`batch.go` 逐仓部分结果与重启不确定投递；`notice.go` 在实际投递前再核身份/当前代际；`read.go` 返回当前资格、历史分页和监测落后状态。
+- `internal/m8/task_dispatch_batch.go` 接线逐仓结果；新增路由仅消费可信认证上下文、拒未知JSON字段/额外JSON/跨站请求。未带R10标签的原信封在新增检查最前返回，不触碰R10表。可靠提醒只记hub queued，不能宣称CLI打开、开工、勾选或验收。
+- `internal/store/task_dispatch_restart_test.go` 用单独测试进程重读持久锁/到期边界并验证不确定outbox；`task_dispatch_compat_test.go` 用真实r48二进制创建70行账库、复制后升0073，原70行哈希不变；旧Hub在升级、手工回滚及失败迁移之后均启动。旧Hub READY/healthz/关闭/副本公共夹具取自本会话R14冻结源码cf6134a6对应兼容测试，改为R10隔离路径与0073断言，没有移入R14产品实现或0072。
+- `rollback.sql` 是未授权生产执行的离线运维脚本：保留新表与历史、原子记录活动锁撤销操作/事件、推进代际并失效token、pending/attempting改unknown。重复执行无活动锁不重复撤销，不删旧表或原70行账。现网执行、部署和独立验收仍须另令。
+- 当前阶段开发态验证不替代最终冻结门；完整18格、语义变异、最终race三轮与全门结果随证据分支交件，T04～09待全部实际完成再勾。
