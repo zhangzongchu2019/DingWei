@@ -23,6 +23,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITES = (
+    ("r14_sticky_browser", "node", ROOT / "view-service/r14-sticky-browser-regression.js"),
     ("coordinate_review_browser", "node", ROOT / "view-service/coordinate-review-browser-regression.js"),
     ("openspec_read_browser", "node", ROOT / "view-service/openspec-read-browser-regression.js"),
     ("renderer_0206_file_render", "node", ROOT / "view-service/renderer-0206-file-render-regression.js"),

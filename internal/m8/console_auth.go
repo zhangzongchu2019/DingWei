@@ -263,7 +263,7 @@ func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http
 func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	page := renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedPageAllowed(r))
+	page := strings.ReplaceAll(renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedPageAllowed(r)), "{{FEATURE_NEWPLAT_NAME_CHECK}}", strconv.FormatBool(h.Identity != nil))
 	if h.consoleMux != nil {
 		page = strings.Replace(page, "const CONSOLE_MUX_ENABLED = false;", "const CONSOLE_MUX_ENABLED = true;", 1)
 		page += "<script>" + consoleMuxBrokerJS + "</script>"
@@ -723,6 +723,7 @@ async function refreshGroups(source){var generation=++groupRequestGeneration;if(
 //    不重写 refreshGroups/renderGroups —— 它们的三态文案、AbortController、generation 守卫由 group 回归守着。
 //    本块自带同款守卫:加载中/空/失败三态、超时、过期应答丢弃;名称有效性、重名、核码一律由 Hub 判,前端不预判。
 // 自备审核区开关(组长裁定 2026-10-01:托管先行,自备封存,第五期再打开)。关闭时该区块不渲染、不发任何请求。
+var FEATURE_NEWPLAT_NAME_CHECK='{{FEATURE_NEWPLAT_NAME_CHECK}}'==='true';
 var FEATURE_SELFHOST_REVIEW=true;    // 第一版入网批准走这块(业主实测:关着时第一版批准走不通)
 // 绑定飞书(取甲:本人自取码):只给当前会话本人;码只在这个小块里显示,点完成/到期/再次点击前都不落盘、不进 storage。
 (function(){
@@ -919,13 +920,28 @@ async function refreshEnroll(){
   }finally{clearTimeout(timer);}
 }
 function enrollBusy(on){['enrollApprove','enrollReject'].forEach(function(id){var b=document.getElementById(id);if(b)b.disabled=on;});}
+async function agentNameAvailable(name,feedback){
+  // The legacy platform keeps its existing naming semantics.
+  if(!FEATURE_NEWPLAT_NAME_CHECK)return true;
+  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},groupFetchTimeoutMs);
+  try{
+    var r=await fetch('/api/console/agent-name-used?name_lc='+encodeURIComponent(name.trim().toLowerCase()),{cache:'no-store',signal:controller.signal});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var used=await r.json();if(typeof used!=='boolean')throw new Error('响应格式无效');
+    if(used){enrollFeedback(feedback,'Agent 短名已被占用，请更换名称');return false;}
+    return true;
+  }catch(err){enrollFeedback(feedback,'短名查重失败，请重试：'+String(err&&err.message||err));return false;}
+  finally{clearTimeout(timer);}
+}
 async function enrollApprove(){
   var code=document.getElementById('enrollCode').value.trim(),name=document.getElementById('enrollName').value.trim(),openedId=enrollOpenId;
   if(!code||!name){enrollFeedback('enrollFeedback','请填写客户端屏幕上的配对码和 Agent 名称');return;}
   var gc=groupChoice('enrollGroup','enrollNewGroup','group_code');
   if(gc.error){enrollFeedback('enrollFeedback',gc.error);return;}
   var abody=Object.assign({pairing_code:code,agent_name:name},gc.fields);
-  enrollBusy(true);var res=await consolePost(ENROLL_API.approve(openedId),abody);enrollBusy(false);
+  enrollBusy(true);
+  if(!await agentNameAvailable(name,'enrollFeedback')){enrollBusy(false);return;}
+  var res=await consolePost(ENROLL_API.approve(openedId),abody);enrollBusy(false);
   if(!res.ok){var gone=ENROLL_GONE.indexOf(res.code)>=0||res.status===410||(res.code==='pairing_mismatch'&&res.data.rejected===true);if(!gone){enrollFeedback('enrollFeedback',res.text);return;}enrollCloseEditor();enrollFeedback('enrollNotice',res.text);refreshEnroll();return;}   // 申请保留、输入保留:业主改名/改码后可再点通过
   enrollCloseEditor();enrollFeedback('enrollNotice','');refreshEnroll();refreshRoster();refreshGroups('enroll');refreshAgents();
 }
@@ -1332,6 +1348,7 @@ async function hostedCreate(){
   if(gc.error){enrollFeedback('hostedFeedback',gc.error);return;}
   Object.assign(body,gc.fields);
   var btn=document.getElementById('hostedCreateBtn');btn.disabled=true;
+  if(!await agentNameAvailable(body.name,'hostedFeedback')){btn.disabled=false;return;}
   var res=await consolePost(HOSTED_API.create,body);btn.disabled=false;
   if(!res.ok){enrollFeedback('hostedFeedback',res.text);return;}   // 输入保留,业主改名/改选后可再点创建
   enrollFeedback('hostedFeedback','');document.getElementById('hostedName').value='';
