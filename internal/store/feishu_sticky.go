@@ -28,9 +28,9 @@ func (s FeishuStickyState) Valid(now time.Time) bool {
 
 type FeishuStickyOperation struct {
 	FeishuStickyKey
-	Seq, BaseGeneration, ResultGeneration                              int64
-	SourceMessageID, Kind, TargetAgentID, Decision, Status, DeliveryID string
-	CreatedAt, CompletedAt                                             time.Time
+	Seq, BaseGeneration, ResultGeneration                                                int64
+	SourceMessageID, Kind, TargetAgentID, Decision, Status, DeliveryID, SourceEnvelopeID string
+	CreatedAt, CompletedAt                                                               time.Time
 }
 
 // Optional capability: legacy Repository implementations need not simulate R14.
@@ -40,7 +40,8 @@ type FeishuStickyRepository interface {
 	FinishFeishuSticky(context.Context, FeishuStickyOperation, string, string, string, time.Time) error
 	ListFeishuStickyUnresolved(context.Context, FeishuStickyKey, time.Time) ([]FeishuStickyOperation, error)
 	ResolveFeishuSticky(context.Context, int64, time.Time) error
-	ListFeishuStickyStates(context.Context, int) ([]FeishuStickyState, error)
+	RecordFeishuStickyIntent(context.Context, FeishuStickyOperation, string, string, string) error
+	ListFeishuStickyStates(context.Context, int, FeishuStickyKey) ([]FeishuStickyState, error)
 	DeleteFeishuSticky(context.Context, FeishuStickyState) error
 	CleanupFeishuSticky(context.Context, time.Time, int) (int64, error)
 }
@@ -70,12 +71,12 @@ func (s *SQLite) GetFeishuSticky(ctx context.Context, k FeishuStickyKey) (*Feish
 	return scanSticky(s.db.QueryRowContext(ctx, "SELECT "+stickyStateCols+" FROM r14_feishu_sticky_state WHERE user_id_lc=? AND bot_channel_id=?", k.UserIDLC, k.BotChannelID))
 }
 
-const stickyOpCols = "user_id_lc,bot_channel_id,operation_seq,source_message_id,operation_kind,base_generation,result_generation,target_agent_id,decision,status,delivery_id,created_at_utc,completed_at_utc"
+const stickyOpCols = "user_id_lc,bot_channel_id,operation_seq,source_message_id,operation_kind,base_generation,result_generation,target_agent_id,decision,status,delivery_id,source_envelope_id,created_at_utc,completed_at_utc"
 
 func scanStickyOp(row interface{ Scan(...any) error }) (FeishuStickyOperation, error) {
 	var o FeishuStickyOperation
 	var a, b string
-	err := row.Scan(&o.UserIDLC, &o.BotChannelID, &o.Seq, &o.SourceMessageID, &o.Kind, &o.BaseGeneration, &o.ResultGeneration, &o.TargetAgentID, &o.Decision, &o.Status, &o.DeliveryID, &a, &b)
+	err := row.Scan(&o.UserIDLC, &o.BotChannelID, &o.Seq, &o.SourceMessageID, &o.Kind, &o.BaseGeneration, &o.ResultGeneration, &o.TargetAgentID, &o.Decision, &o.Status, &o.DeliveryID, &o.SourceEnvelopeID, &a, &b)
 	o.CreatedAt = stickyParse(a)
 	o.CompletedAt = stickyParse(b)
 	return o, err
@@ -188,8 +189,8 @@ func (s *SQLite) ResolveFeishuSticky(ctx context.Context, seq int64, now time.Ti
 	_, err := s.db.ExecContext(ctx, `UPDATE r14_feishu_sticky_operation SET status='resolved',completed_at_utc=? WHERE operation_seq=? AND status IN ('pending','unknown')`, stickyTime(now), seq)
 	return err
 }
-func (s *SQLite) ListFeishuStickyStates(ctx context.Context, limit int) ([]FeishuStickyState, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT "+stickyStateCols+" FROM r14_feishu_sticky_state ORDER BY updated_at_utc,user_id_lc,bot_channel_id LIMIT ?", limit)
+func (s *SQLite) ListFeishuStickyStates(ctx context.Context, limit int, after FeishuStickyKey) ([]FeishuStickyState, error) {
+	rows, err := s.db.QueryContext(ctx, "SELECT "+stickyStateCols+" FROM r14_feishu_sticky_state WHERE (user_id_lc,bot_channel_id)>(?,?) ORDER BY user_id_lc,bot_channel_id LIMIT ?", after.UserIDLC, after.BotChannelID, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -229,4 +230,20 @@ func (s *SQLite) CleanupFeishuSticky(ctx context.Context, now time.Time, limit i
 	}
 	m, _ := r.RowsAffected()
 	return n + m, tx.Commit()
+}
+
+// Metadata checkpoints never make a binding active. A crash leaves a blocked key.
+func (s *SQLite) RecordFeishuStickyIntent(ctx context.Context, o FeishuStickyOperation, target, decision, delivery string) error {
+	r, err := s.db.ExecContext(ctx, `UPDATE r14_feishu_sticky_operation SET target_agent_id=?,decision=?,delivery_id=?,source_envelope_id=? WHERE operation_seq=? AND status='pending'`, target, decision, delivery, o.SourceEnvelopeID, o.Seq)
+	if err != nil {
+		return err
+	}
+	n, err := r.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return ErrStickyGeneration
+	}
+	return nil
 }

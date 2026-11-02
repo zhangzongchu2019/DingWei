@@ -24,6 +24,7 @@ CREATE TABLE r14_feishu_sticky_operation (
  decision TEXT NOT NULL DEFAULT '',
  status TEXT NOT NULL CHECK(status IN ('pending','unknown','accepted','rejected','stale_completion','resolved')),
  delivery_id TEXT NOT NULL DEFAULT '',
+ source_envelope_id TEXT NOT NULL DEFAULT '',
  created_at_utc TEXT NOT NULL,
  completed_at_utc TEXT NOT NULL DEFAULT '',
  UNIQUE(bot_channel_id, source_message_id)
