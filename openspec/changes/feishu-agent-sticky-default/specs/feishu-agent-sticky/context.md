@@ -79,7 +79,7 @@
 
 ## T-05 / T-06 / T-10 当前实现与测试入口
 
-固定实现源码 `9b62531c6fb971239cda5820bd313fe22074ee63`，基线仍为 r48 `1e17255f28ced042784337903914ca8c126ef4cf`。本节为第 108 条授权的当前实现补充，历史 T-01/T-04 的只读勘察边界不替代本单授权。最终整包/变异/浏览器/strict 结果见证据分支及交接记录；本节不声明独立验收或上线。
+固定实现源码 `59e859e1f3bb4099e8f15da246070b549d598263`，基线仍为 r48 `1e17255f28ced042784337903914ca8c126ef4cf`。本节为第 108 条授权的当前实现补充，历史 T-01/T-04 的只读勘察边界不替代本单授权。最终整包/变异/浏览器/strict 结果见证据分支及交接记录；本节不声明独立验收或上线。
 
 | 主题 | 当前文件:行 | 说明 |
 |---|---|---|
@@ -87,8 +87,8 @@
 | 纯解析/匹配/候选 | `internal/m8/feishu_sticky.go:58`、`:75`、`:123`、`:126` | CRLF/LF 纯候选识别、合法上次排首、实际全名逐行井号、精确与唯一前缀。 |
 | 存储事务与代际 | `internal/store/feishu_sticky.go:16`、`:25`、`:95`、`:131`、`:254` | UTC 严格边界，先意图，再既有投递，成功后 CAS；保留 source envelope ID，删除状态后代际仍由保留操作约束。 |
 | 对账不改默认 | `internal/store/feishu_sticky.go:203`、`:271`；`internal/m8/feishu_sticky.go:415` | resolved 只写 operation 终态、实际 delivery ID、完成时刻；验证源信封/目标/principal 三者，既不补目标也不续 TTL/代际或重发。 |
-| 失效/保留清理 | `internal/m8/feishu_sticky.go:377`、`:391`、`:423`；`internal/store/feishu_sticky.go:210`、`:230`、`:282` | 生命周期 owned worker；分钟 pending sweep、小时轮转清理、每批至多 200，pending/unknown 不按 30 天删。 |
-| 队列稳定目标复核 | `internal/m8/feishu_sticky.go:463` | 仅 R14 信封受限制性目标元数据核验，普通原信封语义不变；同名新连接不能取走旧目标消息。 |
+| 失效/保留清理 | `internal/m8/feishu_sticky.go:377`、`:392`、`:423`；`internal/store/feishu_sticky.go:210`、`:230`、`:282` | 生命周期 owned worker；分钟 pending sweep、小时轮转清理、每批至多 200，pending/unknown 不按 30 天删。 |
+| 队列稳定目标复核 | `internal/m8/feishu_sticky.go:469` | 仅 R14 信封受限制性目标元数据核验，普通原信封语义不变；同名新连接不能取走旧目标消息。 |
 | 0072 | `internal/store/migrations/0072_feishu_agent_sticky.sql:1` | 两张 SQLite 表及索引，无旧表修改，无 PG 新表。 |
 | T-10 服务端与路由 | `internal/m8/console_agent_name.go:14`；`cmd/workpulse/console_routes.go:51` | GET 窄 boolean；Identity PG；登录态 owner、无 owner 输入；新平台才注册。 |
 | T-10 两入口 | `internal/m8/console_auth.go:923`、`:943`、`:1351` | 查重失败或 active/suspended 冲突都不提交；旧平台开关在 `:266`/`:726`。 |

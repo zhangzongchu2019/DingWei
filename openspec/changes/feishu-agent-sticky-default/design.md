@@ -226,7 +226,7 @@ Additional isolated T-07 migration/rollback test (not an S024): apply 0072 to a 
 
 ## T-05 / T-06 / T-10 实现落点（第 108 条授权）
 
-本节对应实现源码提交 `9b62531c6fb971239cda5820bd313fe22074ee63`；最终源码分支和验证证据以交接记录及交件 tip/tree 为准。上文 T-04 的“仅设计、不授权实现”是当时边界，本单已另派 T-05、T-06、T-10、T-07；T-08 真实飞书及 T-09 独立验收仍不在本单。
+本节对应实现源码提交 `59e859e1f3bb4099e8f15da246070b549d598263`；最终源码分支和验证证据以交接记录及交件 tip/tree 为准。上文 T-04 的“仅设计、不授权实现”是当时边界，本单已另派 T-05、T-06、T-10、T-07；T-08 真实飞书及 T-09 独立验收仍不在本单。
 
 - R14-001/002/007：私聊挂点留在原 `dispatchSelector` 与最终 `dispatchDefaultPersonalSession`；只对可信 Feishu 入站及新平台身份接线。每次检查真实连接绑定的 `metricsAgentID == np_agent.id`、属主及 active。R14 信封保存限制性目标元数据；入队及恢复 drain 再核同一稳定 ID，防旧消息送给同名新 Agent。既有非 R14 信封不经过该附加检查；跨成员全名复用原跨成员授权与投递路径，不读写本人 K。
 - R14-003/004/005/006：同 K 引用计数互斥车道在决策、意图、投递、提交全过程串行；SQLite 分配 operation_seq 为持久追溯顺序。短名精确优先，再作唯一前缀；仅选择不发空业务。纯多行候选回贴、候选提示、系统命令及重复源不更新绑定。严格 UTC 窗口 `selected_at <= now < expires_at`，回拨无容差；状态时钟字段损坏按读取失败处理，不将零值伪装有效锚。
@@ -240,3 +240,5 @@ Additional isolated T-07 migration/rollback test (not an S024): apply 0072 to a 
 测试使用临时 SQLite、embedded PG、固定 h.now、localhost 真实 Hub WebSocket 与假 Feishu 文本传输；不使用真实业主/Agent、机器人凭据或线上 DB。Go 单元覆盖纯匹配/候选/时间；Hub 集成覆盖 S001～S023 的身份、状态、路由、失败、重启、并发与 API 授权；本地浏览器覆盖 T-10 两入口及 S018 文本 mock，不能代替 T-08 的真实桌面/手机回环。
 
 兼容测试先从精确 r48 源构建仅供隔离测试的旧 Hub（二进制不是发布件），由旧 Hub 创建 r48 库后复制，再应用本单 0072、用旧 Hub 启动副本。另造 0072 对象冲突验证迁移事务失败不半提交且旧 Hub 仍可启动；按上文审定 SQL 验全部绑定失效、全部 pending 转 unknown、表和行不丢。无部署或生产回滚动作；未来 GO 仍须独立授权。
+
+启动时将当前 SQLite capability 在启动 goroutine 前捕获，分钟/小时维护始终使用该固定引用，符合单 Hub/单文件不变量。首轮 race 报告发现后台启动读与测试故障注入替换 Hub.Repo 的竞态，修复提交 `59e859e1f3bb4099e8f15da246070b549d598263`；原始失败保留，最终门以修复后的复跑为准。
