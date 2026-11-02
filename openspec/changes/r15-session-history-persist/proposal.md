@@ -23,11 +23,11 @@ Console 会话回放目前依赖 Hub 进程内的结构化事件环，历史按�
 
 ## Impact
 
-候选实现涉及 `internal/m8` 的结构化事件接收、Console mux／View 回放协议、`view-service/renderer-canary-sse.html` 的对话页，以及 `internal/store` 的 SQLite schema 与读写。写入会增加事件接收热路径的数据库或队列工作；持久化原始会话内容会增加磁盘占用和隐私责任。PM-R15-01～08 业务定值已由 rulings ㉚～㉜ 批准；㉝ 已增加向上分页交互，PM-R15-09 页大小／请求预算仍待定。本提案不授权生产数据迁移、部署或现网／预发操作。
+候选实现涉及 `internal/m8` 的结构化事件接收、Console mux／View 回放协议、`view-service/renderer-canary-sse.html` 的对话页，以及 `internal/store` 的 SQLite schema 与读写。写入会增加事件接收热路径的数据库或队列工作；持久化原始会话内容会增加磁盘占用和隐私责任。PM-R15-01～09 业务定值已由 rulings ㉚～㉞ 批准；㉝ 已增加向上分页交互，㉞ 已定每页最多 100 个事件并沿用 4 MiB／2 秒预算。本提案不授权生产数据迁移、部署或现网／预发操作。
 
 ## 需求来源
 
-事实基线：[S-HISTORY-EMPTY-FACTS 只读报告](https://git.code.tencent.com/wego-ai/dingwei/blob/1c7cc1e29/docs/reviews/prodops-history-empty-facts-20261102/REPORT.md)，提交 `1c7cc1e2`；仓库代码锚点为 `c248506cf120c3af2a06eeaeeae3038f596537b1`。PM 定值来源：[业主 rulings](https://git.code.tencent.com/wego-ai/dingwei/blob/dfd288a748bbcce4a739120d38684926b133004e/docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md) 第㉚～㉝条。业主确定结构化会话事件为存储单位，容量与时长控制保留量，并要求提案同步 Console 向上分页、滚动位置保持、gap 提示与实时流衔接规格。
+事实基线：[S-HISTORY-EMPTY-FACTS 只读报告](https://git.code.tencent.com/wego-ai/dingwei/blob/1c7cc1e29/docs/reviews/prodops-history-empty-facts-20261102/REPORT.md)，提交 `1c7cc1e2`；仓库代码锚点为 `c248506cf120c3af2a06eeaeeae3038f596537b1`。PM 定值来源：[业主 rulings](https://git.code.tencent.com/wego-ai/dingwei/blob/2f9ddaf0f967cb326e10db38030a2ec70c3cbc3c/docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md) 第㉚～㉞条。业主确定结构化会话事件为存储单位，容量与时长控制保留量，并要求提案同步 Console 向上分页、滚动位置保持、gap 提示与实时流衔接规格。
 
 ## 待确认假设
 
@@ -38,7 +38,7 @@ Console 会话回放目前依赖 Hub 进程内的结构化事件环，历史按�
 
 - 持久化正文按 PM-R15-06 定值存于 dw123 本机数据库，不做静态加密；工具调用细节按 PM-R15-07 原样保存，保护与删除同正文，脱敏另定。
 
-## PM 决策（01～08 已定；09 待定）
+## PM 决策（01～09 已定）
 
 1. **PM-R15-01：已定（㉜）。** 以结构化会话事件为存储单元，不设固定条数上限；仅由单条、每 Agent、全局容量与保留时长约束，先到者淘汰最旧并提示缺口；回合视图在读取层聚合。
 2. **PM-R15-02：已定（㉚）。** 单条 ≤1 MB、每 Agent ≤64 MB、全局 ≤2 GB；超限淘汰最旧并报告 gap，不静默截断。此为持久化预算，和 Hub 内存 eventRing 的每会话 16 MiB／全局 128 MiB 预算分开。
@@ -48,11 +48,11 @@ Console 会话回放目前依赖 Hub 进程内的结构化事件环，历史按�
 6. **PM-R15-06：已定（㉛）。** 不做静态加密；正文存于 dw123 本机数据库，不把卷／备份加密未证实设为上线前置。
 7. **PM-R15-07：已定（㉛）。** 结构化事件原样保存，工具调用细节的保护与删除同正文；脱敏规则另定。
 8. **PM-R15-08：已定（㉛）。** Hub 重启本身不使持久 cursor 失效；无真实缺口时免显式 resync，淘汰、撤权或真实缺口仍显式提示。
-9. **PM-R15-09：分页大小与单次读取预算，待业主定值。** 建议每页最多 50 条且序列化响应不超过 4 MiB，单页服务端读取 deadline 2 秒；若字节上限先到即返回已读记录和下一游标，不跨过未返回记录。建议值兼顾可用性和峰值内存／延迟，且小于单次 30 天／64 MB 历史总量。
+9. **PM-R15-09：已定（㉞）。** 每页最多 100 个结构化会话事件；单页 4 MiB 与服务端 2 秒时限沿用提案原建议。字节上限先到时返回连续前缀，并给出下一页游标。
 
 ### 历史选项（仅供决策追溯，已被上列定值替代）
 
-以下保留最初提交的选项与建议；冲突时以上方已定值及 rulings ㉚～㉝ 为准，不再表示待 PM 事项。
+以下保留最初提交的选项与建议；冲突时以上方已定值及 rulings ㉚～㉞ 为准，不再表示待 PM 事项。
 
 1. PM-R15-01 原选项 A：单条结构化事件最近 1000 条；选项 B：按完整用户／Agent 往返回合计 1000 条；原建议 A。
 2. PM-R15-02 原选项 A：单条 256 KiB、每 Agent 16 MiB／1000 条、Hub 全局 128 MiB；选项 B：按预计流量扩大预算；原建议 A。
@@ -62,6 +62,7 @@ Console 会话回放目前依赖 Hub 进程内的结构化事件环，历史按�
 6. PM-R15-06 原选项 A：部署卷／数据库层静态加密并核验覆盖备份；选项 B：应用层字段加密并建立密钥轮换／恢复流程；原建议 A，并曾建议加密覆盖无法证实时暂停上线。该上线前置已被 ㉛ 明确撤销。
 7. PM-R15-07 原选项 A：原样保存结构化事件，包括工具调用／结果；选项 B：剔除工具输入／输出或仅保存摘要；原建议 A。
 8. PM-R15-08 原选项 A：持久 Agent cursor 在纯重启后连续，无 gap 时免显式 resync；选项 B：每次重启都 epoch_changed 并显式 resync；原建议 A。
+9. PM-R15-09 原建议：每页最多 50 条、4 MiB、服务端 2 秒；㉞ 将每页条数改定为最多 100 个事件，4 MiB 与 2 秒时限维持。
 
 ## 验收范围
 
