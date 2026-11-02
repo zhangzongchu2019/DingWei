@@ -1,0 +1,5 @@
+=== RUN   TestHLCBindFailure
+    shutdown_fault_process_test.go:351: S010 bind_failure actual_exit=1 elapsed_ms=142
+--- PASS: TestHLCBindFailure (0.14s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.151s

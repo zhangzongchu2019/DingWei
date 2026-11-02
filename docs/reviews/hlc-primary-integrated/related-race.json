@@ -1,0 +1,27 @@
+{
+  "step": "related-race",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-p",
+    "1",
+    "./cmd/workpulse",
+    "./internal/m8",
+    "./internal/feishu",
+    "./internal/fcs",
+    "./internal/bus",
+    "./internal/lifecycle",
+    "-count=1",
+    "-timeout=10m",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T03:21:34.440635+00:00",
+  "ended_utc": "2026-11-02T03:39:27.445444+00:00",
+  "rc": 1,
+  "sha256": "bbfbdee8ae73943f9883ac4c3153ea8976979516e72ee87c55053b91b058751f",
+  "home": "/tmp/h-b3tknm0u",
+  "tmp": "/tmp/h-b3tknm0u",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

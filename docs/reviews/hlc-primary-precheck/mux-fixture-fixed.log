@@ -1,0 +1,14 @@
+=== RUN   TestMuxRecoveryMetadataExpiresWithoutAnotherRequest
+2026/11/02 02:57:10 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:57:10 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestMuxRecoveryMetadataExpiresWithoutAnotherRequest (3.47s)
+=== RUN   TestMuxRecoveryMetadataExpiresWithoutAnotherRequest
+2026/11/02 02:57:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:57:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestMuxRecoveryMetadataExpiresWithoutAnotherRequest (3.49s)
+=== RUN   TestMuxRecoveryMetadataExpiresWithoutAnotherRequest
+2026/11/02 02:57:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:57:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestMuxRecoveryMetadataExpiresWithoutAnotherRequest (3.56s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	11.552s

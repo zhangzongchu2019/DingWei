@@ -1,0 +1,32 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-overlay",
+    "/tmp/h7-pft5ywv6/overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCS007Full$",
+    "-count=1",
+    "-shuffle=on",
+    "-timeout=10m",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T04:48:34.433947+00:00",
+  "ended_utc": "2026-11-02T04:48:50.361636+00:00",
+  "rc": 0,
+  "race": false,
+  "repeat": 1,
+  "mutant": false,
+  "log_sha256": "4e8a2845cef90e90ffe1719999e1316bf8e088495410587f9c277a55f7839a2e",
+  "sources": {
+    "cmd/workpulse/main.go": "ffbd50053b61ead27306fff55ad840fa686cd38b166095312ef3f1f4a1ef3612",
+    "internal/feishu/lifecycle.go": "52c8bcbbee78cacb930e1e971c729dee897d9d41f18d747f1ffc294c88fc048e",
+    "cmd/workpulse/shutdown.go": "67e8cb166d9ab056b814012c496c9249a52fd6e399ab18c49ecaf5aca184f249",
+    "cmd/workpulse/shutdown_load_test.go": "9feee8ce14daef8e9eb13adc9f222ac0b16c20aa037e250fbcdde49f7f488ed5",
+    "cmd/workpulse/shutdown_mixed_fault_process_test.go": "e4406363bee88af59a7f1970d5c64493094b64d577d9c64a2eb47cf5787116a9",
+    "tests/hlc/sdk_fixture.go.txt": "13520d21e8ef84fe8d254af8630f95ffd884760d9ddeed671ea570d7970d475f",
+    "tests/hlc/s007_full.py": "d474f81f52a8edc47e28062880661450c7e34e317e7c5fafbccc7f07b0b5d758"
+  },
+  "overlay": "Test routes + SDK transport; production shutdown, budgets, lifecycle unchanged except explicitly withdrawn timeout code mutant"
+}

@@ -1,0 +1,29 @@
+=== RUN   TestDBQueueWrapsRepositoryByDirection
+--- PASS: TestDBQueueWrapsRepositoryByDirection (3.71s)
+=== RUN   TestDBQueueSensitiveContentSurvivesFailUntilAck
+--- PASS: TestDBQueueSensitiveContentSurvivesFailUntilAck (3.57s)
+=== RUN   TestAsyncDBQueueFlushesByBatchSize
+--- PASS: TestAsyncDBQueueFlushesByBatchSize (3.48s)
+=== RUN   TestAsyncDBQueueFlushesByTimer
+--- PASS: TestAsyncDBQueueFlushesByTimer (3.51s)
+=== RUN   TestAsyncDBQueueSensitiveContentSurvivesFailUntilAck
+--- PASS: TestAsyncDBQueueSensitiveContentSurvivesFailUntilAck (3.54s)
+=== RUN   TestAsyncDBQueueBackpressuresWhenFull
+--- PASS: TestAsyncDBQueueBackpressuresWhenFull (0.03s)
+=== RUN   TestNewBestEffortDBQueueUsesAsyncForSQLite
+--- PASS: TestNewBestEffortDBQueueUsesAsyncForSQLite (3.51s)
+=== RUN   TestShutdownQueueS008BufferedMultipleBatches
+    shutdown_test.go:115: S008 buffered_before=23 batches=[4 4 4 4 4 3] committed=23 remaining=0 failed=0 late_enqueue=rejected
+--- PASS: TestShutdownQueueS008BufferedMultipleBatches (0.00s)
+=== RUN   TestShutdownQueueS008FirstFailureAndUncommittedCount
+    shutdown_test.go:129: S008 first_error_preserved=true batches=[4 4 4 4 4 3] committed=15 remaining=8 failed=8
+--- PASS: TestShutdownQueueS008FirstFailureAndUncommittedCount (0.00s)
+=== RUN   TestShutdownQueueS008DeadlinePreservesUnattemptedItems
+    shutdown_test.go:143: S008 timeout=true committed=4 remaining=19 failed=4 unattempted=15
+--- PASS: TestShutdownQueueS008DeadlinePreservesUnattemptedItems (0.10s)
+=== RUN   TestShutdownQueueDrainsChannelAndPartialBatch
+--- PASS: TestShutdownQueueDrainsChannelAndPartialBatch (0.00s)
+=== RUN   TestShutdownQueueFailureIsNotSuccessfulFlush
+--- PASS: TestShutdownQueueFailureIsNotSuccessfulFlush (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/bus	22.476s

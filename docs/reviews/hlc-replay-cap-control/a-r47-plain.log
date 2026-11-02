@@ -1,0 +1,32 @@
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:566: 100k: hit-cap batch 9.30934ms; next 1000 completions avg cap check 561ns; size 96000
+--- PASS: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.09s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:566: 100k: hit-cap batch 9.164425ms; next 1000 completions avg cap check 532ns; size 96000
+--- PASS: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.08s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:566: 100k: hit-cap batch 9.719171ms; next 1000 completions avg cap check 586ns; size 96000
+--- PASS: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.07s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:566: 100k: hit-cap batch 8.912739ms; next 1000 completions avg cap check 556ns; size 96000
+--- PASS: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.08s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:566: 100k: hit-cap batch 8.70118ms; next 1000 completions avg cap check 554ns; size 96000
+--- PASS: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.08s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:566: 100k: hit-cap batch 9.167564ms; next 1000 completions avg cap check 620ns; size 96000
+--- PASS: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.07s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:566: 100k: hit-cap batch 8.777193ms; next 1000 completions avg cap check 548ns; size 96000
+--- PASS: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.07s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:566: 100k: hit-cap batch 9.72858ms; next 1000 completions avg cap check 540ns; size 96000
+--- PASS: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.07s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:566: 100k: hit-cap batch 8.856975ms; next 1000 completions avg cap check 569ns; size 96000
+--- PASS: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.07s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:566: 100k: hit-cap batch 9.000391ms; next 1000 completions avg cap check 550ns; size 96000
+--- PASS: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.07s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.759s

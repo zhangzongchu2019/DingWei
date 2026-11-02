@@ -1,0 +1,288 @@
+-test.shuffle 1793584382083319814
+=== RUN   TestHLCLoadMatrix
+2026/11/02 01:53:06 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+    shutdown_load_test.go:577: fixture_random_seed=1793584386994046153
+    shutdown_load_test.go:653: S011-resync stop_ms=2114 process_error=<nil> report_exit=0 stages=[{Name:access Started:2026-11-02 01:53:07.157296302 +0000 UTC Ended:2026-11-02 01:53:07.157334469 +0000 UTC ElapsedMS:0 BudgetMS:1000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:1 outbound:1] durable_counts:<nil> feishu_ingress:map[active_callbacks:1 close_completed:false rejected_after_seal:0 sdk_start_not_joined:1 sealed:false] http_overlaps_streams:map[internal_http:165 public_http:77] hub:map[background_owned:62 internal_bridge:15 internal_sse:100 public_mux:5 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:20 view_ws:1] persistence:unknown producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[failed:0 first_error:nil remaining:1] outbound:map[failed:0 first_error:nil remaining:0]] servers:map[] watchdog_enabled:false watchdog_window_ms:0]} {Name:drain Started:2026-11-02 01:53:07.157345617 +0000 UTC Ended:2026-11-02 01:53:09.259351277 +0000 UTC ElapsedMS:2102 BudgetMS:8000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:<nil> feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] persistence:unknown producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[failed:0 first_error:nil remaining:0] outbound:map[failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-02T01:53:09.259314861Z error:nil listener_closed_utc:2026-11-02T01:53:07.157328259Z] public:map[drained_utc:2026-11-02T01:53:09.205211687Z error:nil listener_closed_utc:2026-11-02T01:53:07.157331519Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:queue Started:2026-11-02 01:53:09.259393353 +0000 UTC Ended:2026-11-02 01:53:09.259663847 +0000 UTC ElapsedMS:0 BudgetMS:3000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_queued:1] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-02T01:53:09.259314861Z error:nil listener_closed_utc:2026-11-02T01:53:07.157328259Z] public:map[drained_utc:2026-11-02T01:53:09.205211687Z error:nil listener_closed_utc:2026-11-02T01:53:07.157331519Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:storage Started:2026-11-02 01:53:09.259678575 +0000 UTC Ended:2026-11-02 01:53:09.267368234 +0000 UTC ElapsedMS:7 BudgetMS:1000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_queued:1] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-02T01:53:09.259314861Z error:nil listener_closed_utc:2026-11-02T01:53:07.157328259Z] public:map[drained_utc:2026-11-02T01:53:09.205211687Z error:nil listener_closed_utc:2026-11-02T01:53:07.157331519Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:finalize Started:2026-11-02 01:53:09.267394791 +0000 UTC Ended:2026-11-02 01:53:09.26740815 +0000 UTC ElapsedMS:0 BudgetMS:2000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_queued:1] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-02T01:53:09.259314861Z error:nil listener_closed_utc:2026-11-02T01:53:07.157328259Z] public:map[drained_utc:2026-11-02T01:53:09.205211687Z error:nil listener_closed_utc:2026-11-02T01:53:07.157331519Z]] watchdog_enabled:false watchdog_window_ms:0]}]
+    shutdown_load_test.go:862: S011 recovery={
+          "automatic_reset_performed": false,
+          "explicit_control": {
+            "automatic_scope_removal_response": {
+              "closed": false,
+              "feed_id": "daaeb0c30352b9de1fefeb11904adaf9",
+              "protocol_version": 1,
+              "revision": 2,
+              "streaming": true,
+              "subscriptions": [
+                {
+                  "after": "e76f6950895bd9e2-1",
+                  "agent_id": "hlcagent01",
+                  "full_name": "hlcagent01.hlcowner0",
+                  "generation": "f232738a075105c686df1ac605cba20e",
+                  "iframe_instance": "00000000000000000000000000000065",
+                  "replay_round": "1",
+                  "reset_baseline": ""
+                },
+                {
+                  "after": "f77ce7cedaff2962-1",
+                  "agent_id": "hlcagent02",
+                  "full_name": "hlcagent02.hlcowner0",
+                  "generation": "a7b547f8fd520b98c86ff8624b046653",
+                  "iframe_instance": "00000000000000000000000000000066",
+                  "replay_round": "1",
+                  "reset_baseline": ""
+                },
+                {
+                  "after": "784b2fc857ca1bcd-1",
+                  "agent_id": "hlcagent03",
+                  "full_name": "hlcagent03.hlcowner0",
+                  "generation": "9a74e43a42ee5cda74e076597756d4e5",
+                  "iframe_instance": "00000000000000000000000000000067",
+                  "replay_round": "1",
+                  "reset_baseline": ""
+                }
+              ]
+            },
+            "explicit_reset_request": {
+              "auth_context": "11ae8e0de620f2883e10f9e2b5bde2e21560b922e6e26b05d0b81093aa46de7e",
+              "console_instance": "0000000000000000000000000000012c",
+              "expected_revision": 2,
+              "refill": [],
+              "request_id": "000000000000000000000000000002bd",
+              "reset": {
+                "full_name": "hlcagent00.hlcowner0",
+                "generation": "b93198099ec73ba01601d2000b2c3976",
+                "iframe_instance": "00000000000000000000000000000064",
+                "replay_round": "1"
+              },
+              "reset_request_id": "000000000000000000000000000002be",
+              "subscriptions": [
+                {
+                  "after": "e76f6950895bd9e2-1",
+                  "full_name": "hlcagent01.hlcowner0",
+                  "iframe_instance": "00000000000000000000000000000065"
+                },
+                {
+                  "after": "f77ce7cedaff2962-1",
+                  "full_name": "hlcagent02.hlcowner0",
+                  "iframe_instance": "00000000000000000000000000000066"
+                },
+                {
+                  "after": "784b2fc857ca1bcd-1",
+                  "full_name": "hlcagent03.hlcowner0",
+                  "iframe_instance": "00000000000000000000000000000067"
+                },
+                {
+                  "after": "",
+                  "full_name": "hlcagent00.hlcowner0",
+                  "iframe_instance": "00000000000000000000000000000320"
+                }
+              ]
+            },
+            "explicit_reset_response": {
+              "closed": false,
+              "feed_id": "daaeb0c30352b9de1fefeb11904adaf9",
+              "protocol_version": 1,
+              "revision": 3,
+              "streaming": true,
+              "subscriptions": [
+                {
+                  "after": "4915c19b60d223f5-0",
+                  "agent_id": "hlcagent00",
+                  "full_name": "hlcagent00.hlcowner0",
+                  "generation": "721802f900e91c7359cd2eac61bf3259",
+                  "iframe_instance": "00000000000000000000000000000320",
+                  "replay_round": "2",
+                  "reset_baseline": "4915c19b60d223f5-0"
+                },
+                {
+                  "after": "e76f6950895bd9e2-1",
+                  "agent_id": "hlcagent01",
+                  "full_name": "hlcagent01.hlcowner0",
+                  "generation": "f232738a075105c686df1ac605cba20e",
+                  "iframe_instance": "00000000000000000000000000000065",
+                  "replay_round": "1",
+                  "reset_baseline": ""
+                },
+                {
+                  "after": "f77ce7cedaff2962-1",
+                  "agent_id": "hlcagent02",
+                  "full_name": "hlcagent02.hlcowner0",
+                  "generation": "a7b547f8fd520b98c86ff8624b046653",
+                  "iframe_instance": "00000000000000000000000000000066",
+                  "replay_round": "1",
+                  "reset_baseline": ""
+                },
+                {
+                  "after": "784b2fc857ca1bcd-1",
+                  "agent_id": "hlcagent03",
+                  "full_name": "hlcagent03.hlcowner0",
+                  "generation": "9a74e43a42ee5cda74e076597756d4e5",
+                  "iframe_instance": "00000000000000000000000000000067",
+                  "replay_round": "1",
+                  "reset_baseline": ""
+                }
+              ]
+            },
+            "source": "console_mux_broker.js route/notify/remove/register/sync; console_auth.go closeTab"
+          },
+          "explicit_resync_utc": "2026-11-02T01:53:09.373685386Z",
+          "helper_count": 20,
+          "helpers_from_ready_ms": 34,
+          "helpers_ready_utc": "2026-11-02T01:53:09.353031184Z",
+          "mux_duplicate_messages": 0,
+          "mux_frames": [
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"gap\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"b93198099ec73ba01601d2000b2c3976\",\"replay_round\":\"1\",\"epoch\":\"4915c19b60d223f5\",\"floor\":\"1\",\"H\":\"2\",\"reason\":\"resync_required\",\"cause\":\"epoch_changed\"}",
+              "At": "2026-11-02T01:53:09.364276045Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"9a74e43a42ee5cda74e076597756d4e5\",\"replay_round\":\"1\",\"epoch\":\"784b2fc857ca1bcd\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-02T01:53:09.364320701Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"9a74e43a42ee5cda74e076597756d4e5\",\"replay_round\":\"1\",\"epoch\":\"784b2fc857ca1bcd\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-03\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-03\",\"turn_id\":\"hlc-turn\"}}",
+              "At": "2026-11-02T01:53:09.364451898Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"9a74e43a42ee5cda74e076597756d4e5\",\"replay_round\":\"1\",\"epoch\":\"784b2fc857ca1bcd\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-02T01:53:09.364462517Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"f232738a075105c686df1ac605cba20e\",\"replay_round\":\"1\",\"epoch\":\"e76f6950895bd9e2\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-02T01:53:09.364978057Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"f232738a075105c686df1ac605cba20e\",\"replay_round\":\"1\",\"epoch\":\"e76f6950895bd9e2\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-01\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-01\",\"turn_id\":\"hlc-turn\"}}",
+              "At": "2026-11-02T01:53:09.365030891Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"f232738a075105c686df1ac605cba20e\",\"replay_round\":\"1\",\"epoch\":\"e76f6950895bd9e2\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-02T01:53:09.365110984Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"a7b547f8fd520b98c86ff8624b046653\",\"replay_round\":\"1\",\"epoch\":\"f77ce7cedaff2962\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-02T01:53:09.365122383Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"a7b547f8fd520b98c86ff8624b046653\",\"replay_round\":\"1\",\"epoch\":\"f77ce7cedaff2962\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-02\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-02\",\"turn_id\":\"hlc-turn\"}}",
+              "At": "2026-11-02T01:53:09.365160349Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"a7b547f8fd520b98c86ff8624b046653\",\"replay_round\":\"1\",\"epoch\":\"f77ce7cedaff2962\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-02T01:53:09.365426463Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"9a74e43a42ee5cda74e076597756d4e5\",\"replay_round\":\"1\",\"epoch\":\"784b2fc857ca1bcd\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-02T01:53:09.379120755Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"9a74e43a42ee5cda74e076597756d4e5\",\"replay_round\":\"1\",\"epoch\":\"784b2fc857ca1bcd\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-02T01:53:09.379414546Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000320\",\"generation\":\"721802f900e91c7359cd2eac61bf3259\",\"replay_round\":\"2\",\"epoch\":\"4915c19b60d223f5\",\"floor\":\"1\",\"H\":\"2\"}",
+              "At": "2026-11-02T01:53:09.779339071Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000320\",\"generation\":\"721802f900e91c7359cd2eac61bf3259\",\"replay_round\":\"2\",\"epoch\":\"4915c19b60d223f5\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-00\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-00\",\"turn_id\":\"hlc-turn\"}}",
+              "At": "2026-11-02T01:53:09.779739932Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000320\",\"generation\":\"721802f900e91c7359cd2eac61bf3259\",\"replay_round\":\"2\",\"epoch\":\"4915c19b60d223f5\",\"seq\":\"2\",\"payload\":{\"delivery_id\":\"hlc-after-verify\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-verify\",\"turn_id\":\"hlc-turn\"}}",
+              "At": "2026-11-02T01:53:09.780115455Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000320\",\"generation\":\"721802f900e91c7359cd2eac61bf3259\",\"replay_round\":\"2\",\"epoch\":\"4915c19b60d223f5\",\"floor\":\"1\",\"H\":\"2\"}",
+              "At": "2026-11-02T01:53:09.780525855Z"
+            }
+          ],
+          "mux_from_explicit_resync_ms": 406,
+          "mux_from_ready_ms": 461,
+          "mux_from_stop_ms": 2622,
+          "mux_gap_count": 1,
+          "mux_gap_from_stop_ms": 2207,
+          "mux_id_counts": {
+            "hlc-after-00": 1,
+            "hlc-after-01": 1,
+            "hlc-after-02": 1,
+            "hlc-after-03": 1,
+            "hlc-after-verify": 1
+          },
+          "mux_missing": 0,
+          "mux_ready_utc": "2026-11-02T01:53:09.780115455Z",
+          "new_listener_observed_utc": "2026-11-02T01:53:09.318966762Z",
+          "new_ready_utc": "2026-11-02T01:53:09.318974591Z",
+          "old_cursor": "653bdbe91b37e52d-1",
+          "old_exit_utc": "2026-11-02T01:53:09.271468573Z",
+          "sse_duplicate_cursors": 0,
+          "sse_duplicate_messages": 0,
+          "sse_frames": [
+            {
+              "Event": "replay_gap",
+              "ID": "",
+              "Data": "{\"reason\":\"epoch_changed\",\"epoch\":\"4915c19b60d223f5\"}",
+              "At": "2026-11-02T01:53:09.354488402Z"
+            },
+            {
+              "Event": "",
+              "ID": "4915c19b60d223f5-1",
+              "Data": "{\"delivery_id\":\"hlc-after-00\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-00\",\"turn_id\":\"hlc-turn\"}",
+              "At": "2026-11-02T01:53:09.354489961Z"
+            },
+            {
+              "Event": "",
+              "ID": "4915c19b60d223f5-2",
+              "Data": "{\"delivery_id\":\"hlc-after-verify\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-verify\",\"turn_id\":\"hlc-turn\"}",
+              "At": "2026-11-02T01:53:09.362407548Z"
+            }
+          ],
+          "sse_from_ready_ms": 43,
+          "sse_gap_count": 1,
+          "sse_id_counts": {
+            "hlc-after-00": 1,
+            "hlc-after-verify": 1
+          },
+          "sse_missing": 0,
+          "sse_ready_utc": "2026-11-02T01:53:09.362407548Z",
+          "stop_to_ready_ms": 2161,
+          "stop_utc": "2026-11-02T01:53:07.157245567Z",
+          "ws_from_ready_ms": 43,
+          "ws_ready_utc": "2026-11-02T01:53:09.362497639Z"
+        }
+    shutdown_load_test.go:866: S011_AUTO_OBSERVATION_CHANGED: inspect raw evidence before reset
+--- FAIL: TestHLCLoadMatrix (8.38s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	8.389s
+FAIL

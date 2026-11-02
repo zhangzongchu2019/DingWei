@@ -1,0 +1,20 @@
+{
+  "step": "S011",
+  "command": [
+    "python3",
+    "tests/hlc/process_matrix.py",
+    "--case",
+    "S011",
+    "--race",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated/S011"
+  ],
+  "started_utc": "2026-11-02T03:19:22.367359+00:00",
+  "ended_utc": "2026-11-02T03:19:43.678089+00:00",
+  "rc": 0,
+  "sha256": "5cc456f7ae6c55c218074f1ed4d5e7fb8f4a20017da35301f478cf69d31692af",
+  "home": "/tmp/h-i1upi4i5",
+  "tmp": "/tmp/h-i1upi4i5",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

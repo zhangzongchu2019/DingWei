@@ -1,0 +1,29 @@
+{
+  "step": "pg-strict",
+  "command": [
+    "go",
+    "test",
+    "-p",
+    "1",
+    "./cmd/workpulse",
+    "./internal/m8",
+    "./internal/feishu",
+    "./internal/fcs",
+    "./internal/bus",
+    "./internal/lifecycle",
+    "./internal/store",
+    "./internal/repo",
+    "./internal/store/pgtest",
+    "-count=1",
+    "-timeout=10m",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T04:26:00.468521+00:00",
+  "ended_utc": "2026-11-02T04:33:41.764441+00:00",
+  "rc": 0,
+  "sha256": "9de197e87c67896d1e46d13a2c327e6e05fa5de6145b440032713c2c183619cb",
+  "home": "/tmp/h-bhf513zv",
+  "tmp": "/tmp/h-bhf513zv",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

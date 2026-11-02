@@ -1,0 +1,17 @@
+{
+  "step": "withdraw-classification",
+  "command": [
+    "python3",
+    "tests/hlc/ws_close_mutation.py",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated/withdraw-classification"
+  ],
+  "started_utc": "2026-11-02T03:21:16.074063+00:00",
+  "ended_utc": "2026-11-02T03:21:34.436026+00:00",
+  "rc": 0,
+  "sha256": "09368d83442561d4506eb97345a06af371e0389a29195750df5b78473e90f1ba",
+  "home": "/tmp/h-qx82e95v",
+  "tmp": "/tmp/h-qx82e95v",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

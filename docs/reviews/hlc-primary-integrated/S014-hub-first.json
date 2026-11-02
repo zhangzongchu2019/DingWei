@@ -1,0 +1,22 @@
+{
+  "step": "S014-hub-first",
+  "command": [
+    "python3",
+    "tests/hlc/process_matrix.py",
+    "--case",
+    "S014-hub-first",
+    "--race",
+    "--repeat",
+    "3",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated/S014-hub-first"
+  ],
+  "started_utc": "2026-11-02T03:20:19.922301+00:00",
+  "ended_utc": "2026-11-02T03:20:47.727301+00:00",
+  "rc": 0,
+  "sha256": "f8fa1f730c9649dc96e97837e03c4a7ccabe960bec61548306484d2a036c90cb",
+  "home": "/tmp/h-zrgro6m3",
+  "tmp": "/tmp/h-zrgro6m3",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

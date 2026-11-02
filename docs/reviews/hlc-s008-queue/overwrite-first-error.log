@@ -1,0 +1,6 @@
+=== RUN   TestShutdownQueueS008FirstFailureAndUncommittedCount
+    shutdown_test.go:127: S008_FIRST_ERROR_AND_REMAINDER: error=async batch persistence failed committed=15 remaining=8 failed=8 buffered=0
+--- FAIL: TestShutdownQueueS008FirstFailureAndUncommittedCount (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/bus	0.020s
+FAIL

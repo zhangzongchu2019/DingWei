@@ -1,0 +1,4 @@
+RESOURCE tmp=/tmp/h-zrgro6m3/hlc-matrix-oei_xeaa/tmp/TestHLCLoadMatrix1844866577/001 sqlite=/tmp/h-zrgro6m3/hlc-matrix-oei_xeaa/tmp/TestHLCLoadMatrix1844866577/001/hub.db public=127.0.0.1:40751 internal=127.0.0.1:41453 pg=127.0.0.1:45333 database=/hubtest
+view=hlc-vs0 address=127.0.0.1:45001 directory=/tmp/h-zrgro6m3/hlc-matrix-oei_xeaa/tmp/TestHLCLoadMatrix1844866577/001
+view=hlc-vs1 address=127.0.0.1:41119 directory=/tmp/h-zrgro6m3/hlc-matrix-oei_xeaa/tmp/TestHLCLoadMatrix1844866577/001
+view=hlc-vs2 address=127.0.0.1:33397 directory=/tmp/h-zrgro6m3/hlc-matrix-oei_xeaa/tmp/TestHLCLoadMatrix1844866577/001

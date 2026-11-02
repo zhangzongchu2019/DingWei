@@ -1,0 +1,8 @@
+=== RUN   TestMuxRecoveryMetadataExpiresWithoutAnotherRequest
+--- PASS: TestMuxRecoveryMetadataExpiresWithoutAnotherRequest (0.02s)
+=== RUN   TestMuxRecoveryMetadataExpiresWithoutAnotherRequest
+--- PASS: TestMuxRecoveryMetadataExpiresWithoutAnotherRequest (0.02s)
+=== RUN   TestMuxRecoveryMetadataExpiresWithoutAnotherRequest
+--- PASS: TestMuxRecoveryMetadataExpiresWithoutAnotherRequest (0.02s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	1.095s

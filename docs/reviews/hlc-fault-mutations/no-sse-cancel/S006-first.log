@@ -1,0 +1,9 @@
+-test.shuffle 1793585536645313370
+=== RUN   TestHLCLoadMatrix
+2026/11/02 02:12:20 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+    shutdown_load_test.go:538: fixture_random_seed=1793585541310713109
+    shutdown_load_test.go:565: fixture readiness: 100 SSE + 5 mux + 15 bridge + 20 session WS
+--- FAIL: TestHLCLoadMatrix (13.47s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	13.484s
+FAIL

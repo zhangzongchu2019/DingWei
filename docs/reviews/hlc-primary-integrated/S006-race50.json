@@ -1,0 +1,22 @@
+{
+  "step": "S006-race50",
+  "command": [
+    "python3",
+    "tests/hlc/process_matrix.py",
+    "--case",
+    "S006",
+    "--repeat",
+    "50",
+    "--race",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated/S006-race50"
+  ],
+  "started_utc": "2026-11-02T03:10:48.996894+00:00",
+  "ended_utc": "2026-11-02T03:19:22.362868+00:00",
+  "rc": 0,
+  "sha256": "78b623a27ab10e6b840f32a634e081481d885cb220e7402526e419a8a75c2d3c",
+  "home": "/tmp/h-mtujo4t1",
+  "tmp": "/tmp/h-mtujo4t1",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

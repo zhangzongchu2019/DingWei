@@ -1,0 +1,19 @@
+{
+  "step": "m8-full",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-count=1",
+    "-timeout=10m",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T03:00:41.710313+00:00",
+  "ended_utc": "2026-11-02T03:03:59.490376+00:00",
+  "rc": 0,
+  "sha256": "0629770364b47d87b9360828c8f752ac271fb55eb8455dccba2e8c60f13a2f1d",
+  "home": "/tmp/h-yefx5604",
+  "tmp": "/tmp/h-yefx5604",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

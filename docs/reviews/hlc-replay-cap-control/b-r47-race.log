@@ -1,0 +1,33 @@
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:556: batch eviction on hitting the cap took 65.525438ms
+--- FAIL: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.62s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:556: batch eviction on hitting the cap took 60.148703ms
+--- FAIL: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.62s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:556: batch eviction on hitting the cap took 61.899632ms
+--- FAIL: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.61s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:556: batch eviction on hitting the cap took 63.258768ms
+--- FAIL: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.61s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:556: batch eviction on hitting the cap took 60.850695ms
+--- FAIL: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.60s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:556: batch eviction on hitting the cap took 60.053852ms
+--- FAIL: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.60s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:556: batch eviction on hitting the cap took 61.51113ms
+--- FAIL: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.60s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:556: batch eviction on hitting the cap took 62.538309ms
+--- FAIL: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.60s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:556: batch eviction on hitting the cap took 62.749578ms
+--- FAIL: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.60s)
+=== RUN   TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards
+    replay_guard_test.go:556: batch eviction on hitting the cap took 64.27128ms
+--- FAIL: TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards (0.59s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	6.092s
+FAIL

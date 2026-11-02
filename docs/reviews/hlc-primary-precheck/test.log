@@ -1,0 +1,1676 @@
+=== RUN   TestBackupRealNodeAgentToRealHub
+--- PASS: TestBackupRealNodeAgentToRealHub (5.01s)
+=== RUN   TestBootstrapAdminEndToEnd
+2026/11/02 02:52:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestBootstrapAdminEndToEnd (3.04s)
+=== RUN   TestBootstrapAdminRefusesBadInvocation
+2026/11/02 02:52:50 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+--- PASS: TestBootstrapAdminRefusesBadInvocation (5.36s)
+=== RUN   TestResetPasswordEndToEnd
+--- PASS: TestResetPasswordEndToEnd (2.93s)
+=== RUN   TestConsoleHostedFeatureHasSingleProductionWiringSource
+--- PASS: TestConsoleHostedFeatureHasSingleProductionWiringSource (0.01s)
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/registered_routes_render_true
+2026/11/02 02:52:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:58 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/11/02 02:52:58 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/configured_but_not_assembled_renders_false
+2026/11/02 02:52:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:59 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/old_platform_renders_false
+2026/11/02 02:52:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestConsoleHostedFeatureFollowsRealAssembly/failed_assembly_never_renders_true
+2026/11/02 02:52:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:01 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestConsoleHostedFeatureFollowsRealAssembly (5.74s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/registered_routes_render_true (2.66s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/configured_but_not_assembled_renders_false (0.13s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/old_platform_renders_false (0.13s)
+    --- PASS: TestConsoleHostedFeatureFollowsRealAssembly/failed_assembly_never_renders_true (2.81s)
+=== RUN   TestMonitorSnapshotOnlyActivePlatformAdmin
+2026/11/02 02:53:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:02 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorSnapshotOnlyActivePlatformAdmin (0.14s)
+=== RUN   TestMonitorGuardFailsClosedOnItsOwnLookup
+2026/11/02 02:53:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:02 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorGuardFailsClosedOnItsOwnLookup (0.29s)
+=== RUN   TestMonitorSnapshotIsGetOnly
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorSnapshotIsGetOnly (0.14s)
+=== RUN   TestMonitorRouteLabelsAreRegisteredPatternsOnly
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorRouteLabelsAreRegisteredPatternsOnly (0.14s)
+=== RUN   TestMonitorPageSameGuardAsSnapshot
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestMonitorPageSameGuardAsSnapshot (0.14s)
+=== RUN   TestConsolePlatformRoutesAreAssembledWithServerGuards
+--- PASS: TestConsolePlatformRoutesAreAssembledWithServerGuards (0.00s)
+=== RUN   TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry
+--- PASS: TestEveryAgentCapabilityRoutePageIsAcceptedBySigningRegistry (0.00s)
+=== RUN   TestAgentTaskDriverRouteRequiresAgentCapability
+--- PASS: TestAgentTaskDriverRouteRequiresAgentCapability (0.00s)
+=== RUN   TestSpecDirectRoutesAndRetiredApprovals
+--- PASS: TestSpecDirectRoutesAndRetiredApprovals (0.00s)
+=== RUN   TestNewPlatformRouteSweep
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    console_routes_test.go:274: routes recorded=183 exempt=16 requests checked=544
+--- PASS: TestNewPlatformRouteSweep (0.39s)
+=== RUN   TestConsoleTasksCompatibilityRoute
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestConsoleTasksCompatibilityRoute (0.14s)
+=== RUN   TestValidateConsoleSeedCommandNeverStartsServer
+--- PASS: TestValidateConsoleSeedCommandNeverStartsServer (0.00s)
+=== RUN   TestValidateConsoleSeedCommandRejectsProductionTypeErrorWithoutStartingServer
+--- PASS: TestValidateConsoleSeedCommandRejectsProductionTypeErrorWithoutStartingServer (0.00s)
+=== RUN   TestConsoleSeedIsExplicitAndSeparatesSharedKey
+--- PASS: TestConsoleSeedIsExplicitAndSeparatesSharedKey (0.13s)
+=== RUN   TestConsoleSeedRejectsDuplicateShortNamesBeforeAnyWrite
+--- PASS: TestConsoleSeedRejectsDuplicateShortNamesBeforeAnyWrite (0.00s)
+=== RUN   TestConsoleSeedRequiresExplicitActive
+--- PASS: TestConsoleSeedRequiresExplicitActive (0.13s)
+=== RUN   TestConsoleSeedFailsClosedWithoutGrant
+--- PASS: TestConsoleSeedFailsClosedWithoutGrant (0.13s)
+=== RUN   TestTwoOwnerIdentitiesEachSeeTheCompleteGrantSet
+--- PASS: TestTwoOwnerIdentitiesEachSeeTheCompleteGrantSet (0.13s)
+=== RUN   TestE2E_MainPath_AddConfirmQuery
+--- PASS: TestE2E_MainPath_AddConfirmQuery (0.13s)
+=== RUN   TestE2E_Permission_CollaboratorCannotModify
+--- PASS: TestE2E_Permission_CollaboratorCannotModify (0.13s)
+=== RUN   TestE2E_PendingConcurrency_SinglePendingPerOwner
+--- PASS: TestE2E_PendingConcurrency_SinglePendingPerOwner (0.13s)
+=== RUN   TestE2E_Cleanup_DryRunAndConfirmStore
+--- PASS: TestE2E_Cleanup_DryRunAndConfirmStore (0.13s)
+=== RUN   TestE2E_AdminCleanup_RejectsRecentCutoff
+--- PASS: TestE2E_AdminCleanup_RejectsRecentCutoff (0.00s)
+=== RUN   TestE2E_Redaction_BeforeStorage
+--- PASS: TestE2E_Redaction_BeforeStorage (0.13s)
+=== RUN   TestE2E_PrefixWildcardOverlap
+--- PASS: TestE2E_PrefixWildcardOverlap (0.14s)
+=== RUN   TestE2E_DualLLM_Failover
+--- PASS: TestE2E_DualLLM_Failover (0.00s)
+=== RUN   TestE2E_Evidence_OptOut
+--- PASS: TestE2E_Evidence_OptOut (0.13s)
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources/default_warn_is_visibly_risky
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_enforce
+=== RUN   TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_warn_differs_from_default
+--- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources (0.00s)
+    --- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources/default_warn_is_visibly_risky (0.00s)
+    --- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_enforce (0.00s)
+    --- PASS: TestWorkpulseEffectiveConfigVersionEnforceSources/explicit_warn_differs_from_default (0.00s)
+=== RUN   TestLivezChecksLockDBAndAcceptHeartbeats
+2026/11/02 02:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestLivezChecksLockDBAndAcceptHeartbeats (0.02s)
+=== RUN   TestSDNotifyWritesUnixDatagram
+--- PASS: TestSDNotifyWritesUnixDatagram (0.00s)
+=== RUN   TestWatchdogInterval
+--- PASS: TestWatchdogInterval (0.00s)
+=== RUN   TestWatchdogFastConfirmRecoversOnAnySuccessfulProbe
+--- PASS: TestWatchdogFastConfirmRecoversOnAnySuccessfulProbe (0.00s)
+=== RUN   TestWatchdogFastConfirmRequiresAllConfiguredFailures
+--- PASS: TestWatchdogFastConfirmRequiresAllConfiguredFailures (0.00s)
+=== RUN   TestHelperUpdateRegisterIsOperatorOnlyCLI
+2026/11/02 02:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestHelperUpdateRegisterIsOperatorOnlyCLI (0.15s)
+=== RUN   TestHostedAccessConfiguration
+--- PASS: TestHostedAccessConfiguration (0.00s)
+=== RUN   TestHostedAccessEveryHumanRouteRejectsBeforeBusiness
+--- PASS: TestHostedAccessEveryHumanRouteRejectsBeforeBusiness (0.00s)
+=== RUN   TestHostedAccessAllowedRealSessionReachesEveryBusinessRoute
+--- PASS: TestHostedAccessAllowedRealSessionReachesEveryBusinessRoute (2.67s)
+=== RUN   TestHostedAccessFreshIdentityAndStartupSnapshot
+--- PASS: TestHostedAccessFreshIdentityAndStartupSnapshot (0.00s)
+=== RUN   TestHostedAccessEmptyListPreservesOnlyRegisteredOpsBearer
+--- PASS: TestHostedAccessEmptyListPreservesOnlyRegisteredOpsBearer (2.60s)
+=== RUN   TestHostedAccessRegistrationCannotActivateHostedAccess
+--- PASS: TestHostedAccessRegistrationCannotActivateHostedAccess (0.00s)
+=== RUN   TestHostedAccessMustChangeExpiredAndMissingIdentity
+--- PASS: TestHostedAccessMustChangeExpiredAndMissingIdentity (0.00s)
+=== RUN   TestHostedAccessRealAssemblyUnsetEmptyAndNamed
+=== RUN   TestHostedAccessRealAssemblyUnsetEmptyAndNamed/<unset>
+2026/11/02 02:53:11 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:11 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:13 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+=== RUN   TestHostedAccessRealAssemblyUnsetEmptyAndNamed/explicit-empty
+2026/11/02 02:53:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:15 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+=== RUN   TestHostedAccessRealAssemblyUnsetEmptyAndNamed/owner
+2026/11/02 02:53:16 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:18 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+--- PASS: TestHostedAccessRealAssemblyUnsetEmptyAndNamed (8.35s)
+    --- PASS: TestHostedAccessRealAssemblyUnsetEmptyAndNamed/<unset> (2.95s)
+    --- PASS: TestHostedAccessRealAssemblyUnsetEmptyAndNamed/explicit-empty (2.76s)
+    --- PASS: TestHostedAccessRealAssemblyUnsetEmptyAndNamed/owner (2.64s)
+=== RUN   TestAccountRegisterNoEchoAndEncrypted
+--- PASS: TestAccountRegisterNoEchoAndEncrypted (2.58s)
+=== RUN   TestAccountCrossUserMatrix
+--- PASS: TestAccountCrossUserMatrix (2.51s)
+=== RUN   TestAccountNameAndLimitOverHTTP
+--- PASS: TestAccountNameAndLimitOverHTTP (2.54s)
+=== RUN   TestHostedWriteRoutesRequireOrigin
+--- PASS: TestHostedWriteRoutesRequireOrigin (2.52s)
+=== RUN   TestAccountRegisterValidationOverHTTP
+--- PASS: TestAccountRegisterValidationOverHTTP (2.54s)
+=== RUN   TestAdminAccountRoutes
+--- PASS: TestAdminAccountRoutes (2.55s)
+=== RUN   TestRefreshCredRoute
+--- PASS: TestRefreshCredRoute (2.55s)
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize
+2026/11/02 02:53:38 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/default-hard
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/unknown-mode
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/missing-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/invalid-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/uppercase-revision
+=== RUN   TestHostedAdminQuotaRegistrationCLIToNormalize/labels-cannot-enable-soft
+--- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize (2.63s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/default-hard (0.02s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/unknown-mode (0.02s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/missing-revision (0.02s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/invalid-revision (0.02s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/uppercase-revision (0.02s)
+    --- PASS: TestHostedAdminQuotaRegistrationCLIToNormalize/labels-cannot-enable-soft (0.02s)
+=== RUN   TestHostedAdminScenarios
+2026/11/02 02:53:41 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+--- PASS: TestHostedAdminScenarios (2.63s)
+=== RUN   TestHostedAdminVersionFlagsAndDefaults
+2026/11/02 02:53:44 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+--- PASS: TestHostedAdminVersionFlagsAndDefaults (2.55s)
+=== RUN   TestHostedCapacityReasonsActualHTTP
+=== RUN   TestHostedCapacityReasonsActualHTTP/cpu
+=== RUN   TestHostedCapacityReasonsActualHTTP/memory
+=== RUN   TestHostedCapacityReasonsActualHTTP/disk
+=== RUN   TestHostedCapacityReasonsActualHTTP/load_unknown
+=== RUN   TestHostedCapacityReasonsActualHTTP/stale
+--- PASS: TestHostedCapacityReasonsActualHTTP (2.70s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/cpu (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/memory (0.01s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/disk (0.00s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/load_unknown (0.00s)
+    --- PASS: TestHostedCapacityReasonsActualHTTP/stale (0.00s)
+=== RUN   TestHostedFinalNodeGateJobHTTP
+2026/11/02 02:53:47 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:53:47 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+--- PASS: TestHostedFinalNodeGateJobHTTP (2.61s)
+=== RUN   TestHostedClaudeModelActualHTTP
+--- PASS: TestHostedClaudeModelActualHTTP (2.59s)
+=== RUN   TestB1StagesRealAndAgentListed
+--- PASS: TestB1StagesRealAndAgentListed (2.57s)
+=== RUN   TestB2AllNodeActionsFromHub
+2026/11/02 02:53:56 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:53:56 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+--- PASS: TestB2AllNodeActionsFromHub (2.59s)
+=== RUN   TestB3PullFailureCleanup
+2026/11/02 02:53:59 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:53:59 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:53:59 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:53:59 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:53:59 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:53:59 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+--- PASS: TestB3PullFailureCleanup (2.56s)
+=== RUN   TestB4B5ComboAndPlanGuards
+2026/11/02 02:54:02 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:54:02 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:02 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:54:02 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:54:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:03 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestB4B5ComboAndPlanGuards (2.70s)
+=== RUN   TestB9AutoNodeCapacity
+2026/11/02 02:54:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:54:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:54:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:54:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:54:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:54:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:05 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+--- PASS: TestB9AutoNodeCapacity (2.60s)
+=== RUN   TestB7CredentialExposureSurface
+--- PASS: TestB7CredentialExposureSurface (2.73s)
+=== RUN   TestB8DecryptAuditExactlyOnce
+2026/11/02 02:54:11 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:11 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestB8DecryptAuditExactlyOnce (2.64s)
+=== RUN   TestB11NoLoginCommandInChain
+--- PASS: TestB11NoLoginCommandInChain (2.73s)
+=== RUN   TestB6NameInvalidRejected
+2026/11/02 02:54:13 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:54:13 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:16 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:16 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestB6NameInvalidRejected (3.10s)
+=== RUN   TestB7PlaintextExactlyOnceInCreateSeat
+--- PASS: TestB7PlaintextExactlyOnceInCreateSeat (2.62s)
+=== RUN   TestHostedAuthCodes
+--- PASS: TestHostedAuthCodes (2.51s)
+=== RUN   TestHostedJobOwnerBySeat
+--- PASS: TestHostedJobOwnerBySeat (2.54s)
+=== RUN   TestHostedErrorsAreMachineCodes
+2026/11/02 02:54:24 hosted: internal error: pq: connection refused at 10.0.0.1
+--- PASS: TestHostedErrorsAreMachineCodes (0.00s)
+=== RUN   TestHostedCreateNameInvalidCode
+--- PASS: TestHostedCreateNameInvalidCode (2.69s)
+=== RUN   TestHostedDestroyBackupFailed
+--- PASS: TestHostedDestroyBackupFailed (2.53s)
+=== RUN   TestHostedAdminQuotasShape
+--- PASS: TestHostedAdminQuotasShape (2.52s)
+=== RUN   TestHostedQuotaCodesOverHTTP
+--- PASS: TestHostedQuotaCodesOverHTTP (4.96s)
+=== RUN   TestHostedLifecycleNodeDown
+--- PASS: TestHostedLifecycleNodeDown (2.54s)
+=== RUN   TestLoginHTTPFlow
+--- PASS: TestLoginHTTPFlow (2.52s)
+=== RUN   TestLoginHTTPGuards
+--- PASS: TestLoginHTTPGuards (2.47s)
+=== RUN   TestAdminListCarriesNoKeyTail
+--- PASS: TestAdminListCarriesNoKeyTail (2.45s)
+=== RUN   TestHostedMinimumPlanHTTPOptionsCreateAndQuota
+2026/11/02 02:54:47 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:47 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedMinimumPlanHTTPOptionsCreateAndQuota (2.49s)
+=== RUN   TestHostedCreateWithNewGroup
+=== RUN   TestHostedCreateWithNewGroup/new_group_is_created_with_the_new_seat_as_leader
+=== RUN   TestHostedCreateWithNewGroup/both_group_id_and_new_group_name_is_ambiguous
+=== RUN   TestHostedCreateWithNewGroup/invalid_new_group_names_are_refused_with_group_name_invalid
+=== RUN   TestHostedCreateWithNewGroup/taken_group_name_is_409_and_leaves_the_agent_name_free
+=== RUN   TestHostedCreateWithNewGroup/hosted_new_group_name_is_normalized_before_validation_and_storage
+=== RUN   TestHostedCreateWithNewGroup/seat_insert_failure_leaves_no_new_group
+2026/11/02 02:54:51 hosted: internal error: ERROR: injected seat insert failure (SQLSTATE P0001)
+=== RUN   TestHostedCreateWithNewGroup/seat_insert_failure_with_an_existing_group_keeps_that_group
+2026/11/02 02:54:51 hosted: internal error: ERROR: injected seat insert failure (SQLSTATE P0001)
+=== RUN   TestHostedCreateWithNewGroup/async_create_failure_also_reclaims_the_new_group
+--- PASS: TestHostedCreateWithNewGroup (2.61s)
+    --- PASS: TestHostedCreateWithNewGroup/new_group_is_created_with_the_new_seat_as_leader (0.03s)
+    --- PASS: TestHostedCreateWithNewGroup/both_group_id_and_new_group_name_is_ambiguous (0.00s)
+    --- PASS: TestHostedCreateWithNewGroup/invalid_new_group_names_are_refused_with_group_name_invalid (0.00s)
+    --- PASS: TestHostedCreateWithNewGroup/taken_group_name_is_409_and_leaves_the_agent_name_free (0.03s)
+    --- PASS: TestHostedCreateWithNewGroup/hosted_new_group_name_is_normalized_before_validation_and_storage (0.02s)
+    --- PASS: TestHostedCreateWithNewGroup/seat_insert_failure_leaves_no_new_group (0.03s)
+    --- PASS: TestHostedCreateWithNewGroup/seat_insert_failure_with_an_existing_group_keeps_that_group (0.00s)
+    --- PASS: TestHostedCreateWithNewGroup/async_create_failure_also_reclaims_the_new_group (0.02s)
+=== RUN   TestHostedQuotaRealIdentityOwnerOnlyAndOpsReadOnly
+--- PASS: TestHostedQuotaRealIdentityOwnerOnlyAndOpsReadOnly (2.37s)
+=== RUN   TestHostedRoutesContractCodes
+2026/11/02 02:54:56 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:56 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestHostedRoutesContractCodes (2.47s)
+=== RUN   TestInternalNotify
+=== RUN   TestInternalNotify/入队成功返回_202_且正文落到队列
+=== RUN   TestInternalNotify/未配置目标_⇒_404_而非静默成功
+=== RUN   TestInternalNotify/队列为_nil_⇒_404_而非_panic_或静默成功
+=== RUN   TestInternalNotify/入队失败_⇒_503,不得回_202
+=== RUN   TestInternalNotify/空正文与未知字段一律拒
+--- PASS: TestInternalNotify (0.00s)
+    --- PASS: TestInternalNotify/入队成功返回_202_且正文落到队列 (0.00s)
+    --- PASS: TestInternalNotify/未配置目标_⇒_404_而非静默成功 (0.00s)
+    --- PASS: TestInternalNotify/队列为_nil_⇒_404_而非_panic_或静默成功 (0.00s)
+    --- PASS: TestInternalNotify/入队失败_⇒_503,不得回_202 (0.00s)
+    --- PASS: TestInternalNotify/空正文与未知字段一律拒 (0.00s)
+=== RUN   TestNotifyMustNotBeOnTCPMux
+--- PASS: TestNotifyMustNotBeOnTCPMux (0.00s)
+=== RUN   TestNotifySocketPermissions
+--- PASS: TestNotifySocketPermissions (0.00s)
+=== RUN   TestNotifySocketChmodENOENTExplainsLateUnlink
+--- PASS: TestNotifySocketChmodENOENTExplainsLateUnlink (0.00s)
+=== RUN   TestNotifySocketStopCannotDeleteNewListenerAtSamePath
+--- PASS: TestNotifySocketStopCannotDeleteNewListenerAtSamePath (0.00s)
+=== RUN   TestNotifySocketFirstStopPreservesNewListenerAtReboundPath
+--- PASS: TestNotifySocketFirstStopPreservesNewListenerAtReboundPath (0.00s)
+=== RUN   TestR11FreezeStartupConfig
+=== RUN   TestR11FreezeStartupConfig/unset
+=== RUN   TestR11FreezeStartupConfig/0
+=== RUN   TestR11FreezeStartupConfig/false
+=== RUN   TestR11FreezeStartupConfig/1
+=== RUN   TestR11FreezeStartupConfig/true
+=== RUN   TestR11FreezeStartupConfig/garbage
+--- PASS: TestR11FreezeStartupConfig (0.74s)
+    --- PASS: TestR11FreezeStartupConfig/unset (0.12s)
+    --- PASS: TestR11FreezeStartupConfig/0 (0.12s)
+    --- PASS: TestR11FreezeStartupConfig/false (0.12s)
+    --- PASS: TestR11FreezeStartupConfig/1 (0.12s)
+    --- PASS: TestR11FreezeStartupConfig/true (0.12s)
+    --- PASS: TestR11FreezeStartupConfig/garbage (0.12s)
+=== RUN   TestVersionCommandReportsBuildProvenance
+--- PASS: TestVersionCommandReportsBuildProvenance (0.00s)
+=== RUN   TestRunWiresAdminFileBrowserConfiguration
+--- PASS: TestRunWiresAdminFileBrowserConfiguration (0.00s)
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_URL
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_PUBLIC_URL
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_TOKEN
+=== RUN   TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_AUDIT_TOKEN
+--- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_URL (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_PUBLIC_URL (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_ISSUER_TOKEN (0.00s)
+    --- PASS: TestConfigureAdminFileBrowserWarnsForEachMissingSetting/WP_FILE_AUDIT_TOKEN (0.00s)
+=== RUN   TestHandleFeishuWebhookURLVerification
+--- PASS: TestHandleFeishuWebhookURLVerification (0.12s)
+=== RUN   TestProvisionDownloadRetiredEvenWhenArtifactExists
+--- PASS: TestProvisionDownloadRetiredEvenWhenArtifactExists (0.00s)
+=== RUN   TestHandleFeishuWebhookEnqueuesInboundMessage
+--- PASS: TestHandleFeishuWebhookEnqueuesInboundMessage (0.12s)
+=== RUN   TestHandleFeishuWebhookEnqueuesCCConnectorInboundMessage
+--- PASS: TestHandleFeishuWebhookEnqueuesCCConnectorInboundMessage (0.13s)
+=== RUN   TestHandleFeishuWebhookVerifiesTokenWhenConfigured
+--- PASS: TestHandleFeishuWebhookVerifiesTokenWhenConfigured (0.13s)
+=== RUN   TestHandleFeishuWebhookPlaintextWithoutTokenWarnsOnce
+--- PASS: TestHandleFeishuWebhookPlaintextWithoutTokenWarnsOnce (0.13s)
+=== RUN   TestHandleFeishuWebhookRejectsMissingEntity
+--- PASS: TestHandleFeishuWebhookRejectsMissingEntity (0.13s)
+=== RUN   TestRunOutboundLoopSendsAndAcks
+--- PASS: TestRunOutboundLoopSendsAndAcks (0.14s)
+=== RUN   TestBuildFeishuGatewaySeedsEncryptedBootstrapBot
+2026/11/02 02:54:59 [Info] [client ready]
+--- PASS: TestBuildFeishuGatewaySeedsEncryptedBootstrapBot (0.13s)
+=== RUN   TestBuildFeishuGatewayConfiguresMultipleBotChannels
+2026/11/02 02:54:59 [Info] [client ready]
+2026/11/02 02:54:59 [Info] [client ready]
+--- PASS: TestBuildFeishuGatewayConfiguresMultipleBotChannels (0.13s)
+=== RUN   TestSeedBootstrapBotChannelBackfillsMissingSecretOnly
+--- PASS: TestSeedBootstrapBotChannelBackfillsMissingSecretOnly (0.13s)
+=== RUN   TestSeedBootstrapBotChannelWithoutSecretKeyLeavesSecretUnset
+--- PASS: TestSeedBootstrapBotChannelWithoutSecretKeyLeavesSecretUnset (0.13s)
+=== RUN   TestSchedulerCronPlanR16NotificationTiers
+--- PASS: TestSchedulerCronPlanR16NotificationTiers (0.13s)
+=== RUN   TestRunWiresConsoleAdminDoor
+--- PASS: TestRunWiresConsoleAdminDoor (0.00s)
+=== RUN   TestRunSetsAdminNewPlatformBeforeMount
+--- PASS: TestRunSetsAdminNewPlatformBeforeMount (0.00s)
+=== RUN   TestEmptyDBHubEntryMigratesAndCreatesNoAccount
+2026/11/02 02:54:59 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:54:59 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:59 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:54:59 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:59 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:54:59 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:01 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+--- PASS: TestEmptyDBHubEntryMigratesAndCreatesNoAccount (2.59s)
+=== RUN   TestMigrateFailureRefusesHubEntryAndBootstrap
+2026/11/02 02:55:02 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:02 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:02 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:02 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:03 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:03 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:04 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+--- PASS: TestMigrateFailureRefusesHubEntryAndBootstrap (2.57s)
+=== RUN   TestBrokenLedgerTableRefuses
+2026/11/02 02:55:05 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+--- PASS: TestBrokenLedgerTableRefuses (2.41s)
+=== RUN   TestHostedIdentityIssue
+--- PASS: TestHostedIdentityIssue (0.00s)
+=== RUN   TestHostedIdentityListByOwner
+--- PASS: TestHostedIdentityListByOwner (0.00s)
+=== RUN   TestHostedIdentityLifecycle
+--- PASS: TestHostedIdentityLifecycle (0.00s)
+=== RUN   TestWireHostedOnlineHookAndSweeper
+2026/11/02 02:55:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:55:09 hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration
+--- PASS: TestWireHostedOnlineHookAndSweeper (2.72s)
+=== RUN   TestWireNewPlatformHostedOverlay
+2026/11/02 02:55:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:55:09 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestWireNewPlatformHostedOverlay (0.13s)
+=== RUN   TestNewPlatformRegistrationCodeKeyWired
+2026/11/02 02:55:10 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:10 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:55:10 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestNewPlatformRegistrationCodeKeyWired (0.13s)
+=== RUN   TestNewPlatformConfigFromEnv
+--- PASS: TestNewPlatformConfigFromEnv (0.00s)
+=== RUN   TestWireNewPlatformCreatesNoUser
+2026/11/02 02:55:10 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:10 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:55:10 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestWireNewPlatformCreatesNoUser (0.13s)
+=== RUN   TestWireNewPlatformRoutes
+2026/11/02 02:55:10 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:10 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:55:10 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+--- PASS: TestWireNewPlatformRoutes (0.13s)
+=== RUN   TestRegisterNewPlatformLoginPage
+2026/11/02 02:55:10 newplat login page not built into this binary: GET /console/login not registered
+--- PASS: TestRegisterNewPlatformLoginPage (0.00s)
+=== RUN   TestUpgradeRotationKeepsNewCredentialOnSharedWork
+2026/11/02 02:55:10 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:10 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:55:10 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+2026/11/02 02:55:10 session handshake timing key_id=u_zzc session=seat1 total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:55:10 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=1
+2026/11/02 02:55:10 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=1 reason=session_reconnected released=0
+2026/11/02 02:55:11 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:11 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:11 session handshake timing key_id=u_zzc session=seat1 total=43ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=42ms
+2026/11/02 02:55:11 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=2
+2026/11/02 02:55:11 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=2 reason=session_reconnected released=0
+2026/11/02 02:55:11 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=2 reason=session_disconnected released=0
+2026/11/02 02:55:11 session handshake timing key_id=u_zzc session=seat1 total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:55:11 session capability file_upload_v1=true key_id=u_zzc session=seat1 conn_seq=3
+2026/11/02 02:55:11 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=3 reason=session_reconnected released=0
+--- PASS: TestUpgradeRotationKeepsNewCredentialOnSharedWork (1.48s)
+=== RUN   TestPilotQuestionFeishuStartupSwitch
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=0
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=false
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=true
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=garbage
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=1
+=== RUN   TestPilotQuestionFeishuStartupSwitch/value=_1_
+--- PASS: TestPilotQuestionFeishuStartupSwitch (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value= (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=0 (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=false (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=true (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=garbage (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=1 (0.00s)
+    --- PASS: TestPilotQuestionFeishuStartupSwitch/value=_1_ (0.00s)
+=== RUN   TestPilotQuestionFeishuFakeStubRemainUnwired
+--- PASS: TestPilotQuestionFeishuFakeStubRemainUnwired (0.00s)
+=== RUN   TestPilotQuestionFeishuInboundOutboundFlagsIndependent
+--- PASS: TestPilotQuestionFeishuInboundOutboundFlagsIndependent (0.00s)
+=== RUN   TestPromoteAdminEndToEnd
+2026/11/02 02:55:11 session delivery lease release decision=requeue key_id=u_zzc session=seat1 conn_seq=3 reason=session_disconnected released=0
+2026/11/02 02:55:13 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:13 delivery expiry sweep failed: sql: database is closed
+--- PASS: TestPromoteAdminEndToEnd (2.85s)
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing
+2026/11/02 02:55:16 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:16 delivery expiry sweep failed: sql: database is closed
+2026/11/02 02:55:16 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:55:16 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-hosted-tables
+2026/11/02 02:55:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:55:19 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-seat-table
+2026/11/02 02:55:22 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:22 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:55:22 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-node-table
+2026/11/02 02:55:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:55:25 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+=== RUN   TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/unrelated-query-error
+2026/11/02 02:55:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:55:27 newplat hosted: DW_G4_MASTER_KEY_FILE 未设置——托管面不注册（账号池无法解密，半挂比缺席更糟）
+--- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring (13.68s)
+    --- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/existing (2.68s)
+    --- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-hosted-tables (2.67s)
+    --- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-seat-table (2.71s)
+    --- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/no-node-table (2.91s)
+    --- PASS: TestR31AdminAgentNodeWithoutMasterKeyProductionWiring/unrelated-query-error (2.72s)
+=== RUN   TestR31HostedAccessModes
+--- PASS: TestR31HostedAccessModes (0.00s)
+=== RUN   TestR31AllActiveHTTPReachesQuotaAndDisableIsLive
+--- PASS: TestR31AllActiveHTTPReachesQuotaAndDisableIsLive (2.55s)
+=== RUN   TestR31AdminNodeAPIAndOneTimeCredential
+--- PASS: TestR31AdminNodeAPIAndOneTimeCredential (2.83s)
+=== RUN   TestR31OldBinarySchemaReadCompatibility
+    r31_rollback_compat_test.go:23: requires independently built R30 binary via R31_R30_BINARY
+--- SKIP: TestR31OldBinarySchemaReadCompatibility (0.00s)
+=== RUN   TestLifecycleRecoveryIsWiredAtHostedStartup
+--- PASS: TestLifecycleRecoveryIsWiredAtHostedStartup (0.00s)
+=== RUN   TestRootTasksRouteIsRegistered
+2026/11/02 02:55:33 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:55:33 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestRootTasksRouteIsRegistered (0.13s)
+=== RUN   TestHLCFaultProcessMatrix
+    shutdown_fault_process_test.go:94: isolated fault/watchdog runner tests/hlc/fault_matrix.py
+--- SKIP: TestHLCFaultProcessMatrix (0.00s)
+=== RUN   TestHLCBindFailure
+    shutdown_fault_process_test.go:329: isolated startup failure runner
+--- SKIP: TestHLCBindFailure (0.00s)
+=== RUN   TestShutdownFeishuCloseBeforeRootSealAndWait
+--- PASS: TestShutdownFeishuCloseBeforeRootSealAndWait (0.01s)
+=== RUN   TestShutdownFeishuUsesEightSecondDrainAndExitTwo
+    shutdown_feishu_test.go:79: SDK drain_budget_ms=8000 elapsed_ms=8000 exit_code=2 db_closed=false
+--- PASS: TestShutdownFeishuUsesEightSecondDrainAndExitTwo (8.00s)
+=== RUN   TestShutdownFeishuRemoteReceiverUsesExistingRootGate
+--- PASS: TestShutdownFeishuRemoteReceiverUsesExistingRootGate (0.00s)
+=== RUN   TestShutdownFeishuAdmittedCallbackKeepsWorkBudget
+--- PASS: TestShutdownFeishuAdmittedCallbackKeepsWorkBudget (0.00s)
+=== RUN   TestHLCLoadProcessChild
+--- PASS: TestHLCLoadProcessChild (0.00s)
+=== RUN   TestHLCLoadMatrix
+    shutdown_load_test.go:560: isolated actual-process matrix: tests/hlc/process_matrix.py
+--- SKIP: TestHLCLoadMatrix (0.00s)
+=== RUN   TestHLCProcessChild
+--- PASS: TestHLCProcessChild (0.00s)
+=== RUN   TestHLCActualProcessIdle
+    shutdown_process_test.go:136: S001 raw process rc=0 stop_ms=215 listener_delta_us=4 stages=5
+--- PASS: TestHLCActualProcessIdle (0.35s)
+=== RUN   TestShutdownS008QueueProcessChild
+--- PASS: TestShutdownS008QueueProcessChild (0.00s)
+=== RUN   TestShutdownS008QueueProcessExitCodes
+=== RUN   TestShutdownS008QueueProcessExitCodes/success
+    shutdown_queue_test.go:94: S008 actual_process_exit=0 elapsed_ms=8 queue=map[failed:0 first_error:nil remaining:0]
+=== RUN   TestShutdownS008QueueProcessExitCodes/commit_failure
+    shutdown_queue_test.go:94: S008 actual_process_exit=1 elapsed_ms=7 queue=map[failed:5 first_error:operation_failed remaining:5]
+=== RUN   TestShutdownS008QueueProcessExitCodes/db_deadline
+    shutdown_queue_test.go:94: S008 actual_process_exit=2 elapsed_ms=3009 queue=map[failed:5 first_error:deadline_exceeded remaining:5]
+=== RUN   TestShutdownS008QueueProcessExitCodes/failure_then_deadline
+2026/11/02 02:55:47 amr heartbeat events=0 opened=0 active=0 queued=0 closed=0 incomplete=0 failed=0 non_candidate=0 candidate_rejected=0 candidate_ready=0 dispatched=0 fragment_append=0 fragment_snapshot=0 fragment_dup=0 late_after_terminal=0 legacy_dropped=0 view_backfill_dropped=0 targets_attempted=0 targets_dispatched=0 targets_failed=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=0 missing_identity_or_replay=0 top_invariant=true closed_invariant=true
+2026/11/02 02:55:47 delivery expiry sweep failed: sql: database is closed
+    shutdown_queue_test.go:94: S008 actual_process_exit=2 elapsed_ms=3008 queue=map[failed:2 first_error:operation_failed remaining:5]
+--- PASS: TestShutdownS008QueueProcessExitCodes (6.03s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/success (0.01s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/commit_failure (0.01s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/db_deadline (3.01s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/failure_then_deadline (3.01s)
+=== RUN   TestShutdownS008QueueStageResults
+=== RUN   TestShutdownS008QueueStageResults/success
+    shutdown_queue_test.go:177: S008 exit=0 db_budget_ms=3000 db_elapsed_ms=0 timeout=false remaining=0 failed=0 db_closed=true first_commit_error=false
+=== RUN   TestShutdownS008QueueStageResults/commit_failure
+    shutdown_queue_test.go:177: S008 exit=1 db_budget_ms=3000 db_elapsed_ms=0 timeout=false remaining=5 failed=5 db_closed=true first_commit_error=true
+=== RUN   TestShutdownS008QueueStageResults/db_deadline
+    shutdown_queue_test.go:177: S008 exit=2 db_budget_ms=3000 db_elapsed_ms=3001 timeout=true remaining=5 failed=5 db_closed=false first_commit_error=false
+=== RUN   TestShutdownS008QueueStageResults/failure_then_deadline
+    shutdown_queue_test.go:177: S008 exit=2 db_budget_ms=3000 db_elapsed_ms=3000 timeout=true remaining=5 failed=2 db_closed=false first_commit_error=true
+--- PASS: TestShutdownS008QueueStageResults (6.00s)
+    --- PASS: TestShutdownS008QueueStageResults/success (0.00s)
+    --- PASS: TestShutdownS008QueueStageResults/commit_failure (0.00s)
+    --- PASS: TestShutdownS008QueueStageResults/db_deadline (3.00s)
+    --- PASS: TestShutdownS008QueueStageResults/failure_then_deadline (3.00s)
+=== RUN   TestShutdownRecordsBothServersAndExitClassification
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/graceful
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/failure
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/timeout
+--- PASS: TestShutdownRecordsBothServersAndExitClassification (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/graceful (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/failure (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/timeout (0.00s)
+=== RUN   TestShutdownDoesNotCloseDBWithLiveUsers
+--- PASS: TestShutdownDoesNotCloseDBWithLiveUsers (0.00s)
+=== RUN   TestShutdownBlockingFinalizerIsBounded
+--- PASS: TestShutdownBlockingFinalizerIsBounded (2.00s)
+=== RUN   TestShutdownTimeoutHasPriority
+--- PASS: TestShutdownTimeoutHasPriority (0.00s)
+=== RUN   TestClarificationStartupFlagsIndependent
+--- PASS: TestClarificationStartupFlagsIndependent (0.00s)
+=== RUN   TestClarificationReplyRequiresPinnedTenantAndNativeCapability
+--- PASS: TestClarificationReplyRequiresPinnedTenantAndNativeCapability (0.00s)
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/#00
+2026/11/02 02:55:56 [Info] [client ready]
+2026/11/02 02:55:56 [Info] [client ready]
+=== RUN   TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/{"native":"tenant-one"}
+2026/11/02 02:55:56 [Info] [client ready]
+2026/11/02 02:55:56 [Info] [client ready]
+--- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping (0.00s)
+    --- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/#00 (0.00s)
+    --- PASS: TestSingleTenantStartupUsesConfiguredNativeApplicationsWithoutMapping/{"native":"tenant-one"} (0.00s)
+=== RUN   TestVerifyVersionedDelivery
+--- PASS: TestVerifyVersionedDelivery (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	195.818s
+=== RUN   TestAgentDiskCurrentCredentialIngress
+2026/11/02 02:52:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestAgentDiskCurrentCredentialIngress (0.14s)
+=== RUN   TestAgentDiskRejectsStaleAndRelabeledSource
+=== RUN   TestAgentDiskRejectsStaleAndRelabeledSource/old_connection
+2026/11/02 02:52:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestAgentDiskRejectsStaleAndRelabeledSource/shared_key
+2026/11/02 02:52:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestAgentDiskRejectsStaleAndRelabeledSource/body_identity
+2026/11/02 02:52:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestAgentDiskRejectsStaleAndRelabeledSource/wrong_agent
+2026/11/02 02:52:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestAgentDiskRejectsStaleAndRelabeledSource/hosted
+2026/11/02 02:52:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestAgentDiskRejectsStaleAndRelabeledSource (0.68s)
+    --- PASS: TestAgentDiskRejectsStaleAndRelabeledSource/old_connection (0.14s)
+    --- PASS: TestAgentDiskRejectsStaleAndRelabeledSource/shared_key (0.13s)
+    --- PASS: TestAgentDiskRejectsStaleAndRelabeledSource/body_identity (0.14s)
+    --- PASS: TestAgentDiskRejectsStaleAndRelabeledSource/wrong_agent (0.14s)
+    --- PASS: TestAgentDiskRejectsStaleAndRelabeledSource/hosted (0.13s)
+=== RUN   TestAgentDiskSignedReadOnlyRoute
+2026/11/02 02:52:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestAgentDiskSignedReadOnlyRoute/replay
+=== RUN   TestAgentDiskSignedReadOnlyRoute/wrong_direction
+=== RUN   TestAgentDiskSignedReadOnlyRoute/wrong_target
+=== RUN   TestAgentDiskSignedReadOnlyRoute/relabel
+=== RUN   TestAgentDiskSignedReadOnlyRoute/unknown_key
+=== RUN   TestAgentDiskSignedReadOnlyRoute/oversize
+--- PASS: TestAgentDiskSignedReadOnlyRoute (0.13s)
+    --- PASS: TestAgentDiskSignedReadOnlyRoute/replay (0.00s)
+    --- PASS: TestAgentDiskSignedReadOnlyRoute/wrong_direction (0.00s)
+    --- PASS: TestAgentDiskSignedReadOnlyRoute/wrong_target (0.00s)
+    --- PASS: TestAgentDiskSignedReadOnlyRoute/relabel (0.00s)
+    --- PASS: TestAgentDiskSignedReadOnlyRoute/unknown_key (0.00s)
+    --- PASS: TestAgentDiskSignedReadOnlyRoute/oversize (0.00s)
+=== RUN   TestAgentDiskRetiredNameCannotInheritOldConnection
+2026/11/02 02:52:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestAgentDiskRetiredNameCannotInheritOldConnection (0.13s)
+=== RUN   TestAgentDiskCheapAdmission
+=== RUN   TestAgentDiskCheapAdmission/burst
+2026/11/02 02:52:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestAgentDiskCheapAdmission/oversize
+2026/11/02 02:52:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestAgentDiskCheapAdmission/invalid_first_attempt
+2026/11/02 02:52:47 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestAgentDiskCheapAdmission (0.42s)
+    --- PASS: TestAgentDiskCheapAdmission/burst (0.14s)
+    --- PASS: TestAgentDiskCheapAdmission/oversize (0.15s)
+    --- PASS: TestAgentDiskCheapAdmission/invalid_first_attempt (0.14s)
+=== RUN   TestAgentWSPlaceholderFromTerminalOutputReachesBuffer
+2026/11/02 02:52:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:48 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentWSPlaceholderFromTerminalOutputReachesBuffer (0.18s)
+=== RUN   TestAgentWSPlaceholderFromAgentToAgentIsDelivered
+2026/11/02 02:52:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:48 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:48 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentWSPlaceholderFromAgentToAgentIsDelivered (0.17s)
+=== RUN   TestNewPlatformAgentOwnerResolutionSelectorIsolationAndRoster
+2026/11/02 02:52:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:48 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:48 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:48 session handshake timing key_id=u_lbl session=outsider total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:48 online directory snapshot timing owner=zzc total=0s members=0s endpoints=0s snapshot=0s account_fill=0s bound=0s sessions=3 clients=2
+2026/11/02 02:52:48 feishu dispatch rejected reason=short_name_not_resolvable open_id="" target="outsider" bot_channel=""
+2026/11/02 02:52:48 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+--- PASS: TestNewPlatformAgentOwnerResolutionSelectorIsolationAndRoster (0.42s)
+=== RUN   TestNewPlatformAMRSelectorNormalizesFullName
+2026/11/02 02:52:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:48 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:48 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestNewPlatformAMRSelectorNormalizesFullName (0.16s)
+=== RUN   TestDisabledNewPlatformOwnerAgentShortSelectorIsRejected
+2026/11/02 02:52:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:49 session handshake timing key_id=u_zzc session=opus50ts total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:49 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:49 feishu dispatch rejected reason=short_name_not_resolvable open_id="" target="kimi" bot_channel=""
+2026/11/02 02:52:49 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+--- PASS: TestDisabledNewPlatformOwnerAgentShortSelectorIsRejected (0.41s)
+=== RUN   TestAgentWSPlaceholderFromFeishuReplyIsDelivered
+2026/11/02 02:52:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:49 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentWSPlaceholderFromFeishuReplyIsDelivered (0.17s)
+=== RUN   TestAgentWSPlaceholderFromSessionEventReachesRing
+2026/11/02 02:52:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:49 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentWSPlaceholderFromSessionEventReachesRing (0.17s)
+=== RUN   TestAgentWSForgedOtherSessionFromStillRejected
+2026/11/02 02:52:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:49 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentWSForgedOtherSessionFromStillRejected (0.16s)
+=== RUN   TestAgentWSNearNameFromStillRejected
+2026/11/02 02:52:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:49 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentWSNearNameFromStillRejected (0.15s)
+=== RUN   TestLegacySessionWSWrongKeyFromStillRejected
+2026/11/02 02:52:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:50 session name warning key_id=FB-person-20261102-f64718a5 owner= session=developer: 无法确认该 key 绑定成员 owner_key
+2026/11/02 02:52:50 session version warning key_id=FB-person-20261102-f64718a5 owner= session=developer version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:52:50 session handshake timing key_id=FB-person-20261102-f64718a5 session=developer total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+--- PASS: TestLegacySessionWSWrongKeyFromStillRejected (0.15s)
+=== RUN   TestAgentSpecDirectAuthenticationAndLegacyFailClosed
+2026/11/02 02:52:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestAgentSpecDirectAuthenticationAndLegacyFailClosed (0.14s)
+=== RUN   TestAgentSpecDirectSelfOwnershipAttributionAndConflict
+2026/11/02 02:52:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestAgentSpecDirectSelfOwnershipAttributionAndConflict (0.14s)
+=== RUN   TestHostedSuspendResumeOverWS
+2026/11/02 02:52:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:50 session handshake timing key_id=u_zzc session=codex1 total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:50 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:50 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/11/02 02:52:50 session handshake timing key_id=u_zzc session=codex1 total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestHostedSuspendResumeOverWS (0.19s)
+=== RUN   TestHostedReissueTakeKicksOldConnection
+2026/11/02 02:52:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:50 session handshake timing key_id=u_zzc session=codex2 total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:50 session handshake timing key_id=u_zzc session=codex2 total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestHostedReissueTakeKicksOldConnection (0.27s)
+=== RUN   TestHostedRetireStillKicksWithRevoked
+2026/11/02 02:52:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:50 session handshake timing key_id=u_zzc session=codex3 total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestHostedRetireStillKicksWithRevoked (0.15s)
+=== RUN   TestAgentWS_IdentityFromCredentialNotFromURL
+2026/11/02 02:52:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:51 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentWS_IdentityFromCredentialNotFromURL (0.15s)
+=== RUN   TestAgentWSAdvertisesTrustedHelperUpdateSource
+2026/11/02 02:52:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:51 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentWSAdvertisesTrustedHelperUpdateSource (0.14s)
+=== RUN   TestAgentWS_HandshakeErrors
+2026/11/02 02:52:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestAgentWS_HandshakeErrors (0.13s)
+=== RUN   TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity
+=== RUN   TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity/missing
+2026/11/02 02:52:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity/malformed
+2026/11/02 02:52:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity/unknown
+2026/11/02 02:52:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity/revoked
+2026/11/02 02:52:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity/suspended
+2026/11/02 02:52:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity (0.70s)
+    --- PASS: TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity/missing (0.14s)
+    --- PASS: TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity/malformed (0.14s)
+    --- PASS: TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity/unknown (0.15s)
+    --- PASS: TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity/revoked (0.13s)
+    --- PASS: TestAgentWSRejectedHandshakeDoesNotExposeAgentIdentity/suspended (0.14s)
+=== RUN   TestAgentWS_SecondConnectionRejectedWhileAlive
+2026/11/02 02:52:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:52 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentWS_SecondConnectionRejectedWhileAlive (0.46s)
+=== RUN   TestAgentWS_DeadOldConnectionReplaced
+2026/11/02 02:52:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:52 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:58 session handshake timing key_id=u_zzc session=opus50ts total=5.303s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=5.002s
+--- PASS: TestAgentWS_DeadOldConnectionReplaced (5.46s)
+=== RUN   TestAgentWS_RevokeDisconnectsWith4401
+2026/11/02 02:52:58 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:58 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:58 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentWS_RevokeDisconnectsWith4401 (0.16s)
+=== RUN   TestAgentWS_RevokeDoesNotAffectSibling
+2026/11/02 02:52:58 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:58 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:58 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:52:58 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestAgentWS_RevokeDoesNotAffectSibling (0.46s)
+=== RUN   TestAgentWS_ReservedNameRejectedAtApproval
+2026/11/02 02:52:58 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:58 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestAgentWS_ReservedNameRejectedAtApproval (0.14s)
+=== RUN   TestSessionWS_GoneWhenCredentialOnly
+2026/11/02 02:52:58 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:58 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionWS_GoneWhenCredentialOnly (0.13s)
+=== RUN   TestIsInternalSource
+--- PASS: TestIsInternalSource (0.00s)
+=== RUN   TestServiceWS_InternalOnlyInNewPlatformMode
+2026/11/02 02:52:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestServiceWS_InternalOnlyInNewPlatformMode (0.14s)
+=== RUN   TestAMRLogHygieneUnsupportedNameStillLoggedPerLine
+--- PASS: TestAMRLogHygieneUnsupportedNameStillLoggedPerLine (0.05s)
+=== RUN   TestAMRLogHygieneDecisionPrefixOnlyRealSignal
+--- PASS: TestAMRLogHygieneDecisionPrefixOnlyRealSignal (0.05s)
+=== RUN   TestAMRLogHygieneMissingIdentityCountedNotLogged
+--- PASS: TestAMRLogHygieneMissingIdentityCountedNotLogged (0.05s)
+=== RUN   TestAMRLogHygieneInvalidJSONStillLogged
+--- PASS: TestAMRLogHygieneInvalidJSONStillLogged (0.00s)
+=== RUN   TestAMRLogHygieneHeartbeatFieldsBoundToOwnCounters
+--- PASS: TestAMRLogHygieneHeartbeatFieldsBoundToOwnCounters (0.00s)
+=== RUN   TestMarkdownHeadingIsNotCandidate
+=== RUN   TestMarkdownHeadingIsNotCandidate/h1_ascii
+=== RUN   TestMarkdownHeadingIsNotCandidate/h1_cjk_emoji
+=== RUN   TestMarkdownHeadingIsNotCandidate/h2
+=== RUN   TestMarkdownHeadingIsNotCandidate/h3
+=== RUN   TestMarkdownHeadingIsNotCandidate/h4
+=== RUN   TestMarkdownHeadingIsNotCandidate/hash_tab
+=== RUN   TestMarkdownHeadingIsNotCandidate/lone_hash
+--- PASS: TestMarkdownHeadingIsNotCandidate (0.00s)
+    --- PASS: TestMarkdownHeadingIsNotCandidate/h1_ascii (0.00s)
+    --- PASS: TestMarkdownHeadingIsNotCandidate/h1_cjk_emoji (0.00s)
+    --- PASS: TestMarkdownHeadingIsNotCandidate/h2 (0.00s)
+    --- PASS: TestMarkdownHeadingIsNotCandidate/h3 (0.00s)
+    --- PASS: TestMarkdownHeadingIsNotCandidate/h4 (0.00s)
+    --- PASS: TestMarkdownHeadingIsNotCandidate/hash_tab (0.00s)
+    --- PASS: TestMarkdownHeadingIsNotCandidate/lone_hash (0.00s)
+=== RUN   TestRealSelectorStillParsed
+--- PASS: TestRealSelectorStillParsed (0.00s)
+=== RUN   TestAtMentionUnaffected
+--- PASS: TestAtMentionUnaffected (0.00s)
+=== RUN   TestOffendingTokenNotPlaceholder
+--- PASS: TestOffendingTokenNotPlaceholder (0.00s)
+=== RUN   TestOffendingTokenDoesNotLeakBody
+--- PASS: TestOffendingTokenDoesNotLeakBody (0.00s)
+=== RUN   TestNoDisplayNoticeFixedThreshold
+--- PASS: TestNoDisplayNoticeFixedThreshold (0.00s)
+=== RUN   TestNoDisplayNoticeFixedThresholdOnTheWire
+2026/11/02 02:52:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:59 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/11/02 02:52:59 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+2026/11/02 02:52:59 delivery failure notification=suppressed reason=client_without_no_display_support session=thr-099 client_version="0.2.1.99" min=0.2.1.100 dock_event=published
+2026/11/02 02:52:59 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+--- PASS: TestNoDisplayNoticeFixedThresholdOnTheWire (0.54s)
+=== RUN   TestIPCSendBodyAMRUsesSharedParserAtAnyIndent
+--- PASS: TestIPCSendBodyAMRUsesSharedParserAtAnyIndent (0.00s)
+=== RUN   TestIPCSendBodyAMRUsesConfiguredTargetLimit
+--- PASS: TestIPCSendBodyAMRUsesConfiguredTargetLimit (0.00s)
+=== RUN   TestIPCSendBodyAMRUsesSharedSyntaxFeedbackWithoutReplacingDirectPath
+2026/11/02 02:52:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:52:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:52:59 amr decision=token_skipped reason=unsupported_name tokens=[张宗楚] source=ipc-source
+2026/11/02 02:52:59 feishu dispatch rejected reason=short_name_not_resolvable open_id="" target="primary" bot_channel=""
+--- PASS: TestIPCSendBodyAMRUsesSharedSyntaxFeedbackWithoutReplacingDirectPath (0.14s)
+=== RUN   TestAMRRouteResultNoticeIncludesDeliveryID
+2026/11/02 02:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestAMRRouteResultNoticeIncludesDeliveryID (0.13s)
+=== RUN   TestAMRFailureNoticeCarriesReplyOriginSuppressionMarker
+2026/11/02 02:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:00 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+--- PASS: TestAMRFailureNoticeCarriesReplyOriginSuppressionMarker (0.14s)
+=== RUN   TestAMRWaitsForExistingTurnCompletedAndAggregatesFragments
+2026/11/02 02:53:00 amr decision=ignored reason=completed_turn counted_late=false session=source delivery_id=d1 turn_id=t1 kind=state_change text_len=0 aggregated=1
+--- PASS: TestAMRWaitsForExistingTurnCompletedAndAggregatesFragments (0.00s)
+=== RUN   TestAMRBackfillAfterHubRestartIsDroppedBeforeAccumulator
+--- PASS: TestAMRBackfillAfterHubRestartIsDroppedBeforeAccumulator (0.00s)
+=== RUN   TestAMRHasNoPerSessionRolloutDimension
+--- PASS: TestAMRHasNoPerSessionRolloutDimension (0.00s)
+=== RUN   TestAMRFragmentClassifierHandlesDuplicateSnapshotAndAppend
+--- PASS: TestAMRFragmentClassifierHandlesDuplicateSnapshotAndAppend (0.00s)
+=== RUN   TestAMRFailClosedForReplayMissingIdentityAndNoTerminal
+--- PASS: TestAMRFailClosedForReplayMissingIdentityAndNoTerminal (0.00s)
+=== RUN   TestAMRIncompleteAndFailedRemainDistinct
+2026/11/02 02:53:00 amr decision=incomplete reason=empty
+2026/11/02 02:53:00 amr decision=failed reason=terminal_failed
+--- PASS: TestAMRIncompleteAndFailedRemainDistinct (0.00s)
+=== RUN   TestAMRTerminalSuccessIsFailClosed
+=== RUN   TestAMRTerminalSuccessIsFailClosed/missing_outcome
+=== RUN   TestAMRTerminalSuccessIsFailClosed/claude_success
+=== RUN   TestAMRTerminalSuccessIsFailClosed/completed
+=== RUN   TestAMRTerminalSuccessIsFailClosed/claude_interrupted_subtype
+=== RUN   TestAMRTerminalSuccessIsFailClosed/explicit_error
+=== RUN   TestAMRTerminalSuccessIsFailClosed/unknown_status
+--- PASS: TestAMRTerminalSuccessIsFailClosed (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/missing_outcome (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/claude_success (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/completed (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/claude_interrupted_subtype (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/explicit_error (0.00s)
+    --- PASS: TestAMRTerminalSuccessIsFailClosed/unknown_status (0.00s)
+=== RUN   TestAMRUnknownTerminalValuesAreCounted
+2026/11/02 02:53:00 amr decision=failed reason=terminal_failed
+--- PASS: TestAMRUnknownTerminalValuesAreCounted (0.00s)
+=== RUN   TestAMRTTLClosesOpenCodeLikeTurnAsIncomplete
+2026/11/02 02:53:00 amr decision=incomplete reason=turn_ttl
+--- PASS: TestAMRTTLClosesOpenCodeLikeTurnAsIncomplete (0.00s)
+=== RUN   TestAMRExpiryUsesBoundedNoticeQueue
+2026/11/02 02:53:00 amr decision=incomplete reason=turn_ttl
+2026/11/02 02:53:00 amr decision=incomplete reason=turn_ttl
+2026/11/02 02:53:00 amr notification=suppressed reason=notice_queue_full
+--- PASS: TestAMRExpiryUsesBoundedNoticeQueue (0.00s)
+=== RUN   TestAMRTruncatesAtHeadAndStillQueuesAtTerminal
+--- PASS: TestAMRTruncatesAtHeadAndStillQueuesAtTerminal (0.00s)
+=== RUN   TestAMRLateAfterTerminalIsCounted
+2026/11/02 02:53:00 amr decision=incomplete reason=empty
+2026/11/02 02:53:00 amr decision=ignored reason=completed_turn counted_late=true session=source delivery_id=d turn_id=t kind=assistant_text text_len=4 aggregated=1
+--- PASS: TestAMRLateAfterTerminalIsCounted (0.00s)
+=== RUN   TestAMRLateAfterTerminalLogCarriesAttribution
+--- PASS: TestAMRLateAfterTerminalLogCarriesAttribution (0.00s)
+=== RUN   TestAMRPerSessionCapacityEvictsOldest
+2026/11/02 02:53:00 amr decision=incomplete reason=session_capacity_eviction
+--- PASS: TestAMRPerSessionCapacityEvictsOldest (0.00s)
+=== RUN   TestAMRRouteAttemptsEveryTargetAndCountsPartialSuccess
+2026/11/02 02:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:00 amr decision=inbound_unavailable session=source delivery_id=d candidates=3 hop_inherit=0
+2026/11/02 02:53:00 amr decision=dispatched candidates=3
+2026/11/02 02:53:00 amr notification=failed reason=source_offline session=source
+--- PASS: TestAMRRouteAttemptsEveryTargetAndCountsPartialSuccess (0.13s)
+=== RUN   TestAMRStateConservationAfterPositiveCandidate
+2026/11/02 02:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:00 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:00 amr decision=dispatched candidates=1
+2026/11/02 02:53:00 amr notification=failed reason=source_offline session=source
+--- PASS: TestAMRStateConservationAfterPositiveCandidate (0.14s)
+=== RUN   TestParseAMRCandidatesUsesWholeTurnAndRejectsInvalidTokens
+2026/11/02 02:53:00 amr decision=token_skipped reason=unsupported_name tokens=[na$me] source=source
+--- PASS: TestParseAMRCandidatesUsesWholeTurnAndRejectsInvalidTokens (0.00s)
+=== RUN   TestAMRRoutesMentionsAnywhereAndHonorsPairedFences
+=== RUN   TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/mid_sentence
+2026/11/02 02:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:00 session version warning key_id=FB-owner-20261102-d934e471 owner=owner session=source version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:00 session handshake timing key_id=FB-owner-20261102-d934e471 session=owner-source-e471 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:00 session version warning key_id=FB-owner-20261102-d934e471 owner=owner session=target version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:00 session handshake timing key_id=FB-owner-20261102-d934e471 session=owner-target-e471 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:00 amr decision=inbound_unavailable session=owner-source-e471 delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:00 amr decision=dispatched candidates=1
+=== RUN   TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/paired_fence
+2026/11/02 02:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:00 session version warning key_id=FB-owner-20261102-b662edc0 owner=owner session=source version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:00 session handshake timing key_id=FB-owner-20261102-b662edc0 session=owner-source-edc0 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/11/02 02:53:00 session version warning key_id=FB-owner-20261102-b662edc0 owner=owner session=target version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:00 session handshake timing key_id=FB-owner-20261102-b662edc0 session=owner-target-edc0 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:00 amr decision=inbound_unavailable session=owner-source-edc0 delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:00 amr decision=dispatched candidates=1
+=== RUN   TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/unmatched_opener_does_not_swallow
+2026/11/02 02:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:00 session version warning key_id=FB-owner-20261102-f0404b94 owner=owner session=source version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:00 session handshake timing key_id=FB-owner-20261102-f0404b94 session=owner-source-4b94 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/11/02 02:53:00 session version warning key_id=FB-owner-20261102-f0404b94 owner=owner session=target version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:00 session handshake timing key_id=FB-owner-20261102-f0404b94 session=owner-target-4b94 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:00 amr decision=inbound_unavailable session=owner-source-4b94 delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:00 amr decision=dispatched candidates=1
+--- PASS: TestAMRRoutesMentionsAnywhereAndHonorsPairedFences (0.43s)
+    --- PASS: TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/mid_sentence (0.14s)
+    --- PASS: TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/paired_fence (0.15s)
+    --- PASS: TestAMRRoutesMentionsAnywhereAndHonorsPairedFences/unmatched_opener_does_not_swallow (0.14s)
+=== RUN   TestAMRMidBodyMarkdownHeadingIsNotCandidate
+--- PASS: TestAMRMidBodyMarkdownHeadingIsNotCandidate (0.00s)
+=== RUN   TestAMRSoftFailureClassificationKeepsSecurityBoundary
+=== RUN   TestAMRSoftFailureClassificationKeepsSecurityBoundary/unsupported_Chinese_name_is_ordinary_text
+2026/11/02 02:53:00 amr decision=token_skipped reason=unsupported_name tokens=[张宗楚] source=source
+=== RUN   TestAMRSoftFailureClassificationKeepsSecurityBoundary/URL_is_ordinary_text
+=== RUN   TestAMRSoftFailureClassificationKeepsSecurityBoundary/mention_without_body
+=== RUN   TestAMRSoftFailureClassificationKeepsSecurityBoundary/address-like_over_limit_remains_fail_closed
+--- PASS: TestAMRSoftFailureClassificationKeepsSecurityBoundary (0.00s)
+    --- PASS: TestAMRSoftFailureClassificationKeepsSecurityBoundary/unsupported_Chinese_name_is_ordinary_text (0.00s)
+    --- PASS: TestAMRSoftFailureClassificationKeepsSecurityBoundary/URL_is_ordinary_text (0.00s)
+    --- PASS: TestAMRSoftFailureClassificationKeepsSecurityBoundary/mention_without_body (0.00s)
+    --- PASS: TestAMRSoftFailureClassificationKeepsSecurityBoundary/address-like_over_limit_remains_fail_closed (0.00s)
+=== RUN   TestAMRChannelFirstMakesLaterMentionVisible
+--- PASS: TestAMRChannelFirstMakesLaterMentionVisible (0.00s)
+=== RUN   TestAMRNotificationExplainsItCannotBeRepliedTo
+--- PASS: TestAMRNotificationExplainsItCannotBeRepliedTo (0.00s)
+=== RUN   TestDeliveryFailurePreservesCoordinatesAndTruncatedOriginalHead
+--- PASS: TestDeliveryFailurePreservesCoordinatesAndTruncatedOriginalHead (0.00s)
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/first_character_regression
+2026/11/02 02:53:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:00 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:00 amr decision=dispatched candidates=1
+2026/11/02 02:53:00 amr notification=failed reason=source_offline session=source
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/later_column_zero
+2026/11/02 02:53:01 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:01 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:01 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:01 amr decision=dispatched candidates=1
+2026/11/02 02:53:01 amr notification=failed reason=source_offline session=source
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/space_indentation_routes
+2026/11/02 02:53:01 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:01 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:01 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:01 amr decision=dispatched candidates=1
+2026/11/02 02:53:01 amr notification=failed reason=source_offline session=source
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/tab_indentation_routes
+2026/11/02 02:53:01 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:01 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:01 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:01 amr decision=dispatched candidates=1
+2026/11/02 02:53:01 amr notification=failed reason=source_offline session=source
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/unicode_indentation_routes
+2026/11/02 02:53:01 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:01 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:01 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:01 amr decision=dispatched candidates=1
+2026/11/02 02:53:01 amr notification=failed reason=source_offline session=source
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/markdown_heading_continues
+2026/11/02 02:53:01 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:01 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:01 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:01 amr decision=dispatched candidates=1
+2026/11/02 02:53:01 amr notification=failed reason=source_offline session=source
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/decorated_markdown_heading_continues
+2026/11/02 02:53:01 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:01 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:01 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:01 amr decision=dispatched candidates=1
+2026/11/02 02:53:01 amr notification=failed reason=source_offline session=source
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/quote_routes_when_unfenced
+2026/11/02 02:53:01 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:01 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:01 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:01 amr decision=dispatched candidates=1
+2026/11/02 02:53:01 amr notification=failed reason=source_offline session=source
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/only_first_directive_routes
+2026/11/02 02:53:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:02 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:02 amr decision=dispatched candidates=1
+2026/11/02 02:53:02 amr notification=failed reason=source_offline session=source
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/mid-line_mention
+2026/11/02 02:53:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:02 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:02 amr decision=dispatched candidates=1
+2026/11/02 02:53:02 amr notification=failed reason=source_offline session=source
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/first_line_keeps_trim_space
+2026/11/02 02:53:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:02 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:02 amr decision=dispatched candidates=1
+2026/11/02 02:53:02 amr notification=failed reason=source_offline session=source
+=== RUN   TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/zero_width_prefix_still_routes
+2026/11/02 02:53:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:02 amr decision=inbound_unavailable session=source delivery_id=d candidates=1 hop_inherit=0
+2026/11/02 02:53:02 amr decision=dispatched candidates=1
+2026/11/02 02:53:02 amr notification=failed reason=source_offline session=source
+--- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas (1.67s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/first_character_regression (0.14s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/later_column_zero (0.14s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/space_indentation_routes (0.14s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/tab_indentation_routes (0.14s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/unicode_indentation_routes (0.13s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/markdown_heading_continues (0.14s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/decorated_markdown_heading_continues (0.14s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/quote_routes_when_unfenced (0.14s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/only_first_directive_routes (0.15s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/mid-line_mention (0.14s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/first_line_keeps_trim_space (0.14s)
+    --- PASS: TestT082AMRRoutesFirstEligibleLineWithHeartbeatDeltas/zero_width_prefix_still_routes (0.13s)
+=== RUN   TestLegacyAgentRouteDroppedForEverySession
+--- PASS: TestLegacyAgentRouteDroppedForEverySession (0.00s)
+=== RUN   TestDeliveryFailureEnvelopeUsesClientVersionTier
+--- PASS: TestDeliveryFailureEnvelopeUsesClientVersionTier (0.00s)
+=== RUN   TestPrepareSessionSelectorRejectsUnknownInsteadOfSynthesizingAddress
+2026/11/02 02:53:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:02 feishu dispatch rejected reason=short_name_not_resolvable open_id="" target="missing" bot_channel=""
+--- PASS: TestPrepareSessionSelectorRejectsUnknownInsteadOfSynthesizingAddress (0.13s)
+=== RUN   TestReliableEnvelopeDecouplesMirrorFromReliability
+--- PASS: TestReliableEnvelopeDecouplesMirrorFromReliability (0.00s)
+=== RUN   TestAMRRoutedEnvelopeIsReliable
+--- PASS: TestAMRRoutedEnvelopeIsReliable (0.00s)
+=== RUN   TestAMRFragmentBranchesAreDistinguishable
+--- PASS: TestAMRFragmentBranchesAreDistinguishable (0.00s)
+=== RUN   TestAMRQuietTurnSurvivesWhileSourceConnected
+2026/11/02 02:53:02 amr decision=incomplete reason=turn_ttl
+--- PASS: TestAMRQuietTurnSurvivesWhileSourceConnected (0.00s)
+=== RUN   TestAMRQuietTurnKeptWhenSourceStillConnected
+--- PASS: TestAMRQuietTurnKeptWhenSourceStillConnected (0.00s)
+=== RUN   TestAMRQuietTurnStillBoundedByMaxAge
+2026/11/02 02:53:02 amr decision=incomplete reason=turn_ttl
+--- PASS: TestAMRQuietTurnStillBoundedByMaxAge (0.00s)
+=== RUN   TestAMRVerbatimTurnDeliversOriginalText
+2026/11/02 02:53:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:02 session version warning key_id=FB-owner-20261102-169f9340 owner=owner session=ant version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:02 session handshake timing key_id=FB-owner-20261102-169f9340 session=owner-ant-9340 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:02 session version warning key_id=FB-owner-20261102-169f9340 owner=owner session=bee version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:02 session handshake timing key_id=FB-owner-20261102-169f9340 session=owner-bee-9340 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:02 session version warning key_id=FB-owner-20261102-169f9340 owner=owner session=cat version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:02 session handshake timing key_id=FB-owner-20261102-169f9340 session=owner-cat-9340 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:02 amr decision=inbound_unavailable session=owner-ant-9340 delivery_id=dw-dlv_seed-c1 candidates=2 hop_inherit=0
+2026/11/02 02:53:02 amr decision=dispatched candidates=2
+--- PASS: TestAMRVerbatimTurnDeliversOriginalText (0.15s)
+=== RUN   TestAMRVerbatimInboundAloneIsNotReparsed
+2026/11/02 02:53:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:02 session version warning key_id=FB-owner-20261102-bcd0d8ee owner=owner session=ant version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:02 session handshake timing key_id=FB-owner-20261102-bcd0d8ee session=owner-ant-d8ee total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:02 session version warning key_id=FB-owner-20261102-bcd0d8ee owner=owner session=bee version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:02 session handshake timing key_id=FB-owner-20261102-bcd0d8ee session=owner-bee-d8ee total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:02 session version warning key_id=FB-owner-20261102-bcd0d8ee owner=owner session=cat version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:02 session handshake timing key_id=FB-owner-20261102-bcd0d8ee session=owner-cat-d8ee total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:02 amr decision=inbound_unavailable session=owner-ant-d8ee delivery_id=dw-dlv_seed-c2 candidates=2 hop_inherit=0
+2026/11/02 02:53:02 amr decision=dispatched candidates=2
+2026/11/02 02:53:02 [reply-origin] lookup session=owner-bee-d8ee delivery_id=dw-dlv_amr-ced87e9471373d8d1d21f2f79df550f8 cost=35.907µs err=<nil> found=true
+2026/11/02 02:53:02 [reply-origin] R1 已回程 session=owner-bee-d8ee to=owner-ant-d8ee#FB-owner-20261102-bcd0d8ee delivery_id=dw-dlv_amr-ced87e9471373d8d1d21f2f79df550f8 in_reply_to=amr-ced87e9471373d8d1d21f2f79df550f8 hop=1
+--- PASS: TestAMRVerbatimInboundAloneIsNotReparsed (0.17s)
+=== RUN   TestAMRVerbatimQuotedChainStopsAfterFirstHop
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-36fbf045 owner=owner session=ant version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-36fbf045 session=owner-ant-f045 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-36fbf045 owner=owner session=bee version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-36fbf045 session=owner-bee-f045 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-36fbf045 owner=owner session=cat version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-36fbf045 session=owner-cat-f045 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 amr decision=inbound_unavailable session=owner-ant-f045 delivery_id=dw-dlv_seed-c3 candidates=2 hop_inherit=0
+2026/11/02 02:53:03 amr decision=dispatched candidates=2
+2026/11/02 02:53:03 [reply-origin] lookup session=owner-bee-f045 delivery_id=dw-dlv_amr-5d6dc028fca34a985a34f3d0f0931d1c cost=62.264µs err=<nil> found=true
+2026/11/02 02:53:03 [reply-origin] R1 已回程 session=owner-bee-f045 to=owner-ant-f045#FB-owner-20261102-36fbf045 delivery_id=dw-dlv_amr-5d6dc028fca34a985a34f3d0f0931d1c in_reply_to=amr-5d6dc028fca34a985a34f3d0f0931d1c hop=1
+--- PASS: TestAMRVerbatimQuotedChainStopsAfterFirstHop (0.14s)
+=== RUN   TestAMRVerbatimDerivedEnvelopeInheritsInboundHop
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-1be97646 owner=owner session=ant version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-1be97646 session=owner-ant-7646 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-1be97646 owner=owner session=bee version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-1be97646 session=owner-bee-7646 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-1be97646 owner=owner session=cat version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-1be97646 session=owner-cat-7646 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 amr decision=self_skipped session=owner-bee-7646 selector=#bee
+2026/11/02 02:53:03 amr decision=dispatched candidates=1
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-1fcc44ab owner=owner session=ant version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-1fcc44ab session=owner-ant-44ab total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-1fcc44ab owner=owner session=bee version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-1fcc44ab session=owner-bee-44ab total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-1fcc44ab owner=owner session=cat version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-1fcc44ab session=owner-cat-44ab total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 amr decision=self_skipped session=owner-bee-44ab selector=#bee
+2026/11/02 02:53:03 [reply-origin] R4 hop 兜底丢弃 id=amr-388042833d6e092f9c4b57c7053b68b9 from=owner-bee-44ab#FB-owner-20261102-1fcc44ab hop=16 max=16
+2026/11/02 02:53:03 amr decision=dispatched candidates=1
+--- PASS: TestAMRVerbatimDerivedEnvelopeInheritsInboundHop (0.27s)
+=== RUN   TestAMRVerbatimQuotedSelfMentionIsNotRoutedToSelf
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-96cc5d36 owner=owner session=ant version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-96cc5d36 session=owner-ant-5d36 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-96cc5d36 owner=owner session=bee version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-96cc5d36 session=owner-bee-5d36 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-96cc5d36 owner=owner session=cat version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-96cc5d36 session=owner-cat-5d36 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 amr decision=self_skipped session=owner-bee-5d36 selector=#bee
+2026/11/02 02:53:03 amr decision=dispatched candidates=1
+--- PASS: TestAMRVerbatimQuotedSelfMentionIsNotRoutedToSelf (0.14s)
+=== RUN   TestAMRVerbatimSelfOnlyQuoteStillReturnsToOrigin
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-e6f6e1a3 owner=owner session=ant version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-e6f6e1a3 session=owner-ant-e1a3 total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-e6f6e1a3 owner=owner session=bee version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-e6f6e1a3 session=owner-bee-e1a3 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-e6f6e1a3 owner=owner session=cat version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-e6f6e1a3 session=owner-cat-e1a3 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 amr decision=self_skipped session=owner-bee-e1a3 selector=#bee
+2026/11/02 02:53:03 [reply-origin] lookup session=owner-bee-e1a3 delivery_id=dw-dlv_d74d117a82feebdb8a3ebd1760f08dab cost=42.205µs err=<nil> found=true
+2026/11/02 02:53:03 [reply-origin] R1 已回程 session=owner-bee-e1a3 to=owner-ant-e1a3#FB-owner-20261102-e6f6e1a3 delivery_id=dw-dlv_d74d117a82feebdb8a3ebd1760f08dab in_reply_to=seed-dd0d9eda9afb40dd hop=0
+--- PASS: TestAMRVerbatimSelfOnlyQuoteStillReturnsToOrigin (0.14s)
+=== RUN   TestAMRVerbatimTurnDeliveryIDMatchesSessionDelivery
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-3a66e64a owner=owner session=ant version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-3a66e64a session=owner-ant-e64a total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-3a66e64a owner=owner session=bee version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-3a66e64a session=owner-bee-e64a total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session version warning key_id=FB-owner-20261102-3a66e64a owner=owner session=cat version="" required=0.2.3.22: 未上报版本,要求 0.2.3.22
+2026/11/02 02:53:03 session handshake timing key_id=FB-owner-20261102-3a66e64a session=owner-cat-e64a total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/02 02:53:03 session delivery lease release decision=requeue key_id=FB-owner-20261102-3a66e64a session=owner-bee-e64a conn_seq=1 reason=session_reconnected released=0
+2026/11/02 02:53:03 amr decision=inbound_unavailable session=owner-ant-e64a delivery_id=dw-dlv_seed-c6 candidates=2 hop_inherit=0
+2026/11/02 02:53:03 session route decision=durable_queued key_id=FB-owner-20261102-3a66e64a session=owner-bee-e64a client_present=true conn_seq=1 delivery_id=dw-dlv_20c36323d907f8b9321751d52577b31b source_message_id=amr-5e6b3095f0e7b218dd7f089c01adc144
+2026/11/02 02:53:03 amr decision=dispatched candidates=2
+2026/11/02 02:53:03 [reply-origin] lookup session=owner-bee-e64a delivery_id=dw-dlv_20c36323d907f8b9321751d52577b31b cost=66.394µs err=<nil> found=true
+2026/11/02 02:53:03 [reply-origin] R1 已回程 session=owner-bee-e64a to=owner-ant-e64a#FB-owner-20261102-3a66e64a delivery_id=dw-dlv_20c36323d907f8b9321751d52577b31b in_reply_to=amr-5e6b3095f0e7b218dd7f089c01adc144 hop=1
+2026/11/02 02:53:03 session delivery lease release decision=requeue key_id=FB-owner-20261102-3a66e64a session=owner-bee-e64a conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestAMRVerbatimTurnDeliveryIDMatchesSessionDelivery (0.16s)
+=== RUN   TestChannelReservedNamesAndNamingRules
+--- PASS: TestChannelReservedNamesAndNamingRules (0.00s)
+=== RUN   TestOwnerScopedReservationIsPerOwner
+--- PASS: TestOwnerScopedReservationIsPerOwner (0.00s)
+=== RUN   TestChannelMentionParsesChannelsAndRejectsMembers
+=== RUN   TestChannelMentionParsesChannelsAndRejectsMembers/渠道被识别
+=== RUN   TestChannelMentionParsesChannelsAndRejectsMembers/反向:业主名会话名不得被当成渠道
+=== RUN   TestChannelMentionParsesChannelsAndRejectsMembers/地址切分
+--- PASS: TestChannelMentionParsesChannelsAndRejectsMembers (0.00s)
+    --- PASS: TestChannelMentionParsesChannelsAndRejectsMembers/渠道被识别 (0.00s)
+    --- PASS: TestChannelMentionParsesChannelsAndRejectsMembers/反向:业主名会话名不得被当成渠道 (0.00s)
+    --- PASS: TestChannelMentionParsesChannelsAndRejectsMembers/地址切分 (0.00s)
+=== RUN   TestChannelMentionDoesNotBecomeAgentCandidate
+--- PASS: TestChannelMentionDoesNotBecomeAgentCandidate (0.00s)
+=== RUN   TestReservedChannelNameRejectedAtSessionRegistration
+2026/11/02 02:53:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestReservedChannelNameRejectedAtSessionRegistration (0.13s)
+=== RUN   TestChannelDeliveryNoAddressGoesToOwner
+2026/11/02 02:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:04 [channel] deliver session=bee channel=feishu addr="" resolved="ou_owner" fell_back=true bot="alpha-bot"
+--- PASS: TestChannelDeliveryNoAddressGoesToOwner (0.14s)
+=== RUN   TestChannelDeliveryAddressableIDIsNotFallenBack
+2026/11/02 02:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestChannelDeliveryAddressableIDIsNotFallenBack/ou
+2026/11/02 02:53:04 [channel] deliver session=bee channel=feishu addr="ou_realuser" resolved="ou_realuser" fell_back=false bot="alpha-bot"
+=== RUN   TestChannelDeliveryAddressableIDIsNotFallenBack/oc
+2026/11/02 02:53:04 [channel] deliver session=bee channel=feishu addr="oc_realgroup" resolved="oc_realgroup" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryAddressableIDIsNotFallenBack (0.13s)
+    --- PASS: TestChannelDeliveryAddressableIDIsNotFallenBack/ou (0.00s)
+    --- PASS: TestChannelDeliveryAddressableIDIsNotFallenBack/oc (0.00s)
+=== RUN   TestChannelDeliveryUniqueNameSelectsNonFirstMember
+2026/11/02 02:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:04 [channel] deliver session=bee channel=feishu addr="目标乙" resolved="ou_second" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryUniqueNameSelectsNonFirstMember (0.13s)
+=== RUN   TestChannelDeliveryUniqueGroupNameRoutesToGroup
+2026/11/02 02:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:04 [channel] deliver session=bee channel=feishu addr="发布群" resolved="oc_named" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryUniqueGroupNameRoutesToGroup (0.14s)
+=== RUN   TestChannelDeliveryDuplicateNameFallsBackWithOwnershipNote
+2026/11/02 02:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:04 [channel] deliver session=bee channel=feishu addr="同名目标" resolved="ou_owner" fell_back=true bot="alpha-bot"
+--- PASS: TestChannelDeliveryDuplicateNameFallsBackWithOwnershipNote (0.14s)
+=== RUN   TestChannelDeliveryDuplicateNameWithSameOwnerStillIdentifiesBothTargets
+2026/11/02 02:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:04 [channel] deliver session=bee channel=feishu addr="同归属重名" resolved="ou_owner" fell_back=true bot="alpha-bot"
+--- PASS: TestChannelDeliveryDuplicateNameWithSameOwnerStillIdentifiesBothTargets (0.13s)
+=== RUN   TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing
+=== RUN   TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing/members
+2026/11/02 02:53:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:04 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+=== RUN   TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing/groups
+2026/11/02 02:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:05 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+--- PASS: TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing (0.28s)
+    --- PASS: TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing/members (0.14s)
+    --- PASS: TestChannelDeliveryLookupFailureIsVisibleAndNeverClaimsNameMissing/groups (0.13s)
+=== RUN   TestChannelDeliveryMissingNameFallsBackWithNotFoundNote
+2026/11/02 02:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:05 [channel] deliver session=bee channel=feishu addr="不存在的名字" resolved="ou_owner" fell_back=true bot="alpha-bot"
+--- PASS: TestChannelDeliveryMissingNameFallsBackWithNotFoundNote (0.14s)
+=== RUN   TestFeishuNameLookupSkipsMemberDisplayNameThatIsAddressableID
+2026/11/02 02:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestFeishuNameLookupSkipsMemberDisplayNameThatIsAddressableID (0.13s)
+=== RUN   TestChannelDeliveryDefaultBotIsAlphabeticallyFirst
+2026/11/02 02:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:05 [channel] deliver session=bee channel=feishu addr="oc_g" resolved="oc_g" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryDefaultBotIsAlphabeticallyFirst (0.13s)
+=== RUN   TestChannelDeliveryWithoutOwnerOpenIDDoesNotRouteSilently
+2026/11/02 02:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:05 [channel] deliver session=bee channel=feishu addr="" resolved="" fell_back=true bot="alpha-bot"
+2026/11/02 02:53:05 amr notification=failed reason=source_offline session=bee
+--- PASS: TestChannelDeliveryWithoutOwnerOpenIDDoesNotRouteSilently (0.13s)
+=== RUN   TestChannelDeliveryIsWiredIntoProcess
+2026/11/02 02:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:05 [channel] deliver session=bee channel=feishu addr="oc_group" resolved="oc_group" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryIsWiredIntoProcess (0.14s)
+=== RUN   TestChannelDeliveryFromRealProcessEntryReachesOutbound
+2026/11/02 02:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:05 [channel] deliver session=bee channel=feishu addr="渠道真实目标" resolved="ou_channel_real_entry" fell_back=false bot="alpha-bot"
+--- PASS: TestChannelDeliveryFromRealProcessEntryReachesOutbound (0.13s)
+=== RUN   TestChannelMentionNotDispatchedAsMember
+2026/11/02 02:53:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestChannelMentionNotDispatchedAsMember (0.13s)
+=== RUN   TestDeviceClaimAcrossActualClientAndHub
+    claim_client_integration_test.go:33: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment
+--- SKIP: TestDeviceClaimAcrossActualClientAndHub (0.00s)
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres
+    claim_client_integration_test.go:45: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment
+--- SKIP: TestDeviceClaimAcrossActualClientAndPostgres (0.00s)
+=== RUN   TestConsoleAgentGroupUserShortNameCollisionIsReportedNotRedrawn
+2026/11/02 02:53:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleAgentGroupUserShortNameCollisionIsReportedNotRedrawn (0.14s)
+=== RUN   TestConsoleAgentGroupConcurrentDeleteAndJoinLeavesNoMembers
+2026/11/02 02:53:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleAgentGroupConcurrentDeleteAndJoinLeavesNoMembers (0.15s)
+=== RUN   TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete
+2026/11/02 02:53:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    console_agent_groups_test.go:156: unknown 32-character group code: status=404 body="组码不存在"
+    console_agent_groups_test.go:177: closed additions: status=409 body="该编组已关闭添加"
+    console_agent_groups_test.go:195: duplicate member: status=409 body="该 Agent 已在该编组中"
+--- PASS: TestConsoleAgentGroupHTTPCreateCloseJoinListAndDelete (0.14s)
+=== RUN   TestConsoleAgentGroupNameIsTrimmedExactAndSuggestsWithin24Runes
+2026/11/02 02:53:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    console_agent_groups_test.go:279: duplicate group name: status=409 body="团队名称不可用；建议名称：团队11、团队12"
+--- PASS: TestConsoleAgentGroupNameIsTrimmedExactAndSuggestsWithin24Runes (0.14s)
+=== RUN   TestConsoleAgentGroupsRetryCollisionAndEnforceOwnership
+2026/11/02 02:53:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleAgentGroupsRetryCollisionAndEnforceOwnership (0.14s)
+=== RUN   TestConsoleAgentGroupsLegacyLeaderOwnerSeesTheDeleteActionTheHandlerAllows
+2026/11/02 02:53:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleAgentGroupsLegacyLeaderOwnerSeesTheDeleteActionTheHandlerAllows (0.14s)
+=== RUN   TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete
+2026/11/02 02:53:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleAgentGroupsLegacyLeaderCanClaimManageAndDelete (0.14s)
+=== RUN   TestConsoleAgentGroupsLegacyWithoutConsoleAgentRequiresManagementClaim
+2026/11/02 02:53:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleAgentGroupsLegacyWithoutConsoleAgentRequiresManagementClaim (0.14s)
+=== RUN   TestConsoleAgentGroupFailedRequestsDoNotClaimAndClosedRequiresPresence
+2026/11/02 02:53:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleAgentGroupFailedRequestsDoNotClaimAndClosedRequiresPresence (0.13s)
+=== RUN   TestConsoleAgentGroupOrphanDecisionIsRecheckedAtActionTime
+2026/11/02 02:53:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleAgentGroupOrphanDecisionIsRecheckedAtActionTime (0.14s)
+=== RUN   TestGroupingEmptyTableDistinguishesNeverConfiguredFromDeletedAll
+2026/11/02 02:53:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestGroupingEmptyTableDistinguishesNeverConfiguredFromDeletedAll (0.14s)
+=== RUN   TestConsoleCapabilitySignerAcceptsOpaqueViewAndAgentPageIDs
+2026/11/02 02:53:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleCapabilitySignerAcceptsOpaqueViewAndAgentPageIDs (0.13s)
+=== RUN   TestUnifiedConsoleAuthCoversEveryViewRouteAndSeparatesSharedKey
+2026/11/02 02:53:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestUnifiedConsoleAuthCoversEveryViewRouteAndSeparatesSharedKey (0.13s)
+=== RUN   TestConsoleCapabilityIsConsumedForExactSessionBeforeInput
+2026/11/02 02:53:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleCapabilityIsConsumedForExactSessionBeforeInput (0.14s)
+=== RUN   TestDisabledConsoleAuthStripsCallerSuppliedCapabilityMarker
+2026/11/02 02:53:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestDisabledConsoleAuthStripsCallerSuppliedCapabilityMarker (0.14s)
+=== RUN   TestUnifiedConsoleAuthRejectsMissingAndExpiredSession
+2026/11/02 02:53:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestUnifiedConsoleAuthRejectsMissingAndExpiredSession (0.14s)
+=== RUN   TestParseConsoleAuthEnabled
+--- PASS: TestParseConsoleAuthEnabled (0.00s)
+=== RUN   TestConsoleHostedAccessPageFailsClosedPerRequest
+2026/11/02 02:53:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleHostedAccessPageFailsClosedPerRequest (0.13s)
+=== RUN   TestChangeEvidenceHTTPAuthorityAndDefaults
+2026/11/02 02:53:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestChangeEvidenceHTTPAuthorityAndDefaults (0.14s)
+=== RUN   TestChangeEvidenceConsoleBrowser
+    console_change_evidence_test.go:128: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration
+--- SKIP: TestChangeEvidenceConsoleBrowser (0.00s)
+=== RUN   TestConsoleHelperUpdateAuthorizationAndCatalogOnly
+2026/11/02 02:53:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:08 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestConsoleHelperUpdateAuthorizationAndCatalogOnly (0.18s)
+=== RUN   TestConsoleHelperUpdaterVersionAndEligibility
+2026/11/02 02:53:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:08 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestConsoleHelperUpdaterVersionAndEligibility (0.16s)
+=== RUN   TestConsoleHelperUpdateReasonProjectionIsAllowlisted
+2026/11/02 02:53:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/02 02:53:08 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestConsoleHelperUpdateReasonProjectionIsAllowlisted (0.19s)
+=== RUN   TestConsoleHelperUpdateHandlerOriginDefense
+2026/11/02 02:53:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleHelperUpdateHandlerOriginDefense (0.14s)
+=== RUN   TestConsoleHelperUpdateProductionAsset
+2026/11/02 02:53:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsoleHelperUpdateProductionAsset (0.13s)
+=== RUN   TestConsoleHostedFeatureTemplateIsServerInjected
+--- PASS: TestConsoleHostedFeatureTemplateIsServerInjected (0.00s)
+=== RUN   TestConsolePageSourceHasNoDuplicateDOMIDs
+--- PASS: TestConsolePageSourceHasNoDuplicateDOMIDs (0.00s)
+=== RUN   TestNewPlatformLoginPageServedPublicNoStoreAndHoldsNoSecrets
+2026/11/02 02:53:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestNewPlatformLoginPageServedPublicNoStoreAndHoldsNoSecrets (0.14s)
+=== RUN   TestConsoleLoginHappyPathCreatesSessionAndConfirmsTicket
+--- PASS: TestConsoleLoginHappyPathCreatesSessionAndConfirmsTicket (0.00s)
+=== RUN   TestConsoleLoginUnknownSenderIsRefusedAndCreatesNothing
+--- PASS: TestConsoleLoginUnknownSenderIsRefusedAndCreatesNothing (0.00s)
+=== RUN   TestConsoleLoginInactivePrincipalIsRefused
+--- PASS: TestConsoleLoginInactivePrincipalIsRefused (0.00s)
+=== RUN   TestConsoleLoginEmptySenderIsRefused
+--- PASS: TestConsoleLoginEmptySenderIsRefused (0.00s)
+=== RUN   TestConsoleLoginCodeIsSingleUse
+--- PASS: TestConsoleLoginCodeIsSingleUse (0.00s)
+=== RUN   TestConsoleLoginExpiredCodeSaysSoInsteadOfSilentlySucceeding
+--- PASS: TestConsoleLoginExpiredCodeSaysSoInsteadOfSilentlySucceeding (0.00s)
+=== RUN   TestParseConsoleLoginCommand
+--- PASS: TestParseConsoleLoginCommand (0.00s)
+=== RUN   TestViewerStyleCodeIsNotAConsoleLoginCode
+--- PASS: TestViewerStyleCodeIsNotAConsoleLoginCode (0.00s)
+=== RUN   TestConsoleLoginHTTPPageToCookie
+--- PASS: TestConsoleLoginHTTPPageToCookie (0.00s)
+=== RUN   TestConsoleLoginIsWiredIntoRealL1Dispatch
+--- PASS: TestConsoleLoginIsWiredIntoRealL1Dispatch (0.00s)
+=== RUN   TestRequireConsoleManagementRoleMatrix
+2026/11/02 02:53:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestRequireConsoleManagementRoleMatrix/p-mgmt
+=== RUN   TestRequireConsoleManagementRoleMatrix/p-owner-explicit
+=== RUN   TestRequireConsoleManagementRoleMatrix/p-no-role-row
+=== RUN   TestRequireConsoleManagementRoleMatrix/p-mgmt-off
+=== RUN   TestRequireConsoleManagementRoleMatrix/p-mgmt-and-owner
+=== RUN   TestRequireConsoleManagementRoleMatrix/p-inactive
+=== RUN   TestRequireConsoleManagementRoleMatrix/p-does-not-exist
+=== RUN   TestRequireConsoleManagementRoleMatrix/#00
+--- PASS: TestRequireConsoleManagementRoleMatrix (0.15s)
+    --- PASS: TestRequireConsoleManagementRoleMatrix/p-mgmt (0.00s)
+    --- PASS: TestRequireConsoleManagementRoleMatrix/p-owner-explicit (0.00s)
+    --- PASS: TestRequireConsoleManagementRoleMatrix/p-no-role-row (0.00s)
+    --- PASS: TestRequireConsoleManagementRoleMatrix/p-mgmt-off (0.00s)
+    --- PASS: TestRequireConsoleManagementRoleMatrix/p-mgmt-and-owner (0.00s)
+    --- PASS: TestRequireConsoleManagementRoleMatrix/p-inactive (0.00s)
+    --- PASS: TestRequireConsoleManagementRoleMatrix/p-does-not-exist (0.00s)
+    --- PASS: TestRequireConsoleManagementRoleMatrix/#00 (0.00s)
+=== RUN   TestRequireConsoleManagementIsNotSubstitutableByActionVerb
+2026/11/02 02:53:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestRequireConsoleManagementIsNotSubstitutableByActionVerb (0.14s)
+=== RUN   TestRequireConsoleManagementFailsClosed
+=== RUN   TestRequireConsoleManagementFailsClosed/console_鉴权开关关闭_⇒_404,不是放行
+2026/11/02 02:53:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestRequireConsoleManagementFailsClosed/repo_不具备角色取数面_⇒_403
+2026/11/02 02:53:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestRequireConsoleManagementFailsClosed/角色查询报错_⇒_503
+2026/11/02 02:53:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/02 02:53:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestRequireConsoleManagementFailsClosed (0.27s)
+    --- PASS: TestRequireConsoleManagementFailsClosed/console_鉴权开关关闭_⇒_404,不是放行 (0.13s)
+    --- PASS: TestRequireConsoleManagementFailsClosed/repo_不具备角色取数面_⇒_403 (0.00s)
+    --- PASS: TestRequireConsoleManagementFailsClosed/角色查询报错_⇒_503 (0.14s)
+=== RUN   TestConsolePrincipalAccessor
+--- PASS: TestConsolePrincipalAccessor (0.00s)
+=== RUN   TestMuxCostSeedColdBootstrap
+--- PASS: TestMuxCostSeedColdBootstrap (0.00s)
+=== RUN   TestMuxWireLimitAndChargedReaders
+--- PASS: TestMuxWireLimitAndChargedReaders (0.02s)
+=== RUN   TestMuxQueueCreditsAndReplayBarrier
+--- PASS: TestMuxQueueCreditsAndReplayBarrier (0.00s)
+=== RUN   TestMuxRawByteBackpressure
+--- PASS: TestMuxRawByteBackpressure (0.00s)
+=== RUN   TestMuxRecoveryMetadataExpiresWithoutAnotherRequest
+panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0xdea62e]
+
+goroutine 15457 [running]:
+github.com/zhangzongchu2019/dingwei/internal/m8.(*Hub).lifetime(0x410ce5?)
+	/data/ai-dev-data/hub-graceful-shutdown-impl/internal/m8/lifecycle.go:36 +0xe
+github.com/zhangzongchu2019/dingwei/internal/m8.(*Hub).backgroundWork(0x76983c?, {0x15184c4, 0x9}, 0xc000012018)
+	/data/ai-dev-data/hub-graceful-shutdown-impl/internal/m8/lifecycle.go:154 +0x26
+github.com/zhangzongchu2019/dingwei/internal/m8.(*consoleMuxRegistry).expireLater.func1()
+	/data/ai-dev-data/hub-graceful-shutdown-impl/internal/m8/console_mux.go:792 +0x88
+created by time.goFunc
+	/usr/lib/go-1.22/src/time/sleep.go:177 +0x2d
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	23.574s
+=== RUN   TestFakeGatewayRecordsSentMessages
+--- PASS: TestFakeGatewayRecordsSentMessages (0.00s)
+=== RUN   TestLarkGatewayMessageFromEventPersonal
+--- PASS: TestLarkGatewayMessageFromEventPersonal (0.00s)
+=== RUN   TestLarkGatewayMessageFromEventGroup
+--- PASS: TestLarkGatewayMessageFromEventGroup (0.00s)
+=== RUN   TestLarkGatewayIngressObservabilityStagesWithoutChangingDelivery
+--- PASS: TestLarkGatewayIngressObservabilityStagesWithoutChangingDelivery (0.00s)
+=== RUN   TestLarkGatewayIngressObservabilitySeparatesRejectAndEnqueueError
+--- PASS: TestLarkGatewayIngressObservabilitySeparatesRejectAndEnqueueError (0.00s)
+=== RUN   TestLarkGatewayWSLifecycleCountersCoverAllTransitions
+--- PASS: TestLarkGatewayWSLifecycleCountersCoverAllTransitions (0.00s)
+=== RUN   TestReceiveIDType
+--- PASS: TestReceiveIDType (0.00s)
+=== RUN   TestReceiverPinnedSDKProcess
+    lifecycle_sdk_process_test.go:28: process-reaped SDK fixture: run alone with HLC_PINNED_SDK_PROCESS=1
+--- SKIP: TestReceiverPinnedSDKProcess (0.00s)
+=== RUN   TestReceiverS006InflightAndLateCallbackNoDB
+2026/11/02 02:52:46 [Info] [event-dispatch is ready]
+    lifecycle_test.go:137: S006 callback_extension active=0 rejected=1 total_db=1 after_seal_db=0 close_calls=1 sdk_start_not_joined=1
+--- PASS: TestReceiverS006InflightAndLateCallbackNoDB (0.16s)
+=== RUN   TestReceiverInflightTimeoutIsVisible
+2026/11/02 02:52:46 [Info] [event-dispatch is ready]
+--- PASS: TestReceiverInflightTimeoutIsVisible (0.03s)
+=== RUN   TestReceiverCannotStartAfterStop
+2026/11/02 02:52:46 [Info] [event-dispatch is ready]
+--- PASS: TestReceiverCannotStartAfterStop (0.00s)
+=== RUN   TestReceiverBlockedCloseIsBounded
+2026/11/02 02:52:46 [Info] [event-dispatch is ready]
+--- PASS: TestReceiverBlockedCloseIsBounded (0.03s)
+=== RUN   TestReceiverMultiGatewayAggregatesSeals
+2026/11/02 02:52:46 [Info] [event-dispatch is ready]
+2026/11/02 02:52:46 [Info] [event-dispatch is ready]
+--- PASS: TestReceiverMultiGatewayAggregatesSeals (0.00s)
+=== RUN   TestPilotQuestionNativeSDKPrivateRecipientAndUUID
+2026/11/02 02:52:46 [Info] [client ready]
+--- PASS: TestPilotQuestionNativeSDKPrivateRecipientAndUUID (0.00s)
+=== RUN   TestProxyGatewaySend
+--- PASS: TestProxyGatewaySend (0.00s)
+=== RUN   TestProxyGatewaySendErrorStatus
+--- PASS: TestProxyGatewaySendErrorStatus (0.00s)
+=== RUN   TestDeriveRequestIDDeterministicV5
+--- PASS: TestDeriveRequestIDDeterministicV5 (0.00s)
+=== RUN   TestProxyGatewaySendCustodyAndLegacy
+--- PASS: TestProxyGatewaySendCustodyAndLegacy (0.00s)
+=== RUN   TestProxyGatewayResolvePassthrough
+--- PASS: TestProxyGatewayResolvePassthrough (0.00s)
+=== RUN   TestClarificationSDKPreservesAuthenticatedReplyMetadata
+--- PASS: TestClarificationSDKPreservesAuthenticatedReplyMetadata (0.00s)
+=== RUN   TestClarificationSDKRejectsApplicationAndTenantDrift
+--- PASS: TestClarificationSDKRejectsApplicationAndTenantDrift (0.00s)
+=== RUN   TestClarificationWebhookNeverClaimsReplyAuthority
+--- PASS: TestClarificationWebhookNeverClaimsReplyAuthority (0.00s)
+=== RUN   TestSingleTenantSDKPreservesSenderTenantForAudit
+--- PASS: TestSingleTenantSDKPreservesSenderTenantForAudit (0.00s)
+=== RUN   TestTenantTaskUpdateIgnoredAtRealDispatcher
+2026/11/02 02:52:46 [Info] [event-dispatch is ready]
+--- PASS: TestTenantTaskUpdateIgnoredAtRealDispatcher (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishu	0.232s
+=== RUN   TestDBQueueWrapsRepositoryByDirection
+--- PASS: TestDBQueueWrapsRepositoryByDirection (0.16s)
+=== RUN   TestDBQueueSensitiveContentSurvivesFailUntilAck
+--- PASS: TestDBQueueSensitiveContentSurvivesFailUntilAck (0.15s)
+=== RUN   TestAsyncDBQueueFlushesByBatchSize
+--- PASS: TestAsyncDBQueueFlushesByBatchSize (0.15s)
+=== RUN   TestAsyncDBQueueFlushesByTimer
+--- PASS: TestAsyncDBQueueFlushesByTimer (0.16s)
+=== RUN   TestAsyncDBQueueSensitiveContentSurvivesFailUntilAck
+--- PASS: TestAsyncDBQueueSensitiveContentSurvivesFailUntilAck (0.15s)
+=== RUN   TestAsyncDBQueueBackpressuresWhenFull
+--- PASS: TestAsyncDBQueueBackpressuresWhenFull (0.03s)
+=== RUN   TestNewBestEffortDBQueueUsesAsyncForSQLite
+--- PASS: TestNewBestEffortDBQueueUsesAsyncForSQLite (0.15s)
+=== RUN   TestShutdownQueueS008BufferedMultipleBatches
+    shutdown_test.go:115: S008 buffered_before=23 batches=[4 4 4 4 4 3] committed=23 remaining=0 failed=0 late_enqueue=rejected
+--- PASS: TestShutdownQueueS008BufferedMultipleBatches (0.00s)
+=== RUN   TestShutdownQueueS008FirstFailureAndUncommittedCount
+    shutdown_test.go:129: S008 first_error_preserved=true batches=[4 4 4 4 4 3] committed=15 remaining=8 failed=8
+--- PASS: TestShutdownQueueS008FirstFailureAndUncommittedCount (0.00s)
+=== RUN   TestShutdownQueueS008DeadlinePreservesUnattemptedItems
+    shutdown_test.go:143: S008 timeout=true committed=4 remaining=19 failed=4 unattempted=15
+--- PASS: TestShutdownQueueS008DeadlinePreservesUnattemptedItems (0.10s)
+=== RUN   TestShutdownQueueS008AdmissionWaitIsBounded
+--- PASS: TestShutdownQueueS008AdmissionWaitIsBounded (0.05s)
+=== RUN   TestShutdownQueueDrainsChannelAndPartialBatch
+--- PASS: TestShutdownQueueDrainsChannelAndPartialBatch (0.00s)
+=== RUN   TestShutdownQueueFailureIsNotSuccessfulFlush
+--- PASS: TestShutdownQueueFailureIsNotSuccessfulFlush (0.00s)
+=== RUN   TestShutdownQueueRuntimeAcknowledgementRemainsBestEffort
+    shutdown_test.go:246: runtime Enqueue=nil Flush=nil; shutdown reports first persistence failure
+--- PASS: TestShutdownQueueRuntimeAcknowledgementRemainsBestEffort (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/bus	1.118s
+=== RUN   TestSealExcludesConcurrentAdmission
+--- PASS: TestSealExcludesConcurrentAdmission (0.00s)
+=== RUN   TestWaitObservesCompletionNotCancellation
+--- PASS: TestWaitObservesCompletionNotCancellation (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/lifecycle	0.003s
+FAIL

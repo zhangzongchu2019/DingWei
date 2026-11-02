@@ -1,0 +1,21 @@
+{
+  "step": "final-vet",
+  "command": [
+    "go",
+    "vet",
+    "./cmd/workpulse",
+    "./internal/m8",
+    "./internal/feishu",
+    "./internal/fcs",
+    "./internal/bus",
+    "./internal/lifecycle"
+  ],
+  "started_utc": "2026-11-02T03:03:59.516292+00:00",
+  "ended_utc": "2026-11-02T03:04:02.166584+00:00",
+  "rc": 0,
+  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "home": "/tmp/h-2gn0fwp6",
+  "tmp": "/tmp/h-2gn0fwp6",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

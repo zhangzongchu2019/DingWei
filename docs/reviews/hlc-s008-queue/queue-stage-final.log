@@ -1,0 +1,30 @@
+=== RUN   TestShutdownS008QueueStageResults
+=== RUN   TestShutdownS008QueueStageResults/success
+    shutdown_queue_test.go:102: S008 exit=0 db_budget_ms=3000 db_elapsed_ms=0 timeout=false remaining=0 failed=0 db_closed=true first_commit_error=false
+=== RUN   TestShutdownS008QueueStageResults/commit_failure
+    shutdown_queue_test.go:102: S008 exit=1 db_budget_ms=3000 db_elapsed_ms=0 timeout=false remaining=5 failed=5 db_closed=true first_commit_error=true
+=== RUN   TestShutdownS008QueueStageResults/db_deadline
+    shutdown_queue_test.go:102: S008 exit=2 db_budget_ms=3000 db_elapsed_ms=3000 timeout=true remaining=5 failed=5 db_closed=false first_commit_error=false
+=== RUN   TestShutdownS008QueueStageResults/failure_then_deadline
+    shutdown_queue_test.go:102: S008 exit=2 db_budget_ms=3000 db_elapsed_ms=3000 timeout=true remaining=5 failed=2 db_closed=false first_commit_error=true
+--- PASS: TestShutdownS008QueueStageResults (6.00s)
+    --- PASS: TestShutdownS008QueueStageResults/success (0.00s)
+    --- PASS: TestShutdownS008QueueStageResults/commit_failure (0.00s)
+    --- PASS: TestShutdownS008QueueStageResults/db_deadline (3.00s)
+    --- PASS: TestShutdownS008QueueStageResults/failure_then_deadline (3.00s)
+=== RUN   TestShutdownRecordsBothServersAndExitClassification
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/graceful
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/failure
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/timeout
+--- PASS: TestShutdownRecordsBothServersAndExitClassification (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/graceful (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/failure (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/timeout (0.00s)
+=== RUN   TestShutdownDoesNotCloseDBWithLiveUsers
+--- PASS: TestShutdownDoesNotCloseDBWithLiveUsers (0.00s)
+=== RUN   TestShutdownBlockingFinalizerIsBounded
+--- PASS: TestShutdownBlockingFinalizerIsBounded (2.00s)
+=== RUN   TestShutdownTimeoutHasPriority
+--- PASS: TestShutdownTimeoutHasPriority (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	9.040s

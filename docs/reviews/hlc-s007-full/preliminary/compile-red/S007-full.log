@@ -1,0 +1,4 @@
+# github.com/zhangzongchu2019/dingwei/cmd/workpulse [github.com/zhangzongchu2019/dingwei/cmd/workpulse.test]
+cmd/workpulse/shutdown_mixed_fault_process_test.go:364:6: undefined: strings
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse [build failed]
+FAIL

@@ -1,0 +1,20 @@
+{
+  "step": "m8-race45",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./internal/m8",
+    "-count=1",
+    "-timeout=45m",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T03:40:04.281197+00:00",
+  "ended_utc": "2026-11-02T04:24:14.184881+00:00",
+  "rc": 1,
+  "sha256": "9f8423d547d5f4c6a1846999ed6df8808d12533c2cb46f1b46f9fba8018dadf3",
+  "home": "/tmp/h-dxk79q79",
+  "tmp": "/tmp/h-dxk79q79",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

@@ -1,0 +1,7 @@
+=== RUN   TestHLCFaultProcessMatrix
+    shutdown_fault_process_test.go:256: S013 process_exit=-1 elapsed_ms=12699 stages=[] supervisor_abort=true
+    shutdown_fault_process_test.go:261: S013_CONTINUOUS_WATCHDOG: mutant interrupted by real supervisor SIGABRT
+--- FAIL: TestHLCFaultProcessMatrix (12.87s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	12.877s
+FAIL

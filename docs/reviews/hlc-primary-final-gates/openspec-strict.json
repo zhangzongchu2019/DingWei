@@ -1,0 +1,19 @@
+{
+  "step": "openspec-strict",
+  "command": [
+    "/usr/local/bin/node",
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/@fission-ai/openspec/bin/openspec.js",
+    "validate",
+    "--all",
+    "--strict",
+    "--no-interactive"
+  ],
+  "started_utc": "2026-11-02T04:33:41.792093+00:00",
+  "ended_utc": "2026-11-02T04:33:42.049229+00:00",
+  "rc": 0,
+  "sha256": "f8f96a92632cd115415ebbc88a5c1baa6546e9990afa76cd6b1bd5a0c64f247f",
+  "home": "/tmp/h-pl73ocyk",
+  "tmp": "/tmp/h-pl73ocyk",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

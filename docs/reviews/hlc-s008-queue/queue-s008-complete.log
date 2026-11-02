@@ -1,0 +1,63 @@
+=== RUN   TestShutdownQueueS008BufferedMultipleBatches
+    shutdown_test.go:115: S008 buffered_before=23 batches=[4 4 4 4 4 3] committed=23 remaining=0 failed=0 late_enqueue=rejected
+--- PASS: TestShutdownQueueS008BufferedMultipleBatches (0.00s)
+=== RUN   TestShutdownQueueS008FirstFailureAndUncommittedCount
+    shutdown_test.go:129: S008 first_error_preserved=true batches=[4 4 4 4 4 3] committed=15 remaining=8 failed=8
+--- PASS: TestShutdownQueueS008FirstFailureAndUncommittedCount (0.00s)
+=== RUN   TestShutdownQueueS008DeadlinePreservesUnattemptedItems
+    shutdown_test.go:143: S008 timeout=true committed=4 remaining=19 failed=4 unattempted=15
+--- PASS: TestShutdownQueueS008DeadlinePreservesUnattemptedItems (0.10s)
+=== RUN   TestShutdownQueueS008AdmissionWaitIsBounded
+--- PASS: TestShutdownQueueS008AdmissionWaitIsBounded (0.05s)
+=== RUN   TestShutdownQueueDrainsChannelAndPartialBatch
+--- PASS: TestShutdownQueueDrainsChannelAndPartialBatch (0.00s)
+=== RUN   TestShutdownQueueFailureIsNotSuccessfulFlush
+--- PASS: TestShutdownQueueFailureIsNotSuccessfulFlush (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/bus	1.177s
+=== RUN   TestShutdownS008QueueProcessChild
+--- PASS: TestShutdownS008QueueProcessChild (0.00s)
+=== RUN   TestShutdownS008QueueProcessExitCodes
+=== RUN   TestShutdownS008QueueProcessExitCodes/success
+    shutdown_queue_test.go:94: S008 actual_process_exit=0 elapsed_ms=1028 queue=map[failed:0 first_error:nil remaining:0]
+=== RUN   TestShutdownS008QueueProcessExitCodes/commit_failure
+    shutdown_queue_test.go:94: S008 actual_process_exit=1 elapsed_ms=27 queue=map[failed:5 first_error:operation_failed remaining:5]
+=== RUN   TestShutdownS008QueueProcessExitCodes/db_deadline
+    shutdown_queue_test.go:94: S008 actual_process_exit=2 elapsed_ms=3031 queue=map[failed:5 first_error:deadline_exceeded remaining:5]
+=== RUN   TestShutdownS008QueueProcessExitCodes/failure_then_deadline
+    shutdown_queue_test.go:94: S008 actual_process_exit=2 elapsed_ms=3031 queue=map[failed:1 first_error:operation_failed remaining:5]
+--- PASS: TestShutdownS008QueueProcessExitCodes (7.12s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/success (1.03s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/commit_failure (0.03s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/db_deadline (3.03s)
+    --- PASS: TestShutdownS008QueueProcessExitCodes/failure_then_deadline (3.03s)
+=== RUN   TestShutdownS008QueueStageResults
+=== RUN   TestShutdownS008QueueStageResults/success
+    shutdown_queue_test.go:177: S008 exit=0 db_budget_ms=3000 db_elapsed_ms=0 timeout=false remaining=0 failed=0 db_closed=true first_commit_error=false
+=== RUN   TestShutdownS008QueueStageResults/commit_failure
+    shutdown_queue_test.go:177: S008 exit=1 db_budget_ms=3000 db_elapsed_ms=0 timeout=false remaining=5 failed=5 db_closed=true first_commit_error=true
+=== RUN   TestShutdownS008QueueStageResults/db_deadline
+    shutdown_queue_test.go:177: S008 exit=2 db_budget_ms=3000 db_elapsed_ms=3000 timeout=true remaining=5 failed=5 db_closed=false first_commit_error=false
+=== RUN   TestShutdownS008QueueStageResults/failure_then_deadline
+    shutdown_queue_test.go:177: S008 exit=2 db_budget_ms=3000 db_elapsed_ms=3001 timeout=true remaining=5 failed=2 db_closed=false first_commit_error=true
+--- PASS: TestShutdownS008QueueStageResults (6.01s)
+    --- PASS: TestShutdownS008QueueStageResults/success (0.01s)
+    --- PASS: TestShutdownS008QueueStageResults/commit_failure (0.00s)
+    --- PASS: TestShutdownS008QueueStageResults/db_deadline (3.00s)
+    --- PASS: TestShutdownS008QueueStageResults/failure_then_deadline (3.00s)
+=== RUN   TestShutdownRecordsBothServersAndExitClassification
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/graceful
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/failure
+=== RUN   TestShutdownRecordsBothServersAndExitClassification/timeout
+--- PASS: TestShutdownRecordsBothServersAndExitClassification (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/graceful (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/failure (0.00s)
+    --- PASS: TestShutdownRecordsBothServersAndExitClassification/timeout (0.00s)
+=== RUN   TestShutdownDoesNotCloseDBWithLiveUsers
+--- PASS: TestShutdownDoesNotCloseDBWithLiveUsers (0.00s)
+=== RUN   TestShutdownBlockingFinalizerIsBounded
+--- PASS: TestShutdownBlockingFinalizerIsBounded (2.00s)
+=== RUN   TestShutdownTimeoutHasPriority
+--- PASS: TestShutdownTimeoutHasPriority (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	16.162s

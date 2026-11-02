@@ -1,0 +1,15 @@
+{
+  "step": "build-tests",
+  "command": [
+    "bash",
+    "scripts/run-build-tests.sh"
+  ],
+  "started_utc": "2026-11-02T04:33:42.054688+00:00",
+  "ended_utc": "2026-11-02T04:42:39.505000+00:00",
+  "rc": 0,
+  "sha256": "fce30c8a5835085807f820ebbe29ebe0e6dcc25fedb79fbc5ffa345dd01b7450",
+  "home": "/tmp/h-kh_lqv12",
+  "tmp": "/tmp/h-kh_lqv12",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

@@ -1,0 +1,22 @@
+{
+  "step": "S014-live-failure",
+  "command": [
+    "python3",
+    "tests/hlc/process_matrix.py",
+    "--case",
+    "S014-live-failure",
+    "--race",
+    "--repeat",
+    "3",
+    "--output",
+    "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated/S014-live-failure"
+  ],
+  "started_utc": "2026-11-02T03:20:47.731854+00:00",
+  "ended_utc": "2026-11-02T03:21:16.069598+00:00",
+  "rc": 0,
+  "sha256": "abcd9faf0dbc99d7316bf88e68bcdab8c4d7eb96a1006f2f3c917bf278920204",
+  "home": "/tmp/h-aumoh997",
+  "tmp": "/tmp/h-aumoh997",
+  "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+  "untracked_source_present": false
+}

@@ -1,0 +1,5 @@
+=== RUN   TestShutdownQueueRuntimeAcknowledgementRemainsBestEffort
+    shutdown_test.go:246: runtime Enqueue=nil Flush=nil; shutdown reports first persistence failure
+--- PASS: TestShutdownQueueRuntimeAcknowledgementRemainsBestEffort (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/bus	1.024s

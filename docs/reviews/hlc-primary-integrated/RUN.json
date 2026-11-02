@@ -1,0 +1,220 @@
+[
+  {
+    "step": "m8-full",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=1",
+      "-timeout=10m",
+      "-v"
+    ],
+    "started_utc": "2026-11-02T03:00:41.710313+00:00",
+    "ended_utc": "2026-11-02T03:03:59.490376+00:00",
+    "rc": 0,
+    "sha256": "0629770364b47d87b9360828c8f752ac271fb55eb8455dccba2e8c60f13a2f1d",
+    "home": "/tmp/h-yefx5604",
+    "tmp": "/tmp/h-yefx5604",
+    "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+    "untracked_source_present": false
+  },
+  {
+    "step": "final-vet",
+    "command": [
+      "go",
+      "vet",
+      "./cmd/workpulse",
+      "./internal/m8",
+      "./internal/feishu",
+      "./internal/fcs",
+      "./internal/bus",
+      "./internal/lifecycle"
+    ],
+    "started_utc": "2026-11-02T03:03:59.516292+00:00",
+    "ended_utc": "2026-11-02T03:04:02.166584+00:00",
+    "rc": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "home": "/tmp/h-2gn0fwp6",
+    "tmp": "/tmp/h-2gn0fwp6",
+    "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+    "untracked_source_present": false
+  },
+  {
+    "step": "final-plain",
+    "command": [
+      "go",
+      "test",
+      "-p",
+      "1",
+      "./cmd/workpulse",
+      "./internal/m8",
+      "./internal/feishu",
+      "./internal/fcs",
+      "./internal/bus",
+      "./internal/lifecycle",
+      "-count=1",
+      "-timeout=10m",
+      "-v"
+    ],
+    "started_utc": "2026-11-02T03:04:02.170948+00:00",
+    "ended_utc": "2026-11-02T03:10:48.971077+00:00",
+    "rc": 0,
+    "sha256": "e4c4f7ebac12670037dac26a4ba92e6d003bb33eab5e31b93aa14438362496bc",
+    "home": "/tmp/h-ae3alz1g",
+    "tmp": "/tmp/h-ae3alz1g",
+    "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+    "untracked_source_present": false
+  },
+  {
+    "step": "S006-race50",
+    "command": [
+      "python3",
+      "tests/hlc/process_matrix.py",
+      "--case",
+      "S006",
+      "--repeat",
+      "50",
+      "--race",
+      "--output",
+      "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated/S006-race50"
+    ],
+    "started_utc": "2026-11-02T03:10:48.996894+00:00",
+    "ended_utc": "2026-11-02T03:19:22.362868+00:00",
+    "rc": 0,
+    "sha256": "78b623a27ab10e6b840f32a634e081481d885cb220e7402526e419a8a75c2d3c",
+    "home": "/tmp/h-mtujo4t1",
+    "tmp": "/tmp/h-mtujo4t1",
+    "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+    "untracked_source_present": false
+  },
+  {
+    "step": "S011",
+    "command": [
+      "python3",
+      "tests/hlc/process_matrix.py",
+      "--case",
+      "S011",
+      "--race",
+      "--output",
+      "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated/S011"
+    ],
+    "started_utc": "2026-11-02T03:19:22.367359+00:00",
+    "ended_utc": "2026-11-02T03:19:43.678089+00:00",
+    "rc": 0,
+    "sha256": "5cc456f7ae6c55c218074f1ed4d5e7fb8f4a20017da35301f478cf69d31692af",
+    "home": "/tmp/h-i1upi4i5",
+    "tmp": "/tmp/h-i1upi4i5",
+    "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+    "untracked_source_present": false
+  },
+  {
+    "step": "S014",
+    "command": [
+      "python3",
+      "tests/hlc/process_matrix.py",
+      "--case",
+      "S014",
+      "--race",
+      "--repeat",
+      "3",
+      "--output",
+      "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated/S014"
+    ],
+    "started_utc": "2026-11-02T03:19:43.682715+00:00",
+    "ended_utc": "2026-11-02T03:20:19.917605+00:00",
+    "rc": 0,
+    "sha256": "9dd4d6c959ca0bd46fe88a31a985af2c071fb1ee9cb882e8445da84392a12f70",
+    "home": "/tmp/h-eqq8btj9",
+    "tmp": "/tmp/h-eqq8btj9",
+    "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+    "untracked_source_present": false
+  },
+  {
+    "step": "S014-hub-first",
+    "command": [
+      "python3",
+      "tests/hlc/process_matrix.py",
+      "--case",
+      "S014-hub-first",
+      "--race",
+      "--repeat",
+      "3",
+      "--output",
+      "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated/S014-hub-first"
+    ],
+    "started_utc": "2026-11-02T03:20:19.922301+00:00",
+    "ended_utc": "2026-11-02T03:20:47.727301+00:00",
+    "rc": 0,
+    "sha256": "f8fa1f730c9649dc96e97837e03c4a7ccabe960bec61548306484d2a036c90cb",
+    "home": "/tmp/h-zrgro6m3",
+    "tmp": "/tmp/h-zrgro6m3",
+    "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+    "untracked_source_present": false
+  },
+  {
+    "step": "S014-live-failure",
+    "command": [
+      "python3",
+      "tests/hlc/process_matrix.py",
+      "--case",
+      "S014-live-failure",
+      "--race",
+      "--repeat",
+      "3",
+      "--output",
+      "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated/S014-live-failure"
+    ],
+    "started_utc": "2026-11-02T03:20:47.731854+00:00",
+    "ended_utc": "2026-11-02T03:21:16.069598+00:00",
+    "rc": 0,
+    "sha256": "abcd9faf0dbc99d7316bf88e68bcdab8c4d7eb96a1006f2f3c917bf278920204",
+    "home": "/tmp/h-aumoh997",
+    "tmp": "/tmp/h-aumoh997",
+    "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+    "untracked_source_present": false
+  },
+  {
+    "step": "withdraw-classification",
+    "command": [
+      "python3",
+      "tests/hlc/ws_close_mutation.py",
+      "--output",
+      "/data/ai-dev-data/hub-graceful-shutdown-impl/docs/reviews/hlc-primary-integrated/withdraw-classification"
+    ],
+    "started_utc": "2026-11-02T03:21:16.074063+00:00",
+    "ended_utc": "2026-11-02T03:21:34.436026+00:00",
+    "rc": 0,
+    "sha256": "09368d83442561d4506eb97345a06af371e0389a29195750df5b78473e90f1ba",
+    "home": "/tmp/h-qx82e95v",
+    "tmp": "/tmp/h-qx82e95v",
+    "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+    "untracked_source_present": false
+  },
+  {
+    "step": "related-race",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "-p",
+      "1",
+      "./cmd/workpulse",
+      "./internal/m8",
+      "./internal/feishu",
+      "./internal/fcs",
+      "./internal/bus",
+      "./internal/lifecycle",
+      "-count=1",
+      "-timeout=10m",
+      "-v"
+    ],
+    "started_utc": "2026-11-02T03:21:34.440635+00:00",
+    "ended_utc": "2026-11-02T03:39:27.445444+00:00",
+    "rc": 1,
+    "sha256": "bbfbdee8ae73943f9883ac4c3153ea8976979516e72ee87c55053b91b058751f",
+    "home": "/tmp/h-b3tknm0u",
+    "tmp": "/tmp/h-b3tknm0u",
+    "source_commit": "d8e737a4104fd099de2810a36f9a8bdf759afc47",
+    "untracked_source_present": false
+  }
+]
