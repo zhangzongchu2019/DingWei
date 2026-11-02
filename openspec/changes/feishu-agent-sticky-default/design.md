@@ -269,3 +269,5 @@ a0c97a2a1322要求的九格及镜像在r48同命令race count=3均绿，原文�
 ### 开启态的引导帧至发布窗口（组长2026-11-02认可九格结论后追加证据要求）
 
 `TestMirrorRegistrationRuntimeBarrier`显式置开关1、阻塞引导帧写完至在线发布之间；数据库端点已Active但运行时连接未发布时，镜像命令仍按r48返回未就绪且不触发socket控制；释放屏障后才接受命令并收到控制帧。r48同命令三轮也绿。产品`serveSession`、`dispatchMirrorCommand`、`sessionOnline`的函数体相对r48逐字节未改，相关文件/函数哈希审计随交件；`routeToSession`仅增加R14专属元数据核验，无该元数据的旧信封立即放行。因此开启态既有路径的该窗口行为仍一致，不把初始引导帧改造为ready协议，不修改产品发布时刻。正常夹具等待与故意发布前夹具使用raw均由组长15:12Z认可保留。
+
+新增R14-S027由TestR14EnabledPublicationWindowDoesNotRoute在开关明确为1时验证：引导帧已收到、发布屏障未释放，默认投递数为0；释放并发布后投递数为1。与r48镜像屏障格和三个未改函数体共同证明开启态未提前把Agent计为在线。

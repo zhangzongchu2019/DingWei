@@ -5,6 +5,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -74,4 +75,45 @@ func TestR14DisabledStartsNoWorkerAndAllowsAllDeliveries(t *testing.T) {
 		h, _, _ := newTestHub(t)
 		r14Assert(t, h.lifetime().background.Snapshot()["owned"] == 1, "F01_REMOTE_WORKER_STARTED")
 	})
+}
+
+// 显式开启时，已发引导帧但尚未发布的Agent仍不可路由；这与r48在线表边界相同。
+func TestR14EnabledPublicationWindowDoesNotRoute(t *testing.T) {
+	t.Setenv("DW_FEISHU_STICKY_ENABLED", "1")
+	t.Setenv("FCS_RPC_URL", "")
+	e := newAgentEnv(t)
+	bindFeishuForAgentEnv(t, e, "ou_alice")
+	spy := &stickyFaultRepo{SQLite: e.hub.Repo.(*store.SQLite)}
+	e.hub.Repo = spy
+	reached, release := make(chan struct{}), make(chan struct{})
+	var once sync.Once
+	unblock := func() { once.Do(func() { close(release) }) }
+	t.Cleanup(unblock)
+	e.hub.sessionBeforePublishHook = func(string, string) { close(reached); <-release }
+	conn, status, body := e.dial(e.cred, "")
+	if conn == nil {
+		t.Fatalf("dial=%d %s", status, body)
+	}
+	defer conn.CloseNow()
+	select {
+	case <-reached:
+	case <-time.After(envelopeReadTimeout):
+		t.Fatal("R14_PUBLICATION_BARRIER_NOT_REACHED")
+	}
+	if e.readEnvUntil(conn, envelopeReadTimeout, func(env model.Envelope) bool { return metaString(env.Meta, "type") == agentNetworkSkillPushType }) == nil {
+		t.Fatal("R14_GUIDE_NOT_RECEIVED")
+	}
+	res, err := e.hub.Dispatch(e.ctx, feishuInboundMessage("before-published", "plain"), "plain")
+	r14Assert(t, err == nil && spy.count() == 0 && res.Reply != "" && !e.hub.sessionOnline(AgentKeyID("zzc"), "opus50ts"), "R14_ROUTED_BEFORE_RUNTIME_PUBLICATION", res, err)
+	unblock()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	e.hub.mu.Lock()
+	c := e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"]
+	e.hub.mu.Unlock()
+	c.stateMu.Lock()
+	c.deliveryACKV1 = true
+	c.helperReady = true
+	c.stateMu.Unlock()
+	res, err = e.hub.Dispatch(e.ctx, feishuInboundMessage("after-published", "plain"), "plain")
+	r14Assert(t, err == nil && res.Reply == "" && spy.count() == 1, "R14_PUBLISHED_AGENT_NOT_ROUTABLE", res, err)
 }
