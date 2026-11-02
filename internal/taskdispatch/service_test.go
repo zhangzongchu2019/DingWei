@@ -320,8 +320,21 @@ func TestR10ServiceReplayCrossRepositoryReleaseAndOwnerFence(t *testing.T) {
 	e.p.files[c1][dir+"/handoff.md"] = record
 	rel.OperationID = "release_valid_pointer_operation_01"
 	rel.Handoff = td.Handoff{Commit: c1, Path: dir + "/handoff.md", BlobSHA: blob(record), ExecutionCommit: c1, TaskID: l.TaskID, RecoveryState: "stopped"}
-	if _, err = e.s.Execute(ctx, td.Actor{AgentID: "agent-holder"}, rel); err != nil {
+	released, err := e.s.Execute(ctx, td.Actor{AgentID: "agent-holder"}, rel)
+	if err != nil {
 		t.Fatal("R10_VALID_RELEASE", err)
+	}
+	if released.Lock.State != "released" || released.CurrentLease || released.Lock.LeaseToken != "" || released.Lock.Generation <= l.Generation || !released.Lock.UpdatedAt.Equal(e.now) || released.Lock.Handoff != rel.Handoff {
+		t.Fatal("R10_RELEASE_AUTHORITY_NOT_REVOKED", released)
+	}
+	view, inspectErr := e.s.Inspect(ctx, td.Actor{AgentID: "agent-holder"}, l.Key, rel.OperationID)
+	if inspectErr != nil || view.Effective || view.Lock == nil || view.Lock.State != "released" || view.Lock.LeaseToken != "" || len(view.Events) == 0 || view.Events[len(view.Events)-1].Type != "release" {
+		t.Fatal("R10_RELEASE_PERSISTENCE_OR_AUDIT_MISSING", view, inspectErr)
+	}
+	oldRenew := e.holder(l, "renew")
+	oldRenew.OperationID = "released_old_token_operation_01"
+	if _, err = e.s.Execute(ctx, td.Actor{AgentID: "agent-holder"}, oldRenew); !errors.Is(err, td.ErrConflict) {
+		t.Fatal("R10_RELEASED_OLD_TOKEN_RENEWED", err)
 	}
 	if err = e.ids.SetUserState(ctx, "holder", identity.UserDisabled, e.now); err != nil {
 		t.Fatal(err)
