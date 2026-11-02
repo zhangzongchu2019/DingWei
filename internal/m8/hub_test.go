@@ -46,6 +46,8 @@ func testDurationFromEnv(name string, fallback time.Duration) time.Duration {
 	return value
 }
 
+type testHubContextKey struct{}
+
 func newTestHub(t *testing.T) (*Hub, *store.SQLite, context.Context) {
 	t.Helper()
 	db, err := store.OpenSQLite(filepath.Join(t.TempDir(), "m8.db"))
@@ -62,7 +64,7 @@ func newTestHub(t *testing.T) (*Hub, *store.SQLite, context.Context) {
 	// Feature-specific tests enable the lightweight first-seen notification;
 	// unrelated tests keep their historical outbound-queue assumptions.
 	hub.newSessionNotice = false
-	return hub, db, ctx
+	return hub, db, context.WithValue(ctx, testHubContextKey{}, hub)
 }
 
 func useTestSecOpsAdminOpenID(t *testing.T) {
@@ -1539,7 +1541,6 @@ func TestFeishuIngressNewChannelAutoBindingAndReplyToSender(t *testing.T) {
 	managerName := "zzc-manager-" + keyTail(key.ID)
 	manager := dialSession(t, ctx, srv.URL, managerName, key.ID, secret)
 	defer manager.Close(websocket.StatusNormalClosure, "done")
-	waitSessionOnline(t, hub, key.ID, managerName)
 
 	selector := "#" + managerName + " ping"
 	result, err := hub.Dispatch(ctx, model.Message{ID: "feishu-in", ChatEntityID: "dev:personal:ou_zzc", BotChannelID: "dev", ChatType: model.ChatPersonal, Content: `{"text":"` + selector + `"}`}, selector)
@@ -2360,9 +2361,6 @@ func TestShortSessionSelectorRejectsAmbiguousOwnerMatch(t *testing.T) {
 	secondDev := dialSession(t, ctx, srv.URL, "dev55", secondKey.ID, secondSecret)
 	defer secondDev.Close(websocket.StatusNormalClosure, "done")
 
-	waitSessionOnline(t, hub, firstKey.ID, "u1-home-"+keyTail(firstKey.ID))
-	waitSessionOnline(t, hub, firstKey.ID, "u1-dev55-"+keyTail(firstKey.ID))
-	waitSessionOnline(t, hub, secondKey.ID, "u1-dev55-"+keyTail(secondKey.ID))
 	homeName := "u1-home-" + keyTail(firstKey.ID)
 	if err := writeEnvelope(ctx, home, model.Envelope{ID: "ambiguous", To: "#dev55", From: homeName + "#" + firstKey.ID, Body: "ping"}); err != nil {
 		t.Fatal(err)
@@ -2741,8 +2739,6 @@ func TestPersonalMessageDefaultsToOnlyOnlineSession(t *testing.T) {
 	defer srv.Close()
 	u2 := dialSession(t, ctx, srv.URL, "u2", key.ID, secret)
 	defer u2.Close(websocket.StatusNormalClosure, "done")
-	// 引导帧先于在线发布发送；等待可路由状态，避免夹具抢跑。
-	waitSessionOnline(t, hub, key.ID, "u2")
 
 	result, err := hub.Dispatch(ctx, model.Message{
 		ID:           "default-1",
@@ -3486,15 +3482,8 @@ func TestSessionNameReconnectKeepsNameAndReleaseReuses(t *testing.T) {
 	defer srv.Close()
 
 	first := dialSession(t, ctx, srv.URL, "developer", key1.ID, secret1)
-	waitSessionOnline(t, hub, key1.ID, "u1-developer-"+keyTail(key1.ID))
 	reconnect := dialSession(t, ctx, srv.URL, "developer", key1.ID, secret1)
 	defer reconnect.Close(websocket.StatusNormalClosure, "done")
-	waitFor(t, envelopeReadTimeout, "replacement connection published", func() bool {
-		hub.mu.Lock()
-		defer hub.mu.Unlock()
-		c := hub.sessionClients[key1.ID]["u1-developer-"+keyTail(key1.ID)]
-		return c != nil && c.connSeq >= 2
-	})
 	_ = first.Close(websocket.StatusNormalClosure, "replaced")
 	endpoints, err := db.ListSessionEndpoints(ctx)
 	if err != nil {
@@ -6270,6 +6259,7 @@ func dialSessionWithHeader(t *testing.T, ctx context.Context, baseURL, sessionNa
 	t.Helper()
 	conn := dialSessionWithHeaderRaw(t, ctx, baseURL, sessionName, keyID, secret, header)
 	discardInitialAgentNetworkSkill(t, ctx, conn)
+	waitTestSessionPublished(t, ctx, keyID, sessionName)
 	return conn
 }
 
@@ -6325,6 +6315,7 @@ func dialSessionWithQuery(t *testing.T, ctx context.Context, baseURL, sessionNam
 	t.Helper()
 	conn := dialSessionWithQueryRaw(t, ctx, baseURL, sessionName, keyID, secret, query)
 	discardInitialAgentNetworkSkill(t, ctx, conn)
+	waitTestSessionPublished(t, ctx, keyID, sessionName)
 	return conn
 }
 
@@ -6341,6 +6332,35 @@ func dialSessionWithQueryRaw(t *testing.T, ctx context.Context, baseURL, session
 		t.Fatalf("Dial %s: %v", sessionName, err)
 	}
 	return conn
+}
+
+// 正常建连夹具在引导帧之后等待同代连接发布；引导帧本身先于在线表发布。
+// context 仅携带测试 Hub，不改变产品上下文或 WebSocket 协议。
+func waitTestSessionPublished(t *testing.T, ctx context.Context, keyID, requestedName string) {
+	t.Helper()
+	hub, ok := ctx.Value(testHubContextKey{}).(*Hub)
+	if !ok {
+		return
+	}
+	waitFor(t, envelopeReadTimeout, "authenticated session generation published", func() bool {
+		endpoints, err := hub.Repo.ListSessionEndpoints(ctx)
+		if err != nil {
+			t.Fatalf("read fixture endpoint generation: %v", err)
+		}
+		hub.mu.Lock()
+		defer hub.mu.Unlock()
+		for _, c := range hub.sessionClients[keyID] {
+			if c.localName != requestedName {
+				continue
+			}
+			for _, ep := range endpoints {
+				if ep.KeyID == keyID && ep.SessionName == c.sessionName && ep.Active && ep.ConnSeq == c.connSeq {
+					return true
+				}
+			}
+		}
+		return false
+	})
 }
 
 func discardInitialAgentNetworkSkill(t *testing.T, ctx context.Context, conn *websocket.Conn) {
