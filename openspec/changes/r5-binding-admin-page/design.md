@@ -25,6 +25,13 @@ R5 绑定把 Console principal 映射到 GitHub login 与数字用户 ID，供 R
 - GET 页面/API 的管理员 guard 必须独立验证；只隐藏导航会导致直接 URL 可访问。
 - 当前 GET 无审计；本提案不增加查询审计。写入/删除审计沿用数据库事务内既有记录。
 
+## 实施记录（S-R49-R5-BINDING-PAGE-IMPL）
+
+- 页面由console_openspec_binding_page.go嵌入HTML/JS，使用脚本SHA的CSP、no-store与同源connect。仅新增GET页面路由，嵌套既有RequireConsolePrincipal/RequireConsolePlatformAdmin；既有三个API的注册行不变。
+- 平台管理菜单复用现有agent_list_admin能力位展示链接；该位由既有active platform_admin检查产生，与托管开关无关。既有Console刷新发现撤权时移除链接；授权始终在页面/API服务端执行。
+- 保存与删除均先GET最新旧值，再显示目标与旧映射。待确认操作冻结目标及五字段；改表单/重新查询会取消旧确认。DELETE用GET返回的映射满足现有Binding.Valid要求，无映射不发送DELETE、不声称删除了一条记录。重复点击通过busy与一次性pending阻止；后端仍无CAS，本页不引入冲突语义。
+- 页面不另造字段校验，非法字段由原API拒绝并原文显示安全error。API响应只选择Binding五字段渲染，使用textContent，不解析HTML。成功写入后GET回读，显示实际当前映射；provider/instance固定，脚本无外站请求。
+
 ## Open Questions
 
 本提案的页面范围与交互三项已按业主 rulings ㉙ 定值。后续如需变更，先更新本变更规格，不在实现阶段自行扩大范围。

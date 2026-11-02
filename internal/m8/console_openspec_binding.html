@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GitHub 身份绑定</title>
+<style>
+:root{color-scheme:light dark;font:16px/1.6 system-ui,sans-serif}body{max-width:760px;margin:32px auto;padding:0 20px}label{display:block;margin:16px 0}input{display:block;box-sizing:border-box;width:100%;padding:9px;font:inherit}button{padding:8px 14px;margin:6px 8px 6px 0;font:inherit;cursor:pointer}section{border:1px solid #8886;border-radius:8px;padding:16px;margin-top:20px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}#notice{white-space:pre-wrap;overflow-wrap:anywhere}small{display:block}a{color:inherit}
+</style>
+<a href="/console">返回 Console</a><h1>GitHub 身份绑定</h1>
+<p>按 Console principal 查询单条映射。提供方固定为 github，实例固定为 github.com。绑定本身不授予仓库读取权限。</p>
+<p>请手填 GitHub 登录名与数字 ID，并从 GitHub 公共用户资料/API 核对二者对应。本页不会自动查询 GitHub。</p>
+<form id="bindingForm" novalidate autocomplete="off">
+<label>Console principal<input id="principal" name="principal" autocomplete="off"></label>
+<label>GitHub 登录名<input id="login" name="login" autocomplete="off"></label>
+<label>GitHub 数字 ID<input id="accountID" name="account_id" inputmode="numeric" autocomplete="off"></label>
+<button id="query" type="button">查询</button><button id="save" type="submit">保存</button><button id="remove" type="button">删除</button>
+</form>
+<div id="notice" role="status" aria-live="polite"></div>
+<section><h2>当前映射</h2><pre id="current">输入 principal 后查询。</pre></section>
+<section id="confirmation" role="region" aria-label="确认绑定操作" hidden>
+<h2 id="confirmTitle"></h2><pre id="confirmTarget"></pre><h3>当前映射（旧值）</h3><pre id="confirmOld"></pre><h3>本次操作</h3><pre id="confirmNew"></pre>
+<button id="confirm" type="button">确认</button><button id="cancel" type="button">取消</button>
+</section>
+<script>/*BINDING_SCRIPT*/</script></html>

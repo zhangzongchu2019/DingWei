@@ -23,4 +23,6 @@ Binding.Valid() 要求 principal 非空且不超过 200 字符；provider 精确
 
 同源 fetch 对 PUT/DELETE 自动携带浏览器生成的 Origin；页面需明确设置 Content-Type: application/json 和 JSON body，避免把该头误称浏览器默认。当前没有自动 GitHub 用户查询或凭据输入；此变更不增加任何服务器/浏览器外部请求。
 
-实现与验收仅在另行批准后进行。本上下文不包含真实 PAT、绑定、用户登录态或线上读数；不据此推断环境已具备。
+S-R49-R5-BINDING-PAGE-IMPL已批准实现，基于冻结的1e17255f。新增internal/m8/console_openspec_binding_page.go、console_openspec_binding.html/js；cmd/workpulse/console_routes.go只新增受现有双guard保护的页面路由；console_auth.go只新增管理员入口与撤权刷新移除。复用现有agent_list_admin标志（newplat_console.go由active platform_admin计算），不增加权限或API字段。
+
+生产注册权限格在cmd/workpulse/openspec_binding_page_test.go；浏览器套件view-service/openspec-binding-admin-regression.js读取真实页面及Console源码，登记入tools/run-browser-regressions.py；通过PW_CHANNEL选择Chrome或默认headless shell，Proxy实计断言与下限125。三变异仅在测试进程副本注入：自动提交、隐藏旧映射、向非管理员泄露入口；最终读数与原日志放独立仅docs证据分支。本上下文不包含真实凭据、绑定、用户登录态或线上读数；不据此推断环境已具备。T-04独立验收另派。

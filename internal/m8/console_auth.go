@@ -512,6 +512,7 @@ function dwThemeInit(){
 function renderPlatform(platform){
  hostedNodeAdmin=platform.hosted_node_admin===true;
  agentListAdmin=platform.agent_list_admin===true;
+ var bindingEntry=document.getElementById('openSpecBindingEntry');if(bindingEntry&&!agentListAdmin)bindingEntry.remove();
  if(!agentListAdmin){clearAllAgentView();var oldCap=document.querySelector('#adminMenu button[data-capability=all-agents]');if(oldCap)oldCap.hidden=true;var oldView=document.getElementById('adminAllAgents');if(oldView)oldView.hidden=true;}
   var items=document.getElementById('platform-items'); items.replaceChildren();
   (Array.isArray(platform.items)?platform.items:[]).forEach(function(item){
@@ -1594,6 +1595,7 @@ function openPlatformAdminWorkspace(){
   tab.onclick=function(e){if(e.target===x){clearNodeCredential();e.stopPropagation();closeTab('__platform-admin');}else activate('__platform-admin');};
   document.getElementById('tabs').append(tab);document.getElementById('panes').append(pane);tabs.set('__platform-admin',{tab:tab,pane:pane});
   var menu=pane.querySelector('#adminMenu');
+  if(agentListAdmin){var bindingLink=document.createElement('a');bindingLink.id='openSpecBindingEntry';bindingLink.href='/console/openspec-bindings';bindingLink.textContent='GitHub 身份绑定';menu.append(bindingLink);}
   ADMIN_CAPABILITIES.concat(hostedNodeAdmin?[{id:'nodes',title:'托管主机'}]:[]).concat(agentListAdmin?[{id:'all-agents',title:'全部 Agent'}]:[]).forEach(function(c,i){var b=document.createElement('button');b.type='button';b.dataset.capability=c.id;b.textContent=c.title;if(i===0)b.setAttribute('aria-current','true');b.onclick=function(){adminShowCapability(pane,c.id);};menu.append(b);});
   document.getElementById('inviteToggle').onclick=adminToggleInvite;document.getElementById('inviteCreate').onclick=adminCreateUser;document.getElementById('inviteCopy').onclick=adminCopyCode;document.getElementById('inviteDone').onclick=adminClearCode;
   document.getElementById('adminUsersRetry').onclick=refreshAdminUsers;
