@@ -94,7 +94,10 @@
 | T-10 两入口 | `internal/m8/console_auth.go:923`、`:943`、`:1351` | 查重失败或 active/suspended 冲突都不提交；旧平台开关在 `:266`/`:726`。 |
 | Go 单元与 Hub 场景 | `internal/m8/feishu_sticky_unit_test.go:10`、`:25`；`internal/m8/feishu_sticky_test.go:176` | S001～S022、错误注入、重启、并发、稳定身份，以及迟到对账晚于新选择的专格。 |
 | PG / T-10 授权与索引 | `internal/m8/console_agent_name_test.go:16` | 本人 active/suspended、他人 owner、未登录、拒绝跨 owner 输入、旧平台名排除、并发唯一兜底；真实隔离 PG。 |
-| 旧 Hub 与回滚 | `internal/store/feishu_sticky_compat_test.go:31`、`:93` | `R14_OLD_HUB_BINARY` 指精确 r48 的隔离测试产物；缺该外部夹具会明确 Skip，正式本单门须先构建并提供。 |
+| 旧 Hub 与回滚 | `internal/store/feishu_sticky_compat_test.go:31`、`:112` | `R14_OLD_HUB_BINARY` 指精确 r48 的隔离测试产物；缺该外部夹具会明确 Skip，正式本单门须先构建并提供。 |
 | 浏览器 / 总入口登记 | `view-service/r14-sticky-browser-regression.js:1`；`tools/run-browser-regressions.py:25` | 实际 Console handler 页面、localhost API mocks、两浏览器渠道与两入口变异；S018 仅 mock 文本，不是 T-08。 |
 
 组长补充裁定（2026-11-02T11:44:34Z）：迟到 durable 对账只结案，不改当前合法绑定、TTL 或代际；无证据保持 unknown。已写入 design 对账一节及上述接口实现，另配迟到 A 写回目标的语义变异。构建使用锁定 build venv、普通 dev 用户、短 HOME/TMPDIR 和环境白名单；不继承 SH/DINGWEI/DW/WP/PG DSN。实际版本号由既有构建注入，本单不改 VERSION 或写页面版本字面量。
+
+
+最终补充测试锚 `e7d7e6ca35d612f5671a57ea584ee74633bee608`：`internal/m8/feishu_sticky_lane_test.go:12` 同时启动不同 provider ID 的显式切换与无前缀消息，按持久操作序号核对目标及代际 1→2→3；两种合法先后均按实际序号解释，不以飞书时间戳推断顺序。m8 最终全包及该格5次 race 在独立干净树 ba628912398b06080d39989452bfade079aa551c 执行；该树与最终测试锚仅 store 兼容性测试有差别，m8 产品/测试字节相同。旧 Hub 夹具在 `:40` 建本地 unixgram READY 监听、`:68` 等真实 READY 后才测退出，规避健康接口先于信号处理器的测试竞态。最终 gate/SKIP/变异原件与源码文件 blob 清单见证据分支。

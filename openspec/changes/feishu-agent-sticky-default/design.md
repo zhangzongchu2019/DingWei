@@ -242,3 +242,8 @@ Additional isolated T-07 migration/rollback test (not an S024): apply 0072 to a 
 兼容测试先从精确 r48 源构建仅供隔离测试的旧 Hub（二进制不是发布件），由旧 Hub 创建 r48 库后复制，再应用本单 0072、用旧 Hub 启动副本。另造 0072 对象冲突验证迁移事务失败不半提交且旧 Hub 仍可启动；按上文审定 SQL 验全部绑定失效、全部 pending 转 unknown、表和行不丢。无部署或生产回滚动作；未来 GO 仍须独立授权。
 
 启动时将当前 SQLite capability 在启动 goroutine 前捕获，分钟/小时维护始终使用该固定引用，符合单 Hub/单文件不变量。首轮 race 报告发现后台启动读与测试故障注入替换 Hub.Repo 的竞态，修复提交 `59e859e1f3bb4099e8f15da246070b549d598263`；原始失败保留，最终门以修复后的复跑为准。
+
+
+### T-07 implementation handoff
+
+开发侧完成 T-05/T-06/T-10/T-07，测试补充锚 `e7d7e6ca35d612f5671a57ea584ee74633bee608`；所有最终命令/源码锚与日志 SHA256 在证据分支记录。相关场景 race 覆盖 m8/store/workpulse，m8 另全包 -v；同键不同消息的显式切换/无前缀并发专格持久记录 operation_seq、base/result generation 和实际目标。旧 r48 Hub 兼容夹具等待原进程 READY 后才发送退出信号；这仅修测试同步，不修改旧 Hub 启动/退出。T-08 真实飞书与 T-09 独立验收保持后续另派。
