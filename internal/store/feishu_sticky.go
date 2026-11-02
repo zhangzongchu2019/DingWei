@@ -40,6 +40,8 @@ type FeishuStickyRepository interface {
 	FinishFeishuSticky(context.Context, FeishuStickyOperation, string, string, string, time.Time) error
 	ListFeishuStickyUnresolved(context.Context, FeishuStickyKey, time.Time) ([]FeishuStickyOperation, error)
 	ResolveFeishuSticky(context.Context, int64, time.Time) error
+	FindFeishuStickyDelivery(context.Context, FeishuStickyOperation) (string, error)
+	SweepFeishuStickyPending(context.Context, time.Time, int) (int64, error)
 	RecordFeishuStickyIntent(context.Context, FeishuStickyOperation, string, string, string) error
 	ListFeishuStickyStates(context.Context, int, FeishuStickyKey) ([]FeishuStickyState, error)
 	DeleteFeishuSticky(context.Context, FeishuStickyState) error
@@ -59,9 +61,18 @@ func scanSticky(row interface{ Scan(...any) error }) (*FeishuStickyState, error)
 	if err != nil {
 		return nil, err
 	}
-	s.SelectedAt = stickyParse(a)
-	s.ExpiresAt = stickyParse(b)
-	s.UpdatedAt = stickyParse(c)
+	s.SelectedAt, err = time.Parse(time.RFC3339Nano, a)
+	if err != nil {
+		return nil, err
+	}
+	s.ExpiresAt, err = time.Parse(time.RFC3339Nano, b)
+	if err != nil {
+		return nil, err
+	}
+	s.UpdatedAt, err = time.Parse(time.RFC3339Nano, c)
+	if err != nil {
+		return nil, err
+	}
 	return &s, nil
 }
 
@@ -102,6 +113,10 @@ func (s *SQLite) BeginFeishuSticky(ctx context.Context, k FeishuStickyKey, sourc
 	o := FeishuStickyOperation{FeishuStickyKey: k, SourceMessageID: source, Kind: kind, Status: "pending", CreatedAt: now}
 	if state != nil {
 		o.BaseGeneration = state.Generation
+	} else {
+		if err = tx.QueryRowContext(ctx, `SELECT COALESCE(MAX(MAX(base_generation,result_generation)),0) FROM r14_feishu_sticky_operation WHERE user_id_lc=? AND bot_channel_id=?`, k.UserIDLC, k.BotChannelID).Scan(&o.BaseGeneration); err != nil {
+			return o, false, err
+		}
 	}
 	r, err := tx.ExecContext(ctx, `INSERT INTO r14_feishu_sticky_operation(user_id_lc,bot_channel_id,source_message_id,operation_kind,base_generation,status,created_at_utc) VALUES(?,?,?,?,?,'pending',?)`, k.UserIDLC, k.BotChannelID, source, kind, o.BaseGeneration, stickyTime(now))
 	if err != nil {
@@ -128,7 +143,7 @@ func (s *SQLite) FinishFeishuSticky(ctx context.Context, o FeishuStickyOperation
 	}
 	resultGen := int64(0)
 	if status == "accepted" {
-		r, e := tx.ExecContext(ctx, `INSERT INTO r14_feishu_sticky_state(`+stickyStateCols+`) SELECT ?,?,?,?,?,?,?,? WHERE ?=0 ON CONFLICT(user_id_lc,bot_channel_id) DO NOTHING`, o.UserIDLC, o.BotChannelID, target, o.BaseGeneration+1, stickyTime(now), stickyTime(now.Add(FeishuStickyTTL)), o.SourceMessageID, stickyTime(now), o.BaseGeneration)
+		r, e := tx.ExecContext(ctx, `INSERT INTO r14_feishu_sticky_state(`+stickyStateCols+`) SELECT ?,?,?,?,?,?,?,? WHERE NOT EXISTS(SELECT 1 FROM r14_feishu_sticky_operation WHERE user_id_lc=? AND bot_channel_id=? AND result_generation>?) ON CONFLICT(user_id_lc,bot_channel_id) DO NOTHING`, o.UserIDLC, o.BotChannelID, target, o.BaseGeneration+1, stickyTime(now), stickyTime(now.Add(FeishuStickyTTL)), o.SourceMessageID, stickyTime(now), o.UserIDLC, o.BotChannelID, o.BaseGeneration)
 		if e != nil {
 			return e
 		}
@@ -246,4 +261,28 @@ func (s *SQLite) RecordFeishuStickyIntent(ctx context.Context, o FeishuStickyOpe
 		return ErrStickyGeneration
 	}
 	return nil
+}
+
+// Recover the enqueue-before-checkpoint crash window using the preserved
+// source envelope identity and both R14 authority metadata fields.
+func (s *SQLite) FindFeishuStickyDelivery(ctx context.Context, o FeishuStickyOperation) (string, error) {
+	if o.SourceEnvelopeID == "" || o.TargetAgentID == "" {
+		return "", nil
+	}
+	var id string
+	err := s.db.QueryRowContext(ctx, `SELECT id FROM session_delivery WHERE source_message_id=? AND json_extract(envelope_json,'$.meta.r14_target_agent_id')=? AND json_extract(envelope_json,'$.meta.r14_principal_lc')=? ORDER BY created_at LIMIT 1`, o.SourceEnvelopeID, o.TargetAgentID, o.UserIDLC).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return id, err
+}
+func (s *SQLite) SweepFeishuStickyPending(ctx context.Context, now time.Time, limit int) (int64, error) {
+	if limit <= 0 || limit > FeishuStickyCleanupBatch {
+		limit = FeishuStickyCleanupBatch
+	}
+	r, err := s.db.ExecContext(ctx, `UPDATE r14_feishu_sticky_operation SET status='unknown',completed_at_utc=? WHERE operation_seq IN (SELECT operation_seq FROM r14_feishu_sticky_operation WHERE status='pending' AND created_at_utc<=? ORDER BY operation_seq LIMIT ?)`, stickyTime(now), stickyTime(now.Add(-FeishuStickyPendingTTL)), limit)
+	if err != nil {
+		return 0, err
+	}
+	return r.RowsAffected()
 }

@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
@@ -63,13 +64,14 @@ type r14Env struct {
 	now    time.Time
 	seq    int
 	agents map[string]string
+	peers  map[string]*websocket.Conn
 }
 
 func newR14Env(t *testing.T, names ...string) *r14Env {
 	t.Helper()
 	e := newAgentEnv(t)
 	bindFeishuForAgentEnv(t, e, "ou_alice")
-	r := &r14Env{agentEnv: e, repo: &stickyFaultRepo{SQLite: e.hub.Repo.(*store.SQLite)}, now: time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC), agents: map[string]string{"opus50ts": e.agID}}
+	r := &r14Env{agentEnv: e, repo: &stickyFaultRepo{SQLite: e.hub.Repo.(*store.SQLite)}, now: time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC), agents: map[string]string{"opus50ts": e.agID}, peers: make(map[string]*websocket.Conn)}
 	e.hub.Repo = r.repo
 	e.hub.NowFunc = func() time.Time { return r.now }
 	r.online(e.cred, "opus50ts")
@@ -86,8 +88,19 @@ func (r *r14Env) online(cred, name string) {
 	if c == nil {
 		r.t.Fatalf("R14 fixture dial %d %s", status, body)
 	}
+	r.peers[name] = c
 	r.t.Cleanup(func() { c.CloseNow() })
 	waitSessionOnline(r.t, r.hub, AgentKeyID("zzc"), name)
+	expected, err := r.svc.Store.FindAgentByName(r.ctx, "zzc", name)
+	if err != nil {
+		r.t.Fatal(err)
+	}
+	waitFor(r.t, time.Second, "stable R14 connection ID", func() bool {
+		r.hub.mu.Lock()
+		defer r.hub.mu.Unlock()
+		c := r.hub.sessionClients[AgentKeyID("zzc")][name]
+		return c != nil && c.metricsAgentID == expected.ID
+	})
 	r.hub.mu.Lock()
 	client := r.hub.sessionClients[AgentKeyID("zzc")][name]
 	r.hub.mu.Unlock()
@@ -324,7 +337,10 @@ func TestR14S016ConcurrentSameSourceOneDelivery(t *testing.T) {
 }
 func TestR14S017CommandsAndGroupBypass(t *testing.T) {
 	r := newR14Env(t, "Beta")
-	r.choose("Beta")
+	res, handled, err := r.hub.dispatchSelector(r.ctx, feishuInboundMessage("seed-S017", "#Beta"), "#Beta")
+	if err != nil || !handled || !strings.Contains(res.Reply, "已选择") {
+		t.Fatal("S017_FIXTURE", res, err)
+	}
 	s := r.state()
 	r.dispatch("#在线")
 	msg := feishuInboundMessage("group", "group plain")
@@ -358,11 +374,12 @@ func TestR14S019CommitFailureVisibleAndBlocked(t *testing.T) {
 func TestR14S020SameNameNewStableID(t *testing.T) {
 	r := newR14Env(t, "Beta")
 	r.choose("opus50ts")
+	before := r.state()
 	r.svc.Revoke(r.ctx, "zzc", r.agID)
 	cred, id := r.enroll("replacement", "Opus50TS")
 	r.online(cred, "opus50ts")
 	r.dispatch("plain")
-	r14Assert(t, id != r.agID && r.repo.count() == 0, "S020_RECREATED_INHERITED")
+	r14Assert(t, id != r.agID && r.repo.count() == 0 && r.state().AgentID == before.AgentID && r.state().Generation == before.Generation, "S020_RECREATED_INHERITED")
 }
 func TestR14S021ExactBeforePrefix(t *testing.T) {
 	r := newR14Env(t, "ts3dev55", "ts3dev5520")
@@ -480,4 +497,87 @@ func TestR14CleanupRevocationAndBoundedCursor(t *testing.T) {
 	if err != nil || second != nil {
 		t.Fatal("CLEANUP_CURSOR_STARVED_REVOKED", second, err)
 	}
+}
+
+func TestR14PendingMaintenanceJoinsLifetime(t *testing.T) {
+	r := newR14Env(t)
+	key := store.FeishuStickyKey{"zzc", "devplatform"}
+	o, _, err := r.repo.BeginFeishuSticky(r.ctx, key, "orphan", "explicit", r.now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.now = r.now.Add(11 * time.Minute)
+	ctx, cancel := context.WithCancel(r.ctx)
+	ticks := make(chan time.Time)
+	done := make(chan struct{})
+	go func() { defer close(done); r.hub.runFeishuStickyMaintenance(ctx, ticks) }()
+	ticks <- r.now
+	waitFor(t, time.Second, "R14 pending maintenance", func() bool {
+		v, _, err := r.repo.BeginFeishuSticky(r.ctx, key, o.SourceMessageID, "explicit", r.now)
+		return err == nil && v.Status == "unknown"
+	})
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("R14_PENDING_WORKER_NOT_JOINED")
+	}
+}
+
+func TestR14EnqueueBeforeCheckpointHasReconciliationEvidence(t *testing.T) {
+	r := newR14Env(t, "Beta")
+	k := store.FeishuStickyKey{"zzc", "devplatform"}
+	op, fresh, err := r.repo.BeginFeishuSticky(r.ctx, k, "crash-window", "explicit", r.now)
+	if err != nil || !fresh {
+		t.Fatal(err)
+	}
+	op.SourceEnvelopeID = "source-crash-window"
+	if err = r.repo.RecordFeishuStickyIntent(r.ctx, op, r.agents["beta"], "explicit", ""); err != nil {
+		t.Fatal(err)
+	}
+	env := model.Envelope{ID: op.SourceEnvelopeID, To: sessionAddress("beta", AgentKeyID("zzc")), From: feishuAddress("ou_alice", AgentKeyID("zzc"), "devplatform"), Body: "local crash-window fixture", Meta: map[string]any{"r14_target_agent_id": r.agents["beta"], "r14_principal_lc": "zzc"}}
+	env.Meta["bot_channel_id"] = "devplatform"
+	env.Meta["chat_type"] = "personal"
+	r.hub.annotateSourceContext(r.ctx, env.Meta, feishuInboundMessage("source-crash-window", "local crash-window fixture"))
+	if err = r.hub.RouteEnvelope(r.ctx, env); err != nil {
+		t.Fatal(err)
+	}
+	// Simulate process loss before persisting the returned delivery ID.
+	recovered, fresh, err := r.repo.BeginFeishuSticky(r.ctx, k, "crash-window", "explicit", r.now)
+	if err != nil || fresh || recovered.DeliveryID != "" {
+		t.Fatal(recovered, err)
+	}
+	id, err := r.repo.FindFeishuStickyDelivery(r.ctx, recovered)
+	if err != nil || id == "" {
+		t.Fatal("ENQUEUE_CHECKPOINT_EVIDENCE_LOST", id, err)
+	}
+	d, err := r.repo.GetSessionDelivery(r.ctx, id)
+	if err != nil || !stickyDeliveryEvidence(recovered, d) {
+		t.Fatal("ENQUEUE_CHECKPOINT_EVIDENCE_MISMATCH", d, err)
+	}
+}
+
+func TestR14S019DirectUnknownNeverBlindlyReplays(t *testing.T) {
+	r := newR14Env(t, "Beta")
+	r.hub.mu.Lock()
+	client := r.hub.sessionClients[AgentKeyID("zzc")]["beta"]
+	r.hub.mu.Unlock()
+	client.stateMu.Lock()
+	client.deliveryACKV1 = false
+	client.stateMu.Unlock()
+	r.repo.failCommit = true
+	res := r.dispatch("#Beta direct-once")
+	got := r.readEnvUntil(r.peers["beta"], time.Second, func(e model.Envelope) bool { return e.Body == "direct-once" })
+	r14Assert(t, got != nil && res.Reply == stickyUnconfirmed, "S019_DIRECT_FAILURE_HIDDEN", got, res)
+	r.repo.failCommit = false
+	res = r.dispatch("no-prefix")
+	r14Assert(t, res.Reply == stickyUnconfirmed && r.state() == nil, "S019_DIRECT_UNKNOWN_DEFAULTED", res)
+	r.now = r.now.Add(11 * time.Minute)
+	res = r.dispatch("still-unknown")
+	r14Assert(t, res.Reply == stickyUnconfirmed && r.state() == nil, "S019_DIRECT_UNKNOWN_EXPIRED", res)
+	// Explicit selection is still available, but cannot pretend to reconcile the
+	// uncertain direct write; implicit routing stays paused until real evidence.
+	r.choose("opus50ts")
+	res = r.dispatch("still-explicit-only")
+	r14Assert(t, res.Reply == stickyUnconfirmed, "S019_EXPLICIT_CLEARED_UNRECONCILED")
 }

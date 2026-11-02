@@ -2,6 +2,7 @@ package m8
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -111,12 +112,41 @@ func (h *Hub) stickyAgents(ctx context.Context, owner string) ([]identity.Agent,
 	full := make(map[string]string)
 	var out []identity.Agent
 	for _, a := range all {
-		if a.OwnerLC == owner && a.State == identity.AgentActive && h.stickyAgentOnline(&a) {
+		if stickyOwnedActive(a, owner) && h.stickyAgentOnline(&a) {
 			out = append(out, a)
 			full[a.ID] = a.Name + "." + u.ShortName
 		}
 	}
 	return out, full, nil
+}
+
+func stickyOwnedActive(a identity.Agent, owner string) bool {
+	return a.OwnerLC == owner && a.State == identity.AgentActive
+}
+func stickyMatch(agents []identity.Agent, full map[string]string, requested string) *identity.Agent {
+	if strings.Contains(requested, ".") {
+		for i := range agents {
+			if strings.EqualFold(full[agents[i].ID], requested) {
+				return &agents[i]
+			}
+		}
+		return nil
+	}
+	for i := range agents {
+		if strings.EqualFold(agents[i].Name, requested) {
+			return &agents[i]
+		}
+	}
+	var matches []identity.Agent
+	for _, a := range agents {
+		if strings.HasPrefix(a.NameLC(), identity.Lower(requested)) {
+			matches = append(matches, a)
+		}
+	}
+	if len(matches) == 1 {
+		return &matches[0]
+	}
+	return nil
 }
 
 // Hook only at the existing explicit selector and final default decisions.
@@ -193,10 +223,17 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 	}
 	blocked := false
 	for _, o := range unresolved {
+		// Enqueue may have committed before its ID checkpoint was written.
+		if o.DeliveryID == "" {
+			id, e := repo.FindFeishuStickyDelivery(ctx, o)
+			if e == nil {
+				o.DeliveryID = id
+			}
+		}
 		// An existing durable receipt proves acceptance, never a reason to resend.
 		if o.DeliveryID != "" {
 			d, e := h.Repo.GetSessionDelivery(ctx, o.DeliveryID)
-			if e == nil && d != nil && o.SourceEnvelopeID != "" && d.SourceMessageID == o.SourceEnvelopeID {
+			if e == nil && stickyDeliveryEvidence(o, d) {
 				if e = repo.ResolveFeishuSticky(ctx, o.Seq, now); e == nil {
 					continue
 				}
@@ -230,6 +267,9 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 		return reply("") // No business replay or TTL renewal.
 	}
 	finish := func(status, target, decision string) bool {
+		if target == "" {
+			target = op.TargetAgentID
+		}
 		err := repo.FinishFeishuSticky(ctx, op, status, target, decision, h.now().UTC())
 		log.Printf("r14 source_message_id=%s user_id_lc=%s bot_channel_id=%s operation_seq=%d base_generation=%d target_agent_id=%s decision=%s status=%s commit_ok=%t", op.SourceMessageID, k.UserIDLC, k.BotChannelID, op.Seq, op.BaseGeneration, target, decision, status, err == nil)
 		return err == nil
@@ -270,33 +310,7 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 	var chosen *identity.Agent
 	decision := ""
 	if explicit {
-		if strings.Contains(requested, ".") {
-
-			for i := range agents {
-				if strings.EqualFold(full[agents[i].ID], requested) {
-					chosen = &agents[i]
-					break
-				}
-			}
-		} else {
-			for i := range agents {
-				if strings.EqualFold(agents[i].Name, requested) {
-					chosen = &agents[i]
-					break
-				}
-			}
-			if chosen == nil {
-				var matches []identity.Agent
-				for _, a := range agents {
-					if strings.HasPrefix(a.NameLC(), identity.Lower(requested)) {
-						matches = append(matches, a)
-					}
-				}
-				if len(matches) == 1 {
-					chosen = &matches[0]
-				}
-			}
-		}
+		chosen = stickyMatch(agents, full, requested)
 		if chosen == nil {
 			return refuse("未找到你名下在线且可用的 Agent："+requested+"\n"+candidates, "explicit_invalid")
 		}
@@ -335,6 +349,7 @@ func (h *Hub) dispatchFeishuSticky(ctx context.Context, msg model.Message, text 
 	if e != nil || user.State != identity.UserActive {
 		return refuse(stickyUnavailable, "principal_changed")
 	}
+	op.TargetAgentID = chosen.ID
 	op.SourceEnvelopeID = firstNonEmpty(msg.ID, msg.FeishuMsgID)
 	if e = repo.RecordFeishuStickyIntent(ctx, op, chosen.ID, decision, ""); e != nil {
 		return reply(stickyUnconfirmed)
@@ -365,20 +380,46 @@ func (h *Hub) startFeishuStickyCleanup() {
 	}
 	ctx := h.lifetime().ctx
 	h.backgroundWork("owned", func() {
-		ticker := time.NewTicker(time.Hour)
+		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				sweep, cancel := context.WithTimeout(ctx, time.Minute)
-				h.cleanupFeishuSticky(sweep, h.now().UTC())
-				cancel()
-			}
-		}
+		h.runFeishuStickyMaintenance(ctx, ticker.C)
 	})
 }
+
+// Pending recovery runs each minute; retention/revocation cleanup runs hourly.
+// Both use bounded store batches and join the Hub's owned background lifetime.
+func (h *Hub) runFeishuStickyMaintenance(ctx context.Context, ticks <-chan time.Time) {
+	repo, ok := h.Repo.(store.FeishuStickyRepository)
+	if !ok {
+		return
+	}
+	minutes := 0
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticks:
+			sweep, cancel := context.WithTimeout(ctx, time.Minute)
+			if _, err := repo.SweepFeishuStickyPending(sweep, h.now().UTC(), store.FeishuStickyCleanupBatch); err != nil {
+				log.Printf("r14 pending recovery failed: %v", err)
+			}
+			minutes++
+			if minutes == 60 {
+				h.cleanupFeishuSticky(sweep, h.now().UTC())
+				minutes = 0
+			}
+			cancel()
+		}
+	}
+}
+func stickyDeliveryEvidence(o store.FeishuStickyOperation, d *model.SessionDelivery) bool {
+	if d == nil || o.SourceEnvelopeID == "" || o.TargetAgentID == "" || d.SourceMessageID != o.SourceEnvelopeID {
+		return false
+	}
+	var env model.Envelope
+	return json.Unmarshal([]byte(d.Envelope), &env) == nil && metaString(env.Meta, "r14_target_agent_id") == o.TargetAgentID && metaString(env.Meta, "r14_principal_lc") == o.UserIDLC
+}
+
 func (h *Hub) cleanupFeishuSticky(ctx context.Context, now time.Time) {
 	repo, ok := h.Repo.(store.FeishuStickyRepository)
 	if !ok || h.Identity == nil {

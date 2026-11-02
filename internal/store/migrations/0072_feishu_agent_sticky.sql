@@ -31,3 +31,4 @@ CREATE TABLE r14_feishu_sticky_operation (
 );
 CREATE INDEX r14_sticky_operation_lane ON r14_feishu_sticky_operation(user_id_lc,bot_channel_id,operation_seq);
 CREATE INDEX r14_sticky_operation_cleanup ON r14_feishu_sticky_operation(status,completed_at_utc);
+CREATE INDEX r14_sticky_operation_pending ON r14_feishu_sticky_operation(status,created_at_utc,operation_seq);

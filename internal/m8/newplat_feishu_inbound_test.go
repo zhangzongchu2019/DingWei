@@ -2,6 +2,7 @@ package m8
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"strings"
 	"testing"
@@ -24,7 +25,8 @@ func bindFeishuForAgentEnv(t *testing.T, e *agentEnv, subject string) {
 }
 
 func feishuInboundMessage(id, text string) model.Message {
-	return model.Message{ID: id, FeishuMsgID: id, ChatEntityID: "devplatform:personal:ou_alice", BotChannelID: "devplatform", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice", IngressProvenance: model.IngressFeishuWSAuthenticated, Content: `{"text":"` + text + `"}`}
+	content, _ := json.Marshal(map[string]string{"text": text})
+	return model.Message{ID: id, FeishuMsgID: id, ChatEntityID: "devplatform:personal:ou_alice", BotChannelID: "devplatform", ChatType: model.ChatPersonal, SenderOpenID: "ou_alice", IngressProvenance: model.IngressFeishuWSAuthenticated, Content: string(content)}
 }
 
 func TestNewPlatformFeishuInboundSelectorAndDefaultUseIdentityBucket(t *testing.T) {

@@ -99,3 +99,77 @@ func TestFeishuStickyRejectedPendingUnknownRetentionAndBatch(t *testing.T) {
 		t.Fatal("RECONCILIATION_BLOCKED", err)
 	}
 }
+
+func TestFeishuStickyGenerationSurvivesStateDeletion(t *testing.T) {
+	ctx := context.Background()
+	db := openMigrated(t, filepath.Join(t.TempDir(), "generation.db"))
+	defer db.Close()
+	now := time.Now().UTC()
+	k := FeishuStickyKey{"alice", "bot"}
+	first, _, _ := db.BeginFeishuSticky(ctx, k, "one", "explicit", now)
+	if err := db.FinishFeishuSticky(ctx, first, "accepted", "A", "select", now); err != nil {
+		t.Fatal(err)
+	}
+	stale, _, _ := db.BeginFeishuSticky(ctx, k, "old", "explicit", now)
+	s, err := db.GetFeishuSticky(ctx, k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = db.DeleteFeishuSticky(ctx, *s); err != nil {
+		t.Fatal(err)
+	}
+	newer, _, err := db.BeginFeishuSticky(ctx, k, "new", "explicit", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = db.FinishFeishuSticky(ctx, newer, "accepted", "B", "select", now); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.FinishFeishuSticky(ctx, stale, "accepted", "A", "late", now); !errors.Is(err, ErrStickyGeneration) {
+		t.Fatal("DELETED_STATE_GENERATION_REUSED", err)
+	}
+	s, err = db.GetFeishuSticky(ctx, k)
+	if err != nil || s.Generation != 2 || s.AgentID != "B" {
+		t.Fatal("DELETED_STATE_STALE_OVERWRITE", s, err)
+	}
+}
+func TestFeishuStickyPendingSweepIsBounded(t *testing.T) {
+	ctx := context.Background()
+	db := openMigrated(t, filepath.Join(t.TempDir(), "pending.db"))
+	defer db.Close()
+	now := time.Now().UTC()
+	k := FeishuStickyKey{"alice", "bot"}
+	for _, source := range []string{"a", "b", "c"} {
+		if _, _, err := db.BeginFeishuSticky(ctx, k, source, "explicit", now); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if n, err := db.SweepFeishuStickyPending(ctx, now.Add(10*time.Minute-time.Nanosecond), 2); err != nil || n != 0 {
+		t.Fatal("PENDING_EARLY_UNKNOWN", n, err)
+	}
+	if n, err := db.SweepFeishuStickyPending(ctx, now.Add(10*time.Minute), 2); err != nil || n != 2 {
+		t.Fatal("PENDING_SWEEP_BATCH_UNBOUNDED", n, err)
+	}
+	last, fresh, err := db.BeginFeishuSticky(ctx, k, "c", "explicit", now)
+	if err != nil || fresh || last.Status != "pending" {
+		t.Fatal("PENDING_SWEEP_IGNORED_CAP", last, err)
+	}
+}
+
+func TestFeishuStickyCorruptClockFailsClosed(t *testing.T) {
+	ctx := context.Background()
+	db := openMigrated(t, filepath.Join(t.TempDir(), "clock.db"))
+	defer db.Close()
+	now := time.Now().UTC()
+	k := FeishuStickyKey{"alice", "bot"}
+	o, _, _ := db.BeginFeishuSticky(ctx, k, "one", "explicit", now)
+	if err := db.FinishFeishuSticky(ctx, o, "accepted", "A", "select", now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.db.Exec(`UPDATE r14_feishu_sticky_state SET selected_at_utc='invalid-clock'`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.GetFeishuSticky(ctx, k); err == nil {
+		t.Fatal("CORRUPT_CLOCK_TREATED_AS_VALID")
+	}
+}
