@@ -1,0 +1,47 @@
+
+// Only compiled by the isolated HLC overlay. Production SDK lifecycle is unchanged.
+type hlcFixtureSDK struct { ready func() }
+func (c *hlcFixtureSDK) Start(context.Context) error { c.ready(); select {} }
+func (c *hlcFixtureSDK) Close() {}
+type hlcFixtureReceiver struct {
+ g *LarkGateway
+ disp chan *dispatcher.EventDispatcher
+ release <-chan struct{}
+ calls atomic.Int64
+ lateDB atomic.Int64
+}
+func HLCFixtureReceiver(release <-chan struct{}) (Receiver, func(context.Context) error, func() map[string]int64) {
+ r := &hlcFixtureReceiver{g: &LarkGateway{botChannelID:"hlc-fixture"}, disp:make(chan *dispatcher.EventDispatcher,1), release:release}
+ r.g.wsFactory = func(d *dispatcher.EventDispatcher, ready func()) sdkConnection { r.disp<-d; return &hlcFixtureSDK{ready:ready} }
+ invoke := func(ctx context.Context) error {
+  var d *dispatcher.EventDispatcher
+  select { case d=<-r.disp: r.disp<-d; case <-ctx.Done(): return ctx.Err() }
+  _,err:=d.Do(ctx, hlcCallbackEvent("hlc-inflight")); return err
+ }
+ counts:=func()map[string]int64{return map[string]int64{"business_db_calls":r.calls.Load(),"late_db_calls":r.lateDB.Load()}}
+ return r,invoke,counts
+}
+func hlcCallbackEvent(id string) []byte {
+ return []byte(`{"schema":"2.0","header":{"event_type":"im.message.receive_v1"},"event":{"sender":{"sender_id":{"open_id":"ou_hlc_synthetic"}},"message":{"message_id":"`+id+`","chat_type":"p2p","content":"{\"text\":\"synthetic HLC\"}"}}}`)
+}
+func(r *hlcFixtureReceiver) Start(ctx context.Context, fn func(context.Context,model.Message)error) error {
+ return r.g.Start(ctx,func(c context.Context,m model.Message)error{
+  r.calls.Add(1)
+  if r.g.IngressSnapshot().Sealed {r.lateDB.Add(1)}
+  err:=fn(c,m)
+  <-r.release
+  return err
+ })
+}
+func(r *hlcFixtureReceiver) StopIngress(ctx context.Context)error {
+ done:=make(chan error,1)
+ go func(){done<-r.g.StopIngress(ctx)}()
+ for !r.g.IngressSnapshot().Sealed {
+  select{case <-ctx.Done():return ctx.Err();case <-time.After(time.Millisecond):}
+ }
+ d:=<-r.disp;r.disp<-d
+ _,late:=d.Do(context.Background(),hlcCallbackEvent("hlc-late"))
+ if late==nil{return errors.New("S006 late callback unexpectedly admitted")}
+ return <-done
+}
+func(r *hlcFixtureReceiver) IngressSnapshot()IngressShutdownSnapshot{return r.g.IngressSnapshot()}

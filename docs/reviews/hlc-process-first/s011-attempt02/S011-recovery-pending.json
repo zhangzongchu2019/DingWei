@@ -1,0 +1,71 @@
+{
+  "mux": [
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"047316983d504879b87cb6c83205c9b9\",\"replay_round\":\"1\",\"epoch\":\"d32b0116c1a0dd78\",\"floor\":\"1\",\"H\":\"1\"}"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"047316983d504879b87cb6c83205c9b9\",\"replay_round\":\"1\",\"epoch\":\"d32b0116c1a0dd78\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-02\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-02\",\"turn_id\":\"hlc-turn\"}}"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"047316983d504879b87cb6c83205c9b9\",\"replay_round\":\"1\",\"epoch\":\"d32b0116c1a0dd78\",\"floor\":\"1\",\"H\":\"1\"}"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"3e04feccd95b202d2cb79463f4e432a0\",\"replay_round\":\"1\",\"epoch\":\"40920d03b799c29f\",\"floor\":\"1\",\"H\":\"1\"}"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"3e04feccd95b202d2cb79463f4e432a0\",\"replay_round\":\"1\",\"epoch\":\"40920d03b799c29f\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-01\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-01\",\"turn_id\":\"hlc-turn\"}}"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"3e04feccd95b202d2cb79463f4e432a0\",\"replay_round\":\"1\",\"epoch\":\"40920d03b799c29f\",\"floor\":\"1\",\"H\":\"1\"}"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"gap\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"c36d6d6ab7840ef27bcf03e8f5da5eee\",\"replay_round\":\"1\",\"epoch\":\"1a4a1257807dc354\",\"floor\":\"1\",\"H\":\"2\",\"reason\":\"resync_required\",\"cause\":\"epoch_changed\"}"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"5d30dc8b50530a3d0f3b3ce8610f6753\",\"replay_round\":\"1\",\"epoch\":\"8cb13a7fac128fdc\",\"floor\":\"1\",\"H\":\"1\"}"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"5d30dc8b50530a3d0f3b3ce8610f6753\",\"replay_round\":\"1\",\"epoch\":\"8cb13a7fac128fdc\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-03\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-03\",\"turn_id\":\"hlc-turn\"}}"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"5d30dc8b50530a3d0f3b3ce8610f6753\",\"replay_round\":\"1\",\"epoch\":\"8cb13a7fac128fdc\",\"floor\":\"1\",\"H\":\"1\"}"
+    }
+  ],
+  "sse": [
+    {
+      "Event": "replay_gap",
+      "ID": "",
+      "Data": "{\"reason\":\"epoch_changed\",\"epoch\":\"1a4a1257807dc354\"}"
+    },
+    {
+      "Event": "",
+      "ID": "1a4a1257807dc354-1",
+      "Data": "{\"delivery_id\":\"hlc-after-00\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-00\",\"turn_id\":\"hlc-turn\"}"
+    },
+    {
+      "Event": "",
+      "ID": "1a4a1257807dc354-2",
+      "Data": "{\"delivery_id\":\"hlc-after-verify\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-verify\",\"turn_id\":\"hlc-turn\"}"
+    }
+  ]
+}

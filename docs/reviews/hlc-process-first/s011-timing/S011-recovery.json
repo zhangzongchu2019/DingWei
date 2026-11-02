@@ -1,0 +1,116 @@
+{
+  "automatic_reset_performed": false,
+  "helper_count": 20,
+  "helpers_from_ready_ms": 36,
+  "helpers_ready_utc": "2026-11-02T01:46:32.607257102Z",
+  "mux_duplicate_messages": 0,
+  "mux_frames": [
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"5d8e1a4804fc168e52c45e8ada5f43b6\",\"replay_round\":\"1\",\"epoch\":\"bfea611bb5649693\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-02T01:46:32.619090866Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"5d8e1a4804fc168e52c45e8ada5f43b6\",\"replay_round\":\"1\",\"epoch\":\"bfea611bb5649693\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-02\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-02\",\"turn_id\":\"hlc-turn\"}}",
+      "At": "2026-11-02T01:46:32.619162529Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"5d8e1a4804fc168e52c45e8ada5f43b6\",\"replay_round\":\"1\",\"epoch\":\"bfea611bb5649693\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-02T01:46:32.619190996Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"b98356987f031de580d26662f0840b1c\",\"replay_round\":\"1\",\"epoch\":\"654f7f2ec27279d4\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-02T01:46:32.619898577Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"b98356987f031de580d26662f0840b1c\",\"replay_round\":\"1\",\"epoch\":\"654f7f2ec27279d4\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-01\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-01\",\"turn_id\":\"hlc-turn\"}}",
+      "At": "2026-11-02T01:46:32.619961791Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"b98356987f031de580d26662f0840b1c\",\"replay_round\":\"1\",\"epoch\":\"654f7f2ec27279d4\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-02T01:46:32.620011626Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"gap\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"260aa3822cab12f14df4d5b4905cd5cc\",\"replay_round\":\"1\",\"epoch\":\"7a42c1194a458833\",\"floor\":\"1\",\"H\":\"2\",\"reason\":\"resync_required\",\"cause\":\"epoch_changed\"}",
+      "At": "2026-11-02T01:46:32.620052812Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"289258b93bf97de126c7ff8ce44a4a2b\",\"replay_round\":\"1\",\"epoch\":\"288aae9768ec32d6\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-02T01:46:32.620092228Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"289258b93bf97de126c7ff8ce44a4a2b\",\"replay_round\":\"1\",\"epoch\":\"288aae9768ec32d6\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-03\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-03\",\"turn_id\":\"hlc-turn\"}}",
+      "At": "2026-11-02T01:46:32.620625326Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"289258b93bf97de126c7ff8ce44a4a2b\",\"replay_round\":\"1\",\"epoch\":\"288aae9768ec32d6\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-02T01:46:32.620743635Z"
+    }
+  ],
+  "mux_from_ready_ms": null,
+  "mux_gap_count": 1,
+  "mux_id_counts": {
+    "hlc-after-01": 1,
+    "hlc-after-02": 1,
+    "hlc-after-03": 1
+  },
+  "mux_missing": 2,
+  "mux_ready_utc": "0001-01-01T00:00:00Z",
+  "new_listener_observed_utc": "2026-11-02T01:46:32.570405023Z",
+  "new_ready_utc": "2026-11-02T01:46:32.570699305Z",
+  "old_cursor": "349ca6cf7608df51-1",
+  "old_exit_utc": "2026-11-02T01:46:32.531554889Z",
+  "sse_duplicate_cursors": 0,
+  "sse_duplicate_messages": 0,
+  "sse_frames": [
+    {
+      "Event": "replay_gap",
+      "ID": "",
+      "Data": "{\"reason\":\"epoch_changed\",\"epoch\":\"7a42c1194a458833\"}",
+      "At": "2026-11-02T01:46:32.608805221Z"
+    },
+    {
+      "Event": "",
+      "ID": "7a42c1194a458833-1",
+      "Data": "{\"delivery_id\":\"hlc-after-00\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-00\",\"turn_id\":\"hlc-turn\"}",
+      "At": "2026-11-02T01:46:32.608806211Z"
+    },
+    {
+      "Event": "",
+      "ID": "7a42c1194a458833-2",
+      "Data": "{\"delivery_id\":\"hlc-after-verify\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-verify\",\"turn_id\":\"hlc-turn\"}",
+      "At": "2026-11-02T01:46:32.617253676Z"
+    }
+  ],
+  "sse_from_ready_ms": 46,
+  "sse_gap_count": 1,
+  "sse_id_counts": {
+    "hlc-after-00": 1,
+    "hlc-after-verify": 1
+  },
+  "sse_missing": 0,
+  "sse_ready_utc": "2026-11-02T01:46:32.617253676Z",
+  "stop_to_ready_ms": 2202,
+  "stop_utc": "2026-11-02T01:46:30.368102323Z",
+  "ws_from_ready_ms": 46,
+  "ws_ready_utc": "2026-11-02T01:46:32.617403701Z"
+}

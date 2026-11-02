@@ -1,0 +1,801 @@
+package main
+
+// 本夹具以测试 overlay 在 run 的装配末端加受控负载；停机实现不替换。
+// 普通套件明确跳过，专用 runner 开启后使用真实 PG、HTTP、WS 与 Python VS。
+import (
+	"bufio"
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log/slog"
+	"math/rand"
+	"net"
+	"net/http"
+	"os"
+	"os/exec"
+	"os/signal"
+	"path/filepath"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"syscall"
+	"testing"
+	"time"
+
+	"github.com/coder/websocket"
+	"github.com/zhangzongchu2019/dingwei/internal/feishu"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
+	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/m8"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
+	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
+)
+
+var hlcFinalFixture func() map[string]any
+
+var hlcReceiverFactory func(<-chan struct{}) (feishu.Receiver, func(context.Context) error, func() map[string]int64)
+
+func hlcLoadSetup(h *m8.Hub, st *store.SQLite, public, internal *http.ServeMux) feishu.Receiver {
+	release := make(chan struct{})
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
+	go func() { <-signals; time.Sleep(2 * time.Second); close(release); signal.Stop(signals) }()
+	rx, invoke, counts := hlcReceiverFactory(release)
+	var active, completed atomic.Int64
+	hlcFinalFixture = func() map[string]any {
+		return map[string]any{"callback": counts(), "http_committed": completed.Load(), "http_active": active.Load()}
+	}
+	slow := func(w http.ResponseWriter, r *http.Request) {
+		active.Add(1)
+		defer active.Add(-1)
+		<-release
+		if err := st.UpsertAppConfig(r.Context(), "hlc-slow-"+r.PathValue("id"), `{"committed":true}`); err != nil {
+			http.Error(w, "transaction failed", 500)
+			return
+		}
+		completed.Add(1)
+		w.WriteHeader(204)
+	}
+	public.HandleFunc("GET /hlc/slow/{id}", slow)
+	internal.HandleFunc("GET /hlc/slow/{id}", slow)
+	public.HandleFunc("POST /hlc/callback", func(w http.ResponseWriter, r *http.Request) {
+		if err := invoke(r.Context()); err != nil {
+			http.Error(w, "callback failed", 500)
+			return
+		}
+		w.WriteHeader(204)
+	})
+	public.HandleFunc("GET /hlc/status", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"hub": h.LifecycleCounts(), "http_active": active.Load(), "http_committed": completed.Load(), "callback": counts(), "ingress": rx.(feishu.ReceiverLifecycle).IngressSnapshot()})
+	})
+	return rx
+}
+
+func TestHLCLoadProcessChild(t *testing.T) {
+	if os.Getenv("HLC_LOAD_CHILD") != "1" {
+		return
+	}
+	err := run(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	if hlcFinalFixture != nil {
+		json.NewEncoder(os.Stdout).Encode(map[string]any{"hlc_fixture_final": hlcFinalFixture()})
+	}
+	os.Exit(exitCode(err))
+}
+
+type hlcLockedBuffer struct {
+	mu sync.Mutex
+	b  bytes.Buffer
+}
+
+func (b *hlcLockedBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.b.Write(p)
+}
+func (b *hlcLockedBuffer) Bytes() []byte {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return append([]byte(nil), b.b.Bytes()...)
+}
+
+type hlcChild struct {
+	cmd              *exec.Cmd
+	log              *hlcLockedBuffer
+	public, internal string
+	ready            time.Time
+	connected        time.Time
+	done             chan error
+}
+
+func hlcStart(t *testing.T, root, dsn, routing, public, internal string) *hlcChild {
+	t.Helper()
+	c := &hlcChild{public: public, internal: internal, log: &hlcLockedBuffer{}, done: make(chan error, 1)}
+	c.cmd = exec.Command(os.Args[0], "-test.run=^TestHLCLoadProcessChild$", "-test.count=1")
+	c.cmd.Dir = root
+	sock := filepath.Join(root, fmt.Sprintf("notify-%d.sock", time.Now().UnixNano()))
+	notify, err := net.ListenUnixgram("unixgram", &net.UnixAddr{Name: sock, Net: "unixgram"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer notify.Close()
+	c.cmd.Env = []string{"PATH=" + os.Getenv("PATH"), "HOME=" + root, "TZ=UTC", "HLC_LOAD_CHILD=1",
+		"WP_DATA_DIR=" + root, "WP_DB_PATH=" + filepath.Join(root, "hub.db"), "WP_ADDR=" + public, "WP_INTERNAL_ADDR=" + internal,
+		"FEISHU_TRANSPORT=fake", "WP_SCHEDULE_TEAM_FILE=" + filepath.Join(root, "no-team.md"), "WP_SCHEDULE_PERSONAL_DIR=" + root,
+		"WP_CONSOLE_AUTH_ENABLED=false", "DW_NEWPLAT=1", "DW_PUBLIC_ORIGIN=http://" + public, "DW_NEWPLAT_PG_DSN=" + dsn,
+		"NOTIFY_SOCKET=" + sock, "VIEW_ROUTING_CONFIG=" + routing, "GOCACHE=" + os.Getenv("GOCACHE"), "GOMODCACHE=" + os.Getenv("GOMODCACHE"), "GOPATH=" + os.Getenv("GOPATH")}
+	c.cmd.Stdout = c.log
+	c.cmd.Stderr = c.log
+	if err := c.cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	go func() { c.done <- c.cmd.Wait() }()
+	t.Cleanup(func() {
+		_ = c.cmd.Process.Kill()
+		if out := os.Getenv("HLC_MATRIX_EVIDENCE"); out != "" {
+			os.WriteFile(filepath.Join(out, fmt.Sprintf("child-%d.log", c.cmd.Process.Pid)), c.log.Bytes(), 0644)
+		}
+	})
+	deadline := time.Now().Add(15 * time.Second)
+	for time.Now().Before(deadline) {
+		req, _ := http.NewRequest("GET", "http://"+public+"/hlc/status", nil)
+		client := &http.Client{Timeout: 200 * time.Millisecond}
+		if res, err := client.Do(req); err == nil {
+			res.Body.Close()
+			if res.StatusCode == 200 {
+				c.connected = time.Now()
+				notify.SetReadDeadline(deadline)
+				buffer := make([]byte, 1024)
+				for {
+					n, _, err := notify.ReadFromUnix(buffer)
+					if err != nil {
+						t.Fatalf("READY notify: %v", err)
+					}
+					if strings.Contains(string(buffer[:n]), "READY=1") {
+						c.ready = time.Now()
+						return c
+					}
+				}
+			}
+		}
+		select {
+		case err := <-c.done:
+			t.Fatalf("child startup exit=%v log=%s", err, c.log.Bytes())
+		default:
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("child ready deadline log=%s", c.log.Bytes())
+	return nil
+}
+
+func hlcReadStatus(t *testing.T, c *hlcChild) map[string]any {
+	t.Helper()
+	res, err := http.Get("http://" + c.public + "/hlc/status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	var s map[string]any
+	if err := json.NewDecoder(res.Body).Decode(&s); err != nil {
+		t.Fatal(err)
+	}
+	return s
+}
+func hlcUntil(t *testing.T, why string, f func() bool) {
+	t.Helper()
+	end := time.Now().Add(8 * time.Second)
+	for time.Now().Before(end) {
+		if f() {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("fixture readiness: " + why)
+}
+
+func hlcOwner(i int) string { return fmt.Sprintf("hlcowner%d", i/4) }
+func hlcName(i int) string  { return fmt.Sprintf("hlcagent%02d", i) }
+func hlcFull(i int) string  { return hlcName(i) + "." + hlcOwner(i) }
+func hlcCred(i int) string  { return fmt.Sprintf("hlc-isolated-synthetic-agent-credential-%02d", i) }
+func hlcToken(i int) string { return fmt.Sprintf("hlc-isolated-synthetic-session-%d", i) }
+
+func hlcSeed(t *testing.T, dsn string) {
+	t.Helper()
+	ctx := context.Background()
+	ids, pool, closePool, err := openNewPlatformStore(ctx, dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closePool()
+	ac, _ := repo.NewAccessCtx("test", "hlc-process-matrix")
+	for i := 0; i < 5; i++ {
+		u := fmt.Sprintf("hlcowner%d", i)
+		if err := ids.CreateUser(ctx, identity.User{UserID: u, ShortName: u, Type: identity.UserMember, State: identity.UserActive, CreatedAt: time.Now()}); err != nil {
+			t.Fatal(err)
+		}
+		if err := ids.CreateSession(ctx, identity.Session{TokenHash: identity.HashSecret(hlcToken(i)), UserIDLC: u, ExpiresAt: time.Now().Add(time.Hour)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for i := 0; i < 20; i++ {
+		n := hlcName(i)
+		_, err := pool.Exec(ctx, ac, `INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,credential_hash,created_at) VALUES($1,$2,$3,$3,'selfhost','active',$4,clock_timestamp())`, n, hlcOwner(i), n, identity.HashSecret(hlcCred(i)))
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+type hlcFrame struct {
+	Event, ID, Data string
+	At              time.Time
+}
+type hlcStream struct {
+	body   io.ReadCloser
+	mu     sync.Mutex
+	frames []hlcFrame
+	done   chan struct{}
+	status int
+}
+
+func (s *hlcStream) snapshot() []hlcFrame {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]hlcFrame(nil), s.frames...)
+}
+func hlcOpenSSE(t *testing.T, url, token string) *hlcStream {
+	t.Helper()
+	req, _ := http.NewRequest("GET", url, nil)
+	if token != "" {
+		req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: token})
+	}
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != 200 {
+		b, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		t.Fatalf("stream status=%d body=%s", res.StatusCode, b)
+	}
+	s := &hlcStream{body: res.Body, done: make(chan struct{}), status: res.StatusCode}
+	go func() {
+		defer close(s.done)
+		scan := bufio.NewScanner(res.Body)
+		scan.Buffer(make([]byte, 4096), 2<<20)
+		var f hlcFrame
+		for scan.Scan() {
+			v := scan.Text()
+			if v == "" {
+				if f.Data != "" {
+					s.mu.Lock()
+					f.At = time.Now()
+					s.frames = append(s.frames, f)
+					s.mu.Unlock()
+				}
+				f = hlcFrame{}
+				continue
+			}
+			if strings.HasPrefix(v, "data: ") {
+				f.Data = v[6:]
+			}
+			if strings.HasPrefix(v, "event: ") {
+				f.Event = v[7:]
+			}
+			if strings.HasPrefix(v, "id: ") {
+				f.ID = v[4:]
+			}
+		}
+	}()
+	t.Cleanup(func() { res.Body.Close() })
+	return s
+}
+
+type hlcAgent struct {
+	conn     *websocket.Conn
+	done     chan struct{}
+	mu       sync.Mutex
+	received []string
+}
+
+func hlcDialAgent(t *testing.T, c *hlcChild, i int) *hlcAgent {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	conn, res, err := websocket.Dial(ctx, "ws://"+c.public+"/ws/agent?tool=hlc-fixture&version=0.3.0", &websocket.DialOptions{HTTPHeader: http.Header{"Authorization": []string{"Bearer " + hlcCred(i)}}})
+	if err != nil {
+		code := 0
+		if res != nil {
+			code = res.StatusCode
+		}
+		t.Fatalf("helper %d dial status=%d err=%v", i, code, err)
+	}
+	a := &hlcAgent{conn: conn, done: make(chan struct{})}
+	go func() {
+		defer close(a.done)
+		for {
+			_, p, err := conn.Read(context.Background())
+			if err != nil {
+				return
+			}
+			a.mu.Lock()
+			a.received = append(a.received, string(p))
+			a.mu.Unlock()
+		}
+	}()
+	t.Cleanup(func() { conn.CloseNow() })
+	return a
+}
+func hlcPublish(t *testing.T, a *hlcAgent, i int, id string) {
+	t.Helper()
+	body, _ := json.Marshal(map[string]any{"kind": "assistant_text", "text": id, "delivery_id": id, "turn_id": "hlc-turn"})
+	for _, env := range []model.Envelope{
+		{ID: id + "-event", Body: string(body), Meta: map[string]any{"type": "session_event"}},
+		{ID: id + "-terminal", Body: id, Meta: map[string]any{"type": "terminal_output"}},
+	} {
+		b, _ := json.Marshal(env)
+		if err := a.conn.Write(context.Background(), websocket.MessageText, b); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+func hlcJSON(t *testing.T, method, url, origin, token string, body any) map[string]any {
+	t.Helper()
+	b, _ := json.Marshal(body)
+	req, _ := http.NewRequest(method, url, bytes.NewReader(b))
+	req.Header.Set("Origin", origin)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: token})
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	raw, _ := io.ReadAll(res.Body)
+	var v map[string]any
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		t.Fatalf("control %s status=%d body=%s", method, res.StatusCode, raw)
+	}
+	if err := json.Unmarshal(raw, &v); err != nil {
+		t.Fatal(err)
+	}
+	return v
+}
+func hlcOpenMux(t *testing.T, c *hlcChild, owner int, after map[string]string) *hlcStream {
+	t.Helper()
+	base := "http://" + c.public
+	token := hlcToken(owner)
+	ac := hlcJSON(t, "GET", base+"/api/console/event-context", base, token, nil)["auth_context"]
+	subs := []map[string]string{}
+	for j := 0; j < 4; j++ {
+		i := owner*4 + j
+		d := map[string]string{"full_name": hlcFull(i), "iframe_instance": fmt.Sprintf("%032x", i+100)}
+		if after[hlcFull(i)] != "" {
+			d["after"] = after[hlcFull(i)]
+		}
+		subs = append(subs, d)
+	}
+	feed := hlcJSON(t, "POST", base+"/api/console/event-feeds", base, token, map[string]any{"request_id": fmt.Sprintf("%032x", owner+200), "auth_context": ac, "console_instance": fmt.Sprintf("%032x", owner+300), "subscriptions": subs})
+	return hlcOpenSSE(t, base+"/api/console/event-feeds/"+feed["feed_id"].(string)+"/events", token)
+}
+
+func hlcRoutingAndVS(t *testing.T, root, internal string) string {
+	t.Helper()
+	targets := map[string]m8.ViewTarget{}
+	sessions := map[string]string{}
+	for n := 0; n < 3; n++ {
+		name := fmt.Sprintf("hlc-vs%d", n)
+		addr := hlcFreeAddress(t)
+		forward := filepath.Join(root, name+"-forward")
+		reverse := filepath.Join(root, name+"-reverse")
+		// Synthetic one-use fixture keys remain in temporary HOME, never in evidence.
+		if err := os.WriteFile(forward, bytes.Repeat([]byte("f"), 32), 0600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(reverse, bytes.Repeat([]byte("r"), 32), 0600); err != nil {
+			t.Fatal(err)
+		}
+		targets[name] = m8.ViewTarget{URL: "http://" + addr, ViewUnlockV2: true, HubToVSSecretFile: forward, VSToHubSecretFile: reverse}
+		cmd := exec.Command("python3", "view_service.py")
+		cmd.Dir = filepath.Join(os.Getenv("HLC_REPO"), "view-service")
+		cmd.Env = []string{"PATH=" + os.Getenv("PATH"), "HOME=" + root, "TZ=UTC", "VS_PORT=" + strings.Split(addr, ":")[1], "VS_HUB_INTERNAL=http://" + internal, "VS_VIEW_UNLOCK_V2=1", "VS_TARGET_NAME=" + name, "VS_HUB_TO_VS_SECRET_FILE=" + forward, "VS_TO_HUB_SECRET_FILE=" + reverse, "VS_PAGE_DB=" + filepath.Join(root, name+".db"), "VS_STATE_FILE=" + filepath.Join(root, name+".json")}
+		log := &hlcLockedBuffer{}
+		cmd.Stdout = log
+		cmd.Stderr = log
+		if err := cmd.Start(); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { cmd.Process.Kill(); cmd.Wait() })
+		hlcUntil(t, "VS listener", func() bool {
+			res, e := http.Get("http://" + addr + "/tasks")
+			if e == nil {
+				res.Body.Close()
+				return true
+			}
+			return false
+		})
+	}
+	for i := 0; i < 20; i++ {
+		sessions[hlcFull(i)] = fmt.Sprintf("hlc-vs%d", (i%4)%3)
+	}
+	path := filepath.Join(root, "routing.json")
+	b, _ := json.Marshal(m8.ViewRouting{Default: "hlc-vs0", Targets: targets, Sessions: sessions})
+	if err := os.WriteFile(path, b, 0600); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func hlcStop(t *testing.T, c *hlcChild, out, tag string) (shutdownReport, time.Time, time.Time) {
+	t.Helper()
+	start := time.Now()
+	if err := c.cmd.Process.Signal(syscall.SIGTERM); err != nil {
+		t.Fatal(err)
+	}
+	var processErr error
+	select {
+	case processErr = <-c.done:
+	case <-time.After(16 * time.Second):
+		t.Fatal("HLC real process exceeded 15s plus 0.5s measurement tolerance")
+	}
+	ended := time.Now()
+	raw := c.log.Bytes()
+	os.WriteFile(filepath.Join(out, tag+"-process.log"), raw, 0644)
+	report := shutdownReport{}
+	var finalFixture map[string]any
+	scan := bufio.NewScanner(bytes.NewReader(raw))
+	scan.Buffer(make([]byte, 4096), 2<<20)
+	for scan.Scan() {
+		var row struct {
+			Shutdown *shutdownReport `json:"shutdown"`
+			Fixture  map[string]any  `json:"hlc_fixture_final"`
+		}
+		if json.Unmarshal(scan.Bytes(), &row) == nil {
+			if row.Shutdown != nil {
+				report = *row.Shutdown
+			}
+			if row.Fixture != nil {
+				finalFixture = row.Fixture
+			}
+		}
+	}
+	result := map[string]any{"signal_utc": start.UTC(), "exit_utc": ended.UTC(), "stop_ms": ended.Sub(start).Milliseconds(), "process_error": fmt.Sprint(processErr), "report": report, "fixture": finalFixture}
+	b, _ := json.MarshalIndent(result, "", "  ")
+	os.WriteFile(filepath.Join(out, tag+"-shutdown.json"), b, 0644)
+	t.Logf("%s stop_ms=%d process_error=%v report_exit=%d stages=%+v", tag, ended.Sub(start).Milliseconds(), processErr, report.ExitCode, report.Stages)
+	if processErr != nil || report.ExitCode != 0 || len(report.Stages) != 5 {
+		t.Fatalf("%s EXPECT_EXIT0: process=%v report=%+v", tag, processErr, report)
+	}
+	if ended.Sub(start) > 15500*time.Millisecond {
+		t.Fatal("stop total budget exceeded")
+	}
+	if finalFixture == nil {
+		t.Fatal("missing fixture DB call counts")
+	}
+	callback := finalFixture["callback"].(map[string]any)
+	if callback["late_db_calls"] != float64(0) {
+		t.Fatalf("S006_POST_SEAL_DB_ZERO: %v", callback)
+	}
+	snap := report.Snapshot.(map[string]any)
+	servers := snap["servers"].(map[string]any)
+	closed := []time.Time{}
+	for _, name := range []string{"public", "internal"} {
+		entry := servers[name].(map[string]any)
+		when, err := time.Parse(time.RFC3339Nano, entry["listener_closed_utc"].(string))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if entry["error"] != "nil" || when.Sub(start) > time.Second {
+			t.Fatalf("listener/server %s=%v", name, entry)
+		}
+		closed = append(closed, when)
+	}
+	diff := closed[0].Sub(closed[1])
+	if diff < 0 {
+		diff = -diff
+	}
+	if diff > 100*time.Millisecond {
+		t.Fatalf("LISTENER_DELTA: %v", diff)
+	}
+	for _, kind := range []string{"hub", "http_overlaps_streams", "consumers", "producers"} {
+		for label, n := range snap[kind].(map[string]any) {
+			if n != float64(0) {
+				t.Fatalf("OWNED_WORK_NOT_JOINED: %s/%s=%v", kind, label, n)
+			}
+		}
+	}
+	return report, start, ended
+}
+
+func TestHLCLoadMatrix(t *testing.T) {
+	if os.Getenv("HLC_LOAD_ENABLED") != "1" {
+		t.Skip("isolated actual-process matrix: tests/hlc/process_matrix.py")
+	}
+	ctx := context.Background()
+	root := t.TempDir()
+	out := os.Getenv("HLC_MATRIX_EVIDENCE")
+	if os.Getenv("HLC_REPEAT") != "" && os.Getenv("HLC_REPEAT") != "1" {
+		out = filepath.Join(out, fmt.Sprintf("run-%d", time.Now().UnixNano()))
+		t.Setenv("HLC_MATRIX_EVIDENCE", out)
+	}
+	os.MkdirAll(out, 0755)
+	dsn := pgtest.DSN(t)
+	hlcSeed(t, dsn)
+	public, internal := hlcFreeAddress(t), hlcFreeAddress(t)
+	routing := hlcRoutingAndVS(t, root, internal)
+	c := hlcStart(t, root, dsn, routing, public, internal)
+	agents := make([]*hlcAgent, 20)
+	seed := time.Now().UnixNano()
+	random := rand.New(rand.NewSource(seed))
+	t.Logf("fixture_random_seed=%d", seed)
+	for _, i := range random.Perm(len(agents)) {
+		agents[i] = hlcDialAgent(t, c, i)
+		hlcPublish(t, agents[i], i, fmt.Sprintf("hlc-before-%02d", i))
+	}
+	hlcUntil(t, "terminal states", func() bool {
+		res, e := http.Get("http://" + internal + "/internal/view/" + hlcFull(0) + "/events")
+		if e != nil {
+			return false
+		}
+		res.Body.Close()
+		return res.StatusCode == 200
+	})
+	streams := []*hlcStream{}
+	for i := 0; i < 100; i++ {
+		streams = append(streams, hlcOpenSSE(t, "http://"+internal+"/internal/view/"+hlcFull(i%20)+"/events", ""))
+	}
+	muxes := []*hlcStream{}
+	for owner := 0; owner < 5; owner++ {
+		muxes = append(muxes, hlcOpenMux(t, c, owner, nil))
+	}
+	// Exactly 20 mux/bridge handlers: five public mux writers + fifteen signed VS bridges.
+	hlcUntil(t, "100 SSE + 5 mux + 15 bridge + 20 session WS", func() bool {
+		s := hlcReadStatus(t, c)
+		h := s["hub"].(map[string]any)
+		return h["internal_sse"] == float64(100) && h["public_mux"] == float64(5) && h["internal_bridge"] == float64(15) && h["session_ws"] == float64(20)
+	})
+	baseline := hlcReadStatus(t, c)
+	b, _ := json.MarshalIndent(baseline, "", "  ")
+	os.WriteFile(filepath.Join(out, os.Getenv("HLC_CASE")+"-load.json"), b, 0644)
+	// Keep a real viewer WS for S011's third push channel, beyond the twenty helpers.
+	viewCtx, viewCancel := context.WithTimeout(ctx, 3*time.Second)
+	defer viewCancel()
+	viewer, _, err := websocket.Dial(viewCtx, "ws://"+public+"/ws/view/"+hlcFull(0), &websocket.DialOptions{HTTPHeader: http.Header{"Origin": []string{"http://" + public}, "Cookie": []string{httpapi.SessionCookie + "=" + hlcToken(0)}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	viewDone := make(chan struct{})
+	go func() {
+		defer close(viewDone)
+		for {
+			if _, _, err := viewer.Read(ctx); err != nil {
+				return
+			}
+		}
+	}()
+	defer viewer.CloseNow()
+	pending := make(chan int, 101)
+	for _, i := range random.Perm(100) {
+		go func(i int) {
+			addr := public
+			if i >= 50 {
+				addr = internal
+			}
+			res, err := http.Get(fmt.Sprintf("http://%s/hlc/slow/%03d", addr, i))
+			if err != nil {
+				pending <- 0
+				return
+			}
+			res.Body.Close()
+			pending <- res.StatusCode
+		}(i)
+	}
+	go func() {
+		res, err := http.Post("http://"+public+"/hlc/callback", "application/json", nil)
+		if err != nil {
+			pending <- 0
+			return
+		}
+		res.Body.Close()
+		pending <- res.StatusCode
+	}()
+	hlcUntil(t, "100 slow HTTP + inflight callback", func() bool {
+		s := hlcReadStatus(t, c)
+		return s["http_active"] == float64(100) && s["ingress"].(map[string]any)["active_callbacks"] == float64(1)
+	})
+	report, stopped, exited := hlcStop(t, c, out, os.Getenv("HLC_CASE"))
+	for i := 0; i < 101; i++ {
+		select {
+		case status := <-pending:
+			if status != 204 {
+				t.Fatalf("finite work response=%d", status)
+			}
+		case <-time.After(time.Second):
+			t.Fatal("finite work failed to return")
+		}
+	}
+	for _, s := range append(streams, muxes...) {
+		select {
+		case <-s.done:
+		case <-time.After(time.Second):
+			t.Fatal("stream not ended by shutdown")
+		}
+	}
+	for _, a := range agents {
+		select {
+		case <-a.done:
+		case <-time.After(time.Second):
+			t.Fatal("helper WS did not close")
+		}
+	}
+	select {
+	case <-viewDone:
+	case <-time.After(time.Second):
+		t.Fatal("viewer WS not closed")
+	}
+	snapshot := report.Snapshot.(map[string]any)
+	ingress := snapshot["feishu_ingress"].(map[string]any)
+	if ingress["active_callbacks"] != float64(0) || ingress["rejected_after_seal"] != float64(1) {
+		t.Fatalf("callback final counts=%v", ingress)
+	}
+	// Reopen the actual old SQLite only after waitpid. Verify all accepted HTTP commits survive.
+	db, err := store.OpenSQLite(filepath.Join(root, "hub.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	configs, err := db.ListAppConfig(ctx)
+	db.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	commits := 0
+	for _, v := range configs {
+		if strings.HasPrefix(v.Key, "hlc-slow-") {
+			commits++
+		}
+	}
+	if commits != 100 {
+		t.Fatalf("durable HTTP commits=%d want100", commits)
+	}
+	if os.Getenv("HLC_CASE") == "S006" {
+		t.Logf("S006 first run: persisted_http=%d SSE=100 public_mux=5 signed_bridge=15 helper_ws=20 callback_rejected=1 callback_active=0", commits)
+		return
+	}
+	// S011 continues with the same durable SQLite/PG, three unchanged VS processes and addresses.
+	c2 := hlcStart(t, root, dsn, routing, public, internal)
+	ready := c2.ready
+	helpersReady := time.Now()
+	agents2 := make([]*hlcAgent, 20)
+	for i := range agents2 {
+		agents2[i] = hlcDialAgent(t, c2, i)
+		hlcPublish(t, agents2[i], i, fmt.Sprintf("hlc-after-%02d", i))
+	}
+	helpersReady = time.Now()
+	oldCursor := ""
+	for _, f := range streams[0].snapshot() {
+		if f.ID != "" {
+			oldCursor = f.ID
+		}
+	}
+	resumed := hlcOpenSSE(t, "http://"+internal+"/internal/view/"+hlcFull(0)+"/events?after="+oldCursor, "")
+	muxResumed := hlcOpenMux(t, c2, 0, map[string]string{hlcFull(0): oldCursor})
+	viewer2, _, err := websocket.Dial(ctx, "ws://"+public+"/ws/view/"+hlcFull(0), &websocket.DialOptions{HTTPHeader: http.Header{"Origin": []string{"http://" + public}, "Cookie": []string{httpapi.SessionCookie + "=" + hlcToken(0)}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer viewer2.CloseNow()
+
+	type wsObservation struct {
+		at      time.Time
+		payload string
+	}
+	wsFrames := make(chan wsObservation, 20)
+	go func() {
+		for {
+			_, p, e := viewer2.Read(ctx)
+			if e != nil {
+				return
+			}
+			wsFrames <- wsObservation{time.Now(), string(p)}
+		}
+	}()
+	hlcPublish(t, agents2[0], 0, "hlc-after-verify")
+	sseReady, muxReady, wsReady := time.Time{}, time.Time{}, time.Time{}
+	first := func(stream *hlcStream) time.Time {
+		for _, f := range stream.snapshot() {
+			if strings.Contains(f.Data, "hlc-after-verify") {
+				return f.At
+			}
+		}
+		return time.Time{}
+	}
+	for time.Now().Before(ready.Add(5 * time.Second)) {
+		sseReady, muxReady = first(resumed), first(muxResumed)
+		select {
+		case frame := <-wsFrames:
+			if strings.Contains(frame.payload, "hlc-after-verify") {
+				wsReady = frame.at
+			}
+		default:
+		}
+		if !sseReady.IsZero() && !muxReady.IsZero() && !wsReady.IsZero() {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	gap, muxGap, duplicates := 0, 0, 0
+	seen := map[string]bool{}
+	for _, f := range resumed.snapshot() {
+		if f.Event == "replay_gap" {
+			gap++
+		}
+		if f.ID != "" {
+			if seen[f.ID] {
+				duplicates++
+			}
+			seen[f.ID] = true
+		}
+	}
+	for _, f := range muxResumed.snapshot() {
+		var row map[string]any
+		json.Unmarshal([]byte(f.Data), &row)
+		if row["type"] == "gap" {
+			muxGap++
+		}
+	}
+	countIDs := func(stream *hlcStream, ids []string) (map[string]int, int, int) {
+		counts := map[string]int{}
+		for _, f := range stream.snapshot() {
+			var row map[string]any
+			json.Unmarshal([]byte(f.Data), &row)
+			if p, ok := row["payload"].(map[string]any); ok {
+				row = p
+			}
+			id, _ := row["delivery_id"].(string)
+			if id != "" {
+				counts[id]++
+			}
+		}
+		missing, dups := 0, 0
+		for _, id := range ids {
+			if counts[id] == 0 {
+				missing++
+			}
+			if counts[id] > 1 {
+				dups += counts[id] - 1
+			}
+		}
+		return counts, missing, dups
+	}
+	sseCounts, sseMissing, sseDups := countIDs(resumed, []string{"hlc-after-00", "hlc-after-verify"})
+	muxCounts, muxMissing, muxDups := countIDs(muxResumed, []string{"hlc-after-00", "hlc-after-01", "hlc-after-02", "hlc-after-03", "hlc-after-verify"})
+	elapsed := func(at time.Time) any {
+		if at.IsZero() {
+			return nil
+		}
+		return at.Sub(ready).Milliseconds()
+	}
+	result := map[string]any{"stop_utc": stopped.UTC(), "old_exit_utc": exited.UTC(), "new_listener_observed_utc": c2.connected.UTC(), "new_ready_utc": ready.UTC(), "helpers_ready_utc": helpersReady.UTC(),
+		"sse_ready_utc": sseReady.UTC(), "mux_ready_utc": muxReady.UTC(), "ws_ready_utc": wsReady.UTC(), "stop_to_ready_ms": ready.Sub(stopped).Milliseconds(), "helpers_from_ready_ms": helpersReady.Sub(ready).Milliseconds(),
+		"sse_from_ready_ms": elapsed(sseReady), "mux_from_ready_ms": elapsed(muxReady), "ws_from_ready_ms": elapsed(wsReady), "old_cursor": oldCursor, "sse_gap_count": gap, "mux_gap_count": muxGap,
+		"sse_duplicate_cursors": duplicates, "sse_id_counts": sseCounts, "sse_missing": sseMissing, "sse_duplicate_messages": sseDups, "mux_id_counts": muxCounts, "mux_missing": muxMissing, "mux_duplicate_messages": muxDups,
+		"sse_frames": resumed.snapshot(), "mux_frames": muxResumed.snapshot(), "automatic_reset_performed": false, "helper_count": 20}
+	b, _ = json.MarshalIndent(result, "", "  ")
+	os.WriteFile(filepath.Join(out, "S011-recovery.json"), b, 0644)
+	t.Logf("S011 recovery=%s", b)
+	if ready.Sub(stopped) > 20500*time.Millisecond || helpersReady.Sub(ready) > 5*time.Second || sseReady.IsZero() || muxReady.IsZero() || wsReady.IsZero() || gap == 0 || muxGap == 0 || duplicates+sseDups+muxDups+sseMissing+muxMissing != 0 {
+		t.Fatal("S011_RECOVERY_LIMIT_OR_GAP_OR_DUPLICATES: existing mux epoch_changed requires explicit resync; no automatic reset injected")
+	}
+	for _, s := range []*hlcStream{resumed, muxResumed} {
+		s.body.Close()
+	}
+	for _, a := range agents2 {
+		a.conn.CloseNow()
+	}
+	viewer2.CloseNow()
+	hlcStop(t, c2, out, "S011-new-cleanup")
+}

@@ -1,0 +1,26 @@
+{
+  "case": "S006",
+  "command": [
+    "go",
+    "test",
+    "-overlay",
+    "/tmp/hlc-matrix-ajwkny94/overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCLoadMatrix$",
+    "-count=1",
+    "-timeout=12m",
+    "-v"
+  ],
+  "started_utc": "2026-11-02T01:41:56.365381+00:00",
+  "ended_utc": "2026-11-02T01:42:04.379175+00:00",
+  "rc": 1,
+  "log": "S006-first.log",
+  "log_sha256": "2667a9d99accaf28408d21c5f9adcfc354adbfbea3ac3317535f6644720d8677",
+  "overlays": "Only fixture setup injection + test SDK transport; shutdown coordinator/handlers/queues unchanged",
+  "sources": {
+    "cmd/workpulse/main.go": "bb9b1c9c2e76a73294287c525153d6aede24964778af972d5a4955bd60cc1265",
+    "internal/feishu/lifecycle.go": "52c8bcbbee78cacb930e1e971c729dee897d9d41f18d747f1ffc294c88fc048e",
+    "cmd/workpulse/shutdown_load_test.go": "ddbc5e490eb7eb1eecc99ffdb380063b97bcf2bae2719e705daca29f351877b1"
+  }
+}

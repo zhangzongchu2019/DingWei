@@ -1,0 +1,455 @@
+{
+  "exit_utc": "2026-11-02T01:43:34.34712898Z",
+  "process_error": "\u003cnil\u003e",
+  "report": {
+    "shutdown_id": "hlc-1793583812177606537",
+    "reason": "terminated",
+    "started_utc": "2026-11-02T01:43:32.177606537Z",
+    "ended_utc": "2026-11-02T01:43:34.343088375Z",
+    "total_elapsed_ms": 2165,
+    "stages": [
+      {
+        "name": "access",
+        "started_utc": "2026-11-02T01:43:32.177613426Z",
+        "ended_utc": "2026-11-02T01:43:32.177666381Z",
+        "elapsed_ms": 0,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 1,
+            "outbound": 1
+          },
+          "durable_counts": null,
+          "feishu_ingress": {
+            "active_callbacks": 1,
+            "close_completed": false,
+            "rejected_after_seal": 0,
+            "sdk_start_not_joined": 1,
+            "sealed": false
+          },
+          "http_overlaps_streams": {
+            "internal_http": 165,
+            "public_http": 77
+          },
+          "hub": {
+            "background_owned": 62,
+            "internal_bridge": 15,
+            "internal_sse": 100,
+            "public_mux": 5,
+            "registration_internal_bridge": 0,
+            "registration_internal_sse": 0,
+            "registration_public_mux": 0,
+            "registration_session_ws": 0,
+            "registration_view_ws": 0,
+            "session_ws": 20,
+            "view_ws": 1
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 1
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {},
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "drain",
+        "started_utc": "2026-11-02T01:43:32.17767719Z",
+        "ended_utc": "2026-11-02T01:43:34.335556621Z",
+        "elapsed_ms": 2157,
+        "budget_ms": 8000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": null,
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 1,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "internal_bridge": 0,
+            "internal_sse": 0,
+            "public_mux": 0,
+            "registration_internal_bridge": 0,
+            "registration_internal_sse": 0,
+            "registration_public_mux": 0,
+            "registration_session_ws": 0,
+            "registration_view_ws": 0,
+            "session_ws": 0,
+            "view_ws": 0
+          },
+          "persistence": "unknown",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T01:43:34.26136318Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T01:43:32.177662972Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T01:43:34.335519914Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T01:43:32.177663272Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "queue",
+        "started_utc": "2026-11-02T01:43:34.335573799Z",
+        "ended_utc": "2026-11-02T01:43:34.335800817Z",
+        "elapsed_ms": 0,
+        "budget_ms": 3000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {
+            "message_queued": 1
+          },
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 1,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "internal_bridge": 0,
+            "internal_sse": 0,
+            "public_mux": 0,
+            "registration_internal_bridge": 0,
+            "registration_internal_sse": 0,
+            "registration_public_mux": 0,
+            "registration_session_ws": 0,
+            "registration_view_ws": 0,
+            "session_ws": 0,
+            "view_ws": 0
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T01:43:34.26136318Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T01:43:32.177662972Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T01:43:34.335519914Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T01:43:32.177663272Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "storage",
+        "started_utc": "2026-11-02T01:43:34.335808886Z",
+        "ended_utc": "2026-11-02T01:43:34.343049199Z",
+        "elapsed_ms": 7,
+        "budget_ms": 1000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {
+            "message_queued": 1
+          },
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 1,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "internal_bridge": 0,
+            "internal_sse": 0,
+            "public_mux": 0,
+            "registration_internal_bridge": 0,
+            "registration_internal_sse": 0,
+            "registration_public_mux": 0,
+            "registration_session_ws": 0,
+            "registration_view_ws": 0,
+            "session_ws": 0,
+            "view_ws": 0
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T01:43:34.26136318Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T01:43:32.177662972Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T01:43:34.335519914Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T01:43:32.177663272Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      },
+      {
+        "name": "finalize",
+        "started_utc": "2026-11-02T01:43:34.343070317Z",
+        "ended_utc": "2026-11-02T01:43:34.343077006Z",
+        "elapsed_ms": 0,
+        "budget_ms": 2000,
+        "timeout": false,
+        "forced_close": false,
+        "result": "completed",
+        "error": "nil",
+        "snapshot": {
+          "consumers": {
+            "inbound": 0,
+            "outbound": 0
+          },
+          "durable_counts": {
+            "message_queued": 1
+          },
+          "feishu_ingress": {
+            "active_callbacks": 0,
+            "close_completed": true,
+            "rejected_after_seal": 1,
+            "sdk_start_not_joined": 1,
+            "sealed": true
+          },
+          "http_overlaps_streams": {
+            "internal_http": 0,
+            "public_http": 0
+          },
+          "hub": {
+            "background_owned": 0,
+            "internal_bridge": 0,
+            "internal_sse": 0,
+            "public_mux": 0,
+            "registration_internal_bridge": 0,
+            "registration_internal_sse": 0,
+            "registration_public_mux": 0,
+            "registration_session_ws": 0,
+            "registration_view_ws": 0,
+            "session_ws": 0,
+            "view_ws": 0
+          },
+          "persistence": "snapshot_captured",
+          "producers": {
+            "cron_reload": 0,
+            "receiver": 0,
+            "reminders": 0
+          },
+          "queue": {
+            "inbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            },
+            "outbound": {
+              "error": "nil",
+              "failed": 0,
+              "first_error": "nil",
+              "remaining": 0
+            }
+          },
+          "servers": {
+            "internal": {
+              "drained_utc": "2026-11-02T01:43:34.26136318Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T01:43:32.177662972Z"
+            },
+            "public": {
+              "drained_utc": "2026-11-02T01:43:34.335519914Z",
+              "error": "nil",
+              "listener_closed_utc": "2026-11-02T01:43:32.177663272Z"
+            }
+          },
+          "watchdog_enabled": false,
+          "watchdog_window_ms": 0
+        }
+      }
+    ],
+    "exit_class": "graceful",
+    "exit_code": 0,
+    "snapshot": {
+      "consumers": {
+        "inbound": 0,
+        "outbound": 0
+      },
+      "durable_counts": {
+        "message_queued": 1
+      },
+      "feishu_ingress": {
+        "active_callbacks": 0,
+        "close_completed": true,
+        "rejected_after_seal": 1,
+        "sdk_start_not_joined": 1,
+        "sealed": true
+      },
+      "http_overlaps_streams": {
+        "internal_http": 0,
+        "public_http": 0
+      },
+      "hub": {
+        "background_owned": 0,
+        "internal_bridge": 0,
+        "internal_sse": 0,
+        "public_mux": 0,
+        "registration_internal_bridge": 0,
+        "registration_internal_sse": 0,
+        "registration_public_mux": 0,
+        "registration_session_ws": 0,
+        "registration_view_ws": 0,
+        "session_ws": 0,
+        "view_ws": 0
+      },
+      "persistence": "snapshot_captured",
+      "producers": {
+        "cron_reload": 0,
+        "receiver": 0,
+        "reminders": 0
+      },
+      "queue": {
+        "inbound": {
+          "error": "nil",
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        },
+        "outbound": {
+          "error": "nil",
+          "failed": 0,
+          "first_error": "nil",
+          "remaining": 0
+        }
+      },
+      "servers": {
+        "internal": {
+          "drained_utc": "2026-11-02T01:43:34.26136318Z",
+          "error": "nil",
+          "listener_closed_utc": "2026-11-02T01:43:32.177662972Z"
+        },
+        "public": {
+          "drained_utc": "2026-11-02T01:43:34.335519914Z",
+          "error": "nil",
+          "listener_closed_utc": "2026-11-02T01:43:32.177663272Z"
+        }
+      },
+      "watchdog_enabled": false,
+      "watchdog_window_ms": 0
+    }
+  },
+  "signal_utc": "2026-11-02T01:43:32.177567721Z",
+  "stop_ms": 2169
+}

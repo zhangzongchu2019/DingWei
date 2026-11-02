@@ -94,3 +94,8 @@ strict规划通过不代表实现/业务验收/发布完成；不archive、不�
 - 2026-11-02T00:16:24.111519+00:00 · coder56solzzc.zzc · SDK本轮门完成，中途源锚拟追加；不是整单交件。
   - 完成：本轮run-build-tests rc0，00:06:09.412389Z～00:14:57.970021Z，helper各1097、Python27／shell2；最终main目标race rc0，含SDK8秒超时分类2／DB不关闭、当前实际Hub fake S001退出0／1227ms／listener差20us及S008。全仓strict rc0、9需求13场景；SDK回调扩展50轮及明确默认skip/独立SDK进程读数均见docs/reviews/hlc-sdk-ingress。
   - 阻塞／下一步：主规格基线和完整HLC矩阵/全量50轮/恢复/独立复核仍未完成，不依据本轮局部格勾选T-04～11；保存实施中途Git锚后继续原单，不把中途锚请作验收或上线。
+
+- 2026-11-02T01:48Z · coder56solzzc.zzc · S006／S011首轮，起点ee7be94d；本段为待追加中途锚，不是交件。
+  - 完成：隔离真实Hub装配/临时PG及3个Python VS负载夹具已运行；S006 100HTTP/100SSE/5mux+15bridge/20会话WS/飞书回调完整首轮rc0，停2131ms退出0、阶段0/2119/0/7/0ms、持久HTTP100、迟到DB0/拒绝1、所有业务owned计数0。S011首轮rc1，补齐时间点后仍红：stop→READY2202ms、20helper36ms、SSE/WS46ms；mux明确epoch_changed gap后5秒缺失2、重复0，未自动reset凑绿。证据docs/reviews/hlc-process-first/REPORT.md。
+  - 阻塞：新增S011与现有mux显式resync协议的口径疑点已报组长dw-dlv_30213f93175447ed7db62ae303ac584e；其它验证可继续，不阻塞S006随机50轮。
+  - 下一步：S006混合随机50/race已起，随后其余反向控制→PG严格相关整包→仓库门，暂估04:30Z须据S011裁定/实测校准；不据局部读数勾选总项、不提前执行预告任务。
