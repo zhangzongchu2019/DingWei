@@ -32,3 +32,7 @@
   - 下一步：普通push到opus50tc2k/openspec-r14-feishu-sticky，核远端tip/tree后冻结交独立审阅；收到业主PM裁定后另派规格回写/实现，不自行继续。
 
 - 2026-11-02 · togpt60lunazzc.zzc · PM WRITEBACK：依据 rulings 2f9ddaf0 第㉔～㉗条完成PM01～08回写、短名唯一性现状勘察和 R14-S021～023；㉗要求的双入口提交前查重仍是待另派实现的 T-10。文档提交 `81bf46d4e9edd7a0c9d4a195da04818a5d1b98c7`；strict 已通过。下一步：提交交接记录，复跑 strict，推送并核对远端 tip/tree；不实现、不apply、不操作环境。
+
+- 2026-11-02T11:28:10Z · togpt60lunazzc.zzc · S-R49-R14-T04 设计冻结文档提交 `88b26b427027f21964169b46add4df3e8caf1ae9`，基于 r48 `1e17255f28ced042784337903914ca8c126ef4cf` 并普通 merge PM 回写 `cd238d715ad33e51f001f874a9963aaa96aa85f3`。
+  - 完成：按 r48 文件:行补稳定身份、时钟/代际、并发序列、投递故障对账、SQLite 0072 迁移草案、短名双入口前置查重及 S001～023 测试层/变异矩阵；待组长定事项单列。仅 T-04 勾选，T-05 以后状态未改。全仓 OpenSpec strict 15/15 rc0；diff-check通过，提交范围仅本变更目录。
+  - 边界：没有产品代码、数据库迁移、真实飞书探测或产品场景执行；该设计提交待组长审阅，T-05/T-06/T-07/T-08/T-10未授权执行。
