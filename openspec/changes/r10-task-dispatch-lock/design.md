@@ -21,7 +21,7 @@
 
 提取任务采用受限Markdown子集：只接受代码块/缩进代码/HTML外的复选列表任务，开头有唯一T-xx（至少两位数字）、后有非空任务描述；保留原checkbox作为读取事实。重复编号、歧义HTML/未闭合代码块、截断、非法编码或超限必须拒绝整个派单，不能挑第一条。已完成任务默认不新派，重新打开需先改仓库规格，不由平台把勾取消。正文留仓库/既有R5呈现，不复制到锁或通知；平台保留tasks blob/hash、任务位置和适用版本等元数据。
 
-派单人需平台可信派单资格及当前仓库read，受派者需有认证Agent主体和当前仓库read；锁变更、历史读取、通知交付及提交边界重新核当前权限。Agent身份只能由现有Bearer认证得到稳定 `np_agent.id`，再从Identity PG当前active Agent行取 `owner_lc`，映射到同值的 `np_user.user_id_lc` 作为R5 Service.Read的授权principal；不得使用浏览器传入的owner/actor，也不得用历史 `console_principal.id`。每次调用都重读active状态与属主并通过R5现有GitHub绑定/ACL重核，失败关闭。这个映射实际复用Agent所属用户的R5仓库授权，不是独立Agent GitHub身份或独立collaborator权限。是否满足“受派者独立read”而允许所有者授权委托给其Agent，须组长确认；确认前不得实现越权回退。证据：`internal/identity/model.go:135-155`；`internal/identity/pgschema.sql:45-65`；Agent Bearer主体：`internal/m8/console_task_flow.go:44-59,114-181`；R5按principal授权：`internal/specread/permission.go:8-36`；Console principal来源：`internal/m8/newplat_view.go:223-244`。
+派单人需平台可信派单资格及当前仓库read。首期受派者采用属主委托：认证Bearer解析稳定 `np_agent.id`，再从Identity PG读取当前Agent行及 `owner_lc`，以该属主的R5绑定和授权读取；每次读取重新核验属主active、R5绑定有效、Agent自身active且owner未变，任一不成立即拒绝（fail closed）。审计同时记录 `agent_id` 与 `owner_lc`。不得使用浏览器传入的owner/actor，也不得用历史 `console_principal.id`。这不是Agent独立GitHub身份；独立GitHub身份不在首期，列后续。锁变更、历史读取、通知交付及提交边界仍须重新核当前权限。证据：`internal/identity/model.go:135-155`；`internal/identity/pgschema.sql:45-65`；Agent Bearer主体：`internal/m8/console_task_flow.go:44-59,114-181`；R5按principal授权：`internal/specread/permission.go:8-36`；Console principal来源：`internal/m8/newplat_view.go:223-244`。
 
 ### 2. 互斥键、事务与代际（R10-003、009）
 
@@ -35,14 +35,14 @@
 
 | 表 | 字段与约束草案 |
 |---|---|
-| `r10_task_lock` | K字段 `provider, instance, repository_id, change_directory, task_id` 联合主键（不含ref/branch/commit）；`state` (`active/released/expired/handed_off`)、`generation INTEGER`、随机不可预测 `lease_token`、`holder_agent_id`、`holder_user_id_lc`、`assigned_by_user_id_lc`、固定 `commit_sha`、`tasks_blob_sha`、task定位、`granted_at_utc`、`expires_at_utc`、`last_renewed_at_utc`、`updated_at_utc`。K主键保证同仓同变更同任务只有一条当前锁行；只要条件写操作正确，任一时刻最多一把有效锁。`lease_token` UNIQUE，不能只靠状态扫描后的普通INSERT。 |
+| `r10_task_lock` | K字段 `provider, instance, repository_id, change_directory, task_id` 联合主键（不含ref/branch/commit）；`state` (`active/released/expired/handed_off`)、`generation INTEGER`、随机不可预测 `lease_token`、`holder_agent_id`、`holder_owner_lc`、`assigned_by_user_id_lc`、固定 `commit_sha`、`tasks_blob_sha`、task定位、`granted_at_utc`、`expires_at_utc`、`last_renewed_at_utc`、`updated_at_utc`。K主键保证同仓同变更同任务只有一条当前锁行；只要条件写操作正确，任一时刻最多一把有效锁。`lease_token` UNIQUE，不能只靠状态扫描后的普通INSERT。 |
 | `r10_task_lock_operation` | `operation_id TEXT PRIMARY KEY`、K、操作种类、期望/结果代际、请求主体、结果状态、创建/完成时刻和结果摘要；相同重试可回原结果，operation ID不可复用不同请求。 |
-| `r10_task_lock_event` | append-only事件ID、K、generation、事件类型、操作者/holder稳定ID、服务端UTC、必要坐标/引用；不得记录任务正文、凭据或访问令牌。用于审计和争用诊断。 |
+| `r10_task_lock_event` | append-only事件ID、K、generation、事件类型、操作者/holder稳定ID（受派操作同时记 `agent_id` 与 `owner_lc`）、服务端UTC、必要坐标/引用；不得记录任务正文、凭据或访问令牌。用于审计和争用诊断。 |
 | `r10_task_lock_outbox` | `id TEXT PRIMARY KEY`、operation_id、K、generation、recipient Agent ID、事件类型、投递状态/回执ID、创建/结束时刻；UNIQUE `(K,generation,event_type,recipient)` 防重复授予通知。与锁授予同事务创建。 |
 
 授予、续租、过期回收和显式交接都在一个SQLite事务中完成。授予对不存在K用INSERT并由主键仲裁；已有行只允许在状态非active或 `expires_at_utc <= now_utc` 时以K+期望代际+到期条件更新，generation加一并换token。续租需同时匹配K、active状态、holder、generation、旧token及 `expires_at_utc>now`，到期时间设为 `now+60m`；其余行数不是1就冲突。回收用K+代际/token+到期条件把旧行改expired，不授给任何人。显式交接验证旧holder或明确获权负责人、双方主体及固定交接记录后，在同一事务CAS旧行并签发新代际、新token、新holder。所有事务同时写operation/event/outbox；任一步失败整体回滚。50并发正确性不得依赖ticker，唯一主键/CAS为最终仲裁。
 
-权威时刻使用Hub的 `h.now().UTC()`；这是当前进程墙钟和测试注入点，不是DB时钟。事务中一次取样；UTC早于已记录授予/续租时刻视为时钟回拨并拒绝授予/续租/回收成功，记录 `clock_invalid` 供人工处理，不使用容差。重启后按绝对 `expires_at_utc` 判过期，不续期；不把ticker视为权威状态。单实例文件/跨进程协调不是A03已证事实，若生产允许多个Hub写同一锁库，须另定部署与SQLite共享文件可用性；不得据单连接池推出跨主机互斥。
+权威时刻使用Hub的 `h.now().UTC()`；这是当前进程墙钟和测试注入点，不是DB时钟。事务中一次取样；UTC早于已记录授予/续租时刻视为时钟回拨并拒绝授予/续租/回收成功，记录 `clock_invalid` 供人工处理，不使用容差。重启后按绝对 `expires_at_utc` 判过期，不续期；不把ticker视为权威状态。已定（组长 2026-11-02）：每个环境只有一个Hub进程写一个SQLite文件，R10以此为锁权威不变量，不做跨Hub协调；T-09不测多Hub。若部署无法保持该不变量，先停止R10写入并另行重新设计，不能假设跨主机互斥。
 
 证据：SQLite `WAL`、`busy_timeout`、单连接池为 `internal/store/sqlite.go:57-66`；旧任务flow `BeginTx(ctx,nil)` 为 `internal/store/console_task_flow.go:98-114,250-261`；现有Hub UTC时钟注入为 `internal/m8/console_auth.go:53-58` 与调用方传 `at` 为 `internal/m8/console_task_flow.go:208-212`。
 
@@ -103,7 +103,7 @@ R10-PM03已按㉒定每60秒检查、发现后5秒内提醒；保留既有R5一�
 
 ## Open Questions
 
-见proposal已定表：PM01～04均由㉒批准，无编号不匹配。R10-A01～04已完成基线事实盘点，细节与文件:行见context.md。首期建议仅启用现有GitHub只读provider；工蜂provider后续。待组长定：`np_agent.owner_lc`到R5主体的所有者委托是否满足受派者“独立read”；当前部署是否保证单一Hub/单一SQLite锁权威，或要另行定义跨进程锁服务。GitHub只读PR元数据接口需新增；网络/权限/限流失败只能标comparison_unknown，绝不能当无漂移。
+见proposal已定表：PM01～04均由㉒批准，无编号不匹配。R10-A01～04已完成基线事实盘点，细节与文件:行见context.md。首期仅启用现有GitHub只读provider；工蜂provider列后续。已定（组长 2026-11-02）：R5读取按Agent属主委托并逐次核验属主/绑定/Agent状态；Agent独立GitHub身份列后续。已定（组长 2026-11-02）：单环境单Hub进程写单一SQLite文件为权威，不做跨Hub协调，T-09不测多Hub。GitHub只读PR元数据接口需新增；网络/权限/限流失败只能标comparison_unknown，绝不能当无漂移。
 
 ## 基线技术前置核实（r48 `1e17255f28ced042784337903914ca8c126ef4cf`）
 

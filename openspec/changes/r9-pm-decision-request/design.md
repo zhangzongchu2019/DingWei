@@ -21,7 +21,7 @@
 
 身份对应链为：Console登录session → `identity.User.UserIDLC()`/`np_user.user_id_lc`；飞书回复则用 `(provider='feishu',issuer=BotChannelID,subject=SenderOpenID)` 解析 `np_identity.user_id_lc`，必须等于请求快照 `pm_user_id_lc` 且用户active。全局PM角色不存在；“PM”角色来自R9责任映射中的每point指派，不是新用户类型。现有 `spec_clarification_policy.pm_user` 是Console Spec澄清策略，不自动成为OpenSpec R9的映射来源。提案解析仍必须完整，代码块/HTML伪点不算；重复编号、缺必填、读取截断或未知集合阻止“全部已答/零项”判断。无点必须是完整读取且明确空集合，不从网络失败推零。
 
-基线没有R9按GitHub仓库/变更/PM点存储的责任映射表。因此0074草案包含 `r9_pm_responsibility`，只作为可信指派的规范化存储；谁有权创建/修改此映射、初次值从何处权威导入，列为「待组长定」。未定前不可把Git作者、Owner或Console Manager自动设成PM。证据：`internal/m8/newplat_view.go:223-244`；`internal/m8/newplat_feishu_inbound.go:12-18`；`internal/identity/pgschema.sql:6-25`；现有逐Spec澄清PM字段 `internal/store/migrations/0061_spec_clarification_thread.sql:3-14`；旧principal独立表 `internal/store/migrations/0033_console_auth.sql:1-18`。
+基线没有R9按GitHub仓库/变更/PM点存储的责任映射表。因此0074新增 `r9_pm_responsibility` 为唯一权威来源，初始为空。已定（组长 2026-11-02）：仅active platform_admin可通过新增管理员接口设置或删除映射；复用 `RequireConsolePlatformAdmin`，按主键单条查、改、删，写操作记审计；不从Git作者、Owner、Console Manager或Spec绑定自动导入。建议接口为 `/api/console/openspec-pm-responsibility`，按 `(provider,instance,repository_id,change_directory,point_id)` 单条GET、PUT、DELETE，不提供全量列表；每个请求要求Console登录，写操作要求同源并使用JSON，与既有绑定管理接口模式一致。PUT校验目标 `np_user.user_id_lc` 当前active；DELETE写入未配置墓碑，不删除代际。每次set/delete在一个事务内锁定主键、令 `mapping_generation` 加1、追加 `r9_pm_audit` 的操作者 `set_by_user_id_lc` 与UTC时刻；并将该point所有在途旧代际请求标记superseded。设置新PM后，由正常R9请求生成流程按新映射创建新代际；删除或未配置时不发请求，状态明确显示「未配置 PM」，变更停在SPEC_REVIEW，不自动挑人。管理员API权限格必须覆盖active platform_admin允许、manager/member拒绝、未登录401/跳转，并对移除管理员guard、允许非管理员写入的变异判红。已定（组长 2026-11-02）：首期仅接口，不做管理页面，页面另立项。该接口不改变飞书私聊身份链；在途旧PM回复因request/mapping generation过期只记late。证据：`internal/m8/newplat_view.go:223-244`；`internal/m8/newplat_feishu_inbound.go:12-18`；`internal/identity/pgschema.sql:6-25`；现有逐Spec澄清PM字段 `internal/store/migrations/0061_spec_clarification_thread.sql:3-14`；旧principal独立表 `internal/store/migrations/0033_console_auth.sql:1-18`。
 
 请求逻辑身份为提供方/实例/稳定仓库ID/变更目录/C/point_id/generation，另保留MR稳定ID及固定C来源链接、负责PM、内容指纹（问题、选项、建议和负责PM的规范结构）。平台保存必要决策摘要和回应，不复制整个仓库文档/源码为上下文。请求代际只代表该点/版本的问答轮次，不是R8阶段。ref仅选版与监测，不代替完整C。
 
@@ -79,14 +79,14 @@ R9-PM01已按rulings㉒选择原A：首期只在平台记录业主回应，标mr
 
 | 表 | 责任/字段及唯一约束 |
 |---|---|
-| `r9_pm_responsibility` | 可信PM映射：`provider,instance,repository_id,change_directory,point_id` 联合主键；`pm_user_id_lc`、`mapping_generation`、`set_by_user_id_lc`、`updated_at_utc`。仅当来源明确的可信配置动作授权后写；写权限来源目前不存在，列待组长定。值必须是Identity PG active `np_user.user_id_lc`。 |
+| `r9_pm_responsibility` | 权威PM映射：`provider,instance,repository_id,change_directory,point_id` 联合主键；可空 `pm_user_id_lc`、单调 `mapping_generation`、`set_by_user_id_lc`、`updated_at_utc`、`deleted_at_utc`。删除保留未配置墓碑以免代际归零；值只能是Identity PG active `np_user.user_id_lc`。仅active platform_admin经复用 `RequireConsolePlatformAdmin` 的单条管理接口写入。 |
 | `r9_pm_request` | `request_id PRIMARY KEY`、固定仓库/变更/C/point、规范内容SHA、PM `pm_user_id_lc`和mapping generation快照、request generation、status (`open/answered/timed_out/superseded/cancelled/unknown`)、首次请求/24h截止/下次提醒/回应时间、版本号。UNIQUE `(provider,instance,repository_id,change_directory,commit_sha,point_id,content_sha256,pm_user_id_lc,generation)`；唯一活动请求由事务检查，不因新建operation绕过。只保存必要决策摘要，不存整个proposal或源码。 |
 | `r9_pm_response` | append-only response ID、request/generation、principal、channel、enum意见、附言/证据引用、server received sequence/UTC、Feishu issuer/tenant/message ID或Console request ID、acceptance/late状态；UNIQUE `(issuer,tenant,message_id)`并UNIQUE `(request_id,generation,accepted_slot)`使当前代际只有首个有效回应获权，其余追加late。附言限长并拒绝凭据字段。 |
 | `r9_pm_delivery` | 每个Console/Feishu投递/提醒一个outbox行：`operation_id`、request/generation/channel/kind/period_index、recipient identity、state、provider message ID、attempt/receipt times、reason；UNIQUE `(request_id,generation,channel,kind,period_index)`。有效回应关闭尚未发送的另一渠道行并停止后续周期；已送达消息不声称可撤回。 |
 | `r9_pm_inbound_key` | Feishu native事件去重键 `(issuer,tenant,key_kind,event_or_message_id)`主键、payload SHA、request/generation、received time/处理状态；同ID异内容冲突隔离。Console command在delivery/request表用稳定 `operation_id` 幂等。 |
-| `r9_pm_audit` | append-only身份、请求坐标、generation、动作、UTC及结果；不记凭据或完整proposal。 |
+| `r9_pm_audit` | append-only身份、请求坐标、mapping/request generation、set/delete动作、操作者 `set_by_user_id_lc`、UTC及结果；不记凭据或完整proposal。 |
 
-首发创建request、Console待办和私聊outbox须同一SQLite事务；每个发送用持久operation_id，回执未知保留unknown并用同ID查证，不更换ID盲重发。PM回应落库、第一有效回应CAS、关闭对侧待办、停止提醒在一个事务完成。源事件message_id/event_id至少保留24小时的去重tombstone；设计建议保留至请求审计清理期结束，不能因24小时后到期删除而允许旧消息重放。语义级重复请求采用稳定dedupe SHA `(repo/change/C/point/contentSHA/pm_user)`：有open请求时永远返回该请求；终态后24小时内重试返回原结果；24小时后仅由新的明确操作创建下一代。内容/PM变更生成新generation，不复用旧回应。
+责任映射管理接口只提供按复合主键的单条GET/PUT/DELETE，不提供全量列表；每次set/delete在一个SQLite事务内CAS递增mapping_generation、写审计并使旧映射代际的在途请求superseded。初始映射为空；缺映射时可见「未配置 PM」且停在SPEC_REVIEW，不自动挑选。首期不做管理页面。首发创建request、Console待办和私聊outbox须同一SQLite事务；每个发送用持久operation_id，回执未知保留unknown并用同ID查证，不更换ID盲重发。PM回应落库、第一有效回应CAS、关闭对侧待办、停止提醒在一个事务完成。源事件message_id/event_id至少保留24小时的去重tombstone；设计建议保留至请求审计清理期结束，不能因24小时后到期删除而允许旧消息重放。语义级重复请求采用稳定dedupe SHA `(repo/change/C/point/contentSHA/pm_user)`：有open请求时永远返回该请求；终态后24小时内重试返回原结果；24小时后仅由新的明确操作创建下一代。内容/PM变更生成新generation，不复用旧回应。
 
 Hub当前任务周期器每5秒唤醒且重启后从持久outbox继续扫描；R9采用独立持久due字段而非在内存维护deadline。R9 scheduler每60秒扫描 `status IN ('open','timed_out') AND next_reminder_at_utc<=now_utc`，用Hub UTC作为唯一时钟。首次请求时持久写 `due_at=created_at+24h`、`next_reminder=due_at`；首轮到期仍无有效回应时标记 `timed_out`并保持等待状态，生成period 0提醒；此后每6小时更新下次到期并按 `period_index`插入双渠道提醒，唯一约束防重复。重启从due字段续跑；宕机跨过多个周期时只建当前到期slot，不回补多条提醒洪水，保留明确missed_periods统计。成功或待对账回应后不再产生新slot；未知投递状态保留并单路对账，不新造逻辑请求。每个请求、channel、generation、reminder period只一条业务outbox。
 
@@ -106,7 +106,7 @@ Hub当前任务周期器每5秒唤醒且重启后从持久outbox继续扫描；R
 | R9-006-S01/S02 超时催办 | Fake clock＋scheduler/outbox重启集成 | 24小时无明确答复仍SPEC_REVIEW，后每6小时每渠道至多一催办 | 沉默/含糊/投递失败不默认同意；撤阻塞/slot唯一约束必须红 |
 | R9-007-S01/S02 写回权限 | 平台store集成＋隔离只读provider | A只平台且MR后置；不请求或模拟写入（B仍属后置） | 只读/失权/未知不得伪称MR成功，A明确显示未完成；撤阶段标识必须红 |
 | R9-008-S01/S02 重启与重复 | SQLite恢复＋inbound/outbox并发race，50轮 | 相同事件/operation/周期重试只一事实，重启已答仍关闭 | 丢回执不换ID重发、已关闭不重开；撤持久去重必须红 |
-| R9-009-S01/S02 审计与ACL | SQLite审计＋HTTP/Feishu authority集成 | 指定PM/渠道/C/时刻/意见与失效历史可核 | 撤仓库read后Console/私聊旧关联拒绝；撤当前ACL或把作者当PM必须红 |
+| R9-009-S01/S02 审计、ACL与责任映射管理 | SQLite审计＋管理员HTTP权限＋Feishu authority集成 | active platform_admin可按主键查/设/删，set/delete递增generation、留审计；指定PM/渠道/C/时刻/意见与失效历史可核 | manager/member及未登录不得读写（401/跳转或403）；撤管理员guard的变异须红；撤仓库read后Console/私聊旧关联拒绝，把作者当PM必须红 |
 
 矩阵中的“A未批”仅是隔离撤除批准守卫的反向格，B评论/回执格只保留后置边界验证；不表示本次A仍待批，也不授权首期申请写权限或真实评论。
 
@@ -119,11 +119,11 @@ Hub当前任务周期器每5秒唤醒且重启后从持久outbox继续扫描；R
 
 ## Migration Plan
 
-先严格校验并冻结R9独立交审，迁移草案0074仅新建R9表和索引；PM01～03已按㉒定值。由组长先定责任映射的权威配置者/来源，再另派实现。实现后同步context及逐格证据/反向读数、race/50轮和仓库门，交独立验收。真实私聊闭环、评论写入、预发/生产均另授权；本提案不发送实际PM请求、不补scope、不部署、不archive/apply。
+先严格校验并冻结R9独立交审，迁移草案0074仅新建R9表和索引；PM01～03已按㉒定值。责任映射由0074表作为唯一权威来源，首期由active platform_admin经管理员接口维护；页面不在首期。实现后同步context及逐格证据/反向读数、race/50轮和仓库门，交独立验收。真实私聊闭环、评论写入、预发/生产均另授权；本提案不发送实际PM请求、不补scope、不部署、不archive/apply。
 
 ## Open Questions
 
-见proposal；PM01～03已定，无编号不匹配；首期MR写回后置，不新申请写权限。R9-B01～03已完成基线事实盘点，细节与文件:行见context.md：Feishu身份与新平台用户有存储映射、每Spec PM绑定及可信私聊澄清回复校验存在，但没有全局PM角色；既有可靠outbox/事件去重仅覆盖已有流程，提醒周期不同且没有R9决策请求的专属闭环。待组长定：R9 responsibility mapping初始可信来源、维护角色与变更授权；在裁定前缺失/多值PM映射一律拒绝建请求。全仓strict只是结构可校验，不能宣称真实双渠道闭环已完成。
+见proposal；PM01～03已定，无编号不匹配；首期MR写回后置，不新申请写权限。R9-B01～03已完成基线事实盘点，细节与文件:行见context.md：Feishu身份与新平台用户有存储映射、每Spec PM绑定及可信私聊澄清回复校验存在，但没有全局PM角色；既有可靠outbox/事件去重仅覆盖已有流程，提醒周期不同且没有R9决策请求的专属闭环。已定（组长 2026-11-02）：R9 responsibility mapping初始为空，由active platform_admin经受保护的单条管理员接口维护；不导入Git作者、Owner、Console Manager或Spec绑定。映射缺失时显示「未配置 PM」、不发请求并停在SPEC_REVIEW；修改递增mapping_generation并使旧在途代际失效。首期仅接口，不做页面。全仓strict只是结构可校验，不能宣称真实双渠道闭环已完成。
 
 ## 基线技术前置核实（r48 `1e17255f28ced042784337903914ca8c126ef4cf`）
 
