@@ -18,6 +18,32 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
+const sessionHistoryPerfBudget = 10 * time.Millisecond
+const sessionHistoryPerfTimerCoverageFloor = time.Millisecond
+
+func sessionHistoryPerfOverBudget(additional time.Duration) bool {
+	return additional > sessionHistoryPerfBudget
+}
+
+func sessionHistoryPerfTimerMissedPersistence(enabledP99 time.Duration) bool {
+	return enabledP99 < sessionHistoryPerfTimerCoverageFloor
+}
+
+func TestSessionHistoryPerformanceGuardsAreLive(t *testing.T) {
+	if sessionHistoryPerfOverBudget(sessionHistoryPerfBudget) {
+		t.Fatal("exact performance budget must pass")
+	}
+	if !sessionHistoryPerfOverBudget(sessionHistoryPerfBudget + time.Nanosecond) {
+		t.Fatal("over-budget performance sample was not rejected")
+	}
+	if sessionHistoryPerfTimerMissedPersistence(sessionHistoryPerfTimerCoverageFloor) {
+		t.Fatal("timer coverage floor boundary must pass")
+	}
+	if !sessionHistoryPerfTimerMissedPersistence(0) {
+		t.Fatal("timer that excludes the durable write was not rejected")
+	}
+}
+
 func TestSessionHistoryDisabledPageHasStableResponse(t *testing.T) {
 	h := New(nil, ConsoleAuthMode{})
 	w := httptest.NewRecorder()
@@ -221,6 +247,67 @@ func TestSessionHistoryEnabledPersistsBeforePublishingCursor(t *testing.T) {
 	}
 }
 
+func TestSessionHistoryConcurrentGroupCursorMatchesLiveEvents(t *testing.T) {
+	history, err := store.OpenSessionHistory(filepath.Join(t.TempDir(), "history.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer history.Close()
+	if err := history.SetEnabled(context.Background(), true, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	h := New(nil, ConsoleAuthMode{})
+	h.SessionHistory, h.SessionHistoryEnabled = history, true
+	const count = 20
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	for i := 0; i < count; i++ {
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			c := &sessionClient{keyID: "key", ownerKey: "owner", sessionName: "work", metricsAgentID: "agent"}
+			if !h.handleSessionEventEnvelopeContext(context.Background(), c, model.Envelope{ID: fmt.Sprintf("live-%02d", i), Body: `{"kind":"assistant_text"}`, Meta: map[string]any{"type": terminalSessionEventType}}) {
+				t.Errorf("event %d rejected", i)
+			}
+		}()
+	}
+	close(start)
+	wg.Wait()
+	page, err := history.Page(context.Background(), "owner", "agent", "work", "", nil)
+	if err != nil || len(page.Events) != count {
+		t.Fatalf("history count=%d err=%v", len(page.Events), err)
+	}
+	stored := make(map[string]store.SessionHistoryCursor, count)
+	for _, event := range page.Events {
+		stored[event.EventID] = event.Cursor
+	}
+	h.mu.Lock()
+	state := h.terminals[terminalKey("key", "work")]
+	live := append([]string(nil), state.eventRing...)
+	h.mu.Unlock()
+	if len(live) != count {
+		t.Fatalf("live event count=%d", len(live))
+	}
+	for _, raw := range live {
+		var event struct {
+			History struct {
+				Generation string `json:"generation"`
+				Seq        int64  `json:"seq"`
+				EventID    string `json:"event_id"`
+			} `json:"_history"`
+		}
+		if err := json.Unmarshal([]byte(raw), &event); err != nil {
+			t.Fatal(err)
+		}
+		cursor, ok := stored[event.History.EventID]
+		if !ok || cursor.Generation != event.History.Generation || cursor.Seq != event.History.Seq {
+			t.Errorf("live cursor differs from committed row: live=%+v stored=%+v exists=%t", event.History, cursor, ok)
+		}
+	}
+}
+
 func TestSessionHistoryTwentyAgentPublishP99(t *testing.T) {
 	if os.Getenv("DW_SESSION_HISTORY_PERF") != "1" {
 		t.Skip("set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate")
@@ -268,8 +355,11 @@ func TestSessionHistoryTwentyAgentPublishP99(t *testing.T) {
 	}
 	baselineP99, enabledP99, additionalP99 := percentile(baseline), percentile(enabled), percentile(pairedAdded)
 	t.Logf("agents=%d pushes_per_agent=%d total=%d baseline_p99=%s enabled_p99=%s paired_additional_p99=%s threshold=%s", agents, pushes, len(baseline), baselineP99, enabledP99, additionalP99, 10*time.Millisecond)
-	if additionalP99 > 10*time.Millisecond {
-		t.Errorf("session history publish-path overhead p99 %s exceeds %s threshold", additionalP99, 10*time.Millisecond)
+	if sessionHistoryPerfTimerMissedPersistence(enabledP99) {
+		t.Errorf("enabled p99 %s is too small to include the synchronous durable append in the timed publish path", enabledP99)
+	}
+	if sessionHistoryPerfOverBudget(additionalP99) {
+		t.Errorf("session history publish-path overhead p99 %s exceeds %s threshold", additionalP99, sessionHistoryPerfBudget)
 	}
 }
 

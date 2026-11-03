@@ -22,6 +22,13 @@
 
 ## 已知差异与边界
 
+## 本次性能优化实现位置（2026-11-03）
+
+- `internal/store/session_history.go`：Append 专用写协程和同步有界组提交；最多 32 条、最多收集 2ms，等待队列容量 32。每个 Append 在包含其持久 cursor 的事务提交后返回；关闭时排空写队列。组事务失败回滚并按单事件事务重试，隔离无关事件写入错误。
+- `internal/store/session_history_test.go`：20 个并发 Agent 的组提交 cursor/落库一致性用例。
+- `internal/m8/session_history_test.go`：隔离 20 Agent × 25 push 发布路径 paired p99 门；Append 仍在计时的 `handleSessionEventEnvelopeContext` 内发生，事务提交完成后事件才进入 ring/live 发布路径。
+- 新增优化未引入表结构、公开接口或配置项；WAL、`synchronous(NORMAL)`、10ms SLO、失败时 live 发布和持久游标语义保持冻结值。
+
 - eventRing 条目是结构化事件帧，不是用户/Agent 往返回合；持久表不得按回合数计量。
 - `session_delivery` 与 `message` 不可由行数推导完整 Agent 会话历史；本设计不回填。
 - r48 mux/SSE 使用进程 epoch，R15 持久代际和序号需独立定义；保留当前 gap/resync 的可观察原则。

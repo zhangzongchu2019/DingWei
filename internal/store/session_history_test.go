@@ -7,9 +7,97 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
+
+func TestSessionHistoryConcurrentAppendGroupCommitAssignsCursors(t *testing.T) {
+	h := newHistoryTest(t)
+	const count = 20
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	errs := make(chan error, count)
+	for i := 0; i < count; i++ {
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			_, err := h.Append(context.Background(), "owner", "agent", "work",
+				fmt.Sprintf("event-%02d", i), "assistant_text", []byte(`{"kind":"assistant_text"}`), time.Unix(10, 0))
+			errs <- err
+		}()
+	}
+	close(start)
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if commits := h.appendBatches.Load(); commits == 0 || commits >= count {
+		t.Fatalf("concurrent appends were not group committed: commits=%d appends=%d", commits, count)
+	}
+	page, err := h.Page(context.Background(), "owner", "agent", "work", "", nil)
+	if err != nil || len(page.Events) != count {
+		t.Fatalf("group page count=%d err=%v", len(page.Events), err)
+	}
+	seen := map[string]bool{}
+	for i, event := range page.Events {
+		if event.Cursor.Seq != int64(i+1) || seen[event.EventID] {
+			t.Fatalf("non-monotonic/duplicate cursor at index=%d event=%+v", i, event)
+		}
+		seen[event.EventID] = true
+	}
+	for i := 0; i < count; i++ {
+		if !seen[fmt.Sprintf("event-%02d", i)] {
+			t.Fatalf("missing event-%02d", i)
+		}
+	}
+}
+
+func TestSessionHistoryGroupCommitFallbackIsolatesDuplicateEvent(t *testing.T) {
+	h := newHistoryTest(t)
+	start := make(chan struct{})
+	ids := []string{"same-id", "same-id", "valid-id"}
+	var wg sync.WaitGroup
+	errs := make(chan error, len(ids))
+	for _, eventID := range ids {
+		eventID := eventID
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			_, err := h.Append(context.Background(), "owner", "agent", "work", eventID, "assistant_text", []byte(`{"kind":"assistant_text"}`), time.Unix(10, 0))
+			errs <- err
+		}()
+	}
+	close(start)
+	wg.Wait()
+	close(errs)
+	failures := 0
+	for err := range errs {
+		if err != nil {
+			failures++
+		}
+	}
+	if failures != 1 {
+		t.Fatalf("duplicate event failure count=%d; want 1", failures)
+	}
+	page, err := h.Page(context.Background(), "owner", "agent", "work", "", nil)
+	if err != nil || len(page.Events) != 2 {
+		t.Fatalf("unrelated events were lost after batch rollback: count=%d err=%v", len(page.Events), err)
+	}
+	seen := map[string]bool{}
+	for _, event := range page.Events {
+		seen[event.EventID] = true
+	}
+	if !seen["same-id"] || !seen["valid-id"] {
+		t.Fatalf("surviving events=%v", seen)
+	}
+}
 
 func newHistoryTest(t *testing.T) *SessionHistory {
 	t.Helper()

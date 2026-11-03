@@ -41,6 +41,31 @@ type SessionHistory struct {
 	closeOnce      sync.Once
 	closeErr       error
 	enabled        atomic.Bool
+	appendMu       sync.RWMutex
+	appendClosed   bool
+	appendQueue    chan *historyAppendRequest
+	appendDone     chan struct{}
+	appendBatches  atomic.Uint64
+}
+
+const (
+	historyAppendBatchMax    = 32
+	historyAppendBatchWindow = 2 * time.Millisecond
+)
+
+type historyAppendRequest struct {
+	ctx                context.Context
+	key                historyKey
+	eventID, eventType string
+	payload            []byte
+	now                time.Time
+	recordBytes        int64
+	result             chan historyAppendResult
+}
+
+type historyAppendResult struct {
+	cursor SessionHistoryCursor
+	err    error
 }
 
 type historyKey struct{ owner, agent, session string }
@@ -96,11 +121,12 @@ func OpenSessionHistory(path string) (*SessionHistory, error) {
 		_ = db.Close()
 		return nil, err
 	}
-	h := &SessionHistory{db: db, path: abs, pending: map[historyKey]pendingHistoryGap{}, pendingDeletes: map[historyDeleteKey]int64{}}
+	h := &SessionHistory{db: db, path: abs, pending: map[historyKey]pendingHistoryGap{}, pendingDeletes: map[historyDeleteKey]int64{}, appendQueue: make(chan *historyAppendRequest, historyAppendBatchMax), appendDone: make(chan struct{})}
 	if err = h.migrate(context.Background()); err != nil {
 		_ = db.Close()
 		return nil, err
 	}
+	go h.runAppendWriter()
 	return h, nil
 }
 
@@ -114,7 +140,14 @@ func (h *SessionHistory) Close() error {
 	if h == nil {
 		return nil
 	}
-	h.closeOnce.Do(func() { h.closeErr = h.db.Close() })
+	h.closeOnce.Do(func() {
+		h.appendMu.Lock()
+		h.appendClosed = true
+		close(h.appendQueue)
+		h.appendMu.Unlock()
+		<-h.appendDone
+		h.closeErr = h.db.Close()
+	})
 	return h.closeErr
 }
 
@@ -229,6 +262,8 @@ func disabledAt(v bool, n int64) any {
 }
 
 // Append writes one complete sanitized event before the caller publishes it to the live ring.
+// Concurrent callers are synchronously joined to a bounded group commit; each returns only
+// after the transaction containing its own cursor commits.
 func (h *SessionHistory) Append(ctx context.Context, owner, agent, session, eventID, eventType string, payload []byte, now time.Time) (SessionHistoryCursor, error) {
 	if h == nil {
 		return SessionHistoryCursor{}, errors.New("history store unavailable")
@@ -240,9 +275,9 @@ func (h *SessionHistory) Append(ctx context.Context, owner, agent, session, even
 	if owner == "" || agent == "" || session == "" {
 		return SessionHistoryCursor{}, errors.New("history identity unavailable")
 	}
+	key := historyKey{owner, agent, session}
 	if !json.Valid(payload) {
-		key := historyKey{owner, agent, session}
-		h.rememberGap(key, "persist_error", now.UTC().UnixMilli())
+		h.rememberGap(key, "persist_error", now.UnixMilli())
 		_ = h.flushOneGap(context.Background(), key)
 		return SessionHistoryCursor{}, errors.New("history payload is not JSON")
 	}
@@ -253,7 +288,6 @@ func (h *SessionHistory) Append(ctx context.Context, owner, agent, session, even
 		eventType = "unknown"
 	}
 	recordBytes := int64(len(payload) + len(owner) + len(agent) + len(session) + len(eventID) + len(eventType) + 96)
-	key := historyKey{owner, agent, session}
 	if recordBytes > SessionHistoryEventMaxBytes {
 		h.rememberGap(key, "oversize", now.UnixMilli())
 		_ = h.flushOneGap(context.Background(), key)
@@ -261,56 +295,181 @@ func (h *SessionHistory) Append(ctx context.Context, owner, agent, session, even
 	}
 	ctx, cancel := context.WithTimeout(ctx, SessionHistoryTxnLimit)
 	defer cancel()
+	request := &historyAppendRequest{ctx: ctx, key: key, eventID: eventID, eventType: eventType,
+		payload: append([]byte(nil), payload...), now: now, recordBytes: recordBytes,
+		result: make(chan historyAppendResult, 1)}
+	h.appendMu.RLock()
+	if h.appendClosed {
+		h.appendMu.RUnlock()
+		return SessionHistoryCursor{}, errors.New("history store closed")
+	}
+	select {
+	case h.appendQueue <- request:
+		h.appendMu.RUnlock()
+	case <-ctx.Done():
+		h.appendMu.RUnlock()
+		return SessionHistoryCursor{}, ctx.Err()
+	}
+	result := <-request.result
+	return result.cursor, result.err
+}
+
+func (h *SessionHistory) runAppendWriter() {
+	defer close(h.appendDone)
+	for first := range h.appendQueue {
+		batch := []*historyAppendRequest{first}
+		timer := time.NewTimer(historyAppendBatchWindow)
+	collect:
+		for len(batch) < historyAppendBatchMax {
+			select {
+			case request, ok := <-h.appendQueue:
+				if !ok {
+					break collect
+				}
+				batch = append(batch, request)
+			case <-timer.C:
+				break collect
+			}
+		}
+		if !timer.Stop() {
+			select {
+			case <-timer.C:
+			default:
+			}
+		}
+		h.commitAppendBatch(batch)
+	}
+}
+
+func (h *SessionHistory) commitAppendBatch(batch []*historyAppendRequest) {
+	active := make([]*historyAppendRequest, 0, len(batch))
+	for _, request := range batch {
+		if err := request.ctx.Err(); err != nil {
+			request.result <- historyAppendResult{err: err}
+			continue
+		}
+		active = append(active, request)
+	}
+	if len(active) == 0 {
+		return
+	}
+	cursors, err := h.appendBatchTx(active)
+	if err == nil {
+		h.appendBatches.Add(1)
+		for i, request := range active {
+			request.result <- historyAppendResult{cursor: cursors[i]}
+		}
+		return
+	}
+	// A bad row must not roll back unrelated live events. Retry the uncommon failed
+	// batch as single-event transactions to isolate failures.
+	for _, request := range active {
+		cursors, oneErr := h.appendBatchTx([]*historyAppendRequest{request})
+		var cursor SessionHistoryCursor
+		if oneErr == nil {
+			cursor = cursors[0]
+		} else {
+			h.rememberGap(request.key, "persist_error", request.now.UnixMilli())
+		}
+		request.result <- historyAppendResult{cursor: cursor, err: oneErr}
+	}
+}
+
+func (h *SessionHistory) appendBatchTx(batch []*historyAppendRequest) ([]SessionHistoryCursor, error) {
+	deadline := time.Now().Add(SessionHistoryTxnLimit)
+	for _, request := range batch {
+		if requestDeadline, ok := request.ctx.Deadline(); ok && requestDeadline.Before(deadline) {
+			deadline = requestDeadline
+		}
+	}
+	ctx, cancel := context.WithDeadline(context.Background(), deadline)
+	defer cancel()
 	tx, err := h.db.BeginTx(ctx, nil)
 	if err != nil {
-		h.rememberGap(key, "persist_error", now.UnixMilli())
-		return SessionHistoryCursor{}, err
+		return nil, err
 	}
 	defer tx.Rollback()
 	var enabled int
 	if err = tx.QueryRowContext(ctx, `SELECT enabled FROM session_history_runtime_state WHERE singleton=1`).Scan(&enabled); err != nil {
-		return SessionHistoryCursor{}, err
+		return nil, err
 	}
 	if enabled != 1 {
-		return SessionHistoryCursor{}, errors.New("session history disabled")
+		return nil, errors.New("session history disabled")
 	}
-	gen, err := ensureHistoryGeneration(ctx, tx, key)
-	if err != nil {
-		h.rememberGap(key, "persist_error", now.UnixMilli())
-		return SessionHistoryCursor{}, err
+	type keyState struct {
+		generation historyGeneration
+		firstSeq   int64
+		bytes      int64
+		flushed    pendingHistoryGap
 	}
-	flushedGap, flushErr := h.flushPendingTx(ctx, tx, key, gen, now.UnixMilli())
-	if flushErr != nil {
-		h.rememberGap(key, "persist_error", now.UnixMilli())
-		return SessionHistoryCursor{}, flushErr
+	states := make(map[historyKey]*keyState)
+	keys := make([]historyKey, 0)
+	cursors := make([]SessionHistoryCursor, len(batch))
+	agents := make(map[historyDeleteKey]struct{})
+	var totalBytes int64
+	for i, request := range batch {
+		key := request.key
+		state := states[key]
+		if state == nil {
+			generation, ensureErr := ensureHistoryGeneration(ctx, tx, key)
+			if ensureErr != nil {
+				return nil, ensureErr
+			}
+			flushed, flushErr := h.flushPendingTx(ctx, tx, key, generation, request.now.UnixMilli())
+			if flushErr != nil {
+				return nil, flushErr
+			}
+			state = &keyState{generation: generation, firstSeq: generation.next, flushed: flushed}
+			states[key] = state
+			keys = append(keys, key)
+		}
+		seq := state.generation.next
+		if _, err = tx.ExecContext(ctx, `UPDATE session_history_gap SET before_seq=?,ended_at_ms=? WHERE owner_key=? AND agent_key_id=? AND session_name=? AND generation=? AND before_seq IS NULL AND after_seq<?`, seq, request.now.UnixMilli(), key.owner, key.agent, key.session, state.generation.value, seq); err != nil {
+			return nil, err
+		}
+		if _, err = tx.ExecContext(ctx, `INSERT INTO session_history_event(owner_key,agent_key_id,session_name,generation,seq,event_id,received_at_ms,event_type,payload_json,record_bytes) VALUES(?,?,?,?,?,?,?,?,?,?)`, key.owner, key.agent, key.session, state.generation.value, seq, request.eventID, request.now.UnixMilli(), request.eventType, request.payload, request.recordBytes); err != nil {
+			return nil, err
+		}
+		state.generation.next++
+		state.bytes += request.recordBytes
+		totalBytes += request.recordBytes
+		cursors[i] = SessionHistoryCursor{Generation: state.generation.value, Seq: seq}
+		agents[historyDeleteKey{key.owner, key.agent}] = struct{}{}
 	}
-	seq := gen.next
-	if _, err = tx.ExecContext(ctx, `UPDATE session_history_gap SET before_seq=?,ended_at_ms=? WHERE owner_key=? AND agent_key_id=? AND session_name=? AND generation=? AND before_seq IS NULL AND after_seq<?`, seq, now.UnixMilli(), owner, agent, session, gen.value, seq); err != nil {
-		return SessionHistoryCursor{}, err
+	for _, key := range keys {
+		state := states[key]
+		if _, err = tx.ExecContext(ctx, `UPDATE session_history_generation SET next_seq=?,newest_seq=?,oldest_seq=CASE WHEN oldest_seq=0 THEN ? ELSE oldest_seq END,retained_bytes=retained_bytes+? WHERE owner_key=? AND agent_key_id=? AND session_name=?`, state.generation.next, state.generation.next-1, state.firstSeq, state.bytes, key.owner, key.agent, key.session); err != nil {
+			return nil, err
+		}
 	}
-	if _, err = tx.ExecContext(ctx, `INSERT INTO session_history_event(owner_key,agent_key_id,session_name,generation,seq,event_id,received_at_ms,event_type,payload_json,record_bytes) VALUES(?,?,?,?,?,?,?,?,?,?)`, owner, agent, session, gen.value, seq, eventID, now.UnixMilli(), eventType, payload, recordBytes); err != nil {
-		h.rememberGap(key, "persist_error", now.UnixMilli())
-		return SessionHistoryCursor{}, err
+	if _, err = tx.ExecContext(ctx, `UPDATE session_history_runtime_state SET retained_bytes=retained_bytes+? WHERE singleton=1`, totalBytes); err != nil {
+		return nil, err
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE session_history_generation SET next_seq=?,newest_seq=?,oldest_seq=CASE WHEN oldest_seq=0 THEN ? ELSE oldest_seq END,retained_bytes=retained_bytes+? WHERE owner_key=? AND agent_key_id=? AND session_name=?`, seq+1, seq, seq, recordBytes, owner, agent, session); err != nil {
-		return SessionHistoryCursor{}, err
+	agentKeys := make([]historyDeleteKey, 0, len(agents))
+	for key := range agents {
+		agentKeys = append(agentKeys, key)
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE session_history_runtime_state SET retained_bytes=retained_bytes+? WHERE singleton=1`, recordBytes); err != nil {
-		return SessionHistoryCursor{}, err
+	sort.Slice(agentKeys, func(i, j int) bool {
+		if agentKeys[i].owner == agentKeys[j].owner {
+			return agentKeys[i].agent < agentKeys[j].agent
+		}
+		return agentKeys[i].owner < agentKeys[j].owner
+	})
+	for _, key := range agentKeys {
+		if err = h.enforceAgentLimitTx(ctx, tx, key.owner, key.agent); err != nil {
+			return nil, err
+		}
 	}
-	if err = h.enforceAgentLimitTx(ctx, tx, owner, agent); err == nil {
-		err = h.enforceGlobalLimitTx(ctx, tx)
-	}
-	if err != nil {
-		h.rememberGap(key, "persist_error", now.UnixMilli())
-		return SessionHistoryCursor{}, err
+	if err = h.enforceGlobalLimitTx(ctx, tx); err != nil {
+		return nil, err
 	}
 	if err = tx.Commit(); err != nil {
-		h.rememberGap(key, "persist_error", now.UnixMilli())
-		return SessionHistoryCursor{}, err
+		return nil, err
 	}
-	h.clearPending(key, flushedGap)
-	return SessionHistoryCursor{Generation: gen.value, Seq: seq}, nil
+	for _, key := range keys {
+		h.clearPending(key, states[key].flushed)
+	}
+	return cursors, nil
 }
 
 type historyGeneration struct {
