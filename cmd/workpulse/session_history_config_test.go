@@ -33,8 +33,10 @@ func TestSessionHistoryDisabledDoesNotCreateHistoryDatabase(t *testing.T) {
 	if err != nil || history != nil {
 		t.Fatalf("history=%v err=%v", history, err)
 	}
-	if _, err := os.Stat(filepath.Join(dir, "workpulse-history.db")); !os.IsNotExist(err) {
-		t.Fatalf("disabled switch created history database: stat err=%v", err)
+	for _, name := range []string{"workpulse-history.db", "workpulse-history.db-wal", "workpulse-history.db-shm"} {
+		if _, err := os.Stat(filepath.Join(dir, name)); !os.IsNotExist(err) {
+			t.Fatalf("disabled switch created history artifact %q: stat err=%v", name, err)
+		}
 	}
 }
 
