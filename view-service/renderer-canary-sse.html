@@ -2313,6 +2313,9 @@
     }
 
     function enforceTimelineCap() {
+      // A requested history page intentionally extends the visible window; the
+      // ordinary live-event cap must not evict its oldest retained row mid-page.
+      if (historyApplying) return;
       const cap = timelineMaxCards();
       // ⚠️ 此处**曾经**加过一段「淘汰后显式补滚」。负向对照显示去掉它测试照样全过
       // (3/3),即它并未起作用 —— 真正治住窄屏小上限的是下方跟随判据里的**迟滞**。
@@ -2485,7 +2488,7 @@
       // G-MERGE-SAME(同会话去重,dev55 设计,纯 renderer 不猜链):结构化 user_input 回显 delivery_id
       // 精确命中本视图 primary input_posted.delivery_id → 不建第二张用户卡,primary 加「已回显」footnote;
       // 乱序短窗缓冲(C2_ECHO_HOLD_MS);未命中/空 id/copy/legacy 无 id=照常独立。provenance 只取 primary canonical。
-      if (provFlagOn() && ev.kind === 'user_input' && (ev._norm || {}).deliveryId) {
+      if (!historyApplying && provFlagOn() && ev.kind === 'user_input' && (ev._norm || {}).deliveryId) {
         const echoN = ev._norm;
         const echoKey = echoN.originDlv || echoN.deliveryId;  // 归并锚=origin_delivery_id(两签可信字段);回退=自身 id 精确命中;绝不 trim dw- 猜链
         const pKey = c1DeliveryCards.get(deliveryMergeKey(echoKey));
@@ -4178,8 +4181,12 @@
         historyOlder.hidden = false;
         historyOlder.textContent = historyHasOlder ? '向上翻页' : '没有更早的记录';
         historyOlder.disabled = !historyHasOlder;
+        // Set the anchor only after any earlier live replay has settled its
+        // pending turn-group redraws; a redraw can replace a node captured too soon.
+        flushPendingRenders();
         const viewportTop = timeline.getBoundingClientRect().top;
         const anchor = [...timeline.children].find(node => node.getBoundingClientRect().bottom > viewportTop) || timeline.firstElementChild;
+        const insertionPoint = timeline.firstElementChild;
         const anchorTop = anchor?.getBoundingClientRect().top;
         const prior = new Set(timeline.children);
         historyApplying = true;
@@ -4190,9 +4197,14 @@
           ev._history = { generation: row.cursor.generation, seq: row.cursor.seq, event_id: row.event_id };
           handleIncomingEvent(ev);
         }
+        // History rows must have concrete timeline nodes before we compute the
+        // insertion set. Live user_input replay normally has an echo merge hold;
+        // historyApplying bypasses that timer above. Flush turn-group updates
+        // synchronously too, so paging does not depend on rAF/timer ordering.
+        flushPendingRenders();
         historyApplying = false;
         const added = [...timeline.children].filter(node => !prior.has(node));
-        if (anchor) for (const node of added) timeline.insertBefore(node, anchor);
+        if (insertionPoint) for (const node of added) timeline.insertBefore(node, insertionPoint);
         if (anchor && Number.isFinite(anchorTop)) timeline.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
         if (page.gap_before || (priorGeneration && historyGeneration && priorGeneration !== historyGeneration) || page.gaps?.length) {
           const notice = document.createElement('div');

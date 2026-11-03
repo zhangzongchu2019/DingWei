@@ -80,6 +80,12 @@
 - [x] T-11 按三′／三″删除「prior=1 且开态启动即补 feature_disabled」分支；加入连续开态重启无 gap、开→关→开恰一 gap 两格，以及旧分支复原变异。
 - [x] T-12 按组长要求运行 store 全包、m8 历史相关、store+m8 历史 race `-count=3` 与 `scripts/run-build-tests.sh`；浏览器运行件未变，复用 163091359 tip 的浏览器读数并注明来源。
 
+## 5. R15 分页顺序补证返工（2026-11-03 13:15Z 组长授权）
+
+- [x] T-13 翻页页内输入同步绕过 live echo hold；重渲同步 flush 后再取差集搬移；分页期间不按 live 窗口淘汰；旧页统一插到时间线原首条之前，并以可见锚点校正 `scrollTop`。
+- [x] T-14 回归断言首条为 `SEQ_001`、`SEQ_100` 紧邻原首条之前及锚点 ±2px；新增去掉搬移／去掉滚动校正的独立变异回归并登记进浏览器套件。
+- [x] T-15 Chrome、bundled Chromium 各连续 10 次全绿；locked venv 下规范构建门通过。
+
 ## 交接记录
 
 - 2026-11-03T11:29Z · togpt60lunazzc.zzc · 实现源提交待提交
@@ -91,3 +97,8 @@
   - 完成：实现与三′／三″修订已提交；store 全包最后一次在提交前的相同产品源码上通过，race count=3、m8 历史格、规范构建门及 strict 均通过；变异红测绑定新增连续启动判据。
   - 阻塞：性能门和独立验收仍按上文条件/职责保留，不自称通过或关闭。
   - 下一步：生成证据子提交并推送、核对 refs。
+
+- 2026-11-03 · togpt60lunazzc.zzc · rework from `c54b79d22fc3` (source commit pending)
+  - 完成：修复历史回放依赖 C2 延迟合并造成的 DOM 差集漏搬，并避免分页逐条渲染触发 live 200 节点淘汰；页内旧事件同步渲染并整体移到既有首条前。新增顺序、锚点及两项定向变异判据。Chrome／bundled 各 10/10、锚点每次 0.00px；`scripts/run-build-tests.sh` 在 `/tmp/dw-filecard-build-venv` 下通过；详细读数见 `docs/reviews/coder-r15-pagination-rework-20261103/REPORT.md`。
+  - 阻塞：无；修复前 Chrome 失败读数来自组长提供的 prodops 只读证据，未重跑，具体见报告。
+  - 下一步：推送本返工分支并核对远端分支 tip/tree，交组长独立复核。

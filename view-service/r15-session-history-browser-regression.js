@@ -74,7 +74,9 @@ async function main() {
     await page.getByText('R15_HISTORY_SEQ_200').waitFor({ timeout: 7000 });
     await page.getByText('R15_LIVE_SEQ_201').waitFor({ timeout: 7000 });
     const timeline = page.locator('#timeline');
-    await timeline.evaluate((n) => { n.style.scrollBehavior = 'auto'; n.scrollTop = 300; });
+    await page.waitForTimeout(1000); // let the initial live echo merge window settle before freezing the old first row
+    await timeline.evaluate((n) => { flushPendingRenders(); n.style.scrollBehavior = 'auto'; n.scrollTop = 300; });
+    const originalFirst = await timeline.evaluate((n) => n.firstElementChild.innerText.match(/R15_HISTORY_SEQ_\d+/)?.[0]);
     const anchor = await timeline.evaluateHandle((n) => [...n.children].find(node => node.getBoundingClientRect().bottom > n.getBoundingClientRect().top));
     const beforeTop = await anchor.evaluate((n) => n.getBoundingClientRect().top);
     const beforeScroll = await timeline.evaluate((n) => ({ top: n.scrollTop, height: n.scrollHeight, client: n.clientHeight, overflowAnchor: getComputedStyle(n).overflowAnchor }));
@@ -91,6 +93,19 @@ async function main() {
     assert.deepStrictEqual(seenCursors, ['latest', '101'], `history requests=${JSON.stringify(seenCursors)}`);
     const anchorState = await anchor.evaluate((n) => ({ connected: n.isConnected, text: n.innerText.slice(0, 100), top: n.getBoundingClientRect().top }));
     const firstState = await timeline.locator(':scope > *').first().evaluate((n) => ({ text: n.innerText.slice(0, 100), top: n.getBoundingClientRect().top }));
+    const order = await timeline.evaluate((n, originalText) => {
+      const children = [...n.children];
+      const text = (node) => node.innerText || '';
+      const first = children[0];
+      const seq100 = children.find(node => text(node).includes('R15_HISTORY_SEQ_100'));
+      const original = children.find(node => text(node).includes(originalText));
+      return { first: text(first).slice(0, 120), seq100NextIsOriginal: !!seq100 && seq100.nextElementSibling === original,
+        original: original ? text(original).slice(0, 120) : null, originalText,
+        firstRows: children.slice(0, 8).map(node => text(node).match(/R15_HISTORY_SEQ_\d+/)?.[0] || text(node).slice(0, 35)),
+        sequenceIndex: children.findIndex(node => text(node).includes('R15_HISTORY_SEQ_101')), lastRows: children.slice(-5).map(node => text(node).match(/R15_HISTORY_SEQ_\d+/)?.[0] || text(node).slice(0, 35)) };
+    }, originalFirst);
+    assert.ok(order.first.includes('R15_HISTORY_SEQ_001') && order.seq100NextIsOriginal,
+      `timeline order invalid: ${JSON.stringify(order)} before=${JSON.stringify(beforeScroll)} after=${JSON.stringify(afterScroll)}`);
     assert.ok(Math.abs(afterTop - beforeTop) <= 2, `scroll anchor shifted ${afterTop - beforeTop}px before=${JSON.stringify(beforeScroll)} after=${JSON.stringify(afterScroll)} anchor=${JSON.stringify(anchorState)} first=${JSON.stringify(firstState)}`);
     assert.strictEqual(await page.getByRole('button', { name: '没有更早的记录' }).isDisabled(), true);
     const gapPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
