@@ -35,7 +35,6 @@ const server = http.createServer((req, res) => {
   }
   if (url.pathname === '/view/r15/history') {
     const failure = forcedHistoryFailure;
-    if (failure) console.log(`MOCK history failure=${failure} request=${req.url}`);
     if (failure) { res.writeHead(failure, { 'content-type': 'application/json' }); res.end(JSON.stringify({ code: `mock_${failure}` })); return; }
     const before = url.searchParams.get('before');
     seenCursors.push(before || 'latest');
@@ -50,7 +49,6 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify(page)); return;
   }
   if (url.pathname === '/view/r15/events') {
-    if (forcedHistoryFailure) console.log(`MOCK events failure=${forcedHistoryFailure}`);
     res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
     const live = { kind: 'assistant_text', text: 'R15_LIVE_SEQ_201', delivery_id: 'r15-live', turn_id: 'r15-live' };
     if (forcedHistoryFailure !== 503) live._history = { generation: 'generation-r15', seq: 201, event_id: 'r15-live-201' };
@@ -97,7 +95,6 @@ async function main() {
       await failedPage.goto(`http://127.0.0.1:${address.port}/view/r15?failure=${status}`, { waitUntil: 'domcontentloaded' });
       await failedPage.getByText('R15_LIVE_SEQ_201').waitFor({ timeout: 7000 });
       if (status === 503) {
-        console.log(`button disabled ${JSON.stringify(await failedPage.locator('#historyOlder').evaluate((n) => ({hidden:n.hidden,display:getComputedStyle(n).display,text:n.textContent})))}`);
         assert.strictEqual(await failedPage.locator('#historyOlder').isHidden(), true, 'disabled feature showed history button');
       }
       await failedPage.close();
