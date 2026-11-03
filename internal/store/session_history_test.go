@@ -184,7 +184,8 @@ func TestSessionHistoryGlobalQuotaEvictsOldestAcrossAgents(t *testing.T) {
 	perAgentBytes := SessionHistoryAgentMaxBytes - 1_000
 	for i := 0; i < agents; i++ {
 		agent := fmt.Sprintf("agent-%02d", i)
-		if _, err := h.Append(ctx, "owner", agent, "session", "old", "assistant_text", []byte(`{"text":"old"}`), now); err != nil {
+		eventID := fmt.Sprintf("old-%02d", i)
+		if _, err := h.Append(ctx, "owner", agent, "session", eventID, "assistant_text", []byte(`{"text":"old"}`), now); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := h.db.ExecContext(ctx, `UPDATE session_history_event SET record_bytes=? WHERE owner_key='owner' AND agent_key_id=?`, perAgentBytes, agent); err != nil {

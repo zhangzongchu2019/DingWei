@@ -413,6 +413,22 @@ func scanHistoryRows(rows *sql.Rows) ([]historyRowKey, error) {
 	}
 	return out, rows.Err()
 }
+
+func oldestRowsForEviction(rows []historyRowKey, bytesNeeded int64) []historyRowKey {
+	if bytesNeeded <= 0 {
+		return nil
+	}
+	var selected []historyRowKey
+	var freed int64
+	for _, row := range rows {
+		selected = append(selected, row)
+		freed += row.bytes
+		if freed >= bytesNeeded {
+			break
+		}
+	}
+	return selected
+}
 func deleteHistoryRows(ctx context.Context, tx *sql.Tx, rows []historyRowKey, reason string) error {
 	for _, r := range rows {
 		if _, e := tx.ExecContext(ctx, `DELETE FROM session_history_event WHERE owner_key=? AND agent_key_id=? AND session_name=? AND generation=? AND seq=?`, r.owner, r.agent, r.session, r.generation, r.seq); e != nil {
@@ -464,6 +480,7 @@ func (h *SessionHistory) enforceAgentLimitTx(ctx context.Context, tx *sql.Tx, ow
 		if e != nil {
 			return e
 		}
+		batch = oldestRowsForEviction(batch, n-SessionHistoryAgentMaxBytes)
 		if len(batch) == 0 {
 			return errors.New("history agent quota counter inconsistent")
 		}
@@ -492,6 +509,7 @@ func (h *SessionHistory) enforceGlobalLimitTx(ctx context.Context, tx *sql.Tx) e
 		if e != nil {
 			return e
 		}
+		batch = oldestRowsForEviction(batch, n-SessionHistoryGlobalMaxBytes)
 		if len(batch) == 0 {
 			return errors.New("history global quota counter inconsistent")
 		}
