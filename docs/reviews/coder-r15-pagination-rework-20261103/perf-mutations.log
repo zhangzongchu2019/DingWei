@@ -1,0 +1,27 @@
+started_utc=2026-11-03T14:38:30+00:00
+mutations must return nonzero with the named performance predicate red
+
+=== drop_p99_budget_assertion utc=2026-11-03T14:38:39+00:00 rc=1 ===
+=== RUN   TestSessionHistoryPerformanceGuardsAreLive
+    session_history_test.go:37: over-budget performance sample was not rejected
+--- FAIL: TestSessionHistoryPerformanceGuardsAreLive (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.006s
+FAIL
+
+MUTATION_RESULT expected_red=true reason=over-budget performance sample was not rejected
+
+=== move_persisted_publish_outside_timer utc=2026-11-03T14:38:48+00:00 rc=1 ===
+=== RUN   TestSessionHistoryTwentyAgentPublishP99
+2026/11/03 14:38:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/03 14:38:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/03 14:38:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/03 14:38:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    session_history_test.go:363: agents=20 pushes_per_agent=25 total=500 baseline_p99=629.718µs enabled_p99=73.943µs paired_additional_p99=66.113µs threshold=10ms
+    session_history_test.go:365: enabled p99 73.943µs is too small to include the synchronous durable append in the timed publish path
+--- FAIL: TestSessionHistoryTwentyAgentPublishP99 (0.13s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.138s
+FAIL
+
+MUTATION_RESULT expected_red=true reason=too small to include the synchronous durable append

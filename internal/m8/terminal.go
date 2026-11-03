@@ -24,8 +24,11 @@ import (
 
 	"github.com/coder/websocket"
 
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
+	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/obs"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
 const (
@@ -273,6 +276,68 @@ func (h *Hub) HandleTerminalViewCookie(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(`{"ok":true}`))
 }
 
+// HandleSessionHistory serves a bounded owner-scoped page of persisted session events.
+func (h *Hub) HandleSessionHistory(w http.ResponseWriter, r *http.Request) {
+	if !h.SessionHistoryEnabled || h.SessionHistory == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = w.Write([]byte(`{"code":"history_feature_disabled","message":"未启用"}`))
+		return
+	}
+	session := strings.TrimSpace(r.PathValue("sessionName"))
+	var owner, agent string
+	if h.Onboarding != nil {
+		cookie, err := r.Cookie(httpapi.SessionCookie)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		user, err := h.Onboarding.ResolveSession(r.Context(), cookie.Value)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		ag, _, err := h.Identity.ResolveFullName(r.Context(), session)
+		if err != nil || ag.OwnerLC != user.UserIDLC() || ag.State != identity.AgentActive {
+			http.NotFound(w, r)
+			return
+		}
+		owner, agent = ag.OwnerLC, ag.ID
+	} else {
+		ag, ok := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
+		principal, principalOK := r.Context().Value(consolePrincipalContextKey{}).(string)
+		if !ok || !h.consoleAuthEnabled || !principalOK || principal != ag.OwnerPrincipal {
+			// Legacy no-auth mode has no authenticated owner, so history reads fail closed.
+			http.NotFound(w, r)
+			return
+		}
+		owner, agent = ag.OwnerPrincipal, ag.KeyID
+	}
+	var before *int64
+	if raw := r.URL.Query().Get("before"); raw != "" {
+		v, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || v < 1 {
+			http.Error(w, "invalid before cursor", http.StatusBadRequest)
+			return
+		}
+		before = &v
+	}
+	page, err := h.SessionHistory.Page(r.Context(), owner, agent, session, r.URL.Query().Get("generation"), before)
+	if errors.Is(err, store.ErrSessionHistoryDisabled) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = w.Write([]byte(`{"code":"history_feature_disabled","message":"未启用"}`))
+		return
+	}
+	if err != nil {
+		http.Error(w, "history unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	_ = json.NewEncoder(w).Encode(page)
+}
+
 func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 	registrationDone, handlerDone, admitted := h.beginRegistration(w, "view_ws")
 	if !admitted {
@@ -494,6 +559,27 @@ func (h *Hub) handleSessionEventEnvelopeContext(_ context.Context, c *sessionCli
 	if conflict {
 		log.Printf("provenance claim dropped ingress=agent_session session=%s", c.sessionName)
 	}
+	if h.SessionHistoryEnabled && h.SessionHistory != nil {
+		owner, agent := c.ownerKey, c.metricsAgentID
+		if agent == "" {
+			agent = c.keyID
+		}
+		eventID := env.ID
+		if eventID == "" {
+			eventID = randomHex(16)
+		}
+		cursor, err := h.SessionHistory.Append(context.Background(), owner, agent, c.sessionName, eventID, metaString(env.Meta, "type"), []byte(sanitized), h.now())
+		if err != nil {
+			reason := "persist_error"
+			if errors.Is(err, store.ErrSessionHistoryOversize) {
+				reason = "oversize"
+			}
+			log.Printf("session_history_gap owner=%q agent=%q session=%q reason=%s lost_events=1 error_type=%T", owner, agent, c.sessionName, reason, err)
+			sanitized = addHistoryGap(sanitized, reason)
+		} else {
+			sanitized = addHistoryCursor(sanitized, cursor, eventID)
+		}
+	}
 	h.publishSessionEvent(c.keyID, c.sessionName, sanitized)
 	if h.amr != nil {
 		h.amr.ingest(c.keyID, c.sessionName, sanitized)
@@ -501,6 +587,34 @@ func (h *Hub) handleSessionEventEnvelopeContext(_ context.Context, c *sessionCli
 	// R-V2-0103：view 提及转来的那一轮，回合结束时把回复只读显示到发起页（不投递、不进 AMR）。
 	h.mentionMirror.observe(c.keyID, c.sessionName, sanitized)
 	return true
+}
+
+func addHistoryGap(raw, reason string) string {
+	var event map[string]any
+	if json.Unmarshal([]byte(raw), &event) != nil {
+		return raw
+	}
+	delete(event, "_history")
+	event["_history_gap"] = map[string]any{"reason": reason, "lost_events": 1}
+	b, err := json.Marshal(event)
+	if err != nil {
+		return raw
+	}
+	return string(b)
+}
+
+func addHistoryCursor(raw string, cursor store.SessionHistoryCursor, eventID string) string {
+	var event map[string]any
+	if json.Unmarshal([]byte(raw), &event) != nil {
+		return raw
+	}
+	delete(event, "_history_gap")
+	event["_history"] = map[string]any{"generation": cursor.Generation, "seq": cursor.Seq, "event_id": eventID}
+	b, err := json.Marshal(event)
+	if err != nil {
+		return raw
+	}
+	return string(b)
 }
 
 func stripClientProvenance(raw string) (string, bool) {

@@ -105,7 +105,24 @@ func (h *Hub) ReconcileNewPlatformConsole(ctx context.Context) error {
 
 // NewPlatformAgentGone identity.Service.OnRevoked／OnSuspended：投影 Agent 立即停用，再按原样断开在线连接。
 func (h *Hub) NewPlatformAgentGone(agentID string) {
+	h.newPlatformAgentUnavailable(agentID, true)
+}
+
+// NewPlatformAgentSuspended drops the active projection immediately but preserves history;
+// a reversible suspension is not an identity revocation.
+func (h *Hub) NewPlatformAgentSuspended(agentID string) {
+	h.newPlatformAgentUnavailable(agentID, false)
+}
+
+func (h *Hub) newPlatformAgentUnavailable(agentID string, purgeHistory bool) {
 	h.revokeConsoleMuxAgent(agentID)
+	if purgeHistory && h.SessionHistory != nil && h.Identity != nil {
+		if agent, err := h.Identity.Store.GetAgent(context.Background(), agentID); err == nil && agent != nil {
+			if err := h.SessionHistory.RequestAgentDeletion(context.Background(), agent.OwnerLC, agent.ID, h.now()); err != nil {
+				log.Printf("session history deletion enqueue failed agent=%q error_type=%T", agentID, err)
+			}
+		}
+	}
 	if repo, ok := h.newPlatformShim(); ok {
 		if err := repo.DeactivateNewPlatformConsoleAgent(context.Background(), agentID); err != nil {
 			log.Printf("newplat shim: deactivate agent %s: %v", agentID, err)
@@ -134,6 +151,11 @@ func (h *Hub) NewPlatformUserChanged(userLC string) {
 		return
 	}
 	for _, ag := range agents {
+		if h.SessionHistory != nil {
+			if err := h.SessionHistory.RequestAgentDeletion(ctx, ag.OwnerLC, ag.ID, h.now()); err != nil {
+				log.Printf("session history deletion enqueue failed agent=%q error_type=%T", ag.ID, err)
+			}
+		}
 		h.disconnectAgentSession(AgentKeyID(ag.OwnerLC), ag.NameLC(), "credential_suspended")
 	}
 }

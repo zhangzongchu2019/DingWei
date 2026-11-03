@@ -90,6 +90,8 @@ type Hub struct {
 	TrustProxy               bool // R31: only configured loopback nginx can supply X-Real-IP.
 	consoleMux               *consoleMuxRegistry
 	Repo                     store.Repository
+	SessionHistory           *store.SessionHistory
+	SessionHistoryEnabled    bool
 	Outbound                 MessageQueue
 	System                   SystemHandler
 	L2                       llm.Provider
