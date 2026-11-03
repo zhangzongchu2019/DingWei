@@ -53,16 +53,16 @@ PASS mutant=restore_live_eviction_during_paged_history rc=2 red_at="post-live hi
 
 组长于 `14:04:54Z` 明确授权继续优化并冻结 10ms 门槛。本席选择同步组提交：`SessionHistory` 单写协程从容量 32 的队列收取最多 32 条请求，最多等 2ms；在单 SQLite 事务内按入队顺序分配 generation/seq、写入事件、更新字节计数并执行每 Agent/全局容量淘汰。调用方必须等该事务提交后才收到自己的 cursor，Hub 原有调用仍在 `Append` 返回后把同一 cursor 加入 live payload 并发布。组事务失败时先回滚，再按既有单事件事务逐项重试，隔离一条坏事件；关闭时拒绝新请求、排空队列后关闭 DB。WAL、`synchronous(NORMAL)`、实时发布时序、gap 失败语义及 10ms 门槛均未改。组提交实现与调用/关闭语义在 [session_history.go](../../../internal/store/session_history.go)；同会话并发 cursor 顺序和失败隔离回归见 [session_history_test.go](../../../internal/store/session_history_test.go)。
 
-第一轮优化性能实施于 UTC `2026-11-03T14:12:08Z`；runner 使用 `env -i`，只注入 Go 缓存/模块路径、临时 HOME/TMPDIR 与 `DW_SESSION_HISTORY_PERF=1`，未继承 `SH_*`、`DINGWEI_*` 或环境配置。机核数 `16`；开跑 load average (1/5/15m) `(1.2534, 1.6460, 1.3257)`。20 Agent × 25 pushes 共 500 个样本，连续五轮原文（完整日志 `perf-five.log`）：
+最终 tip 性能复测于 UTC `2026-11-03T14:38:21Z`；runner 使用 `env -i`，只注入 Go 缓存/模块路径、临时 HOME/TMPDIR 与 `DW_SESSION_HISTORY_PERF=1`，未继承 `SH_*`、`DINGWEI_*` 或环境配置。机核数 `16`；开跑 load average (1/5/15m) `(1.1196, 1.8716, 2.3584)`。20 Agent × 25 pushes 共 500 个样本，连续五轮原文（完整日志 `perf-five.log`）：
 
 | Round | baseline p99 | enabled p99 | paired additional p99 | 门槛 |
 |---|---:|---:|---:|---:|
-| 1 | 1.542999ms | 5.588534ms | 5.584844ms | 10ms |
-| 2 | 1.468267ms | 5.795954ms | 5.786655ms | 10ms |
-| 3 | 1.670486ms | 6.028111ms | 6.025531ms | 10ms |
-| 4 | 1.712262ms | 5.671506ms | 5.659986ms | 10ms |
-| 5 | 1.744969ms | 5.867167ms | 5.858437ms | 10ms |
+| 1 | 1.198052ms | 6.287736ms | 6.217092ms | 10ms |
+| 2 | 1.443279ms | 5.433969ms | 5.425120ms | 10ms |
+| 3 | 1.520021ms | 5.415681ms | 5.411771ms | 10ms |
+| 4 | 1.460288ms | 5.433829ms | 5.431459ms | 10ms |
+| 5 | 1.799074ms | 5.450537ms | 5.446777ms | 10ms |
 
-五轮皆 `rc=0` 且 paired p99 ≤10ms。性能门的两项变异原始输出在 `perf-mutations.log`：删除超限断言后，`TestSessionHistoryPerformanceGuardsAreLive` 以“over-budget performance sample was not rejected”失败；把计时起点挪至整个 handler（含持久化）返回之后，计时样本仅 80–140ns，性能用例以“too small to include the synchronous durable append”失败。两个源变异由 runner 逐项做、各自确认红后恢复源文件。并发组提交 cursor 测试另以 `-count=20` 通过。
+五轮皆 `rc=0` 且 paired p99 ≤10ms。性能门两项变异原始输出在 `perf-mutations.log`：删掉 p99 budget 断言后，`TestSessionHistoryPerformanceGuardsAreLive` 因超限样本不再拒绝而失败；把真正的 `Append` 写放到计时起点之前、计时区只保留 live ring publish 后，p99 降至 66.113µs，性能用例因计时范围不含同步持久写而失败。runner 逐项变异并在收集红测后还原源码。store 同会话 20 路并发 cursor 测试与 Hub live cursor 对库内 cursor 对照测试均 `-count=20` 通过；重复 event_id 的组回滚/逐项重试测试也 `-count=20` 通过。
 
-性能门获准后的全包 Go、涉存储 race、完整构建门和 OpenSpec strict 结果以本节最终更新和提交附带日志为准；以上性能五轮是在优化源码及测试断言落地后执行。
+与 `7dad334d8e53991ad55ac7ccf19ea73d84f0a505` 源树相同的 Go 全包命令 `go test ./internal/store ./internal/m8 ./cmd/workpulse` 通过，三个包均 `rc=0`（在源提交创建前执行）。提交后的涉存储 race 用 `go test -race -count=3 ./internal/store ./internal/m8 ./cmd/workpulse -run '^TestSessionHistory'` 执行，三包分别 `ok`：store `26.772s`、m8 `13.415s`、workpulse `1.448s`，输出在 `race-session-history-count3.log`。另试过范围更宽的全包 `-race -count=3`，三个包均在 Go 默认 600s 测试超时退出；没有据此声称全包 race 通过，压缩原始日志在 `race-store-m8-workpulse.log.gz`。完整锁定构建门在隔离 HOME/环境下 `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`，裁定后压缩原始日志在 `build-final-7dad.log.gz`。OpenSpec strict `18 passed, 0 failed`，`git diff --check` 通过。性能五轮是在固定优化源码提交 `7dad334d8e53991ad55ac7ccf19ea73d84f0a505` 上执行，后续只追加证据文档与原始日志。
