@@ -122,7 +122,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	svc := identity.NewService(store, nil, nil)
 	// 吊销／暂停：先停用垫片投影的 console_agent（spec／任务 Agent 侧立即失效），再按原样 4401 断开（R-V2-SPEC-TASK-SHIM-IMPL U3）。
 	svc.OnRevoked = hub.NewPlatformAgentGone
-	svc.OnSuspended = hub.NewPlatformAgentGone
+	svc.OnSuspended = hub.NewPlatformAgentSuspended
 	// 用户停用／恢复／改类型（A11）：立即重投影；停用时断开其全部 Agent。
 	svc.OnUserChanged = hub.NewPlatformUserChanged
 	svc.OnCredentialIssued = hub.DisconnectAgentRotated // 轮换只断不删：旧 helper 收 credential_suspended，不删共用 /work 里的新凭据

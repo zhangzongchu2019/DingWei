@@ -73,6 +73,7 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/file-upload-ticket", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleConsoleFileUploadTicket))
 	mux.HandleFunc("POST /api/console/files/{fileID}/archive", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleFileArchive))
 	mux.HandleFunc("POST /view/{sessionName}/unlock-cookie", prefixHub.RequireConsoleAgent("interact", prefixHub.HandleTerminalViewCookie))
+	mux.HandleFunc("GET /view/{sessionName}/history", prefixHub.RequireConsoleAgent("view", prefixHub.HandleSessionHistory))
 	// V11 ＠候选：Hub 自己答，不反代给 view-service（比下面的子路径更具体，优先匹配）。
 	mux.HandleFunc("GET /view/{sessionName}/mention-candidates", prefixHub.RequireConsoleAgent("view", prefixHub.HandleViewMentionCandidates))
 	mux.HandleFunc("/view/{sessionName}/{rest...}", prefixHub.RequireConsoleViewSubPath(prefixHub.HandleViewSubPath)) // 新 view 子路径(events/input/status)→ 反代 View 服务

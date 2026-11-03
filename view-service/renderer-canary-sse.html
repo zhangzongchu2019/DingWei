@@ -420,6 +420,7 @@
       gap: 10px;
       overflow-y: auto;
       overscroll-behavior: contain;
+      overflow-anchor: none;
       padding-right: 4px;
       scroll-behavior: smooth;
     }
@@ -1096,6 +1097,7 @@
         <button class="text-btn" id="streamRetryBtn" type="button">重试</button>
       </section>
       <div class="task-progress" id="taskProgress" hidden aria-hidden="true"></div>
+      <button class="text-btn" id="historyOlder" type="button" hidden>向上翻页</button>
       <section class="timeline" id="timeline" aria-live="polite"></section>
       <section class="waiting-area" id="waitingArea" aria-label="等待接纳的消息" aria-live="polite" hidden>
         <div id="waitingList"></div>
@@ -1185,6 +1187,7 @@
 
   <script>
     const timeline = document.getElementById('timeline');
+    const historyOlder = document.getElementById('historyOlder');
     const waitingArea = document.getElementById('waitingArea');
     const waitingList = document.getElementById('waitingList');
     const workspaceDock = document.getElementById('workspaceDock');
@@ -2323,6 +2326,10 @@
     }
 
     function handleIncomingEvent(ev) {
+      if (historyBootstrapPending && !historyApplying && (ev?._history || ev?._history_gap)) {
+        historyLivePending.push(ev);
+        return;
+      }
       try {
         return dispatchIncomingEvent(ev);
       } finally {
@@ -2331,6 +2338,31 @@
     }
 
     function dispatchIncomingEvent(ev) {
+      const historyCursor = ev?._history;
+      if (!historyApplying && !historyBootstrapPending && historyCursor
+          && historyCursor.generation === historyGeneration
+          && Number(historyCursor.seq) <= historyHighWater) return;
+      if (markHistoryEvent(ev)) return;
+      if (!historyApplying && historyCursor) {
+        if (!historyGeneration) historyGeneration = historyCursor.generation;
+        if (historyCursor.generation === historyGeneration) {
+          const seq = Number(historyCursor.seq) || 0;
+          if (seq > historyHighWater) historyHighWater = seq;
+          if (seq > 1 && (!historyBefore || seq < Number(historyBefore))) {
+            historyBefore = seq;
+            historyHasOlder = true;
+            historyOlder.hidden = false;
+            historyOlder.disabled = false;
+            historyOlder.textContent = '向上翻页';
+          }
+        }
+      }
+      if (ev?._history_gap) {
+        const notice = document.createElement('div');
+        notice.className = 'event-card';
+        notice.textContent = '这段历史未保存';
+        timeline.appendChild(notice);
+      }
       ev = normalizeEvent(ev);
       // Admission failures have no model turn: annotate the existing input,
       // rather than constructing an empty turn card or changing delivery ACKs.
@@ -4104,11 +4136,100 @@
       });
     }
 
+    let historyGeneration = '';
+    let historyBefore = null;
+    let historyHasOlder = false;
+    let historyLoading = false;
+    let historyBootstrapPending = false;
+    let historyApplying = false;
+    let historyHighWater = 0;
+    let initialHistoryStreamOpen = null;
+    const historyLivePending = [];
+    const historyEventIDs = new Set();
+    function markHistoryEvent(ev) {
+      const id = ev?._history?.event_id;
+      if (!id) return false;
+      if (historyEventIDs.has(id)) return true;
+      historyEventIDs.add(id);
+      if (historyEventIDs.size > 20000) historyEventIDs.delete(historyEventIDs.values().next().value);
+      return false;
+    }
+    async function loadSessionHistory(before = null) {
+      if (historyLoading) return;
+      historyLoading = true;
+      historyOlder.disabled = true;
+      try {
+        const url = new URL(apiEp('history'), location.href);
+        if (historyGeneration) url.searchParams.set('generation', historyGeneration);
+        if (before) url.searchParams.set('before', String(before));
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2100);
+        let response;
+        try { response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', signal: controller.signal }); }
+        finally { clearTimeout(timeout); }
+        if (response.status === 503) return; // Disabled response is intentionally invisible to the r49 page flow.
+        if (!response.ok) return;
+        const page = await response.json();
+        const priorGeneration = historyGeneration;
+        historyGeneration = page.generation || historyGeneration;
+        if (priorGeneration && historyGeneration && priorGeneration !== historyGeneration) historyHighWater = 0;
+        historyHighWater = Math.max(historyHighWater, Number(page.high_water) || 0);
+        historyHasOlder = !!page.has_older;
+        historyOlder.hidden = false;
+        historyOlder.textContent = historyHasOlder ? '向上翻页' : '没有更早的记录';
+        historyOlder.disabled = !historyHasOlder;
+        const viewportTop = timeline.getBoundingClientRect().top;
+        const anchor = [...timeline.children].find(node => node.getBoundingClientRect().bottom > viewportTop) || timeline.firstElementChild;
+        const anchorTop = anchor?.getBoundingClientRect().top;
+        const prior = new Set(timeline.children);
+        historyApplying = true;
+        for (const row of (page.events || [])) {
+          let ev;
+          try { ev = JSON.parse(row.event); } catch (_) { continue; }
+          delete ev._history_gap;
+          ev._history = { generation: row.cursor.generation, seq: row.cursor.seq, event_id: row.event_id };
+          handleIncomingEvent(ev);
+        }
+        historyApplying = false;
+        const added = [...timeline.children].filter(node => !prior.has(node));
+        if (anchor) for (const node of added) timeline.insertBefore(node, anchor);
+        if (anchor && Number.isFinite(anchorTop)) timeline.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
+        if (page.gap_before || (priorGeneration && historyGeneration && priorGeneration !== historyGeneration) || page.gaps?.length) {
+          const notice = document.createElement('div');
+          notice.className = 'event-card';
+          notice.textContent = '这段历史未保存';
+          timeline.prepend(notice);
+        }
+        historyBefore = page.before_seq || (page.events?.length ? page.events[0].cursor.seq : null);
+      } catch (_) {
+        // A failed history request leaves the live r49 stream available.
+      } finally {
+        historyApplying = false;
+        historyLoading = false;
+        if (!historyOlder.hidden) historyOlder.disabled = !historyHasOlder;
+        if (historyBootstrapPending) {
+          historyBootstrapPending = false;
+          for (const ev of historyLivePending.splice(0)) {
+            const cursor = ev?._history;
+            if (cursor && cursor.generation === historyGeneration && Number(cursor.seq) <= historyHighWater) continue;
+            handleIncomingEvent(ev);
+          }
+        }
+      }
+    }
+    historyOlder?.addEventListener('click', () => { if (historyBefore) loadSessionHistory(historyBefore); });
     async function startApp() {
       resetConversation();
       updateLocalTime();
       setInterval(updateLocalTime, 1000);
+      historyBootstrapPending = true;
+      let resolveStreamOpen;
+      const streamOpen = new Promise(resolve => { resolveStreamOpen = resolve; });
+      initialHistoryStreamOpen = resolveStreamOpen;
       connectEventStream();
+      await Promise.race([streamOpen, new Promise(resolve => setTimeout(resolve, 2100))]);
+      initialHistoryStreamOpen = null;
+      await loadSessionHistory();
       await refreshStatus();
       startViewRefresh();
     }
@@ -4588,6 +4709,10 @@
       });
       eventSource.onopen = () => {
         if (generation !== eventSourceGeneration) return;
+        if (initialHistoryStreamOpen) {
+          initialHistoryStreamOpen();
+          initialHistoryStreamOpen = null;
+        }
         if (!opened) resetIntegrityNotices();
         // 第二次及以后的 open = 断线重连:hub 会重放 ring,先 arm 延迟清空避免与已有内容叠加。
         // 🔴 arm 的时机必须在 **open**,不能提前到 scheduleReconnect:延迟清空窗口
