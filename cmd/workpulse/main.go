@@ -135,11 +135,14 @@ func run(logger *slog.Logger) error {
 			_ = st.Close()
 		}
 	}()
-	historyStore, err := store.OpenSessionHistory(filepath.Join(bs.DataDir, "workpulse-history.db"))
+	sessionHistoryEnabled := sessionHistoryEnabledFromEnv(os.Getenv("DW_SESSION_HISTORY_PERSIST_ENABLED"))
+	historyStore, err := openSessionHistoryIfEnabled(bs.DataDir, sessionHistoryEnabled)
 	if err != nil {
 		return err
 	}
-	defer historyStore.Close()
+	if historyStore != nil {
+		defer historyStore.Close()
+	}
 
 	var runJobs lifecycle.Group
 	var claims lifecycle.Group
@@ -185,24 +188,26 @@ func run(logger *slog.Logger) error {
 	outbound := bus.NewBestEffortDBQueue(queueCtx, st, model.DirectionOut, writeQueueConfig)
 	prefixHub := m8.New(st, consoleAuthMode)
 	prefixHub.SessionHistory = historyStore
-	prefixHub.SessionHistoryEnabled = sessionHistoryEnabledFromEnv(os.Getenv("DW_SESSION_HISTORY_PERSIST_ENABLED"))
-	if err := historyStore.SetEnabled(ctx, prefixHub.SessionHistoryEnabled, time.Now()); err != nil {
-		return err
-	}
-	startRunTask(ctx, "session_history_cleanup", func() {
-		ticker := time.NewTicker(time.Minute)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case now := <-ticker.C:
-				if err := historyStore.CleanupBatch(ctx, now); err != nil && ctx.Err() == nil {
-					logger.Warn("session history cleanup failed", "error", err)
+	prefixHub.SessionHistoryEnabled = sessionHistoryEnabled
+	if historyStore != nil {
+		if err := historyStore.SetEnabled(ctx, true, time.Now()); err != nil {
+			return err
+		}
+		startRunTask(ctx, "session_history_cleanup", func() {
+			ticker := time.NewTicker(time.Minute)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case now := <-ticker.C:
+					if err := historyStore.CleanupBatch(ctx, now); err != nil && ctx.Err() == nil {
+						logger.Warn("session history cleanup failed", "error", err)
+					}
 				}
 			}
-		}
-	})
+		})
+	}
 	prefixHub.Outbound = outbound
 	fileIssuerURL := strings.TrimSpace(os.Getenv("WP_FILE_ISSUER_URL"))
 	filePublicURL := strings.TrimSpace(os.Getenv("WP_FILE_PUBLIC_URL"))
@@ -697,6 +702,13 @@ func run(logger *slog.Logger) error {
 }
 
 func sessionHistoryEnabledFromEnv(value string) bool { return value == "1" }
+
+func openSessionHistoryIfEnabled(dataDir string, enabled bool) (*store.SessionHistory, error) {
+	if !enabled {
+		return nil, nil
+	}
+	return store.OpenSessionHistory(filepath.Join(dataDir, "workpulse-history.db"))
+}
 
 func workpulseEffectiveConfig() []config.Observed {
 	return []config.Observed{

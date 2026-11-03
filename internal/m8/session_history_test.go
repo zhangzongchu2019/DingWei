@@ -136,6 +136,9 @@ func TestSessionHistoryDisabledDirectPublishAndSSEMatchR49Bodies(t *testing.T) {
 	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "data: "+first+"\n\n") || !strings.Contains(w.Body.String(), "data: "+second+"\n\n") {
 		t.Fatalf("SSE code=%d body=%q", w.Code, w.Body.String())
 	}
+	if strings.Contains(w.Body.String(), `"_history"`) || strings.Contains(w.Body.String(), `"_history_gap"`) {
+		t.Fatalf("disabled SSE changed r49 event payload: %q", w.Body.String())
+	}
 	rows, _, err := history.HistoryStats(context.Background())
 	if err != nil || rows != 0 {
 		t.Fatalf("disabled history rows=%d err=%v", rows, err)

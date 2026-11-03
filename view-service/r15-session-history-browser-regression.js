@@ -9,6 +9,7 @@ const html = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'));
 const rendererOverride = process.env.RENDERER_OVERRIDE;
 const pageHTML = rendererOverride ? fs.readFileSync(rendererOverride) : html;
 const seenCursors = [];
+let forcedHistoryFailure = 0;
 const eventRow = (seq) => ({
   cursor: { generation: 'generation-r15', seq },
   event_id: `r15-history-${seq}`,
@@ -22,6 +23,7 @@ const eventRow = (seq) => ({
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
   if (url.pathname === '/view/r15') {
+    forcedHistoryFailure = Number(url.searchParams.get('failure')) || 0;
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(pageHTML); return;
   }
   if (url.pathname === '/view/r15/status') {
@@ -32,6 +34,9 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' }); res.end('{}'); return;
   }
   if (url.pathname === '/view/r15/history') {
+    const failure = forcedHistoryFailure;
+    if (failure) console.log(`MOCK history failure=${failure} request=${req.url}`);
+    if (failure) { res.writeHead(failure, { 'content-type': 'application/json' }); res.end(JSON.stringify({ code: `mock_${failure}` })); return; }
     const before = url.searchParams.get('before');
     seenCursors.push(before || 'latest');
     const events = before === '101'
@@ -45,8 +50,11 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify(page)); return;
   }
   if (url.pathname === '/view/r15/events') {
+    if (forcedHistoryFailure) console.log(`MOCK events failure=${forcedHistoryFailure}`);
     res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
-    res.write(`data: ${JSON.stringify({ kind: 'assistant_text', text: 'R15_LIVE_SEQ_201', delivery_id: 'r15-live', turn_id: 'r15-live', _history: { generation: 'generation-r15', seq: 201, event_id: 'r15-live-201' } })}\n\n`);
+    const live = { kind: 'assistant_text', text: 'R15_LIVE_SEQ_201', delivery_id: 'r15-live', turn_id: 'r15-live' };
+    if (forcedHistoryFailure !== 503) live._history = { generation: 'generation-r15', seq: 201, event_id: 'r15-live-201' };
+    res.write(`data: ${JSON.stringify(live)}\n\n`);
     req.on('close', () => { try { res.end(); } catch (_) {} }); return;
   }
   if (req.method === 'POST') { req.resume(); res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"ok":true}'); return; }
@@ -84,7 +92,17 @@ async function main() {
     const firstState = await timeline.locator(':scope > *').first().evaluate((n) => ({ text: n.innerText.slice(0, 100), top: n.getBoundingClientRect().top }));
     assert.ok(Math.abs(afterTop - beforeTop) <= 2, `scroll anchor shifted ${afterTop - beforeTop}px before=${JSON.stringify(beforeScroll)} after=${JSON.stringify(afterScroll)} anchor=${JSON.stringify(anchorState)} first=${JSON.stringify(firstState)}`);
     assert.strictEqual(await page.getByRole('button', { name: '没有更早的记录' }).isDisabled(), true);
-    console.log(`PASS channel=${process.env.PW_CHANNEL || 'bundled-chromium'} latest=100 older=100 live=1 cursor_exclusive=true anchor_delta_px=${(afterTop - beforeTop).toFixed(2)}`);
+    for (const status of [503, 401, 404, 500]) {
+      const failedPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      await failedPage.goto(`http://127.0.0.1:${address.port}/view/r15?failure=${status}`, { waitUntil: 'domcontentloaded' });
+      await failedPage.getByText('R15_LIVE_SEQ_201').waitFor({ timeout: 7000 });
+      if (status === 503) {
+        console.log(`button disabled ${JSON.stringify(await failedPage.locator('#historyOlder').evaluate((n) => ({hidden:n.hidden,display:getComputedStyle(n).display,text:n.textContent})))}`);
+        assert.strictEqual(await failedPage.locator('#historyOlder').isHidden(), true, 'disabled feature showed history button');
+      }
+      await failedPage.close();
+    }
+    console.log(`PASS channel=${process.env.PW_CHANNEL || 'bundled-chromium'} latest=100 older=100 live=1 cursor_exclusive=true anchor_delta_px=${(afterTop - beforeTop).toFixed(2)} errors=503,401,404,500 live_unblocked=true`);
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));
