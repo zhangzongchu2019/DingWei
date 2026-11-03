@@ -136,7 +136,7 @@ func run(logger *slog.Logger) error {
 		}
 	}()
 	sessionHistoryEnabled := sessionHistoryEnabledFromEnv(os.Getenv("DW_SESSION_HISTORY_PERSIST_ENABLED"))
-	historyStore, err := openSessionHistoryIfEnabled(bs.DataDir, sessionHistoryEnabled)
+	historyStore, err := openSessionHistoryWithPolicy(bs.DataDir, sessionHistoryEnabled, logger)
 	if err != nil {
 		return err
 	}
@@ -190,7 +190,7 @@ func run(logger *slog.Logger) error {
 	prefixHub.SessionHistory = historyStore
 	prefixHub.SessionHistoryEnabled = sessionHistoryEnabled
 	if historyStore != nil {
-		if err := historyStore.SetEnabled(ctx, true, time.Now()); err != nil {
+		if err := historyStore.SetEnabled(ctx, sessionHistoryEnabled, time.Now()); err != nil {
 			return err
 		}
 		startRunTask(ctx, "session_history_cleanup", func() {
@@ -703,11 +703,17 @@ func run(logger *slog.Logger) error {
 
 func sessionHistoryEnabledFromEnv(value string) bool { return value == "1" }
 
-func openSessionHistoryIfEnabled(dataDir string, enabled bool) (*store.SessionHistory, error) {
-	if !enabled {
-		return nil, nil
+func openSessionHistoryWithPolicy(dataDir string, enabled bool, logger *slog.Logger) (*store.SessionHistory, error) {
+	path := filepath.Join(dataDir, "workpulse-history.db")
+	history, err := store.OpenSessionHistory(path)
+	if err == nil {
+		return history, nil
 	}
-	return store.OpenSessionHistory(filepath.Join(dataDir, "workpulse-history.db"))
+	if enabled {
+		return nil, fmt.Errorf("open session history %q: %w", path, err)
+	}
+	logger.Warn("session history unavailable; continuing with feature disabled", "path", path, "error", err)
+	return nil, nil
 }
 
 func workpulseEffectiveConfig() []config.Observed {

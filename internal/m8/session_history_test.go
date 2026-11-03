@@ -145,6 +145,37 @@ func TestSessionHistoryDisabledDirectPublishAndSSEMatchR49Bodies(t *testing.T) {
 	}
 }
 
+func TestSessionHistoryUnavailableDirectPublishAndSSEMatchR49Bodies(t *testing.T) {
+	h := New(nil, ConsoleAuthMode{})
+	first, second := `{"kind":"assistant_text","text":"ingress"}`, `{"kind":"tool_call","text":"publish"}`
+	c := &sessionClient{keyID: "key", ownerKey: "owner", sessionName: "work", metricsAgentID: "agent"}
+	if !h.handleSessionEventEnvelopeContext(context.Background(), c, model.Envelope{ID: "e1", Body: first, Meta: map[string]any{"type": terminalSessionEventType}}) {
+		t.Fatal("session event rejected")
+	}
+	h.publishSessionEvent("key", "work", second)
+	st := h.terminals[terminalKey("key", "work")]
+	if len(st.eventRing) != 2 || st.eventRing[0] != first || st.eventRing[1] != second {
+		t.Fatalf("ring=%q", st.eventRing)
+	}
+	h.sessionClients = map[string]map[string]*sessionClient{"key": {"work": c}}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	req := httptest.NewRequest("GET", "/internal/view/work/events", nil).WithContext(ctx)
+	req.SetPathValue("session", "work")
+	w := httptest.NewRecorder()
+	h.HandleInternalViewEvents(w, req)
+	var gotEvents []string
+	for _, line := range strings.Split(w.Body.String(), "\n") {
+		if strings.HasPrefix(line, "data: ") {
+			gotEvents = append(gotEvents, strings.TrimPrefix(line, "data: "))
+		}
+	}
+	wantEvents := []string{first, second}
+	if w.Code != http.StatusOK || strings.Join(gotEvents, "\x00") != strings.Join(wantEvents, "\x00") {
+		t.Fatalf("unavailable-store event payloads differ from r49: code=%d got=%q want=%q", w.Code, gotEvents, wantEvents)
+	}
+}
+
 func TestSessionHistoryEnabledPersistsBeforePublishingCursor(t *testing.T) {
 	history, err := store.OpenSessionHistory(filepath.Join(t.TempDir(), "history.db"))
 	if err != nil {
