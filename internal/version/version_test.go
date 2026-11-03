@@ -42,7 +42,7 @@ func TestViewHealthVersionMatchesDeploymentVersion(t *testing.T) {
 // 它只焊「VERSION 文件 == Go 常量」,两处一致地都不改,它防不住。
 // 本用例把常量与【上一个已发版本】焊住,构成另一维。
 func TestVersionIsAheadOfLastReleasedVersion(t *testing.T) {
-	const lastReleased = "0.2.3.23" // 已发布的 helper；本次只提升兼容修复位 D。
+	const lastReleased = "0.2.3.24" // 已发布的 helper；本次只提升兼容修复位 D。
 	cur, prev := parseQuad(t, Version), parseQuad(t, lastReleased)
 	if !(cur[0] > prev[0] ||
 		(cur[0] == prev[0] && cur[1] > prev[1]) ||
