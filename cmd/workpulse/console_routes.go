@@ -13,6 +13,13 @@ import (
 // run 与路由全扫描用例（console_routes_test.go）调用的是同一份 —— 新增一条路由而漏包认人中间件，扫描用例就会红
 // （组长裁定 140013Z ③）。新平台模式下的身份、登录与入网路由由 wireNewPlatform 另行注册。
 func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
+	mux.HandleFunc("GET /api/console/task-dispatch-locks", prefixHub.RequireConsolePrincipal(prefixHub.HandleTaskDispatchLock))
+	mux.HandleFunc("POST /api/console/task-dispatch-locks", prefixHub.RequireConsolePrincipal(prefixHub.HandleTaskDispatchLock))
+	mux.HandleFunc("GET /api/agent/task-dispatch-locks", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskDispatchLock))
+	mux.HandleFunc("POST /api/agent/task-dispatch-locks", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskDispatchLock))
+	mux.HandleFunc("POST /api/console/task-dispatch-locks/batch", prefixHub.RequireConsolePrincipal(prefixHub.HandleTaskDispatchBatch))
+	mux.HandleFunc("POST /api/agent/task-dispatch-locks/batch", prefixHub.RequireAgentTaskFlow(prefixHub.HandleAgentTaskDispatchBatch))
+
 	mux.HandleFunc("GET /ws/view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewWS))
 	mux.HandleFunc("GET /view/{sessionName}", prefixHub.RequireConsoleAgent("view", prefixHub.HandleTerminalViewPage))
 	mux.HandleFunc("GET /tasks", prefixHub.RequireConsolePrincipal(prefixHub.HandleViewTasks))

@@ -86,6 +86,20 @@ var newPlatformSpecTaskExempt = map[string]string{
 	"POST /api/agent/console/specs/{specID}/inferences":                  "Agent 回推论：专属凭据＋能力令牌",
 }
 
+// R10 routes are additional to the legacy spec/task registry. Agent routes
+// require their own bearer, including when a human must-change cookie exists.
+// They remain in the sweep; this is an auth-class assertion, not an exemption.
+var r10AgentCredentialRoutes = map[string]bool{
+	"GET /api/agent/task-dispatch-locks":        true,
+	"POST /api/agent/task-dispatch-locks":       true,
+	"POST /api/agent/task-dispatch-locks/batch": true,
+}
+var r10ConsoleRoutes = map[string]bool{
+	"GET /api/console/task-dispatch-locks":        true,
+	"POST /api/console/task-dispatch-locks":       true,
+	"POST /api/console/task-dispatch-locks/batch": true,
+}
+
 // newPlatformOptionalExempt 只在某些编译形态下才注册的公开路由：注册了 ⇒ 按豁免处理，并且必须真的公开（无会话 200）；
 // 没注册 ⇒ 不要求（与 newPlatformAuthExempt 不同，后者要求「豁免项必须已注册」）。
 var newPlatformOptionalExempt = map[string]string{
@@ -151,6 +165,16 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 			t.Fatalf("route %q not registered; recorded %d routes", must, len(rec.patterns))
 		}
 	}
+	for p := range r10AgentCredentialRoutes {
+		if !seen[p] {
+			t.Errorf("R10 Agent route %q not registered", p)
+		}
+	}
+	for p := range r10ConsoleRoutes {
+		if !seen[p] {
+			t.Errorf("R10 Console route %q not registered", p)
+		}
+	}
 	// R-V2-SPEC-TASK-SHIM-IMPL G4（翻转原「一条都不能注册」）：spec 与任务路由在新平台全部注册，且与旧平台注册的是同一组。
 	// 认人：非豁免的照常进下面的全路由扫描（无会话 401／302、必须改密 403）；豁免的逐条钉住无凭据应答。
 	oldRec := &routeRecorder{mux: http.NewServeMux()}
@@ -162,7 +186,7 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 	}
 	nSpecTask := 0
 	for _, p := range rec.patterns {
-		if specTaskRoute.MatchString(p) {
+		if specTaskRoute.MatchString(p) && !r10ConsoleRoutes[p] {
 			nSpecTask++
 		}
 	}
@@ -260,6 +284,12 @@ func TestNewPlatformRouteSweep(t *testing.T) {
 				} {
 					st, loc, body := do(method, concrete, c.tok, accept)
 					checked++
+					if r10AgentCredentialRoutes[k] {
+						if st != 401 || !strings.Contains(body, "agent_auth_required") {
+							t.Errorf("R10_AGENT_CREDENTIAL_GUARD %s [%s] cookie=%q: %d %s", k, accept, c.tok, st, body)
+						}
+						continue
+					}
 					if page {
 						if st != 302 || loc != c.wantLoc {
 							t.Errorf("%s %s [%s] session=%q: %d loc=%q, want 302 %s", method, path, accept, c.tok, st, loc, c.wantLoc)
