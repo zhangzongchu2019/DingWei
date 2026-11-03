@@ -300,6 +300,42 @@ func TestSessionHistoryOffIntervalBecomesGapOnReenable(t *testing.T) {
 	}
 }
 
+func TestSessionHistoryStartupConservativelyMarksFailedDisableInterval(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "history.db")
+	h, err := OpenSessionHistory(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer h.Close()
+	start := time.Unix(2_000, 0).UTC()
+	if err := h.SetEnabledAtStartup(ctx, true, start); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.Append(ctx, "o", "a", "s", "before", "t", []byte(`{"n":1}`), start.Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.db.ExecContext(ctx, `CREATE TRIGGER reject_disable BEFORE UPDATE OF enabled ON session_history_runtime_state WHEN NEW.enabled=0 BEGIN SELECT RAISE(ABORT,'simulated readonly state'); END`); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.SetEnabledAtStartup(ctx, false, start.Add(10*time.Second)); err == nil {
+		t.Fatal("expected disabled-state write failure")
+	}
+	if _, err := h.db.ExecContext(ctx, `DROP TRIGGER reject_disable`); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.SetEnabledAtStartup(ctx, true, start.Add(20*time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	page, err := h.Page(ctx, "o", "a", "s", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Gaps) != 1 || page.Gaps[0].Reason != "feature_disabled" || !page.Gaps[0].StartedAt.Equal(start) {
+		t.Fatalf("failed disable interval missing or incorrectly bounded: %+v", page.Gaps)
+	}
+}
+
 func TestSessionHistoryDeletionQueuePurgesAndRetries(t *testing.T) {
 	h := newHistoryTest(t)
 	ctx := context.Background()

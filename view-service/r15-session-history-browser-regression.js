@@ -10,6 +10,7 @@ const rendererOverride = process.env.RENDERER_OVERRIDE;
 const pageHTML = rendererOverride ? fs.readFileSync(rendererOverride) : html;
 const seenCursors = [];
 let forcedHistoryFailure = 0;
+let forcedHistoryGap = false;
 const eventRow = (seq) => ({
   cursor: { generation: 'generation-r15', seq },
   event_id: `r15-history-${seq}`,
@@ -24,6 +25,7 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
   if (url.pathname === '/view/r15') {
     forcedHistoryFailure = Number(url.searchParams.get('failure')) || 0;
+    forcedHistoryGap = url.searchParams.get('gap') === '1';
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(pageHTML); return;
   }
   if (url.pathname === '/view/r15/status') {
@@ -42,8 +44,9 @@ const server = http.createServer((req, res) => {
       ? Array.from({ length: 100 }, (_, i) => eventRow(1 + i))
       : Array.from({ length: 100 }, (_, i) => eventRow(101 + i));
     const page = {
-      generation: 'generation-r15', high_water: 200, events, gaps: [],
-      has_older: before !== '101', before_seq: before === '101' ? null : 101, gap_before: false,
+      generation: 'generation-r15', high_water: 200, events,
+      gaps: forcedHistoryGap ? [{ after_seq: 100, started_at: new Date(1700000000000).toISOString(), reason: 'feature_disabled', lost_events: 1 }] : [],
+      has_older: before !== '101', before_seq: before === '101' ? null : 101, gap_before: forcedHistoryGap,
     };
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
     res.end(JSON.stringify(page)); return;
@@ -90,6 +93,11 @@ async function main() {
     const firstState = await timeline.locator(':scope > *').first().evaluate((n) => ({ text: n.innerText.slice(0, 100), top: n.getBoundingClientRect().top }));
     assert.ok(Math.abs(afterTop - beforeTop) <= 2, `scroll anchor shifted ${afterTop - beforeTop}px before=${JSON.stringify(beforeScroll)} after=${JSON.stringify(afterScroll)} anchor=${JSON.stringify(anchorState)} first=${JSON.stringify(firstState)}`);
     assert.strictEqual(await page.getByRole('button', { name: '没有更早的记录' }).isDisabled(), true);
+    const gapPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    await gapPage.goto(`http://127.0.0.1:${address.port}/view/r15?gap=1`, { waitUntil: 'domcontentloaded' });
+    await gapPage.getByText('这段历史未保存').waitFor({ timeout: 7000 });
+    await gapPage.getByText('R15_LIVE_SEQ_201').waitFor({ timeout: 7000 });
+    await gapPage.close();
     for (const status of [503, 401, 404, 500]) {
       const failedPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
       await failedPage.goto(`http://127.0.0.1:${address.port}/view/r15?failure=${status}`, { waitUntil: 'domcontentloaded' });
@@ -99,7 +107,7 @@ async function main() {
       }
       await failedPage.close();
     }
-    console.log(`PASS channel=${process.env.PW_CHANNEL || 'bundled-chromium'} latest=100 older=100 live=1 cursor_exclusive=true anchor_delta_px=${(afterTop - beforeTop).toFixed(2)} errors=503,401,404,500 live_unblocked=true`);
+    console.log(`PASS channel=${process.env.PW_CHANNEL || 'bundled-chromium'} latest=100 older=100 live=1 cursor_exclusive=true anchor_delta_px=${(afterTop - beforeTop).toFixed(2)} feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true`);
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));

@@ -65,6 +65,12 @@ func TestSessionHistoryRouteRequiresAgentOwner(t *testing.T) {
 	if _, err := history.Append(ctx, "owner", "key", "work", "event", "assistant_text", []byte(`{"kind":"assistant_text"}`), now); err != nil {
 		t.Fatal(err)
 	}
+	if err := history.SetEnabled(ctx, false, now.Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if err := history.SetEnabled(ctx, true, now.Add(2*time.Second)); err != nil {
+		t.Fatal(err)
+	}
 	hub.SessionHistory, hub.SessionHistoryEnabled = history, true
 	wrapped := hub.RequireConsoleAgent("view", hub.HandleSessionHistory)
 	for _, tc := range []struct {
@@ -78,6 +84,9 @@ func TestSessionHistoryRouteRequiresAgentOwner(t *testing.T) {
 		wrapped(w, req)
 		if w.Code != tc.want {
 			t.Errorf("principal=%s status=%d body=%s", tc.principal, w.Code, w.Body.String())
+		}
+		if tc.principal == "owner" && !strings.Contains(w.Body.String(), `"reason":"feature_disabled"`) {
+			t.Errorf("history API omitted feature-disabled gap: %s", w.Body.String())
 		}
 	}
 }
