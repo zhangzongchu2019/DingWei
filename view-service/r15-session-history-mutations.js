@@ -20,6 +20,12 @@ const cases = [
     to: '/* mutant: omitted scrollTop anchor correction */',
     expected: 'scroll anchor shifted',
   },
+  {
+    name: 'restore_live_eviction_during_paged_history',
+    from: 'if (historyWindowExpanded && !timelineAtBottom) return;',
+    to: '/* mutant: permit oldest-first eviction while reader is in history */',
+    expected: 'post-live history prefix was evicted:',
+  },
 ];
 
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'r15-history-mutants-'));

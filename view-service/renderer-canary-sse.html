@@ -1869,7 +1869,10 @@
       // 判宽的代价是「用户只滚了一点点,仍会被带回底」(再滚多一点即可);
       // 判窄的代价是「淘汰抖一下就永久失去跟随」,即本次要修的病。
       const gap = timeline.scrollHeight - timeline.clientHeight - timeline.scrollTop;
-      if (nearBottom) timelineAtBottom = true;
+      if (nearBottom) {
+        timelineAtBottom = true;
+        if (historyWindowExpanded) enforceTimelineCap();
+      }
       else if (byUser && gap > FOLLOW_RELEASE_GAP_PX) timelineAtBottom = false;
     }, { passive: true });
 
@@ -1895,6 +1898,7 @@
 
     function resetConversation() {
       rendered = 0;
+      historyWindowExpanded = false;
       messageBuffers.clear();
       messageNodes.clear();
       turnGroups.clear();
@@ -2316,6 +2320,9 @@
       // A requested history page intentionally extends the visible window; the
       // ordinary live-event cap must not evict its oldest retained row mid-page.
       if (historyApplying) return;
+      // Keep an over-cap paged window while the user reads away from the bottom.
+      // Once they return to the live edge, resume normal oldest-first eviction.
+      if (historyWindowExpanded && !timelineAtBottom) return;
       const cap = timelineMaxCards();
       // ⚠️ 此处**曾经**加过一段「淘汰后显式补滚」。负向对照显示去掉它测试照样全过
       // (3/3),即它并未起作用 —— 真正治住窄屏小上限的是下方跟随判据里的**迟滞**。
@@ -2327,6 +2334,7 @@
         releaseTimelineNode(oldest);
         timeline.removeChild(oldest);
       }
+      historyWindowExpanded = false;
     }
 
     function handleIncomingEvent(ev) {
@@ -2488,7 +2496,7 @@
       // G-MERGE-SAME(同会话去重,dev55 设计,纯 renderer 不猜链):结构化 user_input 回显 delivery_id
       // 精确命中本视图 primary input_posted.delivery_id → 不建第二张用户卡,primary 加「已回显」footnote;
       // 乱序短窗缓冲(C2_ECHO_HOLD_MS);未命中/空 id/copy/legacy 无 id=照常独立。provenance 只取 primary canonical。
-      if (!historyApplying && provFlagOn() && ev.kind === 'user_input' && (ev._norm || {}).deliveryId) {
+      if (provFlagOn() && ev.kind === 'user_input' && (ev._norm || {}).deliveryId) {
         const echoN = ev._norm;
         const echoKey = echoN.originDlv || echoN.deliveryId;  // 归并锚=origin_delivery_id(两签可信字段);回退=自身 id 精确命中;绝不 trim dw- 猜链
         const pKey = c1DeliveryCards.get(deliveryMergeKey(echoKey));
@@ -2500,10 +2508,12 @@
           if (shouldFollow) scheduleTimelineToBottom();
           return;
         }
-        bufferMergeCopy(echoKey, ev, { admit: true, holdMs: C2_ECHO_HOLD_MS, footKey: 'echo_merge' });
-        rendered += 1;
-        updateMetrics();
-        return;
+        if (!historyApplying) {
+          bufferMergeCopy(echoKey, ev, { admit: true, holdMs: C2_ECHO_HOLD_MS, footKey: 'echo_merge' });
+          rendered += 1;
+          updateMetrics();
+          return;
+        }
       }
       admitWaitingDelivery(ev);
       renderEvent(ev);
@@ -3655,7 +3665,8 @@
       // 成因见 T-074:失败事件与输入卡的 message_id 键对不上,`c1CardFor` 找不到 ⇒ 新建 ⇒ 多一张。
       // ⇒ 按 message_id 找不到时,改用**投递号**(已归一)反查已有卡再更新。
       const entry0 = norm.key ? c1CardFor(norm, true) : null;
-      if (!entry0?.card && norm.stage === 'failed') {
+      const entry = entry0;
+      if (!entry?.card && norm.stage === 'failed') {
         const viaDlv = norm.deliveryId ? c1InputCards.get(c1DeliveryCards.get(deliveryMergeKey(norm.deliveryId))) : null;
         if (viaDlv?.footer) {
           // fail-loud:不在界面另起卡,但仍留痕,便于事后诊断(业主不看,排查时要用)
@@ -3668,7 +3679,6 @@
         console.warn('[delivery-failed-orphan]', norm.deliveryId || '', stageFooterText(norm));
         return;
       }
-      const entry = entry0;
       if (entry && entry.card) {
         // 同 message_id 已有输入卡:原位更新,绝不产生第二张
         if (norm.text && !entry.content.textContent) entry.content.textContent = norm.text;
@@ -4146,6 +4156,7 @@
     let historyLoading = false;
     let historyBootstrapPending = false;
     let historyApplying = false;
+    let historyWindowExpanded = false;
     let historyHighWater = 0;
     let initialHistoryStreamOpen = null;
     const historyLivePending = [];
@@ -4181,9 +4192,6 @@
         historyOlder.hidden = false;
         historyOlder.textContent = historyHasOlder ? '向上翻页' : '没有更早的记录';
         historyOlder.disabled = !historyHasOlder;
-        // Set the anchor only after any earlier live replay has settled its
-        // pending turn-group redraws; a redraw can replace a node captured too soon.
-        flushPendingRenders();
         const viewportTop = timeline.getBoundingClientRect().top;
         const anchor = [...timeline.children].find(node => node.getBoundingClientRect().bottom > viewportTop) || timeline.firstElementChild;
         const insertionPoint = timeline.firstElementChild;
@@ -4212,6 +4220,7 @@
           notice.textContent = '这段历史未保存';
           timeline.prepend(notice);
         }
+        if (before && page.events?.length) historyWindowExpanded = true;
         historyBefore = page.before_seq || (page.events?.length ? page.events[0].cursor.seq : null);
       } catch (_) {
         // A failed history request leaves the live r49 stream available.

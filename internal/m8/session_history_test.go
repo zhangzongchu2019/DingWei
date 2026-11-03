@@ -266,7 +266,11 @@ func TestSessionHistoryTwentyAgentPublishP99(t *testing.T) {
 		sort.Slice(values, func(i, j int) bool { return values[i] < values[j] })
 		return values[(len(values)*99+99)/100-1]
 	}
-	t.Logf("agents=%d pushes_per_agent=%d total=%d baseline_p99=%s enabled_p99=%s paired_additional_p99=%s threshold=%s", agents, pushes, len(baseline), percentile(baseline), percentile(enabled), percentile(pairedAdded), 10*time.Millisecond)
+	baselineP99, enabledP99, additionalP99 := percentile(baseline), percentile(enabled), percentile(pairedAdded)
+	t.Logf("agents=%d pushes_per_agent=%d total=%d baseline_p99=%s enabled_p99=%s paired_additional_p99=%s threshold=%s", agents, pushes, len(baseline), baselineP99, enabledP99, additionalP99, 10*time.Millisecond)
+	if additionalP99 > 10*time.Millisecond {
+		t.Errorf("session history publish-path overhead p99 %s exceeds %s threshold", additionalP99, 10*time.Millisecond)
+	}
 }
 
 func TestSessionHistoryOversizeStillPublishesAndMarksGap(t *testing.T) {

@@ -9,17 +9,25 @@ const html = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'));
 const rendererOverride = process.env.RENDERER_OVERRIDE;
 const pageHTML = rendererOverride ? fs.readFileSync(rendererOverride) : html;
 const seenCursors = [];
+const eventStreams = new Set();
 let forcedHistoryFailure = 0;
 let forcedHistoryGap = false;
-const eventRow = (seq) => ({
-  cursor: { generation: 'generation-r15', seq },
-  event_id: `r15-history-${seq}`,
-  received_at: new Date(1700000000000 + seq).toISOString(),
-  event: JSON.stringify({
-    kind: 'user_input', text: `R15_HISTORY_SEQ_${String(seq).padStart(3, '0')}`, delivery_id: `r15-${seq}`,
+const eventRow = (seq) => {
+  const paired = seq === 50 || seq === 51;
+  const event = {
+    kind: seq === 50 ? 'input_posted' : 'user_input',
+    text: paired ? `R15_HISTORY_SEQ_${String(seq).padStart(3, '0')}_${seq === 50 ? 'PRIMARY' : 'ECHO'}` : `R15_HISTORY_SEQ_${String(seq).padStart(3, '0')}`,
+    delivery_id: paired ? 'r15-paired-50' : `r15-${seq}`,
+    message_id: paired ? `r15-paired-message-${seq}` : undefined,
     turn_id: `r15-${seq}`, stage: 'cli_injected', ts: 1700000000000 + seq,
-  }),
-});
+  };
+  return {
+    cursor: { generation: 'generation-r15', seq },
+    event_id: `r15-history-${seq}`,
+    received_at: new Date(1700000000000 + seq).toISOString(),
+    event: JSON.stringify(event),
+  };
+};
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://127.0.0.1');
@@ -53,10 +61,16 @@ const server = http.createServer((req, res) => {
   }
   if (url.pathname === '/view/r15/events') {
     res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
+    eventStreams.add(res);
     const live = { kind: 'assistant_text', text: 'R15_LIVE_SEQ_201', delivery_id: 'r15-live', turn_id: 'r15-live' };
     if (forcedHistoryFailure !== 503) live._history = { generation: 'generation-r15', seq: 201, event_id: 'r15-live-201' };
     res.write(`data: ${JSON.stringify(live)}\n\n`);
-    req.on('close', () => { try { res.end(); } catch (_) {} }); return;
+    req.on('close', () => { eventStreams.delete(res); try { res.end(); } catch (_) {} }); return;
+  }
+  if (url.pathname === '/view/r15/test-live' && req.method === 'POST') {
+    const live = { kind: 'assistant_text', text: 'R15_LIVE_AFTER_PAGE', delivery_id: 'r15-live-after', turn_id: 'r15-live-after' };
+    for (const stream of eventStreams) stream.write(`data: ${JSON.stringify(live)}\n\n`);
+    res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"ok":true}'); return;
   }
   if (req.method === 'POST') { req.resume(); res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"ok":true}'); return; }
   res.writeHead(404); res.end('not found');
@@ -74,8 +88,12 @@ async function main() {
     await page.getByText('R15_HISTORY_SEQ_200').waitFor({ timeout: 7000 });
     await page.getByText('R15_LIVE_SEQ_201').waitFor({ timeout: 7000 });
     const timeline = page.locator('#timeline');
-    await page.waitForTimeout(1000); // let the initial live echo merge window settle before freezing the old first row
-    await timeline.evaluate((n) => { flushPendingRenders(); n.style.scrollBehavior = 'auto'; n.scrollTop = 300; });
+    await page.waitForFunction(() => pendingRenders.size === 0 && c1MergeBuf.size === 0, null, { timeout: 7000 });
+    await timeline.evaluate((n) => { n.style.scrollBehavior = 'auto'; n.scrollTop = 300; });
+    const box = await timeline.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, 10);
+    await page.waitForFunction(() => timelineAtBottom === false, null, { timeout: 3000 });
     const originalFirst = await timeline.evaluate((n) => n.firstElementChild.innerText.match(/R15_HISTORY_SEQ_\d+/)?.[0]);
     const anchor = await timeline.evaluateHandle((n) => [...n.children].find(node => node.getBoundingClientRect().bottom > n.getBoundingClientRect().top));
     const beforeTop = await anchor.evaluate((n) => n.getBoundingClientRect().top);
@@ -83,7 +101,7 @@ async function main() {
     await page.getByRole('button', { name: '向上翻页' }).click();
     try {
       await page.getByText('R15_HISTORY_SEQ_001').waitFor({ timeout: 7000 });
-    await page.getByText('R15_HISTORY_SEQ_100').waitFor({ timeout: 7000 });
+      await page.getByText('R15_HISTORY_SEQ_100').waitFor({ timeout: 7000 });
     } catch (error) {
       console.error(`debug cursors=${JSON.stringify(seenCursors)} button=${await page.locator('#historyOlder').textContent()} timeline=${(await timeline.innerText()).slice(0, 600)}`);
       throw error;
@@ -100,13 +118,22 @@ async function main() {
       const seq100 = children.find(node => text(node).includes('R15_HISTORY_SEQ_100'));
       const original = children.find(node => text(node).includes(originalText));
       return { first: text(first).slice(0, 120), seq100NextIsOriginal: !!seq100 && seq100.nextElementSibling === original,
-        original: original ? text(original).slice(0, 120) : null, originalText,
-        firstRows: children.slice(0, 8).map(node => text(node).match(/R15_HISTORY_SEQ_\d+/)?.[0] || text(node).slice(0, 35)),
-        sequenceIndex: children.findIndex(node => text(node).includes('R15_HISTORY_SEQ_101')), lastRows: children.slice(-5).map(node => text(node).match(/R15_HISTORY_SEQ_\d+/)?.[0] || text(node).slice(0, 35)) };
+        original: original ? text(original).slice(0, 120) : null, originalText };
     }, originalFirst);
     assert.ok(order.first.includes('R15_HISTORY_SEQ_001') && order.seq100NextIsOriginal,
       `timeline order invalid: ${JSON.stringify(order)} before=${JSON.stringify(beforeScroll)} after=${JSON.stringify(afterScroll)}`);
+    assert.strictEqual(await timeline.locator('[data-message-id^="r15-paired-message-"]').count(), 1, 'history input_posted/user_input echo with one delivery rendered more than one user card');
     assert.ok(Math.abs(afterTop - beforeTop) <= 2, `scroll anchor shifted ${afterTop - beforeTop}px before=${JSON.stringify(beforeScroll)} after=${JSON.stringify(afterScroll)} anchor=${JSON.stringify(anchorState)} first=${JSON.stringify(firstState)}`);
+    await page.evaluate(() => fetch('/view/r15/test-live', { method: 'POST' }));
+    await page.getByText('R15_LIVE_AFTER_PAGE').waitFor({ timeout: 7000 });
+    const afterLiveTop = await anchor.evaluate((n) => n.getBoundingClientRect().top);
+    const afterLiveFirst = await timeline.locator(':scope > *').first().innerText();
+    const postLiveAnchorDelta = afterLiveTop - beforeTop;
+    assert.ok(afterLiveFirst.includes('R15_HISTORY_SEQ_001'), `post-live history prefix was evicted: first=${afterLiveFirst.slice(0, 120)}`);
+    assert.ok(Math.abs(postLiveAnchorDelta) <= 2, `post-live scroll anchor shifted ${postLiveAnchorDelta}px before=${JSON.stringify(beforeScroll)} after=${JSON.stringify(await timeline.evaluate((n) => ({ top: n.scrollTop, height: n.scrollHeight, client: n.clientHeight })))}`);
+    await timeline.evaluate((n) => { n.scrollTop = n.scrollHeight; });
+    await page.waitForFunction(() => timelineAtBottom && !historyWindowExpanded, null, { timeout: 3000 });
+    assert.ok(await timeline.locator(':scope > *').count() <= 200, 'timeline cap did not resume after returning to live edge');
     assert.strictEqual(await page.getByRole('button', { name: '没有更早的记录' }).isDisabled(), true);
     const gapPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     await gapPage.goto(`http://127.0.0.1:${address.port}/view/r15?gap=1`, { waitUntil: 'domcontentloaded' });
@@ -122,7 +149,7 @@ async function main() {
       }
       await failedPage.close();
     }
-    console.log(`PASS channel=${process.env.PW_CHANNEL || 'bundled-chromium'} latest=100 older=100 live=1 cursor_exclusive=true anchor_delta_px=${(afterTop - beforeTop).toFixed(2)} feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true`);
+    console.log(`PASS channel=${process.env.PW_CHANNEL || 'bundled-chromium'} latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=${(afterTop - beforeTop).toFixed(2)} post_live_anchor_delta_px=${postLiveAnchorDelta.toFixed(2)} history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true`);
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));

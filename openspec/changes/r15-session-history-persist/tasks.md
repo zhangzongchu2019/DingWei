@@ -85,6 +85,9 @@
 - [x] T-13 翻页页内输入同步绕过 live echo hold；重渲同步 flush 后再取差集搬移；分页期间不按 live 窗口淘汰；旧页统一插到时间线原首条之前，并以可见锚点校正 `scrollTop`。
 - [x] T-14 回归断言首条为 `SEQ_001`、`SEQ_100` 紧邻原首条之前及锚点 ±2px；新增去掉搬移／去掉滚动校正的独立变异回归并登记进浏览器套件。
 - [x] T-15 Chrome、bundled Chromium 各连续 10 次全绿；locked venv 下规范构建门通过。
+- [x] T-16 按 13:34Z 初审保持分页后离底历史窗，追加真实 SSE live 事件仍断言旧页首条和锚点；恢复 oldest-first 淘汰变异按 post-live 首条判据转红。
+- [x] T-17 移除测试固定睡眠与页面主动 flush，改等 `pendingRenders`／C2 merge buffer 清空；历史 `input_posted`＋同 delivery `user_input` 回显只产生一张用户卡。取锚前 flush 删除变异未红，移除无证据产品行。
+- [x] T-18 显式运行 20-Agent 性能门并使数值超 10ms 时测试失败，避免把超限读数报告成绿；最终读数见返工报告。性能 SLO 未通过，按冻结设计等组长裁定后续。
 
 ## 交接记录
 
@@ -102,3 +105,8 @@
   - 完成：修复历史回放依赖 C2 延迟合并造成的 DOM 差集漏搬，并避免分页逐条渲染触发 live 200 节点淘汰；页内旧事件同步渲染并整体移到既有首条前。新增顺序、锚点及两项定向变异判据。Chrome／bundled 各 10/10、锚点每次 0.00px；`scripts/run-build-tests.sh` 在 `/tmp/dw-filecard-build-venv` 下通过；详细读数见 `docs/reviews/coder-r15-pagination-rework-20261103/REPORT.md`。
   - 阻塞：无；修复前 Chrome 失败读数来自组长提供的 prodops 只读证据，未重跑，具体见报告。
   - 下一步：推送本返工分支并核对远端分支 tip/tree，交组长独立复核。
+
+- 2026-11-03T13:34Z 初审追加 · rework source pending
+  - 完成：分页后只要用户离底阅读已展开历史窗，就暂停 live oldest-first 淘汰；回到底部恢复上限。实 SSE 后续事件判据及 3 项变异全做。C2 同 delivery 双事件合卡判据通过。测试内固定睡眠与主动 flush 已移除；取锚前 flush 删除不转红，故删产品行。性能门实测 paired additional p99 约 40.6ms，已让其超过 10ms 时明确 FAIL。
+  - 阻塞：性能门超阈值；设计冻结要求超限报告并等组长裁定，不擅改 SLO 或持久化语义。
+  - 下一步：三项返工最终证据、完整构建门与 final-tip 性能读数复跑后一次交件。性能优化预计需额外 30–45 分钟分析和实现，且须组长裁定继续；按当前冻结设计，不将未授权优化纳入本次交件。
