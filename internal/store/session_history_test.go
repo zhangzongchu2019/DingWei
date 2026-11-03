@@ -300,7 +300,7 @@ func TestSessionHistoryOffIntervalBecomesGapOnReenable(t *testing.T) {
 	}
 }
 
-func TestSessionHistoryStartupConservativelyMarksFailedDisableInterval(t *testing.T) {
+func TestSessionHistoryStartupDoesNotInferGapWhenDisableWriteFailed(t *testing.T) {
 	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), "history.db")
 	h, err := OpenSessionHistory(path)
@@ -331,8 +331,86 @@ func TestSessionHistoryStartupConservativelyMarksFailedDisableInterval(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(page.Gaps) != 1 || page.Gaps[0].Reason != "feature_disabled" || !page.Gaps[0].StartedAt.Equal(start) {
-		t.Fatalf("failed disable interval missing or incorrectly bounded: %+v", page.Gaps)
+	if len(page.Gaps) != 0 {
+		t.Fatalf("failed disable write cannot be inferred as a confirmed disabled interval: %+v", page.Gaps)
+	}
+}
+
+func TestSessionHistoryConsecutiveEnabledStartupDoesNotCreateGap(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "history.db")
+	start := time.Unix(2_000, 0).UTC()
+	h, err := OpenSessionHistory(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := h.SetEnabledAtStartup(ctx, true, start); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.Append(ctx, "o", "a", "s", "before", "t", []byte(`{"n":1}`), start.Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.Close(); err != nil {
+		t.Fatal(err)
+	}
+	h, err = OpenSessionHistory(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer h.Close()
+	if err := h.SetEnabledAtStartup(ctx, true, start.Add(10*time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	page, err := h.Page(ctx, "o", "a", "s", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Events) != 1 || len(page.Gaps) != 0 {
+		t.Fatalf("ordinary enabled restart must remain continuous: %+v", page)
+	}
+}
+
+func TestSessionHistoryStartupOpenOffOnCreatesExactlyOneGap(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "history.db")
+	start := time.Unix(3_000, 0).UTC()
+	h, err := OpenSessionHistory(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := h.SetEnabledAtStartup(ctx, true, start); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.Append(ctx, "o", "a", "s", "before", "t", []byte(`{"n":1}`), start.Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.Close(); err != nil {
+		t.Fatal(err)
+	}
+	h, err = OpenSessionHistory(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := h.SetEnabledAtStartup(ctx, false, start.Add(10*time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.Close(); err != nil {
+		t.Fatal(err)
+	}
+	h, err = OpenSessionHistory(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer h.Close()
+	if err := h.SetEnabledAtStartup(ctx, true, start.Add(20*time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	page, err := h.Page(ctx, "o", "a", "s", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Events) != 1 || len(page.Gaps) != 1 || page.Gaps[0].Reason != "feature_disabled" || !page.Gaps[0].StartedAt.Equal(start.Add(10*time.Second)) {
+		t.Fatalf("open-off-on startup should retain history and create exactly one bounded gap: %+v", page)
 	}
 }
 

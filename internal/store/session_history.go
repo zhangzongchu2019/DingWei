@@ -165,17 +165,16 @@ func (h *SessionHistory) migrate(ctx context.Context) error {
 
 // SetEnabled stores only feature-state metadata while disabled; event rows are never written.
 func (h *SessionHistory) SetEnabled(ctx context.Context, enabled bool, now time.Time) error {
-	return h.setEnabled(ctx, enabled, now, false)
+	return h.setEnabled(ctx, enabled, now)
 }
 
-// SetEnabledAtStartup conservatively accounts for the interval since the last
-// process updated runtime state. In particular, a previous disabled-state
-// write may have failed while the Hub continued with persistence disabled.
+// SetEnabledAtStartup records the configured state. A restart while persisted
+// state is enabled does not imply that persistence was disabled in between.
 func (h *SessionHistory) SetEnabledAtStartup(ctx context.Context, enabled bool, now time.Time) error {
-	return h.setEnabled(ctx, enabled, now, true)
+	return h.setEnabled(ctx, enabled, now)
 }
 
-func (h *SessionHistory) setEnabled(ctx context.Context, enabled bool, now time.Time, startup bool) error {
+func (h *SessionHistory) setEnabled(ctx context.Context, enabled bool, now time.Time) error {
 	if h == nil {
 		return nil
 	}
@@ -186,9 +185,8 @@ func (h *SessionHistory) setEnabled(ctx context.Context, enabled bool, now time.
 	}
 	defer tx.Rollback()
 	var prior, initialized int
-	var changed int64
 	var disabled sql.NullInt64
-	if err = tx.QueryRowContext(ctx, `SELECT enabled,initialized,changed_at_ms,disabled_since_ms FROM session_history_runtime_state WHERE singleton=1`).Scan(&prior, &initialized, &changed, &disabled); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT enabled,initialized,disabled_since_ms FROM session_history_runtime_state WHERE singleton=1`).Scan(&prior, &initialized, &disabled); err != nil {
 		return err
 	}
 	ms := now.UnixMilli()
@@ -201,12 +199,6 @@ func (h *SessionHistory) setEnabled(ctx context.Context, enabled bool, now time.
 			_, err = tx.ExecContext(ctx, `INSERT INTO session_history_gap(gap_id,owner_key,agent_key_id,session_name,generation,after_seq,before_seq,started_at_ms,reason,lost_event_count)
 			SELECT lower(hex(randomblob(16))),owner_key,agent_key_id,session_name,generation,newest_seq,NULL,?, 'feature_disabled', 1 FROM session_history_generation`, disabled.Int64)
 		}
-		if err == nil {
-			_, err = tx.ExecContext(ctx, `UPDATE session_history_runtime_state SET enabled=1,changed_at_ms=?,disabled_since_ms=NULL WHERE singleton=1`, ms)
-		}
-	} else if prior == 1 && enabled && startup {
-		_, err = tx.ExecContext(ctx, `INSERT INTO session_history_gap(gap_id,owner_key,agent_key_id,session_name,generation,after_seq,before_seq,started_at_ms,reason,lost_event_count)
-		SELECT lower(hex(randomblob(16))),owner_key,agent_key_id,session_name,generation,newest_seq,NULL,?, 'feature_disabled', 1 FROM session_history_generation`, changed)
 		if err == nil {
 			_, err = tx.ExecContext(ctx, `UPDATE session_history_runtime_state SET enabled=1,changed_at_ms=?,disabled_since_ms=NULL WHERE singleton=1`, ms)
 		}

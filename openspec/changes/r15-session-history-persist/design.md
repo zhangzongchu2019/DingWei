@@ -91,7 +91,7 @@ CREATE TABLE session_history_runtime_state (
 
 generation 行是当前身份/会话代际的唯一高水位和淘汰边界；撤权/删除时必须清事件正文与可关联索引，代际标记更新或移除，使同名重建获得新随机 generation。稳定排序键为 `owner_key, agent_key_id, session_name, generation, seq`；事件 ID 在接收时生成，作为幂等键。具体字段/约束与现有身份模型的映射在实现前由实现者复核，不允许以客户端自报 owner 作为键来源。
 
-`session_history_gap` 只保存非正文缺口边界；运行状态表是控制元数据，不是事件历史。Hub 启动时比较上次记录的 enabled 状态并更新当前状态：关闭启动记录 `disabled_since_ms`，再启用时将此区间收束为所有已有代际的 gap 边界，并在新事件写入后补齐 `before_seq`。这些状态行不能包含事件内容。异常关机后状态仍可从上次持久状态推断；启用进程的普通重启不产生 `feature_disabled` gap。
+`session_history_gap` 只保存非正文缺口边界；运行状态表是控制元数据，不是事件历史。Hub 启动时比较上次记录的 enabled 状态并更新当前状态：关闭启动记录 `disabled_since_ms`，再启用时将此区间收束为所有已有代际的 gap 边界，并在新事件写入后补齐 `before_seq`。这些状态行不能包含事件内容。启用进程的普通重启不产生 `feature_disabled` gap。三″已知局限：若 Hub 运行期间关闭开关，但写入 `enabled=0` 状态失败，持久状态仍是 enabled；后续再次启动为 enabled 时无法区分“连续开启”与“曾关闭但状态未落盘”，因此不推断 gap。此时关态期间事件不会保存，历史 API 可能表现为连续；需依赖日志中的关闭态写入告警识别。只有关闭状态已持久化时，开→关→开才保证生成一个 gap。
 
 建议同一个向前事务内：读取并锁定 generation；按序分配 `seq`；插事件；更新高水位和计量；按 TTL、Agent 配额、全局配额顺序删旧记录并推进 gap；提交。回滚则不产生已分配的持久 seq。逻辑计量不把 SQLite freelist、页碎片或 WAL 算作事件容量；主库文件可因此超过 2 GB。
 

@@ -74,3 +74,15 @@
   - 完成：五项裁定已写回并推送；strict 15/15、目录内 diff-check 通过；当时远端 tip 与本地 HEAD 一致，tree=`f57d64c77956b76a2cdcb0f3092a34988f799a59`。
   - 阻塞：组长需复核本次写回后确认设计冻结；实现依派单安排在 R10、R9 之后。
   - 下一步：组长复核并冻结；event_id/generation 身份字段最终对照留待实现阶段写入 context。
+
+## 4. R15 实现补正（2026-11-03 组长交件反馈授权）
+
+- [x] T-11 按三′／三″删除「prior=1 且开态启动即补 feature_disabled」分支；加入连续开态重启无 gap、开→关→开恰一 gap 两格，以及旧分支复原变异。
+- [x] T-12 按组长要求运行 store 全包、m8 历史相关、store+m8 历史 race `-count=3` 与 `scripts/run-build-tests.sh`；浏览器运行件未变，复用 163091359 tip 的浏览器读数并注明来源。
+
+## 交接记录
+
+- 2026-11-03T11:29Z · togpt60lunazzc.zzc · 实现源提交待提交
+  - 完成：按组长 11:15Z 反馈移除开态连续启动假 gap；新增连续启动无缺口与持久关闭后重启仅一个 gap 两格；三″关闭状态写入失败的不可推断局限写入 design 与交件报告。已执行旧逻辑复原变异，连续启动判据按多出的 `feature_disabled` gap 转红。store 全包、m8 历史相关、store+m8 历史 race `-count=3`、锁定 venv 下完整构建门及 OpenSpec strict 均通过。
+  - 阻塞：20-Agent 性能门需隔离性能开关，本轮因未设置 `DW_SESSION_HISTORY_PERF=1` 按用例条件跳过；store 中依赖外部旧 Hub 二进制的一个兼容用例按既定条件跳过。两项均未计通过。
+  - 下一步：证据分支以新源 tip 为父追加报告与原始读数；推送两分支并核对远端坐标，交组长复核。
