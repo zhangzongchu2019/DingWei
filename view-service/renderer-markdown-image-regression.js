@@ -384,8 +384,8 @@ const MUTATIONS = {
         `        if (url === openTail || longerExists(url) || seen.has(url)) continue;`,
       ],
       [
-        `            if (mdInlineImageUrls(cardEl).has(url)) { slot.remove(); return; }`,
-        `            // (M-G4 变异:让位规则第二道已拆)`,
+        `            if (mdInlineImageUrls(cardEl).has(url)) {`,
+        `            if (false) { // (M-G4 变异:探测回来时不让位)`,
       ],
       [
         `      for (const el of [...cardEl._fileHost.children]) {

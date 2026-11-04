@@ -3190,7 +3190,11 @@
         buildFileAttachment(url, current)
           .then((box) => {
             if (!current() || !box) return;
-            if (mdInlineImageUrls(cardEl).has(url)) { slot.remove(); return; }
+            if (mdInlineImageUrls(cardEl).has(url)) {
+              slot.remove();
+              if (records.get(url) === rec) { records.delete(url); seen.delete(url); }
+              return;
+            }
             // 404/failure bodies remain visible and copyable (R5-3).
             if (box.dataset.dispatch && box.dataset.dispatch !== 'gone') box.dataset.rendered = 'ok';
             slot.replaceWith(box); rec.node = box;

@@ -3,19 +3,37 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {chromium}=require('playwright');
 const source=path.resolve(process.argv[2]||'view-service/renderer-canary-sse.html');
-const html=fs.readFileSync(source,'utf8');
 const origin='https://file-card.invalid';
 const url=origin+'/f/u_owner/agent/26/1014/'+'a6a7f17b'.repeat(8)+'.md';
+const raceUrl=origin+'/f/u_owner/agent/26/1014/'+'b7b8c28'.repeat(8)+'.png';
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
-let browser,passed=0,failed=0;
+let html=fs.readFileSync(source,'utf8');
+if(process.argv.includes('--mutate-g6-leave-seen')){
+ const anchor='if (records.get(url) === rec) { records.delete(url); seen.delete(url); }';
+ assert.equal(html.split(anchor).length-1,1,'G6 mutation anchor must occur exactly once');
+ html=html.replace(anchor,'/* mutation: stale seen/record retained */');
+}
+let passed=0,failed=0,browser;
 async function fixture(){
  const context=await browser.newContext();const page=await context.newPage();
  const calls=[],held=new Map(),pending=new Map();
+ let imageRace=null;
  await page.route('**/*',async route=>{
   const request=route.request(),u=new URL(request.url());
   if(u.origin!==origin)return route.abort();
   if(u.pathname.startsWith('/f/')){
    calls.push({url:request.url(),method:request.method()});
+   if(imageRace&&request.url()===imageRace.url){
+    if(request.method()==='HEAD'){
+     imageRace.headStarted();await imageRace.headGate;
+     return route.fulfill({status:200,contentType:'image/png',headers:{'Content-Length':'12'},body:''});
+    }
+    if(request.method()==='GET'){
+     imageRace.gets++;
+     if(imageRace.gets===2){imageRace.secondGetStarted();await imageRace.secondGetGate;}
+     return route.fulfill({status:200,contentType:'image/png',headers:{'Content-Length':'12'},body:'not an image'});
+    }
+   }
    if(request.method()==='HEAD'&&held.has(request.url())){
     await new Promise(resolve=>pending.set(request.url(),resolve));
    }
@@ -44,7 +62,13 @@ async function fixture(){
    body:c.querySelector('.event-content')?.textContent,visible:c.querySelector('.event-content')?.innerText,
    note:c.querySelector('.attachment-note')?.textContent};
  },id);}
- return {page,calls,card,attach,cards,state,hold:u=>held.set(u,true),async release(u){
+ return {page,calls,card,attach,cards,state,hold:u=>held.set(u,true),raceImage(u){
+  let startHead,startSecondGet,releaseHead,releaseSecondGet;
+  const headStarted=new Promise(r=>startHead=r),secondGetStarted=new Promise(r=>startSecondGet=r);
+  const headGate=new Promise(r=>releaseHead=r),secondGetGate=new Promise(r=>releaseSecondGet=r);
+  imageRace={url:u,gets:0,headStarted:()=>startHead(),secondGetStarted:()=>startSecondGet(),headGate,secondGetGate};
+  return {headStarted,secondGetStarted,releaseHead,releaseSecondGet};
+ },async release(u){
   const end=Date.now()+3000;while(!pending.has(u)&&Date.now()<end)await pause(5);
   assert(pending.has(u),'deferred HEAD was not observed');pending.get(u)();pending.delete(u);
  },close:()=>context.close()};
@@ -136,6 +160,38 @@ async function test(name,fn){const h=await fixture();try{await fn(h);console.log
   await h.attach('closed','[report]('+url+')',true);await pause(20);
   assert.deepEqual((await h.state('closed')).urls,[url]);
  });
+ async function g6HandoffRace(order){
+  const h=await fixture();
+  try{
+   const gates=h.raceImage(raceUrl);
+   await h.page.evaluate(u=>{
+    handleIncomingEvent({kind:'assistant_text',turn_id:'g6-handoff',cursor:'1',text:`![bad](${u})`});flushPendingRenders();
+   },raceUrl);
+   await gates.headStarted;
+   await h.page.evaluate(()=>{
+    handleIncomingEvent({kind:'assistant_text',turn_id:'g6-handoff',cursor:'2',text:'\n\n重建'});flushPendingRenders();
+   });
+   await gates.secondGetStarted;
+   if(order==='head-before-error'){
+    gates.releaseHead();
+    await h.page.waitForFunction(()=>document.querySelector('#timeline .attachments')?.children.length===0);
+    gates.releaseSecondGet();
+   }else{
+    gates.releaseSecondGet();
+    await h.page.waitForFunction(u=>![...document.querySelectorAll('#timeline .md img')].some(img=>img.src===u),raceUrl);
+    gates.releaseHead();
+   }
+   await pause(100);
+   const cards=await h.page.locator(`#timeline .attachment[data-file-url="${raceUrl}"]`).count();
+   assert.equal(cards,1,'🔴 解不了码那张的附件卡=0(应 1:卡要接手,不能什么都没有)');
+   assert.equal(await h.page.locator(`#timeline .attachment[data-file-url="${raceUrl}"] a.attachment-dl`).count(),1,
+    '🔴 解不了码那张没有下载出路(应 1)');
+  }finally{await h.close();}
+ }
+ try{await g6HandoffRace('head-before-error');console.log('PASS G6 deterministic handoff: image reappears before HEAD, then fails; download card is restored');passed++;}
+ catch(e){console.error('FAIL G6 deterministic handoff: '+e.message);failed++;}
+ try{await g6HandoffRace('head-after-error');console.log('PASS G6 control: HEAD resolves after the rebuilt image error; download card remains');passed++;}
+ catch(e){console.error('FAIL G6 control: '+e.message);failed++;}
  console.log(`TOTAL ${passed} passed, ${failed} failed (Chromium, exact renderer, intercepted HTTP only)`);
  await browser.close();process.exitCode=failed?1:0;
 })().catch(async e=>{console.error(e.stack);if(browser)await browser.close();process.exitCode=1;});
