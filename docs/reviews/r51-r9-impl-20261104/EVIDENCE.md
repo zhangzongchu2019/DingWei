@@ -7,7 +7,55 @@
 - R51 test fixes merged before implementation: `76c72fbe`, merge commit `095768968`.
 - Implementation branch: `review/togpt60lunazzc/r51-r9-impl-20261104`.
 - Final source tip: `5cede10976b2d16f8a4534d9c62a00614e8bb279`; tree `c27baf4ed93c3a8768561730965adaa174cb1850`.
-- R10 and R15 change directories are untouched. This evidence file is documentation only.
+- R10 and R15 change directories are untouched. The final evidence tip adds only R9-off compatibility tests and this evidence update; it does not change runtime implementation.
+
+## Existing-file attachment points and disabled-state compatibility
+
+The following line coordinates are the zero-context additions in
+`git diff --unified=0 eaf8f01c..693cd69c -- internal/m8/hub.go cmd/workpulse/console_routes.go cmd/workpulse/main.go`
+(r50 base `eaf8f01c`, submitted R9 tree `693cd69c`). They are additive wiring:
+
+| Existing file | Diff lines | R9 change | Why other input stays on the r50 path |
+|---|---|---|---|
+| `internal/m8/hub.go` | `+152`, `+430`, `+1606..1608` | Adds a dedicated R9 sender, starts its scheduler, and checks `dispatchR9PMReply` before the existing clarification and ordinary dispatch. | The sender and scheduler both require the exact `DW_PM_DECISION_REQUEST_ENABLED=1` flag. With the flag off, `dispatchR9PMReply` returns `(unmatched, false, nil)` before inspecting reply metadata or querying R9 tables. When on, an unrelated parent is still passed through. |
+| `cmd/workpulse/console_routes.go` | `+34..39` | Adds six `/api/console/openspec-pm-*` routes; existing route registrations are not edited. Responsibility writes retain the platform-admin guard. | Each new handler checks the same exact feature flag and returns 404 while disabled, matching the r50 response for an unregistered route. Existing registrations and handlers remain unchanged. |
+| `cmd/workpulse/main.go` | `+310` | Configures the R9 Feishu sender after the existing pilot-question sender setup. | `configureR9PMFeishu` delegates to `ConfigureR9PMFeishuSender`; the Hub starts no sender worker unless the exact flag is on and a real gateway is present. No existing sender or receipt callback is replaced. |
+
+The off-state comparison is exercised directly, rather than inferred from the
+enabled-path tests:
+
+- `TestR9PMResponsibilityRegisteredRouteIsPlatformAdminOnly`: after confirming
+  the enabled admin route, sets `DW_PM_DECISION_REQUEST_ENABLED=0` and sends
+  GET/PUT/DELETE responsibility, GET/POST requests, and POST response requests
+  as an authenticated platform admin. All six return HTTP 404, the old
+  unregistered-route behavior; unauthorized and non-admin enabled reads remain
+  401 and 403, and the enabled admin write remains 200.
+- `TestR9PMFlagIsExactAndOffSkipsR9Lookup`: empty, `true`, ` 1 `, and `0` all
+  leave R9 dispatch unmatched; the R9 repository lookup count is exactly 0.
+- `TestR9PMDispatcherPassesNonR9ReplyThrough`: with R9 enabled, a known-shape
+  personal Feishu reply whose parent is not an R9 request remains unmatched and
+  is not accepted by the R9 store.
+- `TestClarificationFeishuPlainReplySupplementsAndReplay` now explicitly sets
+  the R9 flag to `0`, then exercises the existing authenticated clarification
+  callback through `Hub.Dispatch`. It passes with two posts at floors 1 and 2,
+  both receipts sent, exact receipt prefixes `已入第1条` / `已入第2条`, and replay
+  creates no third post. This is the existing r50 clarification and receipt
+  path under the R9-off setting.
+- `TestNewPlatformRouteSweep` passed with 198 registered routes and 604 auth
+  requests checked; `TestConsoleTasksCompatibilityRoute` passed, retaining the
+  existing task-board 200 and legacy redirects (302). These cover the existing
+  Console route/auth surface alongside the six disabled R9 endpoints.
+
+Reproduction on this evidence tip:
+
+```
+$ go test ./cmd/workpulse -run '^(TestR9PMResponsibilityRegisteredRouteIsPlatformAdminOnly|TestNewPlatformRouteSweep|TestConsoleTasksCompatibilityRoute)$' -count=1 -v
+PASS; cmd/workpulse 0.687s
+TestNewPlatformRouteSweep: routes recorded=198 exempt=16 requests checked=604
+
+$ go test ./internal/m8 -run '^(TestR9PMDispatcherPassesNonR9ReplyThrough|TestR9PMFlagIsExactAndOffSkipsR9Lookup|TestClarificationFeishuPlainReplySupplementsAndReplay)$' -count=1 -v
+PASS; internal/m8 0.456s
+```
 
 ## Gates
 

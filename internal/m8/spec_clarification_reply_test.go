@@ -80,6 +80,9 @@ func clarificationReplyPosts(t *testing.T, e *shimEnv, q store.PilotQuestion) []
 }
 
 func TestClarificationFeishuPlainReplySupplementsAndReplay(t *testing.T) {
+	// R9 is explicitly off here: this existing callback/receipt path must retain
+	// its r50 behavior when the new PM-decision feature is not enabled.
+	t.Setenv("DW_PM_DECISION_REQUEST_ENABLED", "0")
 	e, q, sends, receipts := clarificationReplyFixture(t)
 	e.hub.processQuestions(e.ctx)
 	if *sends != 1 {

@@ -37,9 +37,9 @@ func TestR9PMResponsibilityRegisteredRouteIsPlatformAdminOnly(t *testing.T) {
 	mux := http.NewServeMux()
 	registerConsoleRoutes(mux, h, true)
 	body := `{"provider":"github","instance":"github.com","repository_id":"1","change_directory":"openspec/changes/demo","point_id":"R9-PM01","pm_user_id_lc":"manager"}`
-	call := func(token string) int {
+	call := func(method, path, token string) int {
 		t.Helper()
-		r := httptest.NewRequest(http.MethodPut, h.PublicOrigin+"/api/console/openspec-pm-responsibility", strings.NewReader(body))
+		r := httptest.NewRequest(method, h.PublicOrigin+path, strings.NewReader(body))
 		r.Header.Set("Origin", h.PublicOrigin)
 		r.Header.Set("Content-Type", "application/json")
 		if token != "" {
@@ -49,15 +49,31 @@ func TestR9PMResponsibilityRegisteredRouteIsPlatformAdminOnly(t *testing.T) {
 		mux.ServeHTTP(w, r)
 		return w.Code
 	}
-	if got := call(""); got != http.StatusUnauthorized {
+	const responsibility = "/api/console/openspec-pm-responsibility"
+	if got := call(http.MethodPut, responsibility, ""); got != http.StatusUnauthorized {
 		t.Fatalf("unauthenticated route status=%d, want 401", got)
 	}
 	for _, token := range []string{"r9-manager", "r9-member"} {
-		if got := call(token); got != http.StatusForbidden {
+		if got := call(http.MethodPut, responsibility, token); got != http.StatusForbidden {
 			t.Errorf("non-admin route token=%s status=%d, want 403", token, got)
 		}
 	}
-	if got := call("r9-root"); got != http.StatusOK {
+	if got := call(http.MethodPut, responsibility, "r9-root"); got != http.StatusOK {
 		t.Fatalf("active platform-admin route status=%d, want 200", got)
+	}
+	// With the feature flag off, these newly registered endpoints retain the
+	// same externally visible 404 as an unknown route on the r50 console.
+	t.Setenv("DW_PM_DECISION_REQUEST_ENABLED", "0")
+	for _, tc := range []struct{ method, path string }{
+		{http.MethodGet, responsibility},
+		{http.MethodPut, responsibility},
+		{http.MethodDelete, responsibility},
+		{http.MethodGet, "/api/console/openspec-pm-requests"},
+		{http.MethodPost, "/api/console/openspec-pm-requests"},
+		{http.MethodPost, "/api/console/openspec-pm-requests/request-1/response"},
+	} {
+		if got := call(tc.method, tc.path, "r9-root"); got != http.StatusNotFound {
+			t.Errorf("disabled route %s %s status=%d, want 404", tc.method, tc.path, got)
+		}
 	}
 }
