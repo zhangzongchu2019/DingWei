@@ -19,3 +19,14 @@ B01～B03的基线事实盘点完成，均为「部分具备」，可关闭T-03.
 设计拟用0074新增责任映射、request、append-only response、跨渠道delivery/outbox、Feishu inbound去重键和审计表；request与两个渠道待办同事务，提醒due/period持久化，重启扫描恢复；唯一键防同一请求、事件和提醒period重复。可信回复只接已认证native WS、原始personal reply、可核provider parent message与当前request generation，沿用App/tenant/PM/current read复核。基线支撑与限制见 `internal/store/migrations/0062_spec_clarification_transport.sql:11-38`、`internal/m8/spec_clarification_reply.go:41-59,186-217`。
 
 待组长定：谁是每point PM映射的权威配置者/导入源；映射新增修改是否采用现有R7责任映射或新增受控配置入口。PM的身份主键、Console和Feishu映射链及防旧代际规则已在本设计写明。此设计不表示真实飞书通道或周期闭环已运行。
+
+## S-R51 implementation attachment points (2026-11-04)
+
+- Migration and ledger preflight: `internal/store/migrations/0074_pm_decision_request.sql`; exact full-DDL preflight set in `internal/store/sqlite.go`.
+- Sole-authority PM mapping, mutation audit, generation, request/outbox/response/dedupe/scheduler persistence: `internal/store/r9_pm.go`.
+- Fixed-point proposal parsing and canonical content fingerprint: `internal/r9pm/proposal.go`.
+- Exact feature flag, admin mapping handlers and Console response/task handlers: `internal/m8/r9_pm_mapping.go` and `internal/m8/r9_pm_console.go`.
+- Request admission, immutable proposal read, missing-mapping status and transactional request creation: `internal/m8/r9_pm_request.go`.
+- Trusted Feishu reply validation, FCS_RPC_URL exclusion, CAS and periodic delivery/retry/unknown receipts: `internal/m8/r9_pm_reply.go`.
+- Only the existing private Feishu sender is wired by `cmd/workpulse/r9_pm_feishu.go`; API routes are registered in `cmd/workpulse/console_routes.go`, and the periodic worker is triggered from the existing Hub lifecycle in `internal/m8/hub.go`.
+- Coverage is in `internal/store/r9_pm_migration_test.go`, `internal/m8/r9_pm_*_test.go`, `internal/r9pm/proposal_test.go`, and `cmd/workpulse/r9_routes_test.go`. Route tests exercise unauthenticated, non-admin and admin sessions. These tests use isolated stores and fake senders; they do not assert a real provider delivery.
