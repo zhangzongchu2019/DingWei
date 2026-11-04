@@ -64,6 +64,18 @@ func TestR9PMResponsibilityEmptySetDeleteGenerationAndAudit(t *testing.T) {
 	if err = s.db.QueryRowContext(ctx, `SELECT status FROM r9_pm_request WHERE request_id='old'`).Scan(&state); err != nil || state != "superseded" {
 		t.Fatalf("old request state=%q err=%v", state, err)
 	}
+	var newPM, newStatus string
+	var newMappingGeneration, newGeneration int64
+	if err = s.db.QueryRowContext(ctx, `SELECT pm_user_id_lc,mapping_generation,generation,status FROM r9_pm_request WHERE request_id<>'old' AND point_id=? ORDER BY generation DESC LIMIT 1`, k.PointID).Scan(&newPM, &newMappingGeneration, &newGeneration, &newStatus); err != nil {
+		t.Fatal(err)
+	}
+	var reissuedDeliveries int
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM r9_pm_delivery WHERE request_id IN (SELECT request_id FROM r9_pm_request WHERE pm_user_id_lc='pm2@example.test') AND state='pending'`).Scan(&reissuedDeliveries); err != nil {
+		t.Fatal(err)
+	}
+	if newPM != "pm2@example.test" || newMappingGeneration != 2 || newGeneration != 2 || newStatus != "open" || reissuedDeliveries != 2 {
+		t.Fatalf("mapping change did not create a fresh paired generation: pm=%s mapping_generation=%d generation=%d status=%s deliveries=%d", newPM, newMappingGeneration, newGeneration, newStatus, reissuedDeliveries)
+	}
 	g, err = s.DeleteR9PMResponsibility(ctx, k, "admin@example.test")
 	if err != nil || g != 3 {
 		t.Fatalf("delete gen=%d err=%v", g, err)
@@ -75,6 +87,10 @@ func TestR9PMResponsibilityEmptySetDeleteGenerationAndAudit(t *testing.T) {
 	var audits int
 	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM r9_pm_audit WHERE actor_user_id_lc='admin@example.test' AND action IN ('set','delete')`).Scan(&audits); err != nil || audits != 3 {
 		t.Fatalf("audit rows=%d err=%v", audits, err)
+	}
+	var pending int
+	if err = s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM r9_pm_delivery WHERE state='pending'`).Scan(&pending); err != nil || pending != 0 {
+		t.Fatalf("mapping delete left old channel todos pending=%d err=%v", pending, err)
 	}
 }
 
@@ -148,6 +164,77 @@ func TestR9PMSchedulerPersistsOneDuePeriodAndSkipsBacklog(t *testing.T) {
 	}
 	if reminders != 4 || missed != 1 {
 		t.Fatalf("reminders=%d missed=%d", reminders, missed)
+	}
+	var status, answer, answeredAt string
+	if err = s.db.QueryRowContext(ctx, `SELECT status,answer,answered_at_utc FROM r9_pm_request WHERE request_id=?`, req.RequestID).Scan(&status, &answer, &answeredAt); err != nil {
+		t.Fatal(err)
+	}
+	if status != "timed_out" || answer != "" || answeredAt != "" {
+		t.Fatalf("silence was converted into a PM decision: status=%s answer=%s answered_at=%s", status, answer, answeredAt)
+	}
+}
+
+func TestR9PMRequestResponseAndClosurePersistAcrossRestart(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "restart.db")
+	s, err := OpenSQLite(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = s.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	k := R9PMKey{"github", "github.com", "restart", "change", "PM01"}
+	if _, err = s.SetR9PMResponsibility(ctx, k, "pm", "admin"); err != nil {
+		t.Fatal(err)
+	}
+	in := R9PMCreateInput{RequestID: "restart-request", R9PMKey: k, CommitSHA: "c", ContentSHA256: "h", PMUserIDLC: "pm", ConsoleRecipient: "pm", FeishuRecipient: "ou_pm", FeishuIssuer: "bot"}
+	if _, created, e := s.CreateR9PMRequest(ctx, in); e != nil || !created {
+		t.Fatalf("initial create created=%v err=%v", created, e)
+	}
+	if err = s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	s, err = OpenSQLite(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = s.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if req, created, e := s.CreateR9PMRequest(ctx, in); e != nil || created || req.RequestID != in.RequestID {
+		t.Fatalf("restart duplicate created=%v request=%+v err=%v", created, req, e)
+	}
+	response := R9PMResponseInput{ResponseID: "restart-response", RequestID: in.RequestID, Generation: 1, PrincipalUserIDLC: "pm", Channel: "feishu", Decision: "agree", Issuer: "bot", Tenant: "tenant", MessageID: "restart-message", EventID: "restart-event", PayloadSHA256: "body"}
+	if accepted, e := s.AcceptR9PMResponse(ctx, response); e != nil || !accepted {
+		t.Fatalf("first durable response accepted=%v err=%v", accepted, e)
+	}
+	if err = s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	s, err = OpenSQLite(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	if err = s.Migrate(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if accepted, e := s.AcceptR9PMResponse(ctx, response); e != nil || accepted {
+		t.Fatalf("replayed durable event accepted=%v err=%v", accepted, e)
+	}
+	conflicting := response
+	conflicting.ResponseID = "restart-response-conflict"
+	conflicting.PayloadSHA256 = "different-body"
+	if accepted, e := s.AcceptR9PMResponse(ctx, conflicting); e == nil || accepted {
+		t.Fatalf("same event ID with different payload accepted=%v err=%v", accepted, e)
+	}
+	var status string
+	if err = s.db.QueryRowContext(ctx, `SELECT status FROM r9_pm_request WHERE request_id=?`, in.RequestID).Scan(&status); err != nil || status != "answered" {
+		t.Fatalf("restart reopened answered request status=%s err=%v", status, err)
+	}
+	if tasks, e := s.ListR9PMConsoleTasks(ctx, "pm"); e != nil || len(tasks) != 0 {
+		t.Fatalf("answered request todo reopened after restart tasks=%+v err=%v", tasks, e)
 	}
 }
 

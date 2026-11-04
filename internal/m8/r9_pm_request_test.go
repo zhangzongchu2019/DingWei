@@ -57,10 +57,19 @@ func TestRequestR9PMDecisionRequiresMappedPMAndCreatesBoundRequest(t *testing.T)
 	if err := mem.CreateUser(ctx, identity.User{UserID: "pm", ShortName: "pm", State: identity.UserActive, Type: identity.UserMember}); err != nil {
 		t.Fatal(err)
 	}
+	if err := mem.CreateUser(ctx, identity.User{UserID: "intruder", ShortName: "intruder", State: identity.UserActive, Type: identity.UserMember}); err != nil {
+		t.Fatal(err)
+	}
 	if err := mem.CreateRegistrationCode(ctx, "pm", "bind", time.Now().Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := mem.RedeemRegistrationCode(ctx, "bind", identity.Identity{Provider: "feishu", Issuer: "bot", Subject: "ou_pm"}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if err := mem.CreateRegistrationCode(ctx, "intruder", "intruder-bind", time.Now().Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := mem.RedeemRegistrationCode(ctx, "intruder-bind", identity.Identity{Provider: "feishu", Issuer: "bot", Subject: "ou_intruder"}, time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	h.Identity = identity.NewService(mem, nil, nil)
@@ -87,6 +96,33 @@ func TestRequestR9PMDecisionRequiresMappedPMAndCreatesBoundRequest(t *testing.T)
 	payload := []byte("reply")
 	sum := sha256.Sum256(payload)
 	msg := model.Message{BotChannelID: "bot", SenderOpenID: "ou_pm", ChatType: model.ChatPersonal, IngressProvenance: model.IngressFeishuWSAuthenticated, FeishuReply: &model.FeishuReplyMetadata{Authenticated: true, MessageID: "om_r9_reply", EventID: "ev-r9-reply", ParentID: "om_r9_request", RootID: "om_r9_request", MessageType: "text", Tenant: "tenant", SenderTenant: "tenant", AppID: "app", SenderType: "user", ContentSHA: hex.EncodeToString(sum[:])}}
+	for name, bad := range map[string]model.Message{
+		"untrusted transport": func() model.Message { m := msg; m.IngressProvenance = model.IngressProvenance("untrusted"); return m }(),
+		"group chat":          func() model.Message { m := msg; m.ChatType = model.ChatGroup; return m }(),
+		"wrong PM":            func() model.Message { m := msg; m.SenderOpenID = "ou_intruder"; return m }(),
+	} {
+		_, handled, e := h.dispatchR9PMReply(ctx, bad, "同意")
+		if e != nil || name == "wrong PM" && !handled || name != "wrong PM" && handled {
+			t.Errorf("%s Feishu input handled=%v err=%v", name, handled, e)
+		}
+		pending, e := db.ListR9PMConsoleTasks(ctx, "pm")
+		if e != nil || len(pending) != 1 {
+			t.Fatalf("%s input changed open request: tasks=%+v err=%v", name, pending, e)
+		}
+	}
+	if err := db.DeleteSpecReadBinding(ctx, "root", "pm", "github", "github.com"); err != nil {
+		t.Fatal(err)
+	}
+	if _, handled, e := h.dispatchR9PMReply(ctx, msg, "同意"); e != nil || !handled {
+		t.Fatalf("revoked repository read was not rejected: handled=%v err=%v", handled, e)
+	}
+	pending, err := db.ListR9PMConsoleTasks(ctx, "pm")
+	if err != nil || len(pending) != 1 {
+		t.Fatalf("revoked repository read changed request: tasks=%+v err=%v", pending, err)
+	}
+	if err := db.SetSpecReadBinding(ctx, "root", specread.Binding{Principal: "pm", Provider: "github", Instance: "github.com", AccountID: "1", Login: "alice"}); err != nil {
+		t.Fatal(err)
+	}
 	first, err := h.Dispatch(ctx, msg, "同意")
 	if err != nil || !first.Matched || first.Reply != "已记录你的 PM 决定。" {
 		t.Fatalf("trusted reply=%+v err=%v", first, err)

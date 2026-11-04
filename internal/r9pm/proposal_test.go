@@ -47,3 +47,21 @@ func TestParseDecisionPointsRejectsMalformedClosedPointAndFence(t *testing.T) {
 		}
 	}
 }
+
+func TestPointFingerprintChangesWithQuestionOptionsRecommendationAndPM(t *testing.T) {
+	base := Point{ID: "R9-PM01", Question: "Q?", Options: []string{"A. yes", "B. no"}, Recommendation: "A"}
+	want := base.ContentSHA256("pm-a")
+	variants := []Point{
+		{ID: base.ID, Question: "Q2?", Options: base.Options, Recommendation: base.Recommendation},
+		{ID: base.ID, Question: base.Question, Options: []string{"A. yes", "B. no", "C. later"}, Recommendation: base.Recommendation},
+		{ID: base.ID, Question: base.Question, Options: base.Options, Recommendation: "B"},
+	}
+	for i, p := range variants {
+		if got := p.ContentSHA256("pm-a"); got == want {
+			t.Errorf("point content variant %d reused prior fingerprint %s", i, got)
+		}
+	}
+	if got := base.ContentSHA256("pm-b"); got == want {
+		t.Fatal("responsibility PM change reused prior fingerprint")
+	}
+}

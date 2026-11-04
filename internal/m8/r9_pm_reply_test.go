@@ -16,11 +16,24 @@ type r9ReplyRepoFixture struct {
 	store.Repository
 	target            *store.R9PMReplyTarget
 	lookups, accepted int
+	err               error
 }
 
 func (r *r9ReplyRepoFixture) R9PMReplyTarget(context.Context, string) (*store.R9PMReplyTarget, error) {
 	r.lookups++
-	return r.target, nil
+	return r.target, r.err
+}
+
+func TestR9PMDispatcherPassesNonR9ReplyThrough(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	repo := &r9ReplyRepoFixture{err: store.ErrR9PMNotFound}
+	h.Repo = repo
+	t.Setenv("DW_PM_DECISION_REQUEST_ENABLED", "1")
+	msg := model.Message{ChatType: model.ChatPersonal, IngressProvenance: model.IngressFeishuWSAuthenticated, FeishuReply: &model.FeishuReplyMetadata{ParentID: "clarification-parent"}}
+	_, handled, err := h.dispatchR9PMReply(ctx, msg, "同意")
+	if err != nil || handled || repo.accepted != 0 {
+		t.Fatalf("non-R9 parent was intercepted: handled=%v accepts=%d err=%v", handled, repo.accepted, err)
+	}
 }
 func (r *r9ReplyRepoFixture) AcceptR9PMResponse(context.Context, store.R9PMResponseInput) (bool, error) {
 	r.accepted++
