@@ -68,12 +68,20 @@ const NGINX_CONF = path.join(HERE, '..', 'deploy', 'nginx-dingwei.conf');
 const SESSION = 'mdimg-alpha-2642';
 const VP = { width: 1280, height: 900 };
 const WAIT_MS = 30000;
-const SETTLE_MS = 1600;          // 附件卡是异步的(HEAD 探测 + 图片 load),给足时间再断言,免得量到中间态
+const SETTLE_MS = 1600;          // 其他用例的原有稳定窗口;G6 改为等待两张目标卡出现
+const CASE_FILTER = process.argv.find((arg) => arg.startsWith('--case='))?.slice(7) || '';
+const MUTATE_NO_G6_CARD = process.argv.includes('--mutate-no-g6-card');
 const SENTINEL = 'DWMDIMGSENTINEL';   // 🔴 与变异无关的等待锚:每例正文都带它
 
 let RENDERER_BYTES;
 try {
   RENDERER_BYTES = fs.readFileSync(RENDERER);
+  if (MUTATE_NO_G6_CARD) {
+    const src = RENDERER_BYTES.toString('utf8');
+    const anchor = 'slot.replaceWith(box); rec.node = box;';
+    if (!src.includes(anchor)) throw new Error('G6 mutation anchor missing');
+    RENDERER_BYTES = Buffer.from(src.replace(anchor, 'slot.remove(); rec.node = slot;'));
+  }
 } catch (e) {
   console.error(`环境不可用:读不到 renderer(${RENDERER}):${e.message}`);
   process.exit(3);
@@ -811,7 +819,20 @@ function caseG6(bytes) {
     probe: [async (page, out) => {
       await page.waitForSelector('#timeline .turn-assistant .event-content .md', { timeout: WAIT_MS, state: 'attached' })
         .catch(() => { throw new Error('等不到回合重建后的 .md ⇒ 先修装置'); });
-      await sleep(SETTLE_MS);
+      const { ubad, ugone } = out.ctx;
+      const cardsReady = await page.waitForFunction(({ bad, gone }) => {
+        const cards = [...document.querySelectorAll('#timeline .attachment')];
+        const badCard = cards.find((node) => node.dataset.fileUrl === bad);
+        const goneCard = cards.find((node) => node.dataset.fileUrl === gone);
+        const unresolved = [...document.querySelectorAll('#timeline .md img')]
+          .some((node) => node.src === bad || node.src === gone);
+        return !unresolved && badCard?.querySelector('a.attachment-dl') &&
+          goneCard?.dataset.dispatch === 'gone' && (goneCard.querySelector('.attachment-note')?.textContent || '').includes('7 天');
+      }, { bad: ubad, gone: ugone }, { timeout: 60000 }).then(() => true, () => false);
+      if (!cardsReady) console.log('🔵 G6 条件等待到 60s：', await page.evaluate(({ bad, gone }) => ({
+        images: [...document.querySelectorAll('#timeline .md img')].map((node) => node.src),
+        cards: [...document.querySelectorAll('#timeline .attachment')].map((node) => ({ url: node.dataset.fileUrl, dispatch: node.dataset.dispatch, dls: node.querySelectorAll('a.attachment-dl').length, note: node.querySelector('.attachment-note')?.textContent || '' })),
+      }), { bad: ubad, gone: ugone }));
       out.scans.push({ at: '回合重建后', s: await scan(page) });
     }],
     check: (out) => {
@@ -980,6 +1001,7 @@ const METRIC = {
 
     for (const mk of BROWSERS_CASES) {
       const c = mk();
+      if (CASE_FILTER && c.name !== CASE_FILTER) continue;
       await t(`${c.name} ${c.title}`, async () => {
         const out = await runCase(browser, c);
         if (out.error) throw new Error(`装置异常:${out.error}`);
@@ -991,7 +1013,7 @@ const METRIC = {
 
     // ── 五条阳性对照:变异必须让**对应那格的观测量**动起来 ──────────────────────────
     const srcText = RENDERER_BYTES.toString('utf8');
-    for (const name of Object.keys(MUTATIONS)) {
+    for (const name of (CASE_FILTER ? [] : Object.keys(MUTATIONS))) {
       const m = MUTATIONS[name];
       const spec = METRIC[name];
       await t(`PC ${name} 阳性对照:${m.label} ⇒ **必须观测到观测量移动**(不红说明探针没有分辨力)`, async () => {
