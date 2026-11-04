@@ -307,6 +307,7 @@ func run(logger *slog.Logger) error {
 		}
 	}
 	configurePilotQuestionFeishu(prefixHub, feishuGateway)
+	configureR9PMFeishu(prefixHub, feishuGateway)
 	configureSpecClarification(prefixHub)
 	if err := configureClarificationReplyAuthority(prefixHub, feishuGateway); err != nil {
 		return err

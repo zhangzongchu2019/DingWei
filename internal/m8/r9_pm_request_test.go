@@ -1,0 +1,102 @@
+package m8
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/specread"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
+)
+
+type r9ProposalProvider struct{ body string }
+
+func (*r9ProposalProvider) Repository(context.Context, string) (specread.Repository, error) {
+	return specread.Repository{ID: "1", FullName: "owner/repo"}, nil
+}
+func (*r9ProposalProvider) Authorize(context.Context, specread.Repository, specread.Binding) error {
+	return nil
+}
+func (*r9ProposalProvider) Resolve(context.Context, specread.Repository, string) (string, error) {
+	return strings.Repeat("a", 40), nil
+}
+func (p *r9ProposalProvider) Tree(context.Context, specread.Repository, string) ([]specread.Entry, error) {
+	return []specread.Entry{{Path: "openspec/changes/demo/proposal.md", SHA: strings.Repeat("b", 40), Mode: "100644", Type: "blob", Size: int64(len(p.body))}}, nil
+}
+func (p *r9ProposalProvider) Blob(context.Context, specread.Repository, specread.Entry) ([]byte, error) {
+	return []byte(p.body), nil
+}
+func (*r9ProposalProvider) Source(_ specread.Repository, sha, path string) string {
+	return "https://github.test/owner/repo/blob/" + sha + "/" + path
+}
+
+func TestRequestR9PMDecisionRequiresMappedPMAndCreatesBoundRequest(t *testing.T) {
+	h, db, ctx := newTestHub(t)
+	t.Setenv("DW_PM_DECISION_REQUEST_ENABLED", "1")
+	const commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	proposal := "## 待 PM 决策\n- R9-PM01: 首期如何记录？\n  - 问题：是否先写平台？\n  - A. 平台记录、MR后置\n  - B. 立即写MR\n  - 建议：A\n"
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "alice", Provider: "feishu", ProviderIssuer: "test", ProviderSubject: "alice", DisplayName: "alice", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertConsolePrincipal(ctx, model.ConsolePrincipal{ID: "pm", Provider: "feishu", ProviderIssuer: "bot", ProviderSubject: "ou_pm", DisplayName: "pm", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetSpecReadBinding(ctx, "alice", specread.Binding{Principal: "alice", Provider: "github", Instance: "github.com", AccountID: "1", Login: "alice"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetSpecReadBinding(ctx, "pm", specread.Binding{Principal: "pm", Provider: "github", Instance: "github.com", AccountID: "1", Login: "alice"}); err != nil {
+		t.Fatal(err)
+	}
+	h.SpecReader = &specread.Service{Bindings: db, Providers: map[string]specread.Provider{"github:github.com": &r9ProposalProvider{body: proposal}}, Repositories: map[string]bool{"github:github.com:1": true}}
+	mem := identity.NewMemStore()
+	if err := mem.CreateUser(ctx, identity.User{UserID: "pm", ShortName: "pm", State: identity.UserActive, Type: identity.UserMember}); err != nil {
+		t.Fatal(err)
+	}
+	if err := mem.CreateRegistrationCode(ctx, "pm", "bind", time.Now().Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := mem.RedeemRegistrationCode(ctx, "bind", identity.Identity{Provider: "feishu", Issuer: "bot", Subject: "ou_pm"}, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	h.Identity = identity.NewService(mem, nil, nil)
+	c := specread.Coordinate{Provider: "github", Instance: "github.com", Repository: "1", Commit: commit}
+	if _, err := h.RequestR9PMDecision(ctx, "alice", c, "demo", "R9-PM01"); err != ErrR9PMNotConfigured {
+		t.Fatalf("unmapped point did not stop: %v", err)
+	}
+	k := store.R9PMKey{Provider: "github", Instance: "github.com", RepositoryID: "1", ChangeDirectory: "demo", PointID: "R9-PM01"}
+	if _, err := db.SetR9PMResponsibility(ctx, k, "pm", "root"); err != nil {
+		t.Fatal(err)
+	}
+	result, err := h.RequestR9PMDecision(ctx, "alice", c, "demo", "R9-PM01")
+	if err != nil || !result.Created || result.Request.Status != "open" {
+		t.Fatalf("request=%+v err=%v", result, err)
+	}
+	tasks, err := db.ListR9PMConsoleTasks(ctx, "pm")
+	if err != nil || len(tasks) != 1 || tasks[0].CommitSHA != commit || tasks[0].Generation != 1 || tasks[0].MRWritebackStatus != "postponed" {
+		t.Fatalf("console task=%+v err=%v", tasks, err)
+	}
+	// A verified personal reply must bind the exact persisted Feishu message and current PM read ACL.
+	h.ClarificationReplyAuthorities = map[string]ClarificationReplyAuthority{"bot": {AppID: "app", Tenant: "tenant"}}
+	h.R9PMQuestionSender = func(context.Context, string, string, string, string) (string, error) { return "om_r9_request", nil }
+	h.dispatchR9PMDeliveries(ctx, db)
+	payload := []byte("reply")
+	sum := sha256.Sum256(payload)
+	msg := model.Message{BotChannelID: "bot", SenderOpenID: "ou_pm", ChatType: model.ChatPersonal, IngressProvenance: model.IngressFeishuWSAuthenticated, FeishuReply: &model.FeishuReplyMetadata{Authenticated: true, MessageID: "om_r9_reply", EventID: "ev-r9-reply", ParentID: "om_r9_request", RootID: "om_r9_request", MessageType: "text", Tenant: "tenant", SenderTenant: "tenant", AppID: "app", SenderType: "user", ContentSHA: hex.EncodeToString(sum[:])}}
+	first, err := h.Dispatch(ctx, msg, "同意")
+	if err != nil || !first.Matched || first.Reply != "已记录你的 PM 决定。" {
+		t.Fatalf("trusted reply=%+v err=%v", first, err)
+	}
+	late, err := h.Dispatch(ctx, msg, "同意")
+	if err != nil || !late.Matched || late.Reply == first.Reply {
+		t.Fatalf("duplicate reply not late: %+v err=%v", late, err)
+	}
+	tasks, err = db.ListR9PMConsoleTasks(ctx, "pm")
+	if err != nil || len(tasks) != 0 {
+		t.Fatalf("answered PM still has console todo: %+v err=%v", tasks, err)
+	}
+}

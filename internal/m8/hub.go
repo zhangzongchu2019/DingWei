@@ -149,6 +149,7 @@ type Hub struct {
 	blockerDispatchMu     sync.Mutex
 	questionDispatchMu    sync.Mutex
 	QuestionSender        QuestionSender
+	R9PMQuestionSender    QuestionSender
 	questionReminderAfter string
 	questionOutboxAfter   string
 
@@ -426,6 +427,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 	h.startCapabilityPendingCleanup()
 	h.configureSpecRead()
 	h.startFeishuStickyCleanup()
+	h.startR9PMScheduler()
 	return h
 }
 
@@ -1601,6 +1603,9 @@ func sessionNameRequestWarning(requested, keyID, ownerKey string) string {
 }
 
 func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {
+	if result, handled, err := h.dispatchR9PMReply(ctx, msg, text); handled {
+		return result, err
+	}
 	if result, handled, err := h.dispatchClarificationReply(ctx, msg, text); handled {
 		return result, err
 	}
