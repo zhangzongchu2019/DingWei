@@ -3268,6 +3268,34 @@
       }
     }
 
+    function timelineTimestamp(node) {
+      const explicit = Number(node?.dataset?.timelineTs);
+      if (Number.isFinite(explicit) && explicit > 0) return explicit;
+      const values = [...(node?.querySelectorAll?.('.event-time[data-ts]') || [])]
+        .map(el => Number(el.dataset.ts)).filter(value => Number.isFinite(value) && value > 0);
+      return values.length ? Math.min(...values) : NaN;
+    }
+
+    // Keep timeline order stable across live delivery, history replay and older-page insertion.
+    // Event timestamps are the sender's chronology; unknown timestamps retain caller order.
+    function placeTimelineNode(node, fallbackBefore = null) {
+      const ts = timelineTimestamp(node);
+      if (!Number.isFinite(ts)) {
+        if (fallbackBefore?.parentNode === timeline) timeline.insertBefore(node, fallbackBefore);
+        else timeline.appendChild(node);
+        return;
+      }
+      for (const current of timeline.children) {
+        if (current === node) continue;
+        const currentTs = timelineTimestamp(current);
+        if (Number.isFinite(currentTs) && currentTs > ts) {
+          timeline.insertBefore(node, current);
+          return;
+        }
+      }
+      timeline.appendChild(node);
+    }
+
     function baseCard(ev, cls = '', cardClass = 'message-card') {
       const card = document.createElement('article');
       card.className = `${cardClass} ${cls}`.trim();
@@ -3404,7 +3432,8 @@
         node.className = 'turn-group';
         node.dataset.turnKey = turnKey;
         node.setAttribute('aria-label', `Turn ${turnKey}`);
-        timeline.appendChild(node);
+        node.dataset.timelineTs = String(Number(ev.ts) || 0);
+        placeTimelineNode(node);
         group = { node, events: [], completedItemIds: new Set(), kind: 'turn', dirty: false, sorted: true, lastRender: 0, detached: false };
         turnGroups.set(turnKey, group);
       }
@@ -3703,7 +3732,7 @@
       const footText = isCopy ? '已同步/镜像(不追 ACK)' : stageFooterText(norm);
       footer.innerHTML = `${badge}${outboundTargetsHtml(norm)}<span class="stage-text">${escapeHtml(footText)}</span>`;
       card.appendChild(footer);
-      timeline.appendChild(card);
+      placeTimelineNode(card); // R51-TIMELINE-USER
       if (entry) {
         entry.card = card;
         entry.canonicalPrimary = ev.kind === 'input_posted';
@@ -3747,7 +3776,7 @@
       const text = String(ev.text || '');
       if (failed) content.textContent = text;
       else content.innerHTML = renderMarkdown(text);
-      timeline.appendChild(card);
+      placeTimelineNode(card);
       return true;
     }
 
@@ -3757,7 +3786,7 @@
       if (!body) {
         const { card, content } = baseCard(ev, `assistant ${ev.delivery_id?.startsWith('ext-') ? 'external' : ''}`);
         card.dataset.messageKey = k;   // D:逐出时按此反查,清 messageNodes/messageBuffers/assistantEntries
-        timeline.appendChild(card);
+        placeTimelineNode(card);
         body = content;
         messageNodes.set(k, body);
         messageBuffers.set(k, '');
@@ -4198,7 +4227,6 @@
         historyOlder.disabled = !historyHasOlder;
         const viewportTop = timeline.getBoundingClientRect().top;
         const anchor = [...timeline.children].find(node => node.getBoundingClientRect().bottom > viewportTop) || timeline.firstElementChild;
-        const insertionPoint = timeline.firstElementChild;
         const anchorTop = anchor?.getBoundingClientRect().top;
         const prior = new Set(timeline.children);
         historyApplying = true;
@@ -4216,7 +4244,9 @@
         flushPendingRenders();
         historyApplying = false;
         const added = [...timeline.children].filter(node => !prior.has(node));
-        if (insertionPoint) for (const node of added) timeline.insertBefore(node, insertionPoint);
+        // Each rendered history node already uses placeTimelineNode; reposition the
+        // newly-created set in timestamp order to preserve the same rule for old pages.
+        for (const node of added) placeTimelineNode(node);
         if (anchor && Number.isFinite(anchorTop)) timeline.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
         if (page.gap_before || (priorGeneration && historyGeneration && priorGeneration !== historyGeneration) || page.gaps?.length) {
           const notice = document.createElement('div');
