@@ -552,8 +552,8 @@ func TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards(t *testing.T) {
 	start := time.Now()
 	p.capCompletedLocked()
 	hit := time.Since(start)
-	if hit > 50*time.Millisecond {
-		t.Fatalf("batch eviction on hitting the cap took %s", hit)
+	if hit > completedTotalCapHitLimit {
+		t.Fatalf("batch eviction on hitting the cap took %s (limit %s)", hit, completedTotalCapHitLimit)
 	}
 	var total time.Duration
 	for i := 1; i <= 1000; i++ {
@@ -564,7 +564,7 @@ func TestCompletedTotalCapAt100kIsBatchedAndCheapAfterwards(t *testing.T) {
 	}
 	avg := total / 1000
 	t.Logf("100k: hit-cap batch %s; next 1000 completions avg cap check %s; size %d", hit, avg, len(p.completed))
-	if avg > time.Millisecond {
-		t.Fatalf("average cap check after the batch took %s", avg)
+	if avg > completedTotalCapAverageLimit {
+		t.Fatalf("average cap check after the batch took %s (limit %s)", avg, completedTotalCapAverageLimit)
 	}
 }

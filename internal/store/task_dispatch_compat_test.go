@@ -19,6 +19,79 @@ import (
 	"time"
 )
 
+type r10MigrationLedgerRow struct {
+	version   string
+	digest    string
+	appliedAt string
+}
+
+func r10ReadMigrationLedger(t *testing.T, db *SQLite) []r10MigrationLedgerRow {
+	t.Helper()
+	rows, err := db.db.Query(`SELECT version,digest,applied_at FROM schema_migrations ORDER BY version`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var ledger []r10MigrationLedgerRow
+	for rows.Next() {
+		var row r10MigrationLedgerRow
+		if err := rows.Scan(&row.version, &row.digest, &row.appliedAt); err != nil {
+			t.Fatal(err)
+		}
+		ledger = append(ledger, row)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return ledger
+}
+
+func r10ExpectedMigrationsAfterR48(t *testing.T, oldBinaryVersion string) []string {
+	t.Helper()
+	fields := strings.Fields(oldBinaryVersion)
+	if len(fields) < 2 || fields[0] != "0.2.3.23" || fields[1] != "1e17255f28ced042784337903914ca8c126ef4cf" {
+		t.Fatalf("R10_OLD_BINARY_SOURCE_PIN: version output %q", oldBinaryVersion)
+	}
+	// The pinned r48 binary above is the 0.2.3.23 build whose last migration
+	// was 0071_coordinate_review.sql. Enumerate later filenames from the same
+	// embedded migrations directory used by Migrate, so added migrations and
+	// the expected ledger row count follow the current migration set.
+	const r48LastMigration = "0071_coordinate_review.sql"
+	entries, err := migrationFS.ReadDir("migrations")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var later []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sql") && entry.Name() > r48LastMigration {
+			later = append(later, entry.Name())
+		}
+	}
+	return later
+}
+
+func r10LedgerHash(ledger []r10MigrationLedgerRow) string {
+	var b strings.Builder
+	for _, row := range ledger {
+		fmt.Fprintf(&b, "%s|%s|%s\n", row.version, row.digest, row.appliedAt)
+	}
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(b.String())))
+}
+
+func r10AddedMigrationNames(before, after []r10MigrationLedgerRow) []string {
+	known := make(map[string]struct{}, len(before))
+	for _, row := range before {
+		known[row.version] = struct{}{}
+	}
+	var added []string
+	for _, row := range after {
+		if _, ok := known[row.version]; !ok {
+			added = append(added, row.version)
+		}
+	}
+	return added
+}
+
 // Readiness helper reused from frozen R14 cf6134a6, only renamed for R10.
 func r10CompatFreeAddress(t *testing.T) string {
 	t.Helper()
@@ -123,9 +196,10 @@ func TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy(t *testing.T) {
 		t.Skip("exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate")
 	}
 	version, err := exec.Command(binary, "version").Output()
-	if err != nil || !strings.Contains(string(version), "1e17255f28ced042784337903914ca8c126ef4cf") {
-		t.Fatal("R10_OLD_BINARY_SOURCE_PIN", err)
+	if err != nil {
+		t.Fatal("R10_OLD_BINARY_VERSION", err)
 	}
+	expectedAdded := r10ExpectedMigrationsAfterR48(t, string(version))
 	root := t.TempDir()
 	original := filepath.Join(root, "r48.db")
 	r10CompatRunOldHub(t, binary, original, "r48-original")
@@ -142,41 +216,25 @@ func TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ledger := func() string {
-		rows, err := db.db.Query(`SELECT version,digest,applied_at FROM schema_migrations WHERE version<>'0073_task_dispatch_lock.sql' ORDER BY version`)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer rows.Close()
-		var b strings.Builder
-		n := 0
-		for rows.Next() {
-			var v, d, a string
-			if err = rows.Scan(&v, &d, &a); err != nil {
-				t.Fatal(err)
-			}
-			fmt.Fprintf(&b, "%s|%s|%s\n", v, d, a)
-			n++
-		}
-		if err = rows.Err(); err != nil {
-			t.Fatal(err)
-		}
-		if n != 70 {
-			t.Fatal("R10_OLD_LEDGER_NOT_70", n)
-		}
-		return fmt.Sprintf("%x", sha256.Sum256([]byte(b.String())))
-	}
-	before := ledger()
+	before := r10ReadMigrationLedger(t, db)
+	beforeHash := r10LedgerHash(before)
 	if err = db.Migrate(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if after := ledger(); after != before {
-		t.Fatal("R10_UPGRADE_OLD_LEDGER_CHANGED", before, after)
+	after := r10ReadMigrationLedger(t, db)
+	for i, oldRow := range before {
+		if i >= len(after) || after[i] != oldRow {
+			t.Fatalf("R10_UPGRADE_OLD_LEDGER_CHANGED at row %d: before=%+v after=%+v", i, oldRow, after)
+		}
 	}
-	var count int
-	if err = db.db.QueryRow(`SELECT count(*) FROM schema_migrations`).Scan(&count); err != nil || count != 71 {
-		t.Fatal("R10_UPGRADE_NOT_70_TO_71", count, err)
+	added := r10AddedMigrationNames(before, after)
+	if strings.Join(added, ",") != strings.Join(expectedAdded, ",") {
+		t.Fatalf("R10_UPGRADE_ADDED_MIGRATIONS: got=%v want=%v", added, expectedAdded)
 	}
+	if len(after) != len(before)+len(expectedAdded) {
+		t.Fatalf("R10_UPGRADE_LEDGER_ROW_COUNT: old=%d added=%d got=%d", len(before), len(expectedAdded), len(after))
+	}
+	upgradedLedger := append([]r10MigrationLedgerRow(nil), after...)
 	if err = db.Migrate(ctx); err != nil {
 		t.Fatal("R10_UPGRADE_RESTART", err)
 	}
@@ -227,8 +285,8 @@ func TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy(t *testing.T) {
 	if err != nil || len(events) != 2 || events[0].Type != "grant" || events[1].Type != "rollback" {
 		t.Fatal("R10_ROLLBACK_HISTORY_LOST", len(events), err)
 	}
-	if after := ledger(); after != before {
-		t.Fatal("R10_ROLLBACK_OLD_LEDGER_CHANGED")
+	if after := r10ReadMigrationLedger(t, db); strings.Join(r10AddedMigrationNames(upgradedLedger, after), ",") != "" || r10LedgerHash(after) != r10LedgerHash(upgradedLedger) {
+		t.Fatal("R10_ROLLBACK_MIGRATION_LEDGER_CHANGED")
 	}
 	if _, err = db.db.Exec(string(sql)); err != nil {
 		t.Fatal("R10_ROLLBACK_NOT_REPEATABLE", err)
@@ -237,7 +295,7 @@ func TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy(t *testing.T) {
 	if len(events) != 2 {
 		t.Fatal("R10_ROLLBACK_DUPLICATE_INVALIDATION_EVENT", len(events))
 	}
-	t.Logf("R10_R48_UPGRADE old_rows=70 new_rows=71 added=0073 old_ledger_sha256=%s unchanged=true; rollback state=expired generation=%d unknown_notices=1 events=2 tables_retained=true", before, lock.Generation)
+	t.Logf("R10_R48_UPGRADE old_rows=%d new_rows=%d added=%v old_ledger_sha256=%s unchanged=true; rollback state=expired generation=%d unknown_notices=1 events=2 tables_retained=true", len(before), len(after), added, beforeHash, lock.Generation)
 	db.Close()
 	r10CompatRunOldHub(t, binary, copyPath, "r48-after-r10-rollback")
 	badPath := filepath.Join(root, "failed-0073.db")
@@ -251,6 +309,7 @@ func TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy(t *testing.T) {
 	if _, err = bad.db.Exec(`CREATE TABLE r10_task_lock_operation(conflicting_shape TEXT)`); err != nil {
 		t.Fatal(err)
 	}
+	var count int
 	if err = bad.Migrate(ctx); err == nil {
 		t.Fatal("R10_MIGRATION_FAILURE_NOT_PROPAGATED")
 	}
