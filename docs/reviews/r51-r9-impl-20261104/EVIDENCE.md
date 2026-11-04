@@ -17,7 +17,7 @@ Times are UTC, captured by the invoking runner. All results below are from the f
 |---|---|---|---|
 | Full verbose strict package set | `HUB_TEST_PG_STRICT=1 go test -v ./internal/store ./internal/m8 ./cmd/workpulse ./internal/r9pm` | 2026-11-04 03:14:01.402–03:17:48.685 | rc 0; store 81.380s, m8 225.807s, cmd/workpulse 208.726s, r9pm 0.002s |
 | Build tests | `PATH=/tmp/r9helper-venv/bin:$PATH scripts/run-build-tests.sh` | 2026-11-04 03:14:01.402–03:22:48.989 | rc 0; final line `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2` |
-| OpenSpec strict | `NODE_OPTIONS=--disable-warning=ExperimentalWarning /home/dev/.npm/_npx/2e6f94dbd680ce26/node_modules/.bin/openspec validate --all --strict --no-interactive` | final validation after context/task update; exact CLI output: 22/22 valid | rc 0 |
+| OpenSpec strict | `NODE_OPTIONS=--disable-warning=ExperimentalWarning /home/dev/.npm/_npx/2e6f94dbd680ce26/node_modules/.bin/openspec validate --all --strict --no-interactive` | 2026-11-04 04:40Z | rc 0; `Totals: 22 passed, 0 failed (22 items)` |
 | Race matrix | `go test -race -count=3 -timeout=35m <package> -run <shard regex>` | 2026-11-04 03:26:27.842–04:38:48.704 | all 15 shards rc 0; shard inventory below |
 
 ### Race shard inventory
