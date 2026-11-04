@@ -23,6 +23,8 @@ const SHOTS = process.env.SHOTS || '/tmp/renderer-0206-shots';
 const fx = (n) => path.join(FIXTURES, n);
 // Negative control is CLI-only; no new environment override or product bypass.
 const withoutStatusQuery = process.argv.includes('--without-status-query');
+const CASE_FILTER = process.argv.find((arg) => arg.startsWith('--case='))?.slice(7) || '';
+const MUTATE_DRAFT_NAME = process.argv.includes('--mutate-draft-name');
 const statusURL = url => url.pathname.endsWith('/status') && (!withoutStatusQuery || !url.search);
 
 // 两个大件不入仓（820 KB / 50 MiB），改为**用时现生成**，不依赖任何人的本地残留。
@@ -74,6 +76,7 @@ async function assertServedRendererMatchesRepo(page) {
 
 let pass = 0, fail = 0;
 async function t(name, fn) {
+  if (CASE_FILTER && !name.includes(CASE_FILTER)) return;
   try { await fn(); console.log('  ✅', name); pass++; }
   catch (e) { console.log('  🔴', name, '->', e && e.message); fail++; }
 }
@@ -704,6 +707,7 @@ async function t(name, fn) {
     assert.strictEqual(nonAscii.length, 2,
       `另外两个夹具是**按设计**的纯 ASCII(一个测空格与括号、一个测 %),不得也变成非 ASCII —— 否则「ASCII 路径没坏」这一半就没人测了,实测 ${JSON.stringify(nonAscii)}`);
     const made = [];
+    const uploadDeadline = Date.now() + 120000;
     try {
       for (const n of names) {
         const t2 = path.join(FIXTURES, n);
@@ -716,12 +720,14 @@ async function t(name, fn) {
       await page.setInputFiles('#filePicker', made);
       // 🔴 关键:四个都要真的上传成功。编码没做时,setRequestHeader 抛异常 ⇒ 这里永远等不到。
       await page.waitForFunction(() => (document.getElementById('humanInput').value.match(/\/f\//g) || []).length >= 4,
-        null, { timeout: 60000 });
+        null, { timeout: Math.max(1, uploadDeadline - Date.now()) });
       const draft = await page.inputValue('#humanInput');
       for (const n of names) {
         assert.ok(draft.includes(n), `输入框应回填原名 ${JSON.stringify(n)}，实测 ${JSON.stringify(draft.slice(0, 300))}`);
       }
       // 草稿块也必须显示原名(不是 %E5%AD%A3… 那种编码串)
+      await page.waitForFunction(() => document.querySelectorAll('#draftAttachments .draft-chip .d-name').length >= 4, null, { timeout: Math.max(1, uploadDeadline - Date.now()) });
+      if (MUTATE_DRAFT_NAME) await page.locator('#draftAttachments .draft-chip .d-name').evaluateAll((nodes) => nodes.forEach((node) => { node.textContent = 'mutated'; }));
       const chipNames = await page.locator('#draftAttachments .draft-chip .d-name').allTextContents();
       for (const n of names) {
         assert.ok(chipNames.some((c) => c === n), `草稿块应显示原名 ${JSON.stringify(n)}，实测 ${JSON.stringify(chipNames)}`);

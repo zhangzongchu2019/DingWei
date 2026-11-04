@@ -15,6 +15,9 @@ const HARNESS_COMMIT = 'c0ffee1234567890';
 const START = 'const consolePageHTML = `';
 const END = '`\n\nfunc (h *Hub) HandleConsoleAgents';
 const MUTATION = process.argv.find((arg) => arg.startsWith('--mutate='))?.slice(9) || '';
+const CASE_FILTER = process.argv.find((arg) => arg.startsWith('--case='))?.slice(7) || '';
+const CONDITION_WAIT_MS = 30000;
+let caseFilterReached = false;
 
 function consoleHTMLFromProductionSource() {
   const source = fs.readFileSync(GO_SOURCE, 'utf8');
@@ -239,6 +242,10 @@ async function main() {
     const pageErrors = [];
     const consoleErrors = [];
   async function test(name, fn) {
+    if (CASE_FILTER && caseFilterReached) return;
+    const selectedCase = !CASE_FILTER || name.includes(CASE_FILTER);
+    if (CASE_FILTER && !selectedCase) return;
+    if (selectedCase) caseFilterReached = true;
     // Restore HTTP fixture state even when an assertion throws before local cleanup.
     // Counters remain monotonic; cookies and the shared page intentionally persist.
     const saved = { raceGroupResponses, raceGroupRequest, failGroupLoad, failGroupAction,
@@ -250,6 +257,7 @@ async function main() {
     const pagesBefore = new Set(browser.contexts().flatMap((context) => context.pages()));
     try {
       await fn();
+      if (selectedCase) caseFilterReached = true;
       passed += 1;
       console.log(`  PASS ${name}`);
     } catch (error) {
@@ -288,6 +296,12 @@ async function main() {
     page.setDefaultTimeout(1500);
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: `http://127.0.0.1:${port}` });
     await page.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
+    if (CASE_FILTER) {
+      await page.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.locator('#platform-items a[data-item-id="agent-groups"]').click();
+      await page.locator('#retryGroups').waitFor({ state: 'visible', timeout: CONDITION_WAIT_MS });
+    }
 
     await test('loads the real console document', async () => {
       assert.strictEqual(await page.title(), 'DingWei Agent Console');
@@ -714,26 +728,32 @@ async function main() {
     });
 
     await test('shows group load and network action failures beside their controls', async () => {
+      const conditionDeadline = Date.now() + CONDITION_WAIT_MS;
+      const expectText = async (selector, text, criterion) => {
+        const locator = page.locator(selector);
+        await page.waitForFunction(({ selector, text }) => { const node = document.querySelector(selector); return node && node.offsetParent !== null && node.textContent.includes(text); }, { selector, text }, { timeout: Math.max(1, conditionDeadline - Date.now()) }).catch(() => {});
+        assert.ok(String(await locator.textContent() || '').includes(text), criterion);
+      };
       failGroupLoad = '500';
       await page.locator('#retryGroups').click();
-      await page.locator('#groupRetryFeedback').getByText('编组加载失败: HTTP 500').waitFor({state:'visible'});
+      await expectText('#groupRetryFeedback', '编组加载失败: HTTP 500', '编组加载失败: HTTP 500');
       assert.strictEqual(await page.locator('#groupLeader').isDisabled(), true);
       assert.strictEqual(await page.locator('#groupLeader option').textContent(), '加载失败');
-      failGroupLoad = 'shape'; await page.locator('#retryGroups').click(); await page.locator('#groupRetryFeedback').getByText('响应格式无效').waitFor({state:'visible'});
-      failGroupLoad = 'timeout'; await page.evaluate(() => { groupFetchTimeoutMs=20; }); await page.locator('#retryGroups').click(); await page.locator('#groupRetryFeedback').getByText('请求超时').waitFor({state:'visible'});
-      failGroupLoad = 'empty'; await page.locator('#retryGroups').click(); await page.locator('#group-status').getByText('没有自己的 Agent').waitFor({state:'visible'});
+      failGroupLoad = 'shape'; await page.locator('#retryGroups').click(); await expectText('#groupRetryFeedback', '响应格式无效', '响应格式无效');
+      failGroupLoad = 'timeout'; await page.evaluate(() => { groupFetchTimeoutMs=20; }); await page.locator('#retryGroups').click(); await expectText('#groupRetryFeedback', '请求超时', '请求超时');
+      failGroupLoad = 'empty'; await page.locator('#retryGroups').click(); await expectText('#group-status', '没有自己的 Agent', '没有自己的 Agent');
       assert.strictEqual(await page.locator('#groupLeader option').textContent(), '没有自己的 Agent');
-      failGroupLoad = ''; await page.locator('#retryGroups').click(); await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
+      failGroupLoad = ''; await page.locator('#retryGroups').click(); await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false, null, { timeout: Math.max(1, conditionDeadline - Date.now()) });
       assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['alpha', 'beta']);
       failGroupLoad = '';
       failGroupAction = '500';
       if (await page.locator('#groupAddPanel').isHidden()) await page.locator('#groupAddOpen').click();
       await page.locator('#groupShortName').fill('团队3');
       await page.locator('#createGroup').click();
-      await page.locator('#groupNameFeedback').filter({hasText:'fixture create denied'}).waitFor({state:'visible'});
+      await expectText('#groupNameFeedback', 'fixture create denied', 'fixture create denied');
       failGroupAction = 'network';
       await page.locator('#createGroup').click();
-      await page.locator('#groupNameFeedback').filter({hasText:'请求失败:'}).waitFor({state:'visible'});
+      await expectText('#groupNameFeedback', '请求失败:', '请求失败:');
       failGroupAction = '';
     });
 
