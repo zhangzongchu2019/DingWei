@@ -4,8 +4,9 @@
 
 基于原派单基线 `113ac4befcbfafe9f392ab679d7c3eab137f9129`，当前工作从退回 tip `b5677648` 继续。只改 renderer、timeline browser regression 与本报告；未改 Hub/helper、wire protocol、schema、migration、release/version 位。
 
-- `view-service/renderer-canary-sse.html`：实时 SSE 用 `Last-Event-ID` 的 Hub epoch/seq 标记事件；历史 API 用 row cursor seq 标记事件。Hub 序号可用时按序号二分定位，不再扫描每张卡的 DOM 时间标签。`cli_injected` 确认到达后，以对应 `input_posted` 的 Hub 序号为分界，把同一 turn 拆成前后 segment；即使确认晚于输出也能分开文本。分页先读到确认、再上翻读到输入时，暂存确认栅栏并在输入到达时补建 segment。
-- `view-service/renderer-timeline-order-regression.js`：覆盖 Claude 完整文本块、Codex 同 item 重复 cursor 的 delta、Hub 实时 SSE、刷新重放、历史上翻（确认先于输入载入）、回合结束后才到的确认、空闲对照，以及 append/no-split 两刀。
+- `view-service/renderer-canary-sse.html`：为首次观察到的 Hub epoch／R15 history generation 分配单调 rank，同一 rank 内再比 seq；不同 epoch 的同 turn 输出分成独立 timeline group。回合组的最小排序键随事件增量维护，流式片段不再全量 map/min，也不再重复移动位置未变的组节点。二分查找使用独立的 sequenced-node 索引，无序号通知与缺口提示可留在相邻 DOM 子节点之间，不参与该索引。
+- `view-service/renderer-timeline-order-regression.js`：覆盖 Claude 完整文本块、Codex 同 item 重复 cursor 的 delta、Hub 实时 SSE、刷新重放、历史上翻（确认先于输入载入）、回合结束后才到的确认、空闲对照、无序号通知夹入，以及 append/no-split 两刀。
+- `view-service/renderer-epoch-order-regression.js`：正式回归 Hub 重启后新 SSE epoch 的低 seq 排在旧内容之后；还验证同一 turn 在 Hub epoch 与 history generation 改变时分组/排序仍保持先后。`--mutate-drop-epoch` 变异必须红。
 - 真实样本：**待 r51 预发**。夹具为读码对照形状，不冒充现网采样。
 
 ## Read-code event shape and clocks
@@ -21,20 +22,20 @@
 
 夹具采用与代码一致的形状：Hub `input_posted` / `delivery_update` 用 ISO `updated_at`（输入无 `ts`），助手事件使用 helper envelope 的整数毫秒 `ts`；history row 含 `{cursor:{generation,seq},event_id,received_at,event}`；实时 SSE 使用 `{epoch}-{seq}` ID。两种 helper 分段形状分别独立测试。实际预发序列仍待业主在 Console 发出回合中输入后核对。
 
-## Readings
+## Second rework readings (2026-11-05)
 
-- Bundled Chromium 与系统 Chrome，空闲各 10 轮：`realtime=10`、Claude active `20`、Codex active `20`、refresh replay `20`、older history page `10`、after-end `10`、idle `10`，全绿。最终 renderer SHA-256 `d26a2485b636eed4131b175dba91a5edb8292dd5f388dd9afe227e518089748f`。
-- Bundled Chromium 与系统 Chrome，16 个并行 CPU-bound worker 下同一 10 轮矩阵均全绿。
-- 两刀均 rc=1，失败在原判据 `timeline order invalid: late accepted user card must be between earlier and later same-turn output`：`--mutate-append` 与 `--mutate-no-split`。
-- 2000 个已有 timeline 节点后插入 100 项：bundled Chromium 空闲读数 `2.40ms`、CPU 满载 `2.40ms`；系统 Chrome 空闲 `2.50ms`、CPU 满载 `9.30ms`；每轮最终 2100 children。序号路径使用二分 DOM 定位，没有逐子节点 `querySelectorAll`。
-- `renderer-markdown-image-regression.js`：bundled Chromium、系统 Chrome 均 15 pass / 0 fail。
-- `tests/file-card-streaming.cjs`：bundled Chromium、系统 Chrome 均 12 pass / 0 fail。
-- `delivery-ack-v2-browser-regression.js`：bundled Chromium 与系统 Chrome 各 46 assertions / 0 failed。
-- `r15-session-history-browser-regression.js`：bundled Chromium 与系统 Chrome 均通过，100+100 页、实时衔接、cursor 排他与锚点读数 `0.34px`。
-- `view-service/r15-session-history-mutations.js`：三刀均 rc 2，分别红在 `timeline order invalid`、`scroll anchor shifted`、`post-live history prefix was evicted`。
-- `scripts/run-build-tests.sh`：使用锁定环境 `PATH=/tmp/dw-filecard-build-venv/bin:/usr/bin:/bin scripts/run-build-tests.sh`，rc=0，末行为 `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`；helper 两 profile 各 `1097/1097`。
-- `openspec validate r51-console-timeline-order --strict`：valid。
+- Final renderer SHA-256: `2bf883a284cb7f791d03cda14d000bf021cfffe4151b25e62d99c1d9fa786b3a`.
+- Bundled Chromium and system Chrome: idle 10-round and 16-worker loaded 10-round timeline matrices all passed. Each reported `realtime=10`, Claude active `20`, Codex active `20`, refresh replay `20`, older history page `10`, after-end `10`, idle `10`; the unsequenced-notice ordering cell passed. Insert benchmark (2000 existing nodes + 100) was 3.20ms / 3.20ms idle and 9.40ms / 8.50ms loaded, respectively.
+- Flood stress regression, final renderer: rc0 `ALL PASS`; flood pushed and received 100,000/100,000 at 5993/5991 events/s; late-order pushed and received 30,000/30,000 at 5983/5977 events/s. Flood longtasks 0 (max 0ms, total 0ms), agents maximum gap 1002ms, final text exact, `big_sorts=0`. Late-order longtasks 0, agents maximum gap 1002ms, text exact. The reviewer-provided baseline was longtask 0 and agents maximum gap 1003ms; current readings are at the same scale.
+- All three order mutations were detected: append and no-split each exited rc1 on the existing late-input ordering assertion; `--mutate-drop-epoch` exited rc1 on the restart-order assertion. The epoch regression printed `EPOCH_CHECK_PASS` and `HISTORY_GENERATION_CHECK_PASS` on the unmutated source.
+- `renderer-markdown-image-regression.js`: bundled Chromium and system Chrome each 15 pass / 0 fail.
+- `tests/file-card-streaming.cjs`: bundled Chromium and system Chrome each 12 pass / 0 fail.
+- `delivery-ack-v2-browser-regression.js`: bundled Chromium and system Chrome each 46 assertions / 0 failed.
+- `r15-session-history-browser-regression.js`: bundled Chromium and system Chrome both passed, including 100+100 rows, live continuation, exclusive cursors and anchor delta `0.34px`. One Chrome run while other browser jobs were competing timed out at the user-scroll assertion; isolated reruns on both browsers passed.
+- `view-service/r15-session-history-mutations.js`: bundled Chromium and system Chrome each detected all three inherited mutations at `timeline order invalid`, `scroll anchor shifted`, and `post-live history prefix was evicted`.
+- `scripts/run-build-tests.sh`: locked environment `PATH=/tmp/dw-filecard-build-venv/bin:/usr/bin:/bin`; rc0, `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`, helper profiles each `1097/1097`.
+- `openspec validate r51-console-timeline-order --strict`: valid.
 
 ## Handoff
 
-真实样本待 r51 预发。完成剩余验证后提交、推送并核对 `ls-remote`，再回报分支、tip 与读数；交件后冻结。本提交保持在 `b5677648` 之后，未改基线。
+真实样本待 r51 预发。复核要求的验证已完成；提交并推送后核对 `ls-remote`，再回报分支、tip 与读数；交件后冻结。本提交保持在 `b5677648` 之后，未改基线。

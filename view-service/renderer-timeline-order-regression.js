@@ -174,18 +174,34 @@ async function benchmarkHistoryInsert(page) {
   return page.evaluate(() => {
     const host = document.getElementById('timeline');
     host.replaceChildren();
+    timelineSequencedNodes.length = 0;
     for (let i = 1; i <= 2000; i++) {
       const node = document.createElement('article');
       node.dataset.timelineSeq = String(i * 2);
+      node.dataset.timelineEpochOrder = '0';
       host.appendChild(node);
+      timelineSequencedNodes.push(node);
     }
+    // Unsequenced notices are free to sit between sequenced cards. The binary
+    // search must use the maintained sequenced-node index, not all children.
+    const notice = document.createElement('div');
+    notice.className = 'event-card';
+    notice.textContent = 'UNSEQUENCED_GAP_NOTICE';
+    host.insertBefore(notice, timelineSequencedNodes[1001]);
     const start = performance.now();
     for (let i = 1; i <= 100; i++) {
       const node = document.createElement('article');
       node.dataset.timelineSeq = String(i * 2 + 1);
       placeTimelineNode(node);
     }
-    return { elapsedMs: performance.now() - start, children: host.children.length };
+    const ordered = timelineSequencedNodes.every((node, index, nodes) => index === 0
+      || compareTimelineKey(Number(nodes[index - 1].dataset.timelineEpochOrder) || 0,
+        timelineSequence(nodes[index - 1]), Number(node.dataset.timelineEpochOrder) || 0,
+        timelineSequence(node)) <= 0);
+    const noticeAnchored = Number(notice.previousElementSibling?.dataset?.timelineSeq) === 2002
+      && Number(notice.nextElementSibling?.dataset?.timelineSeq) === 2004;
+    return { elapsedMs: performance.now() - start, children: host.children.length,
+      unsequencedNoticeStable: notice.parentNode === host && ordered && noticeAnchored };
   });
 }
 
@@ -193,7 +209,7 @@ async function main() {
   if (mutationAppend || mutationNoSplit) {
     const anchor = mutationAppend
       ? '    function placeTimelineNode(node, fallbackBefore = null) {\n'
-      : '            splitTurnGroupAtHubSequence(norm.turnId, Number(wEntry.event?._hubSeq));\n';
+      : '            splitTurnGroupAtHubSequence(norm.turnId, Number(wEntry.event?._hubSeq), timelineEventRank(wEntry.event));\n';
     assert.strictEqual(source.split(anchor).length - 1, 1, 'mutation anchor must be unique');
     source = mutationAppend
       ? source.replace(anchor, `${anchor}      timeline.appendChild(node); // mutant: append instead of sequence positioning\n      return;\n`)
@@ -217,7 +233,8 @@ async function main() {
     const benchPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     const bench = await benchmarkHistoryInsert(benchPage);
     await benchPage.close();
-    console.log(`PASS rounds=${rounds} realtime=${rounds} claude_active=${rounds * 2} codex_active=${rounds * 2} reload_replay=${rounds * 2} history_older_page=${rounds} late_after_end=${rounds} idle_order=${rounds} benchmark_2000_plus_100_ms=${bench.elapsedMs.toFixed(2)} benchmark_children=${bench.children} renderer_sha=${require('crypto').createHash('sha256').update(source).digest('hex')}`);
+    assert.ok(bench.unsequencedNoticeStable, 'unsequenced notice must not break sequenced node ordering');
+    console.log(`PASS rounds=${rounds} realtime=${rounds} claude_active=${rounds * 2} codex_active=${rounds * 2} reload_replay=${rounds * 2} history_older_page=${rounds} late_after_end=${rounds} idle_order=${rounds} benchmark_2000_plus_100_ms=${bench.elapsedMs.toFixed(2)} benchmark_children=${bench.children} unsequenced_notice=stable renderer_sha=${require('crypto').createHash('sha256').update(source).digest('hex')}`);
   } finally {
     await browser.close();
     await new Promise(resolve => server.close(resolve));

@@ -1918,6 +1918,9 @@
       // 的反向索引,键不是 messageId,上面两句清不到它 => 重置后仍留着指向已清空卡片的悬挂键。
       // 实测重置前 dlv=5/cards=5,重置后 dlv=5/cards=0。与 releaseTimelineNode 处同源,一并清。
       c1DeliveryCards.clear();
+      timelineSequencedNodes.length = 0;
+      timelineEpochRanks.clear();
+      nextTimelineEpochRank = 1;
       stats.turns = 0;
       stats.cost = 0;
       stats.turnCost = 0;
@@ -2293,6 +2296,7 @@
     // D 逐出节点时同步清掉指向它的全部索引缓存(旧实现只清 turnGroups,其余 Map 只增不减)。
     function releaseTimelineNode(node) {
       const ds = (node && node.dataset) || {};
+      forgetTimelineSequenceNode(node);
       if (ds.turnKey) {
         const segments = turnGroupSegments.get(ds.turnKey) || [];
         const kept = segments.filter(group => {
@@ -2428,7 +2432,7 @@
             // The primary input_posted row is Hub-sequenced at send time. Split
             // at that boundary, even if its cli_injected acknowledgement arrives
             // after later same-turn output.
-            splitTurnGroupAtHubSequence(norm.turnId, Number(wEntry.event?._hubSeq));
+            splitTurnGroupAtHubSequence(norm.turnId, Number(wEntry.event?._hubSeq), timelineEventRank(wEntry.event));
             injectionFences.delete(norm.deliveryId);
             wEntry.event.turn_id = norm.turnId;
             wEntry.event._norm.turnId = norm.turnId;
@@ -2566,7 +2570,7 @@
       waitingDeliveries.delete(deliveryId);
       waitingArea.hidden = waitingDeliveries.size === 0;
       const boundary = Number(entry.event?._hubSeq);
-      if (Number.isSafeInteger(boundary) && boundary > 0) splitTurnGroupAtHubSequence(fence.turnId, boundary);
+      if (Number.isSafeInteger(boundary) && boundary > 0) splitTurnGroupAtHubSequence(fence.turnId, boundary, timelineEventRank(entry.event));
       const promoted = { ...entry.event, turn_id: fence.turnId,
         _norm: { ...entry.event._norm, turnId: fence.turnId, stage: 'cli_injected', stageIdx: C1_STAGE_ORDER.indexOf('cli_injected') } };
       renderEvent(promoted);
@@ -3329,23 +3333,78 @@
       return Number.isSafeInteger(value) && value > 0 ? value : NaN;
     }
 
+    // Epoch identifiers are opaque and random, so their lexical value cannot
+    // express chronology. Assign each newly observed epoch a stable rank; a
+    // later Hub epoch therefore sorts after every node from an earlier epoch.
+    const timelineEpochRanks = new Map();
+    let nextTimelineEpochRank = 1;
+    const timelineSequencedNodes = [];
+    function timelineEpochRank(epoch) {
+      if (!epoch) return 0;
+      if (!timelineEpochRanks.has(epoch)) timelineEpochRanks.set(epoch, nextTimelineEpochRank++);
+      return timelineEpochRanks.get(epoch);
+    }
+    function setTimelineEventEpoch(ev, epoch) {
+      if (!epoch) return;
+      ev._timelineEpoch = String(epoch);
+      ev._timelineEpochOrder = timelineEpochRank(ev._timelineEpoch);
+    }
+    function timelineEventRank(ev) {
+      return Number.isSafeInteger(ev?._timelineEpochOrder)
+        ? ev._timelineEpochOrder : timelineEpochRank(ev?._timelineEpoch);
+    }
+    function compareTimelineKey(aRank, aSeq, bRank, bSeq) {
+      return aRank === bRank ? aSeq - bSeq : aRank - bRank;
+    }
+    function setNodeTimelineKey(node, rank, seq) {
+      node.dataset.timelineEpochOrder = String(rank);
+      node.dataset.timelineSeq = String(seq);
+    }
+    function timelineEventsMinKey(events) {
+      let best = null;
+      for (const event of events) {
+        const seq = Number(event?._hubSeq);
+        if (!Number.isSafeInteger(seq) || seq <= 0) continue;
+        const rank = timelineEventRank(event);
+        if (!best || compareTimelineKey(rank, seq, best.rank, best.seq) < 0) best = { rank, seq };
+      }
+      return best;
+    }
+    function forgetTimelineSequenceNode(node) {
+      const index = timelineSequencedNodes.indexOf(node);
+      if (index >= 0) timelineSequencedNodes.splice(index, 1);
+    }
+
     // Keep timeline order stable across live delivery, history replay and older-page insertion.
     // Event timestamps are the sender's chronology; unknown timestamps retain caller order.
     function placeTimelineNode(node, fallbackBefore = null) {
       const seq = timelineSequence(node);
       if (Number.isFinite(seq)) {
-        // Sequenced Hub events dominate sender timestamps. Binary search keeps
-        // live insertion and 100-row history pages cheap on long timelines.
-        if (node.parentNode === timeline) timeline.removeChild(node);
-        let low = 0, high = timeline.children.length;
+        // Search only the maintained sequenced-node index. Notifications and
+        // gap markers have no sequence and may sit between timeline children;
+        // they must not invalidate the binary-search ordering invariant.
+        const rank = Number(node.dataset.timelineEpochOrder) || 0;
+        const oldRank = Number(node._timelineEpochOrderAtPlacement);
+        const oldSeq = Number(node._timelineSeqAtPlacement);
+        if (node.parentNode === timeline && oldRank === rank && oldSeq === seq) return;
+        if (node.parentNode === timeline) {
+          forgetTimelineSequenceNode(node);
+          timeline.removeChild(node);
+        }
+        let low = 0, high = timelineSequencedNodes.length;
         while (low < high) {
           const mid = (low + high) >>> 1;
-          const current = timeline.children[mid];
+          const current = timelineSequencedNodes[mid];
+          const currentRank = Number(current.dataset.timelineEpochOrder) || 0;
           const currentSeq = timelineSequence(current);
-          if (Number.isFinite(currentSeq) && currentSeq <= seq) low = mid + 1;
+          if (Number.isFinite(currentSeq) && compareTimelineKey(currentRank, currentSeq, rank, seq) <= 0) low = mid + 1;
           else high = mid;
         }
-        timeline.insertBefore(node, timeline.children[low] || null);
+        const next = timelineSequencedNodes[low] || null;
+        timelineSequencedNodes.splice(low, 0, node);
+        node._timelineEpochOrderAtPlacement = rank;
+        node._timelineSeqAtPlacement = seq;
+        timeline.insertBefore(node, next);
         return;
       }
       const ts = timelineTimestamp(node);
@@ -3497,9 +3556,12 @@
     function renderTurnEvent(turnKey, ev) {
       let group = turnGroups.get(turnKey);
       const hubSeq = Number(ev._hubSeq);
-      const segments = turnGroupSegments.get(turnKey);
-      if (segments && Number.isSafeInteger(hubSeq) && hubSeq > 0) {
-        group = segments.find(segment => hubSeq >= segment.rangeStart && hubSeq < segment.rangeEnd) || group;
+      const eventRank = Number.isSafeInteger(hubSeq) && hubSeq > 0 ? timelineEventRank(ev) : 0;
+      let segments = turnGroupSegments.get(turnKey);
+      if (segments && eventRank > 0) {
+        group = segments.find(segment => segment.timelineEpochOrder === eventRank
+          && hubSeq >= segment.rangeStart && hubSeq < segment.rangeEnd) || null;
+        if (!group) group = segments.find(segment => segment.timelineEpochOrder === eventRank) || null;
       }
       if (!group) {
         const node = document.createElement('article');
@@ -3507,12 +3569,15 @@
         node.dataset.turnKey = turnKey;
         node.setAttribute('aria-label', `Turn ${turnKey}`);
         node.dataset.timelineTs = String(Number(ev.ts) || 0);
-        node.dataset.timelineSeq = String(Number(ev._hubSeq) || 0);
-        placeTimelineNode(node);
         group = { node, events: [], completedItemIds: new Set(), kind: 'turn', dirty: false, sorted: true, lastRender: 0, detached: false,
+          timelineEpochOrder: eventRank || Number.POSITIVE_INFINITY, timelineSeq: Number.POSITIVE_INFINITY,
           rangeStart: 0, rangeEnd: Number.POSITIVE_INFINITY };
-        turnGroups.set(turnKey, group);
-        turnGroupSegments.set(turnKey, [group]);
+        if (!segments) segments = [];
+        const insertAt = eventRank > 0 ? segments.findIndex(segment => segment.timelineEpochOrder > eventRank) : -1;
+        if (insertAt >= 0) segments.splice(insertAt, 0, group);
+        else segments.push(group);
+        turnGroups.set(turnKey, segments.at(-1));
+        turnGroupSegments.set(turnKey, segments);
       }
       if (group.overCap) return;   // R-V2-0105 件一：已到硬上限并已提示
       const itemKey = ev.kind === 'assistant_text' ? stableAssistantItemKey(ev) : '';
@@ -3533,9 +3598,16 @@
       }
       const prevEv = group.events[group.events.length - 1];
       group.events.push(ev);   // 不做 cursor 去重:同一 item 的多片 delta 共用 cursor,去重会吞正文
-      const seqs = group.events.map(item => Number(item._hubSeq)).filter(value => Number.isSafeInteger(value) && value > 0);
-      if (seqs.length) group.node.dataset.timelineSeq = String(Math.min(...seqs));
-      placeTimelineNode(group.node);
+      const seq = Number(ev._hubSeq);
+      if (Number.isSafeInteger(seq) && seq > 0) {
+        const rank = timelineEventRank(ev);
+        if (compareTimelineKey(rank, seq, group.timelineEpochOrder, group.timelineSeq) < 0) {
+          group.timelineEpochOrder = rank;
+          group.timelineSeq = seq;
+          setNodeTimelineKey(group.node, rank, seq);
+          placeTimelineNode(group.node);
+        }
+      } else if (!group.node.parentNode) placeTimelineNode(group.node);
       // R-V2-0105 件一压力格：按 cursor 顺序到达（常态）不置乱序，重渲与合并就不必每次全量重排；
       // 全量重排在 2 万条时每次约百毫秒，每片都触发一次重渲时页面整个卡住（含同页 Agent 列表轮询）。
       // 平局（同 cursor 多片）保持到达序，与稳定排序结果相同。
@@ -3546,32 +3618,39 @@
       scheduleRender(group, completed);
     }
 
-    function splitTurnGroupAtHubSequence(turnKey, boundarySeq) {
+    function splitTurnGroupAtHubSequence(turnKey, boundarySeq, boundaryRank = 0) {
       const latest = turnGroups.get(turnKey);
       if (!latest || !Number.isSafeInteger(boundarySeq) || boundarySeq <= 0) return;
       const segments = turnGroupSegments.get(turnKey) || [latest];
-      const segmentIndex = segments.findIndex(segment => boundarySeq >= segment.rangeStart && boundarySeq < segment.rangeEnd);
+      const segmentIndex = segments.findIndex(segment => (!boundaryRank || segment.timelineEpochOrder === boundaryRank)
+        && boundarySeq >= segment.rangeStart && boundarySeq < segment.rangeEnd);
       if (segmentIndex < 0) return;
       const before = segments[segmentIndex];
       const earlier = [], later = [];
       for (const event of before.events) {
         const seq = Number(event._hubSeq);
-        (Number.isSafeInteger(seq) && seq >= boundarySeq ? later : earlier).push(event);
+        const rank = timelineEventRank(event);
+        (Number.isSafeInteger(seq) && seq > 0
+          && compareTimelineKey(rank, seq, boundaryRank || rank, boundarySeq) >= 0 ? later : earlier).push(event);
       }
       if (!earlier.length && !later.length) return;
       const priorEnd = before.rangeEnd;
       const after = { node: document.createElement('article'), events: later,
         completedItemIds: new Set(before.completedItemIds || []), kind: 'turn', dirty: false,
-        sorted: false, lastRender: 0, detached: false, rangeStart: boundarySeq, rangeEnd: priorEnd };
+        sorted: false, lastRender: 0, detached: false, timelineEpochOrder: boundaryRank || before.timelineEpochOrder,
+        timelineSeq: Number.POSITIVE_INFINITY, rangeStart: boundarySeq, rangeEnd: priorEnd };
       after.node.className = 'turn-group';
       after.node.dataset.turnKey = turnKey;
       after.node.setAttribute('aria-label', `Turn ${turnKey}`);
       if (earlier.length) {
         before.events = earlier;
         before.sorted = false;
+        before.timelineEpochOrder = boundaryRank || before.timelineEpochOrder;
         before.rangeEnd = boundarySeq;
-        before.node.dataset.timelineSeq = String(Math.min(...earlier.map(event => Number(event._hubSeq))));
+        const earlierKey = timelineEventsMinKey(earlier);
+        if (earlierKey) setNodeTimelineKey(before.node, earlierKey.rank, earlierKey.seq);
       } else {
+        forgetTimelineSequenceNode(before.node);
         before.node.remove();
         before.events = [];
         before.rangeEnd = boundarySeq;
@@ -3579,9 +3658,11 @@
         before.node.className = 'turn-group';
         before.node.dataset.turnKey = turnKey;
         before.node.setAttribute('aria-label', `Turn ${turnKey}`);
+        before.timelineEpochOrder = boundaryRank || before.timelineEpochOrder;
+        before.timelineSeq = Number.POSITIVE_INFINITY;
       }
-      const laterSeqs = later.map(event => Number(event._hubSeq)).filter(value => Number.isSafeInteger(value) && value > 0);
-      if (laterSeqs.length) after.node.dataset.timelineSeq = String(Math.min(...laterSeqs));
+      const laterKey = timelineEventsMinKey(later);
+      if (laterKey) setNodeTimelineKey(after.node, laterKey.rank, laterKey.seq);
       segments.splice(segmentIndex, 1, before, after);
       turnGroupSegments.set(turnKey, segments);
       turnGroups.set(turnKey, segments.at(-1));
@@ -3846,6 +3927,7 @@
       }
       const { card, content } = baseCard(ev, 'user');
       if (Number.isSafeInteger(Number(ev._hubSeq)) && Number(ev._hubSeq) > 0) card.dataset.timelineSeq = String(Number(ev._hubSeq));
+      if (Number.isSafeInteger(Number(ev._hubSeq)) && Number(ev._hubSeq) > 0) card.dataset.timelineEpochOrder = String(timelineEventRank(ev));
       content.textContent = ev.text || norm.text || '';
       attachFileRenders(card, ev.text || norm.text || '');   // 0.2.0.6 A：正文里的 /f/ 直链渲染
       if (norm.key) card.dataset.messageId = norm.key;
@@ -4362,6 +4444,7 @@
           delete ev._history_gap;
           ev._history = { generation: row.cursor.generation, seq: row.cursor.seq, event_id: row.event_id };
           ev._hubSeq = Number(row.cursor.seq);
+          setTimelineEventEpoch(ev, `history:${row.cursor.generation}`);
           handleIncomingEvent(ev);
         }
         // History rows must have concrete timeline nodes before we compute the
@@ -4926,7 +5009,11 @@
           const payload = JSON.parse(msg.data);
           if (!admitEventId(msg.lastEventId)) return;
           const eventCursor = parseEventId(msg.lastEventId);
-          if (eventCursor) payload._hubSeq = eventCursor.seq;
+          if (eventCursor) {
+            payload._hubSeq = eventCursor.seq;
+            payload._hubEpoch = eventCursor.epoch;
+            setTimelineEventEpoch(payload, `hub:${eventCursor.epoch}`);
+          }
           integrityDispatchDepth++;
           try { handleIncomingEvent(payload); } finally { integrityDispatchDepth--; }
           maybeClearRecoveredGap();
