@@ -292,7 +292,7 @@ func (h *Hub) HandleSessionHistory(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
-		user, err := h.Onboarding.ResolveSession(r.Context(), cookie.Value)
+		user, err := h.resolveNewPlatformHTTPSession(w, r, cookie.Value)
 		if err != nil {
 			http.NotFound(w, r)
 			return

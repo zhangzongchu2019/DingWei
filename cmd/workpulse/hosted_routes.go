@@ -27,6 +27,7 @@ type hostedDeps struct {
 	life      *hosted.Lifecycle
 	qs        *hosted.QuotaService
 	actor     func(r *http.Request) (string, error)
+	renew     func(http.ResponseWriter, *http.Request) error
 	ownsAgent func(r *http.Request, userLC, agentID string) bool // identity 归属（含管理用户豁免由身份侧定）
 	isManager func(r *http.Request, userLC string) bool          // 管理角色（C6）
 	listUsers func(r *http.Request) ([]hostedUser, error)        // 管理配额页用户清单（identity 侧）
@@ -45,7 +46,7 @@ type hostedUser struct {
 func registerHostedRoutes(mux interface {
 	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
 }, d hostedDeps) {
-	human := hostedHumanMux{mux: mux, access: d.access, actor: d.actor}
+	human := hostedHumanMux{mux: mux, access: d.access, actor: d.actor, renew: d.renew}
 	human.HandleFunc("GET /api/console/hosted/options", d.handleOptions)
 	human.HandleFunc("GET /api/console/hosted/nodes", d.handleNodeList)
 	registerHostedNodeAdmin(mux, d)

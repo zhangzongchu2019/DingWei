@@ -29,7 +29,7 @@ import (
 // wireHosted G4 装配。返回 false＝未装（缺主密钥配置）；错误＝装配失败（启动即拒）。
 // 须在 httpapi.API 构造之前调用（cfg.hosted 注入点在其上）。
 func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatformConfig, pool *repo.Pool,
-	idStore identity.Store, svc *identity.Service, actor func(r *http.Request) (string, error)) (bool, error) {
+	idStore identity.Store, svc *identity.Service, actor func(r *http.Request) (string, error), renew func(http.ResponseWriter, *http.Request) error) (bool, error) {
 	access, err := parseHostedAccessMode(os.Getenv("DW_G4_ACCESS_MODE"), os.Getenv("DW_G4_ACCESS_ALLOW_USER_IDS"))
 	if err != nil {
 		return false, err
@@ -100,7 +100,7 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 	if quotaOwner == "" || quotaOps == "" {
 		log.Printf("hosted quota: owner/ops destination configuration incomplete; missing routes stay pending, owner release requires explicit identity configuration")
 	}
-	(hostedQuotaRoutes{access: access, store: hst, gw: gate, identity: svc, actor: actor, owner: quotaOwner, ops: quotaOps, origin: cfg.publicOrigin}).register(mux)
+	(hostedQuotaRoutes{access: access, store: hst, gw: gate, identity: svc, actor: actor, renew: renew, owner: quotaOwner, ops: quotaOps, origin: cfg.publicOrigin}).register(mux)
 	if quotaOwner != "" {
 		startRunTask(ctx, "hosted_quota", func() { runQuotaNotices(ctx, hst, hub, quotaOwner, quotaOps) })
 	}
@@ -133,7 +133,7 @@ func wireHosted(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg *newPlatf
 			return e == nil && u.State == identity.UserActive && u.Type == identity.UserPlatformAdmin
 		},
 		orch: orch, life: life, qs: hosted.NewQuotaService(hst, idp),
-		actor: actor, pool: poolSvc, publicOrigin: cfg.publicOrigin, login: loginSvc,
+		actor: actor, renew: renew, pool: poolSvc, publicOrigin: cfg.publicOrigin, login: loginSvc,
 		ownsAgent: func(r *http.Request, userLC, agentID string) bool {
 			ags, err := svc.ListAgents(r.Context(), userLC)
 			if err != nil {

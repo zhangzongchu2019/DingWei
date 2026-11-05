@@ -108,6 +108,57 @@ func TestPGStoreCheckSchema(t *testing.T) {
 	}
 }
 
+func TestPGStoreTouchSessionGuardsAndAbsoluteCap(t *testing.T) {
+	pool, tc := pgSchemaFactory(t)(t)
+	ctx := context.Background()
+	for _, ddl := range identitytest.PGTestSchema() {
+		if _, err := pool.Exec(ctx, tc, ddl); err != nil {
+			t.Fatal(err)
+		}
+	}
+	s := identity.NewPGStore(pool)
+	now := time.Date(2026, 11, 5, 0, 0, 0, 0, time.UTC)
+	if err := s.CreateUser(ctx, identity.User{UserID: "touch", ShortName: "touch", Type: identity.UserMember, State: identity.UserActive, CreatedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+	key := identity.HashSecret("pg-touch")
+	if err := s.CreateSession(ctx, identity.Session{TokenHash: key, UserIDLC: "touch", CreatedAt: now, ExpiresAt: now.Add(identity.SessionTTL)}); err != nil {
+		t.Fatal(err)
+	}
+	changed, err := s.TouchSession(ctx, key, now.Add(7*time.Hour), now.Add(19*time.Hour))
+	if err != nil || !changed {
+		t.Fatalf("valid touch changed=%v err=%v", changed, err)
+	}
+	changed, err = s.TouchSession(ctx, key, now.Add(7*time.Hour+time.Second), now.Add(18*time.Hour))
+	if err != nil || changed {
+		t.Fatalf("shortening touch changed=%v err=%v", changed, err)
+	}
+	changed, err = s.TouchSession(ctx, key, now.Add(7*time.Hour+2*time.Second), now.Add(60*24*time.Hour))
+	if err != nil || !changed {
+		t.Fatalf("capped touch changed=%v err=%v", changed, err)
+	}
+	sess, _, err := s.ResolveSession(ctx, key, now.Add(7*time.Hour+3*time.Second))
+	if err != nil || !sess.ExpiresAt.Equal(now.Add(identity.SessionAbsoluteTTL)) {
+		t.Fatalf("absolute cap session=%+v err=%v", sess, err)
+	}
+	expired := identity.HashSecret("pg-expired")
+	if err := s.CreateSession(ctx, identity.Session{TokenHash: expired, UserIDLC: "touch", CreatedAt: now, ExpiresAt: now.Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	changed, err = s.TouchSession(ctx, expired, now.Add(time.Hour), now.Add(20*time.Hour))
+	if err != nil || changed {
+		t.Fatalf("expired touch changed=%v err=%v", changed, err)
+	}
+	revoked := identity.HashSecret("pg-revoked")
+	if err := s.CreateSession(ctx, identity.Session{TokenHash: revoked, UserIDLC: "touch", CreatedAt: now, ExpiresAt: now.Add(identity.SessionTTL), RevokedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+	changed, err = s.TouchSession(ctx, revoked, now, now.Add(20*time.Hour))
+	if err != nil || changed {
+		t.Fatalf("revoked touch changed=%v err=%v", changed, err)
+	}
+}
+
 // 同一套契约（与内存实现完全相同的 25 格）跑在 PG 上。
 func TestPGStoreContract(t *testing.T) {
 	identitytest.Run(t, pgFactory(t))

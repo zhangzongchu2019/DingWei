@@ -175,6 +175,12 @@ func (m *consoleMuxRegistry) actor(w http.ResponseWriter, r *http.Request, names
 		return consolemux.Authorization{}, "", time.Time{}, false
 	}
 	hash := identity.HashSecret(c.Value)
+	if m.h.Onboarding != nil {
+		if _, err := m.h.resolveNewPlatformHTTPSession(w, r, c.Value); err != nil {
+			writeAgentWSError(w, 401, "unauthenticated")
+			return consolemux.Authorization{}, "", time.Time{}, false
+		}
+	}
 	auth, start, err := m.authorize(r.Context(), hash, names)
 	if err != nil {
 		code := 503

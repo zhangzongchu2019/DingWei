@@ -87,10 +87,17 @@ type hostedHumanMux struct {
 	mux    hostedRouteMux
 	access hostedAccess
 	actor  func(*http.Request) (string, error)
+	renew  func(http.ResponseWriter, *http.Request) error
 }
 
 func (m hostedHumanMux) HandleFunc(pattern string, next func(http.ResponseWriter, *http.Request)) {
 	m.mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		if m.renew != nil {
+			if err := m.renew(w, r); err != nil {
+				hostedForbidden(w)
+				return
+			}
+		}
 		if _, ok := m.access.human(r, m.actor); !ok {
 			hostedForbidden(w)
 			return

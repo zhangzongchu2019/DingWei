@@ -20,6 +20,7 @@ type hostedQuotaRoutes struct {
 	gw                 hosted.NodeGateway
 	identity           *identity.Service
 	actor              func(*http.Request) (string, error)
+	renew              func(http.ResponseWriter, *http.Request) error
 	owner, ops, origin string
 }
 
@@ -54,8 +55,16 @@ func (d hostedQuotaRoutes) canMonitor(r *http.Request) bool {
 	return err == nil && ag != nil && full == d.ops
 }
 func (d hostedQuotaRoutes) register(mux httpapi.Mux) {
-	human := hostedHumanMux{mux: mux, access: d.access, actor: d.actor}
-	mux.HandleFunc("GET /api/console/hosted/quota-monitor", d.monitor)
+	human := hostedHumanMux{mux: mux, access: d.access, actor: d.actor, renew: d.renew}
+	mux.HandleFunc("GET /api/console/hosted/quota-monitor", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") == "" && d.renew != nil {
+			if err := d.renew(w, r); err != nil {
+				hostedForbidden(w)
+				return
+			}
+		}
+		d.monitor(w, r)
+	})
 	human.HandleFunc("POST /api/console/hosted/nodes/{nodeID}/holds/{seatID}/release", d.release)
 	human.HandleFunc("GET /console/hosted-quota", d.page)
 }

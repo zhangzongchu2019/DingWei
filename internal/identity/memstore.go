@@ -308,6 +308,27 @@ func (m *MemStore) CreateSession(_ context.Context, s Session) error {
 	return nil
 }
 
+func (m *MemStore) TouchSession(ctx context.Context, tokenHash string, now, desiredExpiry time.Time) (bool, error) {
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	s := m.sessions[tokenHash]
+	if s == nil || !s.RevokedAt.IsZero() || !now.Before(s.ExpiresAt) || s.CreatedAt.IsZero() {
+		return false, nil
+	}
+	cap := s.CreatedAt.Add(SessionAbsoluteTTL)
+	if desiredExpiry.After(cap) {
+		desiredExpiry = cap
+	}
+	if !desiredExpiry.After(s.ExpiresAt) {
+		return false, nil
+	}
+	s.ExpiresAt = desiredExpiry.UTC()
+	return true, nil
+}
+
 func (m *MemStore) RevokeSession(ctx context.Context, tokenHash string, now time.Time) error {
 	if err := ctx.Err(); err != nil {
 		return err

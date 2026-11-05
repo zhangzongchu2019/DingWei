@@ -22,6 +22,9 @@ const (
 	RegistrationCodeTTL = 24 * time.Hour // 台账 c5981300
 	LoginCodeTTL        = 5 * time.Minute
 	SessionTTL          = 12 * time.Hour // 与旧平台 consoleSessionTTL 一致
+	SessionAbsoluteTTL  = 30 * 24 * time.Hour
+	SessionRenewBelow   = SessionTTL / 2
+	SessionTouchMin     = time.Minute
 	MinPasswordLen      = 12
 	// 同一来源对同一用户 ID 的密码登录失败：15 分钟内最多 5 次。
 	passwordFailWindow = 15 * time.Minute
@@ -57,10 +60,12 @@ type Onboarding struct {
 	// 为空 ⇒ 随机码，取不回（页面退回「重新生成」）。
 	CodeKey string
 
-	omu        sync.Mutex
-	umu        sync.Mutex             // 停用／改类型串行（SetUserState、SetUserType）；与 omu 分开，OnUserChanged 在其下调用
-	pwFails    map[string][]time.Time // 来源 IP＋用户 ID → 失败时刻
-	loginCodes map[string]*loginTicket
+	omu            sync.Mutex
+	touchMu        sync.Mutex
+	umu            sync.Mutex             // 停用／改类型串行（SetUserState、SetUserType）；与 omu 分开，OnUserChanged 在其下调用
+	pwFails        map[string][]time.Time // 来源 IP＋用户 ID → 失败时刻
+	loginCodes     map[string]*loginTicket
+	sessionTouches map[string]time.Time
 }
 
 type loginTicket struct {
@@ -71,7 +76,7 @@ type loginTicket struct {
 
 // NewOnboarding 基于已有 Service 建 N3 业务层。
 func NewOnboarding(s *Service) *Onboarding {
-	return &Onboarding{Service: s, pwFails: map[string][]time.Time{}, loginCodes: map[string]*loginTicket{}}
+	return &Onboarding{Service: s, pwFails: map[string][]time.Time{}, loginCodes: map[string]*loginTicket{}, sessionTouches: map[string]time.Time{}}
 }
 
 // BootstrapAdmin 初始化脚本（workpulse bootstrap-admin，运维在主机上执行）建第一个管理用户：
@@ -212,10 +217,55 @@ func (o *Onboarding) newSession(ctx context.Context, userLC string) (string, err
 	if err != nil {
 		return "", err
 	}
-	if err := o.Store.CreateSession(ctx, Session{TokenHash: HashSecret(tok), UserIDLC: userLC, ExpiresAt: o.Now().Add(SessionTTL)}); err != nil {
+	now := o.Now()
+	if err := o.Store.CreateSession(ctx, Session{TokenHash: HashSecret(tok), UserIDLC: userLC, CreatedAt: now, ExpiresAt: now.Add(SessionTTL)}); err != nil {
 		return "", err
 	}
 	return tok, nil
+}
+
+// ResolveSessionForHTTP authenticates and opportunistically renews an HTTP session.
+// The caller reissues the cookie only when a persisted extension succeeded.
+func (o *Onboarding) ResolveSessionForHTTP(ctx context.Context, token string) (*User, bool, error) {
+	now := o.Now()
+	s, u, err := o.Store.ResolveSession(ctx, HashSecret(token), now)
+	if err != nil {
+		return nil, false, ErrNotFound
+	}
+	if u.MustChangePassword {
+		return u, false, ErrMustChange
+	}
+	if s.CreatedAt.IsZero() || s.ExpiresAt.Sub(now) >= SessionRenewBelow {
+		return u, false, nil
+	}
+	key := s.TokenHash
+	o.touchMu.Lock()
+	defer o.touchMu.Unlock()
+	if len(o.sessionTouches) > 2048 {
+		for session, last := range o.sessionTouches {
+			if now.Sub(last) >= SessionTouchMin {
+				delete(o.sessionTouches, session)
+			}
+		}
+	}
+	if last, ok := o.sessionTouches[key]; ok && now.Sub(last) < SessionTouchMin {
+		return u, false, nil
+	}
+	desired := now.Add(SessionTTL)
+	if cap := s.CreatedAt.Add(SessionAbsoluteTTL); desired.After(cap) {
+		desired = cap
+	}
+	if !desired.After(s.ExpiresAt) {
+		return u, false, nil
+	}
+	changed, err := o.Store.TouchSession(ctx, key, now, desired)
+	if err != nil || !changed {
+		// Renewal is opportunistic: the session already authenticated this request.
+		// Leave the cookie alone and retry on a later poll if persistence failed.
+		return u, false, nil
+	}
+	o.sessionTouches[key] = now
+	return u, true, nil
 }
 
 // Logout is idempotent, including retries after a committed revoke whose hook failed.

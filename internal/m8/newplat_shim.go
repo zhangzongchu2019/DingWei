@@ -162,9 +162,12 @@ func (h *Hub) NewPlatformUserChanged(userLC string) {
 
 // newPlatformSessionProjection 由新平台会话 cookie 得出投影会话（id／token_hash＝np:＋会话令牌哈希，到期同新平台会话）。
 // 会话无效 ⇒ (nil, false)。
-func (h *Hub) newPlatformSessionProjection(r *http.Request) (*model.ConsoleSession, bool) {
+func (h *Hub) newPlatformSessionProjection(w http.ResponseWriter, r *http.Request) (*model.ConsoleSession, bool) {
 	c, err := r.Cookie(httpapi.SessionCookie)
 	if err != nil || c.Value == "" {
+		return nil, false
+	}
+	if _, err := h.resolveNewPlatformHTTPSession(w, r, c.Value); err != nil {
 		return nil, false
 	}
 	hash := identity.HashSecret(c.Value)
@@ -190,7 +193,7 @@ func (h *Hub) newPlatformSessionValid(ctx context.Context, sessionID, principal 
 // newPlatformConsoleContext 新平台 console 请求认人之后：同步当前用户（连同本次会话），放入 principal 与投影会话。
 // 同步失败 ⇒ 503，不放行。
 func (h *Hub) newPlatformConsoleContext(w http.ResponseWriter, r *http.Request, userLC string) (*http.Request, bool) {
-	sess, ok := h.newPlatformSessionProjection(r)
+	sess, ok := h.newPlatformSessionProjection(w, r)
 	if !ok || sess.PrincipalID != userLC {
 		writeAgentWSError(w, http.StatusUnauthorized, "unauthenticated")
 		return nil, false
