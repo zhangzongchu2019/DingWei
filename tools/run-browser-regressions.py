@@ -32,6 +32,8 @@ SUITES = (
     ("renderer_in_console_iframe", "node", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
     ("renderer_sse_reconnect", "node", ROOT / "view-service/renderer-sse-reconnect.js"),
     ("r15_session_history_pagination", "node", ROOT / "view-service/r15-session-history-browser-regression.js"),
+    ("renderer_timeline_order", "node", ROOT / "view-service/renderer-timeline-order-regression.js"),
+    ("renderer_epoch_order", "node", ROOT / "view-service/renderer-epoch-order-regression.js"),
     ("r15_session_history_mutations", "node", ROOT / "view-service/r15-session-history-mutations.js"),
     ("renderer_failcard", "node", ROOT / "view-service/renderer-failcard-regression.js"),
     ("renderer_t054_errorboard", "node", ROOT / "view-service/renderer-t054-errorboard-regression.js"),

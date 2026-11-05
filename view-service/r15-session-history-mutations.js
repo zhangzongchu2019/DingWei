@@ -10,8 +10,10 @@ const source = fs.readFileSync(path.join(root, 'renderer-canary-sse.html'), 'utf
 const cases = [
   {
     name: 'drop_history_node_move',
-    from: 'if (insertionPoint) for (const node of added) timeline.insertBefore(node, insertionPoint);',
-    to: '/* mutant: omitted history node move */',
+    patches: [
+      ['    function placeTimelineNode(node, fallbackBefore = null) {\n', '    function placeTimelineNode(node, fallbackBefore = null) {\n      if (historyApplying) { timeline.appendChild(node); return; } // mutant: omit history timestamp positioning\n'],
+      ['        for (const node of added) placeTimelineNode(node);', '        /* mutant: omit history node reposition */'],
+    ],
     expected: 'timeline order invalid:',
   },
   {
@@ -31,9 +33,13 @@ const cases = [
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'r15-history-mutants-'));
 try {
   for (const test of cases) {
-    assert.strictEqual(source.split(test.from).length - 1, 1, `${test.name}: source anchor count`);
+    let mutated = source;
+    for (const [from, to] of test.patches || [[test.from, test.to]]) {
+      assert.strictEqual(mutated.split(from).length - 1, 1, `${test.name}: source anchor count for ${from}`);
+      mutated = mutated.replace(from, to);
+    }
     const override = path.join(temp, `${test.name}.html`);
-    fs.writeFileSync(override, source.replace(test.from, test.to));
+    fs.writeFileSync(override, mutated);
     const result = spawnSync(process.execPath, [path.join(root, 'r15-session-history-browser-regression.js')], {
       cwd: path.dirname(root), encoding: 'utf8', timeout: 30000,
       env: { ...process.env, RENDERER_OVERRIDE: override },
