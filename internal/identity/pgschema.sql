@@ -36,6 +36,7 @@ CREATE INDEX IF NOT EXISTS np_registration_code_user ON np_registration_code (us
 CREATE TABLE IF NOT EXISTS np_session (
     token_hash text        PRIMARY KEY,
     user_id_lc text        NOT NULL REFERENCES np_user (user_id_lc),
+    created_at timestamptz NOT NULL DEFAULT now(),
     expires_at timestamptz NOT NULL,
     revoked_at timestamptz
 );

@@ -55,11 +55,43 @@ func (n *N3) user(r *http.Request) (*identity.User, error) {
 	return n.OB.ResolveSession(r.Context(), c.Value)
 }
 
+func (n *N3) userHTTP(w http.ResponseWriter, r *http.Request) (*identity.User, error) {
+	c, err := r.Cookie(SessionCookie)
+	if err != nil || c.Value == "" {
+		return nil, identity.ErrNotFound
+	}
+	u, renewed, err := n.OB.ResolveSessionForHTTP(r.Context(), c.Value)
+	if renewed {
+		http.SetCookie(w, n.sessionCookie(c.Value))
+	}
+	return u, err
+}
+
+// RenewSession is wired into the sibling console API so its Actor callback can remain read-only.
+func (n *N3) RenewSession(w http.ResponseWriter, r *http.Request) error {
+	c, err := r.Cookie(SessionCookie)
+	if err != nil || c.Value == "" {
+		return identity.ErrNotFound
+	}
+	_, renewed, err := n.OB.ResolveSessionForHTTP(r.Context(), c.Value)
+	if renewed {
+		http.SetCookie(w, n.sessionCookie(c.Value))
+	}
+	return err
+}
+
+func (n *N3) sessionCookie(token string) *http.Cookie {
+	return NewSessionCookie(token, n.Secure, n.OB.Now())
+}
+
+// NewSessionCookie is the single cookie constructor for login and renewal.
+func NewSessionCookie(token string, secure bool, now time.Time) *http.Cookie {
+	return &http.Cookie{Name: SessionCookie, Value: token, Path: "/", HttpOnly: true, Secure: secure,
+		SameSite: http.SameSiteLaxMode, Expires: now.Add(identity.SessionTTL)}
+}
+
 func (n *N3) setSession(w http.ResponseWriter, token string) {
-	http.SetCookie(w, &http.Cookie{
-		Name: SessionCookie, Value: token, Path: "/", HttpOnly: true, Secure: n.Secure,
-		SameSite: http.SameSiteLaxMode, Expires: n.OB.Now().Add(identity.SessionTTL),
-	})
+	http.SetCookie(w, n.sessionCookie(token))
 }
 
 func (n *N3) sameOrigin(r *http.Request) bool {
@@ -69,7 +101,7 @@ func (n *N3) sameOrigin(r *http.Request) bool {
 // authed 会话校验＋写接口 Origin 校验。allowMustChange 为真时，必须改密的会话也放行（只给改密接口用）。
 func (n *N3) authed(allowMustChange bool, next func(http.ResponseWriter, *http.Request, *identity.User)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := n.user(r)
+		u, err := n.userHTTP(w, r)
 		if errors.Is(err, identity.ErrMustChange) && !allowMustChange {
 			writeErr(w, http.StatusForbidden, "must_change_password", nil)
 			return

@@ -38,7 +38,7 @@ func TestWireHostedOnlineHookAndSweeper(t *testing.T) {
 	svc := identity.NewService(idStore, nil, nil)
 	cfg := newPlatformConfig{publicOrigin: "https://x"}
 	actor := func(*http.Request) (string, error) { return "", errors.New("unused") }
-	on, err := wireHosted(ctx, http.NewServeMux(), hub, &cfg, pool, idStore, svc, actor)
+	on, err := wireHosted(ctx, http.NewServeMux(), hub, &cfg, pool, idStore, svc, actor, nil)
 	if err != nil || !on {
 		t.Fatalf("wireHosted: on=%v err=%v", on, err)
 	}

@@ -51,7 +51,7 @@ func (h *Hub) RequireClarificationPage(next http.HandlerFunc) http.HandlerFunc {
 		}
 		mustChange := false
 		if c, e := r.Cookie(httpapi.SessionCookie); e == nil {
-			if _, e = h.Onboarding.ResolveSession(r.Context(), c.Value); e == nil {
+			if _, e = h.resolveNewPlatformHTTPSession(w, r, c.Value); e == nil {
 				protected(w, r)
 				return
 			} else {

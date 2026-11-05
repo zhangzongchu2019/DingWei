@@ -116,7 +116,7 @@ func (h *Hub) newPlatformViewAuth(w http.ResponseWriter, r *http.Request) bool {
 		newPlatformDeny(w, r, false)
 		return false
 	}
-	user, err := h.Onboarding.ResolveSession(r.Context(), c.Value)
+	user, err := h.resolveNewPlatformHTTPSession(w, r, c.Value)
 	if err != nil {
 		newPlatformDeny(w, r, errors.Is(err, identity.ErrMustChange))
 		return false
@@ -139,7 +139,7 @@ func (h *Hub) newPlatformViewAuth(w http.ResponseWriter, r *http.Request) bool {
 // writes only the attested principal header consumed by view-service. The caller strips both
 // trust headers before reaching here. Missing/invalid capabilities deliberately return false
 // without an HTTP error so view-service falls back to its existing #unlock page-lock path.
-func (h *Hub) newPlatformViewCapability(r *http.Request) (bool, error) {
+func (h *Hub) newPlatformViewCapability(w http.ResponseWriter, r *http.Request) (bool, error) {
 	repo, ok := h.Repo.(consoleAuthRepository)
 	if !ok {
 		return false, errors.New("console repository unavailable")
@@ -153,7 +153,7 @@ func (h *Hub) newPlatformViewCapability(r *http.Request) (bool, error) {
 	if err != nil {
 		return false, nil
 	}
-	sess, ok := h.newPlatformSessionProjection(r)
+	sess, ok := h.newPlatformSessionProjection(w, r)
 	if !ok || sess.PrincipalID != ag.OwnerLC {
 		return false, nil
 	}
@@ -227,7 +227,7 @@ func (h *Hub) newPlatformPrincipal(w http.ResponseWriter, r *http.Request) (stri
 	var user *identity.User
 	var err error
 	if c, cerr := r.Cookie(httpapi.SessionCookie); cerr == nil && c.Value != "" {
-		user, err = h.Onboarding.ResolveSession(r.Context(), c.Value)
+		user, err = h.resolveNewPlatformHTTPSession(w, r, c.Value)
 	} else {
 		err = identity.ErrNotFound
 	}
@@ -241,6 +241,15 @@ func (h *Hub) newPlatformPrincipal(w http.ResponseWriter, r *http.Request) (stri
 		return "", false
 	}
 	return user.UserIDLC(), true
+}
+
+func (h *Hub) resolveNewPlatformHTTPSession(w http.ResponseWriter, r *http.Request, token string) (*identity.User, error) {
+	u, renewed, err := h.Onboarding.ResolveSessionForHTTP(r.Context(), token)
+	if renewed {
+		secure := r.TLS != nil || strings.HasPrefix(h.PublicOrigin, "https://")
+		http.SetCookie(w, httpapi.NewSessionCookie(token, secure, h.Onboarding.Now()))
+	}
+	return u, err
 }
 
 // newPlatformWantsPage 浏览器打开页面：GET、要 HTML、不是 WebSocket 升级、不是 /api/ 接口。

@@ -473,8 +473,8 @@ func (s *PGStore) UserHasIdentity(ctx context.Context, userIDLC, provider string
 }
 
 func (s *PGStore) CreateSession(ctx context.Context, se Session) error {
-	_, err := s.pool.Exec(ctx, s.t, `INSERT INTO np_session (token_hash, user_id_lc, expires_at, revoked_at) VALUES ($1,$2,$3,$4)`,
-		se.TokenHash, Lower(se.UserIDLC), se.ExpiresAt.UTC(), nullTime(se.RevokedAt))
+	_, err := s.pool.Exec(ctx, s.t, `INSERT INTO np_session (token_hash, user_id_lc, created_at, expires_at, revoked_at) VALUES ($1,$2,COALESCE($3,now()),$4,$5)`,
+		se.TokenHash, Lower(se.UserIDLC), nullTime(se.CreatedAt), se.ExpiresAt.UTC(), nullTime(se.RevokedAt))
 	switch code, _ := pgCode(err); code {
 	case pgUniqueViolation:
 		return ErrConflict
@@ -484,13 +484,29 @@ func (s *PGStore) CreateSession(ctx context.Context, se Session) error {
 	return err
 }
 
+func (s *PGStore) TouchSession(ctx context.Context, tokenHash string, now, desiredExpiry time.Time) (bool, error) {
+	row, err := s.queryRow(ctx, `UPDATE np_session SET expires_at = LEAST($3, created_at + interval '30 days')
+		WHERE token_hash=$1 AND revoked_at IS NULL AND expires_at>$2
+		AND LEAST($3, created_at + interval '30 days') > expires_at RETURNING expires_at`, tokenHash, now.UTC(), desiredExpiry.UTC())
+	if err != nil {
+		return false, err
+	}
+	var expires time.Time
+	if err := row.Scan(&expires); noRows(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (s *PGStore) RevokeSession(ctx context.Context, tokenHash string, now time.Time) error {
 	_, err := s.pool.Exec(ctx, s.t, `UPDATE np_session SET revoked_at=$2 WHERE token_hash=$1 AND revoked_at IS NULL`, tokenHash, now.UTC())
 	return err
 }
 
 func (s *PGStore) ResolveSession(ctx context.Context, tokenHash string, now time.Time) (*Session, *User, error) {
-	row, err := s.queryRow(ctx, `SELECT s.token_hash, s.user_id_lc, s.expires_at,
+	row, err := s.queryRow(ctx, `SELECT s.token_hash, s.user_id_lc, s.created_at, s.expires_at,
 		u.user_id, u.short_name, u.display_name, u.type, u.state, u.password_hash, u.must_change_password, u.created_at
 		FROM np_session s JOIN np_user u ON u.user_id_lc = s.user_id_lc
 		WHERE s.token_hash = $1 AND s.revoked_at IS NULL AND s.expires_at > $2 AND u.state = 'active'`, tokenHash, now.UTC())
@@ -500,7 +516,7 @@ func (s *PGStore) ResolveSession(ctx context.Context, tokenHash string, now time
 	var se Session
 	var u User
 	var typ, st string
-	err = row.Scan(&se.TokenHash, &se.UserIDLC, &se.ExpiresAt, &u.UserID, &u.ShortName, &u.DisplayName, &typ, &st,
+	err = row.Scan(&se.TokenHash, &se.UserIDLC, &se.CreatedAt, &se.ExpiresAt, &u.UserID, &u.ShortName, &u.DisplayName, &typ, &st,
 		&u.PasswordHash, &u.MustChangePassword, &u.CreatedAt)
 	if noRows(err) {
 		return nil, nil, ErrNotFound
@@ -508,7 +524,7 @@ func (s *PGStore) ResolveSession(ctx context.Context, tokenHash string, now time
 	if err != nil {
 		return nil, nil, err
 	}
-	se.ExpiresAt, u.Type, u.State, u.CreatedAt = se.ExpiresAt.UTC(), UserType(typ), UserState(st), u.CreatedAt.UTC()
+	se.CreatedAt, se.ExpiresAt, u.Type, u.State, u.CreatedAt = se.CreatedAt.UTC(), se.ExpiresAt.UTC(), UserType(typ), UserState(st), u.CreatedAt.UTC()
 	return &se, &u, nil
 }
 

@@ -61,6 +61,7 @@ type Identity struct {
 type Session struct {
 	TokenHash string
 	UserIDLC  string
+	CreatedAt time.Time
 	ExpiresAt time.Time
 	RevokedAt time.Time // 零值＝未吊销
 }

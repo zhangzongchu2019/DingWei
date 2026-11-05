@@ -1817,7 +1817,7 @@ func (h *Hub) RequireConsoleViewSubPath(next http.HandlerFunc) http.HandlerFunc 
 			if h.newPlatformViewAuth(w, r) {
 				h.grantNewPlatformViewServiceInput(r.Context(), r.PathValue("sessionName"))
 				if r.Method != http.MethodGet && consoleCapabilityRequired(r.PathValue("rest")) && consoleControlPageMatches(r) {
-					verified, err := h.newPlatformViewCapability(r)
+					verified, err := h.newPlatformViewCapability(w, r)
 					if err != nil {
 						http.Error(w, "console auth unavailable", http.StatusServiceUnavailable)
 						return

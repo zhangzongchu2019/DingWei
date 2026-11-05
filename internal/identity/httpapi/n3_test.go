@@ -18,18 +18,22 @@ import (
 )
 
 type n3env struct {
-	t   *testing.T
-	clk *clock.Fake
-	ob  *identity.Onboarding
-	srv *httptest.Server
-	pw  string // 初始化脚本给出的一次性初始口令
+	t     *testing.T
+	clk   *clock.Fake
+	ob    *identity.Onboarding
+	store *identity.MemStore
+	n3    *httpapi.N3
+	api   *httpapi.API
+	mux   *http.ServeMux
+	srv   *httptest.Server
+	pw    string // 初始化脚本给出的一次性初始口令
 }
 
 func newN3Env(t *testing.T) *n3env {
 	t.Helper()
 	e := &n3env{t: t, clk: &clock.Fake{T: time.Date(2026, 10, 1, 9, 0, 0, 0, time.UTC)}}
-	store := identity.NewMemStore()
-	svc := identity.NewService(store, e.clk.Now, nil)
+	e.store = identity.NewMemStore()
+	svc := identity.NewService(e.store, e.clk.Now, nil)
 	e.ob = identity.NewOnboarding(svc)
 	// 第一个管理用户由初始化脚本建（台账 8971bddf）；ID 取 Root，好让用户列表按小写排序时排在 Alice 之后。
 	pw, err := e.ob.BootstrapAdmin(context.Background(), "Root", "rt", "")
@@ -37,12 +41,12 @@ func newN3Env(t *testing.T) *n3env {
 		t.Fatal(err)
 	}
 	e.pw = pw
-	n3 := &httpapi.N3{OB: e.ob, PublicOrigin: origin}
-	api := &httpapi.API{Svc: svc, PublicOrigin: origin, Actor: n3.Actor}
-	mux := http.NewServeMux()
-	n3.Register(mux)
-	api.Register(mux)
-	e.srv = httptest.NewServer(mux)
+	e.n3 = &httpapi.N3{OB: e.ob, PublicOrigin: origin}
+	e.api = &httpapi.API{Svc: svc, PublicOrigin: origin, Actor: e.n3.Actor, RenewSession: e.n3.RenewSession}
+	e.mux = http.NewServeMux()
+	e.n3.Register(e.mux)
+	e.api.Register(e.mux)
+	e.srv = httptest.NewServer(e.mux)
 	t.Cleanup(e.srv.Close)
 	return e
 }
@@ -198,6 +202,72 @@ func TestN3HTTP_FullOnboardingFlow(t *testing.T) {
 	if st, _ := e.call(alice, "GET", "/api/console/agents", nil, false); st != 401 {
 		t.Fatalf("after logout: %d", st)
 	}
+}
+
+func TestNewSessionCookieSharedRenewalShape(t *testing.T) {
+	now := time.Date(2026, 11, 5, 1, 0, 0, 0, time.UTC)
+	c := httpapi.NewSessionCookie("synthetic-token", true, now)
+	if c.Name != httpapi.SessionCookie || c.Value != "synthetic-token" || c.Path != "/" || !c.HttpOnly || !c.Secure || c.SameSite != http.SameSiteLaxMode || !c.Expires.Equal(now.Add(identity.SessionTTL)) {
+		t.Fatalf("renewed cookie attributes differ from login constructor: %+v", c)
+	}
+	if c.MaxAge != 0 {
+		t.Fatalf("cookie unexpectedly uses divergent MaxAge=%d", c.MaxAge)
+	}
+}
+
+func TestHTTPRenewalReissuesCookieOnlyWhenExpiryIsExtended(t *testing.T) {
+	e := newN3Env(t)
+	if err := e.ob.ChangePassword(context.Background(), "root", e.pw, "Renew-Strong-Pass-42"); err != nil {
+		t.Fatal(err)
+	}
+	now := e.clk.Now()
+	makeSession := func(token string, age time.Duration) {
+		t.Helper()
+		created := now.Add(-age)
+		if err := e.store.CreateSession(context.Background(), identity.Session{TokenHash: identity.HashSecret(token), UserIDLC: "root", CreatedAt: created, ExpiresAt: created.Add(identity.SessionTTL)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	makeSession("renewed", 7*time.Hour)
+	makeSession("not-renewed", 6*time.Hour)
+	call := func(token string) *http.Response {
+		t.Helper()
+		req, _ := http.NewRequest(http.MethodGet, e.srv.URL+"/api/console/platform/users", nil)
+		req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: token})
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return res
+	}
+	res := call("renewed")
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("renewed status=%d", res.StatusCode)
+	}
+	res.Body.Close()
+	cookies := res.Cookies()
+	if len(cookies) != 1 {
+		t.Fatalf("renewal Set-Cookie count=%d", len(cookies))
+	}
+	want := httpapi.NewSessionCookie("renewed", false, e.clk.Now())
+	got := cookies[0]
+	if got.Name != want.Name || got.Value != want.Value || got.Path != want.Path || got.HttpOnly != want.HttpOnly || got.Secure != want.Secure || got.SameSite != want.SameSite || !got.Expires.Equal(want.Expires) {
+		t.Fatalf("renewal cookie=%+v want login constructor=%+v", got, want)
+	}
+	res = call("not-renewed")
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("not-renewed status=%d", res.StatusCode)
+	}
+	res.Body.Close()
+	if len(res.Cookies()) != 0 {
+		t.Fatalf("unrenewed response unexpectedly set cookie: %+v", res.Cookies())
+	}
+	e.clk.Advance(6 * time.Hour)
+	res = call("not-renewed")
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("session without polling past 12h status=%d", res.StatusCode)
+	}
+	res.Body.Close()
 }
 
 func TestN3HTTP_OriginRequiredOnLoginAndWrites(t *testing.T) {

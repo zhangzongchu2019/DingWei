@@ -41,7 +41,7 @@ func (h *Hub) handleNewPlatformCapability(w http.ResponseWriter, r *http.Request
 		writeAgentWSError(w, http.StatusNotFound, "not_found")
 		return
 	}
-	sess, ok := h.newPlatformSessionProjection(r)
+	sess, ok := h.newPlatformSessionProjection(w, r)
 	if !ok || sess.PrincipalID != ag.OwnerLC { // D4 只属主（RequireConsoleAgent 已拦，这里再钉一次）
 		writeAgentWSError(w, http.StatusNotFound, "not_found")
 		return

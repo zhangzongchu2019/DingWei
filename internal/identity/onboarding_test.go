@@ -27,6 +27,117 @@ func newN3(t *testing.T) *n3 {
 	return e
 }
 
+func TestSessionSlidingRenewalClockBoundaries(t *testing.T) {
+	e := newN3(t)
+	if err := e.store.CreateUser(bg, identity.User{UserID: "renew", ShortName: "renew", Type: identity.UserMember, State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	created := e.clk.Now()
+	if err := e.store.CreateSession(bg, identity.Session{TokenHash: identity.HashSecret("renew-token"), UserIDLC: "renew", CreatedAt: created, ExpiresAt: created.Add(identity.SessionTTL)}); err != nil {
+		t.Fatal(err)
+	}
+	// Exactly half the TTL remains: threshold is strict, so no write.
+	e.clk.Advance(6 * time.Hour)
+	if _, renewed, err := e.ob.ResolveSessionForHTTP(bg, "renew-token"); err != nil || renewed {
+		t.Fatalf("at 6h remaining: renewed=%v err=%v", renewed, err)
+	}
+	e.clk.Advance(time.Minute)
+	if _, renewed, err := e.ob.ResolveSessionForHTTP(bg, "renew-token"); err != nil || !renewed {
+		t.Fatalf("below 6h remaining: renewed=%v err=%v", renewed, err)
+	}
+	s, _, err := e.store.ResolveSession(bg, identity.HashSecret("renew-token"), e.clk.Now())
+	if err != nil || !s.ExpiresAt.Equal(e.clk.Now().Add(identity.SessionTTL)) {
+		t.Fatalf("expiry=%v err=%v", s, err)
+	}
+	// A second request within one minute must not write/reissue; at absolute cap, no extension.
+	if _, renewed, err := e.ob.ResolveSessionForHTTP(bg, "renew-token"); err != nil || renewed {
+		t.Fatalf("throttle: renewed=%v err=%v", renewed, err)
+	}
+}
+
+func TestTouchSessionRejectsExpiredRevokedAndNeverShortens(t *testing.T) {
+	e := newN3(t)
+	if err := e.store.CreateUser(bg, identity.User{UserID: "touch", ShortName: "touch", Type: identity.UserMember, State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	now := e.clk.Now()
+	for _, tc := range []struct {
+		name    string
+		revoked bool
+		expired bool
+	}{
+		{name: "revoked", revoked: true}, {name: "expired", expired: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			expires := now.Add(identity.SessionTTL)
+			revokedAt := time.Time{}
+			if tc.expired {
+				expires = now
+			}
+			if tc.revoked {
+				revokedAt = now
+			}
+			key := identity.HashSecret(tc.name)
+			if err := e.store.CreateSession(bg, identity.Session{TokenHash: key, UserIDLC: "touch", CreatedAt: now, ExpiresAt: expires, RevokedAt: revokedAt}); err != nil {
+				t.Fatal(err)
+			}
+			if changed, err := e.store.TouchSession(bg, key, now, now.Add(identity.SessionTTL)); err != nil || changed {
+				t.Fatalf("changed=%v err=%v", changed, err)
+			}
+		})
+	}
+	key := identity.HashSecret("valid")
+	if err := e.store.CreateSession(bg, identity.Session{TokenHash: key, UserIDLC: "touch", CreatedAt: now, ExpiresAt: now.Add(8 * time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	if changed, err := e.store.TouchSession(bg, key, now, now.Add(7*time.Hour)); err != nil || changed {
+		t.Fatalf("shortening changed=%v err=%v", changed, err)
+	}
+	if changed, err := e.store.TouchSession(bg, key, now, now.Add(40*24*time.Hour)); err != nil || !changed {
+		t.Fatalf("cap changed=%v err=%v", changed, err)
+	}
+	s, _, err := e.store.ResolveSession(bg, key, now)
+	if err != nil || !s.ExpiresAt.Equal(now.Add(identity.SessionAbsoluteTTL)) {
+		t.Fatalf("absolute cap session=%+v err=%v", s, err)
+	}
+	zeroCreated := identity.HashSecret("zero-created")
+	if err := e.store.CreateSession(bg, identity.Session{TokenHash: zeroCreated, UserIDLC: "touch", ExpiresAt: now.Add(time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
+	e.clk.T = now
+	if _, renewed, err := e.ob.ResolveSessionForHTTP(bg, "zero-created"); err != nil || renewed {
+		t.Fatalf("zero CreatedAt renewed=%v err=%v", renewed, err)
+	}
+}
+
+func TestSessionNoPollingExpiryAndAbsoluteLimit(t *testing.T) {
+	e := newN3(t)
+	if err := e.store.CreateUser(bg, identity.User{UserID: "limit", ShortName: "limit", Type: identity.UserMember, State: identity.UserActive}); err != nil {
+		t.Fatal(err)
+	}
+	now := e.clk.Now()
+	if err := e.store.CreateSession(bg, identity.Session{TokenHash: identity.HashSecret("no-poll"), UserIDLC: "limit", CreatedAt: now, ExpiresAt: now.Add(identity.SessionTTL)}); err != nil {
+		t.Fatal(err)
+	}
+	e.clk.Advance(identity.SessionTTL)
+	if _, _, err := e.ob.ResolveSessionForHTTP(bg, "no-poll"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("unpolled 12h session err=%v", err)
+	}
+	e.clk.Advance(identity.SessionAbsoluteTTL - time.Hour)
+	created := e.clk.Now().Add(-identity.SessionAbsoluteTTL + time.Hour)
+	capExpiry := created.Add(identity.SessionAbsoluteTTL)
+	if err := e.store.CreateSession(bg, identity.Session{TokenHash: identity.HashSecret("at-cap"), UserIDLC: "limit", CreatedAt: created, ExpiresAt: capExpiry}); err != nil {
+		t.Fatal(err)
+	}
+	if _, renewed, err := e.ob.ResolveSessionForHTTP(bg, "at-cap"); err != nil || renewed {
+		t.Fatalf("session at absolute cap renewed=%v err=%v", renewed, err)
+	}
+	e.clk.Advance(time.Hour)
+	if _, _, err := e.ob.ResolveSessionForHTTP(bg, "at-cap"); !errors.Is(err, identity.ErrNotFound) {
+		t.Fatalf("absolute cap session extended: %v", err)
+	}
+}
+
 func (e *n3) boot(t *testing.T) {
 	t.Helper()
 	pw, err := e.ob.BootstrapAdmin(bg, adminID, adminShort, "")
