@@ -47,3 +47,26 @@
 ## 交付坐标
 
 待提交与推送后补齐：branch、tip、tree、`git ls-remote` 核验值及最终 UTC 时间。
+
+## 本席续接远端分支后的最终复核（2026-11-06）
+
+按单写者规则查询时，目标分支已存在，tip 为 `b982bf83759a316067da7b2a8280646523e69502`。已 fetch 并在远端提交之上续接；保留远端已提交的 `turnGroupSegments` 聚合及 DOM 正文断言实现，没有推送本地重叠修改。
+
+最终 tip 产品字节与基线 `f7f31fca` 再次逐字节核对一致：
+
+- `view-service/renderer-canary-sse.html`：`2bf883a284cb7f791d03cda14d000bf021cfffe4151b25e62d99c1d9fa786b3a`
+- `view-service/md-render-core.js`：`408d1bcf06e3f78198e3943fc41f3938ba20120d4148a7d3fa234e44d6c5545a`
+
+最终 tip browser runner 在 2026-11-06T13:03:00Z 执行，命令与环境覆盖见上节，35 个 suite 全部 `rc=0`、`aggregate_rc=0`、无跳过项。逐项结果收据 `raw/browser-runner-final-receipt.txt` 列出每个 suite 的名称和 rc；完整终端输出为 `raw/browser-runner-final.log`。其中 `renderer_c2` 有 4 项 T-166 已知缺陷诊断，但该 suite 自身 rc=0。
+
+最终 tip 的真丢段 renderer 变异：在 epoch 变化处理时移除页面所有旧 `.turn-group[data-turn-key="t-1"]` 节点，再接收 `[NEW]`。命令使用 `RENDERER_OVERRIDE=/tmp/r51-true-old-segment-drop-final.html` 执行 `node view-service/renderer-replay-seq-regression.js`。结果 S1–S4、S6–S13 PASS；S5 单独 FAIL，读到 `rendered DOM lost content: [NEW]`，缺少 `[002]`…`[030]`；总退出码 2。完整读数及退出码分别见 `raw/true-old-segment-drop-final.log`、`raw/true-old-segment-drop-final.rc`。该变异修改 renderer 副本实际删除旧页面段，确认 DOM 判据可识别真实可见丢段。
+
+最终 tip build/test 门使用仓库已建立的隔离环境运行：
+
+```sh
+PATH=/tmp/r52lv/bin:$PATH TMPDIR=/tmp/r51erf.Uemyzu scripts/run-build-tests.sh
+```
+
+结果 PASS，`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`，退出码 0；claude、codex 两个 helper profile 各完成 1097 个预期测试。原始日志：`raw/build-tests-final.log`。环境名单自检也 PASS，见 `raw/env-registry-selftest.log`。
+
+以上复核都在远端 tip `b982bf83759a316067da7b2a8280646523e69502` 上完成。本席将此补充证据作为追加提交推到同一目标分支，不改写现有提交。
