@@ -1,19 +1,26 @@
 # Tasks
 
-- [x] T-01 复核并冻结基线架构事实：身份、全名解析、在线清单、Hub 路由、AMR、`session_delivery` 和 delivery_ack v2。
-- [ ] T-02 由业主裁定令牌/OAuth 生命周期、队列 TTL、在线租约、编组命名与 mention 范围。
-- [x] T-03 完成管理员预建 HTTP 席位及每席位 token 哈希/吊销设计；不得写明文凭据。
-- [ ] T-04 实现 MCP `2026-07-28` OAuth metadata 与 Streamable HTTP endpoint，并验证四工具列表及标准客户端互操作。
-- [ ] T-05 实现权限等价的 REST 在线清单、发消息、有限收件等待和 ACK 接口。
-- [ ] T-06 将 HTTP 适配器接入 Hub 普通消息路由、编组授权、AMR 和 `session_delivery`；扩展 ACK v2 时保持 helper/driver 现有行为。
-- [ ] T-07 实现在线租约、离线队列过期、席位/来源限流、审计脱敏、吊销中断与队列容量保护。
-- [ ] T-08 完成安全/功能测试：授权、IDOR、token 哈希及吊销、Origin、MCP/REST 等价、轮询上限、ACK 幂等与 helper 回归。
-- [ ] T-09 至少实施六项变异（移除编组判定、吊销校验、ACK 所有权/generation、等待上限/过期、Origin 校验、两接口权限等价），每项由原判据杀死。
-- [ ] T-10 运行构建与严格 OpenSpec 校验，补充 MCP 互操作记录和部署/回滚方案，另行提交实现变更。
+- [x] T-01 复核最小基线与Hub影响清单：r51 f7f31fca；身份、名称、在线、授权、np_group/np_agent、投递及ACK；未核实处保留标记。
+- [x] T-02 同步业主㊹、补1～补5九点裁定：扫码＋tenant_key、归属名/稳定键、AG序号、组合名、既定传输参数、Hub改造、Console、14天/3天滑动周期；原等待业主六选项已替换；补5按无状态MCP、ACK重投和可选订阅/私有WSS分期同步。仅轮询不续AG的组长解释仍列PM-GW-01待确认，未勾成业主已定。
+- [x] T-03 完成替代管理员预建的扫码身份、标准OAuth、自动双成员AG、持久命名/续期/吊销/解散设计；这是文档完成，不代表产品实现。
+- [ ] T-04 实现飞书网页扫码、本团队tenant校验、稳定主体、OAuth metadata/CIMD与2026-07-28无状态MCP：server/discover、每请求_meta/头/resultType及四工具，验证对话式/自主循环互操作，不依赖initialize/Mcp-Session-Id。
+- [ ] T-05 实现同权REST四操作，scope/audience、Origin和身份隔离；不增加执行/管理权限。
+- [ ] T-06 实现持久AG sequence、external命名和全名适配、双成员事务、普通路由/AMR、session_delivery及HTTP ACK v2适配；断流新RPC请求重取未ACK、按稳定delivery去重与发送幂等，不用SSE续传；保留helper/driver回归。
+- [ ] T-07 实现令牌14天持久滑动续期、90秒在线、AG3天生命周期、启动补扫与分批清理、两侧outbox通知/在途结算、消息24小时到期、限流/审计/吊销中断；实施前冻结节流/跨库方案。
+- [ ] T-08 安全与功能矩阵：本租户/他租户/缺tenant，英文/拼音/同名不同主体，多目标AG并发/重启唯一号，非法短名，14天/3天/90秒/24小时边界，吊销并发、回拨、持久写失败、ACK/队列、OAuth/REST等价、仅轮询不续组（待业主确认）、原helper回归。
+- [ ] T-09 逐项语义变异：删tenant/编组检查、按显示名合并、序号非持久、非法短名放行、删除续期持久写（重启提前失效）、轮询错误续组、删除吊销/Origin/ACK绑定/等待上限/过期栅栏、扩任一面权限；每刀由对应原判据杀死。
+- [ ] T-10 后续实现跑构建/相关race/strict与标准MCP互操作，完成迁移/备份sequence/回滚方案，另行独立验收和发布；本次文档门原文见validation/。
+- [ ] T-11 实现Console Agents下相关AG侧栏与属性页；显示两成员、创建者归属名、创建/最后使用/预计解散，相关主人或平台管理员现核＋二次确认＋审计解散；服务端相关过滤不以创建者/管理员侧栏豁免替代。
+- [ ] T-12 Console两渠道浏览器回归：别人AG不出现、属性完整、双方主人/管理员可解散、无关人拒绝、取消无写、到期竞态/通知；新增套件登记统一runner，去掉只列相关过滤→别人AG出现用例必须红，删服务端解散权限亦须红。
+- [ ] T-13 评估可选本人收件资源＋subscriptions/listen通知：权限隔离、通知不充ACK、断流主动收件；无订阅客户端保留25秒轮询。二期私有WSS仅在必要时另立项，若一期通知足够可不做；开发前再核定稿/SDK状态。
 
 ## 交接记录
 
-- 2026-11-05，执行者 `togpt60lunazzc`，主要内容提交 `b19582cbc6be…`；验证/交接更新随最终 tip。
-  - 完成：新增 OpenSpec 提案、基线上下文、10 条增量需求及分期任务；无产品代码修改。单变更 strict `validate agent-http-mcp-gateway --strict --no-interactive` rc=0；全仓 strict `validate --all --strict --no-interactive` rc=0，24/24、0 failed；`git diff --check` 通过。首轮校验因缺少 ADDED delta 标题失败，已修正后通过。MCP 互操作未实测，规格/Hub 当前支持状态未核实。
-  - 阻塞：T-02 需要业主决定；MCP 互操作仍未实测。
-  - 下一步：推送本提案分支并核对远端 tip，send.py 回执后冻结等待评审。
+- 2026-11-05，执行者togpt60lunazzc，原稿最终基线 f95fa0b3a4a6e693d21c8de4b052e3d3a7424293。
+  - 完成：原始十条增量需求、基线上下文与任务；原提案单变更/全仓strict通过，无实现。
+  - 阻塞（历史）：当时T-02等待业主；现已由2026-11-06八点裁定替代，不继续据历史选项派实现。
+  - 下一步（历史）：原稿冻结，由本次改派执行者修订。
+- 2026-11-06，执行者coder56solzzc，会话01a19ca0-0622-7743-a995-767c05e49c78；父commit f95fa0b3a4a6e693d21c8de4b052e3d3a7424293，当前文档提交以分支tip为准（避免自引用提交号）。
+  - 完成：已读578a41fb138f、09ae257bb65b、7be46cee6bfb和改派；读取2577d91a/4accf167/5ed6d2ae/51133ad3裁定原文、r51代码与698b719e续期实现；八点及第9点追加同步proposal/design/context及原GW-001～010，不改固定需求编号、不增第11条；T-11/12补Console任务，T-13补可选订阅取舍；提交前补读第9点并自行查官方changelog/版本/传输/订阅/CIMD与RC博客/正式release，原文状态差异分别记录。目录外产品与其他派单未动。
+  - 阻塞：PM-GW-01纯轮询不续AG为组长解释待业主确认；技术假设与尚未核实SDK/OAuth/迁移/解散ACK映射明列，未做真实互操作或产品变异。
+  - 下一步：单变更及全仓strict、文档范围检查和仓库要求的canonical构建测试均已完成（rc0，原文/摘要入validation/REPORT.md）；推送核ls-remote后交组长复核，不自行勾实现/独立验收。
