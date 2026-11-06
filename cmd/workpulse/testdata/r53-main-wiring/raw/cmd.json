@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "-count=1",
+    "-timeout=20m",
+    "./cmd/workpulse"
+  ],
+  "source_commit": "d0fdf47fb22a4b88addc61b7c9119cc2522ba9ac",
+  "started_utc": "2026-11-06T19:39:44.253618+00:00",
+  "ended_utc": "2026-11-06T19:43:21.826799+00:00",
+  "rc": 0,
+  "PG_STRICT": 1
+}

@@ -1,0 +1,13 @@
+--- a/cmd/workpulse/r53_extseat.go
++++ b/cmd/workpulse/r53_extseat.go
+@@ -86,9 +86,7 @@
+ 	if err := extwire.CheckSchema(ctx, checker); err != nil {
+ 		return err
+ 	}
+-	if groups == nil {
+-		return errR53GroupsMissing
+-	}
++	
+ 	if d.hub == nil || d.hub.Identity == nil || d.pool == nil || d.mux == nil || cfg.tenantKey == "" {
+ 		return errors.New("r53: incomplete Hub dependencies or TenantKey")
+ 	}

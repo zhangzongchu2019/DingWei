@@ -1,0 +1,20 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "-p",
+    "1",
+    "-count=1",
+    "-timeout=20m",
+    "./internal/mcpgw",
+    "./internal/extseat",
+    "./internal/feishulogin",
+    "./internal/extwire"
+  ],
+  "source_commit": "d0fdf47fb22a4b88addc61b7c9119cc2522ba9ac",
+  "started_utc": "2026-11-06T19:39:44.253805+00:00",
+  "ended_utc": "2026-11-06T19:40:22.175407+00:00",
+  "rc": 0,
+  "PG_STRICT": 1
+}

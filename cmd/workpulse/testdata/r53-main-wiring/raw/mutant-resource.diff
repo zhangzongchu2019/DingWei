@@ -1,0 +1,13 @@
+--- a/cmd/workpulse/r53_extseat.go
++++ b/cmd/workpulse/r53_extseat.go
+@@ -80,9 +80,7 @@
+ 	if strings.TrimSpace(os.Getenv("DW_R53_EXTSEAT")) != "1" {
+ 		return nil
+ 	}
+-	if cfg.resource != cfg.publicOrigin+"/mcp" || !validR53Origin(cfg.publicOrigin) {
+-		return errors.New("r53: Resource 必须等于 PublicOrigin + /mcp（DW_PUBLIC_ORIGIN）")
+-	}
++	
+ 	if err := extwire.CheckSchema(ctx, checker); err != nil {
+ 		return err
+ 	}

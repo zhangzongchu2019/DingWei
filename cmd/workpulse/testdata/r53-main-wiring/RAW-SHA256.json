@@ -1,0 +1,33 @@
+{
+  "source_commit": "d0fdf47fb22a4b88addc61b7c9119cc2522ba9ac",
+  "generated_utc": "2026-11-06T19:49:56.873034+00:00",
+  "files_sha256": {
+    "raw/build.json": "087a786901d0f316434e7d7ddbe68277f9665efa5a74d54769863a33fc7a3508",
+    "raw/build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "raw/canonical.json": "9c242bb623277123ac5790d2301962e6ced345de6163454245c7dc6f1e82d14d",
+    "raw/canonical.log": "b5b38a83b5530844418cd24c2ceeffafbbc8cae0817c76e78e679ad577d988a5",
+    "raw/cmd.json": "9bb416eccfd3e659b955000e2c2d9d12333ebe5d88d08c95a1e7a4921e88444f",
+    "raw/cmd.log": "bc438c0d7887bbe7f81b15fda4ec2664731b657c67e3ec56dc9816ed2dac0989",
+    "raw/draft-accept.log": "4507ae467db08ca066f4d7b37a771010f0c65d98d3a2c2c0ba5ee158a1ce7df9",
+    "raw/draft-capabilities.log": "56916b408ee8a5e19d2a0f173f3b1ca2ae92e7ba44721fb790a6bcf1f1bf8c1f",
+    "raw/go-summary.json": "d8e9bc5e308eeae7e4a19514c829bd9b1cf513072d751af8da5ab867e2b916b8",
+    "raw/mutant-disabled.diff": "8b2fa17486b59eef9736cba313b7acedc68cf5c4549a2e69eca300427f68da46",
+    "raw/mutant-disabled.json": "b1db15102b1752b21093ed3d01cff69b2f5036f1c7bb5c1c3831099762836c4d",
+    "raw/mutant-disabled.log": "374b4acbd534a9deecfec24a3cc2ccc076f93bda7ac0c826bfa7f2e38ab00fb9",
+    "raw/mutant-groups.diff": "91f8d39329b520ddd2e2255c9c6142ecc15eb2789af7618940420ee6f716b375",
+    "raw/mutant-groups.json": "3c52af571570f6b218c25b251e21815a6a157983eb69e9bd1ac525f9e1eb2387",
+    "raw/mutant-groups.log": "937166831dceec780cfa43b622423d52a51f8e498299a9370113f763bb937870",
+    "raw/mutant-resource.diff": "fd39368261c20803578267830320b837cbfa8495639eb55987fdf073fb6147c4",
+    "raw/mutant-resource.json": "e70a58e4f5d9c306b5bb0afaebc81a98a20825979e80406e12b503146f97fbc2",
+    "raw/mutant-resource.log": "4ff842f280e7184ffd8e04bc94a0be5f771b27e42177923ce45d892d4d7b9641",
+    "raw/openspec-locked.json": "75c221d5b9eba7bffa932344c5fc04e8b1356f79bb84ff5a9d1d770e182e3aab",
+    "raw/openspec-locked.log": "76983b822bd96673fb58560f8f62ae38e59236ce5637e7af579c3a8ccb60f62e",
+    "raw/openspec-path-missing.log": "14fe1ed3b1fbb12d93fc813f1c2c828e827f773afa22d12726099fcd9ead3254",
+    "raw/race.json": "d71ebbff3a9e00486e6e5a98de2a8bd858840fde17d674057f746ca8ddfcf090",
+    "raw/race.log": "ebe0b3c348036135cd645f0d46d06473c3874eda2f051a0ba9663568da628d35",
+    "raw/related.json": "5a7416b8d88c05574bb87d999dce2cd830de3ec393f18e134538f2516ccfadc1",
+    "raw/related.log": "7cd393a8d651a0939c61fd3b4206b546223f039a4de968611faf127cd35a92ec",
+    "raw/vet.json": "c687e8fff8cdae54ca8b7bda8cf1a444c9b5be1905eda3c2e31f3534acf4ff75",
+    "raw/vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "source_commit": "d0fdf47fb22a4b88addc61b7c9119cc2522ba9ac",
+  "command": [
+    "go",
+    "test",
+    "-vet=off",
+    "-overlay",
+    "/tmp/r53-main-gates/mutant-disabled-overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestR53DisabledRouteSetUnchanged$",
+    "-v",
+    "-count=1"
+  ],
+  "rc": 1,
+  "started_utc": "2026-11-06T19:40:18.393825+00:00",
+  "ended_utc": "2026-11-06T19:40:21.873037+00:00"
+}

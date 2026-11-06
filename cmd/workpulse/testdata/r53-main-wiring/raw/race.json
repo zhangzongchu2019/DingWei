@@ -1,0 +1,18 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "-race",
+    "-count=3",
+    "-timeout=10m",
+    "./cmd/workpulse",
+    "-run",
+    "TestR53|TestWireR53|TestOptionalMCPGateway|TestMCPGateway"
+  ],
+  "source_commit": "d0fdf47fb22a4b88addc61b7c9119cc2522ba9ac",
+  "started_utc": "2026-11-06T19:39:46.310827+00:00",
+  "ended_utc": "2026-11-06T19:41:00.579329+00:00",
+  "rc": 0,
+  "PG_STRICT": 1
+}

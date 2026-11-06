@@ -1,0 +1,14 @@
+--- a/cmd/workpulse/r53_extseat.go
++++ b/cmd/workpulse/r53_extseat.go
+@@ -78,8 +78,9 @@
+ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, groups extseat.Groups, d r53Dependencies) error {
+ 	// 关闭态不读配置、不查库、不登记路由，与基线启动行为相同。
+ 	if strings.TrimSpace(os.Getenv("DW_R53_EXTSEAT")) != "1" {
+-		return nil
+-	}
++ d.mux.HandleFunc("/r53-disabled-mutant", func(w http.ResponseWriter,r *http.Request){w.WriteHeader(204)})
++ return nil
++}
+ 	if cfg.resource != cfg.publicOrigin+"/mcp" || !validR53Origin(cfg.publicOrigin) {
+ 		return errors.New("r53: Resource 必须等于 PublicOrigin + /mcp（DW_PUBLIC_ORIGIN）")
+ 	}

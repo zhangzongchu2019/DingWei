@@ -1,0 +1,112 @@
+{
+  "cmd": {
+    "counts": {
+      "run": 264,
+      "output": 784,
+      "pass": 258,
+      "skip": 6
+    },
+    "packages": [
+      {
+        "Time": "2026-11-06T11:43:21.805979674-08:00",
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+        "Elapsed": 215.51
+      }
+    ],
+    "skips": [
+      {
+        "Time": "2026-11-06T11:42:29.981661793-08:00",
+        "Action": "skip",
+        "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+        "Test": "TestNPSessionPG8To9AndR50BinaryCompatibility",
+        "Elapsed": 0
+      },
+      {
+        "Time": "2026-11-06T11:42:53.389497588-08:00",
+        "Action": "skip",
+        "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+        "Test": "TestR31OldBinarySchemaReadCompatibility",
+        "Elapsed": 0
+      },
+      {
+        "Time": "2026-11-06T11:42:59.366374776-08:00",
+        "Action": "skip",
+        "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+        "Test": "TestHLCFaultProcessMatrix",
+        "Elapsed": 0
+      },
+      {
+        "Time": "2026-11-06T11:42:59.366389595-08:00",
+        "Action": "skip",
+        "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+        "Test": "TestHLCBindFailure",
+        "Elapsed": 0
+      },
+      {
+        "Time": "2026-11-06T11:43:07.379196129-08:00",
+        "Action": "skip",
+        "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+        "Test": "TestHLCLoadMatrix",
+        "Elapsed": 0
+      },
+      {
+        "Time": "2026-11-06T11:43:07.379224446-08:00",
+        "Action": "skip",
+        "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+        "Test": "TestHLCS007Full",
+        "Elapsed": 0
+      }
+    ]
+  },
+  "related": {
+    "counts": {
+      "run": 207,
+      "output": 414,
+      "pass": 207
+    },
+    "packages": [
+      {
+        "Time": "2026-11-06T11:39:51.742891496-08:00",
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+        "Elapsed": 6.172
+      },
+      {
+        "Time": "2026-11-06T11:40:21.274910087-08:00",
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/internal/extseat",
+        "Elapsed": 29.038
+      },
+      {
+        "Time": "2026-11-06T11:40:21.833675232-08:00",
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/internal/feishulogin",
+        "Elapsed": 0.011
+      },
+      {
+        "Time": "2026-11-06T11:40:22.166166735-08:00",
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/internal/extwire",
+        "Elapsed": 0.003
+      }
+    ],
+    "skips": []
+  },
+  "race": {
+    "counts": {
+      "run": 72,
+      "output": 186,
+      "pass": 72
+    },
+    "packages": [
+      {
+        "Time": "2026-11-06T11:41:00.542908736-08:00",
+        "Action": "pass",
+        "Package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+        "Elapsed": 58.279
+      }
+    ],
+    "skips": []
+  }
+}
