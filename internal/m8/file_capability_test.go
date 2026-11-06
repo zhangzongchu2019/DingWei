@@ -63,7 +63,7 @@ func TestFileRetrievalCapabilityIsFrozen(t *testing.T) {
 	}
 }
 
-func TestUploadTicketPublicBaseUsesOnlyCanonicalOrTrustedOrigin(t *testing.T) {
+func TestUploadTicketPublicBaseUsesOnlyTrustedNonCanonicalOrigin(t *testing.T) {
 	trusted, err := trustedorigin.ParseList("https://dw.cmjrt.com:50443")
 	if err != nil {
 		t.Fatal(err)
@@ -74,7 +74,8 @@ func TestUploadTicketPublicBaseUsesOnlyCanonicalOrTrustedOrigin(t *testing.T) {
 		values  []string
 		want    string
 	}{
-		{name: "canonical with empty list", values: []string{"https://dw.cmjrt.com:55055"}, want: "https://dw.cmjrt.com:55055"},
+		{name: "canonical with empty list falls back", values: []string{"https://dw.cmjrt.com:55055"}, want: "https://files.example"},
+		{name: "canonical with trusted list falls back", trusted: trusted, values: []string{"https://dw.cmjrt.com:55055"}, want: "https://files.example"},
 		{name: "trusted exact origin", trusted: trusted, values: []string{"https://dw.cmjrt.com:50443"}, want: "https://dw.cmjrt.com:50443"},
 		{name: "untrusted origin falls back", trusted: trusted, values: []string{"https://evil.example"}, want: "https://files.example"},
 		{name: "empty list noncanonical falls back", values: []string{"https://dw.cmjrt.com:50443"}, want: "https://files.example"},
@@ -172,7 +173,7 @@ func TestConsoleUploadTicketOriginSelection(t *testing.T) {
 		wantBody      string
 	}{
 		{name: "empty list preserves canonical 443 response bytes", publicOrigin: "https://dw123.cmjrt.com", origins: []string{"https://dw123.cmjrt.com"}, wantUploadURL: "https://files.example/files/upload", wantBody: "{\"expires_at\":\"2030-01-02T03:04:05Z\",\"session\":\"agent-a\",\"ticket\":\"opaque-ticket\",\"upload_url\":\"https://files.example/files/upload\"}\n"},
-		{name: "canonical public origin", publicOrigin: "https://dw123.cmjrt.com", trusted: trusted, origins: []string{"https://dw123.cmjrt.com"}, wantUploadURL: "https://dw123.cmjrt.com/files/upload"},
+		{name: "canonical public origin falls back to file service", publicOrigin: "https://dw123.cmjrt.com", trusted: trusted, origins: []string{"https://dw123.cmjrt.com"}, wantUploadURL: "https://files.example/files/upload"},
 		{name: "trusted 50443 origin", publicOrigin: "https://dw123.cmjrt.com", trusted: trusted, origins: []string{"https://dw123.cmjrt.com:50443"}, wantUploadURL: "https://dw123.cmjrt.com:50443/files/upload"},
 		{name: "unlisted origin falls back", publicOrigin: "https://dw123.cmjrt.com", trusted: trusted, origins: []string{"https://evil.example"}, wantUploadURL: "https://files.example/files/upload"},
 		{name: "duplicate origin header falls back", publicOrigin: "https://dw123.cmjrt.com", trusted: trusted, origins: []string{"https://dw123.cmjrt.com:50443", "https://dw123.cmjrt.com:50443"}, wantUploadURL: "https://files.example/files/upload"},

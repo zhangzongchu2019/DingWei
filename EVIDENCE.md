@@ -106,3 +106,10 @@ The following supplemental implementation was developed in the authorized indepe
 - The independent-worktree locked build gate `TMPDIR=$(mktemp -d /tmp/r52to-final.XXXXXX) PATH=/tmp/r52lv/bin:$PATH scripts/run-build-tests.sh` completed rc=0: `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`; helper inventory 90 files, 1097 expected cases per helper profile.
 - Browser flow regression passed at 443 and 50443, covering upload target, draft thumbnail, canonical stored URL, and post-send local rendering. Both mutation checks failed at their intended assertion. Targeted Python and renderer tests passed (42 and 12 cases respectively).
 - Current integrated branch strict OpenSpec validation: rc=0, 24 passed, 0 failed. Current integrated branch focused Go tests for trusted upload-ticket selection, new-platform upload ticket, and canonical View proxy header: rc=0. `git diff --check`: rc=0.
+
+## 2026-11-06 预复核修正
+
+- 组长对 `a706a53b` 预跑发现 canonical `Origin` 会覆盖 file-service `ticket.PublicBaseURL`，违反空 `DW_TRUSTED_ORIGINS` 时响应逐字节不变。修正 `uploadTicketPublicBase`：只有单一、格式精确、明确列入 `DW_TRUSTED_ORIGINS` 且不等于 `PublicOrigin` 的 Origin 才选择浏览器端点；canonical、空名单、非信任、多值均保留 file-service fallback。新平台 canonical 子用例期望同步为 fallback。
+- `go test ./internal/m8 -run 'FileCapability|UploadTicket|Upload' -count=1`: rc=0。
+- `go test -race -count=3 -timeout 90m ./internal/m8 -run 'FileCapability|UploadTicket|Upload'`: rc=0。
+- 变异检查移除 `requestOrigin != h.PublicOrigin` 条件，`TestConsoleUploadTicketOriginSelection/empty_list_preserves_canonical_443_response_bytes` 按预期失败，报告实际 `https://dw123.cmjrt.com/files/upload` 与预期 `https://files.example/files/upload` 不同；变异随后撤销。

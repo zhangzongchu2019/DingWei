@@ -489,7 +489,7 @@ func TestNewPlatformConsoleUploadTicketAndCapability(t *testing.T) {
 	waitSessionOnline(t, v.hub, "u_zzc", "kimi")
 	waitSessionOnline(t, v.hub, "u_lbl", "kimi")
 	st, out := post(fmt.Sprintf(ticketPath, "KIMI.ZZC"), v.tokZZC, `{"max_bytes":10}`)
-	if st != 200 || out["session"] != "kimi.zzc" || out["ticket"] != "opaque-ticket" || out["upload_url"] != npOrigin+"/files/upload" {
+	if st != 200 || out["session"] != "kimi.zzc" || out["ticket"] != "opaque-ticket" || out["upload_url"] != "https://files.example/files/upload" {
 		t.Fatalf("owner ticket: %d %v", st, out)
 	}
 	if issuer.calls != 1 || issuer.req.SessionName != "kimi.zzc" || issuer.req.OwnerKey != "u_zzc" || issuer.req.MaxBytes != 10 || issuer.req.Operation != "upload" {

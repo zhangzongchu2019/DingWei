@@ -291,13 +291,14 @@ func (h *Hub) writeConsoleUploadTicket(w http.ResponseWriter, r *http.Request, k
 }
 
 func (h *Hub) uploadTicketPublicBase(r *http.Request, fallback string) string {
-	// Upload tickets may target the exact browser origin when it is either the
-	// canonical origin or an explicitly trusted origin. Stored file URLs still
-	// come from the file service and retain its canonical public base.
+	// Preserve the file-service base for the canonical origin and the legacy
+	// empty-list path. Only an additional explicitly trusted browser origin may
+	// select a different upload endpoint; persisted file URLs remain canonical.
 	origins := r.Header.Values("Origin")
 	requestOrigin := r.Header.Get("Origin")
-	if len(origins) == 1 && requestOrigin != "" && strings.TrimSpace(requestOrigin) == requestOrigin &&
-		!strings.Contains(requestOrigin, ",") && h.originAllowed(requestOrigin, requestOrigin == h.PublicOrigin, len(origins)) {
+	if len(origins) == 1 && requestOrigin != "" && requestOrigin != h.PublicOrigin &&
+		strings.TrimSpace(requestOrigin) == requestOrigin && !strings.Contains(requestOrigin, ",") &&
+		h.originAllowed(requestOrigin, requestOrigin == h.PublicOrigin, len(origins)) {
 		return requestOrigin
 	}
 	return fallback
