@@ -3,7 +3,7 @@
 提案：openspec/changes/agent-http-mcp-gateway（dc9684ad，业主 ㊹-补8 通过）。裁定：review/opus50tc2k/rulings 的 ㊹、㊹-补1～补8、㊺。共享类型：internal/extshared（本分支 bbd71ce3）。
 
 ## 迁移编号（组长分配，各路不得自取）
-- PG：0105 归 A 路（外部主体、外部席位、令牌、外部收件箱、outbox）；0106 归 D 路（临时编组 AG：序号、成员、续期、解散）。
+- PG：0105 归 A 路（外部主体、外部席位、令牌、外部收件箱、outbox）；0106 归 D 路（临时编组 AG：序号、成员、续期、解散）。0107 归 B 路（mcpgw_oauth 单表：OAuth 短期事务、一次性 code、C StateStore 持久适配，AES-256-GCM 密文，密钥来自 DW_MCPGW_OAUTH_KEY_FILE；组长 2026-11-06T16:13:02Z 分配）。迁移期望串（internal/store/migrate、internal/m8 claim、cmd/workpulse）与 extwire.RequiredTables 由组长集成时统一改。
 - SQLite：本版原则上不加；A 路若投影确需扩列，先报组长取号。
 
 ## 0. 分路与单写者（每路一个分支，只改自己的包；跨路改动先报组长）
