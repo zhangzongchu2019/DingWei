@@ -25,7 +25,7 @@
 | `node view-service/renderer-epoch-order-regression.js` | `EPOCH_CHECK_PASS`、`HISTORY_GENERATION_CHECK_PASS` |
 | `node view-service/md-render-core-parity.js` | PASS，99/99 输出字节一致 |
 | `python3 view-service/test_md_render_core.py` | PASS，12 tests |
-| `go test ./internal/m8 -run 'TestConsoleSpecEmbeddedMarkdownCoreIsPinned|TestConsoleSpec' -count=1` | PASS，rc=0 |
+| `go test ./internal/m8 -run 'TestConsoleSpecEmbeddedMarkdownCoreIsPinned|TestConsoleSpec' -count=1` | PASS，40 cases pass / 0 fail / 0 skip，rc=0 |
 | `python3 tools/run-browser-regressions.py --selftest-env-coverage` | PASS |
 
 ## 全量浏览器门
