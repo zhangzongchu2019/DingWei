@@ -1,0 +1,23 @@
+=== RUN   TestR53DisabledRouteSetUnchanged
+=== RUN   TestR53DisabledRouteSetUnchanged/#00
+2026/11/06 11:40:21 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/06 11:40:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/06 11:40:21 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+    r53_wiring_test.go:110: disabled r53 changed registered route set
+=== RUN   TestR53DisabledRouteSetUnchanged/0
+2026/11/06 11:40:21 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/06 11:40:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/06 11:40:21 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+    r53_wiring_test.go:110: disabled r53 changed registered route set
+=== RUN   TestR53DisabledRouteSetUnchanged/true
+2026/11/06 11:40:21 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/06 11:40:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/06 11:40:21 newplat: no management user yet; on this host run: workpulse bootstrap-admin --user-id <ID> --short-name <short>
+    r53_wiring_test.go:110: disabled r53 changed registered route set
+--- FAIL: TestR53DisabledRouteSetUnchanged (0.32s)
+    --- FAIL: TestR53DisabledRouteSetUnchanged/#00 (0.02s)
+    --- FAIL: TestR53DisabledRouteSetUnchanged/0 (0.15s)
+    --- FAIL: TestR53DisabledRouteSetUnchanged/true (0.16s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.336s
+FAIL

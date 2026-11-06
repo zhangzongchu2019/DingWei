@@ -1,0 +1,6 @@
+=== RUN   TestR53ResourceMustMatchPublicOrigin
+    r53_wiring_test.go:122: origin="https://other.example": want consistency refusal, got extwire: no table checker
+--- FAIL: TestR53ResourceMustMatchPublicOrigin (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	0.012s
+FAIL
