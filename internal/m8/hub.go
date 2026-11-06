@@ -67,6 +67,8 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
+	ExternalSeats ExternalSeats
+
 	stickyLanes         stickyLanes
 	stickyCleanupMu     sync.Mutex
 	stickyCleanupCursor store.FeishuStickyKey
@@ -4220,6 +4222,9 @@ func (h *Hub) dispatchMemberMention(ctx context.Context, msg model.Message, text
 }
 
 func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env model.Envelope, ackInbound bool) error {
+	if handled, err := h.routeExternalSeat(ctx, keyID, sessionName, env); handled {
+		return err
+	}
 	claimed, sig, err := h.claimEnvelope(env)
 	if err != nil || !claimed {
 		return err

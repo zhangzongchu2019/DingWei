@@ -1,0 +1,11 @@
+{
+  "internal/extseat/core_pg_test.go": "0fb83d90847d0ccfd8a34289c46f8e8cf82357901c1e0c247b8d0f6ec937225b",
+  "internal/extseat/inbox.go": "d31ff32fc8611fb10f41117e071dc7e14d51b48b28c33c96801a21803b69d3ed",
+  "internal/extseat/outbox.go": "987ac0648fa69c922111e505be64c7dc9fa4391ea635876b16a5168417e61d2f",
+  "internal/extseat/service.go": "a25f7238a3d7e7676b4ba575110c99b6495ca5db3b1b5c04aebf45b450d55b7b",
+  "internal/extseat/types.go": "f8519edeac5856da79f7bcd92edb114946ccfad85add8a56922589af8b318f8b",
+  "internal/m8/claim_client_integration_test.go": "8da993b897480de5360a599c870b43be27db3b605a33ef2637c7f07a63e0f4f7",
+  "internal/m8/extseat.go": "6de3c9744d6d419f4341b69563a557bbd085d3d78b0fd7cf321723d1010f1b88",
+  "internal/m8/extseat_test.go": "9868be3d41d5ac2d5d09853ec5ee55c6ee4ff09e96b898cdea52ebf2122a9883",
+  "internal/store/migrate/migrations/0105_extseat.sql": "1574600db003513738c5465dcdbedd858fc43e2d8304df5c3524abafdbbcc2a1"
+}

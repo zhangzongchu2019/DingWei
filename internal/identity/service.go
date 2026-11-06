@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"io"
 	"log"
 	"strings"
@@ -303,6 +304,9 @@ func (s *Service) AuthenticateAgent(ctx context.Context, credential string) (*Ag
 	if err != nil {
 		return nil, "", err
 	}
+	if ag.Origin == OriginExternal {
+		return nil, "", ErrCredentialInvalid
+	}
 	switch ag.State {
 	case AgentRevoked:
 		return nil, "", ErrCredentialRevoked
@@ -421,7 +425,8 @@ func (s *Service) ResolveFullName(ctx context.Context, fullName string) (*Agent,
 		return nil, nil, ErrNotFound
 	}
 	name, short := fullName[:i], fullName[i+1:]
-	if !ValidAgentName(name) || !ValidShortName(short) {
+	_, _, externalName := extshared.SplitAgentName(name)
+	if (!ValidAgentName(name) && !externalName) || !ValidShortName(short) {
 		return nil, nil, ErrNotFound
 	}
 	u, err := s.Store.GetUserByShortName(ctx, short)
@@ -429,7 +434,7 @@ func (s *Service) ResolveFullName(ctx context.Context, fullName string) (*Agent,
 		return nil, nil, ErrNotFound
 	}
 	ag, err := s.Store.FindAgentByName(ctx, u.UserIDLC(), name)
-	if err != nil || !ag.Current() {
+	if err != nil || !ag.Current() || (externalName && ag.Origin != OriginExternal) || (!externalName && ag.Origin == OriginExternal) {
 		return nil, nil, ErrNotFound
 	}
 	return ag, u, nil

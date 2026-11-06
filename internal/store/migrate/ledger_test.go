@@ -52,7 +52,7 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	}
 	// 🔴 这份名单写死是有意的（与上面「缺表名单」同理）：它钉的是【Hub 域里到底有哪几条】，
 	// 引 LedgerInDomains() 去比就变成自己比自己。加一条 Hub 域条目 ⇒ 改这里，红一次是应当的。
-	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
 		t.Errorf("Applied = %v，要 Hub 域四条按字典序（0400 属 fanout 域，不得进 Hub 库）", rep.Applied)
 	}
 	if err := identity.NewPGStore(pool).CheckSchema(ctx); err != nil {
@@ -84,7 +84,7 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("重跑 Migrate: %v", err)
 	}
-	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 9 {
+	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 10 {
 		t.Errorf("重跑 Applied=%v Skipped=%v，要空转四条", rep2.Applied, rep2.Skipped)
 	}
 }
@@ -194,11 +194,22 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 	if _, err := trackA.Exec(ctx, testCtx(t), hostedSourceDDL(t)); err != nil {
 		t.Fatalf("track A hosted schema: %v", err)
 	}
+	entries, err := Ledger()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if entry.Name == "0105_extseat.sql" {
+			if _, err := trackA.Exec(ctx, testCtx(t), entry.Body); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
 	aTables := baseTables(t, trackA, schemaOf(t, trackA))
 	// 13 ＝ 身份域 8 ＋ fanout 域 5（outbound／inbound_msg／inbound_sink／waive_audit／selfcheck，
 	// R-G2-FANOUT-HARDEN ① 把五表收口进 internal/fanout/pgschema.sql 后才有这一项）。
-	if len(aTables) != 29 {
-		t.Fatalf("轨 A 建出 %d 张表（%v），要 29 张＝hosted 14＋身份域 9（G3 终版 800f24d8：原 6 张＋编组两张＋设备认领一张）"+
+	if len(aTables) != 35 {
+		t.Fatalf("轨 A 建出 %d 张表（%v），要 35 张＝外部席位 6＋hosted 14＋身份域 9（G3 终版 800f24d8：原 6 张＋编组两张＋设备认领一张）"+
 			"＋ mux 域 1（0300）＋ fanout 域 5（0400）", len(aTables), aTables)
 	}
 

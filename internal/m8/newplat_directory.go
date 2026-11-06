@@ -54,6 +54,21 @@ func (h *Hub) broadcastNewPlatformDirectories(ctx context.Context) error {
 		ep.FullSessionName = h.Identity.FullName(ctx, ag)
 		peers = append(peers, peer{onlineSessionItem{Endpoint: ep, Owner: owner, Client: snap.Client}, ag})
 	}
+	if h.ExternalSeats != nil {
+		external, err := h.ExternalSeats.Online(ctx)
+		if err != nil {
+			return err
+		}
+		for _, p := range external {
+			if !p.External || p.Agent.Origin != identity.OriginExternal || p.Agent.State != identity.AgentActive {
+				continue
+			}
+			ag := p.Agent
+			owner := model.Member{OwnerKey: ag.OwnerLC, DisplayName: ag.OwnerLC, Active: true}
+			ep := model.SessionEndpoint{KeyID: AgentKeyID(ag.OwnerLC), SessionName: ag.Name, FullSessionName: p.FullName, Active: true, LastSeenAt: p.LastSeenAt, Tool: "MCP/REST"}
+			peers = append(peers, peer{item: onlineSessionItem{Endpoint: ep, Owner: owner}, agent: &ag})
+		}
+	}
 	var writes sync.WaitGroup
 	for _, recipient := range snapshots {
 		source, ok := h.newPlatformAgentAt(ctx, recipient.KeyID, recipient.Session)
