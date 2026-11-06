@@ -78,3 +78,10 @@ func TestTTLConstants(t *testing.T) {
 		t.Fatal("TTL constants drifted from rulings ㊹-补4／提案 GW-005／GW-006")
 	}
 }
+
+func TestScopeStringMatchesPersistedText(t *testing.T) {
+	// A 路 0105 令牌行写入的 scopes 文本；两处必须逐字一致。
+	if ScopeString() != "list_online send_message wait_for_messages ack" {
+		t.Fatalf("scope text drifted: %q", ScopeString())
+	}
+}

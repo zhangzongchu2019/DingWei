@@ -130,3 +130,10 @@ var (
 	ErrQueueFull       = errors.New("extshared: queue full")
 	ErrNotPermitted    = errors.New("extshared: capability not permitted for external seat")
 )
+
+// MVPScopes 外部席位 MVP 唯一授予的 scope 集合：固定四项通讯能力，不做子集（接口约定第 6 节）。
+// 顺序固定，ScopeString 的结果与 A 路 0105 令牌行持久的 scopes 文本逐字相同。
+var MVPScopes = [4]string{"list_online", "send_message", "wait_for_messages", "ack"}
+
+// ScopeString MVPScopes 以单个空格连接，用于持久化与比较。
+func ScopeString() string { return strings.Join(MVPScopes[:], " ") }
