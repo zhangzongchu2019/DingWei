@@ -1,0 +1,114 @@
+{
+  "source_commit": "fe67be849cca1498e0c188864e8df476d55aaa28",
+  "reason": "原四刀旧覆盖源片早于scope定稿，现仅将相同语义刀移到当前源片补齐，不重做长门。",
+  "mutations": [
+    {
+      "label": "core-mut-renewal-not-persisted",
+      "case": "TestCorePG/RenewalPersistsAcrossRestart",
+      "expected_assertion": "persisted renewal lost across restart",
+      "assertion_seen": true,
+      "record": {
+        "label": "core-mut-renewal-not-persisted",
+        "command": [
+          "go",
+          "test",
+          "-overlay",
+          "/tmp/r53-extseat-post-fe67be849/core-mut-renewal-not-persisted-overlay.json",
+          "./internal/extseat",
+          "-run",
+          "^TestCorePG/RenewalPersistsAcrossRestart$",
+          "-count=1",
+          "-timeout",
+          "10m"
+        ],
+        "start_utc": "2026-11-06T08:15:23.493787+00:00",
+        "end_utc": "2026-11-06T08:15:27.148477+00:00",
+        "rc": 1,
+        "tmpdir": "/tmp/xt08pooh0b",
+        "log_sha256": "ade68881416ba634d311e933722540adec77842c960930b1af80cb08fd766d7d"
+      },
+      "failure_log": "--- FAIL: TestCorePG (3.10s)\n    --- FAIL: TestCorePG/RenewalPersistsAcrossRestart (0.07s)\n        core_pg_test.go:192: persisted renewal lost across restart: extshared: token expired\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/extseat\t3.104s\nFAIL\n"
+    },
+    {
+      "label": "core-mut-revocation-revives",
+      "case": "TestCorePG/RevokedCannotRevive",
+      "expected_assertion": "revoked token revived",
+      "assertion_seen": true,
+      "record": {
+        "label": "core-mut-revocation-revives",
+        "command": [
+          "go",
+          "test",
+          "-overlay",
+          "/tmp/r53-extseat-post-fe67be849/core-mut-revocation-revives-overlay.json",
+          "./internal/extseat",
+          "-run",
+          "^TestCorePG/RevokedCannotRevive$",
+          "-count=1",
+          "-timeout",
+          "10m"
+        ],
+        "start_utc": "2026-11-06T08:15:23.494773+00:00",
+        "end_utc": "2026-11-06T08:15:27.156484+00:00",
+        "rc": 1,
+        "tmpdir": "/tmp/xtplt1ne3t",
+        "log_sha256": "9ab716e09cbfa6d9ff8a74ebfc66fb3b01f2b0bf89e363fa67da8689faeea069"
+      },
+      "failure_log": "--- FAIL: TestCorePG (3.11s)\n    --- FAIL: TestCorePG/RevokedCannotRevive (0.07s)\n        core_pg_test.go:220: revoked token revived: <nil>\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/extseat\t3.115s\nFAIL\n"
+    },
+    {
+      "label": "core-mut-same-key-different-request",
+      "case": "TestCorePG/IdempotencyAndAtomicRollback",
+      "expected_assertion": "same key different request accepted",
+      "assertion_seen": true,
+      "record": {
+        "label": "core-mut-same-key-different-request",
+        "command": [
+          "go",
+          "test",
+          "-overlay",
+          "/tmp/r53-extseat-post-fe67be849/core-mut-same-key-different-request-overlay.json",
+          "./internal/extseat",
+          "-run",
+          "^TestCorePG/IdempotencyAndAtomicRollback$",
+          "-count=1",
+          "-timeout",
+          "10m"
+        ],
+        "start_utc": "2026-11-06T08:15:27.189119+00:00",
+        "end_utc": "2026-11-06T08:15:31.461683+00:00",
+        "rc": 1,
+        "tmpdir": "/tmp/xtgbt7si3h",
+        "log_sha256": "120bde8ee18e08d18e4c218e0af64ae2f18b069a4883d45554f221406728e561"
+      },
+      "failure_log": "--- FAIL: TestCorePG (3.70s)\n    --- FAIL: TestCorePG/IdempotencyAndAtomicRollback (0.13s)\n        core_pg_test.go:251: same key different request accepted: <nil>\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/extseat\t3.705s\nFAIL\n"
+    },
+    {
+      "label": "core-mut-poll-touches-group",
+      "case": "TestCorePG/PollingNeverTouchesGroup",
+      "expected_assertion": "poll/list unexpectedly touched group",
+      "assertion_seen": true,
+      "record": {
+        "label": "core-mut-poll-touches-group",
+        "command": [
+          "go",
+          "test",
+          "-overlay",
+          "/tmp/r53-extseat-post-fe67be849/core-mut-poll-touches-group-overlay.json",
+          "./internal/extseat",
+          "-run",
+          "^TestCorePG/PollingNeverTouchesGroup$",
+          "-count=1",
+          "-timeout",
+          "10m"
+        ],
+        "start_utc": "2026-11-06T08:15:27.197617+00:00",
+        "end_utc": "2026-11-06T08:15:31.592346+00:00",
+        "rc": 1,
+        "tmpdir": "/tmp/xtchn58dji",
+        "log_sha256": "70fdf808ce47baf5b3aff6508420fed123f7c718531767781744c71922721e09"
+      },
+      "failure_log": "--- FAIL: TestCorePG (3.81s)\n    --- FAIL: TestCorePG/PollingNeverTouchesGroup (0.11s)\n        core_pg_test.go:283: poll/list unexpectedly touched group\nFAIL\nFAIL\tgithub.com/zhangzongchu2019/dingwei/internal/extseat\t3.812s\nFAIL\n"
+    }
+  ]
+}

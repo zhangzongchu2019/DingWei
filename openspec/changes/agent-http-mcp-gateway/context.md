@@ -63,3 +63,6 @@
 
 
 唯一写者合并的测试与证据入口：docs/reviews/r53-extseat-writer-reconcile/（命令UTC/rc/hash、变异失败原文、受测源码摘要、完整包SKIP清单）；身份投影锁改动在internal/extseat/outbox.go与internal/m8/extseat.go，时钟重核在service.go/inbox.go。0105引入后的真实跨runtime claim集成迁移清单已补齐，数据库仍由pgtest隔离，未改生产配置或helper状态机。
+
+
+A路最终门证据入口改为docs/reviews/r53-extseat/EVIDENCE.md（合同75a40880第7节，交件前已同步）；旧根EVIDENCE保持fe67字节，由组长迁移。实际持锁执行会话01a1af35-98c2-7451-a54a-6ec76c50d4f9依据组长05:14:20Z新裁定接续。产品源fe67不变，最终证据仅追加；Go包race-count3整包store实测需为90m总时限留余量，原90m超时保留，最终按120m完整重跑通过，不缩减用例。

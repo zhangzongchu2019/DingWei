@@ -1,0 +1,113 @@
+{
+  "source_commit": "fe67be849cca1498e0c188864e8df476d55aaa28",
+  "shards": [
+    {
+      "label": "race-m8-0",
+      "rc": 0,
+      "expected_unique_tests": 223,
+      "actual_unique_tests": 223,
+      "top_level_runs": 669,
+      "each_expected_test_ran_exactly_three_times": true,
+      "top_level_outcomes": {
+        "pass": 657,
+        "skip": 12
+      },
+      "missing": [],
+      "unexpected": [],
+      "wrong_count": {}
+    },
+    {
+      "label": "race-m8-1",
+      "rc": 0,
+      "expected_unique_tests": 223,
+      "actual_unique_tests": 223,
+      "top_level_runs": 669,
+      "each_expected_test_ran_exactly_three_times": true,
+      "top_level_outcomes": {
+        "pass": 660,
+        "skip": 9
+      },
+      "missing": [],
+      "unexpected": [],
+      "wrong_count": {}
+    },
+    {
+      "label": "race-m8-2",
+      "rc": 0,
+      "expected_unique_tests": 223,
+      "actual_unique_tests": 223,
+      "top_level_runs": 669,
+      "each_expected_test_ran_exactly_three_times": true,
+      "top_level_outcomes": {
+        "pass": 651,
+        "skip": 18
+      },
+      "missing": [],
+      "unexpected": [],
+      "wrong_count": {}
+    },
+    {
+      "label": "race-m8-3",
+      "rc": 0,
+      "expected_unique_tests": 222,
+      "actual_unique_tests": 222,
+      "top_level_runs": 666,
+      "each_expected_test_ran_exactly_three_times": true,
+      "top_level_outcomes": {
+        "pass": 648,
+        "skip": 18
+      },
+      "missing": [],
+      "unexpected": [],
+      "wrong_count": {}
+    }
+  ],
+  "unique_tests": 891,
+  "top_level_runs": 2673,
+  "all_expected_tests_ran_exactly_three_times": true,
+  "unique_skip_events": [
+    "TestBlockerAcrossRealHTTPHelperIPCMCP",
+    "TestChangeEvidenceConsoleBrowser",
+    "TestConsolePlatformPayloadDump",
+    "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+    "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+    "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+    "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+    "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+    "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+    "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+    "TestDeliveryACKActualCLILateWireTerminal",
+    "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+    "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+    "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+    "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+    "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+    "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+    "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+    "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+    "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+    "TestDesktopMCPRoundTripAcrossRealHub",
+    "TestDeviceClaimAcrossActualClientAndHub",
+    "TestDeviceClaimAcrossActualClientAndPostgres",
+    "TestEnvelopeReadTimeoutEnvironmentChild",
+    "TestFailureNoticeDriverTurnEndToEnd",
+    "TestGroupReplyMCP",
+    "TestHelper0232MixedVersionEndToEnd",
+    "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+    "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+    "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+    "TestHostedBodySendAcrossRealHub",
+    "TestMuxProductHTTP1EightSeats",
+    "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+    "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+    "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+    "TestSessionHistoryTwentyAgentPublishP99",
+    "TestSpecMCPEndToEnd"
+  ],
+  "new_external_tests": {
+    "TestExternalDirectoryMergesByExistingGroupVisibility": 3,
+    "TestExternalRouteNonExternalUnderscoreSkipsIdentity": 3,
+    "TestExternalRouteUsesPGAdapterWithoutWS": 3,
+    "TestExternalProjectionIdempotentPreservesHelperQueue": 3
+  }
+}

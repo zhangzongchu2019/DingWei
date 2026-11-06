@@ -1,0 +1,10 @@
+source_commit=fe67be849cca1498e0c188864e8df476d55aaa28
+HELPER_GATE_RESULT {"actual": 1097, "actual_SH_DRIVER": "claude", "expected": 1097, "files": 90, "groups": [1088, 9], "profile": "claude", "rc": 0}
+HELPER_GATE_RESULT {"actual": 1097, "actual_SH_DRIVER": "codex", "expected": 1097, "files": 90, "groups": [1088, 9], "profile": "codex", "rc": 0}
+--- PASS: TestDeviceClaimAcrossActualClientAndPostgres (19.20s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/new (6.66s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/reuse (3.08s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/lost_ack (3.08s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/takeover (3.37s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/cancel_then_new (3.00s)
+BUILD_TESTS_OK helper_profiles=2 python=27 shell=2
