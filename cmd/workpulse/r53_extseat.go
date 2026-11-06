@@ -4,7 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
 	"net/url"
+
+	"github.com/zhangzongchu2019/dingwei/internal/extseat"
+	"github.com/zhangzongchu2019/dingwei/internal/feishulogin"
+	"github.com/zhangzongchu2019/dingwei/internal/lifecycle"
+	"github.com/zhangzongchu2019/dingwei/internal/m8"
+	"github.com/zhangzongchu2019/dingwei/internal/mcpgw"
 	"os"
 	"strings"
 
@@ -16,8 +24,9 @@ import (
 // 合同 docs/design/R53-MVP-CONTRACT.md 第 6 节：TenantKey 与 Resource 由组长在 main 统一配置，
 // A／B／C 三路读同一份，不各自定义、不内置默认值。默认关：DW_R53_EXTSEAT 不为 "1" 时一行不执行。
 type r53Config struct {
-	tenantKey string // DW_FEISHU_TEAM_TENANT_KEY：本团队飞书 tenant
-	resource  string // DW_MCP_RESOURCE：MCP 受保护资源标识（暂定 https://dw123.cmjrt.com/mcp）
+	tenantKey    string // DW_FEISHU_TEAM_TENANT_KEY：本团队飞书 tenant
+	publicOrigin string // 与新平台使用同一 DW_PUBLIC_ORIGIN 配置
+	resource     string // DW_MCP_RESOURCE：MCP 受保护资源标识（暂定 https://dw123.cmjrt.com/mcp）
 }
 
 var (
@@ -55,14 +64,81 @@ func validMCPResource(s string) bool {
 	return u.RawQuery == "" && u.Fragment == "" && !u.ForceQuery
 }
 
-// wireR53 开启时先核 0105 表都在（迁移已由 openNewPlatformStore 施加；这里管「此刻表在不在」），
-// 缺表即拒启动（rulings ㊹-补12 ⑦）。D 路未并入前，A 路 Service 缺 Groups，签发／续组无法成立 ⇒ fail closed。
-func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker) error {
+// r53Dependencies 仅做装配注入；D 由调用方提供，测试可替换飞书上游与 CIMD。
+// 生产不给 OAuth/Clients 时使用 C 的正式飞书客户端与 B 的安全 CIMD resolver。
+type r53Dependencies struct {
+	mux              *http.ServeMux
+	hub              *m8.Hub
+	pool             *repo.Pool
+	appID, appSecret string
+	oauth            feishulogin.OAuthClient
+	clients          mcpgw.ClientResolver
+}
+
+func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, groups extseat.Groups, d r53Dependencies) error {
+	// 关闭态不读配置、不查库、不登记路由，与基线启动行为相同。
+	if strings.TrimSpace(os.Getenv("DW_R53_EXTSEAT")) != "1" {
+		return nil
+	}
+	if cfg.resource != cfg.publicOrigin+"/mcp" || !validR53Origin(cfg.publicOrigin) {
+		return errors.New("r53: Resource 必须等于 PublicOrigin + /mcp（DW_PUBLIC_ORIGIN）")
+	}
 	if err := extwire.CheckSchema(ctx, checker); err != nil {
 		return err
 	}
-	_ = cfg // D 路并入后在此装 extseat.Service{TenantKey: cfg.tenantKey, Resource: cfg.resource, ...}
-	return errR53GroupsMissing
+	if groups == nil {
+		return errR53GroupsMissing
+	}
+	if d.hub == nil || d.hub.Identity == nil || d.pool == nil || d.mux == nil || cfg.tenantKey == "" {
+		return errors.New("r53: incomplete Hub dependencies or TenantKey")
+	}
+	seats := &extseat.Service{Pool: d.pool, Access: repo.SystemCtx(), Identity: d.hub.Identity,
+		Helpers: m8.HubHelperPresence{Hub: d.hub}, Groups: groups, TenantKey: cfg.tenantKey, Resource: cfg.resource,
+		OnBackgroundError: func(error) { log.Print("r53: external seat background operation failed") }}
+	enabled := registerOptionalMCPGateway(ctx, d.mux, d.pool, repo.SystemCtx(), cfg.resource, func(store mcpgw.Store) (mcpgw.Config, error) {
+		oauth := d.oauth
+		redirect := cfg.publicOrigin + "/mcp/oauth/feishu/callback"
+		if oauth == nil {
+			var err error
+			oauth, err = feishulogin.NewFeishuClient(feishulogin.OAuthConfig{AppID: d.appID, AppSecret: d.appSecret, RedirectURI: redirect})
+			if err != nil {
+				return mcpgw.Config{}, err
+			}
+		}
+		login, err := feishulogin.NewHandler(feishulogin.Config{AppID: d.appID, TeamTenantKey: cfg.tenantKey, RedirectURI: redirect,
+			OAuth: oauth, States: mcpgw.LoginStates{Store: store}, Tokens: extwire.Issuer{Seats: seats, Resource: cfg.resource}})
+		if err != nil {
+			return mcpgw.Config{}, err
+		}
+		clients := d.clients
+		if clients == nil {
+			clients = mcpgw.MetadataClients{}
+		}
+		return mcpgw.Config{PublicOrigin: cfg.publicOrigin, Resource: cfg.resource, Seats: seats, Login: login, Clients: clients, Origins: nil}, nil
+	})
+	if enabled {
+		d.hub.ExternalSeats = seats
+		done := func() {}
+		if jobs, ok := ctx.Value(runTasksKey{}).(*lifecycle.Group); ok {
+			var admitted bool
+			done, admitted = jobs.Enter("r53_extseat_worker")
+			if !admitted {
+				return errors.New("r53: Hub is shutting down")
+			}
+		}
+		go func() {
+			defer done()
+			if err := seats.Run(ctx, m8.HubExtseatProjector{Hub: d.hub}); err != nil && ctx.Err() == nil {
+				log.Print("r53: external seat worker stopped")
+			}
+		}()
+	}
+	return nil
+}
+
+func validR53Origin(raw string) bool {
+	u, err := url.Parse(raw)
+	return err == nil && u.Scheme == "https" && u.Host != "" && u.User == nil && u.Path == "" && u.RawQuery == "" && !u.ForceQuery && u.Fragment == "" && u.Opaque == ""
 }
 
 // pgTableChecker 用新平台连接池实现 extwire.TableChecker（写法同 identity.PGStore 的 CheckSchema）。

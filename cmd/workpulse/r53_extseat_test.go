@@ -49,6 +49,7 @@ func TestR53ConfigFromEnv(t *testing.T) {
 
 // 开启时：0105 表齐 ⇒ 过表核对、停在「D 路未并入」；删一张表 ⇒ 报出缺的那张表名。
 func TestWireR53SchemaCheckPG(t *testing.T) {
+	t.Setenv("DW_R53_EXTSEAT", "1")
 	dsn := pgSchemaDSN(t, false)
 	ctx := context.Background()
 	_, pool, closeStore, err := openNewPlatformStore(ctx, dsn)
@@ -56,14 +57,14 @@ func TestWireR53SchemaCheckPG(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer closeStore()
-	cfg := r53Config{tenantKey: "tk", resource: "https://dw123.cmjrt.com/mcp"}
-	if err := wireR53(ctx, cfg, pgTableChecker{pool: pool}); !errors.Is(err, errR53GroupsMissing) {
+	cfg := r53Config{publicOrigin: "https://dw123.cmjrt.com", tenantKey: "tk", resource: "https://dw123.cmjrt.com/mcp"}
+	if err := wireR53(ctx, cfg, pgTableChecker{pool: pool}, nil, r53Dependencies{}); !errors.Is(err, errR53GroupsMissing) {
 		t.Fatalf("all tables present: err=%v want errR53GroupsMissing", err)
 	}
 	if _, err := pool.Exec(ctx, repo.SystemCtx(), `DROP TABLE np_extseat_outbox`); err != nil {
 		t.Fatal(err)
 	}
-	err = wireR53(ctx, cfg, pgTableChecker{pool: pool})
+	err = wireR53(ctx, cfg, pgTableChecker{pool: pool}, nil, r53Dependencies{})
 	if err == nil || errors.Is(err, errR53GroupsMissing) || !strings.Contains(err.Error(), "np_extseat_outbox") {
 		t.Fatalf("dropped table: err=%v want missing np_extseat_outbox", err)
 	}

@@ -368,7 +368,8 @@ func run(logger *slog.Logger) error {
 		if r53Cfg, r53On, err := r53ConfigFromEnv(newplatOn); err != nil {
 			return fmt.Errorf("r53 config: %w", err)
 		} else if r53On {
-			if err := wireR53(ctx, r53Cfg, pgTableChecker{pool: npPool}); err != nil {
+			r53Cfg.publicOrigin = newplatCfg.publicOrigin
+			if err := wireR53(ctx, r53Cfg, pgTableChecker{pool: npPool}, nil, r53Dependencies{mux: mux, hub: prefixHub, pool: npPool, appID: bs.FeishuAppID, appSecret: bs.FeishuAppSecret}); err != nil {
 				return fmt.Errorf("r53 wiring refused to start: %w", err)
 			}
 		}
