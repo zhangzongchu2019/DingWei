@@ -4,7 +4,7 @@
 
 - 本单父基线：review/togpt60lunazzc/r52-agent-gateway-proposal-20261105，f95fa0b3a4a6e693d21c8de4b052e3d3a7424293；新分支 coder56solzzc/r53-agent-gateway-proposal-rev。
 - 代码核对基线：opus50tc2k/r51-integration，f7f31fca1d1f1468285138578c3f6fafacfb5537，tree 150f51fea5e2de620912d1d66d35780935782865。以下代码行号均指该 commit，用 git show／git grep 只读取得，不使用本地旧工作树行号。
-- 需求原文：review/opus50tc2k/rulings 的 docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md。2577d91a 的 ㊹、补1、补2；4accf167 的补3；5ed6d2ae 的补4；51133ad3 的补5（提交前主动读收件库发现追加后同步）；均已读原文。时间线以这些裁定为本变更依据，不从作者名推断需求。仓库没有找到独立覆盖本能力的平台能力时间线，未据此宣称额外现网事实。
+- 需求原文：review/opus50tc2k/rulings 的 docs/rulings/S-TEAM-MIGRATE-HOSTED-20261017.md。2577d91a 的 ㊹、补1、补2；4accf167 的补3；5ed6d2ae 的补4；51133ad3 的补5（提交前主动读收件库发现追加后同步）；2a18e3f3 的补6；均已读原文。时间线以这些裁定为本变更依据，不从作者名推断需求。仓库没有找到独立覆盖本能力的平台能力时间线，未据此宣称额外现网事实。
 - 规则：openspec/config.yaml，spec-driven、中文正文/英文结构/SHALL或MUST、保留 GW-001～010 十个固定需求编号。本能力尚无独立 openspec/specs/agent-http-mcp-gateway 基线；原提案的 context 与下面 r51 观察是本次最小基线，不增改目录外文件。
 - 本单只改提案目录 Markdown；不实现、迁移、部署或探测真实飞书，不读取/提交凭据。后续实现和独立验收未完成。
 
@@ -24,7 +24,7 @@
 | 14 天令牌与吊销 | internal/identity/pgschema.sql:36：np_session(token_hash,created_at,expires_at,revoked_at)；internal/identity/onboarding.go:215、229：创建与HTTP续期 | 拟独立 OAuth token / scope / external subject / AG / revocation generation 持久记录；不把 Console cookie/token 直接充 MCP 凭据；表名/迁移编号与授权服务器部署未冻结 |
 | 90 秒在线租约 | internal/m8/agent_ws.go:191：AgentOnline 基于现有连接状态 | 新 external last_seen_at/lease_until 与HTTP成功请求触达；np_agent 投影/roster 在类型分支读取租约，不能伪造常驻 WebSocket；未核实现有 runtime 可直接容纳此类型 |
 | 续期复用点 | internal/identity/onboarding.go:229、238、251、261：低阈值续期/一分钟触达；internal/identity/pgstore.go:487：TouchSession 检查未吊销/未过期及30天cap | 复用时钟注入/哈希/持久CAS/限频模式；不复制阈值、30天绝对上限和仅内存触达保证。新增 durable 触达/expiry投影（或先逐请求CAS），见design节流解释 |
-| 3 天组续期与清理 | internal/identity/pgschema.sql:96：组仅created_at/updated_at；internal/identity/pgstore.go:1089：现有DeleteGroup | 新 last_used_at/expires_at、墓碑和 generation；分钟级分批扫/启动补扫/请求时到期检查；普通组不受影响。仅消息/ACK续组为组长解释、待业主确认 |
+| 3 天组续期与清理 | internal/identity/pgschema.sql:96：组仅created_at/updated_at；internal/identity/pgstore.go:1089：现有DeleteGroup | 新 last_used_at/expires_at、墓碑和 generation；分钟级分批扫/启动补扫/请求时到期检查；普通组不受影响。仅消息/首次有效ACK续组已定（㊹-补6） |
 | 普通消息与24小时队列 | internal/store/migrations/0027_session_delivery.sql:1：SQLite session_delivery；internal/store/sqlite.go:2076、2145、2282：入队/过期/领取 | HTTP adapter复用投递，补稳定外部席位与AG代际关联、24小时绝对消息TTL；不能把旧表当成已有gateway token/AG元数据。跨PG/SQLite使用outbox对账而非分布式原子 |
 | ACK与在途处理 | internal/m8/delivery_ack_v2.go:22、24：protocol2且driver；internal/store/session_delivery_ack.go：v2持久确认；internal/store/sqlite.go:2449、2464：取消待投递/确认取消 | 新HTTP处理模式或共享底层校验；解散栅栏、排队失败、已领取结算与通知outbox；不能取消已发生副作用或把unknown伪装完成。具体旧取消函数到新终态映射未核实 |
 | Console相关AG侧栏 | internal/m8/console_auth.go:401：Agents侧栏与#a；:628、655：Agent导航；:720：refreshGroups；internal/identity/group.go:194、206：ListVisibleGroups也给创建者可见 | 在Agents下独立相关AG栏目，后端严格“名下Agent是成员”过滤，不直接复用“创建者或成员”并集，不给个人侧栏平台管理员全量豁免；表为np_group/np_group_member/np_agent |
