@@ -26,7 +26,7 @@ import threading
 import urllib.request
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, quote, urlparse
+from urllib.parse import parse_qs, quote, urlparse, urlsplit
 
 import base64
 import math
@@ -508,6 +508,43 @@ def _read_renderer() -> bytes:
 _PROVENANCE_ICONS_ON = os.environ.get("VS_PROVENANCE_ICONS", "1").strip().lower() not in ("0", "false", "off", "no")
 _PROV_FLAG_SCRIPT = "<script>window.PROVENANCE_ICONS_V1=true;</script>"
 _PROV_FLAG_ANCHOR = "</head>"
+
+_CANONICAL_PUBLIC_ORIGIN_RAW = os.environ.get("VS_CANONICAL_PUBLIC_ORIGIN", "").strip()
+
+
+def _canonical_public_origin(raw: str) -> str:
+    if not raw:
+        return ""
+    try:
+        parsed = urlsplit(raw)
+        _ = parsed.port
+        if (parsed.scheme != "https" or not parsed.hostname or parsed.username is not None
+                or parsed.password is not None or parsed.path not in ("", "/")
+                or parsed.query or parsed.fragment):
+            raise ValueError("expected an HTTPS origin without path, credentials, query, or fragment")
+        host = parsed.hostname.lower()
+        if ":" in host and not host.startswith("["):
+            host = f"[{host}]"
+        port = parsed.port
+        authority = host if port in (None, 443) else f"{host}:{port}"
+        return f"https://{authority}"
+    except ValueError as exc:
+        raise ValueError("VS_CANONICAL_PUBLIC_ORIGIN must be an HTTPS origin") from exc
+
+
+CANONICAL_PUBLIC_ORIGIN = _canonical_public_origin(_CANONICAL_PUBLIC_ORIGIN_RAW)
+
+
+def _inject_canonical_public_origin(text: str) -> str:
+    """注入部署只读配置；请求头不能覆盖 renderer 的规范来源。"""
+    marker = "<script>window.DW_CANONICAL_PUBLIC_ORIGIN="
+    if not CANONICAL_PUBLIC_ORIGIN or marker in text:
+        return text
+    idx = text.find(_PROV_FLAG_ANCHOR)
+    if idx < 0:
+        return text
+    script = marker + json.dumps(CANONICAL_PUBLIC_ORIGIN) + ";</script>"
+    return text[:idx] + script + text[idx:]
 
 
 def _inject_provenance_flag(text: str) -> str:
@@ -1010,6 +1047,7 @@ class _Handler(BaseHTTPRequestHandler):
                 text = text.replace("'" + ep + "'", "'" + pre + ep + "'")
         # 🔴 注入**无条件**:来源头像与是否带 X-DW-Session 无关,
         # 放进上面的 if 里会让直连 VS 的场景永远看不到图标。
+        text = _inject_canonical_public_origin(text)
         text = _inject_provenance_flag(text)
         mode_marker = "/* VS_COST_ACCOUNTING_MODE */ 'active'"
         if COST_ACCOUNTING_MODE == "paused" and text.count(mode_marker) != 1:

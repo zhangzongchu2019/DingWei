@@ -20,7 +20,7 @@
 //      M2 掏空 `"` → `&quot;`(escape 段的承重墙)            ⇒ **20** 项不同(含注入形状 pay[1]),rc=2
 //      M3 `avif: 'image'` → `'download'`(ext-kind 段)      ⇒ **仅 2** 项不同,rc=2  🔵 分辨率到表的单行
 //      M4 转义顺序换成先 `<` 后 `&`(escape 段)              ⇒ **14** 项不同(含 pay[0]/[1]/[2]),rc=2
-//   🔵 未施变异时:**99/99 逐字节相同**。
+//   🔵 未施变异时:**103/103 逐字节相同**。
 //
 // 🔴 本件**没验到**什么(照实写,别读成"渲染已全验"):
 //   ① 只比**纯函数输出**,不比 DOM/CSS/事件 —— 图片"取不到时的下载出路"那层不在共享件里(见核心件头注)。
@@ -28,7 +28,8 @@
 //   ③ 两侧 `location` 由本件**垫成同一个 origin**(页面走 `context.route`,Node 走 shim)。
 //      🔴 真实 spec 页的 origin 与 timeline **未必相同** ⇒ `isOwnFileUrl` 的判定结果也就未必相同;
 //      那条要在消费方接上后按它自己的 origin 重验,本件证不了。
-//   ④ 单档 headless Chromium、Linux;业主那台 macOS + 系统 Chrome 上没跑过(同型缺口已登记)。
+//   ④ 本变更新增 canonical HTTPS 来源映射；浏览器侧模拟 50443，规范来源为无端口 443。
+//      单档 headless Chromium、Linux;业主那台 macOS + 系统 Chrome 上没跑过(同型缺口已登记)。
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -42,7 +43,8 @@ const CORE = (() => {
   return flag ? path.resolve(flag.slice('--core='.length)) : path.join(HERE, 'md-render-core.js');
 })();
 const CORE_OVERRIDE = CORE !== path.join(HERE, 'md-render-core.js');
-const ORIGIN = 'http://renderer.test';
+const ORIGIN = 'https://dw123.cmjrt.com:50443';
+const CANONICAL = 'https://dw123.cmjrt.com';
 const HREF = ORIGIN + '/view/parity-session';
 const own = (ext, id) => `${ORIGIN}/f/o/s/26/0920/${id}.${ext}`;
 
@@ -109,6 +111,10 @@ function compute(api, C) {
     mdText: C.MD.map((s) => api.renderMarkdownText(s)),
     pay: C.PAY.map((s) => api.renderMarkdown(s)),
     url: C.URLS.map((u) => j([api.isOwnFileUrl(u), api.fileExtOf(u), api.kindFromExt(u), api.isInlineImageUrl(u), api.mdImageHtml(u, 'ALT')])),
+    canonical: [api.isOwnFileUrl(C.CANONICAL + '/f/o/s/26/0920/canonical.png'),
+      api.localFileUrl(C.CANONICAL + '/f/o/s/26/0920/canonical.png'),
+      api.canonicalFileUrl(C.ORIGIN + '/f/o/s/26/0920/local.png'),
+      api.renderMarkdown(`![canonical](${C.CANONICAL}/f/o/s/26/0920/canonical.png)`) ],
     esc: ['<a href="x">&\'', 'a&b', '"q"', "s's", '<>&"\''].map((s) => api.escapeHtml(s)),
     hl: C.PROG.map((c, i) => api.highlightCode(c, C.LANGS[i])),
     code: C.PROG.map((c, i) => api.renderCode(c, C.LANGS[i])),
@@ -133,7 +139,8 @@ const sha = (b) => crypto.createHash('sha256').update(b).digest('hex').slice(0, 
   const browser = await launchChromium();
   let inBrowser;
   try {
-    const context = await browser.newContext();
+    const context = await browser.newContext({ ignoreHTTPSErrors: true });
+    await context.addInitScript({ content: `globalThis.DW_CANONICAL_PUBLIC_ORIGIN=${JSON.stringify(CANONICAL)};` });
     // 🔴 注入的就是上面那个 compute 的源码本身 ⇒ 两侧同一份逻辑
     await context.addInitScript({ content: `globalThis.__dwMdParityCompute = ${compute.toString()};` });
     // 自足装置:context.route 直接喂字节,不起服务、不占端口、cwd 无关
@@ -146,36 +153,42 @@ const sha = (b) => crypto.createHash('sha256').update(b).digest('hex').slice(0, 
     const page = await context.newPage();
     await page.goto(HREF, { waitUntil: 'domcontentloaded' });
     inBrowser = await page.evaluate((C) => {
-      // 🔴 18 个符号一律用**裸标识符**取:若被包进 IIFE/模块作用域,这一行当场 ReferenceError。
+      // 🔴 21 个符号一律用**裸标识符**取:若被包进 IIFE/模块作用域,这一行当场 ReferenceError。
       //    这就是核心件头注「硬约束①:不得包 IIFE」的**执行侧证据**,不靠注释提醒。
       const api = {
-        escapeHtml, isOwnFileUrl, fileExtOf, kindFromExt, FILE_EXT_KIND, FILE_EXT_NEVER_INLINE,
+        escapeHtml, isOwnFileUrl, canonicalPublicOrigin, localFileUrl, canonicalFileUrl, fileExtOf, kindFromExt, FILE_EXT_KIND, FILE_EXT_NEVER_INLINE,
         splitFencedBlocks, renderMarkdown, renderMarkdownText, isTableStart, splitTableRow,
         renderTable, renderList, renderInline, renderCode, highlightCode, isInlineImageUrl, mdImageHtml,
       };
       if (typeof globalThis.__dwMdParityCompute !== 'function') throw new Error('compute 未注入到页面');
-      return { out: globalThis.__dwMdParityCompute(api, C), loc: location.origin + '|' + location.href, n: Object.keys(api).length };
-    }, CTX);
+      return { out: globalThis.__dwMdParityCompute(api, C), loc: location.origin + '|' + location.href, n: Object.keys(api).length, canonicalOrigin: canonicalPublicOrigin() };
+    }, { ...CTX, ORIGIN, CANONICAL });
   } finally { await browser.close(); }
 
   // Node 侧把 location 垫成与页面**同一个** origin/href。
   // 🔴 不垫 ⇒ own-url 段必然不同,那是**环境差异不是抽件差异**;下面 loc 守卫会先判"环境不可用",
   //    不让这种红被读成产品问题(与"假故障长得和真故障一模一样"同族)。
-  globalThis.location = { href: HREF, origin: ORIGIN };
+  globalThis.location = { href: HREF, origin: ORIGIN, protocol: 'https:', host: 'dw123.cmjrt.com:50443' };
+  globalThis.DW_CANONICAL_PUBLIC_ORIGIN = CANONICAL;
   let core;
   try { core = require(CORE); }
   catch (err) { throw new EnvironmentUnavailable(`共享件 require 失败(${CORE}): ${err.message}`); }
-  const inNode = { out: compute(core, CTX), loc: globalThis.location.origin + '|' + globalThis.location.href, n: Object.keys(core).length };
+  const inNode = { out: compute(core, { ...CTX, ORIGIN, CANONICAL }), loc: globalThis.location.origin + '|' + globalThis.location.href, n: Object.keys(core).length, canonicalOrigin: core.canonicalPublicOrigin() };
 
   console.log('md-render-core-parity(共享件 vs 产品页 · 输出逐字节对账 · 不比源字节)');
   console.log(`  产品件  ${path.basename(RENDERER)}  sha256=${sha(rendererBytes)}${RENDERER_OVERRIDE ? '  🔴 RENDERER_OVERRIDE 生效:这不是仓内那份产品件' : ''}`);
   console.log(`  共享件  ${path.basename(CORE)}  sha256=${sha(coreBytes)}${CORE_OVERRIDE ? '  🔴 --core 生效:变异/对照跑,不是仓内那份共享件' : ''}`);
-  assert.strictEqual(inBrowser.n, 18, `产品页可见符号数 ${inBrowser.n} ≠ 18(有人包了作用域或删了符号)`);
-  assert.strictEqual(inNode.n, 18, `共享件导出符号数 ${inNode.n} ≠ 18`);
+  console.log(`  规范来源: browser=${inBrowser.canonicalOrigin} core=${inNode.canonicalOrigin}`);
+  assert.strictEqual(inBrowser.n, 21, `产品页可见符号数 ${inBrowser.n} ≠ 21(有人包了作用域或删了符号)`);
+  assert.strictEqual(inNode.n, 21, `共享件导出符号数 ${inNode.n} ≠ 21`);
   if (inBrowser.loc !== inNode.loc) {
     throw new EnvironmentUnavailable(`两侧 location 未对齐:页面 ${inBrowser.loc} vs Node ${inNode.loc} ⇒ 对账无意义,不产出结论`);
   }
   console.log(`  location 对齐 ✅ ${inBrowser.loc}`);
+  assert.strictEqual(inNode.out.canonical[0], true, '50443 页面必须把规范 443 /f/ 地址认作本站文件');
+  assert.strictEqual(inNode.out.canonical[1], `${ORIGIN}/f/o/s/26/0920/canonical.png`, '规范 443 /f/ 地址应映射到页面同源 50443');
+  assert.strictEqual(inNode.out.canonical[2], `${CANONICAL}/f/o/s/26/0920/local.png`, '输入框同源 50443 /f/ 地址应规范化回 443');
+  assert.ok(inNode.out.canonical[3].includes(`<img class="md-img" data-md-img src="${ORIGIN}/f/`), '规范来源图片渲染应从 50443 同源取图');
 
   let same = 0; const diffs = [];
   for (const k of Object.keys(inNode.out)) {

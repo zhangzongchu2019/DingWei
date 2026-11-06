@@ -63,6 +63,7 @@ sidecar 或 service mesh 添加/删除前缀，验签会 fail closed。需要增
 path 原样透传，并在发布前用双向签名集成测试验证，不能通过放宽验签绕过。
 - `VS_STATE_FILE=/home/ai-dev/dingwei-viewservice/view-state.json`；文件原子替换并保持 `0600`，用于 View Service 重启后复用 viewer/token。
 - 保持 `VS_HUB_INTERNAL=http://127.0.0.1:8792`，除非生产内网端口另有配置。
+- `VS_CANONICAL_PUBLIC_ORIGIN` 只读部署配置，填写 Hub 的规范 HTTPS 来源（与 `DW_PUBLIC_ORIGIN` 一致）；View Service 在页面头部注入它，浏览器仍把文件 GET 发到当前页面同源路径。
 - 同步代码和 renderer 后执行 `systemctl restart dingwei-viewservice`。renderer 每请求读取，也支持先热替换再重启服务。
 - 验证页面仍能复用原 viewer、解锁状态和输入权，无需刷新或重新发送 `#unlock`。
 

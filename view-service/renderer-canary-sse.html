@@ -2823,11 +2823,40 @@
     }
 
     // 🔴 DW-MD-CORE:own-url BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
+    function canonicalPublicOrigin() {
+      try {
+        const raw = typeof globalThis !== 'undefined' ? globalThis.DW_CANONICAL_PUBLIC_ORIGIN : '';
+        const u = new URL(raw);
+        return u.protocol === 'https:' ? u.origin : '';
+      } catch { return ''; }
+    }
+
     function isOwnFileUrl(raw) {
       try {
         const u = new URL(raw, location.href);
-        return u.origin === location.origin && u.pathname.startsWith('/f/');
+        return u.pathname.startsWith('/f/') &&
+          (u.origin === location.origin || (canonicalPublicOrigin() && u.origin === canonicalPublicOrigin()));
       } catch { return false; }
+    }
+
+    function localFileUrl(raw) {
+      try {
+        const u = new URL(raw, location.href);
+        if (!u.pathname.startsWith('/f/') || u.origin !== canonicalPublicOrigin()) return raw;
+        u.protocol = location.protocol;
+        u.host = location.host;
+        return u.href;
+      } catch { return raw; }
+    }
+
+    function canonicalFileUrl(raw) {
+      try {
+        const u = new URL(raw, location.href);
+        if (u.origin !== location.origin || !u.pathname.startsWith('/f/')) return raw;
+        const origin = canonicalPublicOrigin();
+        if (!origin) return raw;
+        return origin + u.pathname + u.search + u.hash;
+      } catch { return raw; }
     }
     // DW-MD-CORE:own-url END
 
@@ -2841,7 +2870,7 @@
     // HEAD 探测：ok ⇒ 服务端声明；404 ⇒ 文件不存在或链接无效；其余(405/403/网络错) ⇒ null ⇒ 走扩展名降级。
     function probeFileMeta(url) {
       if (fileMetaCache.has(url)) return fileMetaCache.get(url);
-      const task = fetch(url, { method: 'HEAD' })
+      const task = fetch(localFileUrl(url), { method: 'HEAD' })
         .then((res) => {
           if (res.ok) {
             const rawDisposition = String(res.headers.get('Content-Disposition') || '');
@@ -2960,7 +2989,7 @@
     function fileDownloadLink(url, label, fileName) {
       const a = document.createElement('a');
       a.className = 'attachment-dl';
-      a.href = url;
+      a.href = localFileUrl(url);
       a.rel = 'noopener noreferrer';
       a.target = '_blank';
       // R4（业主 2026-09-18：下载下来是 f5790871….bin，Word 打不开）：
@@ -2983,7 +3012,7 @@
       // R5-1（业主 09-18：「一个文件链接下一个文件展示」）：文件名本身就是那条链接。
       const name = document.createElement('a');
       name.className = 'attachment-name';
-      name.href = url;
+      name.href = localFileUrl(url);
       name.rel = 'noopener noreferrer';
       name.target = '_blank';
       name.textContent = hint?.name || fileNameFromUrl(url);
@@ -3000,7 +3029,7 @@
       box.appendChild(pre);
       try {
         // Range 取头部：不为了显示一段预览把整个文件拉下来。
-        const res = await fetch(url, { headers: { Range: `bytes=0-${FILE_TEXT_INLINE_MAX - 1}` } });
+        const res = await fetch(localFileUrl(url), { headers: { Range: `bytes=0-${FILE_TEXT_INLINE_MAX - 1}` } });
         if (!res.ok && res.status !== 206) throw new Error(`HTTP ${res.status}`);
         const text = await res.text();
         pre.textContent = text;
@@ -3084,7 +3113,7 @@
       switch (kind) {
         case 'image': {
           const img = document.createElement('img');
-          img.src = url;
+          img.src = localFileUrl(url);
           img.loading = 'lazy';
           img.alt = hint?.name || fileNameFromUrl(url);
           // 图片本身加载不出来时也不留空白：退到下载链接。
@@ -3094,7 +3123,7 @@
         }
         case 'video': {
           const video = document.createElement('video');
-          video.src = url;
+          video.src = localFileUrl(url);
           video.controls = true;
           video.preload = 'metadata';
           // 🔴 下面那条下载链接是**无条件**附的（能播时也该能下载）。
@@ -3282,7 +3311,7 @@
       const urls = new Set();
       if (!cardEl || !cardEl.querySelectorAll) return urls;
       for (const img of cardEl.querySelectorAll('.event-content img[data-md-img]')) {
-        const src = img.getAttribute('src');
+        const src = canonicalFileUrl(img.getAttribute('src') || '');
         if (!src) continue;
         // 🔴 加载失败(complete 且 naturalWidth==0)⇒ **不算**已就地显示 ⇒ 附件卡接手
         if (img.complete && img.naturalWidth === 0) continue;
@@ -4305,7 +4334,7 @@
     //    alt/src 用的都是 escapeHtml **之后**的串(引号已是 &quot;)⇒ 属性突破不成立;
     //    那道承重墙由 ts-No.76 的 P12 与本件 G3/M-G3 一起钉着。
     function mdImageHtml(alt, url) {
-      return `<img class="md-img" data-md-img src="${url}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer">`;
+      return `<img class="md-img" data-md-img src="${localFileUrl(url)}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer">`;
     }
 
     function renderInline(src) {
@@ -4322,7 +4351,7 @@
       out = out.replace(/(!?)\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, bang, text, url) => (
         isInlineImageUrl(url)
           ? mdImageHtml(text, url)
-          : `<a href="${url}" rel="noreferrer" target="_blank">${text}</a>`));
+          : `<a href="${localFileUrl(url)}" rel="noreferrer" target="_blank">${text}</a>`));
       out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
       out = out.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
       out = out.replace(/\n/g, '<br>');
@@ -5555,7 +5584,8 @@
         return;
       }
       // 规范粘贴换行，去掉边界空行，保留正文中间换行和缩进。
-      const text = humanInput.value.replace(/\r\n?/g, '\n').replace(/^\n+/u, '').replace(/\s+$/u, '');
+      const text = humanInput.value.replace(/\r\n?/g, '\n').replace(/^\n+/u, '').replace(/\s+$/u, '')
+        .replace(FILE_URL_RE, (url) => canonicalFileUrl(url));
       if (!text.trim()) return;
       try {
         const result = await submitInput(text);
@@ -5908,7 +5938,7 @@
         const mediaType = hint.mediaType || '';
         if (mediaType.startsWith('image/') && mediaType !== 'image/svg+xml') {
           const img = document.createElement('img');
-          img.src = url;
+          img.src = localFileUrl(url);
           img.alt = hint.name || fileNameFromUrl(url);
           img.loading = 'lazy';
           // 缩略图取不到就退回图标，不留一个破图。

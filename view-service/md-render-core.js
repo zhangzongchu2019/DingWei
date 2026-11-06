@@ -80,11 +80,40 @@
 // DW-MD-CORE:escape END
 
 // DW-MD-CORE:own-url BEGIN
+    function canonicalPublicOrigin() {
+      try {
+        const raw = typeof globalThis !== 'undefined' ? globalThis.DW_CANONICAL_PUBLIC_ORIGIN : '';
+        const u = new URL(raw);
+        return u.protocol === 'https:' ? u.origin : '';
+      } catch { return ''; }
+    }
+
     function isOwnFileUrl(raw) {
       try {
         const u = new URL(raw, location.href);
-        return u.origin === location.origin && u.pathname.startsWith('/f/');
+        return u.pathname.startsWith('/f/') &&
+          (u.origin === location.origin || (canonicalPublicOrigin() && u.origin === canonicalPublicOrigin()));
       } catch { return false; }
+    }
+
+    function localFileUrl(raw) {
+      try {
+        const u = new URL(raw, location.href);
+        if (!u.pathname.startsWith('/f/') || u.origin !== canonicalPublicOrigin()) return raw;
+        u.protocol = location.protocol;
+        u.host = location.host;
+        return u.href;
+      } catch { return raw; }
+    }
+
+    function canonicalFileUrl(raw) {
+      try {
+        const u = new URL(raw, location.href);
+        if (u.origin !== location.origin || !u.pathname.startsWith('/f/')) return raw;
+        const origin = canonicalPublicOrigin();
+        if (!origin) return raw;
+        return origin + u.pathname + u.search + u.hash;
+      } catch { return raw; }
     }
 // DW-MD-CORE:own-url END
 
@@ -301,7 +330,7 @@
     //    alt/src 用的都是 escapeHtml **之后**的串(引号已是 &quot;)⇒ 属性突破不成立;
     //    那道承重墙由 ts-No.76 的 P12 与本件 G3/M-G3 一起钉着。
     function mdImageHtml(alt, url) {
-      return `<img class="md-img" data-md-img src="${url}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer">`;
+      return `<img class="md-img" data-md-img src="${localFileUrl(url)}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer">`;
     }
 
     function renderInline(src) {
@@ -318,7 +347,7 @@
       out = out.replace(/(!?)\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, bang, text, url) => (
         isInlineImageUrl(url)
           ? mdImageHtml(text, url)
-          : `<a href="${url}" rel="noreferrer" target="_blank">${text}</a>`));
+          : `<a href="${localFileUrl(url)}" rel="noreferrer" target="_blank">${text}</a>`));
       out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
       out = out.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
       out = out.replace(/\n/g, '<br>');
@@ -380,6 +409,9 @@
   const api = {
     escapeHtml: escapeHtml,
     isOwnFileUrl: isOwnFileUrl,
+    canonicalPublicOrigin: canonicalPublicOrigin,
+    localFileUrl: localFileUrl,
+    canonicalFileUrl: canonicalFileUrl,
     fileExtOf: fileExtOf,
     kindFromExt: kindFromExt,
     FILE_EXT_KIND: FILE_EXT_KIND,

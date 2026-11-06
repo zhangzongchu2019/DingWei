@@ -41,7 +41,7 @@ func TestConsoleSpecAssetsArePinnedAndRouteIsAllowlisted(t *testing.T) {
 
 func TestConsoleSpecEmbeddedMarkdownCoreIsPinned(t *testing.T) {
 	sum := sha256.Sum256([]byte(viewservice.MarkdownRenderCore))
-	const want = "408d1bcf06e3f78198e3943fc41f3938ba20120d4148a7d3fa234e44d6c5545a"
+	const want = "8a4f09f09df40489bafa9006bffd7bab5d1f57d942089fbf3f7c939f570f11aa"
 	if got := hex.EncodeToString(sum[:]); got != want {
 		t.Fatalf("embedded md-render-core sha=%s want=%s", got, want)
 	}

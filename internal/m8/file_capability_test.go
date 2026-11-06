@@ -10,12 +10,14 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 type recordingFileIssuer struct {
-	req   FileTicketRequest
-	calls int
-	err   error
+	req       FileTicketRequest
+	calls     int
+	err       error
+	expiresAt time.Time
 }
 
 type recordingArchiveClient struct {
@@ -31,7 +33,11 @@ func (c *recordingArchiveClient) SetFileArchived(_ context.Context, req FileArch
 
 func (f *recordingFileIssuer) IssueFileTicket(_ context.Context, req FileTicketRequest) (FileTicket, error) {
 	f.req, f.calls = req, f.calls+1
-	return FileTicket{Token: "opaque-ticket", ExpiresAt: time.Now().Add(time.Minute), PublicBaseURL: "https://files.example"}, f.err
+	expiresAt := f.expiresAt
+	if expiresAt.IsZero() {
+		expiresAt = time.Now().Add(time.Minute)
+	}
+	return FileTicket{Token: "opaque-ticket", ExpiresAt: expiresAt, PublicBaseURL: "https://files.example"}, f.err
 }
 
 func TestFileRetrievalCapabilityIsFrozen(t *testing.T) {
@@ -118,6 +124,52 @@ func TestConsoleUploadTicketUsesGrantedOnlineAgentIdentity(t *testing.T) {
 	var response map[string]any
 	if json.Unmarshal(w.Body.Bytes(), &response) != nil || response["ticket"] != "opaque-ticket" || response["session"] != "agent-a" {
 		t.Fatalf("response=%q", w.Body.String())
+	}
+}
+
+func TestConsoleUploadTicketOriginSelection(t *testing.T) {
+	trusted, err := trustedorigin.ParseList("https://dw123.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name          string
+		publicOrigin  string
+		trusted       []trustedorigin.Origin
+		origins       []string
+		wantUploadURL string
+		wantBody      string
+	}{
+		{name: "empty list preserves canonical 443 response bytes", publicOrigin: "https://dw123.cmjrt.com", origins: []string{"https://dw123.cmjrt.com"}, wantUploadURL: "https://files.example/files/upload", wantBody: "{\"expires_at\":\"2030-01-02T03:04:05Z\",\"session\":\"agent-a\",\"ticket\":\"opaque-ticket\",\"upload_url\":\"https://files.example/files/upload\"}\n"},
+		{name: "canonical public origin", publicOrigin: "https://dw123.cmjrt.com", trusted: trusted, origins: []string{"https://dw123.cmjrt.com"}, wantUploadURL: "https://dw123.cmjrt.com/files/upload"},
+		{name: "trusted 50443 origin", publicOrigin: "https://dw123.cmjrt.com", trusted: trusted, origins: []string{"https://dw123.cmjrt.com:50443"}, wantUploadURL: "https://dw123.cmjrt.com:50443/files/upload"},
+		{name: "unlisted origin falls back", publicOrigin: "https://dw123.cmjrt.com", trusted: trusted, origins: []string{"https://evil.example"}, wantUploadURL: "https://files.example/files/upload"},
+		{name: "duplicate origin header falls back", publicOrigin: "https://dw123.cmjrt.com", trusted: trusted, origins: []string{"https://dw123.cmjrt.com:50443", "https://dw123.cmjrt.com:50443"}, wantUploadURL: "https://files.example/files/upload"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			issuer := &recordingFileIssuer{}
+			if tc.wantBody != "" {
+				issuer.expiresAt = time.Date(2030, time.January, 2, 3, 4, 5, 0, time.UTC)
+			}
+			h := &Hub{fileIssuer: issuer, PublicOrigin: tc.publicOrigin, TrustedOrigins: tc.trusted, sessionClients: map[string]map[string]*sessionClient{
+				"shared": {"agent-a": {keyID: "shared", ownerKey: "owner-a", sessionName: "agent-a"}},
+			}}
+			req := httptest.NewRequest(http.MethodPost, "/api/console/agents/agent-a/file-upload-ticket", bytes.NewBufferString(`{"max_bytes":1234}`))
+			for _, origin := range tc.origins {
+				req.Header.Add("Origin", origin)
+			}
+			req = req.WithContext(context.WithValue(req.Context(), consoleAgentContextKey{}, model.ConsoleAgent{KeyID: "shared", SessionName: "agent-a"}))
+			w := httptest.NewRecorder()
+			h.HandleConsoleFileUploadTicket(w, req)
+			var response map[string]any
+			if json.Unmarshal(w.Body.Bytes(), &response) != nil || response["upload_url"] != tc.wantUploadURL {
+				t.Fatalf("code=%d upload_url=%v want=%q body=%q", w.Code, response["upload_url"], tc.wantUploadURL, w.Body.String())
+			}
+			if tc.wantBody != "" && w.Body.String() != tc.wantBody {
+				t.Fatalf("empty trusted-list response changed byte-for-byte:\n got %q\nwant %q", w.Body.String(), tc.wantBody)
+			}
+		})
 	}
 }
 

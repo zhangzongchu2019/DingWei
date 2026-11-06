@@ -25,6 +25,32 @@ UTC, 2026-11-05 unless stated.
 
 The helper gate returned rc=1 on both the implementation and baseline worktrees; it did not reach Python/shell checks.
 
+## Scope extension: upload URL and renderer
+
+- `internal/m8/file_capability.go`: the upload ticket now takes the request `Origin` only when the shared trusted-origin policy accepts it (exact `PublicOrigin` or an allow-listed origin). Empty `DW_TRUSTED_ORIGINS` keeps the existing `ticket.PublicBaseURL + "/files/upload"` path and exact response JSON bytes. Invalid, absent, duplicate, or untrusted Origin values fall back to the configured file-service base.
+- `internal/fileservice/http.go` and `internal/fileservice/spec_permanent.go`: response `url` remains `PublicBaseURL + /f/ + key`; this is the canonical persisted address and was intentionally not rewritten.
+- View Service injects validated read-only `VS_CANONICAL_PUBLIC_ORIGIN` as `DW_CANONICAL_PUBLIC_ORIGIN`. The shared markdown renderer regards both `location.origin` and canonical origin `/f/` URLs as own files; it localizes canonical links for draft attachments, body links, images, `src`/`href`, probes and download actions. Before send, current-origin `/f/` links normalize back to the canonical origin. The core was synchronized to the generated renderer HTML and the `internal/m8` embedded-core SHA pin was updated to `8a4f09f09df40489bafa9006bffd7bab5d1f57d942089fbf3f7c939f570f11aa`.
+
+## 盘点补遗
+
+盘点方式：在 `internal/`, `cmd/`, and `view-service/` source searched `FS_PUBLIC_BASE_URL`, `PublicBaseURL`, `*_PUBLIC_*`, `https://` construction and Hub `wss://`-to-HTTPS derivation; excluded tests, fixtures, vendored/minified assets, and documentation examples. 甲 is a browser-consumed Console/view URL; 乙 is a server or node client URL, including canonical persisted addresses; 丙 is an external/fixed navigation or third-party source.
+
+| 类别 | 生成点与用途 | 经 `:50443` 的 Console 是否使用 | 本次处理 |
+|---|---|---|---|
+| 甲/乙 | `internal/fileservice/config.go` reads `FS_PUBLIC_BASE_URL` into `PublicBaseURL`; `internal/m8/file_capability.go` returns the upload ticket URL; `internal/fileservice/http.go` returns uploaded-file `/f/` URLs; `internal/fileservice/spec_permanent.go` returns permanent `/f/` URLs | Yes: ticket URL is POSTed by Console upload; `/f/` URLs are read in drafts, editor body and messages; canonical URL is stored with the message/spec | Ticket uses accepted request Origin; file-service response and persisted link stay canonical; View maps canonical `/f/` links locally for display and normalizes before send |
+| 甲 | `view-service/view_service.py` reads `VS_CANONICAL_PUBLIC_ORIGIN` and injects the renderer's canonical origin; `view-service/md-render-core.js` performs own-file recognition, localization and send normalization | Yes, all Console file rendering/thumbnail paths | Covered; renderer canary and shared core synchronized, SHA pin updated |
+| 乙 | `cmd/workpulse/newplat.go` reads `DW_PUBLIC_ORIGIN` as the Hub's canonical public origin/security origin; `internal/nodeagent/login.go` and `internal/nodeagent/backup.go` derive HTTPS login/upload bases from the node's configured Hub `wss://` URL; `internal/hosted/login.go` and `internal/hosted/backup.go` make hosted client login/backup endpoints | Not the Console file-upload/read flow; these are node/client protocols | Deferred to a later specification; not altered by this change |
+| 丙 | Fixed external links include the SessionHelper download in `internal/m8/hub.go`, Feishu/LLM navigation in Console guidance/auth handlers, GitHub source navigation in `internal/specread/github.go`; `internal/portal/schedule.go` loads Mermaid from jsDelivr | Some Console external links are visible, but none is a Console `/f/` URL; Mermaid is a Portal page, and GitHub/API URLs are source/server requests | Deferred; no external navigation, CDN, client API or source-link behavior changed |
+
+Coverage boundary: this change covers the Console upload-ticket origin and canonical `/f/` display/send cycle described above. File-service canonical URLs, CORS, all non-Console node/hosted URLs and unrelated external links remain unchanged pending any later ruling.
+
+## Upload/renderer verification
+
+- Chromium flow suite `view-service/trusted-origins-file-flow-regression.js` passed on both 443 and 50443: upload request uses the page origin; draft thumbnail loads; current-origin link is sent as canonical `/f/` URL; post-send rendering uses the page origin. The empty-list exact-byte ticket test and upload-ticket race3 both pass.
+- Mutation controls both failed at their intended assertion: `--mutate-send-normalization` submitted a port-bearing URL to persistence; `--mutate-own-url` failed to display the 50443 draft thumbnail.
+- Renderer parity: 103/103 fixtures pass; renderer synchronization check reports all six sections byte-identical. Python renderer/injection suite: 23 tests pass.
+- Full browser bundle's last aggregate was rc=2: `md_render_core_parity`'s initial failure was fixed and its direct rerun passes; the remaining `renderer_replay_seq` S5 failure reproduces unchanged with the baseline `f7f31fca` renderer (epoch transition retains only `[NEW]` instead of `[002]…[030][NEW]`). The trusted-origin Chromium suite and all other reported browser suites pass. This pre-existing timeline replay failure is outside this scope.
+
 ## Targeted mutation checks
 
 Final-source mutation overlays ran against `./internal/identity/httpapi` at 22:07:38Z–22:07:40Z. Each mutant exited rc=1 on the named assertion:
@@ -56,8 +82,10 @@ Final-source mutation overlays ran against `./internal/identity/httpapi` at 22:0
 Serial command: `go test -json -race -count=3 -timeout 90m <package>`.
 
 - `./internal/store`: started 21:34:01Z; rc=0 at 23:04:01Z; 592 unique pass names, 5 skip names, 0 fail names. Skips: `TestConsoleTaskLegacyDODMigrationPendingProductionCount` (K17 awaits production count); `TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling` (K7 ruling pending); `TestFeishuStickyOldHubMigrationRollbackCompatibility` (exact R14 binary absent); `TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy` (exact R48 binary absent); `TestR10RestartChildAuthority` (subprocess probe covered by parent test `TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice`).
-- `./internal/m8`: initial serial run reached `-timeout 90m` at 00:34:25Z, rc=1. Go output: `FAIL .../internal/m8 5400.045s`, `panic: test timed out after 1h30m0s`; no assertion failure or race detector finding before timeout. Three requested repetitions did not complete. An extended rerun `go test -json -race -count=3 -timeout 4h ./internal/m8` completed rc=0 at 03:14:16Z (started 00:34Z), 1474 unique pass names, 37 skip names, 0 fail names; 4422 pass events / 111 skip events across three repetitions. Log: `/tmp/r52-race-internal_m8-final.jsonl`. This was run in the shared checkout while additional unstaged, out-of-scope edits were present in `internal/m8/file_capability.go` and its test, so it supplements but does not erase the prescribed clean-scope 90m timeout result above. Skips are the opt-in/integration tests listed above.
+- `./internal/m8`: initial serial run reached `-timeout 90m` at 00:34:25Z, rc=1. Go output: `FAIL .../internal/m8 5400.045s`, `panic: test timed out after 1h30m0s`; no assertion failure or race detector finding before timeout. Three requested repetitions did not complete. Final-source rerun `go test -json -race -count=3 -timeout 4h ./internal/m8` completed rc=0 at 03:14:16Z, 1474 unique pass names, 37 skip names, 0 fail names; 4422 pass events / 111 skip events across three repetitions. Log: `/tmp/r52-race-internal_m8-final.jsonl`. Skips are the opt-in/integration tests listed above.
 - `./cmd/workpulse`: after the prescribed serial chain stopped at the preceding `m8` 90m timeout, separately ran `-race -count=3 -timeout 90m` from 00:35:05Z to 00:55:57Z; rc=0, 233 unique pass names, 7 skip names, 0 fail names. The seven skip names and reasons are listed in the full `workpulse` row above.
+- Final-source serial `./cmd/workpulse` race3 rerun `go test -json -race -count=3 -timeout 4h ./cmd/workpulse`: **rc=0**, 03:14:45Z–03:35:50Z, 233 unique pass names, 7 unique skip names, 0 fail names (699 pass events / 21 skip events). Log: `/tmp/r52-race-workpulse-final.jsonl`.
+- Final embedded markdown-core SHA pin test `go test -json -race -count=3 -timeout 2m ./internal/m8 -run '^TestConsoleSpecEmbeddedMarkdownCoreIsPinned$'`: **rc=0**, 03:35:58Z–03:36:00Z; 3 pass, 0 skip/fail.
 - Final-source `./internal/trustedorigin`: `-race -count=3 -timeout 90m`, 00:57:41Z–00:57:43Z, rc=0, 11 pass/0 fail/0 skip.
 - Final-source `./internal/identity/httpapi`: same flags, 00:57:43Z–00:59:36Z, rc=0, 65 pass/0 fail/0 skip.
 

@@ -62,6 +62,22 @@ class ProvenanceFlagInjection(unittest.TestCase):
         self.assertNotEqual(out, real, "真渲染器未被注入,说明锚点在它里面不存在")
 
 
+class CanonicalPublicOriginInjection(unittest.TestCase):
+    def test_config_is_injected_and_request_headers_do_not_select_it(self):
+        vs = _load(VS_CANONICAL_PUBLIC_ORIGIN="https://dw123.cmjrt.com:443")
+        out = vs._inject_canonical_public_origin(HTML)
+        self.assertIn('window.DW_CANONICAL_PUBLIC_ORIGIN="https://dw123.cmjrt.com"', out)
+        self.assertEqual(out, vs._inject_canonical_public_origin(out))
+
+    def test_unconfigured_origin_keeps_template_unchanged(self):
+        vs = _load(VS_CANONICAL_PUBLIC_ORIGIN=None)
+        self.assertEqual(vs._inject_canonical_public_origin(HTML), HTML)
+
+    def test_invalid_config_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "VS_CANONICAL_PUBLIC_ORIGIN"):
+            _load(VS_CANONICAL_PUBLIC_ORIGIN="http://dw123.cmjrt.com")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
 

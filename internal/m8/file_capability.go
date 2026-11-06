@@ -283,8 +283,15 @@ func (h *Hub) writeConsoleUploadTicket(w http.ResponseWriter, r *http.Request, k
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
+	uploadOrigin := ticket.PublicBaseURL
+	if len(h.TrustedOrigins) > 0 {
+		requestOrigin := r.Header.Get("Origin")
+		if h.originAllowed(requestOrigin, requestOrigin == h.PublicOrigin, len(r.Header.Values("Origin"))) {
+			uploadOrigin = requestOrigin
+		}
+	}
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"upload_url": ticket.PublicBaseURL + "/files/upload", "ticket": ticket.Token,
+		"upload_url": uploadOrigin + "/files/upload", "ticket": ticket.Token,
 		"expires_at": ticket.ExpiresAt.UTC().Format(time.RFC3339Nano), "session": ticketSession,
 	})
 }
