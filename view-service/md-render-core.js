@@ -82,7 +82,9 @@
 // DW-MD-CORE:own-url BEGIN
     function canonicalPublicOrigin() {
       try {
-        const raw = typeof globalThis !== 'undefined' ? globalThis.DW_CANONICAL_PUBLIC_ORIGIN : '';
+        const raw = typeof VS_CANONICAL_ORIGIN !== 'undefined' && VS_CANONICAL_ORIGIN
+          ? VS_CANONICAL_ORIGIN
+          : (typeof globalThis !== 'undefined' ? globalThis.DW_CANONICAL_PUBLIC_ORIGIN : '');
         const u = new URL(raw);
         return u.protocol === 'https:' ? u.origin : '';
       } catch { return ''; }

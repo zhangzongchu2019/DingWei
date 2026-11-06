@@ -1213,7 +1213,7 @@
     const lockBadge = document.getElementById('lockBadge');
     const copyUnlockBtn = document.getElementById('copyUnlockBtn');
     const costAccountingMode = /* VS_COST_ACCOUNTING_MODE */ 'active';
-    const canonicalPublicOrigin = /* VS_PUBLIC_ORIGIN */ '';
+    const VS_CANONICAL_ORIGIN = /* VS_PUBLIC_ORIGIN */ '';
     const composerInner = document.getElementById('composerInner');
     const filePicker = document.getElementById('filePicker');
     const dropHint = document.getElementById('dropHint');
@@ -2826,7 +2826,9 @@
     // 🔴 DW-MD-CORE:own-url BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
     function canonicalPublicOrigin() {
       try {
-        const raw = typeof globalThis !== 'undefined' ? globalThis.DW_CANONICAL_PUBLIC_ORIGIN : '';
+        const raw = typeof VS_CANONICAL_ORIGIN !== 'undefined' && VS_CANONICAL_ORIGIN
+          ? VS_CANONICAL_ORIGIN
+          : (typeof globalThis !== 'undefined' ? globalThis.DW_CANONICAL_PUBLIC_ORIGIN : '');
         const u = new URL(raw);
         return u.protocol === 'https:' ? u.origin : '';
       } catch { return ''; }
@@ -5621,14 +5623,14 @@
     }
 
     function normalizeInputFileUrls(text) {
-      if (!canonicalPublicOrigin || canonicalPublicOrigin === location.origin) return text;
+      if (!VS_CANONICAL_ORIGIN || VS_CANONICAL_ORIGIN === location.origin) return text;
       return String(text).replace(FILE_URL_RE, (raw) => {
         const trimmed = trimUrlTail(raw);
         if (!isOwnFileUrl(trimmed)) return raw;
         try {
           const u = new URL(trimmed);
           if (u.origin !== location.origin || !u.pathname.startsWith('/f/')) return raw;
-          return canonicalPublicOrigin + trimmed.slice(u.origin.length) + raw.slice(trimmed.length);
+          return VS_CANONICAL_ORIGIN + trimmed.slice(u.origin.length) + raw.slice(trimmed.length);
         } catch { return raw; }
       });
     }
