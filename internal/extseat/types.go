@@ -1,0 +1,84 @@
+// Package extseat 实现外部席位的 PG 权威令牌、收件箱和投递受理。
+package extseat
+
+import (
+	"context"
+	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/extshared"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
+)
+
+// Seat 是服务端读出的授权快照；公开业务入口始终重新读取权威记录。
+// 不接收客户端声明的主体/组/代际作为授权依据。
+type Seat struct {
+	ID, AgentID, Name, FullName, OwnerLC string
+	Principal                            extshared.Principal
+	Group                                extshared.AGCode
+	Generation                           int64
+	TokenID                              string
+	AuthGeneration                       int64
+	ExpiresAt                            time.Time
+}
+
+type Group struct {
+	Code       extshared.AGCode
+	Generation int64
+	Target     identity.Agent
+	ExpiresAt  time.Time
+}
+
+type CreateGroupRequest struct {
+	Principal       extshared.Principal
+	ExternalAgentID string
+	OwnerLC         string
+	Target          identity.Agent
+	At              time.Time
+	// CreateExternal 在编号分配后、D 写入双成员之前调用；事务由 A 持有。
+	// D 必须在同一事务中调用且恰好一次；回调失败整个事务回滚。
+	CreateExternal func(Group) error
+}
+
+// Groups 由 D 路实现。实现者只使用传入 tx，不另开事务或提交。
+// RecheckGroup 在同一事务中锁定有效组并检查成员/代际，与解散互斥。
+// TouchGroup 只接受已受理发送/首次 received；事件键持久幂等。
+type Groups interface {
+	CreateTempGroup(context.Context, repo.Tx, CreateGroupRequest) (Group, error)
+	RecheckGroup(context.Context, repo.Tx, Seat, time.Time) (Group, error)
+	TouchGroup(context.Context, repo.Tx, Group, string, extshared.GroupUseKind, time.Time) error
+}
+
+type Delivery struct {
+	ID                               string
+	Generation                       int64
+	From, To, Body                   string
+	Group                            extshared.AGCode
+	CreatedAt, ExpiresAt, LeaseUntil time.Time
+	Phase                            extshared.ReceiptPhase
+}
+
+type SendReceipt struct {
+	DeliveryID           string
+	Generation           int64
+	Stage                extshared.SendStage
+	CreatedAt, ExpiresAt time.Time
+}
+
+type OnlineAgent struct {
+	Agent      identity.Agent
+	FullName   string
+	LastSeenAt time.Time
+	External   bool
+}
+
+// Helpers 只返回可观测的 helper presence；组可见性由服务再次过滤。
+type Helpers interface {
+	Online(context.Context) ([]OnlineAgent, error)
+}
+
+// Projector 必须按 DeliveryID 幂等写入 SQLite，返回前提交。
+// 重试同一消息不可重复生成 delivery_id；不能修改现有 helper ACK/重试语义。
+type Projector interface {
+	Project(context.Context, Delivery, identity.Agent) error
+}
