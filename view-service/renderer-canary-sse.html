@@ -1213,6 +1213,7 @@
     const lockBadge = document.getElementById('lockBadge');
     const copyUnlockBtn = document.getElementById('copyUnlockBtn');
     const costAccountingMode = /* VS_COST_ACCOUNTING_MODE */ 'active';
+    const canonicalPublicOrigin = /* VS_PUBLIC_ORIGIN */ '';
     const composerInner = document.getElementById('composerInner');
     const filePicker = document.getElementById('filePicker');
     const dropHint = document.getElementById('dropHint');
@@ -3136,7 +3137,7 @@
         }
         case 'audio': {
           const audio = document.createElement('audio');
-          audio.src = url;
+          audio.src = displayOwnFileUrl(url);
           audio.controls = true;
           audio.preload = 'metadata';
           // 与 video 同一形态（见上）：下载链接**无条件**附一条 ——
@@ -3148,7 +3149,7 @@
         }
         case 'pdf': {
           const frame = document.createElement('iframe');
-          frame.src = url;
+          frame.src = displayOwnFileUrl(url);
           frame.title = hint?.name || fileNameFromUrl(url);
           box.appendChild(frame);
           box.appendChild(fileDownloadLink(url, '下载 PDF', knownName));   // 浏览器无内置 PDF 阅读器时仍有出路
@@ -5617,6 +5618,19 @@
       const detail = ` (${String(name || 'file')}, ${Number(size)} bytes)`;
       humanInput.setRangeText(prefix + fileRef + detail + suffix, start, end, 'end');
       humanInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function normalizeInputFileUrls(text) {
+      if (!canonicalPublicOrigin || canonicalPublicOrigin === location.origin) return text;
+      return String(text).replace(FILE_URL_RE, (raw) => {
+        const trimmed = trimUrlTail(raw);
+        if (!isOwnFileUrl(trimmed)) return raw;
+        try {
+          const u = new URL(trimmed);
+          if (u.origin !== location.origin || !u.pathname.startsWith('/f/')) return raw;
+          return canonicalPublicOrigin + trimmed.slice(u.origin.length) + raw.slice(trimmed.length);
+        } catch { return raw; }
+      });
     }
     // ── 0.2.0.6 A 线：上传入口（业主第 1 条）────────────────────────────
     // 契约：tasks/v0.1-B 锚 d26bfd7002f70b7a9c9b5dcec6a1682ccbef974f

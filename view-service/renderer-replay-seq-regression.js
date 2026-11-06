@@ -51,9 +51,8 @@ async function startFixture(mode, extra = {}) {
 
 const probe = page => page.evaluate(async () => (await fetch('/probe', { cache: 'no-store' })).json());
 const turnText = (page, turn = 't-1') => page.evaluate(t => {
-  const g = turnGroups.get(t);
-  if (!g) return '';
-  const evs = g.events.filter(e => e.kind === 'assistant_text').slice().sort(compareCursor);
+  const groups = turnGroupSegments.get(t) || (turnGroups.has(t) ? [turnGroups.get(t)] : []);
+  const evs = groups.flatMap(g => g.events.filter(e => e.kind === 'assistant_text').slice().sort(compareCursor));
   return evs.map(e => e.text || '').join('');
 }, turn);
 // 等某条文本出现；超时不抛（记为未出现），让该格以断言失败呈现、不中断其余各格。

@@ -63,6 +63,37 @@ func TestFileRetrievalCapabilityIsFrozen(t *testing.T) {
 	}
 }
 
+func TestUploadTicketPublicBaseUsesOnlyCanonicalOrTrustedOrigin(t *testing.T) {
+	trusted, err := trustedorigin.ParseList("https://dw.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name    string
+		trusted []trustedorigin.Origin
+		values  []string
+		want    string
+	}{
+		{name: "canonical with empty list", values: []string{"https://dw.cmjrt.com:55055"}, want: "https://dw.cmjrt.com:55055"},
+		{name: "trusted exact origin", trusted: trusted, values: []string{"https://dw.cmjrt.com:50443"}, want: "https://dw.cmjrt.com:50443"},
+		{name: "untrusted origin falls back", trusted: trusted, values: []string{"https://evil.example"}, want: "https://files.example"},
+		{name: "empty list noncanonical falls back", values: []string{"https://dw.cmjrt.com:50443"}, want: "https://files.example"},
+		{name: "duplicate Origin headers fall back", trusted: trusted, values: []string{"https://dw.cmjrt.com:50443", "https://dw.cmjrt.com:50443"}, want: "https://files.example"},
+		{name: "comma Origin falls back", trusted: trusted, values: []string{"https://dw.cmjrt.com:50443, https://evil.example"}, want: "https://files.example"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h := &Hub{PublicOrigin: "https://dw.cmjrt.com:55055", TrustedOrigins: tc.trusted}
+			r := httptest.NewRequest(http.MethodPost, "/api/console/agents/kimi.zzc/file-upload-ticket", nil)
+			for _, value := range tc.values {
+				r.Header.Add("Origin", value)
+			}
+			if got := h.uploadTicketPublicBase(r, "https://files.example"); got != tc.want {
+				t.Fatalf("uploadTicketPublicBase = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestFileCapabilityRejectsInvalidRequestBeforeIssuer(t *testing.T) {
 	for _, meta := range []map[string]any{
 		{"type": fileCapabilityRequestType, "request_id": "r", "operation": "get", "file_ref": "dwfile:../../secret", "range": "bytes=0-1"},

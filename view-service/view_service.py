@@ -1045,6 +1045,12 @@ class _Handler(BaseHTTPRequestHandler):
             pre = PUBLIC_VIEW_BASE + "/" + hdr_sess.strip()
             for ep in ("/events", "/input", "/interrupt", "/control", "/status", "/page"):
                 text = text.replace("'" + ep + "'", "'" + pre + ep + "'")
+        public_origin_marker = "/* VS_PUBLIC_ORIGIN */ ''"
+        if text.count(public_origin_marker) != 1:
+            return self.send_error(503, "public origin template unavailable")
+        public_origin = self.headers.get("X-DW-Public-Origin", "")
+        encoded_origin = json.dumps(public_origin, ensure_ascii=True).replace("<", "\\u003c")
+        text = text.replace(public_origin_marker, encoded_origin)
         # 🔴 注入**无条件**:来源头像与是否带 X-DW-Session 无关,
         # 放进上面的 if 里会让直连 VS 的场景永远看不到图标。
         text = _inject_canonical_public_origin(text)

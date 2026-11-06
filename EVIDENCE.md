@@ -1,6 +1,6 @@
 # S-R52-TRUSTED-ORIGINS-IMPL evidence
 
-Baseline: `f7f31fca1d1f1468285138578c3f6fafacfb5537`; branch `togpt60lunazzc/r52-trusted-origins-impl`.
+Original R52 baseline: `f7f31fca1d1f1468285138578c3f6fafacfb5537`; supplemental upload/render scope starts from accepted intermediate tip `d555768c102b04caac3a1f05afcff4a55832cc13` in independent worktree `/tmp/togpt60lunazzc-r52-trusted-origins-impl`; branch intent `togpt60lunazzc/r52-trusted-origins-impl`.
 
 ## Scope
 

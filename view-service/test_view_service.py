@@ -171,14 +171,14 @@ class ProductionRendererTest(unittest.TestCase):
         _, written = self._events_call("/events", lines=lines)
         self.assertEqual(written, b"".join(lines))
 
-    def _render_for_public_base(self, public_base):
+    def _render_for_public_base(self, public_base, public_origin=""):
         handler = object.__new__(vs._Handler)
-        handler.headers = {"X-DW-Session": "zzc-tester-2642"}
+        handler.headers = {"X-DW-Session": "zzc-tester-2642", "X-DW-Public-Origin": public_origin}
         handler.wfile = io.BytesIO()
         handler.send_response = mock.Mock()
         handler.send_header = mock.Mock()
         handler.end_headers = mock.Mock()
-        renderer = b"const API={events:'/events',input:'/input',interrupt:'/interrupt',status:'/status',page:'/page'}"
+        renderer = b"const canonicalPublicOrigin=/* VS_PUBLIC_ORIGIN */ ''; const API={events:'/events',input:'/input',interrupt:'/interrupt',status:'/status',page:'/page'}"
         with mock.patch.object(vs, "PUBLIC_VIEW_BASE", public_base), \
                 mock.patch.object(vs, "_read_renderer", return_value=renderer):
             handler._serve_file()
@@ -194,6 +194,14 @@ class ProductionRendererTest(unittest.TestCase):
         rendered = self._render_for_public_base("/view")
         for endpoint in ("events", "input", "interrupt", "status", "page"):
             self.assertIn(f"'/view/zzc-tester-2642/{endpoint}'", rendered)
+
+    def test_renderer_receives_canonical_public_origin_as_json(self):
+        rendered = self._render_for_public_base("/view", "https://dw123.cmjrt.com")
+        self.assertIn('canonicalPublicOrigin="https://dw123.cmjrt.com"', rendered)
+
+    def test_renderer_origin_injection_escapes_script_delimiters(self):
+        rendered = self._render_for_public_base("/view", "https://example.invalid</script>")
+        self.assertIn('canonicalPublicOrigin="https://example.invalid\\u003c/script>"', rendered)
 
     def test_public_view_base_validation_fails_closed(self):
         self.assertEqual(vs._validate_public_view_base(" /v2c/view "), "/v2c/view")

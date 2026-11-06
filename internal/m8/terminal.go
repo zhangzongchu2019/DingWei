@@ -1305,6 +1305,11 @@ func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, session
 	// return an error and must never silently send an unsigned V2 cost request.
 	prepared := r.Clone(r.Context())
 	prepared.Header.Set("X-DW-Session", header)
+	// The browser may use a trusted non-canonical origin, but file links remain
+	// rooted at PublicOrigin. Never forward a caller-supplied value for this
+	// renderer configuration.
+	prepared.Header.Del("X-DW-Public-Origin")
+	prepared.Header.Set("X-DW-Public-Origin", h.PublicOrigin)
 	p := strings.TrimPrefix(prepared.URL.Path, prefix)
 	if p == "" {
 		p = "/"
