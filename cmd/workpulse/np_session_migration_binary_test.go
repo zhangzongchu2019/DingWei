@@ -183,7 +183,7 @@ func TestNPSessionPG8To9AndR50BinaryCompatibility(t *testing.T) {
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("certified R50 authenticated API status=%d", res.StatusCode)
 	}
-	t.Logf("PG8->PG9: prior_entries=%d unchanged=true total_entries=9; existing_session_created_at~migration_time=true; certified_R50_password_login=%d authenticated_API=%d", len(previous), loginRes.StatusCode, res.StatusCode)
+	t.Logf("PG8->PG%d: prior_entries=%d unchanged=true total_entries=%d; existing_session_created_at~migration_time=true; certified_R50_password_login=%d authenticated_API=%d", count, len(previous), count, loginRes.StatusCode, res.StatusCode)
 }
 
 func freeNPAddr(t *testing.T) string {
