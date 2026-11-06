@@ -365,6 +365,15 @@ func run(logger *slog.Logger) error {
 		if err := wireNewPlatform(ctx, mux, prefixHub, newplatCfg, npStore, npPool); err != nil {
 			return fmt.Errorf("newplat wiring refused to start: %w", err)
 		}
+		if r53Cfg, r53On, err := r53ConfigFromEnv(newplatOn); err != nil {
+			return fmt.Errorf("r53 config: %w", err)
+		} else if r53On {
+			if err := wireR53(ctx, r53Cfg, pgTableChecker{pool: npPool}); err != nil {
+				return fmt.Errorf("r53 wiring refused to start: %w", err)
+			}
+		}
+	} else if _, r53On, err := r53ConfigFromEnv(false); r53On {
+		return fmt.Errorf("r53 config: %w", err)
 	}
 	configureCoordinateReviewFeishu(prefixHub, feishuGateway)
 	registerConsoleRoutes(mux, prefixHub, newplatOn)
