@@ -47,3 +47,8 @@ run-build-tests（短 TMPDIR）rc0；本路包与 m8／store 整包；race -coun
 3. 跨库权威：外部席位收件箱（入队、领取、确认、过期）权威在 PG，与令牌、AG 同库；Send 的「受理＋TouchGroup＋入队」同一 PG 事务。外部→helper 方向经 PG outbox 幂等投影到 SQLite session_delivery（受理≠送达，返回 accepted）；helper→外部方向在 Hub 路由处写 PG 收件箱并 TouchGroup（同事务）。SQLite 现有 30 分钟／12 次策略不改、不套用到外部目标。
 4. 续期：Authenticate 每次成功交互以 CAS 持久续到 now＋14 天（单行条件更新，无额外 touch 表）；Recheck 只核不续；presence 持久 last_seen（90 秒判离线）；AG 只由「受理成功的发送」与「首次有效 received 确认」续 3 天。
 5. 共享类型：target／AG／principal／receipt／错误码由组长在集成分支 internal/extshared（暂名）一处定义并先推，各路只引用；跨路不自建表、状态或错误含义。
+
+## 6. 授权资源与 scope（2026-11-06T04:5xZ 组长，据 ㊹-补9 与 A 路 01a19ca0 提问）
+- MVP 的 scope 固定为四项通讯能力（list_online、send_message、wait_for_messages、ack），不做子集授权；令牌行持久 audience（MCP 受保护资源标识）与这四项 scope，Authenticate 核对与服务配置的资源一致。
+- main 装配时由组长统一提供两项配置：团队 tenant_key（DW_FEISHU_TEAM_TENANT_KEY，候选值见 prodops 04:42Z 只读）与 MCP 资源标识（暂定 https://dw123.cmjrt.com/mcp）；A、B、C 三路读同一配置，不各自定义。
+- 飞书 access_token／refresh_token 只在 C 路回调内使用、用完即弃，不持久、不交给 A。
