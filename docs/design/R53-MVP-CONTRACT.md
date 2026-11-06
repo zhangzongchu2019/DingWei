@@ -52,3 +52,7 @@ run-build-tests（短 TMPDIR）rc0；本路包与 m8／store 整包；race -coun
 - MVP 的 scope 固定为四项通讯能力（list_online、send_message、wait_for_messages、ack），不做子集授权；令牌行持久 audience（MCP 受保护资源标识）与这四项 scope，Authenticate 核对与服务配置的资源一致。
 - main 装配时由组长统一提供两项配置：团队 tenant_key（DW_FEISHU_TEAM_TENANT_KEY，候选值见 prodops 04:42Z 只读）与 MCP 资源标识（暂定 https://dw123.cmjrt.com/mcp）；A、B、C 三路读同一配置，不各自定义。
 - 飞书 access_token／refresh_token 只在 C 路回调内使用、用完即弃，不持久、不交给 A。
+
+## 7. 证据文件位置（2026-11-06T05:4xZ 组长，据 A＋C 试合）
+- A（fe67be84）与 C（97671b3a）试合：全仓 go build、vet 通过，extshared／feishulogin／identity 测试通过；唯一冲突为两路都在仓根新增 EVIDENCE.md（add/add）。
+- 此后各路证据一律写在 docs/reviews/r53-<路名>/EVIDENCE.md（例如 r53-tempgroup、r53-mcpgw），不得写仓根 EVIDENCE.md；A、C 已交件的仓根文件由组长集成时迁移合并。
