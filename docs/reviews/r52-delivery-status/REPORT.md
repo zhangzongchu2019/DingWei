@@ -16,19 +16,20 @@ The delete failure was a state-contract mismatch. At the base, Hub published `ca
 - The supplemental regressions cover an unknown delivery remaining busy with no retry affordance before any same-session turn ends, and both late `injected` and late `processed` confirmations restoring the normal timeline row and removing retry UI.
 - `internal/m8/view_retry_v2.go:56`, `view-service/view_service.py:454,791`, and `view-service/renderer-canary-sse.html:1419`: signed, page-authorized retry uses a deterministic new delivery ID keyed by the original delivery, clones its body and attachment metadata, and can create at most one retry. The original row receives “已重发”; the retry control disappears after acceptance.
 - `view-service/renderer-canary-sse.html:1145,1738,1998`: replaces the opaque unknown-state wording and adds a read-only list beside the helper unknown count. It lists retained/current event details; if the helper supplies a count but this page has no detail event, it states that explicitly.
-- `view-service/renderer-delivery-status-regression.js` adds eight browser checks and is registered in `tools/run-browser-regressions.py`.
+- `view-service/renderer-delivery-status-regression.js` now adds eleven browser checks and is registered in `tools/run-browser-regressions.py`.
 
 ## Verification
 
-- Targeted Hub checks, including retry once, next same-session turn convergence, cancellability stages, and both session event rings: `go test ./internal/m8 -run 'Test(ViewRetryV2ReplaysExactEnvelopeOnce|ConvergeAdmissionUnknownOnNextSessionTurnCompletion|DeliveryUpdateCancellableUsesAuthoritativeState|SessionToSessionReliableAdmissionPublishesBothEventRings)' -count=3` — rc 0.
-- Full Hub package: `go test ./internal/m8 -count=1` — rc 0, `217.576s`.
+- Original targeted Hub checks, including retry once, same-session turn convergence, cancellability stages, and both session event rings: `go test ./internal/m8 -run 'Test(ViewRetryV2ReplaysExactEnvelopeOnce|ConvergeAdmissionUnknownOnNextSessionTurnCompletion|DeliveryUpdateCancellableUsesAuthoritativeState|SessionToSessionReliableAdmissionPublishesBothEventRings)' -count=3` — prior rc 0. Supplemental focused Go checks — rc 0 for no-turn pending, another-message convergence, and late injected/processed confirmations.
+- Full Hub package at the supplemented code tip: `go test ./internal/m8 -count=1` — rc 0, `215.946s`.
 - View tests are included in the build gate. `bash scripts/run-build-tests.sh` — rc 0, `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`. The system Python initially lacked the lockfile's `websockets` and `pexpect`; rerunning with an isolated `/tmp` venv installed from `tools/sessionhelper/requirements-runtime.lock` passed.
 - New browser suite direct run before supplement — rc 0, 8/8 checks. Supplemental browser run — rc 0, 11/11 checks, including the no-turn and both late-confirmation cases.
-- Full browser runner on implementation commit `28b9f0aebe9db57b8486134d8363bd1193f19fdf` — rc 0, all 36 suites rc 0. The complete machine receipt is [BROWSER-RECEIPT.txt](BROWSER-RECEIPT.txt); generated `2026-11-06T17:49:54Z`.
+- Full browser runner on supplemented code tip `0c063d61f751af200ab552e74de929c8ea44d572` — rc 0, all 36 suites rc 0; generated `2026-11-06T18:20:12Z`. R52 browser suite: 11/11. C2 continues to report its four separately registered T-166 known defects; runner aggregate remains rc 0.
+- Standard build gate on the supplemented code tip — rc 0, `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`; both helper profiles ran 1097/1097.
 - Four independent mutations each made its guard fail, then were reverted: broaden `sent`/`delivered` cancellation (Go rc 1); create a fresh retry per request (retry-once Go rc 1); disable turn-end convergence (Go rc 1); restore the old unknown wording (browser rc 2, `UNKNOWN_HAS_CLEAR_COPY`).
 - Supplemental fifth mutation, also reverted: require `turn_completed.delivery_id` to match the unknown delivery. It failed specifically in `TestAnotherMessagesTurnEndConvergesUnknownDelivery` with “matching terminal event did not converge unknown delivery”; this is the intended “another message's turn ends ⇒ converge” cell.
-- `git diff --check` passed. Final browser receipt records `commit_sha=28b9f0aebe9db57b8486134d8363bd1193f19fdf`.
+- `git diff --check` passed. The full Go, build, and browser gates all passed on supplemented source commit `0c063d61f751af200ab552e74de929c8ea44d572`.
 
 ## Conclusion
 
-**Initial implementation passed; requested supplement pending verification.** The read-only list is bounded by the details retained in the current/replayed session event stream; an aggregate helper count without a matching detail event is shown as unavailable rather than represented by invented content.
+**通过。** The requested three matrix cells, fifth targeted mutation, m8 package, build gate, and all browser suites passed on the supplemented source commit. The read-only list is bounded by the details retained in the current/replayed session event stream; an aggregate helper count without a matching detail event is shown as unavailable rather than represented by invented content.
