@@ -27,7 +27,7 @@ A 消费签名由 Seats 接口钉住：Authenticate／ListOnline／Send／Wait�
 | /.well-known/oauth-authorization-server | GET | issuer、authorize/token、PKCE S256、CIMD；无DCR/refresh |
 | /oauth/authorize | GET | 外层 OAuth，验证客户端／redirect／resource／完整scope／PKCE |
 | /feishu/connect | GET/POST | 验 B 事务和浏览器 cookie，再交 C 页面／Start |
-| /oauth/feishu/callback | GET | 先核 B 关联，再按 C state 取得签发结果，发一次性 code |
+| /mcp/oauth/feishu/callback | GET | 先核 B 关联，再按 C state 取得签发结果，发一次性 code |
 | /oauth/token | POST form | authorization_code＋client_id＋redirect_uri＋resource＋code_verifier |
 
 通讯路径只认 Authorization: Bearer，不接受 query/cookie 令牌。MCP 与 REST 共用四工具分发和 Authenticate；REST 不扩权限。在线响应只带 fullname/last_seen/external，不暴露底层 identity 对象。发送返回 stage=accepted/projected/unknown 的原义，不把 HTTP 返回当送达。收件返回稳定 delivery_id/generation，绝不替客户端调用 ACK。

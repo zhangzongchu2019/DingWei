@@ -79,7 +79,7 @@ func (g *Gateway) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/oauth/authorize", g.guard(g.authorize))
 	mux.HandleFunc("/oauth/token", g.guard(g.token))
 	mux.HandleFunc("/feishu/connect", g.guard(g.connect))
-	mux.HandleFunc("/oauth/feishu/callback", g.guard(g.callback))
+	mux.HandleFunc("/mcp/oauth/feishu/callback", g.guard(g.callback))
 }
 func (g *Gateway) guard(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

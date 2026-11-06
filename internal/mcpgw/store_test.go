@@ -84,7 +84,7 @@ func TestDurableCStateAdapter(t *testing.T) {
 	ctx := context.Background()
 	_, s := testDB(t)
 	now := time.Now()
-	a := feishulogin.LoginAttempt{StateHash: hash("csrf"), AppID: "app", Purpose: feishulogin.StatePurposeConnectForm, RedirectURI: testOrigin + "/oauth/feishu/callback", CreatedAt: now, ExpiresAt: now.Add(time.Minute), Request: feishulogin.IssueRequest{AttemptID: "bound"}}
+	a := feishulogin.LoginAttempt{StateHash: hash("csrf"), AppID: "app", Purpose: feishulogin.StatePurposeConnectForm, RedirectURI: testOrigin + "/mcp/oauth/feishu/callback", CreatedAt: now, ExpiresAt: now.Add(time.Minute), Request: feishulogin.IssueRequest{AttemptID: "bound"}}
 	adapter := LoginStates{Store: s}
 	if e := adapter.Create(ctx, a); e != nil {
 		t.Fatal(e)

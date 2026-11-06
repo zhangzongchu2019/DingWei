@@ -38,7 +38,7 @@ func oauthFixtureWithStore(t *testing.T, store Store) (*Gateway, *seatsFake, *ht
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/token":
-			if r.ParseForm() != nil || r.PostForm.Get("code") != "feishu-code" || r.PostForm.Get("redirect_uri") != testOrigin+"/oauth/feishu/callback" {
+			if r.ParseForm() != nil || r.PostForm.Get("code") != "feishu-code" || r.PostForm.Get("redirect_uri") != testOrigin+"/mcp/oauth/feishu/callback" {
 				t.Error("upstream code/redirect not bound")
 				w.WriteHeader(400)
 				return
@@ -54,11 +54,11 @@ func oauthFixtureWithStore(t *testing.T, store Store) (*Gateway, *seatsFake, *ht
 		}
 	}))
 	t.Cleanup(upstream.Close)
-	oauth, e := feishulogin.NewFeishuClient(feishulogin.OAuthConfig{AppID: "app", AppSecret: "test-only-secret", RedirectURI: testOrigin + "/oauth/feishu/callback", AuthorizeURL: upstream.URL + "/authorize", TokenURL: upstream.URL + "/token", UserInfoURL: upstream.URL + "/user", HTTPClient: upstream.Client()})
+	oauth, e := feishulogin.NewFeishuClient(feishulogin.OAuthConfig{AppID: "app", AppSecret: "test-only-secret", RedirectURI: testOrigin + "/mcp/oauth/feishu/callback", AuthorizeURL: upstream.URL + "/authorize", TokenURL: upstream.URL + "/token", UserInfoURL: upstream.URL + "/user", HTTPClient: upstream.Client()})
 	if e != nil {
 		t.Fatal(e)
 	}
-	login, e := feishulogin.NewHandler(feishulogin.Config{AppID: "app", TeamTenantKey: "team", RedirectURI: testOrigin + "/oauth/feishu/callback", OAuth: oauth, States: LoginStates{Store: g.cfg.Store}, Tokens: extwire.Issuer{Seats: seats, Resource: testOrigin + "/mcp"}, Now: g.cfg.Now})
+	login, e := feishulogin.NewHandler(feishulogin.Config{AppID: "app", TeamTenantKey: "team", RedirectURI: testOrigin + "/mcp/oauth/feishu/callback", OAuth: oauth, States: LoginStates{Store: g.cfg.Store}, Tokens: extwire.Issuer{Seats: seats, Resource: testOrigin + "/mcp"}, Now: g.cfg.Now})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -105,7 +105,7 @@ func finishFeishu(t *testing.T, mux *http.ServeMux, attempt string, cookies []*h
 	}
 	u, _ := url.Parse(w.Header().Get("Location"))
 	state := u.Query().Get("state")
-	callbackURL := testOrigin + "/oauth/feishu/callback?" + url.Values{"state": {state}, "code": {"feishu-code"}, "redirect_uri": {"https://attacker.example"}, "tenant_key": {"evil"}, "target_agent": {"evil.zzc"}}.Encode()
+	callbackURL := testOrigin + "/mcp/oauth/feishu/callback?" + url.Values{"state": {state}, "code": {"feishu-code"}, "redirect_uri": {"https://attacker.example"}, "tenant_key": {"evil"}, "target_agent": {"evil.zzc"}}.Encode()
 	r = httptest.NewRequest("GET", callbackURL, nil)
 	addCookies(r, cookies)
 	w = serve(mux, r)
@@ -245,7 +245,7 @@ func TestOAuthMetadataAndOrigin(t *testing.T) {
 			t.Fatal("unsupported grant/registration advertised")
 		}
 	}
-	for _, path := range []string{"/mcp", "/api/external/list_online", "/oauth/authorize", "/oauth/token", "/feishu/connect", "/oauth/feishu/callback", "/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource/mcp"} {
+	for _, path := range []string{"/mcp", "/api/external/list_online", "/oauth/authorize", "/oauth/token", "/feishu/connect", "/mcp/oauth/feishu/callback", "/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource/mcp"} {
 		r := httptest.NewRequest("POST", testOrigin+path, strings.NewReader(`{}`))
 		r.Header.Set("Origin", "https://evil.example")
 		if w := serve(mux, r); w.Code != 403 {
@@ -273,5 +273,17 @@ func TestOAuthConcurrentExchangeOnlyOneWinner(t *testing.T) {
 	wg.Wait()
 	if wins.Load() != 1 {
 		t.Fatalf("code redeemed %d times", wins.Load())
+	}
+}
+
+// 飞书重定向 URL 以业主裁定为准（rulings ㊹-补10：/mcp/oauth/feishu/callback，443 与 :50443 两条），
+// 业主在飞书后台登记的正是这条路径；旧路径不得再登记，免得两条回调并存。
+func TestFeishuCallbackPathMatchesOwnerRuling(t *testing.T) {
+	_, _, mux := oauthFixture(t)
+	if w := serve(mux, httptest.NewRequest("GET", testOrigin+"/oauth/feishu/callback?state=x&code=y", nil)); w.Code != 404 {
+		t.Fatalf("legacy callback path still served: %d", w.Code)
+	}
+	if w := serve(mux, httptest.NewRequest("GET", testOrigin+"/mcp/oauth/feishu/callback?state=x&code=y", nil)); w.Code == 404 {
+		t.Fatal("ruled callback path /mcp/oauth/feishu/callback not registered")
 	}
 }
