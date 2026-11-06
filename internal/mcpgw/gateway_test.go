@@ -397,3 +397,33 @@ func testAccess(t *testing.T) repo.AccessCtx {
 	}
 	return a
 }
+
+func TestApplicationErrorsAvoidMCPReservedRange(t *testing.T) {
+	for _, r := range errorRules {
+		if r.err == errParams || r.err == errMethod {
+			continue
+		}
+		if r.code >= -32768 && r.code <= -32000 {
+			t.Fatalf("application error uses reserved MCP code %d", r.code)
+		}
+	}
+}
+func TestRequestIDMustBeStringOrInteger(t *testing.T) {
+	_, _, mux := fixture(t)
+	for _, id := range []string{"null", "1.5", "true", "{}"} {
+		r := rpcRequestFor("tools/list", "", `{}`)
+		raw, _ := io.ReadAll(r.Body)
+		r.Body = io.NopCloser(strings.NewReader(strings.Replace(string(raw), `"fresh-rpc"`, id, 1)))
+		if w := serve(mux, r); w.Code != 400 {
+			t.Fatalf("invalid ID %s accepted", id)
+		}
+	}
+}
+func TestAcceptZeroQualityRejected(t *testing.T) {
+	_, _, mux := fixture(t)
+	r := rpcRequestFor("tools/list", "", `{}`)
+	r.Header.Set("Accept", "application/json; q=0.0, text/event-stream")
+	if w := serve(mux, r); w.Code != 406 {
+		t.Fatal("zero quality accepted")
+	}
+}

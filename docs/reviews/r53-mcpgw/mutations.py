@@ -46,6 +46,14 @@ def main():
         ('authentication', 'gateway.go',
          'return g.cfg.Seats.Authenticate(r.Context(), p[1])', 'return extseat.Seat{}, nil',
          '^TestToolBoundaryMatrix/list_online/mcp/revoked$', 'status 200'),
+        ('application-code', 'gateway.go',
+         '{extshared.ErrQueueFull, 429, 1029, "queue_full"}',
+         '{extshared.ErrQueueFull, 429, -32029, "queue_full"}',
+         '^TestApplicationErrorsAvoidMCPReservedRange$', 'application error uses reserved MCP code'),
+        ('code-expiry', 'store.go',
+         'if now.UnixNano() >= expiry || len(sealed) < s.aead.NonceSize() {',
+         'if false && now.UnixNano() >= expiry || len(sealed) < s.aead.NonceSize() {',
+         '^TestOAuthExpiryAndRevocationBeforeExchange/code_expired$', 'expired/revoked grant accepted'),
     ]
     env = {k: v for k, v in os.environ.items() if not k.startswith(('SH_', 'DINGWEI_'))}
     env.update(TMPDIR='/tmp', TZ='UTC')

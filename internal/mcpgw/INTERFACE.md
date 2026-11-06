@@ -50,4 +50,4 @@ scope 按集合精确核固定四项，允许顺序不同，不接受子集/额�
 
 每次 Put 在同一事务先清本resource的过期行，再检查未清记录数（10000阈值）并插入。没有请求时不启动独立worker；下次写入清理，所有读取/兑换仍即时检查期限，晚清不延长授权。Take 用单条 DELETE…RETURNING 跨连接/进程原子消费，失败/过期不能兑换。此表是短期OAuth状态，不改变A的令牌14天、AG3天或投递/ACK权威。
 
-错误表集中在 gateway.go 的 errorRules，按 errors.Is 映射；未识别错误统一 internal_error，不返回底层异常。认证失败401并给 protected-resource 元数据挑战；权限403、幂等冲突409、队列满429。OAuth失败只返固定错误名，不带上游正文或令牌。
+错误表集中在 gateway.go 的 errorRules，按 errors.Is 映射；业务错误使用JSON-RPC保留区之外的正整数1001/1003/1008/1009/1029，MCP保留区只用于标准定义的头/版本错误；未识别错误统一 internal_error，不返回底层异常。认证失败401并给 protected-resource 元数据挑战；权限403、幂等冲突409、队列满429。OAuth失败只返固定错误名，不带上游正文或令牌。

@@ -10,6 +10,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -156,19 +157,19 @@ var errorRules = []struct {
 	status, code int
 	name         string
 }{
-	{extshared.ErrUnauthenticated, 401, -32001, "unauthenticated"},
-	{extshared.ErrTokenRevoked, 401, -32001, "token_revoked"},
-	{extshared.ErrTokenExpired, 401, -32001, "token_expired"},
-	{extshared.ErrTenantRejected, 403, -32003, "tenant_rejected"},
-	{extshared.ErrGroupDissolved, 403, -32003, "group_dissolved"},
-	{extshared.ErrTargetNotInAG, 403, -32003, "target_not_in_ag"},
-	{extshared.ErrNotPermitted, 403, -32003, "not_permitted"},
-	{extshared.ErrIdempotencyKey, 409, -32009, "idempotency_conflict"},
-	{extshared.ErrQueueFull, 429, -32029, "queue_full"},
+	{extshared.ErrUnauthenticated, 401, 1001, "unauthenticated"},
+	{extshared.ErrTokenRevoked, 401, 1001, "token_revoked"},
+	{extshared.ErrTokenExpired, 401, 1001, "token_expired"},
+	{extshared.ErrTenantRejected, 403, 1003, "tenant_rejected"},
+	{extshared.ErrGroupDissolved, 403, 1003, "group_dissolved"},
+	{extshared.ErrTargetNotInAG, 403, 1003, "target_not_in_ag"},
+	{extshared.ErrNotPermitted, 403, 1003, "not_permitted"},
+	{extshared.ErrIdempotencyKey, 409, 1009, "idempotency_conflict"},
+	{extshared.ErrQueueFull, 429, 1029, "queue_full"},
 	{errParams, 400, -32602, "invalid_params"},
 	{errMethod, 404, -32601, "method_not_found"},
-	{context.Canceled, 408, -32008, "request_cancelled"},
-	{context.DeadlineExceeded, 408, -32008, "request_timeout"},
+	{context.Canceled, 408, 1008, "request_cancelled"},
+	{context.DeadlineExceeded, 408, 1008, "request_timeout"},
 }
 
 func mapped(e error) (int, wireError) {
@@ -203,16 +204,17 @@ func rpcError(w http.ResponseWriter, status int, id json.RawMessage, e wireError
 	writeJSON(w, status, map[string]any{"jsonrpc": "2.0", "id": id, "error": e})
 }
 func validID(id json.RawMessage) bool {
-	var v any
-	if len(id) == 0 || json.Unmarshal(id, &v) != nil {
+	if len(id) == 0 {
 		return false
 	}
-	switch v.(type) {
-	case string, float64:
+	var text string
+	if len(id) > 0 && id[0] == '"' && json.Unmarshal(id, &text) == nil {
 		return true
 	}
-	return false
+	_, e := strconv.ParseInt(string(id), 10, 64)
+	return e == nil
 }
+
 func singleHeader(r *http.Request, name string) string {
 	v := r.Header.Values(name)
 	if len(v) != 1 {
@@ -309,7 +311,15 @@ func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {
 func accepts(header, want string) bool {
 	for _, s := range strings.Split(header, ",") {
 		t, p, e := mime.ParseMediaType(strings.TrimSpace(s))
-		if e == nil && t == want && p["q"] != "0" {
+		quality := 1.0
+		if raw, ok := p["q"]; ok {
+			q, err := strconv.ParseFloat(raw, 64)
+			if err != nil || q <= 0 || q > 1 {
+				continue
+			}
+			quality = q
+		}
+		if e == nil && t == want && quality > 0 {
 			return true
 		}
 	}
