@@ -54,3 +54,13 @@
   - 完成：接续既有长门，canonical rc0，五包整包rc0；extseat/migrate/identity race三轮包级PASS，m8四片各rc0且891顶层用例各3次。store旧合并命令90m总超时rc1保留，仅store按120m完整三轮重跑rc0。五包1375顶层用例各3次，共4125次，新增12测试无SKIP；42条普通整包SKIP中的PG相关一项已由canonical实际补跑五子项PASS。七刀修订变异保持，四条核心变异移到fe67当前源片补验均命中预期断言。证据见docs/reviews/r53-extseat/EVIDENCE.md。
   - 阻塞：无A路实现/自测阻塞；独立复核由组长集成执行，不据此勾选全跨路T-06～T-10或冒认B/C/D/main完成。
   - 下一步：只追加证据与交接，不改写fe67产品；提交前已fetch A=fe67、集成=75a40880，派单后合同新增第7节已同步至新证据目录，需求无新增变更。最终strict已rc0；正式交件tip/tree以推送核ls-remote后的回执为准，回执附实取ID及to字段，回报完成后释放锁。下一步由组长集成独立复核；不部署或重启。
+- 2026-11-06，B路执行者coder56solzzc，实取会话01a1b01a-3bc9-7003-998c-53b56b27c2ec；父基线144b215e32e718553d9fef2e79c83ece164f6514。
+  - 完成：持有r53-mcpgw.writer.lock，按S-R53-MCPGW-IMPL实现internal/mcpgw四工具MCP/REST、OAuth/PKCE/CIMD、Origin接口/错误表及cmd显式依赖注入；真实C/extwire假飞书联调、真实临时PG并发兑换及八项语义变异首轮通过。组长16:13:02Z分配0107，唯一短期加密表，运行时不建表；密钥文件失效只关闭本路。
+  - 阻塞：中间提交未交件，canonical锁定环境长门仍在跑；账本期待串由集成组长调整，本路未越权；主装配/D、真实飞书/第三方SDK互操作与上线不在本路结果内。
+  - 下一步：推中间tip供组长只读试合，完成最终source绑定的race/变异/strict/canonical证据并交件；不勾跨路T-04/T-08/T-10整体完成，不自验收或部署。
+
+- 2026-11-06，B路持锁执行者coder56solzzc，线程01a1b01a-3bc9-7003-998c-53b56b27c2ec；最终源码冻结b82d221a380ee23dcc4a52cee2cba8d2b1281b89（中间2f1a65298直父144b215e）。
+  - 完成：四工具MCP/REST、OAuth/PKCE/CIMD、Origin接口与统一错误码、0107单表加密短期状态、密钥失败仅关闭本路；本路119项含真PG并发兑换/expiry/资源隔离，四包189项与三轮race357项零SKIP；十刀语义红。源码全仓build、vet、严格OpenSpec通过。原样canonical最终b82仅claim五子项旧迁移清单缺0107失败；按组长16:16:37Z裁定，一次性树仅同步0107清单/表数/轨A参考后migrate42项和canonical两profile各1097＋27Python＋2shell均rc0。原始失败、仅测试期望diff、全部命令/UTC/SHA见docs/reviews/r53-mcpgw/EVIDENCE.md与raw，正式分支未改集成测试期望。
+  - 阻塞：本路实施无；原样0107棘轮待组长集成0105/0106/0107时统一处理，未假称canonical原样绿或跨路独立验收；真实飞书/第三方SDK互操作、D/主装配与r52受信来源接入留给集成。
+  - 下一步：证据-only提交推送核ls-remote，向组长回最终tip/tree/source对应各门；回报持久入队后核owner释放锁。A/C/D/helper零修改，未发布/重启/上传源码或二进制。提交前重新fetch rulings并读㊹-补12/13/14及㊺-补1；派单后的0107/密钥/棘轮裁定已同步本路文书，原业务需求未改。
+  - 提交前同步补记：2026-11-06T16:37:37Z实取opus50tc2k/r53-wire-wip最新d5336761ebf989f1b448263c69a5a9ee5597910a；相对指定144b215e的本变更OpenSpec目录与R53-MVP-CONTRACT文书diff为零。A集成scope helper调整未带入本分支，继续保持A冻结；0107等定向裁定已按上文实现。

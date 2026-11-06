@@ -1,0 +1,23 @@
+{
+  "source_commit": "b82d221a380ee23dcc4a52cee2cba8d2b1281b89",
+  "tree": "1e229d605eeec4a2b200dac714bba7ca5ff9960d",
+  "created_utc": "2026-11-06T16:25:38.110220+00:00",
+  "files": {
+    "cmd/workpulse/mcpgw.go": "9abe516a6ecf9de8e375570dc08bb4233771ec4a4bdc9d3932a21a65a88853f2",
+    "cmd/workpulse/mcpgw_test.go": "829f00dc8713d39818ac373d197a0b78039ba168f9c65dacf023a55fd17200d7",
+    "internal/mcpgw/INTERFACE.md": "8175f8ecd66ad147a4f0ebb57649ab256377a87f7c6e931c6de4386eade6b9d5",
+    "internal/mcpgw/clients.go": "da24d813a92cbef0d8506f7c5e1f60c5f35bf2cfa18e8ffa0092f016a4fb40dc",
+    "internal/mcpgw/gateway.go": "4e946e8fe394b17982f3347a52957e1408b47721f46e31eb52e177965b7287a0",
+    "internal/mcpgw/gateway_test.go": "a86f980820b7e267626402824cffae84ae5a04e8c34b2e7cf5f22278582b2b05",
+    "internal/mcpgw/key.go": "d330abb3b71a8c0fcb05c3e3e692b9b4727a403f896b5e2606745fed4b1beb31",
+    "internal/mcpgw/key_test.go": "4038d17b220afa1d2df48f506c7e6634dd1cb95f27b08119d060f6b695c79cef",
+    "internal/mcpgw/login_states.go": "e591ff1fb2324d6cfd4d0d9464e09ac442f76b6c3aa9abc695efbab15b258e4f",
+    "internal/mcpgw/oauth.go": "934364408df472baf30faf91b19c14a280c769ad4f53d1bce0f649da3076e693",
+    "internal/mcpgw/oauth_test.go": "c475e4e79ed7afd5546f3a23c00b524cb7897a91cdf96d442ed5f3d7b8f7bb16",
+    "internal/mcpgw/store.go": "05180407b47a697bc20a81d0cfdcd156b7fd8be8a01d6b33542f7a49204032e0",
+    "internal/mcpgw/store_pg_test.go": "98530c6ff950d62e225164dd15e0a04e28536421e8d47a6a4b658ba7ec253c34",
+    "internal/mcpgw/store_test.go": "6a1fe44770c1f8e18b4d21e433b23f6410ede1b1c027881a82d3276ac2382e1c",
+    "internal/mcpgw/tools.go": "ed32081edb575bf23f22d2a29e39f30c25ae36c4046235869151f833078c2575",
+    "internal/store/migrate/migrations/0107_mcpgw_oauth.sql": "c7e1ca148108e30f6d538e631dc62b7985f79661f432e871aeb58162f50a0939"
+  }
+}

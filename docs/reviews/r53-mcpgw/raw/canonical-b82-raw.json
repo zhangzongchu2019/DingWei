@@ -1,0 +1,11 @@
+{
+  "command": [
+    "bash",
+    "scripts/run-build-tests.sh"
+  ],
+  "started_utc": "2026-11-06T16:25:59.356372+00:00",
+  "ended_utc": "2026-11-06T16:34:44.553017+00:00",
+  "rc": 1,
+  "source_commit": "b82d221a380ee23dcc4a52cee2cba8d2b1281b89",
+  "tmpdir": "/tmp/brr36kd88f"
+}

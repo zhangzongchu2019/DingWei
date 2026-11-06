@@ -1,0 +1,25 @@
+✓ change/agent-http-mcp-gateway
+✓ spec/change-lifecycle-evidence
+✓ spec/change-risk-reminders
+✓ spec/console-coordinate-review
+✓ spec/console-spec-reading
+✓ spec/console-version-confirmation
+✓ change/feishu-agent-sticky-default
+✓ change/helper-first-offer-idempotence
+✓ change/hub-graceful-shutdown
+✓ spec/hub-lifecycle
+✓ spec/legacy-console-spec
+✓ spec/pm-decision-request
+✓ change/r1-identify-high-risk-changes
+✓ change/r10-task-dispatch-lock
+✓ change/r11-freeze-legacy-console-spec
+✓ change/r15-session-history-persist
+✓ change/r5-binding-admin-page
+✓ change/r5-render-openspec-readonly
+✓ change/r51-console-timeline-order
+✓ change/r6-coordinate-review
+✓ change/r7-confirm-immutable-version
+✓ change/r8-evidence-driven-change-lifecycle
+✓ change/r9-pm-decision-request
+✓ spec/task-dispatch-lock
+Totals: 24 passed, 0 failed (24 items)

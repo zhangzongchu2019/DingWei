@@ -1,0 +1,9 @@
+{"Time":"2026-11-06T16:24:19.784304778Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw"}
+{"Time":"2026-11-06T16:24:19.789667984Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthCodeReplay"}
+{"Time":"2026-11-06T16:24:19.789686202Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthCodeReplay","Output":"=== RUN   TestOAuthCodeReplay\n"}
+{"Time":"2026-11-06T16:24:19.847443179Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthCodeReplay","Output":"    oauth_test.go:167: authorization code reusable: 200 {\"access_token\":\"local-token\",\"expires_in\":1209600,\"scope\":\"list_online send_message wait_for_messages ack\",\"token_type\":\"Bearer\"}\n"}
+{"Time":"2026-11-06T16:24:19.847914643Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthCodeReplay","Output":"--- FAIL: TestOAuthCodeReplay (0.06s)\n"}
+{"Time":"2026-11-06T16:24:19.847926132Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthCodeReplay","Elapsed":0.06}
+{"Time":"2026-11-06T16:24:19.847937681Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\n"}
+{"Time":"2026-11-06T16:24:19.848432522Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/mcpgw\t0.064s\n"}
+{"Time":"2026-11-06T16:24:19.848445241Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Elapsed":0.064}

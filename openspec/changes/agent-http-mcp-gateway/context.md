@@ -66,3 +66,8 @@
 
 
 A路最终门证据入口改为docs/reviews/r53-extseat/EVIDENCE.md（合同75a40880第7节，交件前已同步）；旧根EVIDENCE保持fe67字节，由组长迁移。实际持锁执行会话01a1af35-98c2-7451-a54a-6ec76c50d4f9依据组长05:14:20Z新裁定接续。产品源fe67不变，最终证据仅追加；Go包race-count3整包store实测需为90m总时限留余量，原90m超时保留，最终按120m完整重跑通过，不缩减用例。
+## B路实施坐标（2026-11-06）
+
+父基线144b215e32e718553d9fef2e79c83ece164f6514；分支coder56solzzc/r53-mcpgw；internal/mcpgw/INTERFACE.md列路由、A/C依赖、0107表列与密钥来源。cmd/workpulse/mcpgw.go提供显式注册与密钥失败降级；主装配仍由组长集成。已重新fetch并核rulings的㊹-补12/13/14及㊺-补1；0107来自16:13:02Z定向分配。官方2026-07-28的Streamable HTTP/versioning/server/discover/client-registration本轮重新在线核对，支持无initialize的逐请求头/元数据及CIMD；未把假上游联调称为真实飞书或第三方SDK互操作。生产密钥来源DW_MCPGW_OAUTH_KEY_FILE；本地测试用随机密钥、临时SQLite/临时PG，不使用在线Hub或生产库。
+
+协议自查增补：重新核对 [MCP Base Protocol/Error Codes](https://modelcontextprotocol.io/specification/2026-07-28/basic/index#error-codes) 的保留区规则，业务错误改用1001/1003/1008/1009/1029，标准HeaderMismatch/-32020与UnsupportedProtocolVersion/-32022保持；请求ID只接字符串或整数，Accept的q=0拒绝。对应正反与变异在本路证据中绑定，不改业务权限。

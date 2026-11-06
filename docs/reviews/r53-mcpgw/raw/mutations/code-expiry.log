@@ -1,0 +1,13 @@
+{"Time":"2026-11-06T16:24:25.842132727Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw"}
+{"Time":"2026-11-06T16:24:25.847366366Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthExpiryAndRevocationBeforeExchange"}
+{"Time":"2026-11-06T16:24:25.847400032Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthExpiryAndRevocationBeforeExchange","Output":"=== RUN   TestOAuthExpiryAndRevocationBeforeExchange\n"}
+{"Time":"2026-11-06T16:24:25.847411061Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthExpiryAndRevocationBeforeExchange/code_expired"}
+{"Time":"2026-11-06T16:24:25.847414171Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthExpiryAndRevocationBeforeExchange/code_expired","Output":"=== RUN   TestOAuthExpiryAndRevocationBeforeExchange/code_expired\n"}
+{"Time":"2026-11-06T16:24:25.920992262Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthExpiryAndRevocationBeforeExchange/code_expired","Output":"    oauth_test.go:232: expired/revoked grant accepted 200\n"}
+{"Time":"2026-11-06T16:24:25.921476725Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthExpiryAndRevocationBeforeExchange/code_expired","Output":"--- FAIL: TestOAuthExpiryAndRevocationBeforeExchange/code_expired (0.07s)\n"}
+{"Time":"2026-11-06T16:24:25.921483044Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthExpiryAndRevocationBeforeExchange/code_expired","Elapsed":0.07}
+{"Time":"2026-11-06T16:24:25.921560566Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthExpiryAndRevocationBeforeExchange","Output":"--- FAIL: TestOAuthExpiryAndRevocationBeforeExchange (0.07s)\n"}
+{"Time":"2026-11-06T16:24:25.921566086Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthExpiryAndRevocationBeforeExchange","Elapsed":0.07}
+{"Time":"2026-11-06T16:24:25.921588184Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\n"}
+{"Time":"2026-11-06T16:24:25.922639451Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/mcpgw\t0.080s\n"}
+{"Time":"2026-11-06T16:24:25.9226527Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Elapsed":0.081}

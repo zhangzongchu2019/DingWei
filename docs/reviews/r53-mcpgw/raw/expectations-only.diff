@@ -1,0 +1,69 @@
+diff --git a/internal/m8/claim_client_integration_test.go b/internal/m8/claim_client_integration_test.go
+index baf458eeb..ae5004fca 100644
+--- a/internal/m8/claim_client_integration_test.go
++++ b/internal/m8/claim_client_integration_test.go
+@@ -74 +74 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
+-		if err != nil || strings.Join(report.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
++		if err != nil || strings.Join(report.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0107_mcpgw_oauth.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+diff --git a/internal/store/migrate/domains_test.go b/internal/store/migrate/domains_test.go
+index 71a9024ef..a56cad9c5 100644
+--- a/internal/store/migrate/domains_test.go
++++ b/internal/store/migrate/domains_test.go
+@@ -117 +117 @@ func TestLedgerInDomains_PartitionsRealLedger(t *testing.T) {
+-	if strings.Join(hub, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
++	if strings.Join(hub, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0107_mcpgw_oauth.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+@@ -218 +218 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
+-		if strings.Join(rep.Applied, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
++		if strings.Join(rep.Applied, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0107_mcpgw_oauth.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+@@ -232 +232 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
+-		if len(rows) != 10 || rows["0103_agent_last_source_r31.sql"].digest == "" || rows["0200_hosted_r30_baseline.sql"].digest == "" || rows["0201_hosted_node_access_r31.sql"].digest == "" || rows["0102_device_claim.sql"].digest == "" || rows[coreEntry].digest == "" || rows[frozenIdentityEntry].digest == "" || rows["0101_group_communication.sql"].digest == "" {
++		if len(rows) != 11 || rows["0103_agent_last_source_r31.sql"].digest == "" || rows["0200_hosted_r30_baseline.sql"].digest == "" || rows["0201_hosted_node_access_r31.sql"].digest == "" || rows["0102_device_claim.sql"].digest == "" || rows[coreEntry].digest == "" || rows[frozenIdentityEntry].digest == "" || rows["0101_group_communication.sql"].digest == "" {
+@@ -293 +293 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
+-		if strings.Join(rep.Applied, ",") != "0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
++		if strings.Join(rep.Applied, ",") != "0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0107_mcpgw_oauth.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+@@ -303 +303 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
+-			if table != "np_device_claim" && table != "np_external_principal" && table != "np_extseat" && table != "np_extseat_token" && table != "np_extseat_inbox" && table != "np_extseat_outbox" && table != "np_extseat_send_key" && table != "console_transport_slot" && !strings.HasPrefix(table, "g4_") {
++			if table != "mcpgw_oauth" && table != "np_device_claim" && table != "np_external_principal" && table != "np_extseat" && table != "np_extseat_token" && table != "np_extseat_inbox" && table != "np_extseat_outbox" && table != "np_extseat_send_key" && table != "console_transport_slot" && !strings.HasPrefix(table, "g4_") {
+@@ -307 +307 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
+-		if len(after) != len(before)+22 || strings.Join(before, ",") != strings.Join(filtered, ",") {
++		if len(after) != len(before)+23 || strings.Join(before, ",") != strings.Join(filtered, ",") {
+@@ -311 +311 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
+-		if len(afterRows) != len(beforeRows)+8 {
++		if len(afterRows) != len(beforeRows)+9 {
+diff --git a/internal/store/migrate/ledger_test.go b/internal/store/migrate/ledger_test.go
+index e6da90be3..614af2594 100644
+--- a/internal/store/migrate/ledger_test.go
++++ b/internal/store/migrate/ledger_test.go
+@@ -55 +55 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
+-	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
++	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0107_mcpgw_oauth.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+@@ -87 +87 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
+-	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 10 {
++	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 11 {
+@@ -202 +202 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
+-		if entry.Name == "0105_extseat.sql" {
++		if entry.Name == "0105_extseat.sql" || entry.Name == "0107_mcpgw_oauth.sql" {
+@@ -211,2 +211,2 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
+-	if len(aTables) != 35 {
+-		t.Fatalf("轨 A 建出 %d 张表（%v），要 35 张＝外部席位 6＋hosted 14＋身份域 9（G3 终版 800f24d8：原 6 张＋编组两张＋设备认领一张）"+
++	if len(aTables) != 36 {
++		t.Fatalf("轨 A 建出 %d 张表（%v），要 36 张＝MCP OAuth 1＋外部席位 6＋hosted 14＋身份域 9（G3 终版 800f24d8：原 6 张＋编组两张＋设备认领一张）"+
+diff --git a/internal/store/migrate/migrate_test.go b/internal/store/migrate/migrate_test.go
+index 53a1ef06f..f39c09534 100644
+--- a/internal/store/migrate/migrate_test.go
++++ b/internal/store/migrate/migrate_test.go
+@@ -148 +148 @@ func TestLedger_EmbeddedEntries(t *testing.T) {
+-	want := []string{"0001_core_baseline.sql", "0100_identity_baseline.sql", "0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0200_hosted_r30_baseline.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql"}
++	want := []string{"0001_core_baseline.sql", "0100_identity_baseline.sql", "0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0107_mcpgw_oauth.sql", "0200_hosted_r30_baseline.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql"}
+@@ -242 +242 @@ func TestLedger_RegisteredEntriesSortWithEmbedded(t *testing.T) {
+-		"0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0200_hosted_r30_baseline.sql", "0200_hosted_test.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql", "0900_cross_test.sql"}
++		"0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0107_mcpgw_oauth.sql", "0200_hosted_r30_baseline.sql", "0200_hosted_test.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql", "0900_cross_test.sql"}
+@@ -608 +608 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
+-	if len(entries) != 11 {
++	if len(entries) != 12 {
+@@ -652 +652 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
+-	if len(rows) != 11 {
++	if len(rows) != 12 {
+@@ -668 +668 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
+-	if len(rep.Applied) != 0 || len(rep.Skipped) != 11 {
++	if len(rep.Applied) != 0 || len(rep.Skipped) != 12 {

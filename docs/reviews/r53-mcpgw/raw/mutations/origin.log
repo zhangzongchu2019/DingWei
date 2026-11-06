@@ -1,0 +1,9 @@
+{"Time":"2026-11-06T16:24:21.245589401Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw"}
+{"Time":"2026-11-06T16:24:21.251353697Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthMetadataAndOrigin"}
+{"Time":"2026-11-06T16:24:21.251403523Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthMetadataAndOrigin","Output":"=== RUN   TestOAuthMetadataAndOrigin\n"}
+{"Time":"2026-11-06T16:24:21.262696739Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthMetadataAndOrigin","Output":"    oauth_test.go:252: Origin guard absent on /mcp: 415\n"}
+{"Time":"2026-11-06T16:24:21.262933096Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthMetadataAndOrigin","Output":"--- FAIL: TestOAuthMetadataAndOrigin (0.01s)\n"}
+{"Time":"2026-11-06T16:24:21.262950264Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthMetadataAndOrigin","Elapsed":0.01}
+{"Time":"2026-11-06T16:24:21.262960623Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\n"}
+{"Time":"2026-11-06T16:24:21.263435367Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/mcpgw\t0.018s\n"}
+{"Time":"2026-11-06T16:24:21.263449686Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Elapsed":0.018}

@@ -1,0 +1,50 @@
+[
+  {
+    "test": "TestLedgerInDomains_PartitionsRealLedger",
+    "line": "    domains_test.go:118: HubDomains 取到 [0001_core_baseline.sql 0100_identity_baseline.sql 0101_group_communication.sql 0102_device_claim.sql 0103_agent_last_source_r31.sql 0104_np_session_created_at.sql 0105_extseat.sql 0107_mcpgw_oauth.sql 0200_hosted_r30_baseline.sql 0201_hosted_node_access_r31.sql 0300_console_transport_slot.sql]，要 0001_core_baseline.sql,0100_identity_baseline.sql（core＋identity，🔴 不含 fanout 的 0400_fanout_baseline.sql）"
+  },
+  {
+    "test": "TestMigrate_DomainScopingOnRealLedger/Hub_侧只施加_Hub_域",
+    "line": "    domains_test.go:219: Applied = [0001_core_baseline.sql 0100_identity_baseline.sql 0101_group_communication.sql 0102_device_claim.sql 0103_agent_last_source_r31.sql 0104_np_session_created_at.sql 0105_extseat.sql 0107_mcpgw_oauth.sql 0200_hosted_r30_baseline.sql 0201_hosted_node_access_r31.sql 0300_console_transport_slot.sql]，要 Hub 域三条按字典序"
+  },
+  {
+    "test": "TestMigrate_DomainScopingOnRealLedger/Hub_侧只施加_Hub_域",
+    "line": "    domains_test.go:233: 账上读到 [0001_core_baseline.sql 0100_identity_baseline.sql 0101_group_communication.sql 0102_device_claim.sql 0103_agent_last_source_r31.sql 0104_np_session_created_at.sql 0105_extseat.sql 0107_mcpgw_oauth.sql 0200_hosted_r30_baseline.sql 0201_hosted_node_access_r31.sql 0300_console_transport_slot.sql]，要 core、identity、communication 三条（含 0001_core_baseline.sql 与 0100_identity_baseline.sql）"
+  },
+  {
+    "test": "TestMigrate_DomainScopingOnRealLedger/既有_Hub_升级应用全部后续_Hub_迁移",
+    "line": "    domains_test.go:294: Applied=[0101_group_communication.sql 0102_device_claim.sql 0103_agent_last_source_r31.sql 0104_np_session_created_at.sql 0105_extseat.sql 0107_mcpgw_oauth.sql 0200_hosted_r30_baseline.sql 0201_hosted_node_access_r31.sql 0300_console_transport_slot.sql], want all pending Hub migrations including session creation time"
+  },
+  {
+    "test": "TestMigrate_DomainScopingOnRealLedger/既有_Hub_升级应用全部后续_Hub_迁移",
+    "line": "    domains_test.go:308: 表清单动了："
+  },
+  {
+    "test": "TestMigrate_DomainScopingOnRealLedger/既有_Hub_升级应用全部后续_Hub_迁移",
+    "line": "    domains_test.go:312: 账多了条目：迁前 [0001_core_baseline.sql 0100_identity_baseline.sql]、迁后 [0001_core_baseline.sql 0100_identity_baseline.sql 0101_group_communication.sql 0102_device_claim.sql 0103_agent_last_source_r31.sql 0104_np_session_created_at.sql 0105_extseat.sql 0107_mcpgw_oauth.sql 0200_hosted_r30_baseline.sql 0201_hosted_node_access_r31.sql 0300_console_transport_slot.sql]"
+  },
+  {
+    "test": "TestMigrate_RealLedgerSatisfiesIdentityCheckSchema",
+    "line": "    ledger_test.go:56: Applied = [0001_core_baseline.sql 0100_identity_baseline.sql 0101_group_communication.sql 0102_device_claim.sql 0103_agent_last_source_r31.sql 0104_np_session_created_at.sql 0105_extseat.sql 0107_mcpgw_oauth.sql 0200_hosted_r30_baseline.sql 0201_hosted_node_access_r31.sql 0300_console_transport_slot.sql]，要 Hub 域四条按字典序（0400 属 fanout 域，不得进 Hub 库）"
+  },
+  {
+    "test": "TestMigrate_RealLedgerSatisfiesIdentityCheckSchema",
+    "line": "    ledger_test.go:88: 重跑 Applied=[] Skipped=[0001_core_baseline.sql 0100_identity_baseline.sql 0101_group_communication.sql 0102_device_claim.sql 0103_agent_last_source_r31.sql 0104_np_session_created_at.sql 0105_extseat.sql 0107_mcpgw_oauth.sql 0200_hosted_r30_baseline.sql 0201_hosted_node_access_r31.sql 0300_console_transport_slot.sql]，要空转四条"
+  },
+  {
+    "test": "TestLedgerShapeMatchesDomainDDL",
+    "line": "    ledger_test.go:246: 轨 B 的表集合 = [audit_log console_transport_slot g4_account_grant g4_account_login g4_account_pool g4_audit g4_backup g4_hosted_seat g4_lifecycle_job g4_node g4_node_access_grant g4_node_credential g4_quota g4_quota_notice g4_seat_event g4_team_key inbound_msg inbound_sink mcpgw_oauth np_agent np_device_claim np_enroll_application np_external_principal np_extseat np_extseat_inbox np_extseat_outbox np_extseat_send_key np_extseat_token np_group np_group_member np_identity np_registration_code np_session np_user outbound schema_migrations selfcheck waive_audit]，要 [audit_log console_transport_slot g4_account_grant g4_account_login g4_account_pool g4_audit g4_backup g4_hosted_seat g4_lifecycle_job g4_node g4_node_access_grant g4_node_credential g4_quota g4_quota_notice g4_seat_event g4_team_key inbound_msg inbound_sink np_agent np_device_claim np_enroll_application np_external_principal np_extseat np_extseat_inbox np_extseat_outbox np_extseat_send_key np_extseat_token np_group np_"
+  },
+  {
+    "test": "TestLedger_EmbeddedEntries",
+    "line": "    migrate_test.go:150: 账本条数 = 12（[0001_core_baseline.sql 0100_identity_baseline.sql 0101_group_communication.sql 0102_device_claim.sql 0103_agent_last_source_r31.sql 0104_np_session_created_at.sql 0105_extseat.sql 0107_mcpgw_oauth.sql 0200_hosted_r30_baseline.sql 0201_hosted_node_access_r31.sql 0300_console_transport_slot.sql 0400_fanout_baseline.sql]），要 11"
+  },
+  {
+    "test": "TestLedger_RegisteredEntriesSortWithEmbedded",
+    "line": "    migrate_test.go:244: 账本顺序 = [0001_core_baseline.sql 0050_core_test.sql 0100_identity_baseline.sql 0101_group_communication.sql 0102_device_claim.sql 0103_agent_last_source_r31.sql 0104_np_session_created_at.sql 0105_extseat.sql 0107_mcpgw_oauth.sql 0200_hosted_r30_baseline.sql 0200_hosted_test.sql 0201_hosted_node_access_r31.sql 0300_console_transport_slot.sql 0400_fanout_baseline.sql 0900_cross_test.sql]，要 [0001_core_baseline.sql 0050_core_test.sql 0100_identity_baseline.sql 0101_group_communication.sql 0102_device_claim.sql 0103_agent_last_source_r31.sql 0104_np_session_created_at.sql 0105_extseat.sql 0200_hosted_r30_baseline.sql 0200_hosted_test.sql 0201_hosted_node_access_r31.sql 0300_console_transport_slot.sql 0400_fanout_baseline.sql 0900_cross_test.sql]（字典序，与来源无关）"
+  },
+  {
+    "test": "TestMigrate_ConcurrentRunnersAllSucceed",
+    "line": "    migrate_test.go:609: 账本 12 条（[0001_core_baseline.sql 0100_identity_baseline.sql 0101_group_communication.sql 0102_device_claim.sql 0103_agent_last_source_r31.sql 0104_np_session_created_at.sql 0105_extseat.sql 0107_mcpgw_oauth.sql 0200_hosted_r30_baseline.sql 0201_hosted_node_access_r31.sql 0300_console_transport_slot.sql 0400_fanout_baseline.sql]），本格按 11 条写断言（变了就改本格，别改断言数字糊过去）"
+  }
+]

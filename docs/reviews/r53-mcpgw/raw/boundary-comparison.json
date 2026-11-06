@@ -1,0 +1,31 @@
+{
+  "same_violations": true,
+  "source_commit": "b82d221a380ee23dcc4a52cee2cba8d2b1281b89",
+  "baseline": "144b215e32e718553d9fef2e79c83ece164f6514",
+  "current_paths": [
+    "    cmd/workpulse/session_history_config_test.go:93:\tdb, err := sql.Open(\"sqlite\", path)",
+    "    internal/datad/assignment_pg_integration_test.go:58:\tw.appDB, err = sql.Open(\"pgx\", dsn)",
+    "    internal/datad/assignment_pg_integration_test.go:64:\t\tw.setupDB, err = sql.Open(\"pgx\", sup)",
+    "    internal/fileservice/repository.go:24:\tdb, err := sql.Open(\"sqlite\", \"file:\"+filepath.ToSlash(path)+\"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)\")",
+    "    internal/mcs/board/board.go:62:\tdb, err := sql.Open(\"sqlite\", path)",
+    "    internal/mcs/board/board.go:84:func-returns-handle DB",
+    "    internal/store/openspec_confirmation_migration.go:14:\texpectedDB, err := sql.Open(\"sqlite\", \":memory:\")",
+    "    internal/store/session_history.go:115:\tdb, err := sql.Open(\"sqlite\", fmt.Sprintf(\"file:%s?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=busy_timeout(2000)&_pragma=foreign_keys(ON)\", abs))",
+    "    internal/store/sqlite.go:60:\tdb, err := sql.Open(\"sqlite\", dsn)",
+    "    tests/r32-task-flow/compat-probe/main.go:44:\t\traw, e := sql.Open(\"sqlite\", os.Args[2])",
+    "    tests/r32-task-flow/compat-probe/main.go:63:\traw, err := sql.Open(\"sqlite\", os.Args[2])"
+  ],
+  "baseline_paths": [
+    "    cmd/workpulse/session_history_config_test.go:93:\tdb, err := sql.Open(\"sqlite\", path)",
+    "    internal/datad/assignment_pg_integration_test.go:58:\tw.appDB, err = sql.Open(\"pgx\", dsn)",
+    "    internal/datad/assignment_pg_integration_test.go:64:\t\tw.setupDB, err = sql.Open(\"pgx\", sup)",
+    "    internal/fileservice/repository.go:24:\tdb, err := sql.Open(\"sqlite\", \"file:\"+filepath.ToSlash(path)+\"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)\")",
+    "    internal/mcs/board/board.go:62:\tdb, err := sql.Open(\"sqlite\", path)",
+    "    internal/mcs/board/board.go:84:func-returns-handle DB",
+    "    internal/store/openspec_confirmation_migration.go:14:\texpectedDB, err := sql.Open(\"sqlite\", \":memory:\")",
+    "    internal/store/session_history.go:115:\tdb, err := sql.Open(\"sqlite\", fmt.Sprintf(\"file:%s?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=busy_timeout(2000)&_pragma=foreign_keys(ON)\", abs))",
+    "    internal/store/sqlite.go:60:\tdb, err := sql.Open(\"sqlite\", dsn)",
+    "    tests/r32-task-flow/compat-probe/main.go:44:\t\traw, e := sql.Open(\"sqlite\", os.Args[2])",
+    "    tests/r32-task-flow/compat-probe/main.go:63:\traw, err := sql.Open(\"sqlite\", os.Args[2])"
+  ]
+}

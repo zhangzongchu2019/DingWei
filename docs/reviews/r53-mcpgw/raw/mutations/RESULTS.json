@@ -1,0 +1,222 @@
+[
+  {
+    "name": "pkce",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-count=1",
+      "-overlay",
+      "/tmp/r53-mcpgw-mutations-protocol/pkce.overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestOAuthPKCEAndBindings/pkce$"
+    ],
+    "rc": 1,
+    "semantic_kill": true,
+    "started_utc": "2026-11-06T16:24:18.314747+00:00",
+    "ended_utc": "2026-11-06T16:24:19.090886+00:00",
+    "source_sha256": "934364408df472baf30faf91b19c14a280c769ad4f53d1bce0f649da3076e693",
+    "log": "/tmp/r53-mcpgw-mutations-protocol/pkce.log",
+    "log_sha256": "7493db6f0b962d360c65cccd45a2d4392ff484f024f1a61e8266d904ad06e1c4",
+    "expected_marker": "code_verifier not bound"
+  },
+  {
+    "name": "code-replay",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-count=1",
+      "-overlay",
+      "/tmp/r53-mcpgw-mutations-protocol/code-replay.overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestOAuthCodeReplay$"
+    ],
+    "rc": 1,
+    "semantic_kill": true,
+    "started_utc": "2026-11-06T16:24:19.091245+00:00",
+    "ended_utc": "2026-11-06T16:24:19.856529+00:00",
+    "source_sha256": "934364408df472baf30faf91b19c14a280c769ad4f53d1bce0f649da3076e693",
+    "log": "/tmp/r53-mcpgw-mutations-protocol/code-replay.log",
+    "log_sha256": "83de64688ef42213919bc26faa4df03521b25597222a83e7124454eea41acca7",
+    "expected_marker": "authorization code reusable"
+  },
+  {
+    "name": "rest-extra",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-count=1",
+      "-overlay",
+      "/tmp/r53-mcpgw-mutations-protocol/rest-extra.overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDiscoveryWithoutInitializeAndNoExtraCapabilities$"
+    ],
+    "rc": 1,
+    "semantic_kill": true,
+    "started_utc": "2026-11-06T16:24:19.856834+00:00",
+    "ended_utc": "2026-11-06T16:24:20.563463+00:00",
+    "source_sha256": "4e946e8fe394b17982f3347a52957e1408b47721f46e31eb52e177965b7287a0",
+    "log": "/tmp/r53-mcpgw-mutations-protocol/rest-extra.log",
+    "log_sha256": "99013ff6ea5513070b73b20bc937b2961198da93bc540fefad853fcf61f6a9fb",
+    "expected_marker": "extra capability execute allowed"
+  },
+  {
+    "name": "origin",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-count=1",
+      "-overlay",
+      "/tmp/r53-mcpgw-mutations-protocol/origin.overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestOAuthMetadataAndOrigin$"
+    ],
+    "rc": 1,
+    "semantic_kill": true,
+    "started_utc": "2026-11-06T16:24:20.563761+00:00",
+    "ended_utc": "2026-11-06T16:24:21.270999+00:00",
+    "source_sha256": "4e946e8fe394b17982f3347a52957e1408b47721f46e31eb52e177965b7287a0",
+    "log": "/tmp/r53-mcpgw-mutations-protocol/origin.log",
+    "log_sha256": "e7873b594eb87efad354762ccebef76d837446f29c7d935f553fcd1717957b2c",
+    "expected_marker": "Origin guard absent"
+  },
+  {
+    "name": "headers",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-count=1",
+      "-overlay",
+      "/tmp/r53-mcpgw-mutations-protocol/headers.overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestRequestMetadataAndOriginGuards/method_mismatch$"
+    ],
+    "rc": 1,
+    "semantic_kill": true,
+    "started_utc": "2026-11-06T16:24:21.271372+00:00",
+    "ended_utc": "2026-11-06T16:24:21.995482+00:00",
+    "source_sha256": "4e946e8fe394b17982f3347a52957e1408b47721f46e31eb52e177965b7287a0",
+    "log": "/tmp/r53-mcpgw-mutations-protocol/headers.log",
+    "log_sha256": "1930efeb02eacbb747f14f0c82884783bb3a99c7475e9fb2f5d0dba7959b284a",
+    "expected_marker": "guard missing"
+  },
+  {
+    "name": "version",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-count=1",
+      "-overlay",
+      "/tmp/r53-mcpgw-mutations-protocol/version.overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestRequestMetadataAndOriginGuards$"
+    ],
+    "rc": 1,
+    "semantic_kill": true,
+    "started_utc": "2026-11-06T16:24:21.995798+00:00",
+    "ended_utc": "2026-11-06T16:24:22.822938+00:00",
+    "source_sha256": "4e946e8fe394b17982f3347a52957e1408b47721f46e31eb52e177965b7287a0",
+    "log": "/tmp/r53-mcpgw-mutations-protocol/version.log",
+    "log_sha256": "89f3d2539dd4ef7645383e741f6acbbe5a9199074338ac5b7268f09a3df70d36",
+    "expected_marker": "bad metadata response"
+  },
+  {
+    "name": "wait-max",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-count=1",
+      "-overlay",
+      "/tmp/r53-mcpgw-mutations-protocol/wait-max.overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestArgumentsAndCrossAG$"
+    ],
+    "rc": 1,
+    "semantic_kill": true,
+    "started_utc": "2026-11-06T16:24:22.823234+00:00",
+    "ended_utc": "2026-11-06T16:24:23.736451+00:00",
+    "source_sha256": "ed32081edb575bf23f22d2a29e39f30c25ae36c4046235869151f833078c2575",
+    "log": "/tmp/r53-mcpgw-mutations-protocol/wait-max.log",
+    "log_sha256": "c7fabf73ec6a0410111ddf54f3c7d85b775b993eb3f47f041bc8c7393234c0f8",
+    "expected_marker": "200"
+  },
+  {
+    "name": "authentication",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-count=1",
+      "-overlay",
+      "/tmp/r53-mcpgw-mutations-protocol/authentication.overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestToolBoundaryMatrix/list_online/mcp/revoked$"
+    ],
+    "rc": 1,
+    "semantic_kill": true,
+    "started_utc": "2026-11-06T16:24:23.737335+00:00",
+    "ended_utc": "2026-11-06T16:24:24.452985+00:00",
+    "source_sha256": "4e946e8fe394b17982f3347a52957e1408b47721f46e31eb52e177965b7287a0",
+    "log": "/tmp/r53-mcpgw-mutations-protocol/authentication.log",
+    "log_sha256": "68daad337980ee00a3dc9b1ede26359da7d93069166f4a24b0512251b42fd18b",
+    "expected_marker": "status 200"
+  },
+  {
+    "name": "application-code",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-count=1",
+      "-overlay",
+      "/tmp/r53-mcpgw-mutations-protocol/application-code.overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestApplicationErrorsAvoidMCPReservedRange$"
+    ],
+    "rc": 1,
+    "semantic_kill": true,
+    "started_utc": "2026-11-06T16:24:24.453368+00:00",
+    "ended_utc": "2026-11-06T16:24:25.151505+00:00",
+    "source_sha256": "4e946e8fe394b17982f3347a52957e1408b47721f46e31eb52e177965b7287a0",
+    "log": "/tmp/r53-mcpgw-mutations-protocol/application-code.log",
+    "log_sha256": "daa871d5a08636264e235e5a787dca4cb8b25733f4834b7edad932dc386321a0",
+    "expected_marker": "application error uses reserved MCP code"
+  },
+  {
+    "name": "code-expiry",
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "-count=1",
+      "-overlay",
+      "/tmp/r53-mcpgw-mutations-protocol/code-expiry.overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestOAuthExpiryAndRevocationBeforeExchange/code_expired$"
+    ],
+    "rc": 1,
+    "semantic_kill": true,
+    "started_utc": "2026-11-06T16:24:25.151772+00:00",
+    "ended_utc": "2026-11-06T16:24:25.933503+00:00",
+    "source_sha256": "05180407b47a697bc20a81d0cfdcd156b7fd8be8a01d6b33542f7a49204032e0",
+    "log": "/tmp/r53-mcpgw-mutations-protocol/code-expiry.log",
+    "log_sha256": "d50154b47ee035c65946dc89e1a2996a5f4d56080f49b10bdb93a56188024d1c",
+    "expected_marker": "expired/revoked grant accepted"
+  }
+]
