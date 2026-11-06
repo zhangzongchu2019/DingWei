@@ -14,3 +14,12 @@
   - 完成：m8 五片 `-race -count=3` 串行门全部 rc=0；浏览器回归及最终构建门结果记录于根 `EVIDENCE.md`。
   - 阻塞：无。
   - 完成：最终审阅通过；实现与证据已提交到获准分支并核验推送坐标。
+
+- [ ] T-07 修正 renderer 的 trusted-origin 常量重名，合入 R51 epoch replay 修正，并在最终 tip 完成全量浏览器回归与非强制推送。
+
+## 交接记录（2026-11-06 补充）
+
+- 2026-11-06，执行者 `togpt60lunazzc`，最终提交号见本记录提交后的 `git rev-parse HEAD`。
+  - 完成：已修正 renderer 同作用域重名；同步 md-render-core 与 embedded SHA；定向回归和构建门通过；已合入 R51 replay fix。
+  - 阻塞：无。
+  - 下一步：在本补充提交的最终后续 tip 重跑完整 browser regression，记录逐套件 rc 与 SHA，核验并非强制推送分支。
