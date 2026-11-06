@@ -23,3 +23,12 @@
   - 完成：已修正 renderer 同作用域重名；同步 md-render-core 与 embedded SHA；定向回归和构建门通过；已合入 R51 replay fix。
   - 阻塞：无。
   - 下一步：在本补充提交的最终后续 tip 重跑完整 browser regression，记录逐套件 rc 与 SHA，核验并非强制推送分支。
+
+- [x] T-08 修正 PDF/audio 使用不存在的展示 URL helper，复跑 0206 套件与完整 35 套件浏览器门禁。
+
+## 交接记录（2026-11-06 最终实现验证）
+
+- 2026-11-06，执行者 `togpt60lunazzc`，实现提交 `9da5b75f410e4e2456944836bfc27d18bd163d57`。
+  - 完成：重名修复、md-render-core 生成副本同步、PDF/audio helper 修正；build gate 通过；独立 0206 回归 41/41；完整浏览器套件 35/35 rc=0。原始逐套件收据归档于 `docs/reviews/r52-trusted-origins-impl/raw/browser-receipt-at-9da5b75f.txt`。
+  - 阻塞：无。
+  - 下一步：推送更新后的分支，并在证据提交形成的最终分支 tip 上重跑完整浏览器套件。
