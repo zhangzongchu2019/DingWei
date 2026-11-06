@@ -63,4 +63,10 @@ Serial command: `go test -json -race -count=3 -timeout 90m <package>`.
 
 ## Delivery coordinates
 
-To fill after final scope review, commit, push, and `ls-remote` verification.
+- Branch: `togpt60lunazzc/r52-trusted-origins-impl`.
+- Implementation commit: `fd415c15c446c90f254eae285777e607a6ffc5b7`.
+- Implementation tree: `00f24a3749729189f752a97286060f2e3cc8d84d`.
+- Push verification (raw `git ls-remote --heads origin togpt60lunazzc/r52-trusted-origins-impl` output):
+  `fd415c15c446c90f254eae285777e607a6ffc5b7	refs/heads/togpt60lunazzc/r52-trusted-origins-impl`.
+
+This evidence update is committed separately after the implementation commit; the final report sends its own final tip/tree and post-push `ls-remote` output.
