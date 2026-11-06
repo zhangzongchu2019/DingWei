@@ -1,0 +1,13 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "-count=1",
+    "./internal/store/migrate"
+  ],
+  "started_utc": "2026-11-06T16:19:21.369222+00:00",
+  "ended_utc": "2026-11-06T16:20:14.116534+00:00",
+  "rc": 1,
+  "HUB_TEST_PG_STRICT": "1"
+}

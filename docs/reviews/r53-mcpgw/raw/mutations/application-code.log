@@ -1,0 +1,9 @@
+{"Time":"2026-11-06T16:24:25.137725572Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw"}
+{"Time":"2026-11-06T16:24:25.143143553Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestApplicationErrorsAvoidMCPReservedRange"}
+{"Time":"2026-11-06T16:24:25.143160281Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestApplicationErrorsAvoidMCPReservedRange","Output":"=== RUN   TestApplicationErrorsAvoidMCPReservedRange\n"}
+{"Time":"2026-11-06T16:24:25.143219876Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestApplicationErrorsAvoidMCPReservedRange","Output":"    gateway_test.go:407: application error uses reserved MCP code -32029\n"}
+{"Time":"2026-11-06T16:24:25.143229135Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestApplicationErrorsAvoidMCPReservedRange","Output":"--- FAIL: TestApplicationErrorsAvoidMCPReservedRange (0.00s)\n"}
+{"Time":"2026-11-06T16:24:25.143234494Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestApplicationErrorsAvoidMCPReservedRange","Elapsed":0}
+{"Time":"2026-11-06T16:24:25.143240544Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\n"}
+{"Time":"2026-11-06T16:24:25.143668482Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/mcpgw\t0.006s\n"}
+{"Time":"2026-11-06T16:24:25.14368688Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Elapsed":0.006}

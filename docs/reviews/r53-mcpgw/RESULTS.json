@@ -1,0 +1,70 @@
+{
+  "packages-b82": {
+    "run": 189,
+    "pass": 189,
+    "fail": 0,
+    "skip": 0
+  },
+  "race-protocol": {
+    "run": 357,
+    "pass": 357,
+    "fail": 0,
+    "skip": 0
+  },
+  "cmd-b82": {
+    "run": 5,
+    "pass": 5,
+    "fail": 0,
+    "skip": 0
+  },
+  "m8-directed": {
+    "run": 7,
+    "pass": 7,
+    "fail": 0,
+    "skip": 0
+  },
+  "race-m8-directed": {
+    "run": 21,
+    "pass": 21,
+    "fail": 0,
+    "skip": 0
+  },
+  "migrate-raw": {
+    "run": 42,
+    "pass": 33,
+    "fail": 9,
+    "skip": 0
+  },
+  "migrate-expectations-final": {
+    "run": 42,
+    "pass": 42,
+    "fail": 0,
+    "skip": 0
+  },
+  "canonical-b82-raw": {
+    "rc": 1,
+    "failed_tests": [
+      "TestDeviceClaimAcrossActualClientAndPostgres",
+      "TestDeviceClaimAcrossActualClientAndPostgres/new",
+      "TestDeviceClaimAcrossActualClientAndPostgres/reuse",
+      "TestDeviceClaimAcrossActualClientAndPostgres/lost_ack",
+      "TestDeviceClaimAcrossActualClientAndPostgres/takeover",
+      "TestDeviceClaimAcrossActualClientAndPostgres/cancel_then_new"
+    ],
+    "reason": "await integration migration expectation0107; leader16:16:37Z exception"
+  },
+  "canonical-expectations-only": {
+    "rc": 0,
+    "source_commit": "2f1a65298b84f2eb1282ccfd8ded29340613fbd5",
+    "helper_profile_counts": {
+      "claude": 1097,
+      "codex": 1097
+    },
+    "test_skips": 0
+  },
+  "mutations": {
+    "count": 10,
+    "semantic_kills": 10,
+    "source_commit": "b82d221a380ee23dcc4a52cee2cba8d2b1281b89"
+  }
+}

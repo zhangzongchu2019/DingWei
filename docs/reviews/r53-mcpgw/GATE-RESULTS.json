@@ -1,0 +1,41 @@
+{
+  "source_commit": "b82d221a380ee23dcc4a52cee2cba8d2b1281b89",
+  "recorded_utc": "2026-11-06T16:37:29.724775+00:00",
+  "checks": [
+    {
+      "gate": "build",
+      "command": "go build ./...",
+      "rc": 0,
+      "log": "raw/build-b82.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "gate": "vet",
+      "command": "go vet ./internal/mcpgw ./cmd/workpulse",
+      "rc": 0,
+      "log": "raw/vet-b82.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "gate": "cmd",
+      "command": "go test -json -count=1 ./cmd/workpulse -run Test(MCPGateway|OptionalMCPGateway)",
+      "rc": 0,
+      "log": "raw/cmd-b82.log",
+      "log_sha256": "b8527446316e8dcf0f29ccfb545695333c08e712fad3b660bb632b3ab5a61568"
+    },
+    {
+      "gate": "packages",
+      "command": "go test -json -count=1 ./internal/mcpgw ./internal/extshared ./internal/extwire ./internal/feishulogin",
+      "rc": 0,
+      "log": "raw/packages-b82.log",
+      "log_sha256": "4a379f15ca1ad74ece65fc912771e43a496f4bddd477f83420552f0c67ba1816"
+    },
+    {
+      "gate": "openspec",
+      "command": "OPENSPEC_TELEMETRY=0 openspec@1.16.0 validate --all --strict",
+      "rc": 0,
+      "log": "raw/openspec-delivery.log",
+      "log_sha256": "76983b822bd96673fb58560f8f62ae38e59236ce5637e7af579c3a8ccb60f62e"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{"Time":"2026-11-06T16:24:20.537617414Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw"}
+{"Time":"2026-11-06T16:24:20.543055393Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestDiscoveryWithoutInitializeAndNoExtraCapabilities"}
+{"Time":"2026-11-06T16:24:20.543070672Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestDiscoveryWithoutInitializeAndNoExtraCapabilities","Output":"=== RUN   TestDiscoveryWithoutInitializeAndNoExtraCapabilities\n"}
+{"Time":"2026-11-06T16:24:20.555901988Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestDiscoveryWithoutInitializeAndNoExtraCapabilities","Output":"    gateway_test.go:263: extra capability execute allowed: 200\n"}
+{"Time":"2026-11-06T16:24:20.556226066Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestDiscoveryWithoutInitializeAndNoExtraCapabilities","Output":"--- FAIL: TestDiscoveryWithoutInitializeAndNoExtraCapabilities (0.01s)\n"}
+{"Time":"2026-11-06T16:24:20.556231666Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestDiscoveryWithoutInitializeAndNoExtraCapabilities","Elapsed":0.01}
+{"Time":"2026-11-06T16:24:20.556238555Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\n"}
+{"Time":"2026-11-06T16:24:20.556732537Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/mcpgw\t0.019s\n"}
+{"Time":"2026-11-06T16:24:20.556744396Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Elapsed":0.019}

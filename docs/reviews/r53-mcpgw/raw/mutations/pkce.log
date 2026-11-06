@@ -1,0 +1,13 @@
+{"Time":"2026-11-06T16:24:19.00982043Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw"}
+{"Time":"2026-11-06T16:24:19.015432782Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthPKCEAndBindings"}
+{"Time":"2026-11-06T16:24:19.015471078Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthPKCEAndBindings","Output":"=== RUN   TestOAuthPKCEAndBindings\n"}
+{"Time":"2026-11-06T16:24:19.015480757Z","Action":"run","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthPKCEAndBindings/pkce"}
+{"Time":"2026-11-06T16:24:19.015483177Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthPKCEAndBindings/pkce","Output":"=== RUN   TestOAuthPKCEAndBindings/pkce\n"}
+{"Time":"2026-11-06T16:24:19.081409126Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthPKCEAndBindings/pkce","Output":"    oauth_test.go:183: code_verifier not bound 200 {\"access_token\":\"local-token\",\"expires_in\":1209600,\"scope\":\"list_online send_message wait_for_messages ack\",\"token_type\":\"Bearer\"}\n"}
+{"Time":"2026-11-06T16:24:19.081890919Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthPKCEAndBindings/pkce","Output":"--- FAIL: TestOAuthPKCEAndBindings/pkce (0.07s)\n"}
+{"Time":"2026-11-06T16:24:19.081904677Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthPKCEAndBindings/pkce","Elapsed":0.07}
+{"Time":"2026-11-06T16:24:19.08197776Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthPKCEAndBindings","Output":"--- FAIL: TestOAuthPKCEAndBindings (0.07s)\n"}
+{"Time":"2026-11-06T16:24:19.08198185Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Test":"TestOAuthPKCEAndBindings","Elapsed":0.07}
+{"Time":"2026-11-06T16:24:19.082014227Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\n"}
+{"Time":"2026-11-06T16:24:19.083339747Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/mcpgw\t0.073s\n"}
+{"Time":"2026-11-06T16:24:19.083358355Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/mcpgw","Elapsed":0.074}
