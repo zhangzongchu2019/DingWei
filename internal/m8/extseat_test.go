@@ -107,8 +107,11 @@ func TestExternalProjectionIdempotentPreservesHelperQueue(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
+	// 实际PG消费者已提供锁内快照；适配器不得再次查询身份连接。
+	probe := &externalRouteIdentityProbe{}
+	v.hub.Identity = &identity.Service{Store: probe}
 	p := HubExtseatProjector{Hub: v.hub}
-	d := extseat.Delivery{ID: "dw-ext_projection", From: "bot_AG1.zzc", To: "Opus50TS.zzc", Body: "literal link https://example.invalid/test", Generation: 1, CreatedAt: time.Now().UTC()}
+	d := extseat.Delivery{SourceAgent: ex, ID: "dw-ext_projection", From: "bot_AG1.zzc", To: "Opus50TS.zzc", Body: "literal link https://example.invalid/test", Generation: 1, CreatedAt: time.Now().UTC()}
 	if e = p.Project(v.ctx, d, *target); e != nil {
 		t.Fatal(e)
 	}
@@ -124,6 +127,9 @@ func TestExternalProjectionIdempotentPreservesHelperQueue(t *testing.T) {
 	}
 	if !strings.Contains(got.Envelope, d.Body) {
 		t.Fatal("body lost")
+	}
+	if probe.calls != 0 {
+		t.Fatalf("projection reopened identity store: %d", probe.calls)
 	}
 	d.Body = "different"
 	if e = p.Project(v.ctx, d, *target); !errors.Is(e, extshared.ErrIdempotencyKey) {
@@ -171,5 +177,46 @@ func TestExternalDirectoryMergesByExistingGroupVisibility(t *testing.T) {
 		if p.External || p.Agent.ID == ex.ID {
 			t.Fatal("external became helper presence")
 		}
+	}
+}
+
+// 非外部形状不得触碰身份存储，避免普通投递在既有锁内重入。
+type externalRouteIdentityProbe struct {
+	identity.Store
+	calls int
+}
+
+func (s *externalRouteIdentityProbe) FindAgentByName(context.Context, string, string) (*identity.Agent, error) {
+	s.calls++
+	return nil, errors.New("unexpected external identity lookup")
+}
+
+func (s *externalRouteIdentityProbe) GetAgent(context.Context, string) (*identity.Agent, error) {
+	s.calls++
+	return nil, errors.New("unexpected projection identity lookup")
+}
+
+func TestExternalRouteNonExternalUnderscoreSkipsIdentity(t *testing.T) {
+	for _, name := range []string{"foo_bar", "abc_AG0", "abc_ag0"} {
+		t.Run(name, func(t *testing.T) {
+			probe := &externalRouteIdentityProbe{}
+			h := &Hub{Identity: &identity.Service{Store: probe}}
+			handled, err := h.routeExternalSeat(context.Background(), "u_zzc", name, model.Envelope{})
+			if probe.calls != 0 {
+				t.Fatalf("non-external name triggered %d identity queries", probe.calls)
+			}
+			if handled || err != nil {
+				t.Fatalf("ordinary delivery intercepted: handled=%v err=%v", handled, err)
+			}
+			ordinary, _, ctx := newTestHub(t)
+			ordinary.Identity = h.Identity
+			err = ordinary.routeToSession(ctx, "u_zzc", name, model.Envelope{ID: "ordinary-" + name, Body: "正文"}, false)
+			if err == nil || err.Error() != "session "+name+" offline" {
+				t.Fatalf("ordinary offline path changed: %v", err)
+			}
+			if probe.calls != 0 {
+				t.Fatalf("ordinary path triggered %d identity queries", probe.calls)
+			}
+		})
 	}
 }

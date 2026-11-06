@@ -19,7 +19,11 @@ type ExternalSeats interface {
 }
 
 func (h *Hub) routeExternalSeat(ctx context.Context, keyID, name string, env model.Envelope) (bool, error) {
-	if h.Identity == nil || !strings.Contains(name, "_") {
+	if h.Identity == nil {
+		return false, nil
+	}
+	// Hub 会话索引使用小写；恢复编组前缀后再按共享外部名称语法校验。
+	if _, _, ok := extshared.SplitAgentName(strings.Replace(name, "_ag", "_AG", 1)); !ok {
 		return false, nil
 	}
 	target, ok := h.newPlatformAgentAt(ctx, keyID, name)
@@ -111,13 +115,12 @@ func (p HubExtseatProjector) Project(ctx context.Context, d extseat.Delivery, ta
 	if h == nil || h.Repo == nil || h.Identity == nil {
 		return extshared.ErrNotPermitted
 	}
-	current, e := h.Identity.Store.GetAgent(ctx, target.ID)
-	if e != nil || current.State != identity.AgentActive || current.Origin == identity.OriginExternal {
-		return extshared.ErrTargetNotInAG
-	}
-	source, _, e := h.Identity.ResolveFullName(ctx, d.From)
-	if e != nil || source.Origin != identity.OriginExternal {
-		return extshared.ErrUnauthenticated
+	// core.ProjectOne已在同一PG事务内锁定并现核双方身份；这里不得另取PG连接，
+	// 否则小连接池/高并发下会形成持锁等连接的死锁。
+	current := target
+	source := d.SourceAgent
+	if current.ID == "" || current.State != identity.AgentActive || current.Origin == identity.OriginExternal || source.ID == "" || source.State != identity.AgentActive || source.Origin != identity.OriginExternal {
+		return extshared.ErrNotPermitted
 	}
 	key := AgentKeyID(current.OwnerLC)
 	name := current.NameLC()

@@ -1,0 +1,385 @@
+{
+  "packages": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/extseat",
+      "elapsed": 36.128
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store/migrate",
+      "elapsed": 68.308
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "elapsed": 91.255
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/identity",
+      "elapsed": 106.385
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "elapsed": 235.29
+    }
+  ],
+  "top_level_counts": {
+    "github.com/zhangzongchu2019/dingwei/internal/store/migrate": {
+      "pass": 27,
+      "skip": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store": {
+      "pass": 367,
+      "skip": 5
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/m8": {
+      "pass": 872,
+      "skip": 19
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/identity": {
+      "pass": 77,
+      "skip": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extseat": {
+      "pass": 8,
+      "skip": 0
+    }
+  },
+  "skips": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeviceClaimAcrossActualClientAndHub",
+      "reason": [
+        "claim_client_integration_test.go:33: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment",
+        "--- SKIP: TestDeviceClaimAcrossActualClientAndHub (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeviceClaimAcrossActualClientAndPostgres",
+      "reason": [
+        "claim_client_integration_test.go:45: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment",
+        "--- SKIP: TestDeviceClaimAcrossActualClientAndPostgres (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestChangeEvidenceConsoleBrowser",
+      "reason": [
+        "console_change_evidence_test.go:128: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration",
+        "--- SKIP: TestChangeEvidenceConsoleBrowser (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestMuxProductHTTP1EightSeats",
+      "reason": [
+        "console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration",
+        "--- SKIP: TestMuxProductHTTP1EightSeats (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsolePlatformPayloadDump",
+      "reason": [
+        "console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)",
+        "--- SKIP: TestConsolePlatformPayloadDump (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "reason": [
+        "console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision",
+        "--- SKIP: TestConsoleTaskLegacyDODMigrationPendingProductionCount (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "reason": [
+        "console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed",
+        "--- SKIP: TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+      "reason": [
+        "feishu_sticky_compat_test.go:116: R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate",
+        "--- SKIP: TestFeishuStickyOldHubMigrationRollbackCompatibility (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "reason": [
+        "console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically",
+        "--- SKIP: TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.15s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.14s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit (0.14s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.16s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.14s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.16s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm (0.14s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.15s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.14s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.14s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist (0.16s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.15s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/codex (0.16s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.25s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex (0.25s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLILateWireTerminal",
+      "reason": [
+        "delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "--- SKIP: TestDeliveryACKActualCLILateWireTerminal (0.15s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDesktopMCPRoundTripAcrossRealHub",
+      "reason": [
+        "desktop_mcp_roundtrip_test.go:25: run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate",
+        "--- SKIP: TestDesktopMCPRoundTripAcrossRealHub (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+      "reason": [
+        "task_dispatch_compat_test.go:196: exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate",
+        "--- SKIP: TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestFailureNoticeDriverTurnEndToEnd",
+      "reason": [
+        "failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime",
+        "--- SKIP: TestFailureNoticeDriverTurnEndToEnd (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestR10RestartChildAuthority",
+      "reason": [
+        "task_dispatch_restart_test.go:22: subprocess-only probe, exercised by TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice",
+        "--- SKIP: TestR10RestartChildAuthority (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestGroupReplyMCP",
+      "reason": [
+        "group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON",
+        "--- SKIP: TestGroupReplyMCP (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+      "reason": [
+        "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "--- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+      "reason": [
+        "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "--- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "reason": [
+        "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "--- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelper0232MixedVersionEndToEnd",
+      "reason": [
+        "helper_update_e2e_test.go:55: explicit immutable release pins required",
+        "--- SKIP: TestHelper0232MixedVersionEndToEnd (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHostedBodySendAcrossRealHub",
+      "reason": [
+        "hosted_body_send_test.go:23: set explicit isolated integration interpreter",
+        "--- SKIP: TestHostedBodySendAcrossRealHub (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestEnvelopeReadTimeoutEnvironmentChild",
+      "reason": [
+        "hub_timeout_contract_test.go:50: subprocess probe only",
+        "--- SKIP: TestEnvelopeReadTimeoutEnvironmentChild (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+      "reason": [
+        "pilot_question_roundtrip_test.go:17: set locked helper Python; canonical runs this local integration",
+        "--- SKIP: TestPilotQuestionAcrossRealHTTPHelperIPCMCP (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+      "reason": [
+        "pilot_template_roundtrip_test.go:17: set locked helper Python; canonical runs loopback integration",
+        "--- SKIP: TestPilotTemplateAcrossRealHTTPHelperIPCMCP (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+      "reason": [
+        "project_context_roundtrip_test.go:17: set DW_DESKTOP_INTEGRATION_PYTHON to the locked helper test venv; canonical shell gate runs the cross-runtime set",
+        "--- SKIP: TestProjectContextAcrossRealHTTPHelperIPCMCP (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSessionHistoryTwentyAgentPublishP99",
+      "reason": [
+        "session_history_test.go:313: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate",
+        "--- SKIP: TestSessionHistoryTwentyAgentPublishP99 (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSpecMCPEndToEnd",
+      "reason": [
+        "spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses",
+        "--- SKIP: TestSpecMCPEndToEnd (0.00s)"
+      ]
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestBlockerAcrossRealHTTPHelperIPCMCP",
+      "reason": [
+        "task_blocker_roundtrip_test.go:21: set locked helper Python; canonical runs this local integration",
+        "--- SKIP: TestBlockerAcrossRealHTTPHelperIPCMCP (0.00s)"
+      ]
+    }
+  ],
+  "说明": "普通整包未配置DW_DESKTOP_INTEGRATION_PYTHON而跳过的真实跨runtime用例另由writer-desktop实际执行通过；其他skip按各自reason，不包装全覆盖。"
+}

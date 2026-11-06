@@ -142,7 +142,7 @@ func newFixture(t *testing.T, dsn string) *fixture {
 	if e != nil {
 		t.Fatal(e)
 	}
-	s := &Service{Pool: pool, Access: ac, Identity: identity.NewService(identity.NewPGStore(pool), clock.now, nil), Groups: testGroups{}, TenantKey: "tenant", Now: clock.now}
+	s := &Service{Pool: pool, Access: ac, Identity: identity.NewService(identity.NewPGStore(pool), clock.now, nil), Groups: testGroups{}, TenantKey: "tenant", Resource: "https://resource.example.invalid/mcp", Now: clock.now}
 	return &fixture{s: s, clock: clock, pool: pool, access: ac, ctx: ctx}
 }
 func (f *fixture) issue(t *testing.T) (string, Seat) {
@@ -560,5 +560,191 @@ func TestSecretsAndReceiptRollbackPG(t *testing.T) {
 	f.clock.add(-time.Second)
 	if e = f.s.Recheck(f.ctx, a); !errors.Is(e, extshared.ErrNotPermitted) {
 		t.Fatal("presence clock rollback accepted", e)
+	}
+}
+
+func TestTokenAudiencePG(t *testing.T) {
+	f := newFixture(t, pgtest.DSN(t))
+	raw, a := f.issue(t)
+	other := *f.s
+	other.Resource = "https://another.example.invalid/mcp"
+	if _, e := other.Authenticate(f.ctx, raw); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatal("wrong audience accepted", e)
+	}
+	if e := other.Recheck(f.ctx, a); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatal("snapshot crossed resource", e)
+	}
+	var audience, scopes string
+	row, _ := f.pool.QueryRow(f.ctx, f.access, `SELECT audience,scopes FROM np_extseat_token WHERE id=$1`, a.TokenID)
+	if e := row.Scan(&audience, &scopes); e != nil {
+		t.Fatal(e)
+	}
+	if audience != f.s.Resource || scopes != "list_online send_message wait_for_messages ack" {
+		t.Fatal("audience/scope not persisted")
+	}
+	other.Resource = ""
+	if _, e := other.Authenticate(f.ctx, raw); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatal("empty resource accepted", e)
+	}
+	if _, _, _, e := other.IssueToken(f.ctx, a.Principal, "bot", "helper.ho"); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatal("empty resource issued token", e)
+	}
+	if _, e := f.pool.Exec(f.ctx, f.access, `UPDATE np_extseat_token SET scopes='list_online' WHERE id=$1`, a.TokenID); e == nil {
+		t.Fatal("subset scopes persisted")
+	}
+	// 仅在隔离fixture内移除DB约束，独立验证应用层也拒绝不完整授权。
+	if _, e := f.pool.Exec(f.ctx, f.access, `ALTER TABLE np_extseat_token DROP CONSTRAINT np_extseat_token_scopes_check`); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.pool.Exec(f.ctx, f.access, `UPDATE np_extseat_token SET scopes='list_online' WHERE id=$1`, a.TokenID); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.s.Authenticate(f.ctx, raw); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatal("subset scopes authenticated", e)
+	}
+	if e := f.s.Recheck(f.ctx, a); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatal("subset scopes snapshot accepted", e)
+	}
+}
+
+type transientProjector struct {
+	mu    sync.Mutex
+	calls int
+	ids   []string
+}
+
+func (p *transientProjector) Project(ctx context.Context, d Delivery, target identity.Agent) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.calls++
+	p.ids = append(p.ids, d.ID)
+	if p.calls == 1 {
+		return errors.New("synthetic transient projection failure")
+	}
+	return nil
+}
+func TestBackgroundRetriesOutboxPG(t *testing.T) {
+	f := newFixture(t, pgtest.DSN(t))
+	_, a := f.issue(t)
+	r, e := f.s.Send(f.ctx, a, "helper.ho", "body", "worker")
+	if e != nil {
+		t.Fatal(e)
+	}
+	p := &transientProjector{}
+	ctx, cancel := context.WithTimeout(f.ctx, 1500*time.Millisecond)
+	defer cancel()
+	if e = f.s.Run(ctx, p); !errors.Is(e, context.DeadlineExceeded) {
+		t.Fatal(e)
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if len(p.ids) != 2 || p.ids[0] != r.DeliveryID || p.ids[1] != r.DeliveryID {
+		t.Fatal("worker abandoned or regenerated failed outbox", p.ids)
+	}
+	var state string
+	row, _ := f.pool.QueryRow(f.ctx, f.access, `SELECT state FROM np_extseat_outbox WHERE delivery_id=$1`, r.DeliveryID)
+	row.Scan(&state)
+	if state != "projected" {
+		t.Fatal(state)
+	}
+}
+
+type advancingGroups struct {
+	Groups
+	clock *testClock
+}
+
+func (g advancingGroups) RecheckGroup(ctx context.Context, tx repo.Tx, a Seat, at time.Time) (Group, error) {
+	result, e := g.Groups.RecheckGroup(ctx, tx, a, at)
+	g.clock.add(extshared.TokenTTL)
+	return result, e
+}
+func TestWaitingAuthenticationCannotReviveExpiredPG(t *testing.T) {
+	f := newFixture(t, pgtest.DSN(t))
+	raw, _ := f.issue(t)
+	f.keepGroup(t)
+	f.s.Groups = advancingGroups{Groups: f.s.Groups, clock: f.clock}
+	if _, e := f.s.Authenticate(f.ctx, raw); !errors.Is(e, extshared.ErrTokenExpired) {
+		t.Fatal("authentication lock wait revived expired token", e)
+	}
+}
+
+// 真正阻塞在令牌行锁上，释放锁时已到期，不能沿用请求开始时间续期。
+func TestTokenRowLockWaitRechecksClockPG(t *testing.T) {
+	f := newFixture(t, pgtest.DSN(t))
+	raw, a := f.issue(t)
+	f.keepGroup(t)
+	result := make(chan error, 1)
+	e := f.pool.InTx(f.ctx, f.access, nil, func(tx repo.Tx) error {
+		var id string
+		if e := tx.QueryRow(f.ctx, `SELECT id FROM np_extseat_token WHERE id=$1 FOR UPDATE`, a.TokenID).Scan(&id); e != nil {
+			return e
+		}
+		go func() { _, e := f.s.Authenticate(f.ctx, raw); result <- e }()
+		deadline := time.Now().Add(5 * time.Second)
+		for {
+			var waiting bool
+			row, e := f.pool.QueryRow(f.ctx, f.access, `SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE wait_event_type='Lock' AND query LIKE 'SELECT t.id,t.token_hash%')`)
+			if e != nil {
+				return e
+			}
+			if e = row.Scan(&waiting); e != nil {
+				return e
+			}
+			if waiting {
+				break
+			}
+			if time.Now().After(deadline) {
+				return errors.New("authentication never waited on token lock")
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		f.clock.add(extshared.TokenTTL)
+		return nil
+	})
+	if e != nil {
+		t.Fatal(e)
+	}
+	select {
+	case e := <-result:
+		if !errors.Is(e, extshared.ErrTokenExpired) {
+			t.Fatal("token row lock wait revived expired token", e)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("authentication remained blocked after token lock release")
+	}
+}
+
+type lockedIdentityProjector struct{ f *fixture }
+
+func (p lockedIdentityProjector) Project(ctx context.Context, d Delivery, target identity.Agent) error {
+	if d.SourceAgent.ID == "" || d.SourceAgent.Origin != identity.OriginExternal || target.ID != "helper" {
+		return errors.New("projection missing locked identity snapshots")
+	}
+	for _, id := range []string{d.SourceAgent.ID, target.ID} {
+		e := p.f.pool.InTx(ctx, p.f.access, nil, func(tx repo.Tx) error {
+			if _, e := tx.Exec(ctx, `SET LOCAL lock_timeout='100ms'`); e != nil {
+				return e
+			}
+			_, e := tx.Exec(ctx, `UPDATE np_agent SET state='revoked' WHERE id=$1`, id)
+			if e != nil {
+				return e
+			}
+			return errors.New("projection identity update was not locked")
+		})
+		if e == nil || !strings.Contains(e.Error(), "lock timeout") {
+			return fmt.Errorf("projection identity not transactionally locked: %s: %v", id, e)
+		}
+	}
+	return nil
+}
+func TestProjectionHoldsBothIdentityLocksPG(t *testing.T) {
+	f := newFixture(t, pgtest.DSN(t))
+	_, a := f.issue(t)
+	if _, e := f.s.Send(f.ctx, a, "helper.ho", "body", "locked-identities"); e != nil {
+		t.Fatal(e)
+	}
+	if did, e := f.s.ProjectOne(f.ctx, lockedIdentityProjector{f}); !did || e != nil {
+		t.Fatal(did, e)
 	}
 }

@@ -29,9 +29,14 @@ func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string) (
 		if e != nil {
 			return e
 		}
+		now = fresh.checkedAt
 		var targetName string
 		if e = tx.QueryRow(ctx, `SELECT a.name||'.'||u.short_name FROM np_agent a JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE a.id=$1 AND a.state='active' AND u.state='active' AND a.origin<>'external' FOR UPDATE OF a,u`, g.Target.ID).Scan(&targetName); e != nil {
 			return extshared.ErrTargetNotInAG
+		}
+		now, e = s.current(fresh, g)
+		if e != nil {
+			return e
 		}
 		if to != targetName {
 			return extshared.ErrTargetNotInAG
@@ -108,6 +113,10 @@ func (s *Service) EnqueueFromHelper(ctx context.Context, sourceAgentID, targetAg
 		if e = tx.QueryRow(ctx, `SELECT a.name||'.'||u.short_name FROM np_agent a JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE a.id=$1 AND a.origin<>'external' AND a.state='active' AND u.state='active' FOR UPDATE OF a,u`, sourceAgentID).Scan(&from); e != nil {
 			return extshared.ErrTargetNotInAG
 		}
+		now = s.now()
+		if !now.Before(g.ExpiresAt) {
+			return extshared.ErrGroupDissolved
+		}
 		var previous string
 		e = tx.QueryRow(ctx, `SELECT body,created_at,expires_at FROM np_extseat_inbox WHERE id=$1`, id).Scan(&previous, &result.CreatedAt, &result.ExpiresAt)
 		if e == nil {
@@ -153,6 +162,7 @@ func (s *Service) claim(ctx context.Context, a Seat) ([]Delivery, error) {
 		if e != nil {
 			return e
 		}
+		now = fresh.checkedAt
 		if _, e = tx.Exec(ctx, `UPDATE np_extseat_inbox SET state='dead',dead_reason='message_expired',lease_until=NULL WHERE seat_id=$1 AND state IN ('queued','leased') AND expires_at<=$2`, fresh.AgentID, now); e != nil {
 			return e
 		}
@@ -162,6 +172,14 @@ func (s *Service) claim(ctx context.Context, a Seat) ([]Delivery, error) {
 			return nil
 		}
 		if e != nil {
+			return e
+		}
+		now, e = s.current(fresh, g)
+		if e != nil {
+			return e
+		}
+		if !now.Before(d.ExpiresAt) {
+			_, e = tx.Exec(ctx, `UPDATE np_extseat_inbox SET state='dead',dead_reason='message_expired',lease_until=NULL WHERE id=$1`, d.ID)
 			return e
 		}
 		d.Group = g.Code
@@ -219,6 +237,7 @@ func (s *Service) presence(ctx context.Context, a Seat) error {
 		if e != nil {
 			return e
 		}
+		now = fresh.checkedAt
 		return s.seen(ctx, tx, fresh, now)
 	})
 }
@@ -229,6 +248,7 @@ func (s *Service) Ack(ctx context.Context, a Seat, id string, gen int) error {
 		if e != nil {
 			return e
 		}
+		now = fresh.checkedAt
 		var state string
 		var expiry time.Time
 		var generation int64
@@ -236,6 +256,10 @@ func (s *Service) Ack(ctx context.Context, a Seat, id string, gen int) error {
 		if errors.Is(e, sql.ErrNoRows) {
 			return extshared.ErrNotPermitted
 		}
+		if e != nil {
+			return e
+		}
+		now, e = s.current(fresh, g)
 		if e != nil {
 			return e
 		}
@@ -305,6 +329,7 @@ func (s *Service) ListOnline(ctx context.Context, a Seat) ([]OnlineAgent, error)
 		if e != nil {
 			return e
 		}
+		now = fresh.checkedAt
 		for _, h := range helpers {
 			if h.Agent.ID == g.Target.ID && h.Agent.State == identity.AgentActive && !h.External {
 				result = append(result, h)

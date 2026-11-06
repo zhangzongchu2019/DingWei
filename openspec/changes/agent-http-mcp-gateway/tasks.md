@@ -29,3 +29,23 @@
   - 完成：按㊹-补7/补8与R53-MVP-CONTRACT实现PG0105六表、external身份分支、逐交互令牌CAS、PG收件/received/outbox、Hub路由与presence消费者接线；初轮PG正反及四项变异已有读数，详见本分支EVIDENCE.md。
   - 阻塞：无本路实施阻塞；canonical/整包/race长门仍在执行，D实现与组长main装配不在本路，未自验收或部署。
   - 下一步：完成长门与SKIP逐项记录，追加最终证据并推送核ls-remote，交组长复核；广义跨路实现任务未据本路中间结果勾完成。
+
+- 2026-11-06，执行者coder56solzzc，A路会话01a19ca0-0622-7743-a995-767c05e49c78；本段父commit 2e5e0b02b5d77db0428c5d357152ce7e418f54bf。
+  - 完成：按组长04:54:43Z增量将外部路由身份查询入口收紧为SplitAgentName语法；补非外部下划线名零查询/返回false/普通离线路径回归，定向普通及race rc0；改回Contains变异rc1且三个子用例均命中查询次数断言，见EVIDENCE.md。提交前核提案目录最新提交仍为2e5e0b02，无派单后新增规格修订。
+  - 阻塞：本项无；原canonical/整包/race长门仍待原流程收口，本项不提前勾选T-06～T-10或宣称最终交件。
+  - 下一步：随下一个tip合入本项及EVIDENCE读数，按原单完成余项；不单独回信，不部署或重启。
+
+- 2026-11-06，执行者coder56solzzc，A路会话01a19ca0-0622-7743-a995-767c05e49c78；本段父commit 2e5e0b02b5d77db0428c5d357152ce7e418f54bf。
+  - 完成：已fetch/读取593ed5ef第6节，同步派单后新增冻结：固定四通讯scope、不支持子集、A/B/C共享TenantKey/Resource、C不交飞书令牌；A令牌持久audience/scope与资源现核，IssueToken签名保持；接口与context补装配边界。
+  - 阻塞：本项无；原canonical日志已结束rc1，失败为0105加入后的旧claim migration清单断言，不能据本路定向PASS交最终件或验收。
+  - 下一步：本次PG正反、race三轮与audience/scope语义变异读数入EVIDENCE，随下个tip交；main由组长统一装配，不单独回信。
+
+- 2026-11-06，执行者coder56solzzc；本段父commit 2e5e0b02b5d77db0428c5d357152ce7e418f54bf。
+  - 完成：登记C路k31t2075对A中间锚的独立fetch／接口比对报告；同意组长集成层以薄适配器映射C容器与A的Seat.ID、group，接口及证据已补充。
+  - 阻塞：此签名差异不作为阻塞；不因此改A/C包、不认定已真实装配或独立验收。
+  - 下一步：随下个tip提供精确Git坐标，由组长集成及验证适配。
+
+- 2026-11-06，执行者coder56solzzc，A路01a19ca0唯一写者；本段父commit 2e5e0b02b5d77db0428c5d357152ce7e418f54bf，承载commit由最终tip给出。
+  - 完成：遵05:03:21Z指令原子mkdir取得writer.lock，owner.txt记录开始UTC；保留两轮全部改动，合并核对路由形状、audience/固定scope、同事务双方身份锁、锁后时钟重核及后台重试。补真实PG令牌行锁等待/双方身份锁和Hub零身份重查用例，七项语义变异均在对应断言转红。修正0105引入后的真实跨runtime claim迁移清单；桌面真实Hub/PG集成与定向已rc0，逐项完整包结果见EVIDENCE和docs/reviews/r53-extseat-writer-reconcile/。
+  - 阻塞：无本次合并阻塞；长门canonical/race分片按组长特许可在提交后独立重跑，未自验收或部署，不勾全跨路T-06～T-10。
+  - 下一步：完整包通过后单提交推送，核tip/tree/ls-remote并回含to字段及两轮改动核对表的回执；完成后释放锁。提交前已fetch A分支2e5e0b02与集成分支593ed5ef，原提案需求无新增修订，集成新增第6节已同步；集成tasks缺A历史条目不构成规范变更，不删除本席交接。

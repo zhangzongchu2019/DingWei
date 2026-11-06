@@ -21,6 +21,7 @@ CREATE TABLE np_extseat (
 CREATE TABLE np_extseat_token (
  id text PRIMARY KEY, token_hash text NOT NULL UNIQUE CHECK(token_hash ~ '^[a-f0-9]{64}$'),
  seat_id text NOT NULL REFERENCES np_extseat(agent_id),
+ audience text NOT NULL, scopes text NOT NULL CHECK(scopes='list_online send_message wait_for_messages ack'),
  auth_generation bigint NOT NULL CHECK(auth_generation>0),
  created_at timestamptz NOT NULL, last_auth_at timestamptz NOT NULL,
  expires_at timestamptz NOT NULL, revoked_at timestamptz

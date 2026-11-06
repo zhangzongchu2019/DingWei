@@ -56,3 +56,10 @@
 - 状态证据分开记录：[2026-05-21 RC博客](https://blog.modelcontextprotocol.io/posts/2026-07-28-release-candidate/)标题为Release Candidate；[官方2026-07-28 release](https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2026-07-28)本次已标stable，指向commit 5f5440b。保留组长要求“定稿状态开发前须再核”，不把历史RC标签当作当前只有RC的证明；SDK/目标客户端可用性未实测。
 
 上述均为只读网络规范核对，本单没有实现MCP服务、资源订阅或WSS。无论通知流存在多久，平台14天令牌/90秒租约/3天AG仍按持久平台时钟和明确交互规则计算。
+
+## A路授权资源补充（2026-11-06）
+
+组长已在工蜂 opus50tc2k/r53-integration 的593ed5efdaa51bf671cc41fa5d8dc0b7c20ed78e（tree 7378e8bf41342e5edce35b42ed09aa783c1aa3c0）docs/design/R53-MVP-CONTRACT.md 第6节冻结MVP固定四scope、不做子集、A/B/C共享TenantKey与Resource。该坐标已fetch并读取原文，覆盖先前待确认授权细节。A路实现位置internal/extseat/service.go与PG0105：令牌行持久audience及 `list_online send_message wait_for_messages ack`；签发签名不变；Authenticate、Recheck及业务现核共用load，资源/完整scope不匹配拒绝。Service由main注入TenantKey（DW_FEISHU_TEAM_TENANT_KEY）与Resource（暂定https://dw123.cmjrt.com/mcp），A不单独解析环境或内置默认值。C只交验证后的Principal，不交飞书access_token/refresh_token。主程序装配归组长，本路未修改main或声称跨路装配已完成。
+
+
+唯一写者合并的测试与证据入口：docs/reviews/r53-extseat-writer-reconcile/（命令UTC/rc/hash、变异失败原文、受测源码摘要、完整包SKIP清单）；身份投影锁改动在internal/extseat/outbox.go与internal/m8/extseat.go，时钟重核在service.go/inbox.go。0105引入后的真实跨runtime claim集成迁移清单已补齐，数据库仍由pgtest隔离，未改生产配置或helper状态机。

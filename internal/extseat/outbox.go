@@ -39,12 +39,12 @@ func (s *Service) ProjectOne(ctx context.Context, p Projector) (bool, error) {
 		}
 		a.ID = seatID
 		a.AgentID = seatID
-		var active bool
-		if e = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE s.agent_id=$1 AND s.revoked_at IS NULL AND a.state='active' AND u.state='active')`, seatID).Scan(&active); e != nil {
-			return e
-		}
-		if !active {
+		err := tx.QueryRow(ctx, `SELECT a.id,a.owner_lc,a.name,a.origin,a.state FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE s.agent_id=$1 AND s.revoked_at IS NULL AND a.origin='external' AND a.state='active' AND u.state='active' FOR UPDATE OF s,a,u`, seatID).Scan(&d.SourceAgent.ID, &d.SourceAgent.OwnerLC, &d.SourceAgent.Name, &d.SourceAgent.Origin, &d.SourceAgent.State)
+		if errors.Is(err, sql.ErrNoRows) {
 			return dead("seat_revoked")
+		}
+		if err != nil {
+			return err
 		}
 		g, e := s.Groups.RecheckGroup(ctx, tx, a, now)
 		if e != nil {
@@ -55,6 +55,20 @@ func (s *Service) ProjectOne(ctx context.Context, p Projector) (bool, error) {
 		}
 		if g.Target.ID != targetID {
 			return dead("target_not_in_ag")
+		}
+		err = tx.QueryRow(ctx, `SELECT a.id,a.owner_lc,a.name,a.origin,a.state FROM np_agent a JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE a.id=$1 AND a.origin<>'external' AND a.state='active' AND u.state='active' FOR UPDATE OF a,u`, targetID).Scan(&g.Target.ID, &g.Target.OwnerLC, &g.Target.Name, &g.Target.Origin, &g.Target.State)
+		if errors.Is(err, sql.ErrNoRows) {
+			return dead("target_unavailable")
+		}
+		if err != nil {
+			return err
+		}
+		now = s.now()
+		if !now.Before(g.ExpiresAt) {
+			return dead("group_unavailable")
+		}
+		if !now.Before(d.ExpiresAt) {
+			return dead("message_expired")
 		}
 		d.Generation = 1
 		d.Group = g.Code
@@ -67,21 +81,34 @@ func (s *Service) ProjectOne(ctx context.Context, p Projector) (bool, error) {
 	return did, err
 }
 
-// Run 供集成装配为受控后台任务；ctx取消即停止。每轮限定批量，错误交调用方退避处理。
+// Run 供集成装配为受控后台任务；瞬态投影失败保留PG outbox，下轮重试原ID。
 func (s *Service) Run(ctx context.Context, p Projector) error {
+	if p == nil || s.Pool == nil || s.Groups == nil || s.Identity == nil {
+		return extshared.ErrNotPermitted
+	}
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
-	for {
-		if e := s.Expire(ctx); e != nil {
-			return e
+	report := func(err error) {
+		if s.OnBackgroundError != nil && ctx.Err() == nil {
+			s.OnBackgroundError(err)
 		}
-		for i := 0; i < 32; i++ {
-			did, e := s.ProjectOne(ctx, p)
-			if e != nil {
-				return e
-			}
-			if !did {
-				break
+	}
+	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if err := s.Expire(ctx); err != nil {
+			report(err)
+		} else {
+			for i := 0; i < 32; i++ {
+				did, err := s.ProjectOne(ctx, p)
+				if err != nil {
+					report(err)
+					break
+				}
+				if !did {
+					break
+				}
 			}
 		}
 		select {

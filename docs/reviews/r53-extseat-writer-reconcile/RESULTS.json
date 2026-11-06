@@ -1,0 +1,215 @@
+{
+  "说明": "唯一写者合并后的原始命令回执；承载提交为对应执行源，长门另从该提交隔离重跑，非独立验收。",
+  "基线": "2e5e0b02b5d77db0428c5d357152ce7e418f54bf",
+  "records": [
+    {
+      "label": "writer-focused",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "./internal/extseat",
+        "./internal/m8",
+        "-run",
+        "Test(CorePG|OutboxAndIsolationPG|BackgroundRetriesOutboxPG|TokenAudiencePG|WaitingAuthenticationCannotReviveExpiredPG|TokenRowLockWaitRechecksClockPG|ProjectionHoldsBothIdentityLocksPG|External|R8HTTPRealReliableReviewAndHumanOnlyFinalize)",
+        "-count=1",
+        "-timeout",
+        "10m"
+      ],
+      "start_utc": "2026-11-06T05:04:49.634697+00:00",
+      "end_utc": "2026-11-06T05:05:11.986889+00:00",
+      "rc": 0,
+      "tmpdir": "/tmp/xt5myxrdn0",
+      "log_sha256": "a697f7e18f02354860b601734541074707d10838ea4c4a9358b7d6b9b9522204"
+    },
+    {
+      "label": "writer-desktop",
+      "command": [
+        "bash",
+        "scripts/test-desktop-hub-roundtrip.sh"
+      ],
+      "start_utc": "2026-11-06T05:05:51.523846+00:00",
+      "end_utc": "2026-11-06T05:06:28.362384+00:00",
+      "rc": 0,
+      "tmpdir": "/tmp/xt1i86ampo",
+      "log_sha256": "7d9647980bf9590a8166f722b1f7b6a072c0578728fe9e737dddbb2a680ef194"
+    },
+    {
+      "label": "writer-strict-sealed",
+      "command": [
+        "env",
+        "OPENSPEC_TELEMETRY=0",
+        "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+        "validate",
+        "--all",
+        "--strict"
+      ],
+      "start_utc": "2026-11-06T05:07:30.834021+00:00",
+      "end_utc": "2026-11-06T05:07:31.128394+00:00",
+      "rc": 0,
+      "tmpdir": "/tmp/xtws0l9hp9",
+      "log_sha256": "76983b822bd96673fb58560f8f62ae38e59236ce5637e7af579c3a8ccb60f62e"
+    },
+    {
+      "label": "writer-route-shape-mutant",
+      "command": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r53-extseat-evidence/writer-route-shape-overlay.json",
+        "./internal/m8",
+        "-run",
+        "^TestExternalRouteNonExternalUnderscoreSkipsIdentity$",
+        "-count=1",
+        "-timeout",
+        "5m"
+      ],
+      "start_utc": "2026-11-06T05:05:14.004672+00:00",
+      "end_utc": "2026-11-06T05:05:26.274824+00:00",
+      "rc": 1,
+      "tmpdir": "/tmp/xt01urs1ve",
+      "log_sha256": "145340dd19bd2f5a50e9748e8db1e32642699120236138db50fcd49014c45c4e"
+    },
+    {
+      "label": "writer-audience-mutant",
+      "command": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r53-extseat-evidence/writer-audience-overlay.json",
+        "./internal/extseat",
+        "-run",
+        "^TestTokenAudiencePG$",
+        "-count=1",
+        "-timeout",
+        "5m"
+      ],
+      "start_utc": "2026-11-06T05:05:14.004726+00:00",
+      "end_utc": "2026-11-06T05:05:17.691345+00:00",
+      "rc": 1,
+      "tmpdir": "/tmp/xt0yhafw40",
+      "log_sha256": "1643caa18da8ef9f1c1b4879834d5e2dd67124e697158ca540026e18ac3291fb"
+    },
+    {
+      "label": "writer-scope-mutant",
+      "command": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r53-extseat-evidence/writer-scope-overlay.json",
+        "./internal/extseat",
+        "-run",
+        "^TestTokenAudiencePG$",
+        "-count=1",
+        "-timeout",
+        "5m"
+      ],
+      "start_utc": "2026-11-06T05:05:17.743891+00:00",
+      "end_utc": "2026-11-06T05:05:22.654336+00:00",
+      "rc": 1,
+      "tmpdir": "/tmp/xtjr6l9z7a",
+      "log_sha256": "09c257c4bab37ad185bf40d1cd9e753f85eb6ddc1eb3a0fbce5e43248280c15a"
+    },
+    {
+      "label": "writer-clock-mutant",
+      "command": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r53-extseat-evidence/writer-clock-overlay.json",
+        "./internal/extseat",
+        "-run",
+        "^Test(TokenRowLockWaitRechecksClockPG|WaitingAuthenticationCannotReviveExpiredPG)$",
+        "-count=1",
+        "-timeout",
+        "5m"
+      ],
+      "start_utc": "2026-11-06T05:05:22.707143+00:00",
+      "end_utc": "2026-11-06T05:05:32.049316+00:00",
+      "rc": 1,
+      "tmpdir": "/tmp/xta0txb_29",
+      "log_sha256": "33151c90447f9c91de6f1c8178b7bad664f3c7c4c491f798ec43bdff3c534470"
+    },
+    {
+      "label": "writer-source-lock-mutant",
+      "command": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r53-extseat-evidence/writer-source-lock-overlay.json",
+        "./internal/extseat",
+        "-run",
+        "^TestProjectionHoldsBothIdentityLocksPG$",
+        "-count=1",
+        "-timeout",
+        "5m"
+      ],
+      "start_utc": "2026-11-06T05:05:26.319660+00:00",
+      "end_utc": "2026-11-06T05:05:31.064419+00:00",
+      "rc": 1,
+      "tmpdir": "/tmp/xtjbxs9vus",
+      "log_sha256": "f565472ab39f85b215f0a236ee5fc5fb716e4709ba4c9e1d06158f6643135565"
+    },
+    {
+      "label": "writer-target-lock-mutant",
+      "command": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r53-extseat-evidence/writer-target-lock-overlay.json",
+        "./internal/extseat",
+        "-run",
+        "^TestProjectionHoldsBothIdentityLocksPG$",
+        "-count=1",
+        "-timeout",
+        "5m"
+      ],
+      "start_utc": "2026-11-06T05:05:31.109581+00:00",
+      "end_utc": "2026-11-06T05:05:36.184324+00:00",
+      "rc": 1,
+      "tmpdir": "/tmp/xtm2rubblc",
+      "log_sha256": "75665cd970ff6f62144aa38cf09e7ae5360ed0ab23d70affb0bdf386a9688509"
+    },
+    {
+      "label": "writer-projection-requery-mutant",
+      "command": [
+        "go",
+        "test",
+        "-overlay",
+        "/tmp/r53-extseat-evidence/writer-projection-requery-overlay.json",
+        "./internal/m8",
+        "-run",
+        "^TestExternalProjectionIdempotentPreservesHelperQueue$",
+        "-count=1",
+        "-timeout",
+        "5m"
+      ],
+      "start_utc": "2026-11-06T05:05:32.092565+00:00",
+      "end_utc": "2026-11-06T05:05:44.389243+00:00",
+      "rc": 1,
+      "tmpdir": "/tmp/xt30jl6kev",
+      "log_sha256": "310f69518fccd9df6760c3470ed4dc70f0c21fcad7ecd0f52f3833f420ed63ff"
+    },
+    {
+      "label": "writer-full",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "./internal/store",
+        "./internal/store/migrate",
+        "./internal/identity",
+        "./internal/m8",
+        "./internal/extseat",
+        "-count=1",
+        "-timeout",
+        "30m"
+      ],
+      "start_utc": "2026-11-06T05:05:15.137109+00:00",
+      "end_utc": "2026-11-06T05:09:13.844381+00:00",
+      "rc": 0,
+      "tmpdir": "/tmp/xtuc9qx8j6",
+      "log_sha256": "15c9aa606f0fde763bcb6d888914343fe3bead4fa95b2eacb6bb484c9e00d9f8"
+    }
+  ]
+}
