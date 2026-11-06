@@ -12,6 +12,15 @@ import (
 
 const DefaultStateTTL = 5 * time.Minute
 
+// StatePurpose prevents a form CSRF token and a Feishu OAuth state from being
+// used interchangeably even when they share a StateStore.
+type StatePurpose string
+
+const (
+	StatePurposeOAuth       StatePurpose = "feishu_oauth"
+	StatePurposeConnectForm StatePurpose = "connect_form_csrf"
+)
+
 var (
 	ErrConfig             = errors.New("feishulogin: invalid configuration")
 	ErrInvalidStart       = errors.New("feishulogin: invalid login request")
@@ -79,6 +88,7 @@ type TokenIssuer interface {
 // LoginAttempt contains no raw state or authorization code.
 type LoginAttempt struct {
 	StateHash   string
+	Purpose     StatePurpose
 	AppID       string
 	RedirectURI string
 	Request     IssueRequest
@@ -131,6 +141,7 @@ type CallbackRequest struct {
 // CallbackResult is the single local-token disclosure point in this package.
 // The non-secret issuance metadata is forwarded unchanged for B's OAuth response.
 type CallbackResult struct {
+	AttemptID             string
 	Token                 string
 	SeatID                string
 	ExternalAgentFullName string

@@ -39,6 +39,46 @@ IssueToken(ctx context.Context, req IssueRequest) (IssuedToken, error)
 
 C 在 `ResolvePrincipal` 成功后才填 `IssueRequest.Principal`，再调用以上消费者接口。成功的 `CallbackResult` 携带 A 返回的本地 `Token`、`SeatID`、`ExternalAgentFullName`、`Group`、`ExpiresAt`、`Audience`、`Scopes`，交给 B 完成其标准 OAuth 授权响应。字段语义与集成映射见仓根 `EVIDENCE.md`。本地令牌明文只走这个瞬态签发响应，不写日志、审计、state 或错误。B 也不得记录 `CallbackRequest`、飞书访问令牌或 `CallbackResult.Token`。
 
+
+## 接入页 HTTP 接口
+
+C 提供服务端处理函数，由 B 或集成装配挂到一个同源路径，例如 `/feishu/connect`：
+
+```go
+ServeConnectPage(w http.ResponseWriter, r *http.Request)
+```
+
+### GET 渲染表单
+
+- 唯一可选 query 为 `attempt_id`，它是 B 生成的外层授权事务关联标识。C 不接收 MCP 客户端 `redirect_uri`、client_id、scope 或目标清单。
+- 返回服务端渲染 HTML，无 JavaScript、无第三方资源。短名输入有 `required`、`minlength="1"`、`maxlength="8"`、`pattern="[a-z0-9]{1,8}"`，并提示「外部 Agent 名将为 短名_AG序号」；目标 Agent 全名为自由文本，不列平台 Agent 清单。
+- GET 生成 256 位随机 CSRF token，隐藏字段为 `csrf_token`；存储层只存 SHA-256 哈希，`LoginAttempt.Purpose=connect_form_csrf`，默认五分钟过期，并绑定 App ID、C 的飞书回调地址与 AttemptID。
+- 所有 GET／POST／错误响应均设置 `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'`、`X-Frame-Options: DENY`、`Cache-Control: no-store`、`Referrer-Policy: no-referrer` 与 `X-Content-Type-Options: nosniff`。
+
+### POST 校验并进入飞书
+
+表单字段为 `csrf_token`、`attempt_id`、`short_name`、`target_agent`。C 原子消费 CSRF，核对用途、App ID、飞书回调地址及 AttemptID，再调用既有 `Start`。CSRF 缺失、无效、过期、重放或与 OAuth state 交叉使用均拒绝；失败后的合法表单重渲染会签发新 CSRF。
+
+短名前后端都按 `extshared.ValidShortName` 的 1～8 位小写字母数字规则校验。目标仅做 `名称.属主简称` 形状校验：名称当前为 2～32 位字母数字，属主简称当前为 2～16 位字母数字；不查询存在性、不列清单，活跃状态及后续权限仍由 A 路 `IssueToken` 现核。成功返回 303 到 `StartResult.AuthorizationURL`，OAuth state 绑定短名、目标和 AttemptID。
+
+B 的飞书回调适配只允许提取两个 query：
+
+```go
+CallbackRequestFromQuery(query url.Values) CallbackRequest // 只取 state、code
+```
+
+`short_name`、`target_agent`、身份字段及 `redirect_uri` query 一律忽略；签发意图只能取自消费的服务端 OAuth state。`CallbackResult.AttemptID` 把完成的外层事务标识交给 B。
+
+## B 路 MCP OAuth 衔接约定
+
+本包不实现 B 的 MCP 授权服务器。两路按以下字段和顺序衔接：
+
+1. B 的 MCP OAuth `authorize` 端点先验证客户端登记的 `client_id`、`redirect_uri`、PKCE、audience 与固定四项 scope，并生成不可猜测的 `AttemptID`。B 在自己服务端事务中保存 `AttemptID` 与 `client_id`、已验证的客户端 `redirect_uri`、外层 `state`、`code_challenge`、`code_challenge_method`、audience、scopes 的绑定。
+2. B 以 302 将浏览器带到 C 接入页，例如 `/feishu/connect?attempt_id=<url编码值>`。不得把 MCP 客户端 `redirect_uri` 交给 C 表单或作为 C 的开放回跳参数。
+3. C POST 成功后带浏览器完成飞书 OAuth。飞书 `Config.RedirectURI` 指向 B 暴露的飞书回调端点，不是 MCP 客户端 `redirect_uri`。
+4. B 在该回调端点用 `CallbackRequestFromQuery(r.URL.Query())` 构造输入并调用 `Callback`。成功后按 `CallbackResult.AttemptID` 取回并原子消费 B 的外层事务，同时取得本地 Token、SeatID、ExternalAgentFullName、Group、ExpiresAt、Audience、Scopes。
+5. B 生成自己的一次性 MCP authorization code，将本地令牌及签发元数据保存在服务端，再 302 到事务中预先验证的 MCP 客户端 `redirect_uri`，query 只带 B 生成的 `code` 与原外层 `state`。本地 Bearer 明文不得放进浏览器回跳 URL；MCP token 端点再按标准 OAuth 流程交付。
+
 ## 身份与错误
 
 - `Principal.Provider` 固定为 `feishu`，`Issuer` 为 App ID，`Subject` 为 `open_id`，`TenantKey` 为可信 `user_info.tenant_key`，`UnionID` 仅作别名。唯一键继续由 `Principal.Key` 给出，显示名不参与合并。

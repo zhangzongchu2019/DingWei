@@ -7,10 +7,12 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"io"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/extshared"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 )
 
 // Handler provides B's two integration functions. It does not implement an MCP
@@ -53,22 +55,20 @@ func NewHandler(cfg Config) (*Handler, error) {
 
 // Start begins Feishu login and binds the complete issuance intent to state.
 func (h *Handler) Start(ctx context.Context, req StartRequest) (StartResult, error) {
-	if !extshared.ValidShortName(req.ShortName) || req.TargetAgent == "" ||
-		strings.TrimSpace(req.TargetAgent) != req.TargetAgent {
+	if !extshared.ValidShortName(req.ShortName) || !validTargetAgentFullName(req.TargetAgent) {
 		return StartResult{}, ErrInvalidStart
 	}
-	var random [32]byte
-	if _, err := io.ReadFull(h.random, random[:]); err != nil {
+	state, err := h.newState()
+	if err != nil {
 		return StartResult{}, ErrInvalidState
 	}
-	state := base64.RawURLEncoding.EncodeToString(random[:])
 	authorizationURL, err := h.oauth.AuthorizationURL(state, h.redirectURI)
 	if err != nil {
 		return StartResult{}, ErrInvalidStart
 	}
 	now := h.now()
 	attempt := LoginAttempt{
-		StateHash: hashState(state), AppID: h.appID, RedirectURI: h.redirectURI,
+		StateHash: hashState(state), Purpose: StatePurposeOAuth, AppID: h.appID, RedirectURI: h.redirectURI,
 		Request: IssueRequest{
 			ShortName: req.ShortName, TargetAgent: req.TargetAgent, AttemptID: req.AttemptID,
 		},
@@ -93,7 +93,7 @@ func (h *Handler) Callback(ctx context.Context, req CallbackRequest) (CallbackRe
 	if req.Code == "" {
 		return CallbackResult{}, ErrInvalidCallback
 	}
-	if attempt.AppID != h.appID || attempt.RedirectURI != h.redirectURI {
+	if attempt.Purpose != StatePurposeOAuth || attempt.AppID != h.appID || attempt.RedirectURI != h.redirectURI {
 		return CallbackResult{}, ErrInvalidState
 	}
 	accessToken, err := h.oauth.ExchangeCode(ctx, req.Code, attempt.RedirectURI)
@@ -114,7 +114,7 @@ func (h *Handler) Callback(ctx context.Context, req CallbackRequest) (CallbackRe
 		return CallbackResult{}, ErrTokenIssue
 	}
 	return CallbackResult{
-		Token: issued.Token, SeatID: issued.SeatID,
+		AttemptID: attempt.Request.AttemptID, Token: issued.Token, SeatID: issued.SeatID,
 		ExternalAgentFullName: issued.ExternalAgentFullName, Group: issued.Group,
 		ExpiresAt: issued.ExpiresAt, Audience: issued.Audience, Scopes: issued.Scopes,
 	}, nil
@@ -123,4 +123,27 @@ func (h *Handler) Callback(ctx context.Context, req CallbackRequest) (CallbackRe
 func hashState(state string) string {
 	sum := sha256.Sum256([]byte(state))
 	return hex.EncodeToString(sum[:])
+}
+
+// CallbackRequestFromQuery is B's narrow adapter from a Feishu callback URL.
+// It deliberately ignores short_name, target_agent, identity, and redirect_uri
+// query keys: the issuance intent comes only from the consumed server-side state.
+func CallbackRequestFromQuery(query url.Values) CallbackRequest {
+	return CallbackRequest{State: query.Get("state"), Code: query.Get("code")}
+}
+
+func (h *Handler) newState() (string, error) {
+	var random [32]byte
+	if _, err := io.ReadFull(h.random, random[:]); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(random[:]), nil
+}
+
+// validTargetAgentFullName checks shape only. It never resolves or enumerates
+// Agents; A remains responsible for the authoritative active-target check.
+func validTargetAgentFullName(fullName string) bool {
+	i := strings.LastIndexByte(fullName, '.')
+	return i > 0 && i < len(fullName)-1 &&
+		identity.ValidAgentName(fullName[:i]) && identity.ValidShortName(fullName[i+1:])
 }

@@ -2,6 +2,61 @@
 
 本件记录 `k31t2075/r53-feishu-login` 的实现与复核证据。父基线为 `262f4747b3d7def371b44d2feb07e4683f8f87e0`；接口追加依据为 `opus50tc2k/r53-integration` 的 `593ed5efdaa51bf671cc41fa5d8dc0b7c20ed78e` 第 6 节。A 路仅以独立 fetch 的 `2e5e0b02b5d77db0428c5d357152ce7e418f54bf` 做接口阅读，不合入、不修改，也不据此宣称 A 路通过最终验收。
 
+
+## S-R53-CONNECT-PAGE 接入页追加
+
+当前分支为 `k31t2075/r53-connect-page`，父提交 `97671b3a887901724c34056388ef687515c431b2`；此前 `k31t2075/r53-feishu-login` 已复核冻结，本分支只在追加提交中实现接入页，不改写旧分支。
+
+### 页面与信任边界
+
+- `ServeConnectPage` GET 渲染无脚本、无第三方资源的短名／目标全名表单；页面不注入 Agent 清单。前端短名 pattern 与服务端 `extshared.ValidShortName` 一致。
+- GET 签发一次性 CSRF state，POST 原子消费后调用既有 `Start`。`StatePurpose` 区分 `connect_form_csrf` 与 `feishu_oauth`，防止两类 token 交叉使用；AttemptID、App ID 与飞书回调地址也随 CSRF 绑定。
+- 目标只按 `名称.属主简称` 做形状校验，存在性、活跃状态与编组权限不通过页面探测，仍交 A 现核。
+- CSP `frame-ancestors 'none'` 与 `X-Frame-Options: DENY` 禁止嵌入；另设 no-store、no-referrer、nosniff。POST 成功仅 303 到飞书授权 URL。
+- `CallbackRequestFromQuery` 只提取 state 与 code。伪造 short_name、target_agent、redirect_uri query 不会覆盖 state 中的签发意图；`CallbackResult.AttemptID` 供 B 找回外层 MCP OAuth 事务。
+- B 自行保存并现核 MCP 客户端 redirect_uri，完成后以自己的一次性 authorization code 回跳；C 不接收该 redirect_uri，本地 Bearer 不进入浏览器回跳 URL。完整字段顺序见 `INTERFACE.md`。
+
+### 新增用例
+
+| 判据 | 用例与读数 |
+|---|---|
+| GET 表单、前端短名规则、外部名提示、无脚本及无目标枚举 | `TestConnectPageGETRendersSelfContainedValidatedForm` |
+| 服务端非法短名拒绝 | `TestConnectPageRejectsInvalidShortName`：空、大写、下划线、连字符、超长、中文均 400 且无 OAuth state |
+| 目标为空或形状非法，不查目标清单 | `TestConnectPageRejectsMalformedTargetWithoutLookup` |
+| POST 将短名、目标、AttemptID 绑定 OAuth state | `TestConnectPagePOSTBindsIntentToOAuthState` |
+| 回调 query 篡改短名／目标 | `TestCallbackIgnoresQueryShortNameAndTarget`：恶意值存在时签发仍为 mybot／Helper.zzc |
+| CSRF 重放 | `TestConnectPageCSRFReplay`：首次 303，第二次 403，只有一个 OAuth state |
+| CSRF 缺失与 AttemptID 篡改 | `TestConnectPageRejectsMissingCSRFAndAttemptOverride` |
+| CSRF 与 OAuth state 交叉使用 | `TestConnectAndOAuthStatesAreNotInterchangeable`，均在飞书换码前拒绝 |
+| 禁嵌入头及非 GET／POST 方法 | `TestConnectPageRejectsOtherMethodsWithSecurityHeaders`，并在 GET、POST 拒绝及重放响应检查头 |
+
+### 接入页两刀变异
+
+执行日期 2026-11-06，UTC；每刀后均立即还原并复跑目标用例至通过。
+
+| 变异 | 定向命令 | 有效读数 |
+|---|---|---|
+| query 适配临时接受 short_name／target_agent，Callback 临时用其覆盖 state | `go test -count=1 ./internal/feishulogin -run '^TestCallbackIgnoresQueryShortNameAndTarget$' -v` | rc=1；签发请求变为 attacker／Other.evil，目标用例红；还原后 rc=0 |
+| 删除 `Start` 的 `extshared.ValidShortName` 服务端检查，并移除因此未用的 import | `go test -count=1 ./internal/feishulogin -run '^TestConnectPageRejectsInvalidShortName$' -v` | rc=1；六类非法短名均得到 303 且生成 OAuth state；还原后 rc=0 |
+
+第二刀首次仅留下未使用 import 导致编译红，不计行为变异；移除该 import 后得到上表有效行为读数。
+
+
+### 接入页最终门禁
+
+完成于 2026-11-06T05:43:32Z，Go 工具链为 `go1.22.2 linux/amd64`；所有命令均在上述父提交加本分支工作树上执行。
+
+| 命令 | 结果 |
+|---|---|
+| `gofmt -l internal/feishulogin` | rc=0，无输出 |
+| `go vet ./internal/feishulogin ./internal/identity` | rc=0 |
+| `go test -count=1 -v ./internal/feishulogin` | rc=0；30 个顶层用例、32 个一级子用例 PASS，0 FAIL、0 SKIP |
+| `go test -count=1 ./internal/identity` | rc=0，整包 92.448 秒通过 |
+| `go test -race -count=3 ./internal/feishulogin` | rc=0，三轮通过 |
+| `PATH=/tmp/k31-feishu-build-venv/bin:$PATH TMPDIR=/tmp/k31bt.rYbYSb ./scripts/run-build-tests.sh` | rc=0；2026-11-06T05:33:34Z 开始，05:43:32Z 完成；`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`，helper 双配置各 1097 条预期用例 |
+
+接入页没有跳过用例，没有连接真实飞书或枚举真实 Agent；目标存在性与活跃状态留给 A 路现核，本页测试不作这些 A 路行为的独立验收。
+
 ## 消费者结构与集成字段表
 
 C 包保持独立消费者接口，不引用 `internal/extseat`：
@@ -31,7 +86,7 @@ IssueToken(ctx context.Context, req IssueRequest) (IssuedToken, error)
 | `Audience` | `string` | MCP 受保护资源标识；由集成统一配置提供，暂定 `https://dw123.cmjrt.com/mcp`，C 不另设默认值 |
 | `Scopes` | `[]string` | 固定四项 `list_online`、`send_message`、`wait_for_messages`、`ack`；由集成按第 6 节传入，不做子集授权 |
 
-`CallbackResult` 原样承载以上签发结果供 B 完成标准 OAuth 响应；C 不解释或缩减 audience／scope。
+`CallbackResult` 另携带 `AttemptID` 供 B 找回外层事务，并原样承载以上签发结果供 B 完成标准 OAuth 响应；C 不解释或缩减 audience／scope。
 
 ## 接口核验
 
