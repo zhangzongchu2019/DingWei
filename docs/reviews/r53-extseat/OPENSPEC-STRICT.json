@@ -1,0 +1,16 @@
+{
+  "label": "final-strict",
+  "command": [
+    "env",
+    "OPENSPEC_TELEMETRY=0",
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "start_utc": "2026-11-06T08:19:20.213089+00:00",
+  "end_utc": "2026-11-06T08:19:20.503646+00:00",
+  "rc": 0,
+  "tmpdir": "/tmp/xtkd2gk1w7",
+  "log_sha256": "76983b822bd96673fb58560f8f62ae38e59236ce5637e7af579c3a8ccb60f62e"
+}

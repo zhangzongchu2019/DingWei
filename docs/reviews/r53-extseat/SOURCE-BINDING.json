@@ -1,0 +1,16 @@
+{
+  "CODEX_THREAD_ID": "01a1af35-98c2-7451-a54a-6ec76c50d4f9",
+  "recorded_utc": "2026-11-06T08:18:34.155002+00:00",
+  "writer_owner": "CODEX_THREAD_ID=01a1af35-98c2-7451-a54a-6ec76c50d4f9\nUTC=2026-11-06T05:14:45.690524+00:00\n本轮开始时刻=2026-11-06T05:14:45.690524+00:00\n正在做的事=按2026-11-06T05:14:20Z新裁定接续fe67be849已绑定长门，完成证据追加/推送及交件回报前一直持锁。\n",
+  "authority": "组长2026-11-06T05:14:20Z持锁者即唯一写者新裁定；由本会话接续既有fe67长门，替代仅01a19ca0的旧限定。",
+  "repository": "git@git.code.tencent.com:wego-ai/dingwei.git",
+  "ref": "coder56solzzc/r53-extseat",
+  "source_commit": "fe67be849cca1498e0c188864e8df476d55aaa28",
+  "source_tree": "8ccf4edbe9cfc37b9b3800ec31ad12a66c66095c",
+  "source_files_match_tested_manifest": true,
+  "manifest": "../r53-extseat-writer-reconcile/SOURCE-SHA256.json",
+  "root_legacy_evidence_preserved_byte_for_byte": true,
+  "integration_contract_checked": "75a4088052ccb1a4e1a66bd8674bf5d6b55bf879 docs/design/R53-MVP-CONTRACT.md 第7节；相对593ed5ef仅新增证据目录约定，已同步。",
+  "delivery_appendix": "本次追加仅含证据与OpenSpec交接；正式tip/tree以回执为准，不自引用承载提交。",
+  "independent_acceptance": "待组长集成复核"
+}
