@@ -3139,7 +3139,7 @@
         }
         case 'audio': {
           const audio = document.createElement('audio');
-          audio.src = displayOwnFileUrl(url);
+          audio.src = localFileUrl(url);
           audio.controls = true;
           audio.preload = 'metadata';
           // 与 video 同一形态（见上）：下载链接**无条件**附一条 ——
@@ -3151,7 +3151,7 @@
         }
         case 'pdf': {
           const frame = document.createElement('iframe');
-          frame.src = displayOwnFileUrl(url);
+          frame.src = localFileUrl(url);
           frame.title = hint?.name || fileNameFromUrl(url);
           box.appendChild(frame);
           box.appendChild(fileDownloadLink(url, '下载 PDF', knownName));   // 浏览器无内置 PDF 阅读器时仍有出路
