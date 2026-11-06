@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/zhangzongchu2019/dingwei/internal/specread"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -67,6 +68,43 @@ func TestR5BindingJSONOriginAndReadPage(t *testing.T) {
 	}
 	if strings.Contains(w.Body.String(), "/*READ_SCRIPT*/") {
 		t.Fatal("script not embedded")
+	}
+}
+
+func TestR5BindingUsesTrustedOriginPolicy(t *testing.T) {
+	h := newConsolePlatformTestHub(t)
+	h.SpecReader = &specread.Service{Bindings: h.Repo.(specread.Bindings)}
+	h.PublicOrigin = "https://example.com"
+	list, err := trustedorigin.ParseList("https://example.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.TrustedOrigins = list
+	b := specread.Binding{Principal: "owner", Provider: "github", Instance: "github.com", AccountID: "123", Login: "alice"}
+	body, _ := json.Marshal(b)
+	for _, tc := range []struct {
+		name, target, source string
+		want                 int
+	}{
+		{"canonical", "https://example.com/api/console/openspec-bindings", "https://example.com", 204},
+		{"allowlist with normalized case", "https://EXAMPLE.COM:50443/api/console/openspec-bindings", "HTTPS://EXAMPLE.COM:50443", 204},
+		{"wrong port", "https://example.com:50444/api/console/openspec-bindings", "https://example.com:50444", 403},
+		{"http impersonation", "http://example.com:50443/api/console/openspec-bindings", "http://example.com:50443", 403},
+		{"missing origin", "https://example.com:50443/api/console/openspec-bindings", "", 403},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := httptest.NewRequest(http.MethodPut, tc.target, strings.NewReader(string(body)))
+			r.Header.Set("Content-Type", "application/json")
+			if tc.source != "" {
+				r.Header.Set("Origin", tc.source)
+			}
+			r = r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, "manager"))
+			w := httptest.NewRecorder()
+			h.HandleOpenSpecBinding(w, r)
+			if w.Code != tc.want {
+				t.Fatalf("status=%d want=%d body=%s", w.Code, tc.want, w.Body.String())
+			}
+		})
 	}
 }
 func TestR5AdminBindingMiddlewareCannotUseManagement(t *testing.T) {

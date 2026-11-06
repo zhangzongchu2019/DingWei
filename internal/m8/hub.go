@@ -37,6 +37,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/specconfirm"
 	"github.com/zhangzongchu2019/dingwei/internal/specread"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
 
@@ -113,7 +114,8 @@ type Hub struct {
 	// 自备 Agent 不回调。为空＝不回调。
 	OnHostedAgentOnline func(ctx context.Context, agentID string)
 	// PublicOrigin 新平台对外源（例如 https://dw.cmjrt.com:55055）：view 写操作与 WebSocket 升级校验 Origin 用。
-	PublicOrigin string
+	PublicOrigin   string
+	TrustedOrigins []trustedorigin.Origin
 	// Onboarding 新平台 N3：飞书里的登录与注册指令改由它处理（为空＝沿用旧登录）。
 	Onboarding *identity.Onboarding
 	// newPlatformShimRepo 测试缝：非空时垫片用它代替 h.Repo（注入写库失败，复验方 H15）。

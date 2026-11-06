@@ -12,6 +12,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/specread"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 func TestR9PMConsoleAcceptsOnlyThreeExplicitDecisions(t *testing.T) {
@@ -29,6 +30,7 @@ func TestR9PMConsoleAcceptsOnlyThreeExplicitDecisions(t *testing.T) {
 				t.Fatal(err)
 			}
 			h.Identity = identity.NewService(mem, nil, nil)
+			h.PublicOrigin = "https://dw123.cmjrt.com"
 			key := store.R9PMKey{Provider: "github", Instance: "github.com", RepositoryID: "1", ChangeDirectory: "demo", PointID: "R9-PM01"}
 			if _, err := db.SetR9PMResponsibility(ctx, key, "pm", "admin"); err != nil {
 				t.Fatal(err)
@@ -47,6 +49,41 @@ func TestR9PMConsoleAcceptsOnlyThreeExplicitDecisions(t *testing.T) {
 			if _, created, err := db.CreateR9PMRequest(ctx, store.R9PMCreateInput{RequestID: "console-r9", R9PMKey: key, CommitSHA: strings.Repeat("a", 40), ContentSHA256: "fingerprint", PMUserIDLC: "pm", ConsoleRecipient: "pm", FeishuRecipient: "ou_pm", SummaryJSON: `{"question":"Q","options":["A","B"],"recommendation":"A"}`}); err != nil || !created {
 				t.Fatalf("create request created=%v err=%v", created, err)
 			}
+			trusted, err := trustedorigin.ParseList("https://dw123.cmjrt.com:50443")
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, originCase := range []struct {
+				name, source, target string
+				configured           bool
+				want                 int
+			}{
+				{"empty canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com", false, 400},
+				{"empty extra port", "https://dw123.cmjrt.com:50443", "https://dw123.cmjrt.com:50443", false, 403},
+				{"empty case variation", "HTTPS://DW123.CMJRT.COM:50443", "https://DW123.CMJRT.COM:50443", false, 403},
+				{"configured canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com", true, 400},
+				{"configured normalized hit", "HTTPS://DW123.CMJRT.COM:50443", "https://dw123.cmjrt.com:50443", true, 400},
+				{"configured different port", "https://dw123.cmjrt.com:50444", "https://dw123.cmjrt.com:50444", true, 403},
+				{"configured HTTP impostor", "http://dw123.cmjrt.com:50443", "http://dw123.cmjrt.com:50443", true, 403},
+			} {
+				if originCase.configured {
+					h.TrustedOrigins = trusted
+				} else {
+					h.TrustedOrigins = nil
+				}
+				r := httptest.NewRequest(http.MethodPost, originCase.target+"/api/console/openspec-pm-requests/console-r9/response", strings.NewReader("{"))
+				r.SetPathValue("requestID", "console-r9")
+				r.Header.Set("Origin", originCase.source)
+				r.Header.Set("Content-Type", "application/json")
+				r = r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, "pm"))
+				w := httptest.NewRecorder()
+				h.HandleR9PMConsoleResponse(w, r)
+				if w.Code != originCase.want {
+					t.Fatalf("origin matrix %s status=%d want=%d body=%s", originCase.name, w.Code, originCase.want, w.Body.String())
+				}
+			}
+			h.PublicOrigin = "https://console.fixture.invalid"
+			h.TrustedOrigins = nil
 			body := `{"generation":1,"decision":"` + tc.text + `","comment":"verified"}`
 			r := httptest.NewRequest(http.MethodPost, "https://console.fixture.invalid/api/console/openspec-pm-requests/console-r9/response", strings.NewReader(body))
 			r.SetPathValue("requestID", "console-r9")

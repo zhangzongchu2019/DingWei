@@ -16,6 +16,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 const npOrigin = "https://dw.cmjrt.com:55055"
@@ -134,6 +135,46 @@ func TestNewPlatformViewAuth(t *testing.T) {
 	res.Body.Close()
 	if res.StatusCode != 403 {
 		t.Errorf("websocket upgrade without Origin: %d, want 403", res.StatusCode)
+	}
+}
+
+func TestNewPlatformViewTrustedOriginAndWebSocketGate(t *testing.T) {
+	v := newViewEnv(t)
+	list, err := trustedorigin.ParseList("https://dw.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	v.hub.TrustedOrigins = list
+	for _, tc := range []struct {
+		name, method, path, source string
+		upgrade                    bool
+		want                       int
+	}{
+		{"allowlisted write", "POST", "/view/Kimi.zzc/input", "HTTPS://DW.CMJRT.COM:50443", false, 200},
+		{"port mismatch", "POST", "/view/Kimi.zzc/input", "https://dw.cmjrt.com:50444", false, 403},
+		{"http impostor", "POST", "/view/Kimi.zzc/input", "http://dw.cmjrt.com:50443", false, 403},
+		{"missing origin write", "POST", "/view/Kimi.zzc/input", "", false, 403},
+		{"allowlisted websocket upgrade admission", "GET", "/view/Kimi.zzc", "https://dw.cmjrt.com:50443", true, 200},
+		{"missing origin websocket upgrade", "GET", "/view/Kimi.zzc", "", true, 403},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req, _ := http.NewRequest(tc.method, v.srv.URL+tc.path, nil)
+			req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: v.tokZZC})
+			if tc.source != "" {
+				req.Header.Set("Origin", tc.source)
+			}
+			if tc.upgrade {
+				req.Header.Set("Upgrade", "websocket")
+			}
+			res, err := v.srv.Client().Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			res.Body.Close()
+			if res.StatusCode != tc.want {
+				t.Fatalf("status=%d want=%d", res.StatusCode, tc.want)
+			}
+		})
 	}
 }
 

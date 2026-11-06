@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/zhangzongchu2019/dingwei/internal/specread"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 // configureSpecRead never logs paths, credentials, API errors, or source content.
@@ -127,7 +128,7 @@ func (h *Hub) HandleOpenSpecBinding(w http.ResponseWriter, r *http.Request) {
 	}
 	// Require JSON + a matching Origin for administrative mapping mutations.
 	origin, e := url.Parse(r.Header.Get("Origin"))
-	if e != nil || origin.Host != r.Host || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" || (origin.Scheme != "https" && origin.Scheme != "http") || (h.PublicOrigin != "" && r.Header.Get("Origin") != h.PublicOrigin) || r.Header.Get("Sec-Fetch-Site") == "cross-site" || r.Header.Get("Content-Type") != "application/json" || r.URL.RawQuery != "" {
+	if e != nil || !trustedorigin.AuthorityMatches(origin.Host, r.Host, len(h.TrustedOrigins) > 0) || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" || (origin.Scheme != "https" && origin.Scheme != "http") || !h.originAllowed(r.Header.Get("Origin"), h.PublicOrigin == "" || r.Header.Get("Origin") == h.PublicOrigin, len(r.Header.Values("Origin"))) || r.Header.Get("Sec-Fetch-Site") == "cross-site" || r.Header.Get("Content-Type") != "application/json" || r.URL.RawQuery != "" {
 		specReadError(w, specread.ErrForbidden, specread.Result{})
 		return
 	}

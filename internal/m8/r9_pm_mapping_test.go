@@ -10,6 +10,7 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 func TestR9PMMappingAdminAndDisabledGuards(t *testing.T) {
@@ -45,6 +46,49 @@ func TestR9PMMappingAdminAndDisabledGuards(t *testing.T) {
 	input := `{"provider":"github","instance":"github.com","repository_id":"1","change_directory":"openspec/changes/x","point_id":"PM01","pm_user_id_lc":"pm"}`
 	if code := invoke(http.MethodPut, "token-root", input); code != 200 {
 		t.Fatalf("active admin mapping set rc=%d", code)
+	}
+	for _, tc := range []struct{ name, source, target string }{
+		{"extra port", "https://console.fixture.invalid:50443", "https://console.fixture.invalid:50443"},
+		{"case variation", "HTTPS://CONSOLE.FIXTURE.INVALID", "https://CONSOLE.FIXTURE.INVALID"},
+		{"missing origin", "", "https://console.fixture.invalid"},
+	} {
+		r := httptest.NewRequest(http.MethodPut, tc.target+"/api/console/openspec-pm-responsibility", strings.NewReader(input))
+		r.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: "token-root"})
+		if tc.source != "" {
+			r.Header.Set("Origin", tc.source)
+		}
+		r.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, r)
+		if w.Code != http.StatusForbidden {
+			t.Fatalf("empty-list %s status=%d want=%d body=%s", tc.name, w.Code, http.StatusForbidden, w.Body.String())
+		}
+	}
+	trusted, err := trustedorigin.ParseList("https://console.fixture.invalid:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.TrustedOrigins = trusted
+	input50443 := `{"provider":"github","instance":"github.com","repository_id":"1","change_directory":"openspec/changes/x","point_id":"PM02","pm_user_id_lc":"pm"}`
+	for _, tc := range []struct {
+		name, source, target string
+		want                 int
+	}{
+		{"allowlist hit", "HTTPS://CONSOLE.FIXTURE.INVALID:50443", "https://CONSOLE.FIXTURE.INVALID:50443", http.StatusOK},
+		{"different port", "https://console.fixture.invalid:50444", "https://console.fixture.invalid:50444", http.StatusForbidden},
+		{"http impersonation", "http://console.fixture.invalid:50443", "http://console.fixture.invalid:50443", http.StatusForbidden},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := httptest.NewRequest(http.MethodPut, tc.target+"/api/console/openspec-pm-responsibility", strings.NewReader(input50443))
+			r.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: "token-root"})
+			r.Header.Set("Origin", tc.source)
+			r.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, r)
+			if w.Code != tc.want {
+				t.Fatalf("status=%d want=%d body=%s", w.Code, tc.want, w.Body.String())
+			}
+		})
 	}
 	if code := invoke(http.MethodPut, "token-manager", input); code != http.StatusForbidden {
 		t.Fatalf("manager mapping write rc=%d", code)

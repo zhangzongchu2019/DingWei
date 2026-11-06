@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 // API 路由与依赖。
@@ -27,7 +28,8 @@ type API struct {
 	Actor        func(r *http.Request) (userIDLC string, err error)
 	RenewSession func(http.ResponseWriter, *http.Request) error
 	// PublicOrigin console 写接口要求的 Origin（例如 https://dw.cmjrt.com:55055）。为空则拒绝一切 console 写请求。
-	PublicOrigin string
+	PublicOrigin   string
+	TrustedOrigins []trustedorigin.Origin
 	// TrustProxy 为真且直连方是回环地址时，来源 IP 取 X-Real-IP（Hub 在本机 nginx 之后）。
 	TrustProxy bool
 	// Online 报告某 Agent 当前是否在线；为空时一律 false。
@@ -234,7 +236,7 @@ func (a *API) console(next func(w http.ResponseWriter, r *http.Request, actor st
 			writeErr(w, http.StatusUnauthorized, "unauthenticated", nil)
 			return
 		}
-		if r.Method != http.MethodGet && (a.PublicOrigin == "" || r.Header.Get("Origin") != a.PublicOrigin) {
+		if r.Method != http.MethodGet && !trustedorigin.Allows(r.Header.Get("Origin"), a.PublicOrigin, a.TrustedOrigins, a.PublicOrigin != "" && r.Header.Get("Origin") == a.PublicOrigin, len(r.Header.Values("Origin"))) {
 			writeErr(w, http.StatusForbidden, "origin_mismatch", nil)
 			return
 		}

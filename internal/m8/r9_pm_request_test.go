@@ -12,6 +12,9 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/specread"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
+	"net/http"
+	"net/http/httptest"
 )
 
 type r9ProposalProvider struct{ body string }
@@ -134,5 +137,49 @@ func TestRequestR9PMDecisionRequiresMappedPMAndCreatesBoundRequest(t *testing.T)
 	tasks, err = db.ListR9PMConsoleTasks(ctx, "pm")
 	if err != nil || len(tasks) != 0 {
 		t.Fatalf("answered PM still has console todo: %+v err=%v", tasks, err)
+	}
+}
+
+func TestR9PMRequestTrustedOriginMatrix(t *testing.T) {
+	t.Setenv("DW_PM_DECISION_REQUEST_ENABLED", "1")
+	h, _, _ := newTestHub(t)
+	h.PublicOrigin = "https://dw123.cmjrt.com"
+	list, err := trustedorigin.ParseList("https://dw123.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name, source, target string
+		configured           bool
+		want                 int
+	}{
+		{"empty canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com/api/console/r9-pm-requests", false, http.StatusBadRequest},
+		{"empty list excludes extra port", "https://dw123.cmjrt.com:50443", "https://dw123.cmjrt.com:50443/api/console/r9-pm-requests", false, http.StatusForbidden},
+		{"empty list exact case behavior", "HTTPS://DW123.CMJRT.COM:50443", "HTTPS://DW123.CMJRT.COM:50443/api/console/r9-pm-requests", false, http.StatusForbidden},
+		{"configured canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com/api/console/r9-pm-requests", true, http.StatusBadRequest},
+		{"configured allowlist case normalized", "HTTPS://DW123.CMJRT.COM:50443", "https://dw123.cmjrt.com:50443/api/console/r9-pm-requests", true, http.StatusBadRequest},
+		{"configured different port", "https://dw123.cmjrt.com:50444", "https://dw123.cmjrt.com:50444/api/console/r9-pm-requests", true, http.StatusForbidden},
+		{"configured HTTP impersonation", "http://dw123.cmjrt.com:50443", "http://dw123.cmjrt.com:50443/api/console/r9-pm-requests", true, http.StatusForbidden},
+		{"configured missing origin", "", "https://dw123.cmjrt.com:50443/api/console/r9-pm-requests", true, http.StatusForbidden},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.configured {
+				h.TrustedOrigins = list
+			} else {
+				h.TrustedOrigins = nil
+			}
+			r := httptest.NewRequest(http.MethodPost, tc.target, strings.NewReader("{"))
+			if tc.source != "" {
+				r.Header.Set("Origin", tc.source)
+			}
+			r.Header.Set("Content-Type", "application/json")
+			r = r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, "manager"))
+			w := httptest.NewRecorder()
+			h.HandleR9PMRequest(w, r)
+			if w.Code != tc.want {
+				t.Fatalf("status=%d want=%d body=%s", w.Code, tc.want, w.Body.String())
+			}
+		})
 	}
 }

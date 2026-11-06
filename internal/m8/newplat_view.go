@@ -128,7 +128,7 @@ func (h *Hub) newPlatformViewAuth(w http.ResponseWriter, r *http.Request) bool {
 	}
 	// 写操作与 WebSocket 升级都校验 Origin（后者防跨站 WebSocket 劫持）。
 	if (r.Method != http.MethodGet || strings.EqualFold(r.Header.Get("Upgrade"), "websocket")) &&
-		(h.PublicOrigin == "" || r.Header.Get("Origin") != h.PublicOrigin) {
+		!h.originAllowed(r.Header.Get("Origin"), h.PublicOrigin != "" && r.Header.Get("Origin") == h.PublicOrigin, len(r.Header.Values("Origin"))) {
 		writeAgentWSError(w, http.StatusForbidden, "origin_mismatch")
 		return false
 	}
@@ -236,7 +236,7 @@ func (h *Hub) newPlatformPrincipal(w http.ResponseWriter, r *http.Request) (stri
 		return "", false
 	}
 	// 写操作校验 Origin（与 N3、入网接口、view 授权同一口径；cookie 之外再挡一层跨站请求）。
-	if r.Method != http.MethodGet && r.Method != http.MethodHead && (h.PublicOrigin == "" || r.Header.Get("Origin") != h.PublicOrigin) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead && !h.originAllowed(r.Header.Get("Origin"), h.PublicOrigin != "" && r.Header.Get("Origin") == h.PublicOrigin, len(r.Header.Values("Origin"))) {
 		writeAgentWSError(w, http.StatusForbidden, "origin_mismatch")
 		return "", false
 	}

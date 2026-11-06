@@ -14,6 +14,7 @@ import (
 	cr "github.com/zhangzongchu2019/dingwei/internal/coordinatereview"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/specread"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 type coordinateReviewDispatchKey struct{}
@@ -56,7 +57,7 @@ func (h *Hub) coordinateMutation(w http.ResponseWriter, r *http.Request, agent b
 		return true
 	}
 	o, e := url.Parse(r.Header.Get("Origin"))
-	if e != nil || o.Host != r.Host || o.User != nil || o.Path != "" || o.RawQuery != "" || o.Fragment != "" || (o.Scheme != "https" && o.Scheme != "http") || (h.PublicOrigin != "" && r.Header.Get("Origin") != h.PublicOrigin) || r.Header.Get("Sec-Fetch-Site") == "cross-site" {
+	if e != nil || !trustedorigin.AuthorityMatches(o.Host, r.Host, len(h.TrustedOrigins) > 0) || o.User != nil || o.Path != "" || o.RawQuery != "" || o.Fragment != "" || (o.Scheme != "https" && o.Scheme != "http") || !h.originAllowed(r.Header.Get("Origin"), h.PublicOrigin == "" || r.Header.Get("Origin") == h.PublicOrigin, len(r.Header.Values("Origin"))) || r.Header.Get("Sec-Fetch-Site") == "cross-site" {
 		coordinateError(w, cr.ErrForbidden)
 		return false
 	}

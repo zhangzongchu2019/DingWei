@@ -3,6 +3,7 @@ package m8
 import (
 	"encoding/json"
 	td "github.com/zhangzongchu2019/dingwei/internal/taskdispatch"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 	"io"
 	"net/http"
 	"net/url"
@@ -30,7 +31,7 @@ func (h *Hub) handleTaskDispatchBatch(w http.ResponseWriter, r *http.Request, ag
 	}
 	if !agent {
 		origin, e := url.Parse(r.Header.Get("Origin"))
-		if e != nil || origin.Host != r.Host || origin.User != nil || origin.Path != "" || origin.RawQuery != "" || origin.Fragment != "" || (origin.Scheme != "https" && origin.Scheme != "http") || (h.PublicOrigin != "" && r.Header.Get("Origin") != h.PublicOrigin) || r.Header.Get("Sec-Fetch-Site") == "cross-site" {
+		if e != nil || !trustedorigin.AuthorityMatches(origin.Host, r.Host, len(h.TrustedOrigins) > 0) || origin.User != nil || origin.Path != "" || origin.RawQuery != "" || origin.Fragment != "" || (origin.Scheme != "https" && origin.Scheme != "http") || !h.originAllowed(r.Header.Get("Origin"), h.PublicOrigin == "" || r.Header.Get("Origin") == h.PublicOrigin, len(r.Header.Values("Origin"))) || r.Header.Get("Sec-Fetch-Site") == "cross-site" {
 			taskDispatchError(w, td.ErrForbidden)
 			return
 		}

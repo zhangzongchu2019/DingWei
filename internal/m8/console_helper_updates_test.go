@@ -13,6 +13,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 func TestConsoleHelperUpdateAuthorizationAndCatalogOnly(t *testing.T) {
@@ -270,6 +271,50 @@ func TestConsoleHelperUpdateHandlerOriginDefense(t *testing.T) {
 	v.hub.HandleConsoleHelperUpdates(w, r)
 	if w.Code != 403 || !strings.Contains(w.Body.String(), "origin_mismatch") {
 		t.Fatalf("unguarded handler origin=%d %s", w.Code, w.Body.String())
+	}
+}
+
+func TestR52ConsoleHelperUpdatesTrustedOriginMatrix(t *testing.T) {
+	v := newViewEnv(t)
+	h := v.hub
+	h.PublicOrigin = "https://dw123.cmjrt.com"
+	trusted, err := trustedorigin.ParseList("https://dw123.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name, source string
+		configured   bool
+		wantDenied   bool
+	}{
+		{"empty canonical", "https://dw123.cmjrt.com", false, false},
+		{"empty allowlisted origin", "https://dw123.cmjrt.com:50443", false, true},
+		{"empty case variation", "HTTPS://DW123.CMJRT.COM:50443", false, true},
+		{"configured canonical", "https://dw123.cmjrt.com", true, false},
+		{"configured normalized hit", "HTTPS://DW123.CMJRT.COM:50443", true, false},
+		{"configured different port", "https://dw123.cmjrt.com:50444", true, true},
+		{"configured HTTP impostor", "http://dw123.cmjrt.com:50443", true, true},
+		{"configured missing origin", "", true, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.configured {
+				h.TrustedOrigins = trusted
+			} else {
+				h.TrustedOrigins = nil
+			}
+			r := httptest.NewRequest(http.MethodPost, "/api/console/helper-updates", strings.NewReader("{}"))
+			if tc.source != "" {
+				r.Header.Set("Origin", tc.source)
+			}
+			r = r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, "zzc"))
+			w := httptest.NewRecorder()
+			h.HandleConsoleHelperUpdates(w, r)
+			gotDenied := w.Code == http.StatusForbidden && strings.Contains(w.Body.String(), "origin_mismatch")
+			if gotDenied != tc.wantDenied {
+				t.Fatalf("status=%d body=%s denied=%v wantDenied=%v", w.Code, w.Body.String(), gotDenied, tc.wantDenied)
+			}
+		})
 	}
 }
 

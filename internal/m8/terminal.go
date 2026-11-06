@@ -1074,6 +1074,13 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer finish()
+	originValues := r.Header.Values("Origin")
+	if origin := r.Header.Get("Origin"); len(h.TrustedOrigins) > 0 && len(originValues) > 0 {
+		if !h.originAllowed(origin, h.PublicOrigin != "" && origin == h.PublicOrigin, len(originValues)) {
+			http.Error(w, "origin_mismatch", http.StatusForbidden)
+			return
+		}
+	}
 	sessionName := strings.TrimSpace(r.PathValue("session"))
 	if sessionName == "" || strings.Contains(sessionName, "#") {
 		http.Error(w, "invalid session name", http.StatusBadRequest)

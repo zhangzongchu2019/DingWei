@@ -15,6 +15,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 type n3env struct {
@@ -283,5 +284,41 @@ func TestN3HTTP_OriginRequiredOnLoginAndWrites(t *testing.T) {
 	}
 	if st, b := e.call(c, "POST", "/api/console/account/password", map[string]any{"old_password": e.pw, "new_password": "New-Strong-Pass-42"}, false); st != 403 || b["error"] != "origin_mismatch" {
 		t.Fatalf("change without Origin: %d %v", st, b)
+	}
+}
+
+func TestN3LoginUsesTrustedOriginPolicy(t *testing.T) {
+	e := newN3Env(t)
+	list, err := trustedorigin.ParseList("https://dw.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.n3.TrustedOrigins = list
+	for _, tc := range []struct {
+		name, source string
+		want         int
+	}{
+		{"allowlisted normalized origin reaches login", "HTTPS://DW.CMJRT.COM:50443", http.StatusUnauthorized},
+		{"canonical origin reaches login", origin, http.StatusUnauthorized},
+		{"other port rejected", "https://dw.cmjrt.com:50444", http.StatusForbidden},
+		{"http rejected", "http://dw.cmjrt.com:50443", http.StatusForbidden},
+		{"missing origin rejected", "", http.StatusForbidden},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := bytes.NewBufferString(`{"user_id":"nobody","password":"bad"}`)
+			req, _ := http.NewRequest(http.MethodPost, e.srv.URL+"/console/login/password", body)
+			req.Header.Set("Content-Type", "application/json")
+			if tc.source != "" {
+				req.Header.Set("Origin", tc.source)
+			}
+			res, err := e.srv.Client().Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			res.Body.Close()
+			if res.StatusCode != tc.want {
+				t.Fatalf("status=%d want=%d", res.StatusCode, tc.want)
+			}
+		})
 	}
 }
