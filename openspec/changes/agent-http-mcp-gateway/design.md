@@ -121,3 +121,9 @@ PM-GW-01（已定，㊹-补6）：纯轮询不续编组。其余已定八点不�
 ## A路实现锁与授权细节（2026-11-06合并核对）
 
 对应GW-002令牌撤销/到期、GW-005在线租约、GW-006持久投递与过期、GW-008名称路由及GW-010原helper兼容：PG0105保存令牌audience与MVP完整四scope，统一配置由main注入；签发签名保持。外部路由只在SplitAgentName认可形状后查询身份，兼容Hub小写索引。跨库投影以PG事务内锁定的双方身份快照传给Hub适配器，适配器不再申请身份PG连接，SQLite成功仍只算projected。所有锁等待后重取时钟再判整点到期，防止请求开始时间复活过期令牌；瞬态outbox投影失败保留原稳定ID后台重试。上述不增加权限或变更原helper ACK/重试语义。
+
+## B路协议与短期OAuth状态实现（2026-11-06）
+
+对应GW-003/GW-004/GW-009：MCP与REST共用四工具分发，逐请求校验版本/能力与镜像头；集中错误映射，默认只信PublicOrigin的Origin接口留待r52集成。C回调仍经extwire签A令牌，B不改变C签名；浏览器只见一次性code，兑换核S256及完整客户端绑定，再现核A。B提供可选C StateStore适配，不改C包或撤回㊹-补14的单进程内存许可。
+
+组长2026-11-06T16:13:02Z分配0107：mcpgw_oauth短期表以resource/kind/key_hash隔离，密文AES-256-GCM绑定同一三元组；每次写入清过期行，读/原子兑换即时拒过期，并发DELETE RETURNING只准一次。密钥由DW_MCPGW_OAUTH_KEY_FILE指向仓外32字节私有文件；缺/错只禁用本路并日志，不影响Hub。MVP不支持轮换，换钥使在途登录失效。schema只由迁移创建；集成extwire.CheckSchema及账本期望串由组长维护。

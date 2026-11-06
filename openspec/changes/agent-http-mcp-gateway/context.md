@@ -63,3 +63,7 @@
 
 
 唯一写者合并的测试与证据入口：docs/reviews/r53-extseat-writer-reconcile/（命令UTC/rc/hash、变异失败原文、受测源码摘要、完整包SKIP清单）；身份投影锁改动在internal/extseat/outbox.go与internal/m8/extseat.go，时钟重核在service.go/inbox.go。0105引入后的真实跨runtime claim集成迁移清单已补齐，数据库仍由pgtest隔离，未改生产配置或helper状态机。
+
+## B路实施坐标（2026-11-06）
+
+父基线144b215e32e718553d9fef2e79c83ece164f6514；分支coder56solzzc/r53-mcpgw；internal/mcpgw/INTERFACE.md列路由、A/C依赖、0107表列与密钥来源。cmd/workpulse/mcpgw.go提供显式注册与密钥失败降级；主装配仍由组长集成。已重新fetch并核rulings的㊹-补12/13/14及㊺-补1；0107来自16:13:02Z定向分配。官方2026-07-28的Streamable HTTP/versioning/server/discover/client-registration本轮重新在线核对，支持无initialize的逐请求头/元数据及CIMD；未把假上游联调称为真实飞书或第三方SDK互操作。生产密钥来源DW_MCPGW_OAUTH_KEY_FILE；本地测试用随机密钥、临时SQLite/临时PG，不使用在线Hub或生产库。
