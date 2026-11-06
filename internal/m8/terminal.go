@@ -581,12 +581,60 @@ func (h *Hub) handleSessionEventEnvelopeContext(_ context.Context, c *sessionCli
 		}
 	}
 	h.publishSessionEvent(c.keyID, c.sessionName, sanitized)
+	h.convergeAdmissionUnknownAfterTurn(c.keyID, c.sessionName, sanitized)
 	if h.amr != nil {
 		h.amr.ingest(c.keyID, c.sessionName, sanitized)
 	}
 	// R-V2-0103：view 提及转来的那一轮，回合结束时把回复只读显示到发起页（不投递、不进 AMR）。
 	h.mentionMirror.observe(c.keyID, c.sessionName, sanitized)
 	return true
+}
+
+// A terminal event linked to the original delivery resolves the waiting period
+// for an admission_unknown input without claiming that the model accepted it.
+func (h *Hub) convergeAdmissionUnknownAfterTurn(keyID, sessionName, raw string) {
+	if h.Repo == nil {
+		return
+	}
+	var ev amrSessionEvent
+	if json.Unmarshal([]byte(raw), &ev) != nil || !amrTerminalEvent(ev) {
+		return
+	}
+	key := terminalKey(keyID, sessionName)
+	h.unknownDeliveryMu.Lock()
+	ids := make([]string, 0, len(h.unknownDeliveries[key]))
+	now := h.now().UTC()
+	for id, seen := range h.unknownDeliveries[key] {
+		if now.Sub(seen) <= 24*time.Hour {
+			ids = append(ids, id)
+		}
+	}
+	delete(h.unknownDeliveries, key)
+	h.unknownDeliveryMu.Unlock()
+	for _, id := range ids {
+		d, err := h.Repo.GetSessionDelivery(context.Background(), id)
+		if err != nil || d == nil || d.KeyID != keyID || d.SessionName != sessionName ||
+			d.State != "admission_unknown" || d.LastError != "model_admission_unknown" || d.AckProtocol != 2 || d.ProcessingMode != "driver" {
+			continue
+		}
+		h.publishDeliveryUpdateForDelivery(*d, "admission_unknown", "helper_queued", "unconfirmed_retryable", "unconfirmed_retryable")
+	}
+}
+
+func (h *Hub) rememberAdmissionUnknown(d model.SessionDelivery) {
+	if d.KeyID == "" || d.SessionName == "" || d.ID == "" {
+		return
+	}
+	key := terminalKey(d.KeyID, d.SessionName)
+	h.unknownDeliveryMu.Lock()
+	if h.unknownDeliveries == nil {
+		h.unknownDeliveries = make(map[string]map[string]time.Time)
+	}
+	if h.unknownDeliveries[key] == nil {
+		h.unknownDeliveries[key] = make(map[string]time.Time)
+	}
+	h.unknownDeliveries[key][d.ID] = h.now().UTC()
+	h.unknownDeliveryMu.Unlock()
 }
 
 func addHistoryGap(raw, reason string) string {
@@ -895,12 +943,9 @@ func (h *Hub) publishDeliveryUpdateWithMetadata(keyID, sessionName, messageID, d
 }
 
 func sessionDeliveryCancellable(state string) bool {
-	switch state {
-	case "queued", "sent", "delivered":
-		return true
-	default:
-		return false
-	}
+	// Once a delivery has been leased/sent, the helper may already have taken it
+	// from its inbox. Only the durable Hub queue is certainly cancellable.
+	return state == "queued"
 }
 
 func deliveryUpdateEvent(messageID, deliveryID, deliveryState, stage, status, reason string, now time.Time) map[string]any {

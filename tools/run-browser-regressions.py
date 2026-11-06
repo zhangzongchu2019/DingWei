@@ -48,6 +48,7 @@ SUITES = (
     ("renderer_upload_ticket_timeout", "node", ROOT / "view-service/renderer-upload-ticket-timeout-regression.js"),
     ("renderer_flood_stress", "node", ROOT / "view-service/renderer-flood-stress-regression.js"),
     ("renderer_c2", "node", ROOT / "view-service/renderer-c2-regression.js"),
+    ("renderer_delivery_status", "node", ROOT / "view-service/renderer-delivery-status-regression.js"),
     ("console_specs_browser", "node", ROOT / "view-service/console-specs-browser-regression.js"),
     ("console_spec_workflow", "node", ROOT / "view-service/console-spec-workflow-regression.js"),
     ("console_task_flow_r32", "node", ROOT / "view-service/r32-task-flow-browser-regression.js"),

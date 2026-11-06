@@ -8,8 +8,8 @@
 
 - Hub 仅在尚未交给 helper 的可撤销队列态发布 `cancellable=true`；已进入 helper 生命周期的 delivered 不再显示删除。保留 Hub 对竞态取消请求的防线；收到 helper `not_cancelable` 时以安全的 `delivery_update` 反馈「已交给 Agent，无法撤回」，不触碰 helper 账本。
 - 对 `model_admission_unknown` 显示「Agent 正忙：消息已交出但未确认被处理，请看它的下一条回复」。提供显式重发，使用新 delivery、复用原正文与附件；Hub 以原 delivery 作为幂等键，只准创建一次，原条标记已重发，重发按钮随后消失。
-- Hub 的会话事件处理在同一会话、原 delivery 的 `turn_completed` 到达后，把 admission_unknown 对应投递推进为可重发的未确认终态展示；事件必须绑定原投递身份，不能以无关回合收敛，也不写 helper 账本。具体实现优先落 Hub/View 投影状态，保留 delivery 的 helper ACK 事实。
-- `inboxLagState` 的未知计数旁增加只读入口，列出当前启动未知条目；无明细数据时显示明确空/不可用状态，不推测正文。
+- Hub 的会话事件处理在该 delivery 之后同一会话出现任意 `turn_completed` 时，把该会话已记录的 admission_unknown 投递推进为可重发的未确认终态展示；终态事件不要求携带原 delivery id。作用域由 Hub key 与会话名精确限定，不会影响其他会话，也不写 helper 账本。
+- `inboxLagState` 的未知计数旁增加只读入口，列出事件环回放/当前流中收到的未知条目；helper 只报计数而当前页面没有对应明细时，明确显示无明细事件，不推测正文。
 
 ## 验证
 

@@ -54,14 +54,22 @@ func TestDesktopDurableReceiptNeverPublishesCLIInjection(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	select {
-	case raw := <-events:
-		if strings.Contains(raw, "cli_injected") || !strings.Contains(raw, `"delivery_stage":"helper_received"`) || !strings.Contains(raw, "desktop_inbox_saved") {
-			t.Fatalf("false desktop execution evidence: %s", raw)
+	deadline := time.After(time.Second)
+	for {
+		select {
+		case raw := <-events:
+			if strings.Contains(raw, `"delivery_stage":"hub_received"`) {
+				continue
+			}
+			if strings.Contains(raw, "cli_injected") || !strings.Contains(raw, `"delivery_stage":"helper_received"`) || !strings.Contains(raw, "desktop_inbox_saved") {
+				t.Fatalf("false desktop execution evidence: %s", raw)
+			}
+			goto gotReceipt
+		case <-deadline:
+			t.Fatal("no durable receipt event")
 		}
-	case <-time.After(time.Second):
-		t.Fatal("no durable receipt event")
 	}
+gotReceipt:
 	waitFor(t, time.Second, "transport processed", func() bool { d, _ := db.GetSessionDelivery(ctx, id); return d != nil && d.State == "processed" })
 	select {
 	case raw := <-events:

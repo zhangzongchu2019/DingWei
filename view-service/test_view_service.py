@@ -375,6 +375,28 @@ class ControlForwardV2Test(unittest.TestCase):
             self.assertEqual((status, ok), (502, False), f"hub {hub_code} 应 502 未发出、不压 403")
 
 
+class RetryForwardV2Test(unittest.TestCase):
+    def test_retry_requires_page_authority_and_forwards_delivery_id(self):
+        store = mock.MagicMock()
+        store.authorize_page.return_value = True
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_retry", return_value=(200, {"ok": True})) as hub:
+            status, ok = vs._forward_control_v2_retry("sess", "page", "token", "a" * 32, "delivery")
+        self.assertEqual((status, ok), (200, True))
+        hub.assert_called_once_with("sess", "page", "a" * 32, "delivery")
+        store.authorize_page.assert_called_once_with("page", "token", "sess")
+        store.record_successful_write.assert_called_once_with("page", "token")
+
+    def test_retry_denies_invalid_page_authority(self):
+        store = mock.MagicMock()
+        store.authorize_page.return_value = False
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_retry") as hub:
+            status, ok = vs._forward_control_v2_retry("sess", "page", "token", "a" * 32, "delivery")
+        self.assertEqual((status, ok), (403, False))
+        hub.assert_not_called()
+
+
 class InterruptForwardTest(unittest.TestCase):
     """legacy interrupt:过 page 写权 → 转发 hub legacy interrupt、G-ADDR=delivery_id+turn_id。"""
 

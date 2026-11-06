@@ -451,6 +451,37 @@ def _hub_v2_cancel(session: str, page_id: str, request_id: str,
         return 0, {"error": str(exc)}
 
 
+def _hub_v2_retry(session: str, page_id: str, request_id: str, delivery_id: str) -> tuple[int, dict]:
+    if not VIEW_TARGET_NAME or not VS_TO_HUB_SECRET_FILE:
+        return 0, {"error": "v2 retry auth unavailable"}
+    try:
+        with _logged_read(VS_TO_HUB_SECRET_FILE, "rb") as fh:
+            secret = fh.read().strip()
+    except OSError as exc:
+        return 0, {"error": str(exc)}
+    if len(secret) < 32:
+        return 0, {"error": "v2 retry secret too short"}
+    path = f"/internal/view-v2/{session}/retry"
+    body = json.dumps({"session": session, "page_id": page_id, "request_id": request_id,
+                       "delivery_id": delivery_id}, ensure_ascii=False, separators=(",", ":")).encode()
+    timestamp = str(int(time.time()))
+    nonce = secrets.token_hex(16)
+    signature = _control_signature(secret, "POST", path, timestamp, nonce, body,
+                                   direction="view-service-to-hub/v1")
+    req = urllib.request.Request(HUB_INTERNAL + path, data=body, method="POST",
+        headers={"Content-Type": "application/json", "X-DW-VS-Target": VIEW_TARGET_NAME,
+                 "X-DW-Timestamp": timestamp, "X-DW-Nonce": nonce,
+                 "X-DW-Request-ID": request_id, "X-DW-Signature": signature})
+    try:
+        with urllib.request.urlopen(req, timeout=8) as response:
+            raw = response.read().decode("utf-8", "replace")
+            return response.status, json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as exc:
+        return exc.code, {"error": exc.read().decode("utf-8", "replace")}
+    except Exception as exc:
+        return 0, {"error": str(exc)}
+
+
 def _hub_v2_interrupt(session: str, page_id: str, request_id: str,
                       delivery_id: str, turn_id: str) -> tuple[int, dict]:
     """V2 中断链:VS 侧对 hub V2 签名 interrupt 端点(devo48)的调用,镜像 _hub_v2_cancel。
@@ -697,7 +728,7 @@ def _ensure_ready_locked(session: str) -> dict:
 
 # 走甲最小 control:仅支持"删待提交区未注入条目"(pre-injection cancel)。
 # §5 provenance / durable / 全套 control robustness 后补(张宗楚 2026-07-21 定 A)。
-CONTROL_KINDS = frozenset({"cancel"})
+CONTROL_KINDS = frozenset({"cancel", "retry"})
 
 
 def _forward_control(session: str, kind: str, message_id: str, delivery_id: str) -> tuple[bool, int]:
@@ -709,7 +740,7 @@ def _forward_control(session: str, kind: str, message_id: str, delivery_id: str)
     - G-ADDR:message_id + delivery_id 定位待提交区条目;注入前无 turn_id,故不带。
     - 走甲最小 scope:仅 kind=cancel;其余 kind 拒(400)。
     返回 (ok, hub_status)。"""
-    if kind not in CONTROL_KINDS:
+    if kind != "cancel":
         return False, 400
     if not (message_id and delivery_id):
         return False, 400
@@ -755,6 +786,24 @@ def _forward_control_v2(session: str, page_id: str, page_token: str, request_id:
     if code == 409:
         return 200, False  # 注入前条目已终态/已注入 → 取消未生效(非未发出)
     return 502, False  # hub 5xx/网络/签名错 → 未发出,独立码,绝不压成 403
+
+
+def _forward_control_v2_retry(session: str, page_id: str, page_token: str, request_id: str,
+                              delivery_id: str, *, console_verified: bool = False) -> tuple[int, bool]:
+    if not (page_id and page_token and request_id and delivery_id):
+        return 400, False
+    store = None if console_verified else _get_page_store()
+    if not console_verified and not store.authorize_page(page_id, page_token, session):
+        return 403, False
+    code, payload = _hub_v2_retry(session, page_id, request_id, delivery_id)
+    if code == 200:
+        ok = bool(payload.get("ok"))
+        if ok and not console_verified:
+            store.record_successful_write(page_id, page_token)
+        return 200, ok
+    if code == 409:
+        return 200, False
+    return 502, False
 
 
 def _forward_interrupt(session: str, delivery_id: str, turn_id: str) -> tuple[bool, int]:
@@ -1469,8 +1518,15 @@ class _Handler(BaseHTTPRequestHandler):
         delivery_id = str(obj.get("delivery_id", "")).strip()
         # 模式门互斥(镜像 /input):V2 下走 V2 分支、legacy 分支不可达 → 无未鉴权控制入口。
         if VIEW_UNLOCK_V2:
-            # V2 走甲最小 scope:仅 kind=cancel + G-ADDR 双键;四态返回码(不压 403)见 _forward_control_v2。
-            if kind not in CONTROL_KINDS or not (message_id and delivery_id):
+            if kind not in CONTROL_KINDS or not delivery_id:
+                return self._json_response(400, {"ok": False})
+            if kind == "retry":
+                status, ok = _forward_control_v2_retry(session,
+                    str(obj.get("page_id", "")).strip(), str(obj.get("page_token", "")).strip(),
+                    str(obj.get("request_id", "")).strip(), delivery_id,
+                    **({"console_verified": True} if self._console_page_attested(obj) else {}))
+                return self._json_response(status, {"ok": ok})
+            if not message_id:
                 return self._json_response(400, {"ok": False})
             status, ok = _forward_control_v2(
                 session,
