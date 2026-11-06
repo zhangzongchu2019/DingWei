@@ -31,12 +31,34 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
     await input('unknown');
     await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-unknown',observed_delivery_id:'unknown',delivery_stage:'helper_queued',reason:'model_admission_unknown',cancellable:false,ack_protocol:2,processing_mode:'driver'});
     await checks.check('UNKNOWN_HAS_CLEAR_COPY', async()=>assert.ok((await page.locator('.waiting-item[data-delivery-id="unknown"]').innerText()).includes('Agent 正忙：消息已交出但未确认被处理，请看它的下一条回复')));
+    await checks.check('UNKNOWN_WITHOUT_TURN_END_STAYS_BUSY', async()=>{
+      const row=page.locator('.waiting-item[data-delivery-id="unknown"]');
+      assert.ok((await row.innerText()).includes('Agent 正忙'));
+      assert.strictEqual(await row.locator('.waiting-retry-btn').count(),0);
+      assert.ok(!(await row.innerText()).includes('未确认（可重发）'));
+    });
     await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-unknown',observed_delivery_id:'unknown',delivery_stage:'helper_queued',delivery_status:'unconfirmed_retryable',reason:'unconfirmed_retryable',cancellable:false,ack_protocol:2,processing_mode:'driver'});
     await checks.check('TURN_END_STOPS_SPINNER_AND_OFFERS_RETRY', async()=>{
       const row=page.locator('.waiting-item[data-delivery-id="unknown"]');
       assert.strictEqual(await row.locator('.prov-spin').count(),0);
       assert.ok((await row.innerText()).includes('未确认（可重发）'));
       assert.strictEqual(await row.locator('.waiting-retry-btn').count(),1);
+    });
+    await input('late-admitted');
+    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-late-admitted',observed_delivery_id:'late-admitted',delivery_stage:'helper_queued',delivery_status:'unconfirmed_retryable',reason:'unconfirmed_retryable',cancellable:false,ack_protocol:2,processing_mode:'driver'});
+    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-late-admitted',observed_delivery_id:'late-admitted',delivery_stage:'cli_injected',delivery_status:'injected',reason:'',cancellable:false,ack_protocol:2,processing_mode:'driver'});
+    await checks.check('LATE_ADMITTED_RESTORES_NORMAL_PROCESSED', async()=>{
+      assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="late-admitted"]').count(),0);
+      assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="late-admitted"] .waiting-retry-btn').count(),0);
+      assert.ok((await page.locator('#timeline').innerText()).includes('body late-admitted'));
+    });
+    await input('late-processed');
+    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-late-processed',observed_delivery_id:'late-processed',delivery_stage:'helper_queued',delivery_status:'unconfirmed_retryable',reason:'unconfirmed_retryable',cancellable:false,ack_protocol:2,processing_mode:'driver'});
+    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-late-processed',observed_delivery_id:'late-processed',delivery_stage:'turn_processed',delivery_status:'processed',reason:'',cancellable:false,ack_protocol:2,processing_mode:'driver'});
+    await checks.check('LATE_PROCESSED_RESTORES_NORMAL_PROCESSED', async()=>{
+      assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="late-processed"]').count(),0);
+      assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="late-processed"] .waiting-retry-btn').count(),0);
+      assert.ok((await page.locator('#timeline').innerText()).includes('body late-processed'));
     });
     await page.locator('.waiting-item[data-delivery-id="unknown"] .waiting-retry-btn').click();
     await checks.check('RETRY_ONLY_ONCE', async()=>{
@@ -52,6 +74,6 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
       assert.ok((await details.innerText()).includes('body unknown'));
     });
     await checks.check('NO_PAGE_ERRORS', async()=>assert.deepStrictEqual(errors,[]));
-    checks.finish(); console.log('DELIVERY_STATUS_BROWSER_PASS checks=8');
+    checks.finish(); console.log('DELIVERY_STATUS_BROWSER_PASS checks=11');
   } finally { if(browser) await browser.close(); await fixture.close(); }
 })().catch(finishRegression);

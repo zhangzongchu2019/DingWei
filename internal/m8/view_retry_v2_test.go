@@ -125,13 +125,13 @@ func TestViewRetryV2ReplaysExactEnvelopeOnce(t *testing.T) {
 	}
 }
 
-func TestConvergeAdmissionUnknownOnNextSessionTurnCompletion(t *testing.T) {
+func TestAnotherMessagesTurnEndConvergesUnknownDelivery(t *testing.T) {
 	f := newACKV2Fixture(t, true)
 	f.sendAndConfirm("queued", "", "", f.stamp)
 	f.sendAndConfirm("admission_unknown", "", "", f.stamp)
 	_, events, unsub := f.hub.subscribeSessionEvents(f.client.keyID, f.client.sessionName, "converge-test")
 	defer unsub()
-	unrelated, _ := json.Marshal(amrSessionEvent{Kind: "state_change", Data: map[string]any{"change": "turn_completed"}})
+	unrelated, _ := json.Marshal(amrSessionEvent{Kind: "state_change", DeliveryID: "another-message-delivery", Data: map[string]any{"change": "turn_completed"}})
 	f.hub.convergeAdmissionUnknownAfterTurn("other-key", f.client.sessionName, string(unrelated))
 	select {
 	case got := <-events:
@@ -153,5 +153,48 @@ func TestConvergeAdmissionUnknownOnNextSessionTurnCompletion(t *testing.T) {
 	}
 	if row := f.record(); row.State != "admission_unknown" {
 		t.Fatalf("helper ledger projection mutated Hub row: %+v", row)
+	}
+}
+
+func TestAdmissionUnknownStaysPendingUntilAnySameSessionTurnEnds(t *testing.T) {
+	f := newACKV2Fixture(t, true)
+	f.sendAndConfirm("queued", "", "", f.stamp)
+	f.sendAndConfirm("admission_unknown", "", "", f.stamp)
+	_, events, unsub := f.hub.subscribeSessionEvents(f.client.keyID, f.client.sessionName, "no-turn-end")
+	defer unsub()
+	select {
+	case got := <-events:
+		t.Fatalf("unknown delivery unexpectedly converged without a turn end: %s", got)
+	default:
+	}
+	if row := f.record(); row.State != "admission_unknown" {
+		t.Fatalf("unknown delivery row changed without a turn end: %+v", row)
+	}
+}
+
+func TestLateAdmissionAndProcessedConfirmationsSupersedeUnknownProjection(t *testing.T) {
+	for _, phase := range []string{"injected", "processed"} {
+		t.Run(phase, func(t *testing.T) {
+			f := newACKV2Fixture(t, true)
+			f.sendAndConfirm("queued", "", "", f.stamp)
+			f.sendAndConfirm("admission_unknown", "", "", f.stamp)
+			if phase == "processed" {
+				f.sendAndConfirm("injected", "late-turn", "", f.stamp.Add(time.Second))
+			}
+			outcome := ""
+			if phase == "processed" {
+				outcome = "completed"
+			}
+			f.sendAndConfirm(phase, "late-turn", outcome, f.stamp.Add(2*time.Second))
+			updates := f.updates()
+			last := updates[len(updates)-1]
+			wantStage := "cli_injected"
+			if phase == "processed" {
+				wantStage = "turn_processed"
+			}
+			if last["delivery_stage"] != wantStage || last["reason"] != "" {
+				t.Fatalf("late confirmation did not restore normal status: %+v", last)
+			}
+		})
 	}
 }
