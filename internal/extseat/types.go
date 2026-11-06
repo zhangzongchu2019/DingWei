@@ -13,6 +13,8 @@ import (
 // Seat 是服务端读出的授权快照；公开业务入口始终重新读取权威记录。
 // 不接收客户端声明的主体/组/代际作为授权依据。
 type Seat struct {
+	proof, ownerShort                    string
+	tokenGeneration                      int64
 	ID, AgentID, Name, FullName, OwnerLC string
 	Principal                            extshared.Principal
 	Group                                extshared.AGCode

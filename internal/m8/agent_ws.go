@@ -196,6 +196,21 @@ func (h *Hub) AgentOnline(agentID string) bool {
 	if err != nil || !ag.Current() {
 		return false
 	}
+	if ag.Origin == identity.OriginExternal {
+		if h.ExternalSeats == nil {
+			return false
+		}
+		online, err := h.ExternalSeats.Online(context.Background())
+		if err != nil {
+			return false
+		}
+		for _, p := range online {
+			if p.Agent.ID == ag.ID {
+				return true
+			}
+		}
+		return false
+	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.sessionClients[AgentKeyID(ag.OwnerLC)][ag.NameLC()] != nil

@@ -24,3 +24,8 @@
   - 完成：已读578a41fb138f、09ae257bb65b、7be46cee6bfb和改派；读取2577d91a/4accf167/5ed6d2ae/51133ad3裁定原文、r51代码与698b719e续期实现；八点及第9点追加同步proposal/design/context及原GW-001～010，不改固定需求编号、不增第11条；T-11/12补Console任务，T-13补可选订阅取舍；提交前补读第9点并自行查官方changelog/版本/传输/订阅/CIMD与RC博客/正式release，原文状态差异分别记录。目录外产品与其他派单未动。
   - 阻塞：PM-GW-01纯轮询不续AG已定（㊹-补6），此项无阻塞；技术假设与尚未核实SDK/OAuth/迁移/解散ACK映射明列，未做真实互操作或产品变异。
   - 下一步：单变更及全仓strict、文档范围检查和仓库要求的canonical构建测试均已完成（rc0，原文/摘要入validation/REPORT.md）；推送核ls-remote后交组长复核，不自行勾实现/独立验收。
+
+- 2026-11-06，执行者coder56solzzc，A路会话01a19ca0-0622-7743-a995-767c05e49c78，实施基线262f4747；接口中间锚e261aaa5。
+  - 完成：按㊹-补7/补8与R53-MVP-CONTRACT实现PG0105六表、external身份分支、逐交互令牌CAS、PG收件/received/outbox、Hub路由与presence消费者接线；初轮PG正反及四项变异已有读数，详见本分支EVIDENCE.md。
+  - 阻塞：无本路实施阻塞；canonical/整包/race长门仍在执行，D实现与组长main装配不在本路，未自验收或部署。
+  - 下一步：完成长门与SKIP逐项记录，追加最终证据并推送核ls-remote，交组长复核；广义跨路实现任务未据本路中间结果勾完成。

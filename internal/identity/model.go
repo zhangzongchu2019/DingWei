@@ -131,6 +131,7 @@ type AgentOrigin string
 const (
 	OriginSelfhost AgentOrigin = "selfhost"
 	OriginHosted   AgentOrigin = "hosted"
+	OriginExternal AgentOrigin = "external"
 )
 
 // Agent 一个已入网的 Agent。

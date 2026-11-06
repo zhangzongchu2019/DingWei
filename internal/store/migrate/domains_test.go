@@ -114,7 +114,7 @@ func TestLedgerInDomains_PartitionsRealLedger(t *testing.T) {
 
 	// 🔴 名单写死：本格钉的是【真账本里现在有哪几条、各属哪个域】，引 Ledger() 去比就是自己比自己。
 	hub := names(mustLedgerIn(t, HubDomains()))
-	if strings.Join(hub, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+	if strings.Join(hub, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
 		t.Errorf("HubDomains 取到 %v，要 %s（core＋identity，🔴 不含 fanout 的 %s）",
 			hub, coreEntry+","+frozenIdentityEntry, frozenFanoutEntry)
 	}
@@ -215,7 +215,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Migrate(HubDomains): %v", err)
 		}
-		if strings.Join(rep.Applied, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+		if strings.Join(rep.Applied, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
 			t.Errorf("Applied = %v，要 Hub 域三条按字典序", rep.Applied)
 		}
 		for _, tbl := range append(hubTables, r31HostedTableNames()...) {
@@ -229,7 +229,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 			}
 		}
 		rows := ledgerRows(t, pool)
-		if len(rows) != 9 || rows["0103_agent_last_source_r31.sql"].digest == "" || rows["0200_hosted_r30_baseline.sql"].digest == "" || rows["0201_hosted_node_access_r31.sql"].digest == "" || rows["0102_device_claim.sql"].digest == "" || rows[coreEntry].digest == "" || rows[frozenIdentityEntry].digest == "" || rows["0101_group_communication.sql"].digest == "" {
+		if len(rows) != 10 || rows["0103_agent_last_source_r31.sql"].digest == "" || rows["0200_hosted_r30_baseline.sql"].digest == "" || rows["0201_hosted_node_access_r31.sql"].digest == "" || rows["0102_device_claim.sql"].digest == "" || rows[coreEntry].digest == "" || rows[frozenIdentityEntry].digest == "" || rows["0101_group_communication.sql"].digest == "" {
 			t.Errorf("账上读到 %v，要 core、identity、communication 三条（含 %s 与 %s）", keysOf(rows), coreEntry, frozenIdentityEntry)
 		}
 		if _, ok := rows[frozenFanoutEntry]; ok {
@@ -290,7 +290,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		if err != nil {
 			t.Fatalf("在生产 Hub 现状上跑 Hub 侧 Migrate 竟然报错（部署会起不来）: %v", err)
 		}
-		if strings.Join(rep.Applied, ",") != "0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+		if strings.Join(rep.Applied, ",") != "0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
 			t.Errorf("Applied=%v, want all pending Hub migrations including session creation time", rep.Applied)
 		}
 		if strings.Join(rep.Skipped, ",") != coreEntry+","+frozenIdentityEntry {
@@ -300,15 +300,15 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		// 0102 adds only the device-claim table, preserving every old table.
 		filtered := make([]string, 0, len(after))
 		for _, table := range after {
-			if table != "np_device_claim" && table != "console_transport_slot" && !strings.HasPrefix(table, "g4_") {
+			if table != "np_device_claim" && table != "np_external_principal" && table != "np_extseat" && table != "np_extseat_token" && table != "np_extseat_inbox" && table != "np_extseat_outbox" && table != "np_extseat_send_key" && table != "console_transport_slot" && !strings.HasPrefix(table, "g4_") {
 				filtered = append(filtered, table)
 			}
 		}
-		if len(after) != len(before)+16 || strings.Join(before, ",") != strings.Join(filtered, ",") {
+		if len(after) != len(before)+22 || strings.Join(before, ",") != strings.Join(filtered, ",") {
 			t.Errorf("表清单动了：\n迁前 %v\n迁后 %v", before, after)
 		}
 		afterRows := ledgerRows(t, pool)
-		if len(afterRows) != len(beforeRows)+7 {
+		if len(afterRows) != len(beforeRows)+8 {
 			t.Errorf("账多了条目：迁前 %v、迁后 %v", keysOf(beforeRows), keysOf(afterRows))
 		}
 		for name, r := range beforeRows {
