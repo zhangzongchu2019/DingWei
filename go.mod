@@ -10,6 +10,7 @@ require (
 	github.com/coder/websocket v1.8.13
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/larksuite/oapi-sdk-go/v3 v3.9.7
+	github.com/mozillazg/go-pinyin v0.21.0
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.34.1
