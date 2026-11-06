@@ -126,9 +126,11 @@ async function waitConnections(page, count, timeout = 30000) {
       await waitConnections(page, 2);
       await waitTextAppears(page, '[NEW]', 15000);
       await sleep(800);
-      return { text: await turnText(page), alert: await alertState(page) };
+      const renderedText = await page.locator('[data-turn-key="t-1"] .turn-assistant .event-content').evaluateAll(nodes => nodes.map(node => { const clone = node.cloneNode(true); clone.querySelectorAll('.event-meta').forEach(meta => meta.remove()); return clone.textContent; }).join(''));
+      return { text: await turnText(page), renderedText, alert: await alertState(page) };
     });
     await checks.check('S5 换纪元保留原内容、新事件只一份，保持A4中性重启提示', async () => {
+      assert.strictEqual(r3.renderedText, base + '[NEW]', `rendered DOM lost content: ${r3.renderedText}`);
       assert.strictEqual(r3.text, base + '[NEW]', r3.text);
       assert.equal(r3.alert.hidden,false);assert.equal(r3.alert.role,'status');assert.equal(r3.alert.tone,'notice');assert.equal(r3.alert.cause,'epoch_changed');
       assert.equal(r3.alert.text,'服务端已重启，更早的事件无法再逐条核对；当前内容完整保留。');
