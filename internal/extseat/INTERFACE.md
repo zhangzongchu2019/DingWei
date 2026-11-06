@@ -27,3 +27,7 @@ C路k31t2075报告已独立fetch并核验A中间锚2e5e0b02b5d77db0428c5d357152c
 ProjectOne在同一PG事务中锁住outbox、外部席位/Agent/属主、AG及helper目标Agent/属主，并把锁内读取的Delivery.SourceAgent和目标快照交给Projector。SourceAgent不序列化到通讯响应；HubExtseatProjector不再通过Identity另取PG连接查询双方身份，只使用上述内部快照写稳定ID的SQLite队列。消费者不得把该内部Projector当公开HTTP输入面。
 
 Authenticate取得令牌行锁后重新采样时钟，在Group消费者返回后再次核token/AG整点失效与回拨。业务入口复用同一检查；发送、收件领取与received确认在后续身份/消息锁返回后再核，拒绝排队期间已经过期的授权或消息。后台Run遇瞬态投影失败保留PG行并下一轮按原ID重试，错误回调不得记录Bearer或正文。
+
+## 集成补充（组长，rulings ㊹-补12 ②④）
+- RecheckGroup 的实现必须由 agent_id 反查权威 AG；入参 Seat 的 Group／Generation 只作断言，不作为查找依据（outbox 传入的 Seat 只有 ID／AgentID）。
+- TouchGroup 事件键：由调用方给并带方向前缀；去重由 D 路保证；同键重放为 no-op、不报错；同键异 kind 报 extshared.ErrIdempotencyKey。

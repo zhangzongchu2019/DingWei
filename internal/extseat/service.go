@@ -154,7 +154,7 @@ func (s *Service) IssueToken(ctx context.Context, p extshared.Principal, short, 
 			if _, e = tx.Exec(ctx, `INSERT INTO np_extseat(agent_id,principal_id,short_name,ag_code,ag_generation,created_at) VALUES($1,$2,$3,$4,$5,$6)`, seat.AgentID, ph, short, string(g.Code), g.Generation, now); e != nil {
 				return e
 			}
-			_, e = tx.Exec(ctx, `INSERT INTO np_extseat_token(id,token_hash,seat_id,auth_generation,created_at,last_auth_at,expires_at,audience,scopes) VALUES($1,$2,$3,1,$4,$4,$5,$6,'list_online send_message wait_for_messages ack')`, tid, identity.HashSecret(raw), seat.AgentID, now, seat.ExpiresAt, s.Resource)
+			_, e = tx.Exec(ctx, `INSERT INTO np_extseat_token(id,token_hash,seat_id,auth_generation,created_at,last_auth_at,expires_at,audience,scopes) VALUES($1,$2,$3,1,$4,$4,$5,$6,$7)`, tid, identity.HashSecret(raw), seat.AgentID, now, seat.ExpiresAt, s.Resource, extshared.ScopeString())
 			return e
 		}})
 		if e != nil {
@@ -200,7 +200,7 @@ func (s *Service) load(ctx context.Context, tx repo.Tx, tokenID, proof string, n
 	if now.Before(last) || (seen.Valid && now.Before(seen.Time)) {
 		return a, extshared.ErrNotPermitted
 	}
-	if s.Resource == "" || audience != s.Resource || scopes != "list_online send_message wait_for_messages ack" {
+	if s.Resource == "" || audience != s.Resource || scopes != extshared.ScopeString() {
 		return a, extshared.ErrNotPermitted
 	}
 	if a.Principal.TenantKey != s.TenantKey {

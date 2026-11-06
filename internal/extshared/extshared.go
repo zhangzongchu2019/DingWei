@@ -110,6 +110,9 @@ const (
 	StageUnknown   SendStage = "unknown"   // 跨库结果未知，待对账
 )
 
+// AG 代际（generation）语义（rulings ㊹-补12 ③）：创建即为 1，AG 生命周期内不变；只有「同码复活」才 +1（MVP 无此路径）。
+// 续期、到期扫描、解散都不得改动它；A 路据它核对席位与 AG 是否同一代，D 路若误改会让席位全部入口被拒。
+
 // GroupUseKind 能续编组的事件种类；轮询、查在线清单不在其中（㊹-补6）。
 type GroupUseKind string
 
