@@ -1,0 +1,20 @@
+AssertionError [ERR_ASSERTION]: 关态必须零 /api/console/temp-groups 请求
++ actual - expected
+
++ [
++   'GET /api/console/temp-groups',
++   'GET /api/console/temp-groups',
++   'GET /api/console/temp-groups',
++   'GET /api/console/temp-groups',
++   'GET /api/console/temp-groups/AG7'
++ ]
+- []
+
+    at /tmp/r53-offstate-mutant/view-service/console-temp-groups-offstate-regression.js:60:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [Array],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
