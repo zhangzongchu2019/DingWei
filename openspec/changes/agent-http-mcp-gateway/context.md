@@ -75,3 +75,7 @@ A路最终门证据入口改为docs/reviews/r53-extseat/EVIDENCE.md（合同75a4
 ## D 路后端接手（2026-11-07）
 
 父 c5152a213783e63626c161afefb34a7f45cfaea3，线程01a1b33c-11e7-7ec0-8de2-ce60abd9d9f5 持 r53-tempgroup-b.writer.lock；分支coder56solzzc/r53-tempgroup。实际接口/0106全部表列/SEQUENCE/通知在 internal/tempgroup/INTERFACE.md。前端45910532原样合入；新增 internal/tempgroup、internal/m8/tempgroup.go，main已注入真实Groups，Console三路由包既有认人/Origin。测试用本地pgtest临时PG、固定时钟与随机测试凭据，不使用现网库/身份。构建Python使用已有仓外helper-deps-lock-venv，普通系统Python缺websockets.sync导致发现失败的原始日志保留，不改测试门。
+
+## S-R53-TEMPGROUP-OFFSTATE 实现入口（2026-11-07）
+
+基线：工蜂 opus50tc2k/r53-integration，de424c5bfa5aa04002dc7fe1011f82ea7c132d8f。仅修默认关闭时Console探测临时编组接口的回归，来源为组长2026-11-07T03:16:04Z派单。internal/m8/console_auth.go注入并消费h.TempGroups状态；console_temp_groups_offstate_test.go核Hub两态。view-service/console-hosted-page-fixture接受DW_CONSOLE_TEMP_GROUPS_FIXTURE=1，仅在浏览器夹具装配空Service用于页面渲染，不访问真实平台。开态套件显式启用；新增console-temp-groups-offstate-regression.js使用实际关闭态Handler输出，覆盖加载、刷新、Agent管理及直接详情/解散调用。新增套件登记统一runner；该基线实际已有37套，新增后38套，保留全部原套件。证据在docs/reviews/r53-tempgroup-offstate/，不修改既有冻结分支。

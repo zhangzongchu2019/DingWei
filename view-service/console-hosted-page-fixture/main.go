@@ -11,10 +11,14 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
+	"github.com/zhangzongchu2019/dingwei/internal/tempgroup"
 )
 
 func main() {
 	hub := &m8.Hub{}
+	if os.Getenv("DW_CONSOLE_TEMP_GROUPS_FIXTURE") == "1" {
+		hub.TempGroups = &tempgroup.Service{}
+	}
 	if os.Getenv("DW_CONSOLE_NAME_CHECK_FIXTURE") == "1" {
 		hub.Identity = identity.NewService(identity.NewMemStore(), nil, nil)
 	}

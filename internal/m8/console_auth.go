@@ -263,7 +263,10 @@ func (h *Hub) RequireConsoleAgent(permission string, next http.HandlerFunc) http
 func (h *Hub) HandleConsolePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	page := strings.ReplaceAll(renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedPageAllowed(r)), "{{FEATURE_NEWPLAT_NAME_CHECK}}", strconv.FormatBool(h.Identity != nil))
+	page := strings.NewReplacer(
+		"{{FEATURE_NEWPLAT_NAME_CHECK}}", strconv.FormatBool(h.Identity != nil),
+		"{{FEATURE_TEMP_GROUPS}}", strconv.FormatBool(h.TempGroups != nil),
+	).Replace(renderConsolePage(dwversion.Version, dwversion.Commit, h.consoleHostedPageAllowed(r)))
 	if h.consoleMux != nil {
 		page = strings.Replace(page, "const CONSOLE_MUX_ENABLED = false;", "const CONSOLE_MUX_ENABLED = true;", 1)
 		page += "<script>" + consoleMuxBrokerJS + "</script>"
@@ -398,7 +401,7 @@ html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="da
 /* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
 #themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
 </style>
-<nav><section id=platform><div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:4px 0 8px">Work platform</h3><span><button id=bindFeishuBtn type=button>绑定飞书</button><span id=feishuBoundNote hidden style="font-size:12px;color:#666">飞书已绑定</span></span></div><section id=bindFeishuForm hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><label>为确认是你本人，请输入当前口令 <input id=bindFeishuPw type=password autocomplete=current-password></label> <button id=bindFeishuGo type=button>获取绑定码</button></section><section id=bindFeishuBox hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><div>在飞书里向机器人发送：<code id=bindFeishuCmd></code> <button id=bindFeishuCopy type=button>复制</button><span id=bindFeishuCopyFb class=group-feedback></span></div><div id=bindFeishuExpiry style="font-size:12px;color:#666"></div><button id=bindFeishuDone type=button>完成,关闭</button></section><div id=bindFeishuStatus class=group-feedback role=status></div><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=agents-stale role=status hidden></div><div id=a></div><section id=tempGroups hidden><h3>与我相关的临时编组</h3><div id=tempGroupsList></div></section><div id=navFoot><button id=logoutBtn type=button>退出</button></div></nav>
+<nav><section id=platform><div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:4px 0 8px">Work platform</h3><span><button id=bindFeishuBtn type=button>绑定飞书</button><span id=feishuBoundNote hidden style="font-size:12px;color:#666">飞书已绑定</span></span></div><section id=bindFeishuForm hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><label>为确认是你本人，请输入当前口令 <input id=bindFeishuPw type=password autocomplete=current-password></label> <button id=bindFeishuGo type=button>获取绑定码</button></section><section id=bindFeishuBox hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><div>在飞书里向机器人发送：<code id=bindFeishuCmd></code> <button id=bindFeishuCopy type=button>复制</button><span id=bindFeishuCopyFb class=group-feedback></span></div><div id=bindFeishuExpiry style="font-size:12px;color:#666"></div><button id=bindFeishuDone type=button>完成,关闭</button></section><div id=bindFeishuStatus class=group-feedback role=status></div><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=agents-stale role=status hidden></div><div id=a></div><section id=tempGroups data-enabled="{{FEATURE_TEMP_GROUPS}}" hidden><h3>与我相关的临时编组</h3><div id=tempGroupsList></div></section><div id=navFoot><button id=logoutBtn type=button>退出</button></div></nav>
 <main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <div id=app-version data-version="{{CONSOLE_VERSION}}" data-commit="{{CONSOLE_COMMIT}}">{{CONSOLE_VERSION_TEXT}}</div>
 <script>
@@ -692,8 +695,10 @@ async function refreshAgents(){
     if(authFailed||!agentsLastSuccessAt){agentsStale=false;agentListSnapshot=[];renderAgentList([]);}
     else{agentsStale=true;applyAgentStale();}
     status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
-  }finally{clearTimeout(timer);if(typeof refreshTempGroups==='function')refreshTempGroups();}
+  }finally{clearTimeout(timer);if(tempGroupsEnabled())refreshTempGroups();}
 }
+// Server-rendered capability; never probe a disabled route to discover it.
+function tempGroupsEnabled(){return document.getElementById('tempGroups').dataset.enabled==='true';}
 var tempGroupSnapshot=[],tempGroupRequestGeneration=0,tempGroupDetailRequest=0,tempGroupSelectedCode='',tempGroupDissolvePending=false;
 function tempGroupStatus(group){
  if(group.dissolved_at)return '已解散'+(group.dissolve_reason?'（'+group.dissolve_reason+'）':'');
@@ -708,6 +713,7 @@ function tempGroupRemaining(group){
 function tempGroupTime(value){if(!value)return '—';var date=new Date(value);return Number.isFinite(date.getTime())?date.toLocaleString():String(value);}
 function tempGroupSetTime(id,value){var element=document.getElementById(id);if(!element)return;element.dateTime=value||'';element.textContent=tempGroupTime(value);}
 function renderTempGroups(){
+ if(!tempGroupsEnabled())return;
  var section=document.getElementById('tempGroups'),list=document.getElementById('tempGroupsList');if(!section||!list)return;
  var groups=tempGroupSnapshot;section.hidden=groups.length===0;list.replaceChildren();
  groups.forEach(function(group){var item=document.createElement('button');item.type='button';item.className='temp-group-item';item.dataset.agCode=group.code;
@@ -717,6 +723,7 @@ function renderTempGroups(){
  });renderTempGroupWorkspace();
 }
 function renderTempGroupWorkspace(){
+ if(!tempGroupsEnabled())return;
  var section=document.getElementById('tempGroupWorkspace');if(!section)return;var groups=tempGroupSnapshot,body=document.getElementById('tempGroupItems');
  section.hidden=groups.length===0;body.replaceChildren();
  if(tempGroupSelectedCode&&!groups.some(function(group){return group.code===tempGroupSelectedCode;})){tempGroupSelectedCode='';tempGroupDetailRequest++;document.getElementById('tempGroupDetail').hidden=true;}
@@ -726,6 +733,7 @@ function renderTempGroupWorkspace(){
  });
 }
 async function refreshTempGroups(){
+ if(!tempGroupsEnabled())return;
  var generation=++tempGroupRequestGeneration,controller=new AbortController(),timer=setTimeout(function(){controller.abort()},consoleFetchTimeoutMs);
  try{var response=await fetch('/api/console/temp-groups',{cache:'no-store',signal:controller.signal});if(!response.ok)throw new Error('HTTP '+response.status+': '+(await response.text()).trim());
   var data=await response.json();if(!data||!Array.isArray(data.temp_groups))throw new Error('响应格式无效');if(generation!==tempGroupRequestGeneration)return null;
@@ -734,6 +742,7 @@ async function refreshTempGroups(){
  }finally{clearTimeout(timer);}
 }
 async function selectTempGroup(code){
+ if(!tempGroupsEnabled())return;
  var generation=++tempGroupDetailRequest;tempGroupSelectedCode=code;renderTempGroupWorkspace();
  var detail=document.getElementById('tempGroupDetail');if(!detail)return;detail.hidden=false;document.getElementById('tempGroupDetailTitle').textContent=code+' 详情';groupFeedback('tempGroupFeedback','详情加载中…');
  var controller=new AbortController(),timer=setTimeout(function(){controller.abort()},consoleFetchTimeoutMs);
@@ -749,6 +758,7 @@ async function selectTempGroup(code){
  }finally{clearTimeout(timer);}
 }
 async function dissolveTempGroup(group){
+ if(!tempGroupsEnabled())return;
  if(!confirm('确认解散 '+group.code+'？解散后成员不可继续通信。'))return;if(tempGroupDissolvePending)return;
  tempGroupDissolvePending=true;var button=document.getElementById('tempGroupDissolve');button.disabled=true;groupFeedback('tempGroupFeedback','正在解散…');
  try{var response=await fetch('/api/console/temp-groups/'+encodeURIComponent(group.code)+'/dissolve',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({expected_expires_at:group.expires_at,reason:'owner'})});

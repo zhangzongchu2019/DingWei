@@ -10,9 +10,9 @@ const {chromium} = require('playwright');
 const ROOT = path.join(__dirname, '..');
 const html = execFileSync('go', ['run', './view-service/console-hosted-page-fixture'], {
   cwd: ROOT, encoding: 'utf8',
-  env: {...process.env, DW_CONSOLE_HOSTED_FIXTURE: '1', DW_CONSOLE_HOSTED_ACCESS_FIXTURE: '0'},
+  env: {...process.env, DW_CONSOLE_HOSTED_FIXTURE: '1', DW_CONSOLE_HOSTED_ACCESS_FIXTURE: '0', DW_CONSOLE_TEMP_GROUPS_FIXTURE: '1'},
 });
-assert(html.includes('<section id=tempGroups hidden>'), 'production page must start with the temp AG block hidden');
+assert(html.includes('<section id=tempGroups data-enabled="true" hidden>'), 'production page must start with the temp AG block hidden');
 assert(html.includes('setInterval(refreshAgents,15000)'), 'existing Agent refresh cadence must be retained');
 assert(!html.includes('setInterval(refreshTempGroups'), 'temp AG must not create another timer');
 

@@ -30,6 +30,7 @@ SUITES = (
     ("renderer_0206_file_render", "node", ROOT / "view-service/renderer-0206-file-render-regression.js"),
     ("trusted_origins_file_flow", "node", ROOT / "view-service/trusted-origins-file-flow-regression.js"),
     ("console_browser", "node", ROOT / "view-service/console-browser-regression.js"),
+    ("console_temp_groups_offstate", "node", ROOT / "view-service/console-temp-groups-offstate-regression.js"),
     ("console_temp_groups", "node", ROOT / "view-service/console-temp-groups-regression.js"),
     ("renderer_in_console_iframe", "node", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
     ("renderer_sse_reconnect", "node", ROOT / "view-service/renderer-sse-reconnect.js"),

@@ -14,6 +14,8 @@
 - [ ] T-12 Console两渠道浏览器回归：别人AG不出现、属性完整、双方主人/管理员可解散、无关人拒绝、取消无写、到期竞态/通知；新增套件登记统一runner，去掉只列相关过滤→别人AG出现用例必须红，删服务端解散权限亦须红。
 - [ ] T-13 评估可选本人收件资源＋subscriptions/listen通知：权限隔离、通知不充ACK、断流主动收件；无订阅客户端保留25秒轮询。二期私有WSS仅在必要时另立项，若一期通知足够可不做；开发前再核定稿/SDK状态。
 
+- [ ] T-14 S-R53-TEMPGROUP-OFFSTATE：服务端注入只读开关，关闭态零请求/零控制台错误/无可见临时编组区块；原Console与开态回归、单刀变异及整包/全浏览器/canonical门。
+
 ## 交接记录
 
 - 2026-11-05，执行者togpt60lunazzc，原稿最终基线 f95fa0b3a4a6e693d21c8de4b052e3d3a7424293。
@@ -74,3 +76,8 @@
   - 完成：0106/真实Groups/镜像/agent_id反查/事件幂等/恒定generation/到期与双向结算/Console三接口/两侧主人与管理员受控解散/main真实装配及获准棘轮。最终源码六包严格PG有效通过（cmd因长TMPDIR两socket失败后同源整包短目录复跑rc0）；race两包三轮零SKIP；D浏览器、m8定向、strict与四刀均通过。正式SOURCE_COMMIT绑定build.sh最终短TMPDIR rc0，两个helper profile各1097、27Python/2shell与PGclaim五子项通过，四制品本地保留哈希。原始失败与复跑、六个既有opt-in跳过逐项见docs/reviews/r53-tempgroup/。
   - 阻塞：本次要求门已完成；额外boundary父c515与当前同为既有sql.Open10>5，零新增违规、未放宽阈值；独立旧二进制/故障矩阵与真实飞书/第三方客户端未执行，不计通过。未自验收或部署。
   - 下一步：证据-only提交并push核精确远端tip/tree，向组长回执后仅释放本线程D锁；由组长组织独立复核/预发。已重新fetch rulings5474e849和集成c5152a21，任务后无新修订；集群暂停归原持锁线程，不动其树或锁。全跨路与二期T-04～T-10/T-12/T-13不据本路自测整体勾清。
+
+- 2026-11-07，S-R53-TEMPGROUP-OFFSTATE执行者coder56solzzc.zzc，实取线程01a1b3e7-3c3a-7051-9ae2-dd1c6f58ef44；父de424c5bfa5aa04002dc7fe1011f82ea7c132d8f。
+  - 完成：原子mkdir取得r53-offstate.writer.lock；独立分支coder56solzzc/r53-tempgroup-offstate，Hub状态注入与前端各入口保护，新关闭态真实Handler浏览器用例首轮通过，开态夹具显式装配TempGroups。
+  - 阻塞：完整门及变异尚待源码提交绑定后执行；不自验收或部署。
+  - 下一步：冻结源码提交后跑m8/cmd整包、全部浏览器（基线37＋新增1＝38套）、run-build-tests与移除开关判断变异，附原始日志、精确提交、UTC与SKIP，再推送核远端并回执释放本锁。
