@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 func TestR53ConfigFromEnv(t *testing.T) {
@@ -67,5 +68,27 @@ func TestWireR53SchemaCheckPG(t *testing.T) {
 	err = wireR53(ctx, cfg, pgTableChecker{pool: pool}, nil, r53Dependencies{})
 	if err == nil || errors.Is(err, errR53GroupsMissing) || !strings.Contains(err.Error(), "np_extseat_outbox") {
 		t.Fatalf("dropped table: err=%v want missing np_extseat_outbox", err)
+	}
+}
+
+// r52 受信来源接到 r53 网关：名单空 ⇒ 只认 PublicOrigin；名单含 :50443 ⇒ 精确认它，错端口、http、多余路径都拒。
+func TestR53TrustedOriginsAdapter(t *testing.T) {
+	const pub = "https://dw123.cmjrt.com"
+	empty := r53TrustedOrigins{publicOrigin: pub}
+	if !empty.TrustedOrigin(context.Background(), pub) || empty.TrustedOrigin(context.Background(), pub+":50443") {
+		t.Fatal("empty list must accept only PublicOrigin")
+	}
+	list, err := trustedorigin.ParseList(pub + ":50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	with := r53TrustedOrigins{publicOrigin: pub, trusted: list}
+	for origin, want := range map[string]bool{
+		pub: true, pub + ":50443": true, "HTTPS://DW123.CMJRT.COM:50443": true,
+		pub + ":50444": false, "http://dw123.cmjrt.com:50443": false, "https://evil.example": false,
+	} {
+		if got := with.TrustedOrigin(context.Background(), origin); got != want {
+			t.Fatalf("origin %q: got %v want %v", origin, got, want)
+		}
 	}
 }

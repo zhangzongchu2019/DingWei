@@ -13,6 +13,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/lifecycle"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/mcpgw"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 	"os"
 	"strings"
 
@@ -74,6 +75,18 @@ type r53Dependencies struct {
 	appID, appSecret string
 	oauth            feishulogin.OAuthClient
 	clients          mcpgw.ClientResolver
+	trustedOrigins   []trustedorigin.Origin // r52 DW_TRUSTED_ORIGINS，与 Hub 其余写入口同一份
+}
+
+// r53TrustedOrigins 把 r52 受信来源接到 B 的 Origin 守卫：名单为空时只认 PublicOrigin（与 B 缺省逐字同），
+// 名单非空时按 trustedorigin.Allows 的规范化精确匹配（端口、https 都算来源身份）。
+type r53TrustedOrigins struct {
+	publicOrigin string
+	trusted      []trustedorigin.Origin
+}
+
+func (o r53TrustedOrigins) TrustedOrigin(_ context.Context, origin string) bool {
+	return trustedorigin.Allows(origin, o.publicOrigin, o.trusted, origin == o.publicOrigin, 1)
 }
 
 func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, groups extseat.Groups, d r53Dependencies) error {
@@ -115,7 +128,8 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 		if clients == nil {
 			clients = mcpgw.MetadataClients{}
 		}
-		return mcpgw.Config{PublicOrigin: cfg.publicOrigin, Resource: cfg.resource, Seats: seats, Login: login, Clients: clients, Origins: nil}, nil
+		return mcpgw.Config{PublicOrigin: cfg.publicOrigin, Resource: cfg.resource, Seats: seats, Login: login, Clients: clients,
+			Origins: r53TrustedOrigins{publicOrigin: cfg.publicOrigin, trusted: d.trustedOrigins}}, nil
 	})
 	if enabled {
 		d.hub.ExternalSeats = seats
