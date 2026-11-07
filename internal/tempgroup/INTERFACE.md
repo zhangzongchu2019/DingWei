@@ -27,6 +27,8 @@
 - GET /api/console/temp-groups/{code} → 属性对象，含 code/generation、external_full_name、created_by_display（创建时快照）、owner_lc、三时间、解散原因及恰两 members。成员含 agent_id/full_name/role/online；相关内部主人或 active platform_admin 可查详情。
 - POST /api/console/temp-groups/{code}/dissolve：`{expected_expires_at:<RFC3339>,reason:"owner"}`。前端二次确认后提交，服务端组行锁内重核权限与到期快照；无关人404、快照变化/已解散409、格式错误400。客户端 reason 不决定审计原因，整点后记录 expired。
 
+D 不自行创建 SystemCtx；装配从 A 的既有 AccessCtx 注入，所有领域查询复用该上下文。
+
 main 将真实 `*tempgroup.Service` 注入 wireR53，OAuth 路启用成功后接入 Hub、启动受 lifecycle 管理的 worker；缺密钥保持原关闭语义。worker 启动立即补扫，之后每分钟分批200项，瞬态失败记录通用错误并下轮重试，不记录凭据或正文。
 
 ## 解散通知与在途结算

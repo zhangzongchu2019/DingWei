@@ -9,7 +9,7 @@ import (
 
 // Expire 分批锁组，与发送/续期/主动解散互斥；权限拒绝不依赖扫描及时性。
 func (s *Service) Expire(ctx context.Context) error {
-	return s.Pool.InTx(ctx, repo.SystemCtx(), nil, func(tx repo.Tx) error {
+	return s.Pool.InTx(ctx, s.Access, nil, func(tx repo.Tx) error {
 		now := s.now()
 		rows, err := tx.Query(ctx, `SELECT g.code,CASE WHEN g.expires_at<=$1 THEN 'expired' ELSE 'revoked' END FROM np_temp_group g JOIN np_agent a ON a.id=g.external_agent_id JOIN np_agent t ON t.id=g.target_agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc JOIN np_user v ON v.user_id_lc=t.owner_lc WHERE g.dissolved_at IS NULL AND (g.expires_at<=$1 OR a.state='revoked' OR t.state='revoked' OR u.state<>'active' OR v.state<>'active') ORDER BY g.expires_at,g.code LIMIT 200 FOR UPDATE OF g SKIP LOCKED`, now)
 		if err != nil {
@@ -49,7 +49,7 @@ func (s *Service) NotifyPending(ctx context.Context) error {
 	}
 	s.notifyMu.Lock()
 	defer s.notifyMu.Unlock()
-	rows, err := s.Pool.Query(ctx, repo.SystemCtx(), `SELECT code,dissolve_reason FROM np_temp_group WHERE dissolved_at IS NOT NULL AND notified_at IS NULL ORDER BY dissolved_at LIMIT 200`)
+	rows, err := s.Pool.Query(ctx, s.Access, `SELECT code,dissolve_reason FROM np_temp_group WHERE dissolved_at IS NOT NULL AND notified_at IS NULL ORDER BY dissolved_at LIMIT 200`)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (s *Service) NotifyPending(ctx context.Context) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if _, err = s.Pool.Exec(ctx, repo.SystemCtx(), `UPDATE np_temp_group SET notified_at=$2 WHERE code=$1 AND notified_at IS NULL`, string(i.code), s.now()); err != nil {
+		if _, err = s.Pool.Exec(ctx, s.Access, `UPDATE np_temp_group SET notified_at=$2 WHERE code=$1 AND notified_at IS NULL`, string(i.code), s.now()); err != nil {
 			return err
 		}
 	}

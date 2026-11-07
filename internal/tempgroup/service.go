@@ -20,6 +20,7 @@ type TempGroupNotifier interface {
 type Service struct {
 	notifyMu          sync.Mutex
 	Pool              *repo.Pool
+	Access            repo.AccessCtx
 	Now               func() time.Time
 	Notifier          TempGroupNotifier
 	Finalize          func(context.Context, extshared.AGCode) error

@@ -120,6 +120,7 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 	if enabled {
 		d.hub.ExternalSeats = seats
 		if tg, ok := groups.(*tempgroup.Service); ok {
+			tg.Access = seats.Access
 			d.hub.TempGroups = tg
 			tg.Finalize = seats.SettleDissolvedGroup
 			tg.OnBackgroundError = func(error) { log.Print("r53: temporary group background operation failed") }

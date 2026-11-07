@@ -28,6 +28,10 @@ func newFixture(t *testing.T) *fixture {
 	t.Helper()
 	p := pgtest.Pool(t)
 	ctx := context.Background()
+	access, err := repo.NewAccessCtx("tempgroup-test", "isolated PG fixture")
+	if err != nil {
+		t.Fatal(err)
+	}
 	now := time.Date(2026, 11, 7, 2, 0, 0, 0, time.UTC)
 	a, e := os.ReadFile("../store/migrate/migrations/0105_extseat.sql")
 	if e != nil {
@@ -38,18 +42,18 @@ func newFixture(t *testing.T) *fixture {
 		t.Fatal(e)
 	}
 	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(a) + string(d)
-	if _, e = p.Exec(ctx, repo.SystemCtx(), ddl); e != nil {
+	if _, e = p.Exec(ctx, access, ddl); e != nil {
 		t.Fatal(e)
 	}
-	if _, e = p.Exec(ctx, repo.SystemCtx(), `INSERT INTO np_user(user_id_lc,user_id,short_name,short_name_lc,type,state,created_at) VALUES('alice','alice','alice','alice','member','active',$1),('bob','bob','bob','bob','member','active',$1),('admin','admin','admin','admin','platform_admin','active',$1)`, now); e != nil {
+	if _, e = p.Exec(ctx, access, `INSERT INTO np_user(user_id_lc,user_id,short_name,short_name_lc,type,state,created_at) VALUES('alice','alice','alice','alice','member','active',$1),('bob','bob','bob','bob','member','active',$1),('admin','admin','admin','admin','platform_admin','active',$1)`, now); e != nil {
 		t.Fatal(e)
 	}
-	if _, e = p.Exec(ctx, repo.SystemCtx(), `INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,created_at) VALUES('ha','alice','ha','ha','selfhost','active',$1),('hb','bob','hb','hb','selfhost','active',$1)`, now); e != nil {
+	if _, e = p.Exec(ctx, access, `INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,created_at) VALUES('ha','alice','ha','ha','selfhost','active',$1),('hb','bob','hb','hb','selfhost','active',$1)`, now); e != nil {
 		t.Fatal(e)
 	}
 	f := &fixture{ctx: ctx, p: p, now: now, t: t}
-	f.s = &Service{Pool: p, Now: func() time.Time { return f.now }}
-	f.seats = &extseat.Service{Pool: p, Access: repo.SystemCtx(), Identity: identity.NewService(identity.NewPGStore(p), func() time.Time { return f.now }, nil), Groups: f.s, TenantKey: "tenant", Resource: "https://example.invalid/mcp", Now: func() time.Time { return f.now }}
+	f.s = &Service{Pool: p, Access: access, Now: func() time.Time { return f.now }}
+	f.seats = &extseat.Service{Pool: p, Access: access, Identity: identity.NewService(identity.NewPGStore(p), func() time.Time { return f.now }, nil), Groups: f.s, TenantKey: "tenant", Resource: "https://example.invalid/mcp", Now: func() time.Time { return f.now }}
 	return f
 }
 func (f *fixture) issue(target string) extseat.Seat {
@@ -62,7 +66,7 @@ func (f *fixture) issue(target string) extseat.Seat {
 }
 func (f *fixture) scalar(q string, args ...any) int {
 	f.t.Helper()
-	r, e := f.p.QueryRow(f.ctx, repo.SystemCtx(), q, args...)
+	r, e := f.p.QueryRow(f.ctx, f.s.Access, q, args...)
 	if e != nil {
 		f.t.Fatal(e)
 	}
@@ -91,7 +95,7 @@ func TestRealGroupsPG(t *testing.T) {
 		if e != nil || !allowed {
 			t.Fatalf("mirror reachability: %v %v", allowed, e)
 		}
-		e = f.p.InTx(f.ctx, repo.SystemCtx(), nil, func(tx repo.Tx) error {
+		e = f.p.InTx(f.ctx, f.s.Access, nil, func(tx repo.Tx) error {
 			g, e := f.s.RecheckGroup(f.ctx, tx, extseat.Seat{AgentID: a.AgentID}, f.now)
 			if e == nil && (g.Code != a.Group || g.Target.ID != "ha" || g.Generation != 1) {
 				t.Fatal("authoritative reverse lookup mismatch")
@@ -102,7 +106,7 @@ func TestRealGroupsPG(t *testing.T) {
 			t.Fatal(e)
 		}
 		for _, bad := range []extseat.Seat{{AgentID: a.AgentID, Group: "AG999"}, {AgentID: a.AgentID, Generation: 2}, {AgentID: "ha"}} {
-			e = f.p.InTx(f.ctx, repo.SystemCtx(), nil, func(tx repo.Tx) error { _, e := f.s.RecheckGroup(f.ctx, tx, bad, f.now); return e })
+			e = f.p.InTx(f.ctx, f.s.Access, nil, func(tx repo.Tx) error { _, e := f.s.RecheckGroup(f.ctx, tx, bad, f.now); return e })
 			if !errors.Is(e, extshared.ErrGroupDissolved) {
 				t.Fatalf("bad assertion accepted: %v", e)
 			}
@@ -112,7 +116,7 @@ func TestRealGroupsPG(t *testing.T) {
 		f := newFixture(t)
 		var burned extshared.AGCode
 		rollback := errors.New("rollback")
-		e := f.p.InTx(f.ctx, repo.SystemCtx(), nil, func(tx repo.Tx) error {
+		e := f.p.InTx(f.ctx, f.s.Access, nil, func(tx repo.Tx) error {
 			_, e := f.s.CreateTempGroup(f.ctx, tx, extseat.CreateGroupRequest{ExternalAgentID: "burn", OwnerLC: "alice", Target: identity.Agent{ID: "ha"}, At: f.now, CreateExternal: func(g extseat.Group) error { burned = g.Code; return rollback }})
 			return e
 		})
@@ -165,7 +169,7 @@ func TestRealGroupsPG(t *testing.T) {
 		a := f.issue("ha.alice")
 		f.now = f.now.Add(time.Hour)
 		touch := func(key string, kind extshared.GroupUseKind) error {
-			return f.p.InTx(f.ctx, repo.SystemCtx(), nil, func(tx repo.Tx) error {
+			return f.p.InTx(f.ctx, f.s.Access, nil, func(tx repo.Tx) error {
 				return f.s.TouchGroup(f.ctx, tx, extseat.Group{Code: a.Group, Generation: 1}, key, kind, f.now)
 			})
 		}
@@ -311,7 +315,7 @@ func TestDissolveSettlesBothDirectionsPG(t *testing.T) {
 func TestNotifyFailureRetriesAndOrdinaryGroupIsolationPG(t *testing.T) {
 	f := newFixture(t)
 	a := f.issue("ha.alice")
-	if _, e := f.p.Exec(f.ctx, repo.SystemCtx(), `INSERT INTO np_group(code,short_name,creator_lc,leader_agent_id,created_at,updated_at) VALUES('ordinary','ordinary','alice','ha',$1,$1)`, f.now); e != nil {
+	if _, e := f.p.Exec(f.ctx, f.s.Access, `INSERT INTO np_group(code,short_name,creator_lc,leader_agent_id,created_at,updated_at) VALUES('ordinary','ordinary','alice','ha',$1,$1)`, f.now); e != nil {
 		t.Fatal(e)
 	}
 	v, e := f.s.Detail(f.ctx, "alice", a.Group, false)

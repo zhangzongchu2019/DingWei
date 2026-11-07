@@ -37,7 +37,7 @@ type View struct {
 // List 个人侧栏只按内部对端属当前登录者过滤；创建者和管理员无额外豁免。
 func (s *Service) List(ctx context.Context, actor string) ([]View, error) {
 	out := make([]View, 0)
-	rows, err := s.Pool.Query(ctx, repo.SystemCtx(), `SELECT g.code FROM np_temp_group g JOIN np_agent a ON a.id=g.target_agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE a.owner_lc=$1 AND a.state<>'revoked' AND u.state='active' ORDER BY g.created_at,g.code`, actor)
+	rows, err := s.Pool.Query(ctx, s.Access, `SELECT g.code FROM np_temp_group g JOIN np_agent a ON a.id=g.target_agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE a.owner_lc=$1 AND a.state<>'revoked' AND u.state='active' ORDER BY g.created_at,g.code`, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (s *Service) List(ctx context.Context, actor string) ([]View, error) {
 }
 func (s *Service) Detail(ctx context.Context, actor string, code extshared.AGCode, allowAdmin bool) (View, error) {
 	var v View
-	err := s.Pool.InTx(ctx, repo.SystemCtx(), nil, func(tx repo.Tx) error { var e error; v, e = detail(ctx, tx, actor, code, allowAdmin); return e })
+	err := s.Pool.InTx(ctx, s.Access, nil, func(tx repo.Tx) error { var e error; v, e = detail(ctx, tx, actor, code, allowAdmin); return e })
 	return v, err
 }
 func permitted(ctx context.Context, tx repo.Tx, actor string, code extshared.AGCode, admin bool) (bool, error) {
@@ -110,7 +110,7 @@ func detail(ctx context.Context, tx repo.Tx, actor string, code extshared.AGCode
 	return v, rows.Err()
 }
 func (s *Service) Dissolve(ctx context.Context, actor string, code extshared.AGCode, expected time.Time) error {
-	return s.Pool.InTx(ctx, repo.SystemCtx(), nil, func(tx repo.Tx) error {
+	return s.Pool.InTx(ctx, s.Access, nil, func(tx repo.Tx) error {
 		var expires time.Time
 		var dissolved sql.NullTime
 		err := tx.QueryRow(ctx, `SELECT expires_at,dissolved_at FROM np_temp_group WHERE code=$1 FOR UPDATE`, string(code)).Scan(&expires, &dissolved)
