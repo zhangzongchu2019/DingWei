@@ -1,0 +1,18 @@
+{
+  "gate": "race",
+  "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "-race",
+    "-count=3",
+    "-timeout=20m",
+    "./internal/tempgroup",
+    "./internal/extseat"
+  ],
+  "HUB_TEST_PG_STRICT": 1,
+  "started_utc": "2026-11-07T02:22:05.487344+00:00",
+  "ended_utc": "2026-11-07T02:23:45.861213+00:00",
+  "rc": 0
+}

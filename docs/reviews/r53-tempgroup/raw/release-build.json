@@ -1,0 +1,12 @@
+{
+  "gate": "release-build",
+  "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+  "command": [
+    "bash",
+    "build.sh"
+  ],
+  "HUB_TEST_PG_STRICT": 1,
+  "started_utc": "2026-11-07T02:22:05.487584+00:00",
+  "ended_utc": "2026-11-07T02:31:27.321849+00:00",
+  "rc": 1
+}

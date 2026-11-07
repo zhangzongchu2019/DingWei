@@ -1,0 +1,13 @@
+{
+  "gate": "crossruntime-shorttmp",
+  "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+  "command": [
+    "bash",
+    "scripts/test-desktop-hub-roundtrip.sh"
+  ],
+  "HUB_TEST_PG_STRICT": 1,
+  "TMPDIR": "/tmp",
+  "started_utc": "2026-11-07T02:32:12.761724+00:00",
+  "ended_utc": "2026-11-07T02:32:40.279474+00:00",
+  "rc": 0
+}

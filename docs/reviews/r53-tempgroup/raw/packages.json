@@ -1,0 +1,21 @@
+{
+  "gate": "packages",
+  "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "-count=1",
+    "-timeout=20m",
+    "./internal/tempgroup",
+    "./internal/extseat",
+    "./internal/mcpgw",
+    "./internal/extwire",
+    "./internal/store/migrate",
+    "./cmd/workpulse"
+  ],
+  "HUB_TEST_PG_STRICT": 1,
+  "started_utc": "2026-11-07T02:22:05.487130+00:00",
+  "ended_utc": "2026-11-07T02:26:06.578114+00:00",
+  "rc": 1
+}

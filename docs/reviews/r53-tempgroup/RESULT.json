@@ -1,0 +1,262 @@
+{
+  "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+  "source_tree": "438db012b3884fbcdcb7f584c8ca20cd9a42955d",
+  "parent": "c5152a213783e63626c161afefb34a7f45cfaea3",
+  "collected_utc": "2026-11-07T02:41:36.565502+00:00",
+  "gates": [
+    {
+      "gate": "boundary",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "bash",
+        "scripts/repo-boundary-gate.sh"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "started_utc": "2026-11-07T02:22:11.158283+00:00",
+      "ended_utc": "2026-11-07T02:22:12.470795+00:00",
+      "rc": 1
+    },
+    {
+      "gate": "browser",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "node",
+        "view-service/console-temp-groups-regression.js"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "started_utc": "2026-11-07T02:22:09.146993+00:00",
+      "ended_utc": "2026-11-07T02:22:10.929501+00:00",
+      "rc": 0
+    },
+    {
+      "gate": "cmd-shorttmp",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-count=1",
+        "-timeout=20m",
+        "./cmd/workpulse"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "TMPDIR": "/tmp",
+      "started_utc": "2026-11-07T02:26:39.201289+00:00",
+      "ended_utc": "2026-11-07T02:30:20.851326+00:00",
+      "rc": 0
+    },
+    {
+      "gate": "crossruntime-shorttmp",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "bash",
+        "scripts/test-desktop-hub-roundtrip.sh"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "TMPDIR": "/tmp",
+      "started_utc": "2026-11-07T02:32:12.761724+00:00",
+      "ended_utc": "2026-11-07T02:32:40.279474+00:00",
+      "rc": 0
+    },
+    {
+      "gate": "m8-directed",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-count=1",
+        "./internal/m8",
+        "-run",
+        "^TestTempGroup|^TestExternal"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "started_utc": "2026-11-07T02:22:05.487799+00:00",
+      "ended_utc": "2026-11-07T02:22:09.146334+00:00",
+      "rc": 0
+    },
+    {
+      "gate": "openspec",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+        "validate",
+        "agent-http-mcp-gateway",
+        "--strict"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "started_utc": "2026-11-07T02:22:10.929814+00:00",
+      "ended_utc": "2026-11-07T02:22:11.157991+00:00",
+      "rc": 0
+    },
+    {
+      "gate": "packages",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-count=1",
+        "-timeout=20m",
+        "./internal/tempgroup",
+        "./internal/extseat",
+        "./internal/mcpgw",
+        "./internal/extwire",
+        "./internal/store/migrate",
+        "./cmd/workpulse"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "started_utc": "2026-11-07T02:22:05.487130+00:00",
+      "ended_utc": "2026-11-07T02:26:06.578114+00:00",
+      "rc": 1
+    },
+    {
+      "gate": "race",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-race",
+        "-count=3",
+        "-timeout=20m",
+        "./internal/tempgroup",
+        "./internal/extseat"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "started_utc": "2026-11-07T02:22:05.487344+00:00",
+      "ended_utc": "2026-11-07T02:23:45.861213+00:00",
+      "rc": 0
+    },
+    {
+      "gate": "release-build-shorttmp",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "bash",
+        "build.sh"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "TMPDIR": "/tmp",
+      "SOURCE_COMMIT": "9e19d816df8b70225a046a71398e979f22db6399",
+      "started_utc": "2026-11-07T02:32:13.923298+00:00",
+      "ended_utc": "2026-11-07T02:41:14.033570+00:00",
+      "rc": 0
+    },
+    {
+      "gate": "release-build",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "bash",
+        "build.sh"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "started_utc": "2026-11-07T02:22:05.487584+00:00",
+      "ended_utc": "2026-11-07T02:31:27.321849+00:00",
+      "rc": 1
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "fcs",
+      "bytes": 15581336,
+      "sha256": "e8a614e204e4ae87d8d95296f16003eba677ed4a3e0d1b127b31ed6f23e7913e"
+    },
+    {
+      "name": "file-service",
+      "bytes": 9420952,
+      "sha256": "889fc11864746d4bb18f6dcd32cb1c1521eceb0c926e7637ec4e16ec5e772afc"
+    },
+    {
+      "name": "nodeagent",
+      "bytes": 6099096,
+      "sha256": "baa196aa481e697fb15bee7e1da4695f8509b48cc28961069d365dfdcb43a557"
+    },
+    {
+      "name": "workpulse",
+      "bytes": 42696856,
+      "sha256": "06a795aab403dc1236212bb17b7ca2483cf1a5ad0de81fb6113644eb4f499679"
+    }
+  ],
+  "mutations": [
+    {
+      "name": "counter",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-overlay",
+        "/tmp/r53-tempgroup-source9e19/mutations/counter/overlay.json",
+        "-count=1",
+        "./internal/tempgroup",
+        "-run",
+        "^TestRealGroupsPG/SequenceBurnsRollbackAndConcurrentUnique$"
+      ],
+      "started_utc": "2026-11-07T02:22:06.640564+00:00",
+      "ended_utc": "2026-11-07T02:22:12.833697+00:00",
+      "rc": 1,
+      "expected": "sequence rollback reused number",
+      "killed_by_expected_assertion": true
+    },
+    {
+      "name": "filter",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-overlay",
+        "/tmp/r53-tempgroup-source9e19/mutations/filter/overlay.json",
+        "-count=1",
+        "./internal/tempgroup",
+        "-run",
+        "^TestRealGroupsPG/ConsoleOnlyInternalOwnerAndDissolveFence$"
+      ],
+      "started_utc": "2026-11-07T02:22:06.639807+00:00",
+      "ended_utc": "2026-11-07T02:22:12.835710+00:00",
+      "rc": 1,
+      "expected": "login-owner filter",
+      "killed_by_expected_assertion": true
+    },
+    {
+      "name": "mirror",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-overlay",
+        "/tmp/r53-tempgroup-source9e19/mutations/mirror/overlay.json",
+        "-count=1",
+        "./internal/tempgroup",
+        "-run",
+        "^TestRealGroupsPG/MirrorReachabilityAndAgentIDRecheck$"
+      ],
+      "started_utc": "2026-11-07T02:22:06.639549+00:00",
+      "ended_utc": "2026-11-07T02:22:12.785077+00:00",
+      "rc": 1,
+      "expected": "mirror members missing",
+      "killed_by_expected_assertion": true
+    },
+    {
+      "name": "reverse",
+      "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-overlay",
+        "/tmp/r53-tempgroup-source9e19/mutations/reverse/overlay.json",
+        "-count=1",
+        "./internal/tempgroup",
+        "-run",
+        "^TestRealGroupsPG/MirrorReachabilityAndAgentIDRecheck$"
+      ],
+      "started_utc": "2026-11-07T02:22:06.639667+00:00",
+      "ended_utc": "2026-11-07T02:22:12.808965+00:00",
+      "rc": 1,
+      "expected": "group dissolved or expired",
+      "killed_by_expected_assertion": true
+    }
+  ]
+}

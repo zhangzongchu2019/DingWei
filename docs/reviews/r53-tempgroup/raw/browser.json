@@ -1,0 +1,12 @@
+{
+  "gate": "browser",
+  "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+  "command": [
+    "node",
+    "view-service/console-temp-groups-regression.js"
+  ],
+  "HUB_TEST_PG_STRICT": 1,
+  "started_utc": "2026-11-07T02:22:09.146993+00:00",
+  "ended_utc": "2026-11-07T02:22:10.929501+00:00",
+  "rc": 0
+}

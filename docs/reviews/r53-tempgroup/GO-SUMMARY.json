@@ -1,0 +1,134 @@
+{
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/internal/tempgroup": {
+      "top_level_pass": 4,
+      "subtest_pass": 4,
+      "skips": [],
+      "failures": [],
+      "package_status": "pass"
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extseat": {
+      "top_level_pass": 8,
+      "subtest_pass": 12,
+      "skips": [],
+      "failures": [],
+      "package_status": "pass"
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "top_level_pass": 25,
+      "subtest_pass": 95,
+      "skips": [],
+      "failures": [],
+      "package_status": "pass"
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extwire": {
+      "top_level_pass": 5,
+      "subtest_pass": 0,
+      "skips": [],
+      "failures": [],
+      "package_status": "pass"
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store/migrate": {
+      "top_level_pass": 27,
+      "subtest_pass": 15,
+      "skips": [],
+      "failures": [],
+      "package_status": "pass"
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "top_level_pass": 166,
+      "subtest_pass": 90,
+      "skips": [
+        {
+          "test": "TestNPSessionPG8To9AndR50BinaryCompatibility",
+          "output": "=== RUN   TestNPSessionPG8To9AndR50BinaryCompatibility\n    np_session_migration_binary_test.go:26: set independently built current and certified R50 binary paths\n--- SKIP: TestNPSessionPG8To9AndR50BinaryCompatibility (0.00s)\n"
+        },
+        {
+          "test": "TestR31OldBinarySchemaReadCompatibility",
+          "output": "=== RUN   TestR31OldBinarySchemaReadCompatibility\n    r31_rollback_compat_test.go:23: requires independently built R30 binary via R31_R30_BINARY\n--- SKIP: TestR31OldBinarySchemaReadCompatibility (0.00s)\n"
+        },
+        {
+          "test": "TestHLCFaultProcessMatrix",
+          "output": "=== RUN   TestHLCFaultProcessMatrix\n    shutdown_fault_process_test.go:94: isolated fault/watchdog runner tests/hlc/fault_matrix.py\n--- SKIP: TestHLCFaultProcessMatrix (0.00s)\n"
+        },
+        {
+          "test": "TestHLCBindFailure",
+          "output": "=== RUN   TestHLCBindFailure\n    shutdown_fault_process_test.go:329: isolated startup failure runner\n--- SKIP: TestHLCBindFailure (0.00s)\n"
+        },
+        {
+          "test": "TestHLCLoadMatrix",
+          "output": "=== RUN   TestHLCLoadMatrix\n    shutdown_load_test.go:560: isolated actual-process matrix: tests/hlc/process_matrix.py\n--- SKIP: TestHLCLoadMatrix (0.00s)\n"
+        },
+        {
+          "test": "TestHLCS007Full",
+          "output": "=== RUN   TestHLCS007Full\n    shutdown_mixed_fault_process_test.go:164: isolated full mixed fault: tests/hlc/s007_full.py\n--- SKIP: TestHLCS007Full (0.00s)\n"
+        }
+      ],
+      "failures": [
+        "TestNotifySocketStopCannotDeleteNewListenerAtSamePath",
+        "TestNotifySocketFirstStopPreservesNewListenerAtReboundPath",
+        "<package>"
+      ],
+      "package_status": "fail"
+    }
+  },
+  "cmd-shorttmp": {
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "top_level_pass": 168,
+      "subtest_pass": 90,
+      "skips": [
+        {
+          "test": "TestNPSessionPG8To9AndR50BinaryCompatibility",
+          "output": "=== RUN   TestNPSessionPG8To9AndR50BinaryCompatibility\n    np_session_migration_binary_test.go:26: set independently built current and certified R50 binary paths\n--- SKIP: TestNPSessionPG8To9AndR50BinaryCompatibility (0.00s)\n"
+        },
+        {
+          "test": "TestR31OldBinarySchemaReadCompatibility",
+          "output": "=== RUN   TestR31OldBinarySchemaReadCompatibility\n    r31_rollback_compat_test.go:23: requires independently built R30 binary via R31_R30_BINARY\n--- SKIP: TestR31OldBinarySchemaReadCompatibility (0.00s)\n"
+        },
+        {
+          "test": "TestHLCFaultProcessMatrix",
+          "output": "=== RUN   TestHLCFaultProcessMatrix\n    shutdown_fault_process_test.go:94: isolated fault/watchdog runner tests/hlc/fault_matrix.py\n--- SKIP: TestHLCFaultProcessMatrix (0.00s)\n"
+        },
+        {
+          "test": "TestHLCBindFailure",
+          "output": "=== RUN   TestHLCBindFailure\n    shutdown_fault_process_test.go:329: isolated startup failure runner\n--- SKIP: TestHLCBindFailure (0.00s)\n"
+        },
+        {
+          "test": "TestHLCLoadMatrix",
+          "output": "=== RUN   TestHLCLoadMatrix\n    shutdown_load_test.go:560: isolated actual-process matrix: tests/hlc/process_matrix.py\n--- SKIP: TestHLCLoadMatrix (0.00s)\n"
+        },
+        {
+          "test": "TestHLCS007Full",
+          "output": "=== RUN   TestHLCS007Full\n    shutdown_mixed_fault_process_test.go:164: isolated full mixed fault: tests/hlc/s007_full.py\n--- SKIP: TestHLCS007Full (0.00s)\n"
+        }
+      ],
+      "failures": [],
+      "package_status": "pass"
+    }
+  },
+  "race": {
+    "github.com/zhangzongchu2019/dingwei/internal/tempgroup": {
+      "top_level_pass": 12,
+      "subtest_pass": 12,
+      "skips": [],
+      "failures": [],
+      "package_status": "pass"
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extseat": {
+      "top_level_pass": 24,
+      "subtest_pass": 36,
+      "skips": [],
+      "failures": [],
+      "package_status": "pass"
+    }
+  },
+  "m8-directed": {
+    "github.com/zhangzongchu2019/dingwei/internal/m8": {
+      "top_level_pass": 6,
+      "subtest_pass": 3,
+      "skips": [],
+      "failures": [],
+      "package_status": "pass"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "parent": "c5152a213783e63626c161afefb34a7f45cfaea3",
+  "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+  "parent_rc": 1,
+  "current_rc": 1,
+  "equal_ignoring_output_order": true,
+  "raw_handle_open": 10,
+  "baseline_handle_open": 5,
+  "system_ctx": 16,
+  "baseline_system_ctx": 16,
+  "escape": 1,
+  "baseline_escape": 1,
+  "threshold_modified": false,
+  "added_violations": 0,
+  "UTC": "2026-11-07T02:26:10.376059+00:00"
+}

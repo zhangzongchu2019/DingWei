@@ -1,0 +1,20 @@
+{
+  "name": "reverse",
+  "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "-overlay",
+    "/tmp/r53-tempgroup-source9e19/mutations/reverse/overlay.json",
+    "-count=1",
+    "./internal/tempgroup",
+    "-run",
+    "^TestRealGroupsPG/MirrorReachabilityAndAgentIDRecheck$"
+  ],
+  "started_utc": "2026-11-07T02:22:06.639667+00:00",
+  "ended_utc": "2026-11-07T02:22:12.808965+00:00",
+  "rc": 1,
+  "expected": "group dissolved or expired",
+  "killed_by_expected_assertion": true
+}

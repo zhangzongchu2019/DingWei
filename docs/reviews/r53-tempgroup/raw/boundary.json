@@ -1,0 +1,12 @@
+{
+  "gate": "boundary",
+  "source_commit": "9e19d816df8b70225a046a71398e979f22db6399",
+  "command": [
+    "bash",
+    "scripts/repo-boundary-gate.sh"
+  ],
+  "HUB_TEST_PG_STRICT": 1,
+  "started_utc": "2026-11-07T02:22:11.158283+00:00",
+  "ended_utc": "2026-11-07T02:22:12.470795+00:00",
+  "rc": 1
+}
