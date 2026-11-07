@@ -1,0 +1,28 @@
+  PASS S1 慢重连（首条重放 1.5 s）连续 6 次后正文不变、不叠加
+  PASS S2 重连请求带 after＝<纪元>-<已见末序号>
+  PASS S3 有序号时不再走 1 秒清空窗口（不弹「重放超时」）
+  PASS S4 发布错位：中间层丢 after、Hub 整份重放 ⇒ 页面按 id 跳过已见、不叠加
+  FAIL S5 换纪元保留原内容、新事件只一份，保持A4中性重启提示: rendered DOM lost content: [NEW]
++ actual - expected
+
++ '[NEW]'
+- '[002][003][004][005][006][007][008][009][010][011][012][013][014][015][016][017][018][019][020][021][022][023][024][025][026][027][028][029][030][NEW]'
+
+  PASS S6 溢出：先提示「显示可能不全」，ring 内新事件照收、不重复
+  PASS S7 实时跳号 ⇒ 合并等待后带 after 补缺，缺口补上且已显示的不重复
+  PASS S8 跳号风暴：补缺重连 5 分钟内至多 3 次，之后停止并提示
+  PASS S9 回合组到软上限合并（不同 cursor）后正文逐字相同、条数下降
+  PASS S10 同 cursor 相同文本的多片合并后不丢一片
+  PASS S11 不同 delivery 的相邻文本不合并、各留归属，正文仍逐字相同
+  PASS S12 turn_id 为空的相邻 assistant_text 不合并（超软上限也各自保留）
+  PASS S13 乱序到达：未到软上限渲染按 cursor 序；越过软上限合并后内容不丢不重
+Error: 1 regression check(s) failed
+S5 换纪元保留原内容、新事件只一份，保持A4中性重启提示: rendered DOM lost content: [NEW]
++ actual - expected
+
++ '[NEW]'
+- '[002][003][004][005][006][007][008][009][010][011][012][013][014][015][016][017][018][019][020][021][022][023][024][025][026][027][028][029][030][NEW]'
+
+    at Object.finish (/data/ai-dev-data/work/togpt60-r51-epoch-replay-fix/view-service/renderer-regression-selfhost.js:20:34)
+    at /data/ai-dev-data/work/togpt60-r51-epoch-replay-fix/view-service/renderer-replay-seq-regression.js:237:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

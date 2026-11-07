@@ -11,6 +11,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	sc "github.com/zhangzongchu2019/dingwei/internal/specconfirm"
 	"github.com/zhangzongchu2019/dingwei/internal/specread"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -175,6 +176,50 @@ func TestR6DefaultOffMissingDependenciesAndHTTPBounds(t *testing.T) {
 	w = r6HTTP(e, "POST", "", "", e.tokZZC, "", r6JSON(q))
 	if w.Code == 200 {
 		t.Fatal("R6_GONGFENG_FAIL_OPEN")
+	}
+}
+
+func TestR52CoordinateMutationTrustedOriginMatrix(t *testing.T) {
+	h := &Hub{PublicOrigin: "https://dw123.cmjrt.com"}
+	trusted, err := trustedorigin.ParseList("https://dw123.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name, source, target string
+		configured           bool
+		wantAllowed          bool
+	}{
+		{"empty canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com", false, true},
+		{"empty extra port", "https://dw123.cmjrt.com:50443", "https://dw123.cmjrt.com:50443", false, false},
+		{"empty case variation", "HTTPS://DW123.CMJRT.COM:50443", "https://DW123.CMJRT.COM:50443", false, false},
+		{"configured canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com", true, true},
+		{"configured normalized hit", "HTTPS://DW123.CMJRT.COM:50443", "https://dw123.cmjrt.com:50443", true, true},
+		{"configured different port", "https://dw123.cmjrt.com:50444", "https://dw123.cmjrt.com:50444", true, false},
+		{"configured HTTP impostor", "http://dw123.cmjrt.com:50443", "http://dw123.cmjrt.com:50443", true, false},
+		{"configured missing origin", "", "https://dw123.cmjrt.com:50443", true, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.configured {
+				h.TrustedOrigins = trusted
+			} else {
+				h.TrustedOrigins = nil
+			}
+			r := httptest.NewRequest(http.MethodPost, tc.target+"/api/console/coordinate-reviews", strings.NewReader("{}"))
+			if tc.source != "" {
+				r.Header.Set("Origin", tc.source)
+			}
+			r.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			gotAllowed := h.coordinateMutation(w, r, false)
+			if gotAllowed != tc.wantAllowed {
+				t.Fatalf("allowed=%v want=%v status=%d body=%s", gotAllowed, tc.wantAllowed, w.Code, w.Body.String())
+			}
+			if gotAllowed && w.Code != http.StatusOK || !gotAllowed && w.Code != http.StatusForbidden {
+				t.Fatalf("status=%d allowed=%v", w.Code, gotAllowed)
+			}
+		})
 	}
 }
 func r6JSON(v any) string { b, _ := json.Marshal(v); return string(b) }

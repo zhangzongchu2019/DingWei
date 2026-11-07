@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	td "github.com/zhangzongchu2019/dingwei/internal/taskdispatch"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -92,5 +93,58 @@ func TestR10HTTPRejectsForgedActorsCSRFAndAmbiguousJSON(t *testing.T) {
 	l, err := db.TaskDispatchLock(e.ctx, m.Key)
 	if err != nil || l != nil {
 		t.Fatal("R10_HTTP_DENIAL_CREATED_LOCK", l, err)
+	}
+}
+
+func TestR52TaskDispatchLockAndBatchTrustedOriginMatrix(t *testing.T) {
+	e, _, _, _ := r10NoticeEnv(t)
+	h := e.hub
+	h.PublicOrigin = "https://dw123.cmjrt.com"
+	trusted, err := trustedorigin.ParseList("https://dw123.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name, source, target string
+		configured           bool
+		want                 int
+	}{
+		{"empty canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com", false, http.StatusBadRequest},
+		{"empty extra port", "https://dw123.cmjrt.com:50443", "https://dw123.cmjrt.com:50443", false, http.StatusForbidden},
+		{"empty case variation", "HTTPS://DW123.CMJRT.COM:50443", "https://DW123.CMJRT.COM:50443", false, http.StatusForbidden},
+		{"configured canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com", true, http.StatusBadRequest},
+		{"configured normalized hit", "HTTPS://DW123.CMJRT.COM:50443", "https://dw123.cmjrt.com:50443", true, http.StatusBadRequest},
+		{"configured different port", "https://dw123.cmjrt.com:50444", "https://dw123.cmjrt.com:50444", true, http.StatusForbidden},
+		{"configured HTTP impostor", "http://dw123.cmjrt.com:50443", "http://dw123.cmjrt.com:50443", true, http.StatusForbidden},
+		{"configured missing origin", "", "https://dw123.cmjrt.com:50443", true, http.StatusForbidden},
+	}
+	for _, endpoint := range []struct {
+		name, path string
+		handler    http.HandlerFunc
+	}{
+		{"lock", "/api/console/task-dispatch-locks", h.HandleTaskDispatchLock},
+		{"batch", "/api/console/task-dispatch-locks/batch", h.HandleTaskDispatchBatch},
+	} {
+		t.Run(endpoint.name, func(t *testing.T) {
+			for _, tc := range cases {
+				t.Run(tc.name, func(t *testing.T) {
+					if tc.configured {
+						h.TrustedOrigins = trusted
+					} else {
+						h.TrustedOrigins = nil
+					}
+					r := httptest.NewRequest(http.MethodPost, tc.target+endpoint.path, strings.NewReader("{"))
+					r.Header.Set("Content-Type", "application/json")
+					if tc.source != "" {
+						r.Header.Set("Origin", tc.source)
+					}
+					w := httptest.NewRecorder()
+					endpoint.handler(w, r)
+					if w.Code != tc.want {
+						t.Fatalf("status=%d want=%d body=%s", w.Code, tc.want, w.Body.String())
+					}
+				})
+			}
+		})
 	}
 }

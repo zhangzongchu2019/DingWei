@@ -281,12 +281,27 @@ func (h *Hub) writeConsoleUploadTicket(w http.ResponseWriter, r *http.Request, k
 		http.Error(w, "file upload unavailable", http.StatusServiceUnavailable)
 		return
 	}
+	publicBaseURL := h.uploadTicketPublicBase(r, ticket.PublicBaseURL)
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"upload_url": ticket.PublicBaseURL + "/files/upload", "ticket": ticket.Token,
+		"upload_url": publicBaseURL + "/files/upload", "ticket": ticket.Token,
 		"expires_at": ticket.ExpiresAt.UTC().Format(time.RFC3339Nano), "session": ticketSession,
 	})
+}
+
+func (h *Hub) uploadTicketPublicBase(r *http.Request, fallback string) string {
+	// Preserve the file-service base for the canonical origin and the legacy
+	// empty-list path. Only an additional explicitly trusted browser origin may
+	// select a different upload endpoint; persisted file URLs remain canonical.
+	origins := r.Header.Values("Origin")
+	requestOrigin := r.Header.Get("Origin")
+	if len(origins) == 1 && requestOrigin != "" && requestOrigin != h.PublicOrigin &&
+		strings.TrimSpace(requestOrigin) == requestOrigin && !strings.Contains(requestOrigin, ",") &&
+		h.originAllowed(requestOrigin, requestOrigin == h.PublicOrigin, len(origins)) {
+		return requestOrigin
+	}
+	return fallback
 }
 
 func (h *Hub) handleFileCapabilityRequest(ctx context.Context, c *sessionClient, env model.Envelope) bool {

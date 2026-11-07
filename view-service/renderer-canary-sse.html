@@ -1142,6 +1142,7 @@
         <span class="status-item sb-res">内存 <strong id="memStat">--</strong></span>
         <span class="status-item sb-res">Agent 磁盘 <strong id="diskStat">未知</strong></span>
         <span class="status-item" id="inboxLagStat">注入状态未知</span>
+        <details class="status-item" id="inboxUnknownDetails" hidden><summary>查看本会话条目</summary><ul id="inboxUnknownList"></ul></details>
         <span class="status-item sb-res" id="resourceFreshness" role="status">资源待更新</span>
       </div>
       <!-- 业主 2026-09-18 验收第 1 条：「选择文件上传时，没有任何提示，这个很容易认为是出问题了」
@@ -1213,6 +1214,7 @@
     const lockBadge = document.getElementById('lockBadge');
     const copyUnlockBtn = document.getElementById('copyUnlockBtn');
     const costAccountingMode = /* VS_COST_ACCOUNTING_MODE */ 'active';
+    const VS_CANONICAL_ORIGIN = /* VS_PUBLIC_ORIGIN */ '';
     const composerInner = document.getElementById('composerInner');
     const filePicker = document.getElementById('filePicker');
     const dropHint = document.getElementById('dropHint');
@@ -1412,6 +1414,25 @@
         if (btn) btn.disabled = false;
       } else {
         entry.node.insertAdjacentHTML('beforeend', c2Note('取消已请求,待确认'));
+      }
+    }
+    async function c2RequestRetry(waitKey, entry, btn) {
+      if (entry.retryRequested || !btn || btn.disabled) return;
+      entry.retryRequested = true;
+      btn.disabled = true;
+      const norm = entry.event?._norm || {};
+      const requestId = newRequestId();
+      const r = await c2SendControl({ kind: 'retry', delivery_id: deliveryAddrId(norm.deliveryId || waitKey), request_id: requestId });
+      const note = entry.node.querySelector('.retry-note');
+      if (note) note.remove();
+      const text = !r.sent ? '重发未发出，请稍后重试' : (r.ack && r.ack.ok === false ? '重发未受理' : '已重发');
+      entry.node.insertAdjacentHTML('beforeend', `<span class="card-footnote retry-note" role="status">${escapeHtml(text)}</span>`);
+      if (!r.sent || (r.ack && r.ack.ok === false)) {
+        entry.retryRequested = false;
+        btn.disabled = false;
+      } else {
+        btn.remove();
+        entry.event._norm.status = 'retried';
       }
     }
     // 中断:立即"已请求";流上 control/interrupt 事件到达(窗口内)升级"中断已发出";超时无回执→"中断未确认"。
@@ -1717,6 +1738,16 @@
     function refreshInboxLagLabel(){
       const el=document.getElementById('inboxLagStat');
       if(el){el.textContent=inboxLagState.display(performance.now());el.title='helper 上报的模型接收阶段；processed 不等于模型已接收；不代表业务已执行';}
+      const details=document.getElementById('inboxUnknownDetails'), list=document.getElementById('inboxUnknownList');
+      if(details&&list){
+        const reported=inboxLagState.record?.unknown||0;
+        const rows=[...waitingDeliveries.values()].filter(x=>x.event?._norm?.reason==='model_admission_unknown'||['unconfirmed_retryable','retried'].includes(x.event?._norm?.status));
+        details.hidden=rows.length===0&&reported===0;
+        details.querySelector('summary').textContent=`查看未知条目（${reported||rows.length}）`;
+        list.textContent='';
+        if(!rows.length&&reported){const li=document.createElement('li');li.textContent='当前页面没有收到这些条目的明细事件';list.appendChild(li);}
+        for(const row of rows){const li=document.createElement('li');li.textContent=(row.event?._norm?.text||'未知消息')+' — '+(row.event?._norm?.status==='retried'?'已重发':'未确认');list.appendChild(li);}
+      }
     }
     function formatDisk(disk) {
       return agentDiskState.display(performance.now()).text;
@@ -1964,7 +1995,9 @@
       session_unavailable: '会话不在线', page_unauthorized: '写权限失效',
       service_unavailable: '服务临时不可用', cancelled: '已取消',
       injection_unconfirmed: '已写入终端(注入未确认)',
-      model_admission_unknown: '可能已进入会话／暂停自动重投／需核原回合',
+      model_admission_unknown: 'Agent 正忙：消息已交出但未确认被处理，请看它的下一条回复',
+      cancel_not_cancelable: '已交给 Agent，无法撤回',
+      unconfirmed_retryable: '未确认（可重发）',
       legacy_injection_unknown: '旧版 helper 已收／状态无法确认',
       turn_terminal_unknown: '回合终态未知／投递队列已释放／暂停自动重投',
       // A0 §7-amend-1(冻结 @ 6a33540/4fbd4d61):非法 UTF-8=ingress fail-closed 拒收,诚实态文案;code=invalid_utf8 已经理核 §7 冻结文本逐字确认
@@ -2131,6 +2164,7 @@
       if (ev.kind === 'input_posted') {
         norm.stage = ev.stage || 'generated';
         norm.text = ev.payload ?? ev.text ?? '';
+        if (typeof ev.cancellable === 'boolean') norm.cancellable = ev.cancellable;
       } else if (ev.kind === 'delivery_update') {
         // canonical B0 线格式:delivery_stage=管道阶段(generated/hub_received/helper_received/...),
         // delivery_status=终态状态(cancelled/failed);legacy ev.stage 仅迁移输入。
@@ -2219,6 +2253,8 @@
     function stageFooterText(norm) {
       if (norm.reason === 'desktop_inbox_saved') return '已保存到桌面收件箱';
       if (norm.reason === 'model_admission_unknown') return C1_REASON_TEXT.model_admission_unknown;
+      if (norm.reason === 'cancel_not_cancelable') return C1_REASON_TEXT.cancel_not_cancelable;
+      if (norm.reason === 'unconfirmed_retryable') return C1_REASON_TEXT.unconfirmed_retryable;
       if (norm.reason === 'turn_terminal_unknown') return C1_REASON_TEXT.turn_terminal_unknown;
       if (norm.reason === 'legacy_injection_unknown') return C1_REASON_TEXT.legacy_injection_unknown;
       if (norm.stage === 'turn_processed') {
@@ -2475,7 +2511,7 @@
             }
             if (!norm.stage || norm.stageIdx >= currentStageIdx) {
               const status = ev.delivery_status;
-              if (typeof status === 'string' && ['', 'cancelled', 'failed', 'dead', 'dropped'].includes(status) && (current.status || '') !== status) {
+              if (typeof status === 'string' && ['', 'cancelled', 'failed', 'dead', 'dropped', 'unconfirmed_retryable', 'retried'].includes(status) && (current.status || '') !== status) {
                 current.status = status;
                 changed = true;
               }
@@ -2624,8 +2660,9 @@
       if (provFlagOn()) {
         // 精简在途条(张宗楚灰度反馈#2):明确「⏳ 投递中」+单行截断,全文进 title——不与「已收到消息」混淆;
         // 删除寻址保留(截断足够辨认),终态仍事件驱动转出
-        entry.node.classList.add('waiting-item--pending');
-        entry.node.innerHTML = `${provIc}${badge}<span class="prov-spin" title="未达终态(注入/失败/取消/过期/终止)">⏳ 投递中</span>${stageText ? `<span class="waiting-stage">${escapeHtml(stageText)}</span>` : ''}<span class="waiting-text"></span>${cancelTag}`;
+        const retryReady = norm.status === 'unconfirmed_retryable' || norm.status === 'retried';
+        entry.node.classList.toggle('waiting-item--pending', !retryReady);
+        entry.node.innerHTML = `${provIc}${badge}${retryReady ? `<span class="waiting-stage">${C1_REASON_TEXT.unconfirmed_retryable}${norm.status === 'retried' ? ' · 已重发' : ''}</span>` : '<span class="prov-spin" title="未达终态(注入/失败/取消/过期/终止)">⏳ 投递中</span>'}${stageText && !retryReady ? `<span class="waiting-stage">${escapeHtml(stageText)}</span>` : ''}<span class="waiting-text"></span>${cancelTag}`;
       } else {
         entry.node.innerHTML = `${provIc}${badge}<span class="waiting-text"></span>${cancelTag}${stageText ? `<span class="waiting-stage">${escapeHtml(stageText)}</span>` : ''}`;
       }
@@ -2643,7 +2680,14 @@
         btn.addEventListener('click', () => c2RequestCancel(waitKey, entry));
         entry.node.appendChild(btn);
       }
+      if ((norm.status === 'unconfirmed_retryable') && !entry.node.querySelector('.waiting-retry-btn')) {
+        const btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'waiting-retry-btn'; btn.textContent = '重发';
+        btn.addEventListener('click', () => c2RequestRetry(waitKey, entry, btn));
+        entry.node.appendChild(btn);
+      }
       r40PaintQueuedWait(entry);
+      refreshInboxLagLabel();
       waitingArea.hidden = false;
       requestAnimationFrame(() => {
         waitingArea.scrollTop = waitingArea.scrollHeight;
@@ -2823,11 +2867,42 @@
     }
 
     // 🔴 DW-MD-CORE:own-url BEGIN —— 【生成副本】源在 view-service/md-render-core.js 的同名段;改源后跑 md-render-core-sync.py(漂移由 test_md_render_core.py 挡)
+    function canonicalPublicOrigin() {
+      try {
+        const raw = typeof VS_CANONICAL_ORIGIN !== 'undefined' && VS_CANONICAL_ORIGIN
+          ? VS_CANONICAL_ORIGIN
+          : (typeof globalThis !== 'undefined' ? globalThis.DW_CANONICAL_PUBLIC_ORIGIN : '');
+        const u = new URL(raw);
+        return u.protocol === 'https:' ? u.origin : '';
+      } catch { return ''; }
+    }
+
     function isOwnFileUrl(raw) {
       try {
         const u = new URL(raw, location.href);
-        return u.origin === location.origin && u.pathname.startsWith('/f/');
+        return u.pathname.startsWith('/f/') &&
+          (u.origin === location.origin || (canonicalPublicOrigin() && u.origin === canonicalPublicOrigin()));
       } catch { return false; }
+    }
+
+    function localFileUrl(raw) {
+      try {
+        const u = new URL(raw, location.href);
+        if (!u.pathname.startsWith('/f/') || u.origin !== canonicalPublicOrigin()) return raw;
+        u.protocol = location.protocol;
+        u.host = location.host;
+        return u.href;
+      } catch { return raw; }
+    }
+
+    function canonicalFileUrl(raw) {
+      try {
+        const u = new URL(raw, location.href);
+        if (u.origin !== location.origin || !u.pathname.startsWith('/f/')) return raw;
+        const origin = canonicalPublicOrigin();
+        if (!origin) return raw;
+        return origin + u.pathname + u.search + u.hash;
+      } catch { return raw; }
     }
     // DW-MD-CORE:own-url END
 
@@ -2841,7 +2916,7 @@
     // HEAD 探测：ok ⇒ 服务端声明；404 ⇒ 文件不存在或链接无效；其余(405/403/网络错) ⇒ null ⇒ 走扩展名降级。
     function probeFileMeta(url) {
       if (fileMetaCache.has(url)) return fileMetaCache.get(url);
-      const task = fetch(url, { method: 'HEAD' })
+      const task = fetch(localFileUrl(url), { method: 'HEAD' })
         .then((res) => {
           if (res.ok) {
             const rawDisposition = String(res.headers.get('Content-Disposition') || '');
@@ -2960,7 +3035,7 @@
     function fileDownloadLink(url, label, fileName) {
       const a = document.createElement('a');
       a.className = 'attachment-dl';
-      a.href = url;
+      a.href = localFileUrl(url);
       a.rel = 'noopener noreferrer';
       a.target = '_blank';
       // R4（业主 2026-09-18：下载下来是 f5790871….bin，Word 打不开）：
@@ -2983,7 +3058,7 @@
       // R5-1（业主 09-18：「一个文件链接下一个文件展示」）：文件名本身就是那条链接。
       const name = document.createElement('a');
       name.className = 'attachment-name';
-      name.href = url;
+      name.href = localFileUrl(url);
       name.rel = 'noopener noreferrer';
       name.target = '_blank';
       name.textContent = hint?.name || fileNameFromUrl(url);
@@ -3000,7 +3075,7 @@
       box.appendChild(pre);
       try {
         // Range 取头部：不为了显示一段预览把整个文件拉下来。
-        const res = await fetch(url, { headers: { Range: `bytes=0-${FILE_TEXT_INLINE_MAX - 1}` } });
+        const res = await fetch(localFileUrl(url), { headers: { Range: `bytes=0-${FILE_TEXT_INLINE_MAX - 1}` } });
         if (!res.ok && res.status !== 206) throw new Error(`HTTP ${res.status}`);
         const text = await res.text();
         pre.textContent = text;
@@ -3084,7 +3159,7 @@
       switch (kind) {
         case 'image': {
           const img = document.createElement('img');
-          img.src = url;
+          img.src = localFileUrl(url);
           img.loading = 'lazy';
           img.alt = hint?.name || fileNameFromUrl(url);
           // 图片本身加载不出来时也不留空白：退到下载链接。
@@ -3094,7 +3169,7 @@
         }
         case 'video': {
           const video = document.createElement('video');
-          video.src = url;
+          video.src = localFileUrl(url);
           video.controls = true;
           video.preload = 'metadata';
           // 🔴 下面那条下载链接是**无条件**附的（能播时也该能下载）。
@@ -3107,7 +3182,7 @@
         }
         case 'audio': {
           const audio = document.createElement('audio');
-          audio.src = url;
+          audio.src = localFileUrl(url);
           audio.controls = true;
           audio.preload = 'metadata';
           // 与 video 同一形态（见上）：下载链接**无条件**附一条 ——
@@ -3119,7 +3194,7 @@
         }
         case 'pdf': {
           const frame = document.createElement('iframe');
-          frame.src = url;
+          frame.src = localFileUrl(url);
           frame.title = hint?.name || fileNameFromUrl(url);
           box.appendChild(frame);
           box.appendChild(fileDownloadLink(url, '下载 PDF', knownName));   // 浏览器无内置 PDF 阅读器时仍有出路
@@ -3282,7 +3357,7 @@
       const urls = new Set();
       if (!cardEl || !cardEl.querySelectorAll) return urls;
       for (const img of cardEl.querySelectorAll('.event-content img[data-md-img]')) {
-        const src = img.getAttribute('src');
+        const src = canonicalFileUrl(img.getAttribute('src') || '');
         if (!src) continue;
         // 🔴 加载失败(complete 且 naturalWidth==0)⇒ **不算**已就地显示 ⇒ 附件卡接手
         if (img.complete && img.naturalWidth === 0) continue;
@@ -4305,7 +4380,7 @@
     //    alt/src 用的都是 escapeHtml **之后**的串(引号已是 &quot;)⇒ 属性突破不成立;
     //    那道承重墙由 ts-No.76 的 P12 与本件 G3/M-G3 一起钉着。
     function mdImageHtml(alt, url) {
-      return `<img class="md-img" data-md-img src="${url}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer">`;
+      return `<img class="md-img" data-md-img src="${localFileUrl(url)}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer">`;
     }
 
     function renderInline(src) {
@@ -4322,7 +4397,7 @@
       out = out.replace(/(!?)\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, bang, text, url) => (
         isInlineImageUrl(url)
           ? mdImageHtml(text, url)
-          : `<a href="${url}" rel="noreferrer" target="_blank">${text}</a>`));
+          : `<a href="${localFileUrl(url)}" rel="noreferrer" target="_blank">${text}</a>`));
       out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
       out = out.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
       out = out.replace(/\n/g, '<br>');
@@ -5555,7 +5630,8 @@
         return;
       }
       // 规范粘贴换行，去掉边界空行，保留正文中间换行和缩进。
-      const text = humanInput.value.replace(/\r\n?/g, '\n').replace(/^\n+/u, '').replace(/\s+$/u, '');
+      const text = humanInput.value.replace(/\r\n?/g, '\n').replace(/^\n+/u, '').replace(/\s+$/u, '')
+        .replace(FILE_URL_RE, (url) => canonicalFileUrl(url));
       if (!text.trim()) return;
       try {
         const result = await submitInput(text);
@@ -5587,6 +5663,19 @@
       const detail = ` (${String(name || 'file')}, ${Number(size)} bytes)`;
       humanInput.setRangeText(prefix + fileRef + detail + suffix, start, end, 'end');
       humanInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function normalizeInputFileUrls(text) {
+      if (!VS_CANONICAL_ORIGIN || VS_CANONICAL_ORIGIN === location.origin) return text;
+      return String(text).replace(FILE_URL_RE, (raw) => {
+        const trimmed = trimUrlTail(raw);
+        if (!isOwnFileUrl(trimmed)) return raw;
+        try {
+          const u = new URL(trimmed);
+          if (u.origin !== location.origin || !u.pathname.startsWith('/f/')) return raw;
+          return VS_CANONICAL_ORIGIN + trimmed.slice(u.origin.length) + raw.slice(trimmed.length);
+        } catch { return raw; }
+      });
     }
     // ── 0.2.0.6 A 线：上传入口（业主第 1 条）────────────────────────────
     // 契约：tasks/v0.1-B 锚 d26bfd7002f70b7a9c9b5dcec6a1682ccbef974f
@@ -5908,7 +5997,7 @@
         const mediaType = hint.mediaType || '';
         if (mediaType.startsWith('image/') && mediaType !== 'image/svg+xml') {
           const img = document.createElement('img');
-          img.src = url;
+          img.src = localFileUrl(url);
           img.alt = hint.name || fileNameFromUrl(url);
           img.loading = 'lazy';
           // 缩略图取不到就退回图标，不留一个破图。

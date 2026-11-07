@@ -59,7 +59,7 @@
     "delivery_stage": "helper_received",
     "updated_at": "2026-07-22T00:00:00Z",
     "reason": "",
-    "cancellable": true,
+    "cancellable": false,
     "interruptible": false
   },
   "cli_injected": {

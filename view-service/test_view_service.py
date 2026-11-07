@@ -171,14 +171,14 @@ class ProductionRendererTest(unittest.TestCase):
         _, written = self._events_call("/events", lines=lines)
         self.assertEqual(written, b"".join(lines))
 
-    def _render_for_public_base(self, public_base):
+    def _render_for_public_base(self, public_base, public_origin=""):
         handler = object.__new__(vs._Handler)
-        handler.headers = {"X-DW-Session": "zzc-tester-2642"}
+        handler.headers = {"X-DW-Session": "zzc-tester-2642", "X-DW-Public-Origin": public_origin}
         handler.wfile = io.BytesIO()
         handler.send_response = mock.Mock()
         handler.send_header = mock.Mock()
         handler.end_headers = mock.Mock()
-        renderer = b"const API={events:'/events',input:'/input',interrupt:'/interrupt',status:'/status',page:'/page'}"
+        renderer = b"const canonicalPublicOrigin=/* VS_PUBLIC_ORIGIN */ ''; const API={events:'/events',input:'/input',interrupt:'/interrupt',status:'/status',page:'/page'}"
         with mock.patch.object(vs, "PUBLIC_VIEW_BASE", public_base), \
                 mock.patch.object(vs, "_read_renderer", return_value=renderer):
             handler._serve_file()
@@ -194,6 +194,14 @@ class ProductionRendererTest(unittest.TestCase):
         rendered = self._render_for_public_base("/view")
         for endpoint in ("events", "input", "interrupt", "status", "page"):
             self.assertIn(f"'/view/zzc-tester-2642/{endpoint}'", rendered)
+
+    def test_renderer_receives_canonical_public_origin_as_json(self):
+        rendered = self._render_for_public_base("/view", "https://dw123.cmjrt.com")
+        self.assertIn('canonicalPublicOrigin="https://dw123.cmjrt.com"', rendered)
+
+    def test_renderer_origin_injection_escapes_script_delimiters(self):
+        rendered = self._render_for_public_base("/view", "https://example.invalid</script>")
+        self.assertIn('canonicalPublicOrigin="https://example.invalid\\u003c/script>"', rendered)
 
     def test_public_view_base_validation_fails_closed(self):
         self.assertEqual(vs._validate_public_view_base(" /v2c/view "), "/v2c/view")
@@ -365,6 +373,28 @@ class ControlForwardV2Test(unittest.TestCase):
                  mock.patch.object(vs, "_hub_v2_cancel", return_value=(hub_code, {"error": "x"})):
                 status, ok = vs._forward_control_v2("sess", "pg", "ptok", "rid", "msg", "d-001")
             self.assertEqual((status, ok), (502, False), f"hub {hub_code} 应 502 未发出、不压 403")
+
+
+class RetryForwardV2Test(unittest.TestCase):
+    def test_retry_requires_page_authority_and_forwards_delivery_id(self):
+        store = mock.MagicMock()
+        store.authorize_page.return_value = True
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_retry", return_value=(200, {"ok": True})) as hub:
+            status, ok = vs._forward_control_v2_retry("sess", "page", "token", "a" * 32, "delivery")
+        self.assertEqual((status, ok), (200, True))
+        hub.assert_called_once_with("sess", "page", "a" * 32, "delivery")
+        store.authorize_page.assert_called_once_with("page", "token", "sess")
+        store.record_successful_write.assert_called_once_with("page", "token")
+
+    def test_retry_denies_invalid_page_authority(self):
+        store = mock.MagicMock()
+        store.authorize_page.return_value = False
+        with mock.patch.object(vs, "_get_page_store", return_value=store), \
+             mock.patch.object(vs, "_hub_v2_retry") as hub:
+            status, ok = vs._forward_control_v2_retry("sess", "page", "token", "a" * 32, "delivery")
+        self.assertEqual((status, ok), (403, False))
+        hub.assert_not_called()
 
 
 class InterruptForwardTest(unittest.TestCase):

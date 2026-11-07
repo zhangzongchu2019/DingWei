@@ -170,7 +170,13 @@ func (m *consoleMuxRegistry) actor(w http.ResponseWriter, r *http.Request, names
 		writeAgentWSError(w, 401, "unauthenticated")
 		return consolemux.Authorization{}, "", time.Time{}, false
 	}
-	if (r.Method != "GET" && r.Method != "HEAD" || r.Header.Get("Origin") != "") && r.Header.Get("Origin") != m.h.PublicOrigin {
+	origin := r.Header.Get("Origin")
+	originValues := r.Header.Values("Origin")
+	checkOrigin := r.Method != "GET" && r.Method != "HEAD" || origin != ""
+	if len(m.h.TrustedOrigins) > 0 && len(originValues) > 0 {
+		checkOrigin = true
+	}
+	if checkOrigin && !m.h.originAllowed(origin, origin == m.h.PublicOrigin, len(originValues)) {
 		writeAgentWSError(w, 403, "origin_mismatch")
 		return consolemux.Authorization{}, "", time.Time{}, false
 	}

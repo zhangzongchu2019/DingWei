@@ -15,6 +15,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"github.com/zhangzongchu2019/dingwei/internal/store/migrate"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 // 新平台（G3）装配。DW_NEWPLAT=1 时启用：
@@ -25,15 +26,17 @@ import (
 // 环境变量（不含任何值，值由部署方给）：
 //
 //	DW_PUBLIC_ORIGIN            对外源，例如 https://dw.cmjrt.com:55055（console 写接口校验 Origin 用；必填）
+//	DW_TRUSTED_ORIGINS          逗号分隔的精确 HTTPS 来源名单（可选；空值保留现有逐点判断）
 //	DW_NEWPLAT_PG_DSN           身份存储所在 PG 的连接串（与 G2 同一个 PG 库；必填）。表由迁移账本建，缺表拒绝启动
 //	DW_TRUST_PROXY=1            Hub 在本机 nginx 之后时开启：直连方为回环时采信 X-Real-IP
 //
 // 第一个管理用户不再由 Hub 自动建（业主裁定，台账 8971bddf：取消常驻 systemdefault 与空库首启自动建号），
 // 由运维在主机上执行初始化脚本 workpulse bootstrap-admin 建（见 bootstrap_admin.go）。
 type newPlatformConfig struct {
-	publicOrigin string
-	pgDSN        string
-	trustProxy   bool
+	publicOrigin   string
+	trustedOrigins []trustedorigin.Origin
+	pgDSN          string
+	trustProxy     bool
 	// codeKey 注册码派生密钥（WP_SECRET_KEY，与旧平台加密管道密钥同一个环境变量）；空 ⇒ 注册码随机、列表里取不回。
 	codeKey string
 	// hosted 列表托管子对象的提供函数，签名即 httpapi.API.Hosted。G4 装配编排器处一行：cfg.hosted = orch.HostedItem
@@ -57,6 +60,11 @@ func newPlatformConfigFromEnv() (newPlatformConfig, bool, error) {
 		trustProxy:   strings.TrimSpace(os.Getenv("DW_TRUST_PROXY")) == "1",
 		codeKey:      os.Getenv("WP_SECRET_KEY"),
 	}
+	trustedOrigins, err := trustedorigin.ParseList(os.Getenv("DW_TRUSTED_ORIGINS"))
+	if err != nil {
+		return cfg, true, err
+	}
+	cfg.trustedOrigins = trustedOrigins
 	if cfg.publicOrigin == "" {
 		return cfg, true, errNewPlatformConfig
 	}
@@ -144,6 +152,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	hub.Onboarding = ob
 	hub.AgentCredentialOnly = true
 	hub.PublicOrigin = cfg.publicOrigin
+	hub.TrustedOrigins = cfg.trustedOrigins
 	// Shared PG is required for a global single transport slot. Memory mode keeps legacy views.
 	if pg, ok := store.(*identity.PGStore); ok {
 		budget := consolemux.NewBudget()
@@ -164,7 +173,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 		log.Printf("newplat shim: startup reconcile: %v", err)
 	}
 
-	n3 := &httpapi.N3{OB: ob, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Secure: true}
+	n3 := &httpapi.N3{OB: ob, PublicOrigin: cfg.publicOrigin, TrustedOrigins: cfg.trustedOrigins, TrustProxy: cfg.trustProxy, Secure: true}
 	// G4 托管装配（88928305）：pool 非 nil（PG 模式）才尝试；内部按 DW_G4_MASTER_KEY_FILE 开关。
 	// 须在 api 构造前——cfg.hosted 注入点（orch.HostedItem）在 api 上。
 	hostedOn := false
@@ -176,7 +185,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 	}
 	// 页面只认真实装配结果；不能按 env、pool 非空或浏览器 404 猜测。
 	hub.SetConsoleHostedPageEnabled(hostedOn)
-	api := &httpapi.API{Svc: svc, Claims: ob, ClaimBots: hub.ClaimGuidance, Actor: n3.Actor, RenewSession: n3.RenewSession, PublicOrigin: cfg.publicOrigin, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted, HostedAccess: cfg.hostedAccess}
+	api := &httpapi.API{Svc: svc, Claims: ob, ClaimBots: hub.ClaimGuidance, Actor: n3.Actor, RenewSession: n3.RenewSession, PublicOrigin: cfg.publicOrigin, TrustedOrigins: cfg.trustedOrigins, TrustProxy: cfg.trustProxy, Online: hub.AgentOnline, Hosted: cfg.hosted, HostedAccess: cfg.hostedAccess}
 	n3.Register(mux)
 	api.Register(mux)
 	mux.HandleFunc("GET /ws/agent", hub.HandleAgentWS)

@@ -228,7 +228,7 @@ class ExportSurfaceTest(unittest.TestCase):
 NODE_SMOKE = r'''
 const assert = require('assert');
 const core = require('%s');
-const keys = ['escapeHtml','isOwnFileUrl','fileExtOf','kindFromExt','FILE_EXT_KIND','FILE_EXT_NEVER_INLINE',
+const keys = ['escapeHtml','isOwnFileUrl','canonicalPublicOrigin','localFileUrl','canonicalFileUrl','fileExtOf','kindFromExt','FILE_EXT_KIND','FILE_EXT_NEVER_INLINE',
   'splitFencedBlocks','renderMarkdown','renderMarkdownText','isTableStart','splitTableRow','renderTable',
   'renderList','renderInline','renderCode','highlightCode','isInlineImageUrl','mdImageHtml'];
 assert.deepStrictEqual(keys.filter((k) => !(k in core)), [], 'API 缺符号');

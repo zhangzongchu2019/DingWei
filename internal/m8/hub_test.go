@@ -1892,8 +1892,8 @@ func TestDeliveryUpdateCancellableUsesAuthoritativeState(t *testing.T) {
 		want  bool
 	}{
 		{state: "queued", want: true},
-		{state: "sent", want: true},
-		{state: "delivered", want: true},
+		{state: "sent", want: false},
+		{state: "delivered", want: false},
 		{state: "injected", want: false},
 		{state: "processed", want: false},
 		{state: "dead", want: false},
@@ -5589,12 +5589,14 @@ func TestReliableSessionDeliveryInjectedAckPublishesBeforeProcessedWithoutDuplic
 			t.Fatal(err)
 		}
 	}
-	updates := make([]string, 0, 3)
+	updates := make([]string, 0, 4)
 	deadline := time.After(time.Second)
 	for len(updates) < 3 {
 		select {
 		case raw := <-events:
-			updates = append(updates, raw)
+			if !strings.Contains(raw, `"delivery_stage":"hub_received"`) {
+				updates = append(updates, raw)
+			}
 		case <-deadline:
 			t.Fatalf("delivery updates=%v", updates)
 		}
@@ -5686,8 +5688,15 @@ func TestSessionToSessionReliableAdmissionPublishesBothEventRings(t *testing.T) 
 	for name, ch := range map[string]<-chan string{"target": targetEvents, "source": sourceEvents} {
 		select {
 		case raw := <-ch:
+			if strings.Contains(raw, `"delivery_stage":"hub_received"`) {
+				select {
+				case raw = <-ch:
+				case <-time.After(time.Second):
+					t.Fatalf("missing %s helper queued update", name)
+				}
+			}
 			if !strings.Contains(raw, `"kind":"delivery_update"`) || !strings.Contains(raw, `"delivery_stage":"helper_queued"`) ||
-				!strings.Contains(raw, `"cancellable":true`) || strings.Contains(raw, `"cancelable"`) || strings.Contains(raw, `"delivery_status"`) {
+				!strings.Contains(raw, `"cancellable":false`) || strings.Contains(raw, `"cancelable"`) || strings.Contains(raw, `"delivery_status"`) {
 				t.Fatalf("%s delivered update=%s", name, raw)
 			}
 		case <-time.After(time.Second):
@@ -5774,6 +5783,13 @@ func TestReliableSessionDeliveryBusyAckDefersWithoutBurningAttempts(t *testing.T
 	})
 	select {
 	case raw := <-events:
+		if strings.Contains(raw, `"delivery_stage":"hub_received"`) {
+			select {
+			case raw = <-events:
+			case <-time.After(time.Second):
+				t.Fatal("missing busy acknowledgement update")
+			}
+		}
 		var event map[string]any
 		if err := json.Unmarshal([]byte(raw), &event); err != nil || event["kind"] != "delivery_update" ||
 			event["message_id"] != "fm-busy" || event["observed_delivery_id"] != deliveryID ||
@@ -7002,8 +7018,13 @@ func TestDeliveryCancelledAckFinalizesPendingAndPublishesRendererUpdate(t *testi
 		}
 		select {
 		case raw := <-updates:
-			t.Fatalf("negative ACK published renderer update: meta=%+v event=%s", meta, raw)
-		default:
+			if meta["result"] != "not_cancelable" || !strings.Contains(raw, `"reason":"cancel_not_cancelable"`) || !strings.Contains(raw, `"cancellable":false`) {
+				t.Fatalf("unexpected rejection update: meta=%+v event=%s", meta, raw)
+			}
+		case <-time.After(time.Millisecond * 5):
+			if meta["result"] == "not_cancelable" {
+				t.Fatalf("not_cancelable ACK omitted renderer explanation: %+v", meta)
+			}
 		}
 	}
 	if !hub.handleSessionDeliveryAck(ctx, c, model.Envelope{Meta: map[string]any{

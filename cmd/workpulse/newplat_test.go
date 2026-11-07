@@ -33,6 +33,7 @@ func TestNewPlatformConfigFromEnv(t *testing.T) {
 		t.Fatalf("off by default: on=%v err=%v", on, err)
 	}
 	t.Setenv("DW_NEWPLAT", "1")
+	t.Setenv("DW_TRUSTED_ORIGINS", "")
 	t.Setenv("DW_PUBLIC_ORIGIN", "")
 	if _, on, err := newPlatformConfigFromEnv(); !on || !errors.Is(err, errNewPlatformConfig) {
 		t.Fatalf("missing origin: on=%v err=%v", on, err)
@@ -44,9 +45,16 @@ func TestNewPlatformConfigFromEnv(t *testing.T) {
 	}
 	t.Setenv("DW_NEWPLAT_PG_DSN", "postgres://h/db")
 	t.Setenv("DW_TRUST_PROXY", "1")
+	t.Setenv("DW_TRUSTED_ORIGINS", " https://dw123.cmjrt.com:50443 ")
 	cfg, on, err := newPlatformConfigFromEnv()
-	if !on || err != nil || cfg.publicOrigin != "https://dw.cmjrt.com:55055" || cfg.pgDSN != "postgres://h/db" || !cfg.trustProxy {
+	if !on || err != nil || cfg.publicOrigin != "https://dw.cmjrt.com:55055" || cfg.pgDSN != "postgres://h/db" || !cfg.trustProxy || len(cfg.trustedOrigins) != 1 || cfg.trustedOrigins[0].Host != "dw123.cmjrt.com" {
 		t.Fatalf("cfg=%+v on=%v err=%v", cfg, on, err)
+	}
+	for _, invalid := range []string{"   ", ",https://a.example:50443", "https://a.example:50443,HTTPS://A.EXAMPLE:50443", "http://a.example:50443", "https://a.example:*"} {
+		t.Setenv("DW_TRUSTED_ORIGINS", invalid)
+		if _, on, err := newPlatformConfigFromEnv(); !on || err == nil || !strings.Contains(err.Error(), "DW_TRUSTED_ORIGINS") {
+			t.Fatalf("invalid DW_TRUSTED_ORIGINS %q: on=%v err=%v", invalid, on, err)
+		}
 	}
 }
 

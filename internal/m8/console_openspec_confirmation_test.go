@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http/httptest"
 	"net/url"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	sc "github.com/zhangzongchu2019/dingwei/internal/specconfirm"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 type r7Authority struct {
@@ -105,6 +107,53 @@ func TestR7OpenSpecConfirmationHTTPFactsAndForcePush(t *testing.T) {
 	rr = r7Call(h, "GET", r7URL(c), "")
 	if rr.Code != 503 || strings.Contains(rr.Body.String(), "private detail") {
 		t.Fatalf("unknown mapping failed open/leaked %s", rr.Body)
+	}
+}
+
+func TestR52OpenSpecConfirmationTrustedOriginMatrix(t *testing.T) {
+	h := newConsolePlatformTestHub(t)
+	h.PublicOrigin = "https://dw123.cmjrt.com"
+	trusted, err := trustedorigin.ParseList("https://dw123.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.SpecConfirmations = &sc.Service{Store: h.Repo.(sc.Store), Authority: &r7Authority{read: true, committee: true}}
+	cases := []struct {
+		name, source, target string
+		configured           bool
+		want                 int
+	}{
+		{"empty canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com", false, 200},
+		{"empty extra port", "https://dw123.cmjrt.com:50443", "https://dw123.cmjrt.com:50443", false, 403},
+		{"empty case variation", "HTTPS://DW123.CMJRT.COM:50443", "https://DW123.CMJRT.COM:50443", false, 403},
+		{"configured canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com", true, 200},
+		{"configured normalized hit", "HTTPS://DW123.CMJRT.COM:50443", "https://dw123.cmjrt.com:50443", true, 200},
+		{"configured different port", "https://dw123.cmjrt.com:50444", "https://dw123.cmjrt.com:50444", true, 403},
+		{"configured HTTP impostor", "http://dw123.cmjrt.com:50443", "http://dw123.cmjrt.com:50443", true, 403},
+		{"configured missing origin", "", "https://dw123.cmjrt.com:50443", true, 403},
+	}
+	for i, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.configured {
+				h.TrustedOrigins = trusted
+			} else {
+				h.TrustedOrigins = nil
+			}
+			req := r7Request()
+			req.OperationID = fmt.Sprintf("r52-origin-matrix-%02d", i)
+			body, _ := json.Marshal(req)
+			r := httptest.NewRequest("POST", tc.target+"/api/console/openspec-confirmations", bytes.NewReader(body))
+			r.Header.Set("Content-Type", "application/json")
+			if tc.source != "" {
+				r.Header.Set("Origin", tc.source)
+			}
+			r = r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, "manager"))
+			w := httptest.NewRecorder()
+			h.HandleOpenSpecConfirmations(w, r)
+			if w.Code != tc.want {
+				t.Fatalf("status=%d want=%d body=%s", w.Code, tc.want, w.Body.String())
+			}
+		})
 	}
 }
 func TestR7OpenSpecConfirmationHTTPRejectsForgeriesAndUnavailable(t *testing.T) {

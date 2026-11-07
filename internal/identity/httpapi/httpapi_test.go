@@ -17,6 +17,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/clock"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 const (
@@ -235,6 +236,47 @@ func TestConsoleAuthAndOrigin(t *testing.T) {
 		if r.status != 403 || r.body["error"] != "origin_mismatch" {
 			t.Errorf("%s: %d %v", name, r.status, r.body)
 		}
+	}
+}
+
+func TestConsoleWriteUsesTrustedOriginPolicy(t *testing.T) {
+	e := newEnv(t)
+	list, err := trustedorigin.ParseList("https://dw.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.api.TrustedOrigins = list
+	for _, tc := range []struct {
+		name, origin string
+		wantStatus   int
+	}{
+		{"canonical origin", "https://dw.cmjrt.com:55055", 404},
+		{"extra origin", "HTTPS://DW.CMJRT.COM:50443", 404},
+		{"wildcard subdomain rejected", "https://evil.dw.cmjrt.com:50443", 403},
+		{"different port rejected", "https://dw.cmjrt.com:50444", 403},
+		{"http rejected", "http://dw.cmjrt.com:50443", 403},
+		{"missing origin rejected", "", 403},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			headers := map[string]string{"X-Test-Actor": "zzc"}
+			if tc.origin != "" {
+				headers["Origin"] = tc.origin
+			}
+			r := e.do("POST", "/api/console/agents/x/revoke", map[string]any{}, headers)
+			if r.status != tc.wantStatus {
+				t.Fatalf("status=%d body=%v want=%d", r.status, r.body, tc.wantStatus)
+			}
+		})
+	}
+	r := httptest.NewRequest(http.MethodPost, "/api/console/agents/x/revoke", strings.NewReader(`{}`))
+	r.Header.Set("X-Test-Actor", "zzc")
+	r.Header[http.CanonicalHeaderKey("Origin")] = []string{"https://dw.cmjrt.com:50443", "https://evil.example"}
+	w := httptest.NewRecorder()
+	mux := http.NewServeMux()
+	e.api.Register(mux)
+	mux.ServeHTTP(w, r)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("multiple Origin header values status=%d body=%s", w.Code, w.Body.String())
 	}
 }
 

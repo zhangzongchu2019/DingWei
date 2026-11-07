@@ -66,7 +66,7 @@ func (h *Hub) helperConsoleActor(w http.ResponseWriter, r *http.Request) (string
 		helperConsoleError(w, 403, "forbidden")
 		return "", false
 	}
-	if r.Method != http.MethodGet && (h.PublicOrigin == "" || r.Header.Get("Origin") != h.PublicOrigin) {
+	if r.Method != http.MethodGet && !h.originAllowed(r.Header.Get("Origin"), h.PublicOrigin != "" && r.Header.Get("Origin") == h.PublicOrigin, len(r.Header.Values("Origin"))) {
 		helperConsoleError(w, 403, "origin_mismatch")
 		return "", false
 	}

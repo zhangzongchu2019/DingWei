@@ -16,6 +16,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/specread"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 type r9PMStore interface {
@@ -87,7 +88,7 @@ func (h *Hub) HandleR9PMResponsibility(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	origin, e := url.Parse(r.Header.Get("Origin"))
-	if e != nil || origin.Host != r.Host || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" || (origin.Scheme != "https" && origin.Scheme != "http") || (h.PublicOrigin != "" && r.Header.Get("Origin") != h.PublicOrigin) || r.Header.Get("Sec-Fetch-Site") == "cross-site" || r.Header.Get("Content-Type") != "application/json" || r.URL.RawQuery != "" {
+	if e != nil || !trustedorigin.AuthorityMatches(origin.Host, r.Host, len(h.TrustedOrigins) > 0) || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" || (origin.Scheme != "https" && origin.Scheme != "http") || !h.originAllowed(r.Header.Get("Origin"), h.PublicOrigin == "" || r.Header.Get("Origin") == h.PublicOrigin, len(r.Header.Values("Origin"))) || r.Header.Get("Sec-Fetch-Site") == "cross-site" || r.Header.Get("Content-Type") != "application/json" || r.URL.RawQuery != "" {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
@@ -163,7 +164,7 @@ func (h *Hub) HandleR9PMConsoleResponse(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	origin, e := url.Parse(r.Header.Get("Origin"))
-	if e != nil || origin.Host != r.Host || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" || (origin.Scheme != "https" && origin.Scheme != "http") || (h.PublicOrigin != "" && r.Header.Get("Origin") != h.PublicOrigin) || r.Header.Get("Sec-Fetch-Site") == "cross-site" || r.Header.Get("Content-Type") != "application/json" || r.URL.RawQuery != "" {
+	if e != nil || !trustedorigin.AuthorityMatches(origin.Host, r.Host, len(h.TrustedOrigins) > 0) || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" || (origin.Scheme != "https" && origin.Scheme != "http") || !h.originAllowed(r.Header.Get("Origin"), h.PublicOrigin == "" || r.Header.Get("Origin") == h.PublicOrigin, len(r.Header.Values("Origin"))) || r.Header.Get("Sec-Fetch-Site") == "cross-site" || r.Header.Get("Content-Type") != "application/json" || r.URL.RawQuery != "" {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}

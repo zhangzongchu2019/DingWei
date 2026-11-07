@@ -38,6 +38,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/specconfirm"
 	"github.com/zhangzongchu2019/dingwei/internal/specread"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
 
@@ -117,7 +118,8 @@ type Hub struct {
 	// 自备 Agent 不回调。为空＝不回调。
 	OnHostedAgentOnline func(ctx context.Context, agentID string)
 	// PublicOrigin 新平台对外源（例如 https://dw.cmjrt.com:55055）：view 写操作与 WebSocket 升级校验 Origin 用。
-	PublicOrigin string
+	PublicOrigin   string
+	TrustedOrigins []trustedorigin.Origin
 	// Onboarding 新平台 N3：飞书里的登录与注册指令改由它处理（为空＝沿用旧登录）。
 	Onboarding *identity.Onboarding
 	// newPlatformShimRepo 测试缝：非空时垫片用它代替 h.Repo（注入写库失败，复验方 H15）。
@@ -195,6 +197,9 @@ type Hub struct {
 	onboardInterval   time.Duration
 	newSessionNotice  bool
 	viewV2Mu          sync.Mutex
+	viewRetryMu       sync.Mutex
+	unknownDeliveryMu sync.Mutex
+	unknownDeliveries map[string]map[string]time.Time
 	viewV2Nonces      map[string]time.Time
 	viewV2Requests    map[string]viewV2RequestResult
 	deliveryNotices   map[string]time.Time
@@ -408,6 +413,7 @@ func New(repo store.Repository, consoleAuthMode ConsoleAuthMode) *Hub {
 		viewV2Nonces:                  map[string]time.Time{},
 		viewV2Requests:                map[string]viewV2RequestResult{},
 		deliveryNotices:               map[string]time.Time{},
+		unknownDeliveries:             map[string]map[string]time.Time{},
 		capabilityPendingAdmissions:   map[string]*capabilityPendingAdmission{},
 		startedAt:                     time.Now().UTC(),
 		restartWindow:                 envDuration("WP_RESTART_STABILITY_WINDOW", time.Minute),
@@ -4319,6 +4325,9 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			sum := sha256.Sum256([]byte("blocker-wake-v1\x00" + keyID + "\x00" + sessionName + "\x00" + env.ID))
 			deliveryID = deliveryIDPrefix + hex.EncodeToString(sum[:])
 		}
+		if retryOf := metaString(env.Meta, "r52_retry_of"); retryOf != "" {
+			deliveryID = r52RetryDeliveryID(retryOf)
+		}
 		env.Meta["type"] = "delivery"
 		env.Meta["delivery_id"] = deliveryID
 		env.Meta["delivery_version"] = 1
@@ -4591,6 +4600,10 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 				h.publishDeliveryCancelled(c.keyID, c.sessionName, messageID, id, "helper_received")
 				h.backgroundWork("owned", func() { h.drainSessionDeliveries(context.Background(), c) })
 			}
+		} else if metaString(env.Meta, "result") == "not_cancelable" && messageID == d.SourceMessageID {
+			// The helper has already taken/started this input; keep the delivery and
+			// tell View why cancellation did not remove it.
+			h.publishDeliveryUpdateForDelivery(*d, d.State, "helper_received", "", "cancel_not_cancelable")
 		}
 		return true
 	}
@@ -4849,6 +4862,9 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 				c.keyID, c.sessionName, c.connSeq, d.ID, err.Error())
 			return
 		}
+		// Once the socket write succeeds, the helper may have taken this delivery;
+		// tell View to remove the cancel affordance before processing later ACKs.
+		h.publishDeliveryUpdateForDelivery(*d, d.State, "hub_received", "", "")
 		delay := time.Until(d.NextAttemptAt)
 		if delay <= 0 {
 			delay = time.Second

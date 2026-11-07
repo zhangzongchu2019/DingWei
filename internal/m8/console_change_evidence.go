@@ -11,6 +11,7 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/changeflow"
 	"github.com/zhangzongchu2019/dingwei/internal/specconfirm"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 //go:embed console_change_evidence.html
@@ -81,10 +82,13 @@ func (h *Hub) HandleChangeEvidence(w http.ResponseWriter, r *http.Request) {
 		}
 		if raw := r.Header.Get("Origin"); raw != "" {
 			u, err := url.Parse(raw)
-			if err != nil || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Path != "" || (u.Scheme != "http" && u.Scheme != "https") || u.Host != r.Host || (h.PublicOrigin != "" && h.PublicOrigin != raw) {
+			if err != nil || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Path != "" || (u.Scheme != "http" && u.Scheme != "https") || !trustedorigin.AuthorityMatches(u.Host, r.Host, len(h.TrustedOrigins) > 0) || !h.originAllowed(raw, h.PublicOrigin == "" || raw == h.PublicOrigin, len(r.Header.Values("Origin"))) {
 				changeError(w, changeflow.ErrForbidden)
 				return
 			}
+		} else if len(h.TrustedOrigins) > 0 {
+			changeError(w, changeflow.ErrForbidden)
+			return
 		}
 		var q struct {
 			Action       string                `json:"action"`

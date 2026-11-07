@@ -10,6 +10,7 @@ import (
 	"net/url"
 
 	"github.com/zhangzongchu2019/dingwei/internal/specconfirm"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 func (h *Hub) openSpecConfirmationReady() bool {
@@ -92,10 +93,13 @@ func (h *Hub) HandleOpenSpecConfirmations(w http.ResponseWriter, r *http.Request
 		}
 		if raw := r.Header.Get("Origin"); raw != "" {
 			origin, e := url.Parse(raw)
-			if e != nil || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" || (origin.Scheme != "http" && origin.Scheme != "https") || origin.Host != r.Host || (h.PublicOrigin != "" && raw != h.PublicOrigin) {
+			if e != nil || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" || (origin.Scheme != "http" && origin.Scheme != "https") || !trustedorigin.AuthorityMatches(origin.Host, r.Host, len(h.TrustedOrigins) > 0) || !h.originAllowed(raw, h.PublicOrigin == "" || raw == h.PublicOrigin, len(r.Header.Values("Origin"))) {
 				confirmationError(w, specconfirm.ErrForbidden)
 				return
 			}
+		} else if len(h.TrustedOrigins) > 0 {
+			confirmationError(w, specconfirm.ErrForbidden)
+			return
 		}
 		var req specconfirm.Request
 		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 16<<10))

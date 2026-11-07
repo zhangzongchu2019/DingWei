@@ -15,6 +15,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	td "github.com/zhangzongchu2019/dingwei/internal/taskdispatch"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 type taskDispatchContextKey struct{}
@@ -104,7 +105,7 @@ func (h *Hub) handleTaskDispatchLock(w http.ResponseWriter, r *http.Request, age
 	}
 	if !agent {
 		origin, e := url.Parse(r.Header.Get("Origin"))
-		if e != nil || origin.Host != r.Host || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" || (origin.Scheme != "http" && origin.Scheme != "https") || (h.PublicOrigin != "" && r.Header.Get("Origin") != h.PublicOrigin) || r.Header.Get("Sec-Fetch-Site") == "cross-site" {
+		if e != nil || !trustedorigin.AuthorityMatches(origin.Host, r.Host, len(h.TrustedOrigins) > 0) || origin.User != nil || origin.RawQuery != "" || origin.Fragment != "" || origin.Path != "" || (origin.Scheme != "http" && origin.Scheme != "https") || !h.originAllowed(r.Header.Get("Origin"), h.PublicOrigin == "" || r.Header.Get("Origin") == h.PublicOrigin, len(r.Header.Values("Origin"))) || r.Header.Get("Sec-Fetch-Site") == "cross-site" {
 			taskDispatchError(w, td.ErrForbidden)
 			return
 		}

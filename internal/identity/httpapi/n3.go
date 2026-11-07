@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 // SessionCookie 新平台 console 会话 cookie 名。与旧平台 dw_console_session 区分，避免同域混用。
@@ -15,9 +16,10 @@ const SessionCookie = "dw_np_session"
 
 // N3 自举之后的登录、改密、开户接口（设计件 3.3）。
 type N3 struct {
-	OB           *identity.Onboarding
-	PublicOrigin string
-	TrustProxy   bool
+	OB             *identity.Onboarding
+	PublicOrigin   string
+	TrustedOrigins []trustedorigin.Origin
+	TrustProxy     bool
 	// Secure 为真时 cookie 带 Secure（生产必须为真；测试在 http 上跑时置假）。
 	Secure bool
 }
@@ -95,7 +97,7 @@ func (n *N3) setSession(w http.ResponseWriter, token string) {
 }
 
 func (n *N3) sameOrigin(r *http.Request) bool {
-	return n.PublicOrigin != "" && r.Header.Get("Origin") == n.PublicOrigin
+	return trustedorigin.Allows(r.Header.Get("Origin"), n.PublicOrigin, n.TrustedOrigins, n.PublicOrigin != "" && r.Header.Get("Origin") == n.PublicOrigin, len(r.Header.Values("Origin")))
 }
 
 // authed 会话校验＋写接口 Origin 校验。allowMustChange 为真时，必须改密的会话也放行（只给改密接口用）。

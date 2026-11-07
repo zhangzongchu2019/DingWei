@@ -28,6 +28,7 @@ SUITES = (
     ("coordinate_review_browser", "node", ROOT / "view-service/coordinate-review-browser-regression.js"),
     ("openspec_read_browser", "node", ROOT / "view-service/openspec-read-browser-regression.js"),
     ("renderer_0206_file_render", "node", ROOT / "view-service/renderer-0206-file-render-regression.js"),
+    ("trusted_origins_file_flow", "node", ROOT / "view-service/trusted-origins-file-flow-regression.js"),
     ("console_browser", "node", ROOT / "view-service/console-browser-regression.js"),
     ("console_temp_groups", "node", ROOT / "view-service/console-temp-groups-regression.js"),
     ("renderer_in_console_iframe", "node", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
@@ -48,6 +49,7 @@ SUITES = (
     ("renderer_upload_ticket_timeout", "node", ROOT / "view-service/renderer-upload-ticket-timeout-regression.js"),
     ("renderer_flood_stress", "node", ROOT / "view-service/renderer-flood-stress-regression.js"),
     ("renderer_c2", "node", ROOT / "view-service/renderer-c2-regression.js"),
+    ("renderer_delivery_status", "node", ROOT / "view-service/renderer-delivery-status-regression.js"),
     ("console_specs_browser", "node", ROOT / "view-service/console-specs-browser-regression.js"),
     ("console_spec_workflow", "node", ROOT / "view-service/console-spec-workflow-regression.js"),
     ("console_task_flow_r32", "node", ROOT / "view-service/r32-task-flow-browser-regression.js"),
@@ -67,7 +69,7 @@ SUITES = (
 OVERRIDE_ENV_NAMES = (
     "FIXTURES", "MOCK_BASE", "MOCK_CERT", "MOCK_KEY", "MOCK_SESSION",
     "HUB_V2_GOLDEN_FILE", "NODE_PATH", "PLAYWRIGHT_BROWSERS_PATH", "PW_CHANNEL",
-    "RENDERER_FILE", "RENDERER_OVERRIDE",
+    "RENDERER_FILE", "RENDERER_OVERRIDE", "TIMELINE_DEBUG",
     # renderer_flood_stress：反向期望、读数落盘路径、推入时限（取值固定在套件里，这三项只改判法／落点／时限）
     "STRESS_EXPECT_MUTANT", "STRESS_READINGS", "STRESS_DEADLINE_S",
 )

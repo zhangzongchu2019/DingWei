@@ -16,6 +16,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 const npOrigin = "https://dw.cmjrt.com:55055"
@@ -134,6 +135,46 @@ func TestNewPlatformViewAuth(t *testing.T) {
 	res.Body.Close()
 	if res.StatusCode != 403 {
 		t.Errorf("websocket upgrade without Origin: %d, want 403", res.StatusCode)
+	}
+}
+
+func TestNewPlatformViewTrustedOriginAndWebSocketGate(t *testing.T) {
+	v := newViewEnv(t)
+	list, err := trustedorigin.ParseList("https://dw.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	v.hub.TrustedOrigins = list
+	for _, tc := range []struct {
+		name, method, path, source string
+		upgrade                    bool
+		want                       int
+	}{
+		{"allowlisted write", "POST", "/view/Kimi.zzc/input", "HTTPS://DW.CMJRT.COM:50443", false, 200},
+		{"port mismatch", "POST", "/view/Kimi.zzc/input", "https://dw.cmjrt.com:50444", false, 403},
+		{"http impostor", "POST", "/view/Kimi.zzc/input", "http://dw.cmjrt.com:50443", false, 403},
+		{"missing origin write", "POST", "/view/Kimi.zzc/input", "", false, 403},
+		{"allowlisted websocket upgrade admission", "GET", "/view/Kimi.zzc", "https://dw.cmjrt.com:50443", true, 200},
+		{"missing origin websocket upgrade", "GET", "/view/Kimi.zzc", "", true, 403},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req, _ := http.NewRequest(tc.method, v.srv.URL+tc.path, nil)
+			req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: v.tokZZC})
+			if tc.source != "" {
+				req.Header.Set("Origin", tc.source)
+			}
+			if tc.upgrade {
+				req.Header.Set("Upgrade", "websocket")
+			}
+			res, err := v.srv.Client().Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			res.Body.Close()
+			if res.StatusCode != tc.want {
+				t.Fatalf("status=%d want=%d", res.StatusCode, tc.want)
+			}
+		})
 	}
 }
 
@@ -385,7 +426,7 @@ func TestNewPlatformConsolePlatform(t *testing.T) {
 func TestNewPlatformViewProxySessionIsCanonicalFullName(t *testing.T) {
 	v := newViewEnv(t)
 	vs := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.WriteString(w, r.URL.Path+" session="+r.Header.Get("X-DW-Session"))
+		_, _ = io.WriteString(w, r.URL.Path+" session="+r.Header.Get("X-DW-Session")+" public="+r.Header.Get("X-DW-Public-Origin"))
 	}))
 	defer vs.Close()
 	// 简称本身带大写的用户：规范写法里简称也得转小写
@@ -396,11 +437,12 @@ func TestNewPlatformViewProxySessionIsCanonicalFullName(t *testing.T) {
 	for ref, want := range map[string]string{"Kimi.zzc": "kimi.zzc", "KIMI.ZZC": "kimi.zzc", "kimi.zzc": "kimi.zzc", "kimi.LB": "kimi.lb", "Bot.Mx": "bot.mx"} {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/view/"+ref+"/status", nil)
+		req.Header.Set("X-DW-Public-Origin", "https://attacker.invalid")
 		if !v.hub.proxyToViewService(rec, req, ref, vs.URL) {
 			t.Fatalf("%s: proxy unreachable", ref)
 		}
-		if got := rec.Body.String(); got != "/status session="+want {
-			t.Errorf("%s: %q, want /status session=%s", ref, got, want)
+		if got := rec.Body.String(); got != "/status session="+want+" public="+v.hub.PublicOrigin {
+			t.Errorf("%s: %q, want /status session=%s public=%s", ref, got, want, v.hub.PublicOrigin)
 		}
 	}
 }
@@ -414,11 +456,11 @@ func TestNewPlatformConsoleUploadTicketAndCapability(t *testing.T) {
 	mux.HandleFunc("POST /api/console/agents/{sessionName}/file-upload-ticket", v.hub.RequireConsoleAgent("interact", v.hub.HandleConsoleFileUploadTicket))
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-	post := func(path, tok, body string) (int, map[string]any) {
+	postOrigin := func(path, tok, body, origin string) (int, map[string]any) {
 		t.Helper()
 		req, _ := http.NewRequest("POST", srv.URL+path, strings.NewReader(body))
 		req.AddCookie(&http.Cookie{Name: httpapi.SessionCookie, Value: tok})
-		req.Header.Set("Origin", npOrigin)
+		req.Header.Set("Origin", origin)
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatal(err)
@@ -427,6 +469,9 @@ func TestNewPlatformConsoleUploadTicketAndCapability(t *testing.T) {
 		out := map[string]any{}
 		_ = json.NewDecoder(res.Body).Decode(&out)
 		return res.StatusCode, out
+	}
+	post := func(path, tok, body string) (int, map[string]any) {
+		return postOrigin(path, tok, body, npOrigin)
 	}
 	const ticketPath = "/api/console/agents/%s/file-upload-ticket"
 	// 离线：认过人，但没有在线会话 ⇒ 409，不发票
@@ -458,7 +503,15 @@ func TestNewPlatformConsoleUploadTicketAndCapability(t *testing.T) {
 	if st, out := post(fmt.Sprintf(ticketPath, "Kimi.zzc"), v.tokLBL, `{"max_bytes":10}`); st != 404 || out["error"] != "not_found" || issuer.calls != 2 {
 		t.Fatalf("other user: %d %v calls=%d", st, out, issuer.calls)
 	}
-	if st, _ := post(fmt.Sprintf(ticketPath, "Kimi.zzc"), v.tokZZC, `{"max_bytes":0}`); st != 400 || issuer.calls != 2 {
+	trusted, err := trustedorigin.ParseList("https://dw.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	v.hub.TrustedOrigins = trusted
+	if st, out := postOrigin(fmt.Sprintf(ticketPath, "Kimi.zzc"), v.tokZZC, `{"max_bytes":10}`, "https://dw.cmjrt.com:50443"); st != 200 || out["upload_url"] != "https://dw.cmjrt.com:50443/files/upload" {
+		t.Fatalf("trusted-origin ticket: %d %v", st, out)
+	}
+	if st, _ := post(fmt.Sprintf(ticketPath, "Kimi.zzc"), v.tokZZC, `{"max_bytes":0}`); st != 400 || issuer.calls != 3 {
 		t.Fatalf("bad size: %d calls=%d", st, issuer.calls)
 	}
 	// R-V2-VIEW-LOGIN-WRITABLE：新平台属主对 opaque 终端 page id 恢复签发；认人仍在前面。

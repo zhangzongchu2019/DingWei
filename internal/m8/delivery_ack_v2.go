@@ -76,6 +76,7 @@ func (h *Hub) handleDeliveryACKV2(ctx context.Context, c *sessionClient, env mod
 		}
 		h.publishDeliveryUpdateForDelivery(*result, "processed", "turn_processed", "", reason)
 	case "admission_unknown":
+		h.rememberAdmissionUnknown(*result)
 		h.publishDeliveryUpdateForDelivery(*result, "admission_unknown", "helper_queued", "", "model_admission_unknown")
 	case "dead":
 		h.publishDeliveryUpdateForDelivery(*result, "dead", "helper_received", "failed", result.LastError)

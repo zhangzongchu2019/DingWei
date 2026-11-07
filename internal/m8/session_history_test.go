@@ -16,6 +16,7 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 const sessionHistoryPerfBudget = 10 * time.Millisecond
@@ -208,6 +209,48 @@ func TestSessionHistoryUnavailableDirectPublishAndSSEMatchR49Bodies(t *testing.T
 	wantEvents := []string{first, second}
 	if w.Code != http.StatusOK || strings.Join(gotEvents, "\x00") != strings.Join(wantEvents, "\x00") {
 		t.Fatalf("unavailable-store event payloads differ from r49: code=%d got=%q want=%q", w.Code, gotEvents, wantEvents)
+	}
+}
+
+func TestInternalSSERejectsUntrustedOriginBeforeStreamHeaders(t *testing.T) {
+	h := New(nil, ConsoleAuthMode{})
+	list, err := trustedorigin.ParseList("https://dw123.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h.TrustedOrigins = list
+	for _, tc := range []struct {
+		name, origin string
+		want         int
+	}{
+		{"untrusted origin", "https://evil.example:50443", http.StatusForbidden},
+		{"missing origin preserves behavior", "", http.StatusNotFound},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/internal/view/no-such-session/events", nil)
+			req.SetPathValue("session", "no-such-session")
+			if tc.origin != "" {
+				req.Header.Set("Origin", tc.origin)
+			}
+			w := httptest.NewRecorder()
+			h.HandleInternalViewEvents(w, req)
+			if w.Code != tc.want {
+				t.Fatalf("status=%d want=%d body=%q", w.Code, tc.want, w.Body.String())
+			}
+			if got := w.Header().Get("Content-Type"); got == "text/event-stream" {
+				t.Fatal("rejected request wrote SSE content type")
+			}
+		})
+	}
+	// Header.Get returns the first Origin value. An empty first value must not
+	// hide a second, untrusted Origin from SSE admission.
+	req := httptest.NewRequest(http.MethodGet, "/internal/view/no-such-session/events", nil)
+	req.SetPathValue("session", "no-such-session")
+	req.Header[http.CanonicalHeaderKey("Origin")] = []string{"", "https://evil.example:50443"}
+	w := httptest.NewRecorder()
+	h.HandleInternalViewEvents(w, req)
+	if w.Code != http.StatusForbidden || w.Header().Get("Content-Type") == "text/event-stream" {
+		t.Fatalf("ambiguous Origin status=%d content-type=%q body=%q", w.Code, w.Header().Get("Content-Type"), w.Body.String())
 	}
 }
 

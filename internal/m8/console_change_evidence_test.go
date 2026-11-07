@@ -16,6 +16,7 @@ import (
 
 	cf "github.com/zhangzongchu2019/dingwei/internal/changeflow"
 	sc "github.com/zhangzongchu2019/dingwei/internal/specconfirm"
+	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
 
 type uiChangeProvider struct {
@@ -120,6 +121,63 @@ func TestChangeEvidenceHTTPAuthorityAndDefaults(t *testing.T) {
 		if !errors.Is(e, cf.ErrUnavailable) || called {
 			t.Fatal("stub used real provider")
 		}
+	}
+}
+
+func TestR52ChangeEvidenceTrustedOriginMatrix(t *testing.T) {
+	h := newConsolePlatformTestHub(t)
+	h.PublicOrigin = "https://dw123.cmjrt.com"
+	p := &uiChangeProvider{f: uiFacts(), allowed: true}
+	h.ChangeEvidence = &cf.Service{Store: h.Repo.(cf.Store), Provider: p}
+	trusted, err := trustedorigin.ParseList("https://dw123.cmjrt.com:50443")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(map[string]any{"action": "detect", "coordinate": p.f.Coordinate})
+	cases := []struct {
+		name, source, target string
+		configured           bool
+		want                 int
+	}{
+		{"empty canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com", false, 200},
+		{"empty extra port", "https://dw123.cmjrt.com:50443", "https://dw123.cmjrt.com:50443", false, 403},
+		{"empty case variation", "HTTPS://DW123.CMJRT.COM:50443", "https://DW123.CMJRT.COM:50443", false, 403},
+		{"configured canonical", "https://dw123.cmjrt.com", "https://dw123.cmjrt.com", true, 200},
+		{"configured normalized hit", "HTTPS://DW123.CMJRT.COM:50443", "https://dw123.cmjrt.com:50443", true, 200},
+		{"configured different port", "https://dw123.cmjrt.com:50444", "https://dw123.cmjrt.com:50444", true, 403},
+		{"configured HTTP impostor", "http://dw123.cmjrt.com:50443", "http://dw123.cmjrt.com:50443", true, 403},
+		{"configured missing origin", "", "https://dw123.cmjrt.com:50443", true, 403},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.configured {
+				h.TrustedOrigins = trusted
+			} else {
+				h.TrustedOrigins = nil
+			}
+			r := httptest.NewRequest(http.MethodPost, tc.target+"/api/console/change-evidence", bytes.NewReader(body))
+			r.Header.Set("Content-Type", "application/json")
+			if tc.source != "" {
+				r.Header.Set("Origin", tc.source)
+			}
+			r = r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, "manager"))
+			w := httptest.NewRecorder()
+			h.HandleChangeEvidence(w, r)
+			if w.Code != tc.want {
+				t.Fatalf("status=%d want=%d body=%s", w.Code, tc.want, w.Body.String())
+			}
+		})
+	}
+	h.TrustedOrigins = trusted
+	r := httptest.NewRequest(http.MethodPost, "https://dw123.cmjrt.com:50443/api/console/change-evidence", bytes.NewReader(body))
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Set("Origin", "https://dw123.cmjrt.com:50443")
+	r.Header.Set("Sec-Fetch-Site", "cross-site")
+	r = r.WithContext(context.WithValue(r.Context(), consolePrincipalContextKey{}, "manager"))
+	w := httptest.NewRecorder()
+	h.HandleChangeEvidence(w, r)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("matching trusted Origin bypassed Sec-Fetch-Site: %d %s", w.Code, w.Body.String())
 	}
 }
 func TestChangeEvidenceConsoleBrowser(t *testing.T) {
