@@ -1,0 +1,15 @@
+{
+  "gate": "openspec",
+  "source_commit": "82ef325bb08c09648c8501db7a03bbbb3cf2ba08",
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "agent-http-mcp-gateway",
+    "--strict"
+  ],
+  "HUB_TEST_PG_STRICT": 1,
+  "TMPDIR": "/tmp",
+  "started_utc": "2026-11-07T03:24:08.857405+00:00",
+  "ended_utc": "2026-11-07T03:24:09.070263+00:00",
+  "rc": 0
+}

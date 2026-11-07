@@ -1,0 +1,13 @@
+diff --git a/internal/m8/console_auth.go b/internal/m8/console_auth.go
+index 78b5d3b33..dfb589ef4 100644
+--- a/internal/m8/console_auth.go
++++ b/internal/m8/console_auth.go
+@@ -698,7 +698,7 @@ async function refreshAgents(){
+   }finally{clearTimeout(timer);if(tempGroupsEnabled())refreshTempGroups();}
+ }
+ // Server-rendered capability; never probe a disabled route to discover it.
+-function tempGroupsEnabled(){return document.getElementById('tempGroups').dataset.enabled==='true';}
++function tempGroupsEnabled(){return true;}
+ var tempGroupSnapshot=[],tempGroupRequestGeneration=0,tempGroupDetailRequest=0,tempGroupSelectedCode='',tempGroupDissolvePending=false;
+ function tempGroupStatus(group){
+  if(group.dissolved_at)return '已解散'+(group.dissolve_reason?'（'+group.dissolve_reason+'）':'');

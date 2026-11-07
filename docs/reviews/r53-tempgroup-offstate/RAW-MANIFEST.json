@@ -1,0 +1,114 @@
+[
+  {
+    "source_file": "browser-receipt.md",
+    "raw_bytes": 1488,
+    "raw_sha256": "aab42b0b95f46da6a915e7688056cc3d42b91840ea4e239d6c25d5fc9b1a5d2f",
+    "stored_path": "raw/browser-receipt.md",
+    "stored_bytes": 1488,
+    "stored_sha256": "aab42b0b95f46da6a915e7688056cc3d42b91840ea4e239d6c25d5fc9b1a5d2f"
+  },
+  {
+    "source_file": "browsers.json",
+    "raw_bytes": 391,
+    "raw_sha256": "74de538088c4b46b2b287f24d0e8e244af720a3aa5e77c674f825505c50e225d",
+    "stored_path": "raw/browsers.json",
+    "stored_bytes": 391,
+    "stored_sha256": "74de538088c4b46b2b287f24d0e8e244af720a3aa5e77c674f825505c50e225d"
+  },
+  {
+    "source_file": "browsers.log",
+    "raw_bytes": 67285,
+    "raw_sha256": "4193c98f6d1e62064ce3c6350c48bba6315499f15d571eb32c02c33c4b4fc775",
+    "stored_path": "raw/browsers.log",
+    "stored_bytes": 67285,
+    "stored_sha256": "4193c98f6d1e62064ce3c6350c48bba6315499f15d571eb32c02c33c4b4fc775"
+  },
+  {
+    "source_file": "canonical.json",
+    "raw_bytes": 316,
+    "raw_sha256": "e90c23b8c2774d6ffcefb47ad80ab407629eb508c290293442ab4908c26b0ed0",
+    "stored_path": "raw/canonical.json",
+    "stored_bytes": 316,
+    "stored_sha256": "e90c23b8c2774d6ffcefb47ad80ab407629eb508c290293442ab4908c26b0ed0"
+  },
+  {
+    "source_file": "canonical.log",
+    "raw_bytes": 1011543,
+    "raw_sha256": "68e25e009f9c87e2d60e4e360a1898d3d78db9e34dee6b32e9f9111317d03ab1",
+    "stored_path": "raw/canonical.log.gz",
+    "stored_bytes": 102559,
+    "stored_sha256": "f4b992bfe17fde4215bf432308c9712129bfdabd1e271074635f62ede63476af"
+  },
+  {
+    "source_file": "cmd.json",
+    "raw_bytes": 358,
+    "raw_sha256": "fd97f59bd44675b9f0b230d7e39fe97e614cf557c9e31a56a6a114ca5156d8cc",
+    "stored_path": "raw/cmd.json",
+    "stored_bytes": 358,
+    "stored_sha256": "fd97f59bd44675b9f0b230d7e39fe97e614cf557c9e31a56a6a114ca5156d8cc"
+  },
+  {
+    "source_file": "cmd.log",
+    "raw_bytes": 337514,
+    "raw_sha256": "54abeee4e874cbd666f6131cc79e143d1cca2750d93b108c2d8b94320c994c81",
+    "stored_path": "raw/cmd.log.gz",
+    "stored_bytes": 25606,
+    "stored_sha256": "a2c7799537aa51560bfca93e3dc4e6730c0d19ab5dcdc058b518176483efc398"
+  },
+  {
+    "source_file": "m8.json",
+    "raw_bytes": 355,
+    "raw_sha256": "760f2fa98a2a924c44d1fd3f8c50f3179c6ae86bbd252a546f0170cd5c972dd3",
+    "stored_path": "raw/m8.json",
+    "stored_bytes": 355,
+    "stored_sha256": "760f2fa98a2a924c44d1fd3f8c50f3179c6ae86bbd252a546f0170cd5c972dd3"
+  },
+  {
+    "source_file": "m8.log",
+    "raw_bytes": 2670234,
+    "raw_sha256": "45c9eb0fbd5ec5f2647855bb963eddbe50eb96e57eb738251aecffb50d405727",
+    "stored_path": "raw/m8.log.gz",
+    "stored_bytes": 183099,
+    "stored_sha256": "e12ffb48db0c9b9e607a78e862444ad194d6bb84d72a7774090d708ef9bac1ee"
+  },
+  {
+    "source_file": "mutation.diff",
+    "raw_bytes": 804,
+    "raw_sha256": "cb21974a75b6c3598d53c11de3058cbd1c74705ea982e94593827ed433f919d1",
+    "stored_path": "raw/mutation.diff",
+    "stored_bytes": 804,
+    "stored_sha256": "cb21974a75b6c3598d53c11de3058cbd1c74705ea982e94593827ed433f919d1"
+  },
+  {
+    "source_file": "mutation.json",
+    "raw_bytes": 757,
+    "raw_sha256": "623747dabee4294275f14784fbdb1b79503dd5097bded4c71a59d968450feefc",
+    "stored_path": "raw/mutation.json",
+    "stored_bytes": 757,
+    "stored_sha256": "623747dabee4294275f14784fbdb1b79503dd5097bded4c71a59d968450feefc"
+  },
+  {
+    "source_file": "mutation.log",
+    "raw_bytes": 531,
+    "raw_sha256": "26f3013fa0552b5d8fa1938e5119a4503c1b5777f7c27764e19d51b558c52e4a",
+    "stored_path": "raw/mutation.log",
+    "stored_bytes": 531,
+    "stored_sha256": "26f3013fa0552b5d8fa1938e5119a4503c1b5777f7c27764e19d51b558c52e4a"
+  },
+  {
+    "source_file": "openspec.json",
+    "raw_bytes": 400,
+    "raw_sha256": "8739dc951ad2bb6abe4307093eef7e437ba355d9faae29dcd5d077c99d7029d2",
+    "stored_path": "raw/openspec.json",
+    "stored_bytes": 400,
+    "stored_sha256": "8739dc951ad2bb6abe4307093eef7e437ba355d9faae29dcd5d077c99d7029d2"
+  },
+  {
+    "source_file": "openspec.log",
+    "raw_bytes": 41,
+    "raw_sha256": "670c79145504f8eb3b8d6044bab6f798b5db6ad5e2c4921fc894791639ab99ce",
+    "stored_path": "raw/openspec.log",
+    "stored_bytes": 41,
+    "stored_sha256": "670c79145504f8eb3b8d6044bab6f798b5db6ad5e2c4921fc894791639ab99ce"
+  }
+]

@@ -1,0 +1,153 @@
+{
+  "source_commit": "82ef325bb08c09648c8501db7a03bbbb3cf2ba08",
+  "source_tree": "e5c65b43bae547dd3842b6c6173f36a88d3d938a",
+  "baseline": "de424c5bfa5aa04002dc7fe1011f82ea7c132d8f",
+  "CODEX_THREAD_ID": "01a1b3e7-3c3a-7051-9ae2-dd1c6f58ef44",
+  "summary": {
+    "m8": {
+      "top_level": {
+        "pass": 892,
+        "fail": 0,
+        "skip": 19
+      },
+      "including_subtests": {
+        "pass": 1499,
+        "fail": 0,
+        "skip": 37
+      }
+    },
+    "cmd": {
+      "top_level": {
+        "pass": 169,
+        "fail": 0,
+        "skip": 6
+      },
+      "including_subtests": {
+        "pass": 259,
+        "fail": 0,
+        "skip": 6
+      }
+    }
+  },
+  "gates": {
+    "m8": {
+      "gate": "m8",
+      "source_commit": "82ef325bb08c09648c8501db7a03bbbb3cf2ba08",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-count=1",
+        "-timeout=25m",
+        "./internal/m8"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "TMPDIR": "/tmp",
+      "started_utc": "2026-11-07T03:20:19.294583+00:00",
+      "ended_utc": "2026-11-07T03:24:10.467928+00:00",
+      "rc": 0
+    },
+    "cmd": {
+      "gate": "cmd",
+      "source_commit": "82ef325bb08c09648c8501db7a03bbbb3cf2ba08",
+      "command": [
+        "go",
+        "test",
+        "-json",
+        "-count=1",
+        "-timeout=25m",
+        "./cmd/workpulse"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "TMPDIR": "/tmp",
+      "started_utc": "2026-11-07T03:20:19.294813+00:00",
+      "ended_utc": "2026-11-07T03:24:08.857049+00:00",
+      "rc": 0
+    },
+    "browsers": {
+      "gate": "browsers",
+      "source_commit": "82ef325bb08c09648c8501db7a03bbbb3cf2ba08",
+      "command": [
+        "python3",
+        "tools/run-browser-regressions.py",
+        "--receipt",
+        "/tmp/r53-offstate-gates/browser-receipt.md"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "TMPDIR": "/tmp",
+      "started_utc": "2026-11-07T03:20:19.295087+00:00",
+      "ended_utc": "2026-11-07T03:28:15.391301+00:00",
+      "rc": 0
+    },
+    "canonical": {
+      "gate": "canonical",
+      "source_commit": "82ef325bb08c09648c8501db7a03bbbb3cf2ba08",
+      "command": [
+        "bash",
+        "scripts/run-build-tests.sh"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "TMPDIR": "/tmp",
+      "started_utc": "2026-11-07T03:20:19.295441+00:00",
+      "ended_utc": "2026-11-07T03:29:06.905229+00:00",
+      "rc": 0
+    },
+    "openspec": {
+      "gate": "openspec",
+      "source_commit": "82ef325bb08c09648c8501db7a03bbbb3cf2ba08",
+      "command": [
+        "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+        "validate",
+        "agent-http-mcp-gateway",
+        "--strict"
+      ],
+      "HUB_TEST_PG_STRICT": 1,
+      "TMPDIR": "/tmp",
+      "started_utc": "2026-11-07T03:24:08.857405+00:00",
+      "ended_utc": "2026-11-07T03:24:09.070263+00:00",
+      "rc": 0
+    }
+  },
+  "source_pins": {
+    "internal/m8/console_auth.go": {
+      "sha256": "2b40e451618736db8042c8285fc886a4f339806f495610fc718d88e2752bc697",
+      "git_blob": "78b5d3b33f15f104b1752be9de5e89e1730de062"
+    },
+    "internal/m8/console_temp_groups_offstate_test.go": {
+      "sha256": "50cc7c9d747f6a043210cae4e53e17e3067b8869872f58990de4bd350253ad98",
+      "git_blob": "6f83d31e7e4a2d40093a61c952b07bbafdbaa70b"
+    },
+    "openspec/changes/agent-http-mcp-gateway/context.md": {
+      "sha256": "1ead9696acf5aa0f3cccb1006587486627ac896cb3526c533ba98d913854c033",
+      "git_blob": "42e4693ad4f3a7d3363fed2d82fb6e05d0f0412e"
+    },
+    "openspec/changes/agent-http-mcp-gateway/design.md": {
+      "sha256": "0c2d3e3021c3a65db60632e7eae9757112cdc68471cf3201ec44725764051922",
+      "git_blob": "76de0d57f245aac534dce06aec890654eefba379"
+    },
+    "openspec/changes/agent-http-mcp-gateway/specs/agent-http-mcp-gateway/spec.md": {
+      "sha256": "850ea72b67d900288ab7ce149541033545e37f57774eb442e66acf079d87ca3a",
+      "git_blob": "97c96f8ae56af19390345f114a98802586ae3bc4"
+    },
+    "openspec/changes/agent-http-mcp-gateway/tasks.md": {
+      "sha256": "ee582a964afca0454c846c635b49ea2097f973a1c5d85a953a8196bea064da9f",
+      "git_blob": "0ebea3acf57577f4ce0a777eae1de5254693d350"
+    },
+    "tools/run-browser-regressions.py": {
+      "sha256": "0324aebbaa77fec011af658b4b1329f79f0df45fb41a248ac8ec6f2ab59db7ee",
+      "git_blob": "8df8ad8df4c527e123721e6bc3e8129c52653b25"
+    },
+    "view-service/console-hosted-page-fixture/main.go": {
+      "sha256": "fa735ff976b8a077df9999facdc61ac411921162de3822a6f6ee20ddffcfb71d",
+      "git_blob": "ca06fe7e204730b686d0b8bc1af7da7060e52d1b"
+    },
+    "view-service/console-temp-groups-offstate-regression.js": {
+      "sha256": "77eb6299dc23ea0a401bd2a6b345a14b1159ff5366b5992083faea581beff054",
+      "git_blob": "ec589bf0c76a2c5fab1e0f6b93807ac544f8204e"
+    },
+    "view-service/console-temp-groups-regression.js": {
+      "sha256": "341c7b9b51c8dd4764f712cfcd8ecf0d5eeca9e6490600002ec444acc2460c60",
+      "git_blob": "7d7b2df4939cec75398fb1c3f78d5537f57d185e"
+    }
+  }
+}

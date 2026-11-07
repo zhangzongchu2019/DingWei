@@ -1,0 +1,17 @@
+{
+  "gate": "m8",
+  "source_commit": "82ef325bb08c09648c8501db7a03bbbb3cf2ba08",
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "-count=1",
+    "-timeout=25m",
+    "./internal/m8"
+  ],
+  "HUB_TEST_PG_STRICT": 1,
+  "TMPDIR": "/tmp",
+  "started_utc": "2026-11-07T03:20:19.294583+00:00",
+  "ended_utc": "2026-11-07T03:24:10.467928+00:00",
+  "rc": 0
+}

@@ -1,0 +1,16 @@
+{
+  "source_commit": "82ef325bb08c09648c8501db7a03bbbb3cf2ba08",
+  "command": [
+    "node",
+    "view-service/console-temp-groups-offstate-regression.js"
+  ],
+  "mutation": "Only replace shared capability predicate with return true; no test or fixture changes",
+  "started_utc": "2026-11-07T03:20:45.958285+00:00",
+  "ended_utc": "2026-11-07T03:20:51.386016+00:00",
+  "rc": 1,
+  "expected_assertion": "关态必须零 /api/console/temp-groups 请求",
+  "killed_at_expected_assertion": true,
+  "before_sha256": "2b40e451618736db8042c8285fc886a4f339806f495610fc718d88e2752bc697",
+  "mutated_sha256": "25ad424ffc45216b07cfbce65d35e7bb4796d2cd29b480443bd117dae7e0ef57",
+  "restored_sha256": "2b40e451618736db8042c8285fc886a4f339806f495610fc718d88e2752bc697"
+}

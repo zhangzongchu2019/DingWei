@@ -14,7 +14,7 @@
 - [ ] T-12 Console两渠道浏览器回归：别人AG不出现、属性完整、双方主人/管理员可解散、无关人拒绝、取消无写、到期竞态/通知；新增套件登记统一runner，去掉只列相关过滤→别人AG出现用例必须红，删服务端解散权限亦须红。
 - [ ] T-13 评估可选本人收件资源＋subscriptions/listen通知：权限隔离、通知不充ACK、断流主动收件；无订阅客户端保留25秒轮询。二期私有WSS仅在必要时另立项，若一期通知足够可不做；开发前再核定稿/SDK状态。
 
-- [ ] T-14 S-R53-TEMPGROUP-OFFSTATE：服务端注入只读开关，关闭态零请求/零控制台错误/无可见临时编组区块；原Console与开态回归、单刀变异及整包/全浏览器/canonical门。
+- [x] T-14 S-R53-TEMPGROUP-OFFSTATE：服务端注入只读开关，关闭态零请求/零控制台错误/无可见临时编组区块；原Console与开态回归、单刀变异及整包/全浏览器/canonical门。
 
 ## 交接记录
 
@@ -81,3 +81,8 @@
   - 完成：原子mkdir取得r53-offstate.writer.lock；独立分支coder56solzzc/r53-tempgroup-offstate，Hub状态注入与前端各入口保护，新关闭态真实Handler浏览器用例首轮通过，开态夹具显式装配TempGroups。
   - 阻塞：完整门及变异尚待源码提交绑定后执行；不自验收或部署。
   - 下一步：冻结源码提交后跑m8/cmd整包、全部浏览器（基线37＋新增1＝38套）、run-build-tests与移除开关判断变异，附原始日志、精确提交、UTC与SKIP，再推送核远端并回执释放本锁。
+
+- 2026-11-07T03:29Z，S-R53-TEMPGROUP-OFFSTATE持锁执行者coder56solzzc.zzc，实取线程01a1b3e7-3c3a-7051-9ae2-dd1c6f58ef44；受测源码82ef325bb08c09648c8501db7a03bbbb3cf2ba08。
+  - 完成：m8整包、cmd/workpulse整包、统一浏览器38套（基线实际37＋新增1）、canonical run-build-tests、OpenSpec strict全部rc0；原Console20格与D开态通过。canonical两个helper profile各1097项、27Python/2shell、跨runtime及真实PG claim均通过；关闭态零请求/零控制台错误/无可见临时编组UI；删除共用开关判断的一刀rc1准确命中新格零请求断言，隔离树还原哈希一致。完整计数、全部跳过和无损raw见docs/reviews/r53-tempgroup-offstate/。
+  - 阻塞：本任务要求门无；既有opt-in与暂缓模型跳过逐项列SKIPS.json，不计作通过；不自验收或部署。提交前再次fetch集成分支，任务OpenSpec与MVP合同相对de424c5b零新增修订。
+  - 下一步：仅追加证据文书，push并核精确远端tip/tree，交组长独立复核后释放本锁；不推已冻结r53-tempgroup或触碰集群。

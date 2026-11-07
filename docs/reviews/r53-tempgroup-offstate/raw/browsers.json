@@ -1,0 +1,15 @@
+{
+  "gate": "browsers",
+  "source_commit": "82ef325bb08c09648c8501db7a03bbbb3cf2ba08",
+  "command": [
+    "python3",
+    "tools/run-browser-regressions.py",
+    "--receipt",
+    "/tmp/r53-offstate-gates/browser-receipt.md"
+  ],
+  "HUB_TEST_PG_STRICT": 1,
+  "TMPDIR": "/tmp",
+  "started_utc": "2026-11-07T03:20:19.295087+00:00",
+  "ended_utc": "2026-11-07T03:28:15.391301+00:00",
+  "rc": 0
+}
