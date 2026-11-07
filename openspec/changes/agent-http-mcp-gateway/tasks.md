@@ -64,3 +64,8 @@
   - 阻塞：本路实施无；原样0107棘轮待组长集成0105/0106/0107时统一处理，未假称canonical原样绿或跨路独立验收；真实飞书/第三方SDK互操作、D/主装配与r52受信来源接入留给集成。
   - 下一步：证据-only提交推送核ls-remote，向组长回最终tip/tree/source对应各门；回报持久入队后核owner释放锁。A/C/D/helper零修改，未发布/重启/上传源码或二进制。提交前重新fetch rulings并读㊹-补12/13/14及㊺-补1；派单后的0107/密钥/棘轮裁定已同步本路文书，原业务需求未改。
   - 提交前同步补记：2026-11-06T16:37:37Z实取opus50tc2k/r53-wire-wip最新d5336761ebf989f1b448263c69a5a9ee5597910a；相对指定144b215e的本变更OpenSpec目录与R53-MVP-CONTRACT文书diff为零。A集成scope helper调整未带入本分支，继续保持A冻结；0107等定向裁定已按上文实现。
+
+- 2026-11-07，D后端执行者coder56solzzc.zzc，实取CODEX_THREAD_ID=01a1b33c-11e7-7ec0-8de2-ce60abd9d9f5，父c5152a213783e63626c161afefb34a7f45cfaea3；提交号见D交件回执。
+  - 完成：原子mkdir取得r53-tempgroup-b.writer.lock，从指定父起实现0106、真实Groups、Console三接口与普通组AG过滤、main实装，合入已冻前端45910532。核心真实PG与D浏览器首轮通过；真实A/B/C/D扫码链路（飞书上游为本地假服务）已过。接口表列见internal/tempgroup/INTERFACE.md。
+  - 阻塞：完整build/strict整包/race三轮/canonical（含claim五子项）及四变异尚在执行，不自验收、不部署。
+  - 下一步：冻结source锚后跑全门并附原始日志和变异；fetch核规格有无变动；推送核ls-remote并回执，持锁到交件结束。集群暂停tip/释放cluster锁由原持锁线程01a1b1a2负责，本线程不改其树或锁。

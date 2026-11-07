@@ -71,3 +71,7 @@ A路最终门证据入口改为docs/reviews/r53-extseat/EVIDENCE.md（合同75a4
 父基线144b215e32e718553d9fef2e79c83ece164f6514；分支coder56solzzc/r53-mcpgw；internal/mcpgw/INTERFACE.md列路由、A/C依赖、0107表列与密钥来源。cmd/workpulse/mcpgw.go提供显式注册与密钥失败降级；主装配仍由组长集成。已重新fetch并核rulings的㊹-补12/13/14及㊺-补1；0107来自16:13:02Z定向分配。官方2026-07-28的Streamable HTTP/versioning/server/discover/client-registration本轮重新在线核对，支持无initialize的逐请求头/元数据及CIMD；未把假上游联调称为真实飞书或第三方SDK互操作。生产密钥来源DW_MCPGW_OAUTH_KEY_FILE；本地测试用随机密钥、临时SQLite/临时PG，不使用在线Hub或生产库。
 
 协议自查增补：重新核对 [MCP Base Protocol/Error Codes](https://modelcontextprotocol.io/specification/2026-07-28/basic/index#error-codes) 的保留区规则，业务错误改用1001/1003/1008/1009/1029，标准HeaderMismatch/-32020与UnsupportedProtocolVersion/-32022保持；请求ID只接字符串或整数，Accept的q=0拒绝。对应正反与变异在本路证据中绑定，不改业务权限。
+
+## D 路后端接手（2026-11-07）
+
+父 c5152a213783e63626c161afefb34a7f45cfaea3，线程01a1b33c-11e7-7ec0-8de2-ce60abd9d9f5 持 r53-tempgroup-b.writer.lock；分支coder56solzzc/r53-tempgroup。实际接口/0106全部表列/SEQUENCE/通知在 internal/tempgroup/INTERFACE.md。前端45910532原样合入；新增 internal/tempgroup、internal/m8/tempgroup.go，main已注入真实Groups，Console三路由包既有认人/Origin。测试用本地pgtest临时PG、固定时钟与随机测试凭据，不使用现网库/身份。构建Python使用已有仓外helper-deps-lock-venv，普通系统Python缺websockets.sync导致发现失败的原始日志保留，不改测试门。

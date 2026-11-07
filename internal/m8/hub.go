@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/zhangzongchu2019/dingwei/internal/tempgroup"
 	"html"
 	"log"
 	"net"
@@ -68,6 +69,7 @@ type ViewPageUnlockRequest struct {
 
 type Hub struct {
 	ExternalSeats ExternalSeats
+	TempGroups    *tempgroup.Service
 
 	stickyLanes         stickyLanes
 	stickyCleanupMu     sync.Mutex

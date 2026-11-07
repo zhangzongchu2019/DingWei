@@ -53,7 +53,7 @@ func TestCheckSchemaReportsEveryMissingTable(t *testing.T) {
 // RequiredTables 必须恰好等于 0105（A 路）与 0107（B 路）迁移里 CREATE TABLE 的表，次序同文件次序。
 // 从迁移原文取表名，免得迁移加表而这里漏改（D 路 0106 合入时把文件加进 files）。
 func TestRequiredTablesMatchMigrations(t *testing.T) {
-	files := []string{"0105_extseat.sql", "0107_mcpgw_oauth.sql"}
+	files := []string{"0105_extseat.sql", "0106_tempgroup.sql", "0107_mcpgw_oauth.sql"}
 	re := regexp.MustCompile(`(?m)^CREATE TABLE ([a-z_][a-z0-9_]*)`)
 	var want []string
 	for _, f := range files {
@@ -65,8 +65,8 @@ func TestRequiredTablesMatchMigrations(t *testing.T) {
 			want = append(want, m[1])
 		}
 	}
-	if len(want) != 7 {
-		t.Fatalf("parsed %d tables from %v, want 7 (0105 six + 0107 one): %v", len(want), files, want)
+	if len(want) != 10 {
+		t.Fatalf("parsed %d tables from %v, want 10 (0105 six + 0106 three + 0107 one): %v", len(want), files, want)
 	}
 	if strings.Join(RequiredTables, ",") != strings.Join(want, ",") {
 		t.Fatalf("RequiredTables %v drifted from migrations %v", RequiredTables, want)

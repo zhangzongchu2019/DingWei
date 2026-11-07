@@ -380,3 +380,18 @@ func (s *Service) Online(ctx context.Context) ([]OnlineAgent, error) {
 	})
 	return out, e
 }
+
+// SettleDissolvedGroup 供 D 的提交后通知 worker 调用；只结算 A 自己的未确认行。
+// 已 received 或已投影的 helper 投递不回退，D 不跨域写 A 的表。
+func (s *Service) SettleDissolvedGroup(ctx context.Context, code extshared.AGCode) error {
+	if _, ok := extshared.ParseAGCode(string(code)); !ok {
+		return extshared.ErrNotPermitted
+	}
+	return s.tx(ctx, func(tx repo.Tx) error {
+		if _, err := tx.Exec(ctx, `UPDATE np_extseat_inbox SET state='dead',dead_reason='group_unavailable',lease_until=NULL WHERE ag_code=$1 AND state IN ('queued','leased')`, string(code)); err != nil {
+			return err
+		}
+		_, err := tx.Exec(ctx, `UPDATE np_extseat_outbox SET state='dead',dead_reason='group_unavailable' WHERE ag_code=$1 AND state='queued'`, string(code))
+		return err
+	})
+}

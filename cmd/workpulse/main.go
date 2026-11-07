@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/zhangzongchu2019/dingwei/internal/tempgroup"
 	"io"
 	"log/slog"
 	"net/http"
@@ -369,7 +370,7 @@ func run(logger *slog.Logger) error {
 			return fmt.Errorf("r53 config: %w", err)
 		} else if r53On {
 			r53Cfg.publicOrigin = newplatCfg.publicOrigin
-			if err := wireR53(ctx, r53Cfg, pgTableChecker{pool: npPool}, nil, r53Dependencies{mux: mux, hub: prefixHub, pool: npPool, appID: bs.FeishuAppID, appSecret: bs.FeishuAppSecret}); err != nil {
+			if err := wireR53(ctx, r53Cfg, pgTableChecker{pool: npPool}, &tempgroup.Service{Pool: npPool, Notifier: prefixHub}, r53Dependencies{mux: mux, hub: prefixHub, pool: npPool, appID: bs.FeishuAppID, appSecret: bs.FeishuAppSecret}); err != nil {
 				return fmt.Errorf("r53 wiring refused to start: %w", err)
 			}
 		}

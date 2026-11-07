@@ -20,39 +20,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zhangzongchu2019/dingwei/internal/extseat"
 	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"github.com/zhangzongchu2019/dingwei/internal/feishulogin"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/lifecycle"
 	"github.com/zhangzongchu2019/dingwei/internal/mcpgw"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
+	"github.com/zhangzongchu2019/dingwei/internal/tempgroup"
 )
-
-// 仅替代尚未合入的 D：回调与双成员写入仍使用 A 提供的同一真实 PG 事务。
-type wiringGroups struct{ target identity.Agent }
-
-func (g wiringGroups) CreateTempGroup(ctx context.Context, tx repo.Tx, r extseat.CreateGroupRequest) (extseat.Group, error) {
-	group := extseat.Group{Code: "AG1", Generation: 1, Target: g.target, ExpiresAt: r.At.Add(extshared.GroupTTL)}
-	if err := r.CreateExternal(group); err != nil {
-		return group, err
-	}
-	_, err := tx.Exec(ctx, `INSERT INTO np_group(code,short_name,creator_lc,leader_agent_id,created_at,updated_at) VALUES('AG1','AG1',$1,$2,$3,$3)`, r.OwnerLC, g.target.ID, r.At)
-	if err != nil {
-		return group, err
-	}
-	_, err = tx.Exec(ctx, `INSERT INTO np_group_member(code,agent_id,created_at) VALUES('AG1',$1,$3),('AG1',$2,$3)`, g.target.ID, r.ExternalAgentID, r.At)
-	return group, err
-}
-func (g wiringGroups) RecheckGroup(_ context.Context, _ repo.Tx, a extseat.Seat, at time.Time) (extseat.Group, error) {
-	if a.Group != "AG1" || a.Generation != 1 {
-		return extseat.Group{}, extshared.ErrGroupDissolved
-	}
-	return extseat.Group{Code: a.Group, Generation: 1, Target: g.target, ExpiresAt: at.Add(extshared.GroupTTL)}, nil
-}
-func (wiringGroups) TouchGroup(context.Context, repo.Tx, extseat.Group, string, extshared.GroupUseKind, time.Time) error {
-	return nil
-}
 
 type wiringClients struct{}
 
@@ -155,12 +130,11 @@ func TestR53WiringPG(t *testing.T) {
 	if !reflect.DeepEqual(wiringPaths(t, mux), []string{"/healthz"}) {
 		t.Fatal("nil groups partially registered routes")
 	}
-	target := identity.Agent{ID: "helper", OwnerLC: "ho", Name: "helper", Origin: identity.OriginSelfhost, State: identity.AgentActive}
 	_, err = pool.Exec(ctx, repo.SystemCtx(), `INSERT INTO np_user(user_id,user_id_lc,short_name,short_name_lc,type,state,created_at) VALUES('ho','ho','ho','ho','member','active',now()); INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,created_at) VALUES('helper','ho','helper','helper','selfhost','active',now());`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	group := wiringGroups{target: target}
+	group := &tempgroup.Service{Pool: pool, Notifier: hub}
 	t.Run("missing_key_keeps_hub", func(t *testing.T) {
 		t.Setenv("DW_MCPGW_OAUTH_KEY_FILE", filepath.Join(t.TempDir(), "absent"))
 		if err := wireR53(ctx, cfg, checker, group, d); err != nil {
@@ -285,6 +259,27 @@ func TestR53WiringPG(t *testing.T) {
 	}
 	if w = request("POST", "/oauth/token", form, nil); w.Code == 200 {
 		t.Fatal("login code replay accepted")
+	}
+
+	list, err := group.List(ctx, "ho")
+	if err != nil || len(list) != 1 || len(list[0].Members) != 2 {
+		t.Fatalf("real D Console list: %v %v", list, err)
+	}
+	if hub.TempGroups != group {
+		t.Fatal("D not wired into Hub")
+	}
+	if err = group.Dissolve(ctx, "ho", list[0].Code, list[0].ExpiresAt); err != nil {
+		t.Fatal(err)
+	}
+	if err = group.NotifyPending(ctx); err != nil {
+		t.Fatal(err)
+	}
+	r = httptest.NewRequest("GET", wiringOrigin+"/api/external/online", nil)
+	r.Header.Set("Authorization", "Bearer "+token.AccessToken)
+	w = httptest.NewRecorder()
+	mux.ServeHTTP(w, r)
+	if w.Code == 200 {
+		t.Fatal("dissolved token remains usable")
 	}
 	cancel()
 }

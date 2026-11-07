@@ -66,6 +66,9 @@ func registerConsoleRoutes(mux httpapi.Mux, prefixHub *m8.Hub, newplat bool) {
 		mux.HandleFunc("GET /api/console/helper-updates", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleHelperUpdates))
 		mux.HandleFunc("POST /api/console/helper-updates", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleHelperUpdates))
 	}
+	mux.HandleFunc("GET /api/console/temp-groups", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleTempGroups))
+	mux.HandleFunc("GET /api/console/temp-groups/{code}", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleTempGroups))
+	mux.HandleFunc("POST /api/console/temp-groups/{code}/dissolve", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleTempGroups))
 	mux.HandleFunc("GET /api/console/agent-groups", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroups))
 	mux.HandleFunc("POST /api/console/agent-groups", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroups))
 	mux.HandleFunc("DELETE /api/console/agent-groups/{code}", prefixHub.RequireConsolePrincipal(prefixHub.HandleConsoleAgentGroup))

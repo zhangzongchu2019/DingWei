@@ -127,3 +127,7 @@ PM-GW-01（已定，㊹-补6）：纯轮询不续编组。其余已定八点不�
 对应GW-003/GW-004/GW-009：MCP与REST共用四工具分发，逐请求校验版本/能力与镜像头；集中错误映射，默认只信PublicOrigin的Origin接口留待r52集成。C回调仍经extwire签A令牌，B不改变C签名；浏览器只见一次性code，兑换核S256及完整客户端绑定，再现核A。B提供可选C StateStore适配，不改C包或撤回㊹-补14的单进程内存许可。
 
 组长2026-11-06T16:13:02Z分配0107：mcpgw_oauth短期表以resource/kind/key_hash隔离，密文AES-256-GCM绑定同一三元组；每次写入清过期行，读/原子兑换即时拒过期，并发DELETE RETURNING只准一次。密钥由DW_MCPGW_OAUTH_KEY_FILE指向仓外32字节私有文件；缺/错只禁用本路并日志，不影响Hub。MVP不支持轮换，换钥使在途登录失效。schema只由迁移创建；集成extwire.CheckSchema及账本期望串由组长维护。
+
+## D 路实现定案（2026-11-07，GW-008/GW-010）
+
+依㊹-补12与本次改派，采用np_group双成员镜像、PG原生SEQUENCE、generation恒1、agent_id反查与方向事件键持久去重；Console沿用既有列表口径加内部主人过滤，详情与解散单独现核。0106字段与错误/路由见internal/tempgroup/INTERFACE.md。终态与删除镜像同事务；待通知标记持久，A公开结算自己域的未确认行后Hub刷新目录，HTTP后续请求现核终态。回调在组锁事务外，避免presence反查同组死锁。崩溃后可重复完整终态快照而不重复业务消息；不承诺网络exactly-once。新增migration/claim/cmd期望清单按组长明确授权同步0106。

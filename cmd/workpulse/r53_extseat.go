@@ -18,6 +18,7 @@ import (
 
 	"github.com/zhangzongchu2019/dingwei/internal/extwire"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
+	"github.com/zhangzongchu2019/dingwei/internal/tempgroup"
 )
 
 // r53 外部 Agent 接入（MCP MVP）的 main 装配入口。
@@ -118,6 +119,15 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 	})
 	if enabled {
 		d.hub.ExternalSeats = seats
+		if tg, ok := groups.(*tempgroup.Service); ok {
+			d.hub.TempGroups = tg
+			tg.Finalize = seats.SettleDissolvedGroup
+			tg.OnBackgroundError = func(error) { log.Print("r53: temporary group background operation failed") }
+			if !startRunTask(ctx, "r53_tempgroup_worker", func() { _ = tg.Run(ctx) }) {
+				return errors.New("r53: Hub is shutting down")
+			}
+		}
+
 		done := func() {}
 		if jobs, ok := ctx.Value(runTasksKey{}).(*lifecycle.Group); ok {
 			var admitted bool

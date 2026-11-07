@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 )
 
@@ -107,6 +108,9 @@ func (h *Hub) handleNewPlatformAgentGroups(w http.ResponseWriter, r *http.Reques
 		}
 		views := make([]npGroupView, 0, len(groups))
 		for _, g := range groups {
+			if _, ag := extshared.ParseAGCode(g.Code); ag {
+				continue
+			}
 			views = append(views, h.npGroupView(g))
 		}
 		ownedViews := make([]npOwnedAgentView, 0, len(owned))
@@ -172,6 +176,10 @@ func (h *Hub) handleNewPlatformAgentGroups(w http.ResponseWriter, r *http.Reques
 // handleNewPlatformAgentGroup 删组、入组、剔除、开关添加（旧平台 HandleConsoleAgentGroup 的新平台分支）；错误文案与状态码与旧平台同。
 func (h *Hub) handleNewPlatformAgentGroup(w http.ResponseWriter, r *http.Request) {
 	actor, code := platformPrincipal(r), r.PathValue("code")
+	if _, ag := extshared.ParseAGCode(code); ag {
+		http.Error(w, "请使用临时编组属性页", http.StatusForbidden)
+		return
+	}
 	var err error
 	switch {
 	case r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/communication"):

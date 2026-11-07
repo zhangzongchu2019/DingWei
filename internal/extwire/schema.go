@@ -14,6 +14,7 @@ var RequiredTables = []string{
 	// 0105_extseat.sql（A 路）
 	"np_external_principal", "np_extseat", "np_extseat_token",
 	"np_extseat_inbox", "np_extseat_send_key", "np_extseat_outbox",
+	"np_temp_group", "np_temp_group_member", "np_temp_group_use",
 	// 0107_mcpgw_oauth.sql（B 路）
 	"mcpgw_oauth",
 }
