@@ -24,7 +24,7 @@
 三条路由均由 RequireConsolePrincipal 包裹，沿用新平台现核身份、必须改密与写 Origin 防护：
 
 - GET /api/console/temp-groups → `{temp_groups:[...]}`。沿用既有 agent-groups 不分页口径，增加「内部对端属当前登录者且未吊销」过滤。创建者身份与管理员身份均不为个人侧栏增加豁免。
-- GET /api/console/temp-groups/{code} → 属性对象，含 code/generation、external_full_name、created_by_display（创建时快照）、owner_lc、三时间、解散原因及恰两 members。成员含 agent_id/full_name/role/online；相关内部主人或 active platform_admin 可查详情。
+- GET /api/console/temp-groups/{code} → 属性对象，含 code/generation、external_full_name、created_by_display（创建时快照）、owner_lc、三时间、解散原因及恰两 members。成员含 agent_id/full_name/role/online；相关两侧成员主人或 active platform_admin 可查详情（个人列表仍仅按内部对端过滤）。
 - POST /api/console/temp-groups/{code}/dissolve：`{expected_expires_at:<RFC3339>,reason:"owner"}`。前端二次确认后提交，服务端组行锁内重核权限与到期快照；无关人404、快照变化/已解散409、格式错误400。客户端 reason 不决定审计原因，整点后记录 expired。
 
 D 不自行创建 SystemCtx；装配从 A 的既有 AccessCtx 注入，所有领域查询复用该上下文。

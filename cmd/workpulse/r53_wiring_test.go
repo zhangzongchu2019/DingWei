@@ -268,18 +268,26 @@ func TestR53WiringPG(t *testing.T) {
 	if hub.TempGroups != group {
 		t.Fatal("D not wired into Hub")
 	}
+	restOnline := func() *httptest.ResponseRecorder {
+		req := httptest.NewRequest("POST", wiringOrigin+"/api/external/list_online", strings.NewReader(`{}`))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+		response := httptest.NewRecorder()
+		mux.ServeHTTP(response, req)
+		return response
+	}
+	if response := restOnline(); response.Code != 200 {
+		t.Fatalf("live REST before dissolution %d %s", response.Code, response.Body)
+	}
 	if err = group.Dissolve(ctx, "ho", list[0].Code, list[0].ExpiresAt); err != nil {
 		t.Fatal(err)
 	}
 	if err = group.NotifyPending(ctx); err != nil {
 		t.Fatal(err)
 	}
-	r = httptest.NewRequest("GET", wiringOrigin+"/api/external/online", nil)
-	r.Header.Set("Authorization", "Bearer "+token.AccessToken)
-	w = httptest.NewRecorder()
-	mux.ServeHTTP(w, r)
-	if w.Code == 200 {
-		t.Fatal("dissolved token remains usable")
+	response := restOnline()
+	if response.Code != 403 || !strings.Contains(response.Body.String(), "group_dissolved") {
+		t.Fatalf("dissolved REST must return group_dissolved: %d %s", response.Code, response.Body)
 	}
 	cancel()
 }

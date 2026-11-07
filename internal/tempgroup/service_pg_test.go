@@ -347,3 +347,19 @@ func TestNotifyFailureRetriesAndOrdinaryGroupIsolationPG(t *testing.T) {
 		t.Fatal("ordinary group affected")
 	}
 }
+
+func TestExternalMemberOwnerMayDissolveWithoutSidebarExemptionPG(t *testing.T) {
+	f := newFixture(t)
+	a := f.issue("ha.alice")
+	list, e := f.s.List(f.ctx, a.OwnerLC)
+	if e != nil || len(list) != 0 {
+		t.Fatal("external creator must not acquire sidebar exemption", e)
+	}
+	v, e := f.s.Detail(f.ctx, a.OwnerLC, a.Group, true)
+	if e != nil || !v.CanDissolve {
+		t.Fatal("related external member owner may view/dissolve", e)
+	}
+	if e = f.s.Dissolve(f.ctx, a.OwnerLC, a.Group, v.ExpiresAt); e != nil {
+		t.Fatal("external member owner rejected", e)
+	}
+}

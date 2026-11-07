@@ -74,7 +74,7 @@ func (s *Service) Detail(ctx context.Context, actor string, code extshared.AGCod
 }
 func permitted(ctx context.Context, tx repo.Tx, actor string, code extshared.AGCode, admin bool) (bool, error) {
 	var ok bool
-	err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM np_temp_group g JOIN np_agent a ON a.id=g.target_agent_id JOIN np_user u ON u.user_id_lc=$1 WHERE g.code=$2 AND u.state='active' AND ((a.owner_lc=$1 AND a.state<>'revoked') OR ($3 AND u.type='platform_admin')))`, actor, string(code), admin).Scan(&ok)
+	err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM np_temp_group g JOIN np_agent a ON a.id=g.target_agent_id JOIN np_user u ON u.user_id_lc=$1 WHERE g.code=$2 AND u.state='active' AND ((a.owner_lc=$1 AND a.state<>'revoked') OR ($3 AND (u.type='platform_admin' OR EXISTS(SELECT 1 FROM np_temp_group_member m JOIN np_agent member ON member.id=m.agent_id WHERE m.code=g.code AND member.owner_lc=$1 AND member.state<>'revoked')))))`, actor, string(code), admin).Scan(&ok)
 	return ok, err
 }
 func detail(ctx context.Context, tx repo.Tx, actor string, code extshared.AGCode, admin bool) (View, error) {
