@@ -1,0 +1,30 @@
+{
+  "finished_or_stopped": true,
+  "mode": "owner_interrupted_after_all_authorized_shards_passed",
+  "counted_as_rc0": false,
+  "utc": "2026-11-08T07:21:27.842837+00:00",
+  "signals": [
+    {
+      "pid": 2282349,
+      "signal": "SIGINT",
+      "utc": "2026-11-08T07:21:27.842864+00:00"
+    }
+  ],
+  "owned_fixture_dirs": [
+    "/tmp/TestMigrationLedger_AppliedExactlyOnce3593264161",
+    "/tmp/TestMigrationLedger_DataVerifierJudgesByStableSignature2149772172",
+    "/tmp/TestMigrationLedger_DigestMismatchRefusesStart3623120458",
+    "/tmp/TestMigrationLedger_DuplicateColumnFailsInsteadOfBeingSwallowed2316707510",
+    "/tmp/TestMigrationLedger_LegacyAckBackfillsWithoutReplay3058906617",
+    "/tmp/TestMigrationLedger_LegacyRefusesUnverifiableDataMigration2562780848",
+    "/tmp/TestMigrationLedger_RestartDoesNotRevertAdminEdit3399034626",
+    "/tmp/TestR1_003_S02no-comment3985388769",
+    "/tmp/TestR7SpecConfirmationConcurrentWritersAreIdempotent2870235017"
+  ],
+  "verified_pid": 2282349,
+  "verified_start_ticks": "191135860",
+  "actual_rc": 1,
+  "actual_end_utc": "2026-11-08T07:21:27.870981+00:00",
+  "owned_fixture_cleanup": true,
+  "unexpected_failure_signatures": []
+}

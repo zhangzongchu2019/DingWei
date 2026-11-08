@@ -1,0 +1,28 @@
+{"name": "mut-release-boundary", "argv": ["sh", "scripts/run-build-tests.sh"], "cwd": "/tmp/s-gates-green-mutations", "thread": "01a1b57a-e610-71a2-ba84-6007a77776f4", "start_utc": "2026-11-08T06:48:23.436602+00:00", "source": "f3d0a4998a96ea3cef45d690b3190f9d9f615dbd", "env_keys": ["GOCACHE", "GOPATH", "GOTOOLCHAIN", "HOME", "LANG", "LOGNAME", "OPENSPEC_TELEMETRY", "PATH", "USER"], "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin", "working_status": " M deploy/test_build_entrypoints.py\n M scripts/run-build-tests.sh\n?? internal/gatesmutant/\n", "working_diff_sha256": "cc565240b8e934d0bd13a730d07040d79e76cbbed5d7aad40d59069dc82fdc51"}
+GATE repo-boundary-gate
+⑦ 仓储包边界（SP7a 甲组·收口 / §22.2c #1 两半）
+  仓储包允许清单（本次生效的全部条目）：
+    - internal/repo
+    - tests/r32-task-flow/compat-probe/main.go
+    - cmd/workpulse/session_history_config_test.go
+    - internal/store/session_history.go
+    - internal/store/tenant_deny_test.go
+  判据一·仓储包外建库句柄：6 处（基线 5，终值 0）
+    internal/fileservice/repository.go:24:	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path)+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)")
+    internal/gatesmutant/mutant.go:3:func extraOpen(){ db,_:=sql.Open("sqlite",":memory:");if db!=nil{db.Close()} }
+    internal/datad/assignment_pg_integration_test.go:58:	w.appDB, err = sql.Open("pgx", dsn)
+    internal/datad/assignment_pg_integration_test.go:64:		w.setupDB, err = sql.Open("pgx", sup)
+    internal/store/sqlite.go:60:	db, err := sql.Open("sqlite", dsn)
+    internal/mcs/board/board.go:62:	db, err := sql.Open("sqlite", path)
+  债·尚未租户化的调用点：90 处（基线 90，终值 0，随 SP7b 归零）
+    ↳ 按效果判（specs/tools/pending-debt），按领域各记各的棘轮：
+       · datad：25 处（基线 25，SP7b 收口时本领域须归零）
+       · fanout：29 处（基线 29，SP7b 收口时本领域须归零）
+       · hosted：36 处（基线 36，SP7b 收口时本领域须归零）
+  债·显式 SystemCtx 调用点：17 处（基线 17；每处都是评审面，不许悄悄增长）
+  判据二·裸库句柄逃出包外：1 处（基线 1，终值 0；允许清单对本条不豁免）
+    internal/mcs/board/board.go:84:func-returns-handle DB
+✗ 判据一由 5 升至 6 —— 棘轮只许下行。新代码请走仓储包。
+  确需例外，改的是 specs/gates/repo-packages.txt —— 这是【纪律】不是闸(本闸识别不了谁批准)；且它对判据二不豁免。
+
+RESULT {"name": "mut-release-boundary", "argv": ["sh", "scripts/run-build-tests.sh"], "cwd": "/tmp/s-gates-green-mutations", "thread": "01a1b57a-e610-71a2-ba84-6007a77776f4", "start_utc": "2026-11-08T06:48:23.436602+00:00", "source": "f3d0a4998a96ea3cef45d690b3190f9d9f615dbd", "env_keys": ["GOCACHE", "GOPATH", "GOTOOLCHAIN", "HOME", "LANG", "LOGNAME", "OPENSPEC_TELEMETRY", "PATH", "USER"], "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin", "working_status": " M deploy/test_build_entrypoints.py\n M scripts/run-build-tests.sh\n?? internal/gatesmutant/\n", "working_diff_sha256": "cc565240b8e934d0bd13a730d07040d79e76cbbed5d7aad40d59069dc82fdc51", "rc": 1, "end_utc": "2026-11-08T06:48:24.964383+00:00"}

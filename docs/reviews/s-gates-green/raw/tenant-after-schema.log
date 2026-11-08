@@ -1,0 +1,21 @@
+  ⑩ 领域表已出现租户列 7 处 —— 触发乙组四项负测前置（逐领域验）：
+      extseat	internal/store/migrate/migrations/0105_extseat.sql:1:np_external_principal.tenant_key
+      store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_event_key.tenant
+      store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_inbound.tenant
+      store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_notice.tenant
+      store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_transport_key.tenant
+      store	internal/store/migrations/0074_pm_decision_request.sql:1:r9_pm_inbound_key.tenant
+      store	internal/store/migrations/0074_pm_decision_request.sql:1:r9_pm_response.tenant
+✗ 领域 extseat 已有租户列，但其乙组负测尚未就位（§22.2a #3 四项须【同时】验）：
+    缺：YIZU_PEP_BEFORE_RESOLVE(extseat)
+    缺：YIZU_DENY_NOT_EMPTY_SET(extseat)
+    缺：YIZU_EXISTENCE_INDISTINGUISHABLE(extseat)
+    缺：YIZU_MINIMAL_DENY_AUDIT(extseat)
+✗ 领域 store 已有租户列，但其乙组负测尚未就位（§22.2a #3 四项须【同时】验）：
+    缺：YIZU_PEP_BEFORE_RESOLVE(store)
+    缺：YIZU_DENY_NOT_EMPTY_SET(store)
+    缺：YIZU_EXISTENCE_INDISTINGUISHABLE(store)
+    缺：YIZU_MINIMAL_DENY_AUDIT(store)
+  🔴 四项须同时满足，缺一即不得判隔离成立 —— 尤其 PEP 前置拒与 deny 语义【须分开验】，
+     只验后者会让「先查了再拒」通过验收（查询已落到库上，跨租户读实际发生过）。
+  🔴 且须【逐领域】各验各的：别的领域挂了标记，不能替这个领域作数（SA-14）。

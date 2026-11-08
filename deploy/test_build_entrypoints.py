@@ -154,6 +154,29 @@ exit 1
         self.assertEqual(set(helper_inventory.splitlines()), actual)
         self.assertEqual(len(helper_inventory.splitlines()), len(actual))
 
+    def test_quality_gates_fail_before_helper_and_preserve_status(self):
+        gates = ('repo-boundary-gate', 'dependency-ratchet', 'tenant-isolation-gate')
+        # Use the real entrypoint with controlled child commands: verify failure
+        # propagation and that expensive helper tests cannot run ahead of gates.
+        for failed in (*gates, None):
+            with self.subTest(failed=failed), tempfile.TemporaryDirectory() as directory:
+                root = pathlib.Path(directory)
+                scripts = root / 'scripts'
+                scripts.mkdir()
+                shutil.copy2(ROOT / 'scripts/run-build-tests.sh', scripts)
+                for gate in gates:
+                    rc = 37 if gate == failed else 0
+                    (scripts / (gate + '.sh')).write_text(
+                        'echo ' + gate + ' >> gate-order\nexit ' + str(rc) + '\n')
+                (scripts / 'run-helper-build-tests.py').write_text(
+                    'from pathlib import Path\nPath("helper-started").touch()\nraise SystemExit(77)\n')
+                result = subprocess.run(['sh', str(scripts / 'run-build-tests.sh')],
+                                        cwd=root, capture_output=True, text=True)
+                expected = list(gates) if failed is None else list(gates[:gates.index(failed) + 1])
+                self.assertEqual((root / 'gate-order').read_text().splitlines(), expected)
+                self.assertEqual(result.returncode, 77 if failed is None else 37)
+                self.assertEqual((root / 'helper-started').exists(), failed is None)
+
     def test_missing_helper_file_rejected_before_import_or_execution(self):
         import runpy
         inventory = runpy.run_path(str(ROOT/'scripts/run-helper-build-tests.py'))['inventory']

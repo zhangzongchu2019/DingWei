@@ -1,0 +1,30 @@
+{
+  "name": "extseat-focused",
+  "argv": [
+    "go",
+    "test",
+    "./internal/extseat",
+    "-run",
+    "^TestTenantDeny",
+    "-count=1",
+    "-timeout=15m"
+  ],
+  "cwd": "/data/ai-dev-data/s-gates-green",
+  "thread": "01a1b57a-e610-71a2-ba84-6007a77776f4",
+  "start_utc": "2026-11-08T06:44:10.134619+00:00",
+  "source": "1909a8f46fbbfb0a0f52472e5f9d24ea4677a6b8",
+  "env_keys": [
+    "GOCACHE",
+    "GOPATH",
+    "GOTOOLCHAIN",
+    "HOME",
+    "LANG",
+    "LOGNAME",
+    "OPENSPEC_TELEMETRY",
+    "PATH",
+    "USER"
+  ],
+  "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin",
+  "rc": 0,
+  "end_utc": "2026-11-08T06:44:13.301967+00:00"
+}

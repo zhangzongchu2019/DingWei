@@ -1,0 +1,34 @@
+{
+  "name": "race-store-shard-2",
+  "argv": [
+    "go",
+    "test",
+    "-race",
+    "./internal/store",
+    "-count=3",
+    "-run",
+    "^(TestBotChannelDisplayNameMigrationPreservesChannelID|TestR1_006_S02|TestR8_001_S01|TestR8_003_S01|TestR8_007_S01|TestR8_004_S01_ExecutedFactsIndependentOfRelease|TestConsoleOwnerRoleIsExplicitAndScopeIsUnambiguous|TestLegacyR8CancelTransferIsDeniedForPMSpecFlow|TestR8EmptyIssueListStillRequiresHuman|TestSpecGateErrorNamesMissingField|TestConsoleSpecGateReviewRequiresAtLeastOneIssue|TestPMSpecSplitGateWithoutMigrationTableKeepsLegacyBehavior|TestPMSpecAcceptSuggestionsAppliesSelectedStructureAndFreezesOnce|TestConsoleSpecTwelveStepFlowSingleEditorFinalAndOwnerOnlyTasks|TestConsoleTaskCaseAcceptanceIDIsApplicationValidatedBecauseCriteriaLiveInJSON|TestR32TaskDependencyAndIllegalTransitions|TestR32TaskListStateReadFailurePropagates|TestR6EventOwnerImmutableAndDifferentEvents|TestSingleTenantStorePersistsObservedTenantAndSender|TestFeishuStickyCorruptClockFailsClosed|TestMigrationLedger_RestartDoesNotRevertAdminEdit|TestNewPlatformProjectionIsAtomic|TestPilotQuestionDisabledReasonDoesNotResetUnknown|TestPilotQuestionReadGrantIsOnlyQuestionAndHistoryBounded|TestPilotQuestionSpecOnlyChangeCanLinkActualNewRevision|TestPilotTemplateSourceProvenanceDedupeAndSSRF|TestPilotTemplateConsentCannotAttachIncompleteContract|TestPilotTemplatePendingFullCannotSilentlyDowngrade|TestR14P1_Migration0008_DefaultProjectBackfill|TestR9PMRequestCreatesBothDeliveriesAndCASCloses|TestDeliveryACKV2OrderedReplayPreservesOriginalTimesAndTurn|TestSessionDeliveryACKV2MigrationPreservesHistoricalRowsAndUnknownSemantics|TestFailSessionDeliveryRetryableCountResetsOnSuccess|TestSessionHistoryExactRecordByteBoundary|TestSessionHistoryStartupOpenOffOnCreatesExactlyOneGap|TestClarificationFeishuOriginRequiresPMAtAppendBoundary|TestClarificationSupplementKindKeepsExistingAuthorityBoundary|TestClarificationReplyBudgetAndReplayOrder|TestSessionEndpointDeliveryACKPersistsAcrossOfflineState|TestReleaseSessionDeliveryLeasesOnlyRequeuesTargetInflightRows|TestProjectAggregateSourcesCRUD|TestSeenPersonUpsertAndMemberFlag|TestRecoverProcessingAfterReopen|TestBlockerDependencyConditionTransitionCreatesOneInput|TestBlockerAdoptPersistsCurrentRevisionTuple|TestR10ReplayAfterHandoffCannotIssueOldPermission|TestR10RestartChildAuthority|TestStageDenyUnavailableAuditStillRejects)$",
+    "-json",
+    "-timeout=120m"
+  ],
+  "cwd": "/data/ai-dev-data/s-gates-green",
+  "thread": "01a1b57a-e610-71a2-ba84-6007a77776f4",
+  "start_utc": "2026-11-08T07:03:01.891002+00:00",
+  "source": "f3d0a4998a96ea3cef45d690b3190f9d9f615dbd",
+  "env_keys": [
+    "GOCACHE",
+    "GOPATH",
+    "GOTOOLCHAIN",
+    "HOME",
+    "LANG",
+    "LOGNAME",
+    "OPENSPEC_TELEMETRY",
+    "PATH",
+    "USER"
+  ],
+  "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin",
+  "working_status": " M deploy/test_build_entrypoints.py\n M openspec/changes/s-gates-green/specs/release-quality-gates/spec.md\n M scripts/run-build-tests.sh\n?? docs/reviews/s-gates-green/\n",
+  "working_diff_sha256": "c5c2c33910add7d7b4c948f1b7e221a0f2e4bf727af589b52e1a06b8a23d0777",
+  "rc": 0,
+  "end_utc": "2026-11-08T07:13:08.518044+00:00"
+}

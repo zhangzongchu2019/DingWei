@@ -26,3 +26,8 @@ IssueToken在原tenant拒绝分支复用Identity.Store.AppendAudit（同一个au
 ## store拒绝审计（㊾-补7 c71bc54e）
 
 StageClarificationInbound的两种元数据前置拒绝（Permission/Invalid）复用既有audit_log，源主体由issuer/subject派生摘要；不信任未通过校验的tenant，派生tenant明确标为unresolved，不通过查绑定来填值。固定op、deny与调用方服务时钟；target为空，不记录消息正文、parent、消息ID或调用方tenant。审计失败只写固定日志，原错误对象和零返回不变。没有新增表或迁移。测试包装真实隔离SQLite连接，分别统计审计写与所有其它SQL，资源spy=0且审计=1。此测试连接器需要一处OpenDB，仅精确测试文件登记例外，不增加产品建库或放宽escape。存在/不存在parent实际预置并核实，除随机行ID外五个审计字段逐字相同。该接口没有HTTP响应写口，保留原error对象和零结果；上层Hub原有状态/正文/头回归由m8整包门验证。时延仅证明没有目标解析，不作统计等时承诺。
+
+
+## 长门取证方式（组长6458a0db4eaa五项条件）
+
+store race按go test-list完整379项轮转8个独立进程，片内串行-count3；逐片实际执行集合与计划比对、全并集diff为空、每例run3且PASS/FAIL/SKIP总计1137，Skip列具体条件。Go包全局/环境属于进程，临时DB和目录逐夹具独立，无固定端口/共享可写目录。extseat单独完整包race3。原始整包长门若未完成而由本席处置，仅核实PID后发信号、保留真实非零退出与原因，不冒称该进程通过；完成的分片矩阵单独作为被授权的store race证据。

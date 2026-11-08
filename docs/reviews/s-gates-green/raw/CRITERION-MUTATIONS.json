@@ -1,0 +1,50 @@
+[
+  {
+    "name": "mut-extseat-pep",
+    "test": "TestTenantDenyPEPBeforeResolve",
+    "rc": 1,
+    "expected": 1,
+    "cause_found": true,
+    "mutated_source_sha256": "8a972d5ce9c77cc06db86f022c490ac5655f590552da6f7b7f77e17756a8c79f"
+  },
+  {
+    "name": "mut-extseat-deny",
+    "test": "TestTenantDenyIsErrorNotSuccess",
+    "rc": 1,
+    "expected": 1,
+    "cause_found": true,
+    "mutated_source_sha256": "a8c77048b0e84df9d39e51bb1fcb3b918cf6bd602069487362d70795080712f9"
+  },
+  {
+    "name": "mut-extseat-existence",
+    "test": "TestTenantDenyExistingAndMissingSameShape",
+    "rc": 1,
+    "expected": 1,
+    "cause_found": true,
+    "mutated_source_sha256": "3ecb7bdb1a7f95c839ebbde2e72a1a13f6cf9ab685a238fae53b8540ea20a77c"
+  },
+  {
+    "name": "mut-store-pep",
+    "test": "TestStageDenyBeforeResourceSQL",
+    "rc": 1,
+    "expected": 1,
+    "cause_found": true,
+    "mutated_source_sha256": "e09e212b73054feb5496ec584f4fc25fc23e151372c34c2b47c6a14eb3ebc098"
+  },
+  {
+    "name": "mut-store-deny",
+    "test": "TestStageDenyNotSuccessfulEmptyResult",
+    "rc": 1,
+    "expected": 1,
+    "cause_found": true,
+    "mutated_source_sha256": "4f35a66a26b45853e66ae467c8034e7eaf8c9ff04b18fe71028faa7a71fc4758"
+  },
+  {
+    "name": "mut-store-existence",
+    "test": "TestStageDenyExistingMissingSameResponseAndAudit",
+    "rc": 1,
+    "expected": 1,
+    "cause_found": true,
+    "mutated_source_sha256": "c5102f85448c5f6f86cbfc5bd8a75c2fae2390a86b792a2fea4c2bf8e12e4a92"
+  }
+]

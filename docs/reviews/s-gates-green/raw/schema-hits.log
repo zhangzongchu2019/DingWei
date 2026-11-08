@@ -1,0 +1,7 @@
+extseat	internal/store/migrate/migrations/0105_extseat.sql:1:np_external_principal.tenant_key
+store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_event_key.tenant
+store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_inbound.tenant
+store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_notice.tenant
+store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_transport_key.tenant
+store	internal/store/migrations/0074_pm_decision_request.sql:1:r9_pm_inbound_key.tenant
+store	internal/store/migrations/0074_pm_decision_request.sql:1:r9_pm_response.tenant

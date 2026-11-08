@@ -1,0 +1,1904 @@
+{
+  "count": 3,
+  "all_cases": 379,
+  "covered_cases": 379,
+  "package": "./internal/store",
+  "every_case_executed_three_times": true,
+  "coverage": {
+    "TestAgentGroupCodeMembershipAndSingleLeader": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_005_S02": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_008_S01": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_002_S05": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_006_S01": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestChangeflowMigrationRestartAndHistoryFence": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleCapabilityRotationAndFourGates": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestLegacyR8StartIsDeniedForPMSpecReviewerRecipient": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8DeadlineRestartAndIdentityPrecommitFailClosed": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSpecArchiveBatchAllOrNothingPermissionAndRestore": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSpecGateReasonLengthBounded": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecPresplitRejectsUnregisteredLegacyFinalSpecOnlyWhenEnabled": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecReviewCompletionRequiresFreshAssistAndEveryDecisionThenExistingFinalGateRemains": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigration0044NonDefaultDuplicateRollsBackOwnerRewrite": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecTaskAssigneesPersistNullableAgentReferences": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskDriverAgentListCarriesOptionalMetadata": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR32TaskOutboxStablePagesPreserveWaitingRows": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskProposalRejectsDefinitionOfDoneWithoutPartialWrite": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFailureNoticeDistinctTargetsSharingOriginalMessageID": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFeishuStickyGenerationSurvivesStateDeletion": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR11FreezeProtectedTableInventory": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigrationLedger_DataVerifierJudgesByStableSignature": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR5BindingPersistenceIsolationAuditAndRevocation": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionDistinctTypedRepliesAppendAndCurrentPolicyRevokes": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionPMDelegationLimitedToExistingQuestionReaders": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateReceiptCannotProxyAndWithdrawal": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateTaskAssignmentAndImpactGuard": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateActualExecutorCannotPerformIndependentReview": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestProjectContextSQLiteReadSnapshotKeepsOneAssignment": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR9PMMigrationBackfillsExactSchemaAndRefusesPartial": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestDeliveryACKV2BindingSurvivesConnectionAndRetryChanges": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestDeliveryACKV2UnreceivedStillUsesTransportExpiry": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFailSessionDeliveryRetryableBackoffSequenceAndCap": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryDisabledDoesNotWriteAndReturnsSentinel": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryStartupDoesNotInferGapWhenDisableWriteFailed": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationFreshGenerationPinsCurrentDeputyPolicy": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationLoginContinuationCookieExpiryAndSingleUse": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationFinalCheckAndAuditFailuresRollBackAll": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationReplyEvidencePersistsQueueRestart": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionDeliveryProvenancePersistsAndHistoricalRowsStayUnknown": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionNoDirectoryCombinesReportedAndAdmin": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestLegacyMessageRowDefaultsUntrusted": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestControlPlaneP1QueueRulesRetryReaperAndStats": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerWaiterRightsAndFullMode": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerMigrationFailureRollsBackDDLAndLedger": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10LockAtomicDecisionReplayAndFailure": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10MigrationBackfillRejectsDamagedSchema": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestStageDenyAuditFailureStillRejects": {
+      "shard": 0,
+      "run": 3,
+      "pass": 3
+    },
+    "TestCompareAndSwapAppConfig": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_006_S01": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_008_S02": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_002_S06": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_006_S02": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestChangeflowSQLiteReopen": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsolePrincipalIssuerIsPartOfIdentity": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestLegacyR8CriteriaConfirmationIsDeniedForPMSpecFlow": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8TransferReplyConcurrency": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecGateRejectsEmptyIssueListButAcceptsAnsweredOne": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecFinalVerificationRequiresAllThreePartsAndAtLeastOneCase": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecCandidateConfirmRejectsUnregisteredLegacyFinalSpecOnlyWhenEnabled": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecAssistRejectsMalformedStructuredSuggestionPayloads": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigration0044RejectsAndListsDuplicateOrEmptyShortNames": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskCaseTwoStageRolesDenominatorFallbackAndCascade": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR32TaskStateCasesAndIndependentAgentSameOwner": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR32TaskListReassignmentBetweenSelectionAndProjection": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR6MigrationLedgerAndBindingIsolation": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFailureNoticeSafeTargetAndChineseReason": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFeishuStickyPendingSweepIsBounded": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR11FreezeSQLTransactionAtomicity": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigrationLedger_R14RejectsPartialOrChangedSchema": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR5BindingMigrationLedgerLossAndDrift": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionBusinessChangeBlocksAllOldScopeAndNeedsHumanDecision": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionSentReminderReassignmentNeverCreatesSecondReminder": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateCheckFailureRollsBack": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateParentMustBeFinalAndCurrent": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateUnenrolledLegacyProposalStillStarts": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR14P1_Migration0008_TablesExist": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR9PMResponsibilityEmptySetDeleteGenerationAndAudit": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestDeliveryACKV2PreviouslyAttemptedUntaggedRowStaysLegacy": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestDeliveryACKV2TransportUnknownKeepsAdmissionAndAcceptsLateTerminal": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFailSessionDeliveryRetryableTurnsDeadAtMax": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryOversizeRecordsGapWithoutTruncating": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryConsecutiveEnabledStartupDoesNotCreateGap": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationReminderDoesNotAcquireReplyAnchor": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationContextProjectionChangesCursorWithoutReopeningTask": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationAnchorCorrectionScopeAndWriteFreeze": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestOpenSQLiteUsesWALAndNormalSynchronous": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionDeliveryBusyUpdateDoesNotConsumeAttempts": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestDefaultPersonalImportDisabled": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMessageIngressProvenanceRejectsUnknownValue": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMessageQueueSurvivesReopen": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerNewInputDuringRecheckAndAssignmentInvalidate": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerCachedReplyUsesCurrentReadingRights": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10LockRenewPRUnknownSyncHandoffAndBinding": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10PGFenceSQLiteFailureDoesNotGrant": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestStageDenyMetadataInvalidPreservesError": {
+      "shard": 1,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBotChannelDisplayNameMigrationPreservesChannelID": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_006_S02": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_001_S01": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_003_S01": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_007_S01": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_004_S01_ExecutedFactsIndependentOfRelease": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleOwnerRoleIsExplicitAndScopeIsUnambiguous": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestLegacyR8CancelTransferIsDeniedForPMSpecFlow": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8EmptyIssueListStillRequiresHuman": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSpecGateErrorNamesMissingField": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecGateReviewRequiresAtLeastOneIssue": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecSplitGateWithoutMigrationTableKeepsLegacyBehavior": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecAcceptSuggestionsAppliesSelectedStructureAndFreezesOnce": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecTwelveStepFlowSingleEditorFinalAndOwnerOnlyTasks": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskCaseAcceptanceIDIsApplicationValidatedBecauseCriteriaLiveInJSON": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR32TaskDependencyAndIllegalTransitions": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR32TaskListStateReadFailurePropagates": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR6EventOwnerImmutableAndDifferentEvents": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSingleTenantStorePersistsObservedTenantAndSender": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFeishuStickyCorruptClockFailsClosed": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigrationLedger_RestartDoesNotRevertAdminEdit": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestNewPlatformProjectionIsAtomic": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionDisabledReasonDoesNotResetUnknown": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionReadGrantIsOnlyQuestionAndHistoryBounded": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionSpecOnlyChangeCanLinkActualNewRevision": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateSourceProvenanceDedupeAndSSRF": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateConsentCannotAttachIncompleteContract": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplatePendingFullCannotSilentlyDowngrade": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR14P1_Migration0008_DefaultProjectBackfill": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR9PMRequestCreatesBothDeliveriesAndCASCloses": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestDeliveryACKV2OrderedReplayPreservesOriginalTimesAndTurn": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionDeliveryACKV2MigrationPreservesHistoricalRowsAndUnknownSemantics": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFailSessionDeliveryRetryableCountResetsOnSuccess": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryExactRecordByteBoundary": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryStartupOpenOffOnCreatesExactlyOneGap": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationFeishuOriginRequiresPMAtAppendBoundary": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationSupplementKindKeepsExistingAuthorityBoundary": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationReplyBudgetAndReplayOrder": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionEndpointDeliveryACKPersistsAcrossOfflineState": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestReleaseSessionDeliveryLeasesOnlyRequeuesTargetInflightRows": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestProjectAggregateSourcesCRUD": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSeenPersonUpsertAndMemberFlag": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestRecoverProcessingAfterReopen": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerDependencyConditionTransitionCreatesOneInput": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerAdoptPersistsCurrentRevisionTuple": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10ReplayAfterHandoffCannotIssueOldPermission": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10RestartChildAuthority": {
+      "shard": 2,
+      "run": 3,
+      "skip": 3
+    },
+    "TestStageDenyUnavailableAuditStillRejects": {
+      "shard": 2,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_003_S01": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_006_S03": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_001_S02": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_003_S02": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_007_S02": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_007_S02_UnknownRiskDoesNotAddLifecycleGate": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsolePlatformRoleIsIndependentFromAgentGrants": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8PendingLockCoversAllStoreWrites": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8CancelledSameEditorLateReply": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSpecGateErrorTruncatesLongCheckerList": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecReviewAgentLookupFailureIsNotReportedAsInvalidAgent": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecCandidateConfirmUsesSameOptInFinalizationGate": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecAssistResultStalesAfterWorkingDraftEdit": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecEditorsAndTransfersRequireActiveOwnerRole": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskAssignmentsMustBePairedAndDifferent": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR32TaskAtomicAuditRecheckAndIdempotency": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskAcceptanceLinksCoverManyToManyAndUnlinkedQuery": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFailureNoticeAtomicRollbackAndSameIDRetry": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSingleTenantStoreKeepsOtherBindingFieldsAndTenantProofStrict": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestValidConsoleAgentGroupNameMatchesSharedTable": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigrationLedger_AppliedExactlyOnce": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestNewPlatformProjectionRefusesLegacyPrincipalID": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionAnswerAtomicAndUsesOnlyD2Wake": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionReassignRevokesSharedD2WaiterGrant": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionCancelPreservesPendingBusinessProposal": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateRevisionInvalidatesReceiptsAndKeepsOldBody": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateMissingReviewOrAgentSignoffRejected": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateSingleHumanMayUseDifferentCaseReviewAgents": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR14P1_Migration0008_NoDefaultBusinessMembers": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR9PMSchedulerPersistsOneDuePeriodAndSkipsBacklog": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestDeliveryACKV2RejectsMissingPredecessorAndMismatchedIdentity": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionDeliveryACKV2MetadataRoundTripsWithoutRewritingReceiptTimes": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFailSessionDeliveryRetryableCountSurvivesReconnect": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryAgentQuotaEvictsOldestBeforeNewRow": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryDeletionQueuePurgesAndRetries": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationDirectInboundGuardFields": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationSupplementMigrationPreservesFloorsRequestsImagesAndGuards": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationLegacySnapshotAnchorsAndHistory": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionDeliveryClaimBypassesExpiredDeliveredAndIsMonotonic": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestCancelPendingSessionDeliveryIsAddressedAndInjectionSafe": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestScheduleRepositoryRoundTripAndDelete": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMessageQueueFailRetriesThenDead": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMemberProgressAndRiskRepository": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerRecheckRequiresCurrentDeveloperVersionAndLease": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerWaiterChangeKeepsCurrentCardFingerprint": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10CorruptPersistedCoordinatesFailClosed": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice": {
+      "shard": 3,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_003_S02": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_006_S04": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_002_S01": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_004_S01": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_008_S01": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestChangeflowMigrationLedgerRecoveryAndMismatch": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestTouchConsoleSessionGuards": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8ActualReviewerPendingHumanGateAndReplay": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8CriteriaCandidateRequiresConfirmationStatus": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSpecGateErrorKeepsSentinelAndLegacyText": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecFinalIsTheExclusiveRevisionRejectionReason": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecFinalizeRejectsTransferredFlowBeforeReviewCompletion": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecReviewCompletionBlocksIncompleteAcceptanceBeforeFreeze": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecsSupportMultipleIndependentSpecsWithPublicReadAndControlledWrite": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskDriverStartGreenReviewAndDeploySequence": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR32ReassignmentClearsCasesAndNotifiesBoth": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskDefinitionOfDoneIsSeparateOnAllThreeWritePaths": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFailureNoticeGlobalSweepEveryNonterminalState": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSingleTenantAmbiguousParentFailsClosed": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR11FreezeStoreRefusalsPreserveHistory": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigrationLedger_DigestMismatchRefusesStart": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR7SpecConfirmationPersistenceImmutableAndRetry": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionNoPartialCommitAndAgentNotPM": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionMigrationRollbackAndReapply": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionRecipientCaseCanonicalBeforeHash": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateRiskUpgradeUnknownAndStockBudget": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateConfirmRollbackAndIdempotence": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateFullAuthorizationExpiryRechecked": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR14P1_Migration0008_NoDefaultScheduleDocImport": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR9PMRequestResponseAndClosurePersistAcrossRestart": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestDeliveryACKV2QueuedDoesNotExpireRequeueOrBlockNextDelivery": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionDeliveryACKV2EnqueueDoesNotInferProtocolFromNewHub": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryConcurrentAppendGroupCommitAssignsCursors": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryGlobalQuotaEvictsOldestAcrossAgents": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryPaginationUsesExclusiveCursorWithoutDuplicates": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationDurableInboundDoubleIDConflict": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationSupplementMigrationFailureRollsBackAndRestoresFK": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationLegacyAnswerPathsCannotBypassEnrollment": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestExpireSessionDeliveriesReturnsOnlyNewTerminalRows": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigrateUpgradesExistingDBWithSeenPersonAndBotSecret": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPendingRepositoryReplacesExistingPending": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestEnqueueMessageRedactsContentBeforeStorage": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestCleanupBefore_DryRunAndConfirm": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerOutboxReconciliationRepairsMissingSignalWithoutNewInput": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerReplyBudgetAndIdempotentReplay": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10NoticeCursorDoesNotStarveLaterPendingEntries": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestStageDenyBeforeResourceSQL": {
+      "shard": 4,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_004_S01": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_006_S05": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_002_S02": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_004_S02": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_008_S02": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsolePrincipalDisplayNameConflictIsExplicit": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecRevisionWriteKeepsCurrentEditorAtAtomicWritePoint": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8CriteriaConfirmationFreshRevisionAndOldGateHistory": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8FreshReviewRequirementFollowsHumanRevision": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFinalizeReportsMissingGateReview": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigration0044PreservesPopulatedSpecForeignKeyGraph": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecWorkingDraftCASPreservesBothConflictPayloadsAndCreatesNoRevision": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecTransferKeepsCreatedOrderPosition": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskPlanningRejectsSelfMissingAndCycles": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskDriverStartRequiresEveryOneOfSevenParts": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR32OutboxFailureRollsBackAssignment": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskAcceptanceLinksCascadeOnTaskDelete": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFailureNoticeRecentDeadBackfillAndConcurrentSweep": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFeishuStickyOldHubMigrationRollbackCompatibility": {
+      "shard": 5,
+      "run": 3,
+      "skip": 3
+    },
+    "TestR11LateResultsAndTaskProgress": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigrationLedger_DuplicateColumnFailsInsteadOfBeingSwallowed": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR7SpecConfirmationRejectsInvalidAndKeepsNewHistory": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionReminderExactlySixtyMinutesAndOncePerGeneration": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionCASAndClockRollbackFailClosed": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionOldDispatchCannotResetToUnsent": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateRealFinalSuccessorAndStickyEnrollment": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateLegacyTaskPathsCannotSkipCurrentContract": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateHumanExecutorCannotReuseCompletedPreReviewAgent": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR14P1_LatestScheduleDoc_ReturnsMaxVersion": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR9PMConcurrentFirstResponseCAS50Rounds": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestDeliveryACKV2AdmissionUnknownIsIsolatedAndNotProcessed": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionDeliveryACKV2MigrationRollsBackAllColumnsOnFailure": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryGroupCommitFallbackIsolatesDuplicateEvent": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryRetentionBoundaryUsesVirtualTime": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryPageStopsAtFourMiBAndKeepsCursorExclusive": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationPublicRevisionDoesNotInheritOldThread": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationAppendReplayAndEqualTextSupplement": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationContinuedResolvedDiscussionDoesNotReopen": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestCapabilityPendingDeliveryResolvesOnceAndOldClaimFilterIgnoresIt": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionEndpointConnSeqAndTouch": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPendingRepositoryExpiresPastPending": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestApproveKeyApplicationWithGrantCommitsCredentialAndGrantAtomically": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerLifecycleNoImplicitResumeAndNoRepeatedWake": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerOwnerCannotImpersonateResumeAfterResolution": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerAddressedWaiterGetsOnlyNeededContext": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10HandoffEventFailureCannotPartiallyTransfer": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestStageDenyNotSuccessfulEmptyResult": {
+      "shard": 5,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_004_S02": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_007_S01": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_002_S03": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_005_S01": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_009_S01": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleACLSeparatesPrincipalsDespiteSharedKey": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleSpecActorMigrationMarksUnattributedRowsUnknown": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8CriteriaRejectsQuotesAndSpoofedConfirmation": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8HumanHistoryCannotHideActiveRequestBehindOldPage": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFinalizeReportsAllProblemsForLiveShape": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigration0044RejectsDanglingChildAndRestoresForeignKeys": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecTransferFreezesDraftAtomicallyAndBlocksLegacyWritesAndFinalize": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigration0044PreservesEveryLegacyStateAndDropsClaimedBy": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskSplitCreatesAndLocksCurrentRevision": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskDriverZeroTasksIsNotGreen": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR32CandidateStageRechecksPGBeforeCommit": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskLegacyDODMigrationPendingProductionCount": {
+      "shard": 6,
+      "run": 3,
+      "skip": 3
+    },
+    "TestFailureNoticeRetryExhaustionIsAtomic": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFeishuStickyIsolationCASExpiryRestartAndDedup": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR11FreezeProcessLease": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigrationLedger_LegacyRefusesUnverifiableDataMigration": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR7SpecConfirmationConcurrentWritersAreIdempotent": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionReplyFirstCancelsNoticeAndUnknownNeverRetries": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionProductionFullAndAckDoesNotStopSLA": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateActualResponsibilityAndR8Finalization": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateImmutableArtifactsNotExecution": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateMigrationAtomicRollbackAndReapply": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestProjectContextSQLiteProjectionReadOnlyAndExactRevision": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR14P1_PersonalNL_AppendScheduleDoc": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR9PMNewContentSupersedesOldGenerationAndLeavesLateEvidence": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestDeliveryACKV2RejectsTurnOrOutcomeReplacementAndLateCancel": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionDeliveryACKV2SchemaRejectsInvalidProtocolGenerationAndOutcome": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryPersistsStableCursorAndOwnerScopedPage": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryDisabledPausesTTLCleanupUntilReenabled": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationNoticeFinishIsAtomicWithProviderParent": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationCorrectionNotifiesCurrentReadersWithoutReopening": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationAuthorityCurrentPolicyAndDeputy": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationReadPaginationCurrentGrantAndPrivateHistory": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestCapabilityPendingDeliveryRejectsAndExpiresWithoutReconnect": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestUpsertSessionEndpointPreservesMirrorToWhenReconnectOmitsIt": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMessageQueueIdempotentClaimAckAndFail": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestUpsertChatEntityAutoBindsOwnerAndPreservesBinding": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerMultipleCardsLegacyGateAndPreservation": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerReadOnlySnapshotAndBoundedInputHistory": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy": {
+      "shard": 6,
+      "run": 3,
+      "skip": 3
+    },
+    "TestR10ExactExpiryAndWrongTokenCannotRenew": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestStageDenyExistingMissingSameResponseAndAudit": {
+      "shard": 6,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_005_S01": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR1_007_S02": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_002_S04": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_005_S02": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8_009_S02": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsolePlatformItemLifecycleAndPendingVisibility": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8DeterministicTransferReplyCommitOrders": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR8CancelTransferIsAtomicAndRejectsLateReply": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestAgentDirectRevisionOneOwnershipAndAudit": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSpecGateNonStringIDKeepsParentVerdict": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecPresplitGateIsOptInAndRequiresFinalReviewedRevision": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPMSpecFreezeOnlyAllowsThreeExplicitActions": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigration0044RewritesOnlyLegacyOwnerDefaultsDeterministically": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskMayStartWithNoAcceptanceLinks": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskDriverUnassignedTaskAppearsForNoAgent": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR32OwnerExplicitlyReopensCompletedInvalidAssignment": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling": {
+      "shard": 7,
+      "run": 3,
+      "skip": 3
+    },
+    "TestFailureNoticeOnlyKnownACKSessionSource": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestFeishuStickyRejectedPendingUnknownRetentionAndBatch": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR11FreezeLeaseCancellation": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMigrationLedger_LegacyAckBackfillsWithoutReplay": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR7SpecConfirmationMigrationRejectsPartialOrAlteredProtection": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionUnconfiguredNeverClaimsSent": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotQuestionSpecOnlyAndCompletedTaskNeverWake": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateMissingSixFieldsAndIdentity": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateD3ConfirmsActualDerivedSuccessor": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestPilotTemplateFullRequiresScopedHumanReceipt": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestProjectContextSQLiteCandidateMetadataAndRoleRace": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR31PrivateSessionSourceClearsHistoricalIPAndPreservesLegacy": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR9PMUnknownReceiptIsNotBlindlyRetriedOrCalledSent": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestDeliveryACKV2RejectedDispatchIsNotAModelTerminal": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionDeliveryACKV2InvalidAdmissionTimestampFailsClosed": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryMigrationLedgerIsSeparateFromPrimaryStore": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestSessionHistoryOffIntervalBecomesGapOnReenable": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationInboundPostRollbackAndUncertainReceiptNoRetry": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationPrivateImageActorQuestionAndImmutableLink": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationTechnicalDoesNotBecomeAuthorityOrCompleteTask": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestClarificationPolicyFailureAndConcurrentRevocation": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestCapabilityPendingConcurrentCapabilityReconnectAndExpirySettleOnce": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestUpsertSessionEndpointPreservesOwnerAndFullNameWhenReconnectOmitsThem": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestMessageIngressProvenanceDefaultsUntrustedAndSurvivesRetry": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestListAPIKeyAccountsForKeys": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerRequestReplayAndRollbackAreAtomic": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestBlockerLegacyDriverStartCannotBypassUnresolvedCards": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10LockConcurrent50RoundsRestartAndExpiry": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestR10MigrationCreatesSeparateTablesAndEmptyReaders": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    },
+    "TestStageDenyMinimalAudit": {
+      "shard": 7,
+      "run": 3,
+      "pass": 3
+    }
+  }
+}

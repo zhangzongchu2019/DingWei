@@ -1,0 +1,143 @@
+{
+  "collected_utc": "2026-11-08T07:22:37.574633+00:00",
+  "CODEX_THREAD_ID": "01a1b57a-e610-71a2-ba84-6007a77776f4",
+  "baseline": "0fe09b9e3df85ee8b32fe08cdeec60099d2b540c",
+  "audit_source_parent": "f3d0a4998a96ea3cef45d690b3190f9d9f615dbd",
+  "frozen_files": 1947,
+  "source_files_unchanged": true,
+  "required_results": {
+    "build-final": 0,
+    "boundary-final": 0,
+    "dependency-final": 0,
+    "tenant-final": 0,
+    "core-count3": 0,
+    "race-extseat-full": 0,
+    "m8-final-count1": 0,
+    "store-final-count1": 0,
+    "canonical": 0,
+    "mutation-reverted-canonical": 0,
+    "openspec-final": 0,
+    "entrypoint-contract": 0,
+    "pinyin-deps": 0,
+    "skip-inventory": 0,
+    "boundary-selftest": 0,
+    "dependency-selftest": 0,
+    "race-store-shard-0": 0,
+    "race-store-shard-1": 0,
+    "race-store-shard-2": 0,
+    "race-store-shard-3": 0,
+    "race-store-shard-4": 0,
+    "race-store-shard-5": 0,
+    "race-store-shard-6": 0,
+    "race-store-shard-7": 0
+  },
+  "audit_and_release_mutations": [
+    {
+      "name": "mut-extseat-audit",
+      "rc": 1,
+      "expected": 1
+    },
+    {
+      "name": "mut-store-audit",
+      "rc": 1,
+      "expected": 1
+    },
+    {
+      "name": "mut-release-boundary",
+      "rc": 1,
+      "expected": 1
+    },
+    {
+      "name": "mutation-reverted-canonical",
+      "rc": 0,
+      "expected": 0
+    }
+  ],
+  "criterion_mutations": [
+    {
+      "name": "mut-extseat-pep",
+      "test": "TestTenantDenyPEPBeforeResolve",
+      "rc": 1,
+      "expected": 1,
+      "cause_found": true,
+      "mutated_source_sha256": "8a972d5ce9c77cc06db86f022c490ac5655f590552da6f7b7f77e17756a8c79f"
+    },
+    {
+      "name": "mut-extseat-deny",
+      "test": "TestTenantDenyIsErrorNotSuccess",
+      "rc": 1,
+      "expected": 1,
+      "cause_found": true,
+      "mutated_source_sha256": "a8c77048b0e84df9d39e51bb1fcb3b918cf6bd602069487362d70795080712f9"
+    },
+    {
+      "name": "mut-extseat-existence",
+      "test": "TestTenantDenyExistingAndMissingSameShape",
+      "rc": 1,
+      "expected": 1,
+      "cause_found": true,
+      "mutated_source_sha256": "3ecb7bdb1a7f95c839ebbde2e72a1a13f6cf9ab685a238fae53b8540ea20a77c"
+    },
+    {
+      "name": "mut-store-pep",
+      "test": "TestStageDenyBeforeResourceSQL",
+      "rc": 1,
+      "expected": 1,
+      "cause_found": true,
+      "mutated_source_sha256": "e09e212b73054feb5496ec584f4fc25fc23e151372c34c2b47c6a14eb3ebc098"
+    },
+    {
+      "name": "mut-store-deny",
+      "test": "TestStageDenyNotSuccessfulEmptyResult",
+      "rc": 1,
+      "expected": 1,
+      "cause_found": true,
+      "mutated_source_sha256": "4f35a66a26b45853e66ae467c8034e7eaf8c9ff04b18fe71028faa7a71fc4758"
+    },
+    {
+      "name": "mut-store-existence",
+      "test": "TestStageDenyExistingMissingSameResponseAndAudit",
+      "rc": 1,
+      "expected": 1,
+      "cause_found": true,
+      "mutated_source_sha256": "c5102f85448c5f6f86cbfc5bd8a75c2fae2390a86b792a2fea4c2bf8e12e4a92"
+    }
+  ],
+  "no_production_actions": true,
+  "race_mode": "authorized 8-shard entire store inventory eachcount3;extseat fullcount3 separately",
+  "race_coverage_totals": {
+    "pass": 1122,
+    "skip": 15,
+    "fail": 0
+  },
+  "original_full_race_disposition": {
+    "finished_or_stopped": true,
+    "mode": "owner_interrupted_after_all_authorized_shards_passed",
+    "counted_as_rc0": false,
+    "utc": "2026-11-08T07:21:27.842837+00:00",
+    "signals": [
+      {
+        "pid": 2282349,
+        "signal": "SIGINT",
+        "utc": "2026-11-08T07:21:27.842864+00:00"
+      }
+    ],
+    "owned_fixture_dirs": [
+      "/tmp/TestMigrationLedger_AppliedExactlyOnce3593264161",
+      "/tmp/TestMigrationLedger_DataVerifierJudgesByStableSignature2149772172",
+      "/tmp/TestMigrationLedger_DigestMismatchRefusesStart3623120458",
+      "/tmp/TestMigrationLedger_DuplicateColumnFailsInsteadOfBeingSwallowed2316707510",
+      "/tmp/TestMigrationLedger_LegacyAckBackfillsWithoutReplay3058906617",
+      "/tmp/TestMigrationLedger_LegacyRefusesUnverifiableDataMigration2562780848",
+      "/tmp/TestMigrationLedger_RestartDoesNotRevertAdminEdit3399034626",
+      "/tmp/TestR1_003_S02no-comment3985388769",
+      "/tmp/TestR7SpecConfirmationConcurrentWritersAreIdempotent2870235017"
+    ],
+    "verified_pid": 2282349,
+    "verified_start_ticks": "191135860",
+    "actual_rc": 1,
+    "actual_end_utc": "2026-11-08T07:21:27.870981+00:00",
+    "owned_fixture_cleanup": true,
+    "unexpected_failure_signatures": []
+  }
+}

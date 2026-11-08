@@ -5,6 +5,12 @@ set -eu
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# 质量闸先于测试执行；set -e 保留每个闸的真实失败退出码。
+for gate in repo-boundary-gate dependency-ratchet tenant-isolation-gate; do
+  echo "GATE $gate"
+  sh "scripts/$gate.sh"
+done
+
 # The view-service tests import sibling modules as top-level Python modules.
 # Keep the source directory explicit so callers do not depend on their cwd.
 PYTHONPATH="$ROOT/tools/sessionhelper:$ROOT/view-service${PYTHONPATH:+:$PYTHONPATH}"

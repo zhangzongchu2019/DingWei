@@ -1,0 +1,54 @@
+{"name": "boundary-selftest", "argv": ["sh", "scripts/repo-boundary-gate.sh", "--selftest"], "cwd": "/data/ai-dev-data/s-gates-green", "thread": "01a1b57a-e610-71a2-ba84-6007a77776f4", "start_utc": "2026-11-08T06:41:38.743289+00:00", "source": "1909a8f46fbbfb0a0f52472e5f9d24ea4677a6b8", "env_keys": ["GOCACHE", "GOPATH", "GOTOOLCHAIN", "HOME", "LANG", "LOGNAME", "OPENSPEC_TELEMETRY", "PATH", "USER"], "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin"}
+  ✓ 干净树两条判据均判 0（闸不误报）
+  ✓ 拦住：仓储包外新增 sql.Open
+  ✓ 拦住：pgxpool.New（换 API 绕不过）
+  ✓ 拦住：sql.Open 换 driver 名
+  ✓ 拦住：_test.go 内的建库（判据含测试文件）
+  ✓ 拦住:导出方法返回 *sql.DB(单行)
+  ✓ 拦住:导出方法【签名换行】(正则盲区,AST 才看得见)
+  ✓ 拦住:import alias(按导入路径判,不按包名字面)
+  ✓ 拦住:本地类型别名链 type H2 = H = *sql.DB
+  ✓ 拦住：改名的 helper(btx) 仍按效果计入 pending（不按名字判）
+✗ 出现【基线里没有的领域】pending:testdom（3 处）—— 新领域的债须先立基线，不得静默计入
+  ✓ 拦住：出现基线里没有的领域 ⇒ fail-closed（非通过）
+✗ 存在【领域判不出】的 pending 债（domain 非字面量）—— 无主的债不得计入，先写明 domain
+    /tmp/tmp.ZIir51kI6H/r/internal/pkg/b.go:7	?	origin
+  ✓ 拦住：domain 非字面量（判不出归属）⇒ fail-closed
+  ✓ 拦住：pending 总数不变但某领域回升（分领域各记各的）
+  ✓ 不误伤：注释里提到 helper 名不计入 pending
+  ✓ 拦住:【逆序声明】三级别名链 H3=H2=H=*sql.DB(SA-11)
+  ✓ 拦住:【逆序四级】别名链(证明是不动点,不是多加一遍)
+  ✓ 拦住:导出字段持句柄
+  ✓ 拦住:匿名嵌入句柄(字段名即类型名,包外可访问)
+  ✓ 拦住:接口方法返回句柄
+  ✓ 不误伤:未导出函数返回句柄(留在包内)
+  ✓ 不误伤:句柄作【入参】(§22.2c #1 只写不返回,不擅自扩严)
+  ✓ 不误伤:未导出接口方法
+  ✓ 语法错文件判为闸坏(非通过,也非跳过)
+  ✓ 豁免：允许清单内的建库不计入判据一
+  ✓ 允许清单【不】豁免判据二（仓储包也不许导出句柄）
+  ✓ 一降一升必拒（两条判据各判各的，不看总和）
+  ✓ 基线缺失判为闸坏（非通过）
+  ✓ 基线值非数字判为闸坏（非通过）
+  ✓ 基线缺 escape 键判为闸坏（判据少一半即不得放行）
+  ✓ 拦住：已裁撤的键 include_tests 回潮（判闸坏，非通过）
+  ✓ 拦住：已裁撤的键 open_prod 回潮（判闸坏，非通过）
+  ✓ 拦住：已裁撤的键 open_all 回潮（判闸坏，非通过）
+  ✓ 拦住:同一行两处调用按处计(不按行)
+  ✓ 拦住:允许项不越界到兄弟目录(storeevil)
+  ✓ 不误伤:允许项对其子目录仍生效
+  ✓ 钩子外「可收紧」判 FAIL(不以写文件当落盘)
+  ✓ 钩子外不改动基线文件(无副作用)
+  ✓ 钩子内但基线非默认路径时仍不静默通过
+  ✓ 钩子外 pending 可收紧判 FAIL（债与收口同权，不许空转）
+  ✓ 钩子外不偷改 pending 基线
+  ✓ 钩子外 system 可收紧判 FAIL（评审面同样是棘轮）
+  ✓ 钩子外 pending:<domain> 可收紧判 FAIL（分领域也走同一逻辑）
+  ✓ 拦住：还掉后又加回来（收紧后的基线不许再涨）
+  ✓ 拦住：【方法】债源及其 x.btx() 调用全部计入（换方法名绕不过）
+  ✓ 拦住：ownerSP 非受控字面量 ⇒ fail-closed（归责不得动态）
+  ✓ 拦住：ownerSP 不在受控枚举内 ⇒ fail-closed
+  ✓ 允许清单漂移判为闸坏（非通过）
+--- 反测 47 项全过（闸有牙）
+
+RESULT {"name": "boundary-selftest", "argv": ["sh", "scripts/repo-boundary-gate.sh", "--selftest"], "cwd": "/data/ai-dev-data/s-gates-green", "thread": "01a1b57a-e610-71a2-ba84-6007a77776f4", "start_utc": "2026-11-08T06:41:38.743289+00:00", "source": "1909a8f46fbbfb0a0f52472e5f9d24ea4677a6b8", "env_keys": ["GOCACHE", "GOPATH", "GOTOOLCHAIN", "HOME", "LANG", "LOGNAME", "OPENSPEC_TELEMETRY", "PATH", "USER"], "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin", "rc": 0, "end_utc": "2026-11-08T06:41:41.121736+00:00"}

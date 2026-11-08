@@ -1,0 +1,22 @@
+[
+  {
+    "name": "mut-extseat-audit",
+    "rc": 1,
+    "expected": 1
+  },
+  {
+    "name": "mut-store-audit",
+    "rc": 1,
+    "expected": 1
+  },
+  {
+    "name": "mut-release-boundary",
+    "rc": 1,
+    "expected": 1
+  },
+  {
+    "name": "mutation-reverted-canonical",
+    "rc": 0,
+    "expected": 0
+  }
+]

@@ -1,0 +1,8 @@
+{"name": "mut-store-audit", "argv": ["go", "test", "./internal/store", "-run", "^TestStageDenyMinimalAudit$", "-count=1"], "cwd": "/tmp/s-gates-green-mutations", "thread": "01a1b57a-e610-71a2-ba84-6007a77776f4", "start_utc": "2026-11-08T06:48:19.879735+00:00", "source": "f3d0a4998a96ea3cef45d690b3190f9d9f615dbd", "env_keys": ["GOCACHE", "GOPATH", "GOTOOLCHAIN", "HOME", "LANG", "LOGNAME", "OPENSPEC_TELEMETRY", "PATH", "USER"], "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin", "working_status": " M deploy/test_build_entrypoints.py\n M internal/store/spec_clarification_inbound.go\n M scripts/run-build-tests.sh\n", "working_diff_sha256": "c82309d3d793749f4531453a514235b77d2db3f9e496401284b83d69c28149d8"}
+--- FAIL: TestStageDenyMinimalAudit (0.17s)
+    tenant_deny_test.go:177: deny audit missing: sql: no rows in result set
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.172s
+FAIL
+
+RESULT {"name": "mut-store-audit", "argv": ["go", "test", "./internal/store", "-run", "^TestStageDenyMinimalAudit$", "-count=1"], "cwd": "/tmp/s-gates-green-mutations", "thread": "01a1b57a-e610-71a2-ba84-6007a77776f4", "start_utc": "2026-11-08T06:48:19.879735+00:00", "source": "f3d0a4998a96ea3cef45d690b3190f9d9f615dbd", "env_keys": ["GOCACHE", "GOPATH", "GOTOOLCHAIN", "HOME", "LANG", "LOGNAME", "OPENSPEC_TELEMETRY", "PATH", "USER"], "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin", "working_status": " M deploy/test_build_entrypoints.py\n M internal/store/spec_clarification_inbound.go\n M scripts/run-build-tests.sh\n", "working_diff_sha256": "c82309d3d793749f4531453a514235b77d2db3f9e496401284b83d69c28149d8", "rc": 1, "end_utc": "2026-11-08T06:48:23.321018+00:00"}

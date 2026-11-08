@@ -1,0 +1,30 @@
+{
+  "name": "race-inventory",
+  "argv": [
+    "go",
+    "test",
+    "./internal/store",
+    "-list",
+    "."
+  ],
+  "cwd": "/data/ai-dev-data/s-gates-green",
+  "thread": "01a1b57a-e610-71a2-ba84-6007a77776f4",
+  "start_utc": "2026-11-08T07:02:43.252089+00:00",
+  "source": "f3d0a4998a96ea3cef45d690b3190f9d9f615dbd",
+  "env_keys": [
+    "GOCACHE",
+    "GOPATH",
+    "GOTOOLCHAIN",
+    "HOME",
+    "LANG",
+    "LOGNAME",
+    "OPENSPEC_TELEMETRY",
+    "PATH",
+    "USER"
+  ],
+  "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin",
+  "working_status": " M deploy/test_build_entrypoints.py\n M openspec/changes/s-gates-green/specs/release-quality-gates/spec.md\n M scripts/run-build-tests.sh\n?? docs/reviews/s-gates-green/\n",
+  "working_diff_sha256": "c5c2c33910add7d7b4c948f1b7e221a0f2e4bf727af589b52e1a06b8a23d0777",
+  "rc": 0,
+  "end_utc": "2026-11-08T07:02:43.854529+00:00"
+}

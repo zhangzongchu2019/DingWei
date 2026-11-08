@@ -1,0 +1,10 @@
+{"name": "dependency-selftest", "argv": ["sh", "scripts/dependency-ratchet.sh", "--selftest"], "cwd": "/data/ai-dev-data/s-gates-green", "thread": "01a1b57a-e610-71a2-ba84-6007a77776f4", "start_utc": "2026-11-08T06:41:39.902113+00:00", "source": "1909a8f46fbbfb0a0f52472e5f9d24ea4677a6b8", "env_keys": ["GOCACHE", "GOPATH", "GOTOOLCHAIN", "HOME", "LANG", "LOGNAME", "OPENSPEC_TELEMETRY", "PATH", "USER"], "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin"}
+  ✓ 不误伤：与基线持平时放行
+  ✓ 拦住：依赖数回升（2 → 3）
+  ✓ 不误伤：依赖数下降时放行（并提示下调基线）
+  ✓ 🔴 数不变而集合变：不判门，但明确提示（判数不判换，须人审）
+  ✓ 🔴 基线缺失 ⇒ exit 2，不报通过（无基线不能判棘轮）
+  ✓ 🔴 受检件缺失 ⇒ exit 2（走不到就不能报数）
+  依赖棘轮反测 6/6 ✓
+
+RESULT {"name": "dependency-selftest", "argv": ["sh", "scripts/dependency-ratchet.sh", "--selftest"], "cwd": "/data/ai-dev-data/s-gates-green", "thread": "01a1b57a-e610-71a2-ba84-6007a77776f4", "start_utc": "2026-11-08T06:41:39.902113+00:00", "source": "1909a8f46fbbfb0a0f52472e5f9d24ea4677a6b8", "env_keys": ["GOCACHE", "GOPATH", "GOTOOLCHAIN", "HOME", "LANG", "LOGNAME", "OPENSPEC_TELEMETRY", "PATH", "USER"], "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin", "rc": 0, "end_utc": "2026-11-08T06:41:39.956575+00:00"}

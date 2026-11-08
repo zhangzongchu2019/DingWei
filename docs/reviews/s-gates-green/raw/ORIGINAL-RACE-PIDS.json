@@ -1,0 +1,26 @@
+{
+  "observed_utc": "2026-11-08T07:06:48.875422+00:00",
+  "pids": [
+    {
+      "pid": 2280334,
+      "uid": 1001,
+      "ppid": 1806331,
+      "start_ticks": "191134954",
+      "cmd": "python3 /tmp/s-gates-green-run.py race-count3 go test -race ./internal/store ./internal/extseat -count=3 -timeout=120m"
+    },
+    {
+      "pid": 2280566,
+      "uid": 1001,
+      "ppid": 2280334,
+      "start_ticks": "191134967",
+      "cmd": "go test -race ./internal/store ./internal/extseat -count=3 -timeout=120m"
+    },
+    {
+      "pid": 2282349,
+      "uid": 1001,
+      "ppid": 2280566,
+      "start_ticks": "191135860",
+      "cmd": "/tmp/go-build3133960197/b001/store.test -test.paniconexit0 -test.count=3 -test.timeout=2h0m0s"
+    }
+  ]
+}
