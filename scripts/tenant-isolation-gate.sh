@@ -28,29 +28,20 @@
 #   把仓储包排除掉，等于把**实际实现过滤的那个位置**排除在触发条件之外。已删除该排除。
 set -u
 
-# 租户列的识别：按【效果】列举常见命名，不指望只有一种写法
-TENANT_COL='tenant_id|tenant_key|tenant_uuid|tenant[[:space:]]+(TEXT|VARCHAR|UUID|INTEGER)'
-# 四项负测的登记标记 —— 测试里须写成 `标记(<domain>)`，与出现租户列的领域绑定。
-# 🔴 不再接受裸标记：裸标记只能证明「全仓有人写过这四个字符串」，
-#    证不了「这个领域有这四项负测」。
+# 仅识别SQL/Go字面DDL中的列声明；排除JSON字段与查询引用。
+# 检测器支持CREATE TABLE和ALTER TABLE ADD COLUMN、引号标识符、注释、字面串拼接；
+# 不执行动态生成DDL，不声称覆盖运行期字符串拼装。表业务归属清单不是豁免。
 MARKERS='YIZU_PEP_BEFORE_RESOLVE YIZU_DENY_NOT_EMPTY_SET YIZU_EXISTENCE_INDISTINGUISHABLE YIZU_MINIMAL_DENY_AUDIT'
-
 scan_tenant() {
-  # 🔴 不排除 internal/repo/：过滤谓词按 §22.2c #3 本就该在仓储包里，
-  #    排除它等于把实际实现位置排除在触发条件之外（SA-14）。
-  #    只排除 TenantCtx 的类型定义件本身（那是类型，不是领域表的租户列）。
-  grep -rnE "$TENANT_COL" --include=*.sql --include=*.go internal/ 2>/dev/null \
-    | grep -v '_test\.go:' | grep -v 'internal/repo/tenant\.go:'
+  "$SCANNER" .
 }
-
-# domain_of 从命中路径推领域：internal/<domain>/... -> <domain>
 domain_of() {
-  printf '%s\n' "$1" | sed -n 's|^.*internal/\([^/]*\)/.*$|\1|p'
+  printf '%s\n' "$1" | cut -f1
 }
 
 check() {
   [ -d internal ] || { echo "✗ 闸依赖缺失：internal/ 不存在"; return 2; }
-  HITS=$(scan_tenant)
+  HITS=$(scan_tenant) || { echo "✗ schema检测器失败（闸坏，非通过）"; return 2; }
   N=$(if [ -z "$HITS" ]; then echo 0; else printf '%s\n' "$HITS" | wc -l | tr -d ' '; fi)
 
   if [ "$N" -eq 0 ]; then
@@ -96,53 +87,48 @@ check() {
 }
 
 selftest() {
-  T=$(mktemp -d); n=0; fail=0
+  T=$(mktemp -d) || return 2
+  n=0; fail=0
   ok(){ n=$((n+1)); echo "  ✓ $1"; }; bad(){ echo "  ✗ 反测未过：$1"; fail=1; }
-
-  if check >/dev/null 2>&1; then ok "现状（无租户列）暂过，且不误报" ; else bad "现状被误判"; fi
-
-  D1=internal/.tenantgate-selftest; D2=internal/.tenantgate-selftest2
-  cleanup() { rm -rf "$D1" "$D2"; }
-  ALL='YIZU_PEP_BEFORE_RESOLVE YIZU_DENY_NOT_EMPTY_SET YIZU_EXISTENCE_INDISTINGUISHABLE YIZU_MINIMAL_DENY_AUDIT'
-  marks() { # marks <domain> <标记数>
-    _d=$1; _k=$2; printf 'package t\n// '; _i=0
-    for m in $ALL; do _i=$((_i+1)); [ $_i -le "$_k" ] && printf '%s(%s) ' "$m" "$_d"; done; printf '\n'
+  mkdir -p "$T/internal/a" "$T/internal/b" "$T/specs/gates"
+  : > "$T/specs/gates/tenant-schema-domains.txt"
+  run(){ (cd "$T" && check) > "$T/result" 2>&1; }
+  marks(){
+    printf 'package fixture\n// '
+    k=0
+    for m in $MARKERS; do k=$((k+1)); [ "$k" -gt "$2" ] || printf '%s(%s) ' "$m" "$1"; done
+    printf '\n'
   }
-
-  # 注入一个租户列 -> 四项负测不存在 -> 必拦
-  mkdir -p "$D1"
-  printf 'CREATE TABLE demo(tenant_id TEXT NOT NULL);\n' > "$D1/x.sql"
-  if check >/dev/null 2>&1; then bad "加了租户列却未要求四项负测"; else ok "拦住：租户列落地而乙组四项未就位"; fi
-
-  # 裸标记（不带领域）不算数 —— 一轮正是靠裸标记就能过
-  printf 'package t\n// YIZU_PEP_BEFORE_RESOLVE YIZU_DENY_NOT_EMPTY_SET YIZU_EXISTENCE_INDISTINGUISHABLE YIZU_MINIMAL_DENY_AUDIT\n' \
-    > "$D1/x_test.go"
-  if check >/dev/null 2>&1; then bad "裸标记（不带领域）被当成该领域已就位"; else ok "拦住：裸标记不算数（标记须绑领域）"; fi
-
-  # 四项带本领域 -> 放行
-  marks .tenantgate-selftest 4 > "$D1/x_test.go"
-  if check >/dev/null 2>&1; then ok "不误伤：本领域四项就位后放行"; else bad "本领域四项就位仍被拒"; fi
-
-  # 只就位三项 -> 仍须拦（四项须【同时】）
-  marks .tenantgate-selftest 3 > "$D1/x_test.go"
-  if check >/dev/null 2>&1; then bad "只就位三项也放行了 —— 四项须同时"; else ok "拦住：四项缺一（同时性有牙）"; fi
-
-  # 🔴 SA-14 的骨：A 领域四项齐全，B 领域新加租户列且一条没有 —— 必须拦 B。
-  #    一轮此处会放行，因为四个标记是全局的。
-  marks .tenantgate-selftest 4 > "$D1/x_test.go"
-  mkdir -p "$D2"
-  printf 'CREATE TABLE demo2(tenant_id TEXT NOT NULL);\n' > "$D2/y.sql"
-  if check >/dev/null 2>&1; then bad "别的领域挂了四项标记，新领域就直接过了（SA-14 未闭）"; \
-    else ok "拦住：A 领域标记齐全不能替 B 领域作数（逐领域各验各的）"; fi
-
-  # 两个领域各自齐全 -> 放行
-  marks .tenantgate-selftest2 4 > "$D2/y_test.go"
-  if check >/dev/null 2>&1; then ok "不误伤：两个领域各自四项齐全后放行"; else bad "两领域各自齐全仍被拒"; fi
-
-  cleanup; rm -rf "$T"
-  [ $fail -eq 0 ] && echo "--- 反测 $n 项全过（闸有牙）" || echo "--- 反测未过"
-  return $fail
+  run && ok '空schema暂过' || bad '空schema误报'
+  printf 'package a\ntype Input struct { Tenant string `json:"tenant_key"` }\n' > "$T/internal/a/input.go"
+  run && ok 'JSON请求字段不冒充schema' || bad 'JSON误报'
+  printf 'CREATE TABLE demo(tenant_id TEXT NOT NULL);\n' > "$T/internal/a/x.sql"
+  run && bad '真实租户列漏报' || ok '真实租户列缺四项必拦'
+  printf 'package a\n// %s\n' "$MARKERS" > "$T/internal/a/x_test.go"
+  run && bad '裸标记误放行' || ok '裸标记不计'
+  marks a 4 > "$T/internal/a/x_test.go"
+  run && ok '本域四项齐全放行' || bad '齐全仍拒'
+  marks a 3 > "$T/internal/a/x_test.go"
+  run && bad '缺一放行' || ok '四项同时性'
+  marks a 4 > "$T/internal/a/x_test.go"
+  printf 'ALTER TABLE demo ADD COLUMN tenant_key TEXT;\n' > "$T/internal/b/y.sql"
+  run && bad '跨域借标记' || ok '别域标记不能抵债'
+  marks b 4 > "$T/internal/b/y_test.go"
+  run && ok '各域各自齐全放行' || bad '各域齐全仍拒'
+  # 迁移目录与真实业务域分开；映射只能转移要求，不能免检。
+  printf 'demo c\n' > "$T/specs/gates/tenant-schema-domains.txt"
+  run && bad '业务归属映射变成豁免' || ok '映射业务域仍缺项必拦'
+  mkdir -p "$T/internal/c"; marks c 4 > "$T/internal/c/x_test.go"
+  run && ok '真实归属域四项补齐放行' || bad '映射域齐全仍拒'
+  rm -rf "$T"
+  [ "$fail" -eq 0 ] && echo "--- 反测 $n 项全过（闸有牙）"
+  return "$fail"
 }
 
+SCANNER=$(mktemp) || exit 2
+trap 'rm -f "$SCANNER"' EXIT HUP INT TERM
+if ! go build -o "$SCANNER" ./specs/tools/tenant-schema; then
+  echo '✗ schema检测器构建失败（闸坏，非通过）'; exit 2
+fi
 case "${1:-}" in --selftest) selftest; exit $? ;; esac
 check; exit $?

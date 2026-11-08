@@ -11,3 +11,5 @@
 2026-11-08，coder56solzzc，当前提交（父0fe09b9e）：T-01完成，仓储闸rc0；open5保持、escape1保持、pending90保持；SystemCtx16→17为内存schema校验显式登记。T-03审计缺口已报组长，下一步依赖登记与schema扫描。
 
 2026-11-08，coder56solzzc，当前依赖提交（父748b02226）：T-02完成，MIT/零传递依赖及三栏突破登记，产品算法不改；继续schema闸及真实负测缺口处理。
+
+2026-11-08，coder56solzzc，schema独立提交（父d118e32d2）：T-03完成DDL触发修正与Go/闸自测；真实store和extseat仍要求四项，未满足前保持红。等待组长审计裁定，继续发布门接入准备。

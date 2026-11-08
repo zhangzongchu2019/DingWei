@@ -1,0 +1,3 @@
+# DDL表的业务归属，非豁免；未列项沿用internal/<domain>。迁移集中在store不等于所有表都归store。
+# 0105_extseat.sql由extseat.Service消费，真实持久化tenant_key，不能作为JSON误报豁免。
+np_external_principal extseat
