@@ -9,6 +9,7 @@ import (
 	"unicode"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/subagent"
 )
 
 // enqueueDeliveryFailureNoticeTx commits with the original terminal transition.
@@ -16,7 +17,7 @@ import (
 // Only the persisted target session label is rendered, after strict sanitization.
 // Original bodies, raw addresses/keys, arbitrary last_error and credentials are never copied.
 func enqueueDeliveryFailureNoticeTx(ctx context.Context, tx *sql.Tx, d model.SessionDelivery, reason string, now time.Time) (bool, error) {
-	if !model.DeliveryFailureReasonAllowed(reason) || d.SourceType != "session_inbound" || d.Provenance == model.FailureNoticeProvenance {
+	if !model.DeliveryFailureReasonAllowed(reason) || (d.SourceType != "session_inbound" && !strings.HasPrefix(d.SourceType, "session_inbound/subagent/")) || d.Provenance == model.FailureNoticeProvenance {
 		return false, nil
 	}
 	var original model.Envelope
@@ -27,8 +28,25 @@ func enqueueDeliveryFailureNoticeTx(ctx context.Context, tx *sql.Tx, d model.Ses
 	if len(source) != 2 || source[0] == "" || source[1] == "" || source[0] == "workpulse" {
 		return false, nil
 	}
+	var route subagent.DeliveryRoute
+	var routeJSON string
+	err := tx.QueryRowContext(ctx, `SELECT route_json FROM session_delivery_sub_route WHERE delivery_id=?`, d.ID).Scan(&routeJSON)
+	if err == nil {
+		if err = json.Unmarshal([]byte(routeJSON), &route); err != nil {
+			return false, err
+		}
+		if route.From != nil {
+			parsed, e := subagent.Parse(route.From.FullName, "")
+			if e != nil {
+				return false, e
+			}
+			source[0] = parsed.Root
+		}
+	} else if err != sql.ErrNoRows {
+		return false, err
+	}
 	var ack int
-	err := tx.QueryRowContext(ctx, `SELECT delivery_ack_v1 FROM session_endpoint WHERE key_id=? AND session_name=?`, source[1], source[0]).Scan(&ack)
+	err = tx.QueryRowContext(ctx, `SELECT delivery_ack_v1 FROM session_endpoint WHERE key_id=? AND session_name=?`, source[1], source[0]).Scan(&ack)
 	if err == sql.ErrNoRows {
 		return false, nil
 	}
@@ -44,6 +62,15 @@ func enqueueDeliveryFailureNoticeTx(ctx context.Context, tx *sql.Tx, d model.Ses
 		Meta: map[string]any{"type": "delivery", "delivery_id": id, "delivery_version": 1, "ack_required": true,
 			"source_message_id": d.ID, "failed_message_id": original.ID, "failed_delivery_id": d.ID, "reason_code": reason,
 			"kind": "reply", "reply_policy": "no_reply", "conversation_terminal": true, "suppress_reply_origin": true, "no_mirror": true}}
+	var returnRoute *subagent.DeliveryRoute
+	if scope := route.From; scope != nil {
+		notice.Meta["sub_path"] = scope.Path
+		notice.Meta["target_full_name"] = scope.FullName
+		notice.Meta["target_node_id"] = scope.NodeID
+		notice.Meta["lane_generation"] = scope.Generation
+		notice.Meta["subtree_revision"] = scope.Revision
+		returnRoute = &subagent.DeliveryRoute{To: scope}
+	}
 	raw, err := json.Marshal(notice)
 	if err != nil {
 		return false, err
@@ -54,6 +81,15 @@ func enqueueDeliveryFailureNoticeTx(ctx context.Context, tx *sql.Tx, d model.Ses
  VALUES(?,?,?,?,?,?,?,'queued',0,?,'',?,?)`, id, source[1], source[0], string(raw), d.ID, "failure_notice", model.FailureNoticeProvenance, stamp, stamp, stamp)
 	if err != nil {
 		return false, err
+	}
+	if returnRoute != nil {
+		raw, e := json.Marshal(returnRoute)
+		if e != nil {
+			return false, e
+		}
+		if _, e = tx.ExecContext(ctx, `INSERT OR IGNORE INTO session_delivery_sub_route(delivery_id,route_json) VALUES(?,?)`, id, string(raw)); e != nil {
+			return false, e
+		}
 	}
 	n, err := r.RowsAffected()
 	return n > 0, err
@@ -75,6 +111,12 @@ func safeFailureNoticeTarget(session string) string {
 
 func failureNoticeReasonText(reason string) string {
 	switch reason {
+	case "sub_agent_not_found":
+		return "子 Agent 不存在"
+	case "sub_agent_ended":
+		return "子 Agent 已结束"
+	case "sub_agent_generation_mismatch":
+		return "子 Agent 代次不符"
 	case "retry_exhausted":
 		return "重试次数已用尽，仍未确认完成投递"
 	case "delivery_ack_unsupported":
@@ -130,7 +172,7 @@ func (s *SQLite) SweepSessionDeliveryFailures(ctx context.Context, now time.Time
 		}
 	}
 	recent, err := collectFailureRows(ctx, tx, sessionDeliverySelect+` WHERE state='dead' AND updated_at>=? AND updated_at<=? AND last_error IN ('delivery_ack_unsupported','delivery_capability_unconfirmed_expired','delivery_expired')
- AND source_type='session_inbound' AND EXISTS (SELECT 1 FROM session_endpoint ep WHERE ep.delivery_ack_v1=1 AND ep.session_name<>'workpulse' AND (ep.session_name || '#' || ep.key_id)=json_extract(CASE WHEN json_valid(envelope_json) THEN envelope_json ELSE '{}' END,'$.from'))
+ AND (source_type='session_inbound' OR source_type LIKE 'session_inbound/subagent/%') AND EXISTS (SELECT 1 FROM session_endpoint ep WHERE ep.delivery_ack_v1=1 AND ep.session_name<>'workpulse' AND (ep.session_name || '#' || ep.key_id)=json_extract(CASE WHEN json_valid(envelope_json) THEN envelope_json ELSE '{}' END,'$.from'))
  AND NOT EXISTS (SELECT 1 FROM session_delivery n WHERE n.source_type='failure_notice' AND n.source_message_id=session_delivery.id) ORDER BY updated_at,id LIMIT 1000`, cutoff, stamp)
 	// Dedup is the deterministic primary key in the INSERT, not an in-memory flag.
 	if err != nil {

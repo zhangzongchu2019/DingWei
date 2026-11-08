@@ -12,6 +12,11 @@
 - [x] T-09 第一刀兼容拒收：AMR跳过并提示三段子提及、Hub拒收未协商子路由保留字段、send.py本地预检拒绝；混部说明与逐项变异。证据：`docs/reviews/subagent-p1-compat-guard/REPORT.md`。
 - [x] T-10 lifecycle已批默认写回AA-007、future复现与legacy控制、canonical双profile及strict。证据：同目录报告与raw运行记录。
 
+- [x] T-11 M1 核对 79a60a1e 基线、写者锁与设计；Hub parser、当前连接能力协商、全量树与墓碑／别名持久化。
+- [x] T-12 M1 加法迁移0075、Hub来源／路由、节点代次delivery ID及旧唯一索引作用域、原子sidecar、出队／ACK拒收。
+- [ ] T-13 M1 正负与逐项变异、旧数据迁移、m8整包、canonical、strict、future保护及证据归档。
+- [ ] T-14 M1 提交推送、核远端坐标并交组长独立复核；M2／M3另派。
+
 ## 交接记录
 
 2026-11-08 coder56solzzc.zzc；commit：本设计提交（由Git父链定位，避免自指SHA）。完成：T01～05，默认参数未定单列PM01～03；基线行为7控制与2个目标红，native并行证据。阻塞：无设计交付阻塞；生命周期默认/平台上限/墓碑策略等待业主决策，不阻止本次交审。下一步：T06完成后由组长复核，产品实现另派；不启动二期或部署。
@@ -23,3 +28,5 @@
 2026-11-08 coder56solzzc.zzc；commit：本次追加提交（父bbfbf95b）。完成：canonical rc0，claude/codex各1097/1097、27Python/2shell；变更与基线strict均rc0；冻结原raw15件不变。阻塞：无。下一步：推送核ls-remote并交坐标、释放锁，等待复核与业主默认决策，不实施或部署。
 
 2026-11-08 togpt60lunazzc.zzc；基于实现分支父提交 `d6657823`。后续裁定〔51〕-补10（rulings `89bda3bc`）已批准生命周期默认，故本次更新AA-007及设计表；前述“等待业主决策”是历史状态记录。完成：T09兼容拒收实现与三项变异、T10默认值及验证；原始证据见`docs/reviews/subagent-p1-compat-guard/`。不包含创建/注册/子投递能力；不部署。下一步：推送并核ls-remote坐标，提交组长复核。
+
+2026-11-08 coder56solzzc.zzc；CODEX_THREAD_ID=01a1bd1c-c28e-7c60-9594-7894d0078533；执行源见本分支父链。完成：T11～12，专项正负通过，future保护保持绿；产品仅Hub范围，无helper改动。新协议／旧索引兼容／feature-off边界见docs/design/SUBAGENT-P1-M1-HUB-PROTOCOL.md。阻塞：无。下一步：T13正式最终门和每格变异，T14交审；不启动M2／M3，不部署。

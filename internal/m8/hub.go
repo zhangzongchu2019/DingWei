@@ -38,6 +38,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/specconfirm"
 	"github.com/zhangzongchu2019/dingwei/internal/specread"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
+	"github.com/zhangzongchu2019/dingwei/internal/subagent"
 	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
@@ -254,6 +255,10 @@ type client struct {
 }
 
 type sessionClient struct {
+	subAgentMu       sync.Mutex // serializes scoped writes with reports/closure
+	subAgentsV1      bool       // stateMu; only current credential connection can negotiate
+	subTreeReady     bool
+	subTreeRevision  int64
 	inboxLag         *inboxLagCache // Observational, bound to this authenticated connection.
 	lastInboxAttempt time.Time
 	lastInboxQuery   time.Time
@@ -1322,6 +1327,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			h.scheduleOnlineBroadcastForSession(context.Background(), keyID, sessionName)
 		}
 	}()
+	r = r.WithContext(context.WithValue(r.Context(), subAgentClientKey{}, c))
 	for {
 		_, data, err := h.readSessionMessage(r.Context(), c)
 		if err != nil {
@@ -1334,7 +1340,10 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, "", "信封解析失败："+err.Error()))
 			continue
 		}
-		if err := rejectUnnegotiatedSubAgentEnvelope(env); err != nil {
+		if h.handleSessionCapability(c, env) || h.handleSubAgentControl(r.Context(), c, env) {
+			continue
+		}
+		if err := h.rejectSubAgentIngress(c, env); err != nil {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, err.Error()))
 			continue
 		}
@@ -3273,7 +3282,8 @@ func rejectUnnegotiatedSubAgentEnvelope(env model.Envelope) error {
 }
 
 func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
-	if err := rejectUnnegotiatedSubAgentEnvelope(env); err != nil {
+	client, _ := ctx.Value(subAgentClientKey{}).(*sessionClient)
+	if err := h.rejectSubAgentIngress(client, env); err != nil {
 		return err
 	}
 	if err := h.taskDispatchEnvelopeAllowed(ctx, env); err != nil {
@@ -3301,6 +3311,16 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 		return errors.New("task notification is Hub-only")
 	}
 
+	if subAgentRequested(env) {
+		return h.routeSubAgentEnvelope(ctx, env)
+	}
+	// Root address plus any child hint can never imply a child target.
+	if err := rejectUnnegotiatedSubAgentEnvelope(env); err != nil {
+		if capable, _ := h.subAgentCapable(client); capable {
+			return subagent.Fail("path_conflict", "explicit child target required")
+		}
+		return err
+	}
 	// reply-origin / loop-termination:conversation 类消息先过 R4 hop / R5 dedup 兜底 + origin 捕获。
 	// control 类与无新字段的 legacy 消息透传不变(向后兼容)。drop=静默丢弃,不回错给发方。
 	env, drop := h.applyReplyOriginTermination(env)
@@ -4270,7 +4290,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		capabilityAdmission = h.capabilityPendingAdmissions[terminalKey(keyID, sessionName)]
 	}()
 	if !h.stickyDeliveryAllowed(ctx, c, env) {
-		h.unclaimEnvelope(env.ID, sig)
+		h.unclaimEnvelope(subAgentClaimKey(env), sig)
 		return errors.New("R14 target identity unavailable")
 	}
 	wantReceipt := outboundReceiptRequested(env) || inboxReceiptRequested(env)
@@ -4282,7 +4302,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		var err error
 		deliveryACK, endpointKnown, err = h.Repo.SessionEndpointDeliveryACK(ctx, keyID, sessionName)
 		if err != nil {
-			h.unclaimEnvelope(env.ID, sig)
+			h.unclaimEnvelope(subAgentClaimKey(env), sig)
 			return err
 		}
 	}
@@ -4311,7 +4331,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		}
 	}
 	if outboundReceiptRequested(env) && !(reliable && (deliveryACK || capabilityPending) && h.Repo != nil) {
-		h.unclaimEnvelope(env.ID, sig)
+		h.unclaimEnvelope(subAgentClaimKey(env), sig)
 		return errors.New("confirmed outbound requires a durable target")
 	}
 	if c == nil && !(reliable && (deliveryACK || capabilityPending) && endpointKnown && h.Repo != nil) {
@@ -4321,7 +4341,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			openID, botChannel := feishuDispatchLogSource(source)
 			logFeishuDispatchRejected("session_offline", openID, sessionName, botChannel)
 		}
-		h.unclaimEnvelope(env.ID, sig)
+		h.unclaimEnvelope(subAgentClaimKey(env), sig)
 		return fmt.Errorf("session %s offline", sessionName)
 	}
 	if reliable && (deliveryACK || capabilityPending) && h.Repo != nil {
@@ -4350,6 +4370,10 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		if retryOf := metaString(env.Meta, "r52_retry_of"); retryOf != "" {
 			deliveryID = r52RetryDeliveryID(retryOf)
 		}
+		route, _ := ctx.Value(subAgentDeliveryKey{}).(*subagent.DeliveryRoute)
+		if route != nil {
+			deliveryID = subAgentRouteDeliveryID(env.ID+"\x00"+keyID+"\x00"+sessionName, *route)
+		}
 		env.Meta["type"] = "delivery"
 		env.Meta["delivery_id"] = deliveryID
 		env.Meta["delivery_version"] = 1
@@ -4367,16 +4391,19 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		}
 		payload, err := json.Marshal(sessionClientEnvelope(env))
 		if err != nil {
-			h.unclaimEnvelope(env.ID, sig)
+			h.unclaimEnvelope(subAgentClaimKey(env), sig)
 			return err
 		}
-		delivery := model.SessionDelivery{ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: deliverySourceType(env), Provenance: provenanceJSON(env)}
+		delivery := model.SessionDelivery{SubRoute: route, ID: deliveryID, KeyID: keyID, SessionName: sessionName, Envelope: string(payload), SourceMessageID: env.ID, SourceType: deliverySourceType(env), Provenance: provenanceJSON(env)}
 		if capabilityPending {
 			delivery.State = capabilityPendingState
 			delivery.Provenance = capabilityPendingProvenance
 		}
 		if err := h.Repo.EnqueueSessionDelivery(ctx, delivery); err != nil {
-			h.unclaimEnvelope(env.ID, sig)
+			h.unclaimEnvelope(subAgentClaimKey(env), sig)
+			if route != nil {
+				return subAgentStorageError(err)
+			}
 			return err
 		}
 		if wantReceipt {
@@ -4408,6 +4435,10 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		}
 		return nil
 	}
+	if ctx.Value(subAgentDeliveryKey{}) != nil {
+		h.unclaimEnvelope(subAgentClaimKey(env), sig)
+		return subagent.Fail("unsupported", "durable helper required")
+	}
 	if inboxReceiptRequested(env) {
 		cleanMeta := make(map[string]any, len(env.Meta))
 		for k, v := range env.Meta {
@@ -4420,7 +4451,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 	if err := c.write(ctx, sessionClientEnvelope(env)); err != nil {
 		log.Printf("session route decision=direct_write_failed key_id=%s session=%s client_present=true conn_seq=%d source_message_id=%s reason=%q",
 			keyID, sessionName, c.connSeq, env.ID, err.Error())
-		h.unclaimEnvelope(env.ID, sig)
+		h.unclaimEnvelope(subAgentClaimKey(env), sig)
 		return err
 	}
 	if reliablePrimaryEnvelope(env) {
@@ -4509,6 +4540,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	c.deliveryACKV2 = metaBool(env.Meta, "delivery_ack_v2") && metaString(env.Meta, "processing_mode") == "driver" && !c.desktopInboxV1
 	c.deliveryACKV1 = c.deliveryACKV1 || c.deliveryACKV2
 	c.stateMu.Unlock()
+	h.writeSubAgentCapability(c, env)
 	h.writeOutboundCapabilities(c, env)
 	if metaBool(env.Meta, "file_upload_v1") {
 		// 只作统计（组长裁定 C）：上传说明由 helper 自行附加，Hub 不据此下发任何内容。
@@ -4599,6 +4631,9 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 		return false
 	}
 	id := metaString(env.Meta, "delivery_id")
+	if !h.subAgentACKAllowed(ctx, c, env, id) {
+		return true
+	}
 	if ackType == "delivery_cancel_ack" {
 		if id == "" {
 			return true
@@ -4797,6 +4832,18 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 			h.publishDeliveryUpdateForDelivery(*d, "dead", "helper_received", "failed", "malformed_envelope")
 			continue
 		}
+		if scopeErr := h.subAgentDrainCheck(ctx, c, d); scopeErr != nil {
+			state := "queued"
+			if subAgentPermanent(scopeErr) {
+				state = "dead"
+			}
+			_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, state, subAgentErrorCode(scopeErr), time.Now().UTC().Add(5*time.Second))
+			if state == "dead" {
+				h.drainDurableFailureNotice(ctx, *d)
+				continue
+			}
+			return
+		}
 		if !h.stickyDeliveryAllowed(ctx, c, env) {
 			if h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", "r14_target_unavailable", time.Now().UTC()) != nil {
 				return
@@ -4878,7 +4925,14 @@ func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {
 		env.Meta["delivery_ack_protocol"] = d.AckProtocol
 		env.Meta["processing_mode"] = d.ProcessingMode
 		env.Meta["ack_generation"] = d.AckGeneration
-		if err := c.write(ctx, env); err != nil {
+		if err := h.writeSubAgentDelivery(ctx, c, d, env); err != nil {
+			if subAgentPermanent(err) {
+				if h.Repo.UpdateSessionDelivery(ctx, d.ID, "dead", subAgentErrorCode(err), time.Now().UTC()) != nil {
+					return
+				}
+				h.drainDurableFailureNotice(ctx, *d)
+				continue
+			}
 			_ = h.Repo.UpdateSessionDelivery(ctx, d.ID, "queued", err.Error(), time.Now().UTC().Add(5*time.Second))
 			log.Printf("session delivery write failed decision=requeue key_id=%s session=%s conn_seq=%d delivery_id=%s reason=%q retry_after=5s",
 				c.keyID, c.sessionName, c.connSeq, d.ID, err.Error())
@@ -6324,13 +6378,14 @@ func (h *Hub) claimEnvelope(env model.Envelope) (bool, string, error) {
 	sig := envelopeSignature(env)
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	if old, ok := h.envelopeIDs[env.ID]; ok {
+	claimKey := subAgentClaimKey(env)
+	if old, ok := h.envelopeIDs[claimKey]; ok {
 		if old == sig {
 			return false, sig, nil
 		}
 		return false, sig, fmt.Errorf("duplicate envelope id %s with different payload", env.ID)
 	}
-	h.envelopeIDs[env.ID] = sig
+	h.envelopeIDs[claimKey] = sig
 	return true, sig, nil
 }
 

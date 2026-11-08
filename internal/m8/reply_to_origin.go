@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/subagent"
 )
 
 // replyToOriginRouteSource 标记回程信封的来路,便于在日志/断言里与 @提及 路由区分。
@@ -109,6 +110,9 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 	if replyPolicyOf(inbound) != replyPolicyExpectReply && p.hub.Identity != nil {
 		source := firstNonEmpty(trustedAgentSource(inbound), inbound.From)
 		if addr, err := parseAddress(source); err == nil && addr.Kind == addressSession {
+			if parsed, e := subagent.Parse(addr.SessionName, ""); e == nil && len(parsed.Path) > 0 {
+				addr.SessionName = parsed.Root
+			}
 			if _, ok := p.hub.newPlatformAgentAt(ctx, addr.KeyID, addr.SessionName); ok {
 				p.bumpReplyOrigin(&p.stats.replyOriginSkipped)
 				return
@@ -186,6 +190,16 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 	route := p.routeEnvelope
 	if route == nil {
 		route = p.hub.RouteEnvelope
+	}
+	if repo, ok := p.hub.Repo.(subAgentRepository); ok {
+		scopes, e := repo.SessionDeliverySubRoute(ctx, delivery.ID)
+		if e != nil {
+			p.replyToOriginUnavailable(job, "来源节点记录不可用")
+			return
+		}
+		if scopes != nil && scopes.From != nil {
+			ctx = context.WithValue(ctx, subAgentReturnTargetKey{}, scopes.From)
+		}
 	}
 	if err := route(ctx, env); err != nil {
 		p.replyToOriginUnavailable(job, "自动回程投递失败:"+err.Error())
