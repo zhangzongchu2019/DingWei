@@ -1,0 +1,127 @@
+BASE=6e2c836491f8ba506833d6f849fbe73530e13f92
+METHOD=git ls-files; Go/Python/JS/HTML/shell; exclude test/regression/vendor/docs/evidence; structural patterns plus manual caller follow-up
+SCANNED=722
+PATTERNS=['ResolveFullName|ValidAgentName|ValidShortName|sessionPathPattern|sessionSegment', '(?:LastIndex|Split|split|rsplit).{0,90}(?:fullName|full_name|session|[\\x22\\x27][.#][\\x22\\x27])', 'func .*?(?:parseAddress|prepareSessionSelector|parseMemberMention|resolveSessionByFullName|muxDecode|amrResolvedShort|parseAMRCandidate|resolveNewPlatformVisibleSession)', 'def (?:complete_addr|_session|agent_route_envelope|reply_target|normalize_client_session_name|detect_full_session_name)', 'OnlineList|strings.Contains\\(.*[Ff]ull|BroadcastChannel|dw-view-page:']
+cmd/mcs-demo/main.go:95:			Online:   &hubdriver.OnlineList{Path: filepath.Join(home, ".dingwei", "devo48.DingWeiOnlineSessions.list")},
+internal/admin/admin.go:2337:	parts := strings.Split(addr, "#")
+internal/admin/admin.go:2580:	parts := strings.SplitN(strings.TrimPrefix(serviceID, "session:"), ":", 2)
+internal/extseat/service.go:84:	if !validPrincipal(p) || !extshared.ValidShortName(short) {
+internal/extseat/service.go:87:	ag, u, e := s.Identity.ResolveFullName(ctx, target)
+internal/extshared/extshared.go:57:// ValidShortName 使用方自起的短名：仅小写字母与数字，1～8 位（㊹-补2）。
+internal/extshared/extshared.go:58:func ValidShortName(s string) bool { return shortNameRE.MatchString(s) }
+internal/extshared/extshared.go:62:	if !ValidShortName(short) {
+internal/extshared/extshared.go:74:	if i <= 0 || !ValidShortName(name[:i]) {
+internal/feishulogin/handler.go:58:	if !extshared.ValidShortName(req.ShortName) || !validTargetAgentFullName(req.TargetAgent) {
+internal/feishulogin/handler.go:146:	i := strings.LastIndexByte(fullName, '.')
+internal/feishulogin/handler.go:148:		identity.ValidAgentName(fullName[:i]) && identity.ValidShortName(fullName[i+1:])
+internal/fileservice/local_store.go:26:	directObjectKey = regexp.MustCompile(`^[a-z0-9_-]{1,64}/` + sessionPathPattern + `/[0-9]{2}/[0-9]{4}/[0-9a-f]{32}\.(?:jpg|png|gif|webp|avif|heic|bmp|tiff|mp4|webm|ogv|mov|mkv|oga|wav|mp3|m4a|flac|aac|opus|pdf|txt|md|csv|json|log|py|js|go|java|yaml|yml|toml|ini|sh|sql|docx|xlsx|pptx|doc|xls|ppt|zip|bin)$`)
+internal/fileservice/manager.go:27:// sessionSegment 会话段另允许新平台的 full_name（名称.用户简称，均为小写字母数字；简称 2～16 位），
+internal/fileservice/manager.go:29:const sessionPathPattern = `[a-z0-9_-]{1,64}(\.[a-z0-9]{2,16})?`
+internal/fileservice/manager.go:31:var sessionSegment = regexp.MustCompile(`^` + sessionPathPattern + `$`)
+internal/fileservice/manager.go:164:	if m.Repo == nil || m.Objects == nil || m.Clock == nil || in.Body == nil || in.ContentLength < 0 || in.ContentLength > m.MaxFileBytes || !identitySegment.MatchString(in.OwnerKey) || !sessionSegment.MatchString(in.SessionName) {
+internal/hosted/login.go:411:	parts := strings.Split(d.Tokens.IDToken, ".")
+internal/identity/claims.go:95:	if !ValidUserID(r.UserID) || !ValidShortName(r.ShortName) || !ValidAgentName(r.AgentName) ||
+internal/identity/hosted.go:59:	if !ValidAgentName(name) || (s.NameAllowed != nil && !s.NameAllowed(name)) {
+internal/identity/model.go:200:// ValidShortName 用户 ID 简称：大小写字母与数字，2～16 位（台账 c5981300）。
+internal/identity/model.go:201:func ValidShortName(s string) bool { return validAlnum(s, 2, 16) }
+internal/identity/model.go:203:// ValidAgentName Agent 名称：大小写字母与数字（V1 第七节）。
+internal/identity/model.go:205:func ValidAgentName(s string) bool { return validAlnum(s, 2, 32) }
+internal/identity/onboarding.go:89:	if !ValidUserID(userID) || !ValidShortName(shortName) || len(displayName) > 64 {
+internal/identity/onboarding.go:336:	if !ValidUserID(r.UserID) || !ValidShortName(r.ShortName) || (r.Type != UserManager && r.Type != UserMember) ||
+internal/identity/service.go:345:	if !ValidAgentName(name) || (s.NameAllowed != nil && !s.NameAllowed(name)) {
+internal/identity/service.go:420:// ResolveFullName 把 full_name（名称.用户简称）解析成未吊销的 Agent 及其归属用户（新平台 view 路由的键，组长台账 738c4a03）。
+internal/identity/service.go:422:func (s *Service) ResolveFullName(ctx context.Context, fullName string) (*Agent, *User, error) {
+internal/identity/service.go:423:	i := strings.LastIndex(fullName, ".")
+internal/identity/service.go:429:	if (!ValidAgentName(name) && !externalName) || !ValidShortName(short) {
+internal/m8/agent_disk_metrics.go:78:	ag, _, err := h.Identity.ResolveFullName(ctx, fullName)
+internal/m8/agent_disk_metrics.go:158:	ag, _, err := h.Identity.ResolveFullName(r.Context(), session)
+internal/m8/amr.go:1081:func amrResolvedShort(addr string) string {
+internal/m8/amr.go:1377:func parseAMRCandidates(text, sourceSession string, maxTargets int) []amrCandidate {
+internal/m8/amr.go:1420:func parseAMRCandidatesDetailed(text, sourceSession string, maxTargets int) ([]amrCandidate, bool) {
+internal/m8/amr.go:1548:func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCandidate, bool) {
+internal/m8/console_auth.go:435:// 传输用 BroadcastChannel(与 renderer 的 page-identity 同一手法,见其 setupPageIdentityChannel):
+internal/m8/console_auth.go:440:// 🔴 写入方必须【自己立刻 apply】:BroadcastChannel 与 storage 事件都**不会**在写入方自己那份文档上触发
+internal/m8/console_auth.go:496:    if(typeof window!=='undefined'&&('BroadcastChannel' in window)&&!dwThemeChannel){
+internal/m8/console_auth.go:497:      dwThemeChannel=new BroadcastChannel(DW_THEME_KEY);
+internal/m8/console_auth.go:653:function memberShort(member){return member.full_name?String(member.full_name).split('.')[0]:dwShortName(member.session_name);}
+internal/m8/console_helper_updates.go:78:	parts := strings.Split(v, ".")
+internal/m8/console_mux.go:219:func muxDecode(w http.ResponseWriter, r *http.Request) (consoleMuxControl, []string, [32]byte, error) {
+internal/m8/console_mux.go:244:		dot := strings.LastIndex(d.FullName, ".")
+internal/m8/console_mux.go:245:		if dot < 1 || !identity.ValidAgentName(d.FullName[:dot]) || !identity.ValidShortName(d.FullName[dot+1:]) || !muxValidID(d.Instance) || seen[d.FullName] {
+internal/m8/console_openspec_read.js:8: function allowedPath(p){return p.startsWith('openspec/')&&/\.md$/i.test(p)&&!/[\\%\x00-\x20?#:]/.test(p)&&!p.includes('//')&&!p.split('/').some(x=>x==='.'||x==='..');}
+internal/m8/console_spec_presplit.go:164:func (h *Hub) handleConsoleSpecPresplitResult(ctx context.Context, c *sessionClient, env model.Envelope) bool {
+internal/m8/console_spec_presplit.go:183:		log.Printf("spec presplit callback rejected request_id=%q reason=unknown_agent key_id=%s session=%s", metaString(env.Meta, "request_id"), c.keyID, c.sessionName)
+internal/m8/console_spec_presplit.go:212:		log.Printf("spec presplit callback ignored claimed identity request_id=%q key_id=%q session_name=%q", body.RequestID, body.KeyID, body.SessionName)
+internal/m8/console_specs_page.go:81: try{if('BroadcastChannel' in window){dwSpecThemeChannel=new BroadcastChannel(DW_THEME_KEY);dwSpecThemeChannel.onmessage=function(e){dwSpecApplyTheme(e&&e.data&&e.data.theme);};}}catch(_){dwSpecThemeChannel=null;}
+internal/m8/console_task_board_page.go:38: try{if('BroadcastChannel' in window){dwTaskThemeChannel=new BroadcastChannel(DW_THEME_KEY);dwTaskThemeChannel.onmessage=function(e){dwTaskApplyTheme(e&&e.data&&e.data.theme);};}}catch(_){dwTaskThemeChannel=null;}
+internal/m8/console_task_flow.go:226:	d, _, err := h.Identity.ResolveFullName(ctx, dev)
+internal/m8/console_task_flow.go:230:	v, _, err := h.Identity.ResolveFullName(ctx, review)
+internal/m8/feishu_sticky.go:214:			target, owner, e := h.Identity.ResolveFullName(ctx, requested)
+internal/m8/grouping.go:191:func (h *Hub) resolveSessionByFullName(ctx context.Context, fullName string) (model.SessionEndpoint, bool, error) {
+internal/m8/hosted_quota_notice.go:36:		ag, user, err := h.Identity.ResolveFullName(ctx, opsFullName)
+internal/m8/hub.go:1373:			if i := strings.LastIndex(env.From, "#"); i > 0 && strings.EqualFold(env.From[:i], sessionName) {
+internal/m8/hub.go:2432:	parts := strings.Split(sessionName, "-")
+internal/m8/hub.go:2940:		parts := strings.SplitN(target, "#", 2)
+internal/m8/hub.go:3839:func (h *Hub) prepareSessionSelector(ctx context.Context, sourceKeyID, sourceSession string, env model.Envelope) (bool, model.Envelope, error) {
+internal/m8/hub.go:5949:	parts := strings.Split(strings.TrimSpace(v), ".")
+internal/m8/hub.go:5983:	parts := strings.Split(sessionName, "-")
+internal/m8/hub.go:6011:	parts := strings.Split(sessionName, "-")
+internal/m8/hub.go:6440:func parseAddress(raw string) (address, error) {
+internal/m8/hub.go:6441:	parts := strings.Split(strings.TrimSpace(raw), "#")
+internal/m8/hub.go:6470:	parts := strings.SplitN(strings.TrimPrefix(serviceID, "session:"), ":", 2)
+internal/m8/hub.go:6555:func parseMemberMention(text string) (memberName, sessionName, body string, ok bool) {
+internal/m8/hub.go:6573:		parts := strings.SplitN(head, "#", 2)
+internal/m8/hub.go:6586:func (h *Hub) parseMemberMention(botChannelID, text string) (memberName, sessionName, body string, ok bool) {
+internal/m8/inbox_lag.go:166:	ag, _, err := h.Identity.ResolveFullName(ctx, fullName)
+internal/m8/newplat_mention.go:19:	self, _, err := h.Identity.ResolveFullName(r.Context(), strings.TrimSpace(r.PathValue("sessionName")))
+internal/m8/newplat_session_name.go:22:func (h *Hub) resolveNewPlatformVisibleSession(ctx context.Context, requested string) newPlatformVisibleSession {
+internal/m8/newplat_session_name.go:28:	ag, user, err := h.Identity.ResolveFullName(ctx, requested)
+internal/m8/newplat_spec_agent.go:39:	ag, _, err := h.Identity.ResolveFullName(r.Context(), strings.TrimSpace(r.PathValue("sessionName")))
+internal/m8/newplat_view.go:25:	ag, _, err := h.Identity.ResolveFullName(context.Background(), fullName)
+internal/m8/newplat_view.go:46:	_, _, err := h.Identity.ResolveFullName(ctx, name)
+internal/m8/newplat_view.go:55:		ag, _, err := h.Identity.ResolveFullName(ctx, name)
+internal/m8/newplat_view.go:124:	ag, _, err := h.Identity.ResolveFullName(r.Context(), strings.TrimSpace(r.PathValue("sessionName")))
+internal/m8/newplat_view.go:152:	ag, _, err := h.Identity.ResolveFullName(r.Context(), strings.TrimSpace(r.PathValue("sessionName")))
+internal/m8/newplat_view.go:282:	ag, u, err := h.Identity.ResolveFullName(ctx, fullName)
+internal/m8/terminal.go:300:		ag, _, err := h.Identity.ResolveFullName(r.Context(), session)
+internal/m8/terminal.go:1320:	parts := strings.Split(sessionName, "-")
+internal/m8/testdata/helper_update_e2e_setup.py:67:    parts = list(map(int, base_pin['version'].split('.'))); parts[-1] += 1
+internal/m8/view_mention_reply.go:232:	a, _, err := h.Identity.ResolveFullName(ctx, strings.TrimSpace(src.mentionedFrom))
+internal/m8/view_mention_route.go:42:	self, _, err := h.Identity.ResolveFullName(ctx, strings.TrimSpace(selfFullName))
+internal/mcs/hubdriver/hubdriver.go:60:// OnlineList 只读活性判据:清单文件新鲜(≤stale)且全名在列。
+internal/mcs/hubdriver/hubdriver.go:61:type OnlineList struct {
+internal/mcs/hubdriver/hubdriver.go:66:func (o *OnlineList) alive(fullName string) error {
+internal/mcs/hubdriver/hubdriver.go:82:	if !strings.Contains(string(b), fullName) {
+internal/mcs/hubdriver/hubdriver.go:105:	online *OnlineList
+internal/mcs/hubdriver/hubdriver.go:153:	Online   *OnlineList
+internal/store/failure_notice.go:26:	source := strings.Split(strings.TrimSpace(original.From), "#")
+internal/store/pilot_template_types.go:174:	for _, label := range strings.Split(host, ".") {
+internal/trustedorigin/origin.go:81:	for _, label := range strings.Split(host, ".") {
+runbooks/harness/easymde-offline/console-iframe-dark-probe.js:14://   · 主题切换走**业主的真实路径**:点 console 顶层那个 ◐(`#themeBtn`),经 BroadcastChannel / storage 落到 pane。
+runbooks/harness/easymde-offline/console-iframe-dark-probe.js:63:  const need = ['id=themeBtn', 'id=panes', "html[data-theme=\"dark\"]", 'BroadcastChannel'];
+tools/sessionhelper/sessionhelper/app.py:457:            if urlsplit(path).path in ("/v1/tasks","/v1/sessions","/v1/config"):
+tools/sessionhelper/sessionhelper/config.py:308:def normalize_client_session_name(value: str) -> str:
+tools/sessionhelper/sessionhelper/config.py:391:def detect_full_session_name(session_name: str, env: dict[str, str] | None = None) -> str:
+tools/sessionhelper/sessionhelper/inbox.py:256:            session = to.split("#", 1)[0]
+tools/sessionhelper/sessionhelper/openCodeDriver.py:966:            phase = ev_type.rsplit(".", 1)[-1].lower()
+tools/sessionhelper/sessionhelper/outbound_receipt.py:41:        source = str(env.get('from') or '').split('#')
+tools/sessionhelper/sessionhelper/outbound_receipt.py:42:        target = str(env.get('to') or '').split('#')
+tools/sessionhelper/sessionhelper/outbound_receipt.py:102:        source = str(env.get('from') or '').split('#')
+tools/sessionhelper/sessionhelper/outbound_receipt.py:103:        target = str(env.get('to') or '').split('#')
+tools/sessionhelper/sessionhelper/provision.py:438:        for token in str(value or "").replace("-", ".").split("."):
+tools/sessionhelper/sessionhelper/routing.py:57:def agent_route_envelope(text: str, book: AddressBook) -> dict | None:
+tools/sessionhelper/sessionhelper/routing.py:91:def reply_target(inbound: dict[str, Any], book: AddressBook) -> tuple[str, dict[str, Any]]:
+tools/sessionhelper/sessionhelper/self_update.py:236:            return tuple((list(map(int, v.split('.'))) + [0] * 4)[:4])
+tools/sessionhelper/sessionhelper/send_dingwei.py:28:def complete_addr(to: str) -> str:
+tools/sessionhelper/sessionhelper/unified_queue.py:265:                or from_addr.split("#", 1)[0]
+tools/sessionhelper/sessionhelper/unified_queue.py:267:    fallback = "用户" if source == "user" else (open_id if source == "feishu" else from_addr.split("#", 1)[0])
+view-service/renderer-canary-sse.html:2277:      const labels = [...new Set(norm.targets.map(addr => String(addr).split('#')[0]).filter(Boolean))];
+view-service/renderer-canary-sse.html:5320:      return `dw-view-page:${stats.sessionName}`;
+view-service/renderer-canary-sse.html:5467:      if (!('BroadcastChannel' in window)) {
+view-service/renderer-canary-sse.html:5477:      pageIdentityChannel = new BroadcastChannel(`dw-view-page:${stats.sessionName}`);
+view-service/renderer-canary-sse.html:5548:    // 传输用 BroadcastChannel —— 与本文件既有的 page-identity 同一手法(见 setupPageIdentityChannel,
+view-service/renderer-canary-sse.html:5549:    // 那里也是先 `'BroadcastChannel' in window` 再建)。选它而不是遍历 iframe 的 postMessage,
+view-service/renderer-canary-sse.html:5554:    // 🔴 写入方必须**自己立刻 apply**:BroadcastChannel 与 storage 事件都**不会**在写入方自己那份文档上触发。
+view-service/renderer-canary-sse.html:5596:        if ('BroadcastChannel' in window && !themeChannel) {
+view-service/renderer-canary-sse.html:5597:          themeChannel = new BroadcastChannel(THEME_KEY);
+view-service/view_service.py:1049:    def _session(self) -> str:

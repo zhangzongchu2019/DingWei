@@ -1,0 +1,45 @@
+{
+  "CODEX_THREAD_ID": "01a1bacf-9317-7b91-bf86-0a0c88c834f6",
+  "to": "opus50tc2k.zzc",
+  "base": "6e2c836491f8ba506833d6f849fbe73530e13f92",
+  "binary": "0.159.2",
+  "binary_sha256": "1748767b230ebfc3d4ab7e4e254920d0c0ad9691fd8c11f190e7d44511a4a92e",
+  "evidence_copied_at_utc": "2026-11-08T12:44:49.827184+00:00",
+  "runs": {
+    "legacy": {
+      "raw_log_last_write_utc": "2026-11-08T12:48:18.756848+00:00",
+      "rc": 0,
+      "go_controls": 7
+    },
+    "future-red": {
+      "raw_log_last_write_utc": "2026-11-08T12:48:26.347590+00:00",
+      "rc": 1,
+      "target_failures": 2
+    },
+    "native": {
+      "raw_log_last_write_utc": "2026-11-08T12:30:53.631800+00:00",
+      "rc": 0
+    },
+    "openspec": {
+      "raw_log_last_write_utc": "2026-11-08T12:48:47.262788+00:00",
+      "rc": 0
+    },
+    "canonical": {
+      "rc": 0,
+      "raw_log_last_write_utc": "2026-11-08T12:46:22.329581+00:00",
+      "helper_profiles": {
+        "claude": "1097/1097",
+        "codex": "1097/1097"
+      },
+      "python_suites": 27,
+      "shell_suites": 2,
+      "uncompressed_sha256": "10fdc2ce7f53102d4f86aa99afa936205a1545c87c8847f31d630335292ae4b2",
+      "uncompressed_bytes": 962766
+    }
+  },
+  "upstream_recheck": {
+    "rulings": "5c142200ea7066b36fc8889849126a61eb82aeb4",
+    "base_unchanged": true,
+    "proposal_unchanged": true
+  }
+}
