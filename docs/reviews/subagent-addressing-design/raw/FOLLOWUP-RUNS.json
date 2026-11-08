@@ -1,0 +1,31 @@
+{
+  "CODEX_THREAD_ID": "01a1bacf-9317-7b91-bf86-0a0c88c834f6",
+  "to": "opus50tc2k.zzc",
+  "frozen_parent": "bbfbf95b56b4afdebf48d89730910980f837a0f3",
+  "ruling": "ad1a1ee0e25386133ebada6a4907472b1a857c09",
+  "runs": {
+    "followup-change-strict": {
+      "rc": 0,
+      "raw_log_last_write_utc": "2026-11-08T13:09:00.501778+00:00"
+    },
+    "followup-spec-strict": {
+      "rc": 0,
+      "raw_log_last_write_utc": "2026-11-08T13:09:00.681775+00:00"
+    },
+    "canonical": {
+      "command": "PATH=/tmp/coder-0232-locked-venv/bin:$PATH sh scripts/run-build-tests.sh",
+      "rc": 0,
+      "raw_log_last_write_utc": "2026-11-08T13:16:43.510049+00:00",
+      "helper_profiles": {
+        "claude": "1097/1097",
+        "codex": "1097/1097"
+      },
+      "python_suites": 27,
+      "shell_suites": 2,
+      "uncompressed_sha256": "9e83b8c0207c3c342ade690951605c593a6cde792edb0e6a335f11dcd850121e",
+      "uncompressed_bytes": 1131175
+    }
+  },
+  "native_rerun": false,
+  "product_files_changed": 0
+}

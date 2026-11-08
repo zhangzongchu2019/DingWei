@@ -20,7 +20,7 @@
 
 兼容例外：现有 external 主名有 `short_AG3.user` 形式（`internal/extshared`），不符合 AA-001 对所有段均为字母数字的概括。保留既有两段 external 主身份流程；第一期不为 external 席开启子 Agent。规格中标明这项历史兼容，不借本设计修改外部席命名。新自托管 Codex 子名遵循 AA-001。
 
-节点使用不透明 `node_id` 与持久 `lane_generation`；别名不是节点主键。默认名从模型会话号前8位生成，碰撞时对 UUID 的无连字符规范表示逐步加长（不能在第9位引入 UUID 的连字符）；旧节点不改名。显式别名与默认名都登记到同一父下，大小写按现有规范统一，冲突拒绝，结束后仍保留名称。不得将旧别名重新绑定到另一个 thread，避免迟到信投新任务。完整模型 threadId 仅 helper 本地保存，不上报 Hub。
+节点使用不透明 `node_id` 与持久 `lane_generation`；别名不是节点主键。默认名取模型会话 UUID 无连字符规范表示的末8位随机段，不能取承载时间戳的前8位。同父冲突时依次取末10、12位直至末32位；已有节点和旧别名不改名，完整UUID仍冲突则拒绝重复绑定，不无限重试。相同分钟创建的孩子须获得不同默认名，随机尾段碰撞也按上述规则处理。显式别名与默认名都登记到同一父下，大小写按现有规范统一，冲突拒绝，结束后仍保留名称。不得将旧别名重新绑定到另一个 thread，避免迟到信投新任务。完整模型 threadId 仅 helper 本地保存，不上报 Hub。
 
 ## 3. Hub 协议与拒收
 
@@ -76,7 +76,7 @@ helper 本地受控 `sub_agent_control` 提供 create/close/task_completed/conte
 
 新建 thread 的独立 developerInstructions 告知自身全名、父、直接孩子、能力、策略及 context revision。提供受控 `dingwei_self_context` 查询；树变化在下一正常 turn 的独立控制输入项更新上下文，原业务正文保持独立且字节不改。没有新业务时不额外启动模型 turn，也不打断长任务。`turn/start` 无 developerInstructions 字段，不假设每轮可覆盖同名参数。
 
-官方 app-server 文档仅作为多 thread/事件接口背景：[OpenAI app-server 文档](https://learn.chatgpt.com/docs/app-server)。实际依据是钉版二进制与 `--experimental` schema；不把当前在线文档接口直接套到旧版。`thread/unsubscribe` 不代表业务任务完成；`thread/archive` 不作为第一期自动清理策略。
+接口依据仅为钉版0.159.2二进制与其 `--experimental` schema（见交审原文），不依赖未经核实的在线外链。`thread/unsubscribe` 不代表业务任务完成；`thread/archive` 不作为第一期自动清理策略。
 
 ### 4.3 与 r55 reconcile 共用代码
 
@@ -176,7 +176,7 @@ Console 与 View 不从显示文字反推身份。新树在线清单显示“根
 | AA003拒收 | 未知、墓碑原因、离线/恢复中、二三级phase拒收、同名兄弟、旧别名 | 加父fallback→parent_never_received红；删除墓碑→ended_distinct红 |
 | AA004来源/权限 | 子→主→原子回信；伪造from/原生thread字段；跨组；任务单执行者 | 信任arguments.from→origin_spoof红；只root授权scope→cross_lane红 |
 | AA005提及 | 短根/全根；子与根混合；正文哈希不变；只有子时提示 | 保留子候选→本次future目标红；整封丢弃→valid_root_retained红 |
-| AA006树/告知 | UUID碰撞延长、alias双入口、结束不复用、direct children上下文 | 别名重绑→late_mail_not_new_child红；原始UUID加长→name_charset红 |
+| AA006树/告知 | 同一分钟创建两个孩子默认名不同；UUID随机尾段碰撞时按末8/10/12位加长；alias双入口、结束不复用、direct children上下文 | 改取前8位→same_minute_default_names_distinct红；删除尾段加长→suffix_collision_resolved红；别名重绑→late_mail_not_new_child红；未去连字符→name_charset红 |
 | AA007生命周期 | 五参数显式、turn完成不结束、显式完成、父关闭、时钟/重启/idle、每封退信 | 用turn/completed退出→long_task_survives红；只退汇总→per_delivery_return红 |
 | AA008协商/broker | 新旧Hub/helper四格；双lane并行、乱序、双向同id、未知thread、关闭A不伤B | 未协商改root→本次misroute目标红；共用通知队列→sibling_event_ownership红 |
 | AA009持久/reconcile | 同env两子、旧代次/错thread/重复clientId/nullable时间/冲突终态；重启/分页201/展示不ACK | 去scope→cross_lane_evidence红；改1s/15s/200分别目标红；提前ACK→display_not_ack红 |

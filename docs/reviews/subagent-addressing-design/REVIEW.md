@@ -31,3 +31,13 @@ canonical 两profile各1097/1097（基线90文件），27套Python与2套shell�
 扫描722个tracked源文件、结构候选123行，原文raw/source-inventory.txt；人工追踪调用点覆盖设计§7，主身份/管理保持与明确不支持均列明。排除的host/JWT/version点分割、测试/历史证据不是地址解析。复现文件放tests/subagent-addressing-design，不进入helper默认90文件清单，不修改canonical测试列表/产品代码。交审不自验收；组长独立复核后再决定实现与默认策略。
 
 提交前同步核对：远端r54基线6e2c8364与提案b33f9ae6均未变化；rulings从6ec4d930推进至5c142200ea7066b36fc8889849126a61eb82aeb4，新增仅〔52〕补7/补8，不影响本设计。
+
+## 〔51〕-补5追加修订（2026-11-08）
+
+bbfbf95b 已由组长独立复核通过并冻结（rulings ad1a1ee0e25386133ebada6a4907472b1a857c09）；本次同分支追加，不改写原提交。修正默认名为UUID随机末8位、碰撞时末10/12位至32位；新增AA006-S02同分钟双创建场景、前8位变异与尾段碰撞变异。删除未核实外链；主spec Purpose明确记录现有行为。输入历史提案保留原文，其旧命名描述由当前AA006及本裁定替代。
+
+raw/name-tail-evidence.json只复算冻结native-rpc.json中的两个原生thread，不是新启动原生实验。两UUIDv7在同一分钟，旧前8位均01a1bb23，随机末8位分别32041d5d/3d6c1f62。证明这对原文适合前缀变异的复现输入；随机尾段理论上仍可碰撞，不能据此取消加长保护，也不声称已有产品命名器或实际跑过未来保护变异。
+
+追加命令：OpenSpec1.16.0 `validate sub-agent-addressing --strict`、`validate agent-addressing --type spec --strict`均rc0，原文分别raw/followup-change-strict.stdout、raw/followup-spec-strict.stdout。canonical重跑完成后记录于raw/FOLLOWUP-RUNS.json。原有native与legacy/future复现脚本未改，不重复声称新原生/新功能通过。
+
+追加canonical rc0：两profile各1097/1097、27Python/2shell，完整原文raw/followup-build.stdout.gz。冻结原raw15件逐字节与bbfbf95b核对未变；新证据与当前设计的SHA清单已更新。产品文件及复现脚本改动0。

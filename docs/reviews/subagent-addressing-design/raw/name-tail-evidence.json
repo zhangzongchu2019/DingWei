@@ -1,0 +1,26 @@
+{
+  "source": "raw/native-rpc.json (bbfbf95b frozen evidence; not a new native run)",
+  "threads": [
+    "01a1bb23-e243-7000-acb5-515032041d5d",
+    "01a1bb23-e254-70c3-9ece-ac693d6c1f62"
+  ],
+  "uuid_versions": [
+    7,
+    7
+  ],
+  "timestamp_milliseconds": [
+    1794141053507,
+    1794141053524
+  ],
+  "same_minute": true,
+  "old_first8": [
+    "01a1bb23",
+    "01a1bb23"
+  ],
+  "new_last8": [
+    "32041d5d",
+    "3d6c1f62"
+  ],
+  "new_names_distinct": true,
+  "checked_at_utc": "2026-11-08T13:09:00.309826+00:00"
+}
