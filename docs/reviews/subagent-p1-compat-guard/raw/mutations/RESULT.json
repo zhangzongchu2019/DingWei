@@ -1,0 +1,20 @@
+{
+  "mutations": {
+    "amr": {
+      "rc": 1,
+      "expected_assertion_red": true,
+      "assertion": "AA005_CHILD_MENTION_NOT_SKIPPED_WITH_VALID_ROOT_RETAINED"
+    },
+    "hub": {
+      "rc": 1,
+      "expected_assertion_red": true,
+      "assertion": "UNNEGOTIATED_SUBPATH_REACHED_PARENT"
+    },
+    "sendpy": {
+      "rc": 1,
+      "expected_assertion_red": true,
+      "assertion": "test_three_segment_target_rejected_before_ipc"
+    }
+  },
+  "all_expected_red": true
+}

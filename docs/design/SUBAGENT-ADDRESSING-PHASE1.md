@@ -84,17 +84,17 @@ helper 本地受控 `sub_agent_control` 提供 create/close/task_completed/conte
 
 r55 冻结不变量不变：真实 turn/start 发出才计入场期限；本地排队不 unknown；每席同时最多一个只读对账请求，同 thread 最短15s，单轮共享上限200条（不是每分道各200）；1s时间比较容差；触顶 incomplete/pending；对账函数不 start/resume；补取复用 `_take_completed_item_backfill`；显示完成不推 ACK。共享 broker 持席级对账 semaphore 和按 thread 计时表。证据必须同时匹配 thread、lane/generation、dispatch intent 及原 ack_generation；相同 clientId、跨 thread、旧代次、冲突终态均不能借别道证据推进状态。响应/通知乱序不得覆盖已持久终态。
 
-## 5. 生命周期（参数，不擅定默认）
+## 5. 生命周期（按已批准默认）
 
-| 参数 | 组长建议（待业主定默认） | 设计语义 |
+| 参数 | 已批准默认（〔51〕-补10，rulings 89bda3bc） | 设计语义 |
 |---|---|---|
-| exit_on_task_complete | 开 | 显式完成信号触发退出；不是 turn/completed 或模型说“完成” |
-| idle_timeout | 24h | 无排队、无执行、无待工具、无歧义执行时累计空闲 |
-| max_lifetime | 7d | 自节点创建绝对累计，重启/离线不清零 |
-| platform_lifetime_cap | 14d | 强制上界；建议按节点计，父先结束则随父关闭 |
+| exit_on_task_complete | 开（完成即退开） | 显式完成信号触发退出；不是 turn/completed 或模型说“完成” |
+| idle_timeout | 1h | 无排队、无执行、无待工具、无歧义执行时累计空闲 |
+| max_lifetime | 2d | 自节点创建绝对累计，重启/离线不清零 |
+| platform_lifetime_cap | 5d，按节点各自计 | 强制上界；父先结束则随父关闭 |
 | exit_grace | 10min | 封口后等待执行确认的最大时间 |
 
-创建必须解析五项策略并持久化；建议值不是运行默认。PM 需确定平台总上限究竟按节点还是整棵树计时；两种实现都以父关闭级联为硬约束。策略禁用项显式表示，不能以0秒混用“禁用”与“立即过期”。读 View、心跳、在线查询、只读对账不刷新 idle；合法新任务和执行进度才更新活动时刻。待执行证据不确定时禁止 idle 自动退出，但绝对寿命上限仍生效。
+创建必须解析五项策略并持久化；上表为已批准运行默认。平台上限按节点各自计时，父关闭级联仍是硬约束。策略禁用项显式表示，不能以0秒混用“禁用”与“立即过期”。读 View、心跳、在线查询、只读对账不刷新 idle；合法新任务和执行进度才更新活动时刻。待执行证据不确定时禁止 idle 自动退出，但绝对寿命上限仍生效。
 
 状态：allocating → active → draining → ended；online/offline 是独立运输属性。先持久 allocating，再创建/绑定 thread，树注册 ACK 后 active；失败回收未成活项并记录原因，不能偷偷借主 thread。重启从持久表恢复 deadline/reason，不启动重复任务。
 
@@ -102,7 +102,7 @@ r55 冻结不变量不变：真实 turn/start 发出才计入场期限；本地�
 
 已入队且确定尚未发给原生的信逐条写失败 outbox，退给各自原发送节点，幂等关联 delivery_id；不只退一条汇总。可能写出/正在执行的信不能谎报“未执行”：保留原账本 pending/unknown，宽限内只对账；届满最多 interrupt 本分道 turn、unsubscribe，通知执行状态不确定，不制造 processed/ACK。发送方自身已结束时留可检索失败记录，不转父或自动激活。失败通知不进入业务 AMR，不递归退信。
 
-ended 墓碑及别名持续保留，14d 存活上限不等于14d后删除墓碑；保留策略另定。关闭原因区分 completed、parent_closed、idle_timeout、max_lifetime、platform_cap、operator_closed、creation_failed，保存原因为提示依据，不把进程暂离线写成结束。
+ended 墓碑及别名持续保留，2d最长存活和5d平台上限都不等于到期后删除墓碑；保留策略另定。关闭原因区分 completed、parent_closed、idle_timeout、max_lifetime、platform_cap、operator_closed、creation_failed，保存原因为提示依据，不把进程暂离线写成结束。
 
 ## 6. 存储迁移与回退
 
@@ -201,4 +201,4 @@ Console 与 View 不从显示文字反推身份。新树在线清单显示“根
 
 单实现者约18–29工作日；获授权后若三席分工、接口冻结无阻塞，约8–14工作日加独立复核。此处只是估算，不启动协作者或预派实现。
 
-顺序：①确认生命周期默认和平台cap语义、冻结协议/迁移；②先上线兼容拒收保护（另行授权），覆盖旧组件；③集成r55，完成broker/来源与持久封口；④Hub注册/投递→helper分道→View/Console/AMR；⑤故障/混部/回退与逐项变异复核；⑥再申请版本集成与灰度。默认参数未定不阻塞设计复核，但未显式配置策略时不得创建运行子 Agent。
+顺序：①按已批准的生命周期默认冻结协议/迁移；②先上线兼容拒收保护（另行授权），覆盖旧组件；③集成r55，完成broker/来源与持久封口；④Hub注册/投递→helper分道→View/Console/AMR；⑤故障/混部/回退与逐项变异复核；⑥再申请版本集成与灰度。子 Agent 创建能力未交付前保持关闭。

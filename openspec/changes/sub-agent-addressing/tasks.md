@@ -9,6 +9,8 @@
 
 - [x] T-07 按〔51〕-补5追加随机尾段命名/场景/变异、删外链及现状Purpose；变更和基线strict复跑。
 - [x] T-08 追加项canonical rc0与证据SHA，提交推送核远端后交审。
+- [x] T-09 第一刀兼容拒收：AMR跳过并提示三段子提及、Hub拒收未协商子路由保留字段、send.py本地预检拒绝；混部说明与逐项变异。证据：`docs/reviews/subagent-p1-compat-guard/REPORT.md`。
+- [x] T-10 lifecycle已批默认写回AA-007、future复现与legacy控制、canonical双profile及strict。证据：同目录报告与raw运行记录。
 
 ## 交接记录
 
@@ -19,3 +21,5 @@
 2026-11-08 coder56solzzc.zzc；父提交bbfbf95b56b4afdebf48d89730910980f837a0f3（已冻结，不改写）。完成：按ad1a1ee0〔51〕-补5修三项，AA006-S02及变异计划同步；以原生原文复算同分钟UUID尾段，变更与现状spec strict rc0。阻塞：无；生命周期默认/平台上限仍待业主。下一步：T08门禁完成后同分支追加提交并核远端，交审后释放锁，不开始实施。
 
 2026-11-08 coder56solzzc.zzc；commit：本次追加提交（父bbfbf95b）。完成：canonical rc0，claude/codex各1097/1097、27Python/2shell；变更与基线strict均rc0；冻结原raw15件不变。阻塞：无。下一步：推送核ls-remote并交坐标、释放锁，等待复核与业主默认决策，不实施或部署。
+
+2026-11-08 togpt60lunazzc.zzc；基于实现分支父提交 `d6657823`。后续裁定〔51〕-补10（rulings `89bda3bc`）已批准生命周期默认，故本次更新AA-007及设计表；前述“等待业主决策”是历史状态记录。完成：T09兼容拒收实现与三项变异、T10默认值及验证；原始证据见`docs/reviews/subagent-p1-compat-guard/`。不包含创建/注册/子投递能力；不部署。下一步：推送并核ls-remote坐标，提交组长复核。
