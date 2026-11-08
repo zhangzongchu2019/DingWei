@@ -1,0 +1,401 @@
+{
+  "calls": [
+    {
+      "method": "initialize",
+      "params": {
+        "clientInfo": {
+          "name": "transport-v2-codex-driver",
+          "version": "0"
+        },
+        "capabilities": {
+          "experimentalApi": true
+        }
+      }
+    },
+    {
+      "method": "thread/start",
+      "params": {
+        "cwd": "/tmp/reconcile-6ihn691b",
+        "ephemeral": false,
+        "sandbox": "read-only",
+        "approvalPolicy": "never"
+      }
+    },
+    {
+      "method": "turn/start",
+      "params": {
+        "threadId": "01a1bac2-66f6-7442-bf40-d905247ab3c5",
+        "input": [
+          {
+            "type": "text",
+            "text": "LOCAL_PROTOCOL_TEST_ONLY"
+          }
+        ],
+        "clientUserMessageId": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-66f6-7442-bf40-d905247ab3c5",
+        "limit": 100,
+        "itemsView": "full",
+        "sortDirection": "asc"
+      }
+    },
+    {
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a1bac2-66f6-7442-bf40-d905247ab3c5",
+        "includeTurns": true
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-66f6-7442-bf40-d905247ab3c5",
+        "limit": 100,
+        "itemsView": "full",
+        "sortDirection": "asc"
+      }
+    },
+    {
+      "method": "turn/interrupt",
+      "params": {
+        "threadId": "01a1bac2-66f6-7442-bf40-d905247ab3c5",
+        "turnId": "01a1bac2-6726-7583-93b8-3747402df322"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-66f6-7442-bf40-d905247ab3c5",
+        "limit": 100,
+        "itemsView": "full",
+        "sortDirection": "asc"
+      }
+    },
+    {
+      "method": "thread/start",
+      "params": {
+        "cwd": "/tmp/reconcile-6ihn691b",
+        "ephemeral": false,
+        "sandbox": "read-only",
+        "approvalPolicy": "never"
+      }
+    }
+  ],
+  "responses": [
+    {
+      "method": "initialize",
+      "result": {
+        "userAgent": "transport-v2-codex-driver/0.159.2 (Ubuntu 24.4.0; x86_64) unknown (transport-v2-codex-driver; 0)",
+        "codexHome": "/tmp/reconcile-6ihn691b/codex",
+        "platformFamily": "unix",
+        "platformOs": "linux"
+      }
+    },
+    {
+      "method": "thread/start",
+      "result": {
+        "thread": {
+          "id": "01a1bac2-66f6-7442-bf40-d905247ab3c5",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/reconcile-6ihn691b",
+              "runtimeWorkspaceRoots": [
+                "/tmp/reconcile-6ihn691b"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1bac2-66f6-7442-bf40-d905247ab3c5",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1794134664,
+          "updatedAt": 1794134664,
+          "recencyAt": 1794134664,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/reconcile-6ihn691b/codex/sessions/2026/11/08/rollout-2026-11-08T10-44-24-01a1bac2-66f6-7442-bf40-d905247ab3c5.jsonl",
+          "cwd": "/tmp/reconcile-6ihn691b",
+          "cliVersion": "0.159.2",
+          "originator": "transport-v2-codex-driver",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "model": "probe-no-inference",
+        "modelProvider": "local_probe",
+        "serviceTier": null,
+        "disabledPluginIds": [],
+        "cwd": "/tmp/reconcile-6ihn691b",
+        "runtimeWorkspaceRoots": [
+          "/tmp/reconcile-6ihn691b"
+        ],
+        "instructionSources": [],
+        "approvalPolicy": "never",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        },
+        "activePermissionProfile": null,
+        "reasoningEffort": null,
+        "multiAgentMode": "explicitRequestOnly"
+      }
+    },
+    {
+      "method": "turn/start",
+      "result": {
+        "turn": {
+          "id": "01a1bac2-6726-7583-93b8-3747402df322",
+          "items": [],
+          "itemsView": "notLoaded",
+          "status": "inProgress",
+          "error": null,
+          "startedAt": null,
+          "completedAt": null,
+          "durationMs": null
+        }
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "error_code": -32601,
+      "error_message": "list_turns is not supported yet"
+    },
+    {
+      "method": "thread/read",
+      "result": {
+        "thread": {
+          "id": "01a1bac2-66f6-7442-bf40-d905247ab3c5",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/reconcile-6ihn691b",
+              "runtimeWorkspaceRoots": [
+                "/tmp/reconcile-6ihn691b"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1bac2-66f6-7442-bf40-d905247ab3c5",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1794134664,
+          "updatedAt": 1794134665,
+          "recencyAt": 1794134665,
+          "status": {
+            "type": "active",
+            "activeFlags": []
+          },
+          "path": "/tmp/reconcile-6ihn691b/codex/sessions/2026/11/08/rollout-2026-11-08T10-44-24-01a1bac2-66f6-7442-bf40-d905247ab3c5.jsonl",
+          "cwd": "/tmp/reconcile-6ihn691b",
+          "cliVersion": "0.159.2",
+          "originator": "transport-v2-codex-driver",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": [
+            {
+              "id": "01a1bac2-6726-7583-93b8-3747402df322",
+              "items": [],
+              "itemsView": "full",
+              "status": "inProgress",
+              "error": null,
+              "startedAt": 1794134664,
+              "completedAt": null,
+              "durationMs": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "result": {
+        "data": [
+          {
+            "id": "01a1bac2-6726-7583-93b8-3747402df322",
+            "items": [
+              {
+                "type": "userMessage",
+                "id": "01a1bac2-6750-7412-86ec-818599920a43",
+                "clientId": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "LOCAL_PROTOCOL_TEST_ONLY",
+                    "text_elements": []
+                  }
+                ]
+              }
+            ],
+            "itemsView": "full",
+            "status": "inProgress",
+            "error": null,
+            "startedAt": 1794134664,
+            "completedAt": null,
+            "durationMs": null
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "{\"requestedThreadId\":\"01a1bac2-66f6-7442-bf40-d905247ab3c5\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+      }
+    },
+    {
+      "method": "turn/interrupt",
+      "result": {}
+    },
+    {
+      "method": "thread/turns/list",
+      "result": {
+        "data": [
+          {
+            "id": "01a1bac2-6726-7583-93b8-3747402df322",
+            "items": [
+              {
+                "type": "userMessage",
+                "id": "01a1bac2-6750-7412-86ec-818599920a43",
+                "clientId": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "LOCAL_PROTOCOL_TEST_ONLY",
+                    "text_elements": []
+                  }
+                ]
+              }
+            ],
+            "itemsView": "full",
+            "status": "interrupted",
+            "error": null,
+            "startedAt": 1794134664,
+            "completedAt": 1794134665,
+            "durationMs": 58
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "{\"requestedThreadId\":\"01a1bac2-66f6-7442-bf40-d905247ab3c5\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+      }
+    },
+    {
+      "method": "thread/start",
+      "result": {
+        "thread": {
+          "id": "01a1bac2-6765-7931-820f-40bdf9ed8aa4",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/reconcile-6ihn691b",
+              "runtimeWorkspaceRoots": [
+                "/tmp/reconcile-6ihn691b"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1bac2-6765-7931-820f-40bdf9ed8aa4",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1794134665,
+          "updatedAt": 1794134665,
+          "recencyAt": 1794134665,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/reconcile-6ihn691b/codex/sessions/2026/11/08/rollout-2026-11-08T10-44-25-01a1bac2-6765-7931-820f-40bdf9ed8aa4.jsonl",
+          "cwd": "/tmp/reconcile-6ihn691b",
+          "cliVersion": "0.159.2",
+          "originator": "transport-v2-codex-driver",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "model": "probe-no-inference",
+        "modelProvider": "local_probe",
+        "serviceTier": null,
+        "disabledPluginIds": [],
+        "cwd": "/tmp/reconcile-6ihn691b",
+        "runtimeWorkspaceRoots": [
+          "/tmp/reconcile-6ihn691b"
+        ],
+        "instructionSources": [],
+        "approvalPolicy": "never",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        },
+        "activePermissionProfile": null,
+        "reasoningEffort": null,
+        "multiAgentMode": "explicitRequestOnly"
+      }
+    }
+  ],
+  "lifecycle": {
+    "delivery_id": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "session_name": "fixture",
+    "envelope_json": "{\"id\":\"fixture\",\"body\":\"LOCAL_PROTOCOL_TEST_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+    "state": "admission_unknown",
+    "attempts": 1,
+    "error": "model_admission_unknown",
+    "received_at": 1794134664.9795818,
+    "updated_at": 1794134665.0037901,
+    "ack_protocol": 2,
+    "processing_mode": "driver",
+    "ack_generation": 1,
+    "dispatch_intent_at": 1794134664.9896898,
+    "request_id": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "turn_id": null,
+    "admitted_at": null,
+    "processed_at": null,
+    "turn_outcome": null
+  }
+}

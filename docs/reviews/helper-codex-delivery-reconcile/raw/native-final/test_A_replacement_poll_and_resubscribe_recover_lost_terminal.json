@@ -1,0 +1,477 @@
+{
+  "calls": [
+    {
+      "method": "initialize",
+      "params": {
+        "clientInfo": {
+          "name": "transport-v2-codex-driver",
+          "version": "0"
+        },
+        "capabilities": {
+          "experimentalApi": true
+        }
+      }
+    },
+    {
+      "method": "thread/start",
+      "params": {
+        "cwd": "/tmp/reconcile-tlwkkaa2",
+        "ephemeral": false,
+        "sandbox": "read-only",
+        "approvalPolicy": "never"
+      }
+    },
+    {
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+        "includeTurns": false
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+        "limit": 5,
+        "itemsView": "notLoaded",
+        "sortDirection": "desc"
+      }
+    },
+    {
+      "method": "turn/start",
+      "params": {
+        "threadId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+        "input": [
+          {
+            "type": "text",
+            "text": "LOCAL_PROTOCOL_TEST_ONLY"
+          }
+        ],
+        "clientUserMessageId": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+        "limit": 100,
+        "itemsView": "full",
+        "sortDirection": "asc"
+      }
+    },
+    {
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+        "includeTurns": true
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+        "limit": 100,
+        "itemsView": "full",
+        "sortDirection": "asc"
+      }
+    },
+    {
+      "method": "turn/interrupt",
+      "params": {
+        "threadId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+        "turnId": "01a1bac2-6147-7dd0-bdca-0153a40c7474"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+        "limit": 100,
+        "itemsView": "full",
+        "sortDirection": "asc"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+        "limit": 20,
+        "itemsView": "full",
+        "sortDirection": "desc"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+        "limit": 20,
+        "itemsView": "full",
+        "sortDirection": "desc"
+      }
+    }
+  ],
+  "responses": [
+    {
+      "method": "initialize",
+      "result": {
+        "userAgent": "transport-v2-codex-driver/0.159.2 (Ubuntu 24.4.0; x86_64) unknown (transport-v2-codex-driver; 0)",
+        "codexHome": "/tmp/reconcile-tlwkkaa2/codex",
+        "platformFamily": "unix",
+        "platformOs": "linux"
+      }
+    },
+    {
+      "method": "thread/start",
+      "result": {
+        "thread": {
+          "id": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/reconcile-tlwkkaa2",
+              "runtimeWorkspaceRoots": [
+                "/tmp/reconcile-tlwkkaa2"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1794134663,
+          "updatedAt": 1794134663,
+          "recencyAt": 1794134663,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/reconcile-tlwkkaa2/codex/sessions/2026/11/08/rollout-2026-11-08T10-44-23-01a1bac2-611a-7420-b8ed-7f0d557610cd.jsonl",
+          "cwd": "/tmp/reconcile-tlwkkaa2",
+          "cliVersion": "0.159.2",
+          "originator": "transport-v2-codex-driver",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "model": "probe-no-inference",
+        "modelProvider": "local_probe",
+        "serviceTier": null,
+        "disabledPluginIds": [],
+        "cwd": "/tmp/reconcile-tlwkkaa2",
+        "runtimeWorkspaceRoots": [
+          "/tmp/reconcile-tlwkkaa2"
+        ],
+        "instructionSources": [],
+        "approvalPolicy": "never",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        },
+        "activePermissionProfile": null,
+        "reasoningEffort": null,
+        "multiAgentMode": "explicitRequestOnly"
+      }
+    },
+    {
+      "method": "thread/read",
+      "result": {
+        "thread": {
+          "id": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/reconcile-tlwkkaa2",
+              "runtimeWorkspaceRoots": [
+                "/tmp/reconcile-tlwkkaa2"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1794134663,
+          "updatedAt": 1794134663,
+          "recencyAt": 1794134663,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/reconcile-tlwkkaa2/codex/sessions/2026/11/08/rollout-2026-11-08T10-44-23-01a1bac2-611a-7420-b8ed-7f0d557610cd.jsonl",
+          "cwd": "/tmp/reconcile-tlwkkaa2",
+          "cliVersion": "0.159.2",
+          "originator": "transport-v2-codex-driver",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        }
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "error_code": -32600,
+      "error_message": "thread 01a1bac2-611a-7420-b8ed-7f0d557610cd is not materialized yet; thread/turns/list is unavailable before first user message"
+    },
+    {
+      "method": "turn/start",
+      "result": {
+        "turn": {
+          "id": "01a1bac2-6147-7dd0-bdca-0153a40c7474",
+          "items": [],
+          "itemsView": "notLoaded",
+          "status": "inProgress",
+          "error": null,
+          "startedAt": null,
+          "completedAt": null,
+          "durationMs": null
+        }
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "error_code": -32601,
+      "error_message": "list_turns is not supported yet"
+    },
+    {
+      "method": "thread/read",
+      "result": {
+        "thread": {
+          "id": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/reconcile-tlwkkaa2",
+              "runtimeWorkspaceRoots": [
+                "/tmp/reconcile-tlwkkaa2"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1bac2-611a-7420-b8ed-7f0d557610cd",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1794134663,
+          "updatedAt": 1794134663,
+          "recencyAt": 1794134663,
+          "status": {
+            "type": "active",
+            "activeFlags": []
+          },
+          "path": "/tmp/reconcile-tlwkkaa2/codex/sessions/2026/11/08/rollout-2026-11-08T10-44-23-01a1bac2-611a-7420-b8ed-7f0d557610cd.jsonl",
+          "cwd": "/tmp/reconcile-tlwkkaa2",
+          "cliVersion": "0.159.2",
+          "originator": "transport-v2-codex-driver",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": [
+            {
+              "id": "01a1bac2-6147-7dd0-bdca-0153a40c7474",
+              "items": [],
+              "itemsView": "full",
+              "status": "inProgress",
+              "error": null,
+              "startedAt": 1794134663,
+              "completedAt": null,
+              "durationMs": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "result": {
+        "data": [
+          {
+            "id": "01a1bac2-6147-7dd0-bdca-0153a40c7474",
+            "items": [
+              {
+                "type": "userMessage",
+                "id": "01a1bac2-6170-78f1-9504-da4591f9269a",
+                "clientId": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "LOCAL_PROTOCOL_TEST_ONLY",
+                    "text_elements": []
+                  }
+                ]
+              }
+            ],
+            "itemsView": "full",
+            "status": "inProgress",
+            "error": null,
+            "startedAt": 1794134663,
+            "completedAt": null,
+            "durationMs": null
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "{\"requestedThreadId\":\"01a1bac2-611a-7420-b8ed-7f0d557610cd\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+      }
+    },
+    {
+      "method": "turn/interrupt",
+      "result": {}
+    },
+    {
+      "method": "thread/turns/list",
+      "result": {
+        "data": [
+          {
+            "id": "01a1bac2-6147-7dd0-bdca-0153a40c7474",
+            "items": [
+              {
+                "type": "userMessage",
+                "id": "01a1bac2-6170-78f1-9504-da4591f9269a",
+                "clientId": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "LOCAL_PROTOCOL_TEST_ONLY",
+                    "text_elements": []
+                  }
+                ]
+              }
+            ],
+            "itemsView": "full",
+            "status": "interrupted",
+            "error": null,
+            "startedAt": 1794134663,
+            "completedAt": 1794134663,
+            "durationMs": 58
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "{\"requestedThreadId\":\"01a1bac2-611a-7420-b8ed-7f0d557610cd\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "result": {
+        "data": [
+          {
+            "id": "01a1bac2-6147-7dd0-bdca-0153a40c7474",
+            "items": [
+              {
+                "type": "userMessage",
+                "id": "01a1bac2-6170-78f1-9504-da4591f9269a",
+                "clientId": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "LOCAL_PROTOCOL_TEST_ONLY",
+                    "text_elements": []
+                  }
+                ]
+              }
+            ],
+            "itemsView": "full",
+            "status": "interrupted",
+            "error": null,
+            "startedAt": 1794134663,
+            "completedAt": 1794134663,
+            "durationMs": 58
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "{\"requestedThreadId\":\"01a1bac2-611a-7420-b8ed-7f0d557610cd\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "result": {
+        "data": [
+          {
+            "id": "01a1bac2-6147-7dd0-bdca-0153a40c7474",
+            "items": [
+              {
+                "type": "userMessage",
+                "id": "01a1bac2-6170-78f1-9504-da4591f9269a",
+                "clientId": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "LOCAL_PROTOCOL_TEST_ONLY",
+                    "text_elements": []
+                  }
+                ]
+              }
+            ],
+            "itemsView": "full",
+            "status": "interrupted",
+            "error": null,
+            "startedAt": 1794134663,
+            "completedAt": 1794134663,
+            "durationMs": 58
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "{\"requestedThreadId\":\"01a1bac2-611a-7420-b8ed-7f0d557610cd\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+      }
+    }
+  ],
+  "lifecycle": {
+    "delivery_id": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "session_name": "fixture",
+    "envelope_json": "{\"id\":\"fixture\",\"body\":\"LOCAL_PROTOCOL_TEST_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+    "state": "admitted",
+    "attempts": 1,
+    "error": null,
+    "received_at": 1794134663.4778662,
+    "updated_at": 1794134663.0,
+    "ack_protocol": 2,
+    "processing_mode": "driver",
+    "ack_generation": 1,
+    "dispatch_intent_at": 1794134663.4862766,
+    "request_id": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "turn_id": "01a1bac2-6147-7dd0-bdca-0153a40c7474",
+    "admitted_at": 1794134663.0,
+    "processed_at": null,
+    "turn_outcome": null
+  }
+}

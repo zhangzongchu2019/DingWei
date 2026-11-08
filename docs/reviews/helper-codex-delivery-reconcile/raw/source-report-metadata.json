@@ -1,0 +1,10 @@
+{
+  "report_sha256": "4ec25d74645e3b629a61edb14b38c57a99c5c80601d56215aaf24c8c8016ec19",
+  "csv_sha256": "7ce07ea47b609970e39549af5ff13971307ac1bd9e545905487af86e2a59bf09",
+  "csv_rows": 218,
+  "csv_states": {
+    "admission_unknown": 161,
+    "admitted": 57
+  },
+  "unknown_without_turn": 161
+}
