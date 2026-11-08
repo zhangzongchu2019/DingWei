@@ -95,7 +95,7 @@ python3 -B tests/helper-codex-delivery-reconcile/timeout_feedback.py
 
 最终原生7格：rc1、FAIL4/PASS3/ERROR0/SKIP0；超时夹具1格：rc1、FAIL1/ERROR0/SKIP0。见 `raw/native-final.log`、`raw/native-final/RESULT.json`、逐格原生响应和 `raw/timeout-feedback.log`。五个目标红正是本步要求；不加expectedFailure、不改产品让它们转绿、不混入规范发布门冒称整体已修好。
 
-前五次开发夹具运行原文保留为native-run1～5.log：早期查询在rollout未materialized时错误、过早中断缺clientId、错误把内部failed receipt当持久failed等均已修正；不能用这些fixture红冒充产品缺陷。最终等待原生userMessage/起止时间后才断言，四个红均落目标断言而非协议异常。
+前五次开发夹具运行原文保留为native-run1～5.log（run2以.log.gz逐字节压缩保留）：早期查询在rollout未materialized时错误、过早中断缺clientId、错误把内部failed receipt当持久failed等均已修正；不能用这些fixture红冒充产品缺陷。最终等待原生userMessage/起止时间后才断言，四个红均落目标断言而非协议异常。
 
 规范 `scripts/run-build-tests.sh` 另列最终读数于 `VALIDATION.md`：系统Python首轮discovery缺四模块非产品回归，换锁依赖venv重跑。意向红测是独立显式入口，未登记到默认helper库存；后续实现获批后再转成常规回归并更新库存。初始产品hash与基线相同见 `raw/product-source-pins.json`。本步无产品变异，因为尚未引入待撤的修复保护；原生完整/缺失两控制格已验证证据门有效。
 
