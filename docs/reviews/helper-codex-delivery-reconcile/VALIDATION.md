@@ -5,7 +5,7 @@
 - 产品文件：`git diff HEAD -- tools/sessionhelper/sessionhelper`输出为空；hash见raw/product-source-pins.json。基线、分析及红测不含产品修复，不声称产品PASS。
 - 规范构建门第一轮系统Python：rc1，三闸通过，helper discovery缺test_desktop_endpoint/test_guide_staging/test_ipc_socket_path_isolation/test_sessionhelper四模块。原文raw/canonical.log，环境改用已有锁依赖venv。
 - 规范门第二轮锁依赖venv：rc1，两profile各1097项，两个legacy测试ERROR（缺硬引用b5faf73c8fe4d5c71720daf4eed5b133b8d45dbd的Git对象）。raw/canonical-locked.log.gz；已从工蜂精确fetch该历史对象，不改测试或产品以跳过。
-- 规范门补齐历史后的最终结果：运行中，交件前更新；不把前两轮记rc0。
+- 规范门补齐历史后的最终结果：rc0，2026-11-08T10:43:47.171373Z～10:53:38.238482Z。三闸通过，helper两profile各1097/1097，27个Python组与两个shell门通过，末行BUILD_TESTS_OK。原文raw/canonical-final.log.gz，执行元数据raw/canonical-final.json；前两轮仍保留真实rc1。
 - 本变更OpenSpec strict：`OPENSPEC_TELEMETRY=0 /tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec validate helper-codex-delivery-reconcile --strict` rc0。
 - 全仓OpenSpec strict：27 passed/1 failed，rc1；唯一既有项r52-delivery-status缺delta。该基线目录只有design/tasks，没有specs；本单未改其目录。原文raw/openspec.log.gz、raw/openspec-baseline-r52.log.gz，不声称全仓strict绿。
 - 新增测试均为显式入口，位于tests/helper-codex-delivery-reconcile，不扩大现有helper默认库存；预期红并非expectedFailure。SKIP为0。原生终态用自己turn/interrupt生成interrupted，不声称自然completed/failed的全覆盖或真daemon重启E2E。
