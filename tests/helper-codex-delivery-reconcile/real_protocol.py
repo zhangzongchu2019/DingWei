@@ -227,6 +227,21 @@ stream_max_retries=0
     def test_B_timeout_finds_client_id_on_historical_thread_without_rebind(self):
         self.assert_unknown_recovers(True)
 
+    def test_native_second_terminal_after_fractional_live_admission(self):
+        turn = self.submitted()
+        self.inbox.record_admitted(self.did, turn['id'], time.time())
+        replacement = self.new_driver()
+        self.bind(replacement, self.tid)
+        adapter = self.adapter(replacement)
+        replacement.poll_receipt(self.did)
+        replacement._stop_event.set()
+        for event in replacement.events():
+            adapter._record_event_lifecycle(event)
+        row = self.inbox.lifecycle(self.did)
+        self.assertEqual(row['state'], 'processed', 'NATIVE_SECONDS_REJECTED_AFTER_LIVE_RECEIPT')
+        self.assertEqual(row['admitted_at'], turn['startedAt'])
+        self.assertEqual(row['processed_at'], turn['completedAt'])
+
     def test_control_no_matching_turn_stays_unknown_without_resubmit(self):
         self.driver._store.upsert(self.tid, self.did, '', 'fixture-hash', 'unknown',
                                   'model_admission_unknown: dispatch pending')

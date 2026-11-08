@@ -150,7 +150,11 @@ class DeliveryLifecycle(DeliveryACKOutbox):
                 raise ValueError('native terminal belongs to old dispatch generation')
             if row['admitted_at'] is not None:
                 if row['turn_id']!=turn_id:raise ValueError('native terminal cannot replace original turn')
-                admitted_at=row['admitted_at']
+                # Reconciliation carries authoritative native occurrence times;
+                # a prior live receipt may only have a fractional observation.
+                # Keep legacy observation-only replays unchanged.
+                if expected_context is None:
+                    admitted_at=row['admitted_at']
             if row['state']=='processed':
                 if row['turn_outcome']!=outcome:raise ValueError('native terminal cannot replace original outcome')
                 return

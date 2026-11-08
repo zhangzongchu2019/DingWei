@@ -168,6 +168,16 @@ class ReconcileBoundaries(unittest.TestCase):
         self.rpc._write_started = None
         self.assertFalse(self.driver.transport_recovery_required(60), 'HEALTHY_WRITER_MISCLASSIFIED')
 
+    def test_native_seconds_replace_fractional_receipt_observation(self):
+        # 通知/响应先记录浮点观察；同秒原生终态的结束时刻整数可比它小。
+        observed = time.time()
+        self.inbox.record_admitted(self.did, 'native-turn', observed)
+        self.scan()
+        row = self.inbox.lifecycle(self.did)
+        self.assertEqual(row['state'], 'processed', 'NATIVE_SECONDS_REJECTED_AFTER_LIVE_RECEIPT')
+        self.assertEqual(row['admitted_at'], self.turn['startedAt'])
+        self.assertEqual(row['processed_at'], self.turn['completedAt'])
+
     def test_duplicate_client_id_is_ambiguous(self):
         other = copy.deepcopy(self.turn); other['id'] = 'duplicate'
         self.rpc.pages[None]['data'].append(other)

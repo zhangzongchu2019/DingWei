@@ -56,6 +56,9 @@ MUTATIONS = [
     ('healthy-response', 'driver_adapter.py', "if self._which == 'codex' and callable(required) and not required(self._admission_timeout):", 'if False:',
      'test_healthy_response_wait_does_not_replace_transport', 'HEALTHY_TRANSPORT_REPLACED_FOR_RESPONSE_WAIT'),
 
+    ('fractional-observation', 'inbox_lifecycle.py', "if expected_context is None:\n                    admitted_at=row['admitted_at']", "if True:\n                    admitted_at=row['admitted_at']",
+     'test_native_seconds_replace_fractional_receipt_observation', 'NATIVE_SECONDS_REJECTED_AFTER_LIVE_RECEIPT'),
+
 ]
 
 

@@ -6,7 +6,7 @@
 
 ## HCD-001：证据与原代次
 
-原生thread/turn/clientId、startedAt/completedAt、status、查询时刻、精确响应SHA256与inbox原ACK代次/dispatch intent/request ID快照放既有deliveries.detail的reconcile JSON后缀；不保存原消息内容、不增加schema。原生秒与浮点intent使用代码常量NATIVE_TIME_TOLERANCE_SECONDS=1.0，验证finite、非bool、正数、先后与未来时刻。inbox原事务内验证快照再幂等提交；已存在的turn/outcome不能替换。inProgress只推进原生admitted，缺结束时间不能推进processed。
+原生thread/turn/clientId、startedAt/completedAt、status、查询时刻、精确响应SHA256与inbox原ACK代次/dispatch intent/request ID快照放既有deliveries.detail的reconcile JSON后缀；不保存原消息内容、不增加schema。原生秒与浮点intent使用代码常量NATIVE_TIME_TOLERANCE_SECONDS=1.0，验证finite、非bool、正数、先后与未来时刻。inbox原事务内验证快照再幂等提交；已存在的turn/outcome不能替换。inProgress只推进原生admitted，缺结束时间不能推进processed。带原代次快照的完整对账证据可把同turn既有浮点接收观察升级为原生startedAt，避免同秒completedAt整数小于浮点观察而误拒；已processed的时刻与outcome不改写。
 
 ## HCD-002：可信范围与只读预算
 
