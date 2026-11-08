@@ -1,0 +1,10 @@
+PACKAGED commit=3e0e37ecb4ac43361c140497b4fe1fcaf4d44085 files=3 output=/tmp/tmp.fGw2c5S2ur/pkg
+VERIFIED files=3 expected_commit=3e0e37ecb4ac43361c140497b4fe1fcaf4d44085
+PACKAGED commit=99e02b4e5777fffb0be48143f8df2d3d7ba7b7ae files=3 output=/tmp/tmp.fGw2c5S2ur/old
+PACKAGED commit=3e0e37ecb4ac43361c140497b4fe1fcaf4d44085 files=3 output=/tmp/tmp.fGw2c5S2ur/install-pkg
+PACKAGED commit=7437ec10b28a1473cc1eb5b1151cf11a12b384d4 files=3 output=/tmp/tmp.fGw2c5S2ur/static-pkg
+PACKAGED commit=cbb56a7c8e40c245faa3ae3d860182e3dc1a93c0 files=3 output=/tmp/tmp.fGw2c5S2ur/two-pkg
+PACKAGED commit=7f8c2e9eebe3a3a7557b3e597f3b3b12d37fd2f0 files=3 output=/tmp/tmp.fGw2c5S2ur/all-pkg
+PACKAGED commit=eabf82f0d27fc6f44246e0879ea793eaeeaecacc files=3 output=/tmp/tmp.fGw2c5S2ur/fail-pkg
+PACKAGED commit=25e66bb93148fa4b3aa38720bb248d3580ba1cab files=3 output=/tmp/tmp.fGw2c5S2ur/unhealthy-pkg
+PASS view-service release core

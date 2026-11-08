@@ -1,0 +1,134 @@
+{
+  "binary_sha256": "1748767b230ebfc3d4ab7e4e254920d0c0ad9691fd8c11f190e7d44511a4a92e",
+  "command": "codex app-server generate-json-schema --out <private-output>",
+  "Turn": {
+    "properties": {
+      "completedAt": {
+        "description": "Unix timestamp (in seconds) when the turn completed.",
+        "format": "int64",
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "durationMs": {
+        "description": "Duration between turn start and completion in milliseconds, if known.",
+        "format": "int64",
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "error": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/TurnError"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Error associated with a failed or interrupted turn."
+      },
+      "id": {
+        "description": "Identifier for this turn. Codex-generated turn IDs are UUIDv7.",
+        "type": "string"
+      },
+      "items": {
+        "description": "Thread items currently included in this turn payload.",
+        "items": {
+          "$ref": "#/definitions/ThreadItem"
+        },
+        "type": "array"
+      },
+      "itemsView": {
+        "allOf": [
+          {
+            "$ref": "#/definitions/TurnItemsView"
+          }
+        ],
+        "default": "full",
+        "description": "Describes how much of `items` has been loaded for this turn."
+      },
+      "startedAt": {
+        "description": "Unix timestamp (in seconds) when the turn started.",
+        "format": "int64",
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "status": {
+        "$ref": "#/definitions/TurnStatus"
+      }
+    },
+    "required": [
+      "id",
+      "items",
+      "status"
+    ],
+    "type": "object"
+  },
+  "userMessage": {
+    "properties": {
+      "clientId": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "content": {
+        "items": {
+          "$ref": "#/definitions/UserInput"
+        },
+        "type": "array"
+      },
+      "id": {
+        "type": "string"
+      },
+      "type": {
+        "enum": [
+          "userMessage"
+        ],
+        "title": "UserMessageThreadItemType",
+        "type": "string"
+      }
+    },
+    "required": [
+      "content",
+      "id",
+      "type"
+    ],
+    "title": "UserMessageThreadItem",
+    "type": "object"
+  },
+  "ThreadTurnsListResponse": {
+    "properties": {
+      "backwardsCursor": {
+        "description": "Opaque cursor to pass as `cursor` when reversing `sortDirection`. This is only populated when the page contains at least one turn. Use it with the opposite `sortDirection` to include the anchor turn again and catch updates to that turn.",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "data": {
+        "items": {
+          "$ref": "#/definitions/Turn"
+        },
+        "type": "array"
+      },
+      "nextCursor": {
+        "description": "Opaque cursor to pass to the next call to continue after the last turn. if None, there are no more turns to return.",
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "data"
+    ],
+    "title": "ThreadTurnsListResponse",
+    "type": "object"
+  }
+}

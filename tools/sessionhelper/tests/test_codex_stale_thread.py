@@ -283,7 +283,11 @@ class CodexStaleThread(unittest.TestCase):
         reconnect.join(3)
         self.assertFalse(delivery.is_alive())
         self.assertFalse(reconnect.is_alive())
-        self.assertEqual(outcomes[0].state, 'processing')
+        # The original transport died during validation. Keeping the admission
+        # lock must not turn this unsent delivery into a native submission.
+        self.assertEqual(outcomes[0].state, 'queued', 'DISCONNECTED_PREFLIGHT_MUST_STAY_LOCAL_QUEUED')
+        self.assertEqual(outcomes[0].source, 'local_queue')
+        self.assertNotIn('turn/start', [method for method, _ in self.rpc.calls])
         self.assertTrue(replaced.is_set())
 
     def _adapter_failure(self, reason):

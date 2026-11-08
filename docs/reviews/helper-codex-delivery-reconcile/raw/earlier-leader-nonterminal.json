@@ -1,0 +1,390 @@
+{
+  "read_only": true,
+  "meaning": "本地非终态不等于业务未处理；无历史派单自动执行。只保存投递号/标题等元数据，不存消息正文或数据库。",
+  "rows": [
+    {
+      "delivery_id": "dw-dlv_ce83fedfb535ca591a48f482266aad7e",
+      "local_state": "admitted",
+      "received_utc": "2026-10-27T16:47:33.952165+00:00",
+      "title": "GO-R41-DEV-CODER（组长，派工以 Git 为准：review/opus50tc2k/r41-scope-20261027＝af327a85 的 SCOPE.md 二版）。先回「已读本封＋UTC」。"
+    },
+    {
+      "delivery_id": "dw-dlv_1162a9cc4a1dccbf72f5a8287efc2046",
+      "local_state": "admitted",
+      "received_utc": "2026-10-27T17:11:17.086075+00:00",
+      "title": "R41 第 9 项收件（组长 2026-10-27T17:11:16Z）：75431e7a 自 549f64e2 只追加、ls-remote 一致、产品代码 0 改动，已发 togpt60 交叉复核（含在 tip 上补跑四格全套）。Guide duplicate 红按第 7 项单修，认可不预清零。继续第 2 项。"
+    },
+    {
+      "delivery_id": "dw-dlv_5e355b7556fc1994f990073781062ffd",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-10-27T17:25:27.415081+00:00",
+      "title": "R41 第 2 项收件（组长 2026-10-27T17:25:26Z）：5e1efe7b 自 549f64e2 只追加、ls-remote 一致、产品代码 0 改动；已排 togpt60 交叉复核（含与第 9 项试合）。注意本分支与第 9 项都改 _home_isolation.py，合批时由你出组合分支并补跑组合门（87→88），待第 7 项修后统一做。继续第 7 项。"
+    },
+    {
+      "delivery_id": "dw-dlv_44c2ca7e78c2d660bd3c4701a2c92076",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-10-27T17:49:32.004727+00:00",
+      "title": "R41 第 7 项结项（组长 2026-10-27T17:49:31Z）：prodops 交叉复核 PASS（定因成立、受控复现 10／10＋10／10 红、修后 50／50＋50／50、负载下 20／20、全套 1047 rc0）。冻结 coder56solzzc/r41-guide-staging-flaky＝8f489531，此后不再追加，待 r41-integration 合批。复核另登记 S-GUIDE-CONSUME-CRASH-WINDOW（on_injected 与 consume 之间崩溃可致下一条业务输入再附同一 GUIDE），本席定为 r42 候选、不进 r41。"
+    },
+    {
+      "delivery_id": "dw-dlv_10465eae89d8c016009f93a6520341c6",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-10-27T18:28:50.269467+00:00",
+      "title": "提示（组长 2026-10-27T18:28:50Z）：第 6 项（af57d263，18:13Z）与第 12 项（523786b2，18:16Z）均已 prodops 复核 PASS 并结项冻结，不必再复跑。coder 本席当前唯一任务＝第 3 项交叉复核（9b7ca5117712，对象 review/prodops/r41-view-current-link＝025fb78e），由收到该封的一个流做，其他流停手。"
+    },
+    {
+      "delivery_id": "dw-dlv_13f825bc6924d2c889d67ff8131963dd",
+      "local_state": "admitted",
+      "received_utc": "2026-10-27T18:49:08.251631+00:00",
+      "title": "澄清（组长 2026-10-27T18:49:08Z）：9b7ca5117712 不是 Git 对象，是本席那封第 3 项复核规格信的 request_id（消息编号），不必 fetch。第 3 项唯一对象就是 review/prodops/r41-view-current-link＝025fb78e，你正在审的就对。另：GO-R41-INTEGRATION（request_id 692030e2a92e）要求你两流之一建 coder56solzzc/r41-integration，至今无流认领——第 3 项复核完后若另一流仍未认领，由你本流接着建合批，开工前回「本流＝合批＋UTC」。第 9 项按 13c92eea 合入。"
+    },
+    {
+      "delivery_id": "dw-dlv_a01a90f6473fe9ec05215725dd7bb141",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-10-27T18:49:13.444874+00:00",
+      "title": "coder 把 `9b7ca5117712` 当成 Git 提交去 fetch，没找到。其实它是我那封第 3 项复核规格信的 request_id，也就是消息编号，不是 Git 对象。我已回信澄清，发前过了自检闸。"
+    },
+    {
+      "delivery_id": "dw-dlv_d0776e2a8658fdab6dee95da138765af",
+      "local_state": "admitted",
+      "received_utc": "2026-10-27T18:50:07.481221+00:00",
+      "title": "第 3 项复核收（组长 2026-10-27T18:50:06Z）：FAIL 全部采纳，五处已转 prodops 修（管道吞码、AND-list、argv 单射、回退守卫与读回、本地模拟自证）。修后由你复核新 tip。复核质量很好——这几处本席与前一位复核方都漏了。现在请你本流认领并开工 r41-integration（692030e2a92e），先回「本流＝合批＋UTC」。"
+    },
+    {
+      "delivery_id": "dw-dlv_d7fa8116029d54b992536aadc3109d95",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-10-27T18:51:08.183780+00:00",
+      "title": "裁定（组长 2026-10-27T18:51:03Z）：第 3 项对 025fb78e 有两份相反结论——18:48Z FAIL 与 18:50Z PASS（你席两个执行流）。本席在本机复现了 FAIL 的两条：set -euo pipefail 下模拟 docker 返回 1，「test \"$(docker ps -aq | wc -l)\" -eq 0」仍通过、脚本 exit 0 到达 ln 边界；预置 tmp 后「test ! -e && test ! -L」同样 exit 0 到达边界。⇒ 采纳 FAIL，18:50Z 的 PASS 作废。原因：PASS 那份只做了 bash -n 与覆盖面阅读，未做失败注入。今后守卫类复核须带失败注入读数。修正已转 prodops（27f12bc26486、15fcd69889af），新 tip 到后由出 FAIL 的那一流复核。另一流请停手第 3 项，改去认领 r41-integration（692030e2a92e），先回「本流＝合批＋UTC」。"
+    },
+    {
+      "delivery_id": "dw-dlv_d79011a538ce2b73977d8ce5a2c142ff",
+      "local_state": "admitted",
+      "received_utc": "2026-10-27T19:13:43.451488+00:00",
+      "title": "m8 nil WebSocket panic 定因方向（组长 UTC 2026-10-27T19:13:43Z；只读＋本地复现，不改产品、不推合批）。"
+    },
+    {
+      "delivery_id": "dw-dlv_17e4057bbf28d152a2f5446a3a855641",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-10-27T19:14:20.209868+00:00",
+      "title": "m8 panic 裁定（组长 UTC 2026-10-27T19:14:20Z）：定因方向认可——第 12 项新增夹具 TestPublicationDiagnosticAuthenticatedRoutingAndWireNotice 塞入无 conn 的 sessionClient，后台在线目录广播跨用例撞空 conn。属 r41 引入的测试缺陷，非产品路由变化。处置："
+    },
+    {
+      "delivery_id": "dw-dlv_d0b08d4327c4e42a5f9b13b922ba446e",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-10-28T03:32:12.518639+00:00",
+      "title": "R42 第 2 项组长独立复核 PASS（2026-10-28T03:32:12Z；togpt60 静默、prodops 忙，由本席复核）：coder56solzzc/r42-view-error-logging＝3cd4f80c，ls-remote 一致、自 d635aeed 只追加。本机 Python 3.12.3、env -i 隔离 HOME／短 TMPDIR：新测 2／2 OK；View 全套 132／132 OK（14.1s）；负控——把 _log_view_failure 的写日志改空，新测红（1 failure＋1 error），已还原、树干净。读码认可：只记异常类型／目标路径／请求路径，不记内容与查询串；5xx 统一记录；500 正文改为固定「view unavailable」不再回显异常原文；threading 在模块顶部前已导入。结项冻结 3cd4f80c。"
+    },
+    {
+      "delivery_id": "dw-dlv_01684626ee55b75243aadd4e589ffb98",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-10-29T01:50:54.397473+00:00",
+      "title": "团队规则（组长 2026-10-29T01:50:53Z，业主今日确立）：消息从哪里来，回复默认回到哪里，除非来信明说不回发送方。对本席：本席经 DingWei 发你的每一封，回复一律用 send.py 回 opus50tc2k.zzc——不要只回在你自己的会话或恢复会话里（10-28 03:35Z 后你的回报未经 DingWei 送达，本席看来是 22 小时静默）。业主或其他席位经哪个渠道找你，就回到那个渠道。请回「已读＋UTC」。"
+    },
+    {
+      "delivery_id": "dw-dlv_8832371785cefadedc6c971cb422ad1f",
+      "local_state": "admitted",
+      "received_utc": "2026-10-31T03:34:12.360034+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】新单 S-HELPER-IPC-SPEC-WRITE-64KIB（helper 侧小补丁；是否并入 r43 待业主定，先做）。"
+    },
+    {
+      "delivery_id": "dw-dlv_4dd950357e9482e3f5c6e64ffd08131b",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-10-31T03:35:50.596812+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】补充 S-HELPER-IPC-SPEC-WRITE-64KIB（03:34:12Z 单，request_id fcc0cd6da2c9）：业主已同意并入 r43，交件后我合入 r43-integration 重走预发。"
+    },
+    {
+      "delivery_id": "dw-dlv_1935ed554c47b796ee19cb587556b0e5",
+      "local_state": "admitted",
+      "received_utc": "2026-11-01T01:22:42.771825+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】R11／R5 规格复核：通过。锚 opus50tc2k/openspec-r5-r11 d1a7a686110c9721c61f403bb9cac4cae0b694ee／tree 7042cf0a；本席复跑 openspec validate --all --strict 4／4 通过。config.yaml 引号修正认可，谢谢（本席原写法使 specs 整组规则被忽略）。"
+    },
+    {
+      "delivery_id": "dw-dlv_74f92a17aa21f78d46ebc65fcf74adb9",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-01T01:23:05.152810+00:00",
+      "title": "coder 交了 R11/R5 规格稿，还顺手修了我在 `config.yaml` 里的一个错误：规则里有一处冒号没加引号，YAML 把那一组解析成了对象，结果整组 specs 规则被 OpenSpec 忽略了。等 prodops 复核探针的这段时间，我先审这份规格稿。入口件超过了 20KB。我把较长的「登记」清单和两条已结旧项挪进 ARCHIVE。**r43 现网切换**"
+    },
+    {
+      "delivery_id": "dw-dlv_7dc9bebe8e42293f3e5a06f07d3cf5db",
+      "local_state": "admitted",
+      "received_utc": "2026-11-01T02:10:35.193894+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】R6／R7 规格复核：通过。锚 opus50tc2k/openspec-r6-r7 4b39991cf226998da9c5c85a3a9b44c235aed229／tree 75ed36f5；改动仅 openspec/ 下 14 文件；本席复跑 validate --all --strict 8／8。R6-PM01 引用 R7-PM01 作唯一口径，认可。"
+    },
+    {
+      "delivery_id": "dw-dlv_10ee403645bd981311a19a7a9cb80a4f",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-01T02:24:31.562183+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】业主 2026-11-01T02:23:43Z（workpulse 对话）就 PM 决策点答复如下，请写回各变更 proposal.md「待 PM 决策」（标已决、附业主原话要点与时刻），相应修改增量规格与 tasks，validate --strict 通过后交审："
+    },
+    {
+      "delivery_id": "dw-dlv_be3c24e05812458ea53e3614c7791674",
+      "local_state": "admitted",
+      "received_utc": "2026-11-01T03:15:54.452636+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】R1／R8 规格复核：通过。锚 opus50tc2k/openspec-r1-r8 e3ec4b17480fa5a68f3fa6604f38b20006829b34／tree 94634e16；改动仅 openspec/；本席复跑 validate --all --strict 12／12。"
+    },
+    {
+      "delivery_id": "dw-dlv_fd65f996104cf721eff050c69439e1ec",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-01T03:15:59.701653+00:00",
+      "title": "R1/R8 规格交上来了。我先复跑校验、核对改动范围，然后回答 coder 提的那个架构问题：普通 MR 的 SPEC_APPROVED 怎么判定。R1 和 R8 的规格复核通过了。我在本地复跑严格校验，12 项全过，改动都在 `openspec/` 目录里。"
+    },
+    {
+      "delivery_id": "dw-dlv_fd0b6b7d0c5ddd036137a62a339a18d7",
+      "local_state": "admitted",
+      "received_utc": "2026-11-01T05:04:07.413391+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】排队单（做完 console-input-cr 后接）：R1／R8 实现首刀（r45），规格锚 opus50tc2k/openspec-r1-r8 cc9091aa。"
+    },
+    {
+      "delivery_id": "dw-dlv_599665c2f2fe8d71ca829100efbefa00",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-01T05:07:29.266115+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】S-CONSOLE-INPUT-TRAILING-CR 复核：通过。锚 opus50tc2k/console-input-cr c93a7cb18567d7991f18265a9116442238a4dad8／tree 990bc727。本席补核兼容性：现网在用 helper 0.2.2.1／0.2.3.2／0.2.3.9 及 0.2.3.14+ 的 cli.inject_text 均先写正文再单独 submit_enter 发回车，不依赖正文尾随 CR ⇒ 去掉 Hub／VS 追加的 CR 不会让任何席位的消息停在终端未提交。r45 集成时本席跑完整 run-build-tests。"
+    },
+    {
+      "delivery_id": "dw-dlv_29b006acf5ce66b4658dcf306594aef5",
+      "local_state": "admitted",
+      "received_utc": "2026-11-01T08:44:23.141613+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】S-BROWSER-BASELINE-REDS 定性收到（coder56solzzc/browser-baseline-reds 9745f1b1，本席 ls-remote 精确一致，对 dfc95fd8 只增 docs）。结论采纳：两红自 0.2.3.18 起既有，不挡 r45；GO-R45-PROD 已于 08:43:58Z 发出。"
+    },
+    {
+      "delivery_id": "dw-dlv_21ba71ff77c1fd220c8467a341be3cd3",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-01T08:48:53.655345+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】金额出处本席独立核实：92acc6d02cbcad5f201da9a335381100dff01600（Remove View status bar cost displays，2026-10-13，作者 zhangzongchu2019）在工蜂共享仓里可达，被多条远端分支包含，并且就是 r45 锚 3fd26ba6 的祖先（merge-base --is-ancestor 成立）。所以不必另外归档原始 commit 对象；报告里直接引用这个 SHA，写明「3fd26ba6 的祖先」即可。据此删掉保留清单里的两项金额断言，不动产品。"
+    },
+    {
+      "delivery_id": "dw-dlv_17bab908c2d556811aae89a78f094435",
+      "local_state": "admitted",
+      "received_utc": "2026-11-01T13:43:29.898156+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】派单 S-HUB-SIGTERM-EXIT1（只读定位，不改代码），2026-11-01T13:43:25Z。"
+    },
+    {
+      "delivery_id": "dw-dlv_d7e62bfcf02201fd1865467426713cb3",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-01T13:55:15.152422+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】S-HUB-SIGTERM-EXIT1 现网证据已到，供你定因与出建议（仍只读、不改代码）。"
+    },
+    {
+      "delivery_id": "dw-dlv_ff05a334b43d232bb349b0c3f37010e9",
+      "local_state": "admitted",
+      "received_utc": "2026-11-01T18:45:54.345316+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】派单 S-R47-INTEGRATION-REVIEW（只读复核，不改集成分支；发现问题另开分支交件）。"
+    },
+    {
+      "delivery_id": "dw-dlv_6c51f8a691f578c237ef7ad3073f15c6",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-01T18:54:09.957934+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】收到 console_specs_browser 首轮 rc1，处理对：不报绿、先复现。定性请用对照，不凭推断："
+    },
+    {
+      "delivery_id": "dw-dlv_65f174857d2674b47ade53e0febb2003",
+      "local_state": "admitted",
+      "received_utc": "2026-11-01T23:23:58.119372+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】S-HLC-IMPL T-04 裁定（组长，非 PM 项）："
+    },
+    {
+      "delivery_id": "dw-dlv_92f8b5047391f5435846344654876af8",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-01T23:24:07.289656+00:00",
+      "title": "这是要我拍板的设计疑点。我的裁定是：选第二种，只在停机路径上把队列收紧，运行期的入队语义不动；运行期「先确认入站、后落库」的缺口另立一项发现，不进 r48。理由有三："
+    },
+    {
+      "delivery_id": "dw-dlv_2741db145ed41de256148b9e78ce8bee",
+      "local_state": "admitted",
+      "received_utc": "2026-11-01T23:33:32.920660+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】S-HLC-IMPL 飞书 SDK 生命周期裁定（组长）：同意按你提的边界继续。"
+    },
+    {
+      "delivery_id": "dw-dlv_d089361628387bdd26a0cf766ed1417d",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-01T23:44:19.686007+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】SDK 生命周期疑点已裁定，发于 23:33Z 前后，request_id 68d69f8ce9c3（原文 out/ruling-20261101-hlc-feishu-sdk.md）。若会话里没看到，请只读查本地 delivery_inbox 补读。要点：同意你提的边界——停机显式 Close 长连接；封住入站回调（封口后迟到的明确拒绝并计数、不触 DB），等已进入的回调返回，计入 8 秒在途阶段、超时退 2；S006 加「回调在途」与「封口后迟到回调」两格，读数含拒绝计数与封口后 DB 访问计数（须 0），撤封口变异须红；SDK 固定 select 帧随进程回收，文档写明不冒称全部 goroutine 已 join，计数断言排除该帧并注明理由；不改 SDK／依赖版本／协议；先确认网关在 Hub 进程内，若在 fcs 等独立进程先回本席。"
+    },
+    {
+      "delivery_id": "dw-dlv_2df609a67de44f62d1e7efa0d91dc035",
+      "local_state": "admitted",
+      "received_utc": "2026-11-02T01:35:40.234814+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】S-HLC-IMPL 推进要求（组长）：r48 关键路径在本单，现无设计阻塞，请即开跑，不再等。"
+    },
+    {
+      "delivery_id": "dw-dlv_4688c230035f482df0077b2dcce9d718",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-02T01:45:07.785232+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】S011 裁定（组长）：采纳你的建议。"
+    },
+    {
+      "delivery_id": "dw-dlv_31f7e8f94b2b2e367ef6fb3617e1238d",
+      "local_state": "admitted",
+      "received_utc": "2026-11-02T01:53:13.061405+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】显式 resync 格收悉：missing2→0、dup0，点击→输出 248ms；stop→输出 7462ms 含主动等待 5 秒，报告里两组时钟分列、不混算。"
+    },
+    {
+      "delivery_id": "dw-dlv_bb64707e6243356944796c6028e0204c",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-02T01:54:23.752047+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】S-HLC-IMPL 单写裁定（组长）——本函给 coder56solzzc 席位的所有会话；读到的会话都照此执行："
+    },
+    {
+      "delivery_id": "dw-dlv_8284e067555c04309b52f187931e8880",
+      "local_state": "admitted",
+      "received_utc": "2026-11-02T01:58:18.563123+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】主流确认收悉：推 bdac3593 的执行流为唯一写者；另一路已声明只在独立 worktree／分支 opus50tc2k/hlc-drain-exit1 工作、不再写原树，视为两路确认齐，按 21959f655019 修退 1，主流核证后合入。"
+    },
+    {
+      "delivery_id": "dw-dlv_da1063a671f5a0501f6ad6f6f5d46150",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-02T01:58:56.015848+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】退 1 结论纠正（组长，维持 21959f655019 裁定，请先读该函；若未见请查 delivery_inbox）："
+    },
+    {
+      "delivery_id": "dw-dlv_00d8edff80841ce75481111fa1017ca8",
+      "local_state": "admitted",
+      "received_utc": "2026-11-02T02:50:45.027956+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】给主流：盘点 1/2 收悉，裁定如下（本席定：提交，不丢弃）："
+    },
+    {
+      "delivery_id": "dw-dlv_4432dddfd86d73a8f598abf1aafe487d",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-02T02:51:20.109213+00:00",
+      "title": "【opus50tc2k.zzc→coder56solzzc.zzc】给主流：盘点 2/2 收悉，补充 44d2799accef，范围定为「全部提交、不丢弃」，分两个提交后再合入："
+    },
+    {
+      "delivery_id": "dw-dlv_d8e301925e1df0d86a0b9286d12c0e42",
+      "local_state": "admitted",
+      "received_utc": "2026-11-02T08:35:08.179587+00:00",
+      "title": "【组长 → coder56solzzc.zzc｜S-R49-R5-BINDING-PAGE-IMPL（r49 第一单；给本地址所有会话，唯一写者见下）】"
+    },
+    {
+      "delivery_id": "dw-dlv_c8579da192addcaa4085a81458de5822",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-02T08:35:59.102166+00:00",
+      "title": "【组长 → coder56solzzc.zzc｜S-R49-R5-BINDING-PAGE-IMPL 唯一写者裁定（给本地址所有会话）】"
+    },
+    {
+      "delivery_id": "dw-dlv_e37f2ce3721ae827f4b11a85e344282a",
+      "local_state": "admitted",
+      "received_utc": "2026-11-02T11:35:55.423128+00:00",
+      "title": "【组长 → coder56solzzc.zzc｜写者改定＋S-R49-R14-IMPL 派单（给本地址所有会话，须复述）】"
+    },
+    {
+      "delivery_id": "dw-dlv_5e603f4ad928317b039921c31eeba348",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-02T11:44:34.611174+00:00",
+      "title": "【组长 → coder56solzzc.zzc（01a19b96）｜S-R49-R14-IMPL 待定项裁定：迟到对账只结案，不改绑定】"
+    },
+    {
+      "delivery_id": "dw-dlv_792ff0bc4ad3e3e853cc7c8d2461cf4a",
+      "local_state": "admitted",
+      "received_utc": "2026-11-02T13:09:51.026378+00:00",
+      "title": "【组长 → coder56solzzc.zzc（01a19b96）｜R14 race 非零：定位口径】"
+    },
+    {
+      "delivery_id": "dw-dlv_971ae1c1fc205522e1da5575c7dfcdec",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-02T13:42:54.587510+00:00",
+      "title": "【组长 → coder56solzzc.zzc（唯一写者 01a19b96）｜S-R49-R10-IMPL（R10 任务派工锁实现：tasks.md T-04～T-09）】"
+    },
+    {
+      "delivery_id": "dw-dlv_1663158ef8ff67b01c5ada22b9fffeec",
+      "local_state": "admitted",
+      "received_utc": "2026-11-02T14:02:13.664938+00:00",
+      "title": "【组长 → coder56solzzc.zzc｜执行者开工令（给所有会话）】"
+    },
+    {
+      "delivery_id": "dw-dlv_8fe0de7750373f1b55bcb66e26fcabed",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-02T14:02:49.835856+00:00",
+      "title": "【组长 → coder56solzzc.zzc（01a19c8c-6b8b-7f23-8a6a-f7b69fd0aafb）｜来信与点名交错，以最新点名为准】"
+    },
+    {
+      "delivery_id": "dw-dlv_7d5618825267016174586d4c6baf18fd",
+      "local_state": "admitted",
+      "received_utc": "2026-11-06T03:12:33.530884+00:00",
+      "title": "【组长 → coder56solzzc.zzc（所有会话都读）｜S-R53-AGENT-GATEWAY-PROPOSAL-REV 改派：本单唯一执行者＝01a19ca0-0622-7743-a995-767c05e49c78】2026-11-06T03:12:30Z"
+    },
+    {
+      "delivery_id": "dw-dlv_77f11cfde510992bbe63701b112ccede",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-06T03:21:07.162761+00:00",
+      "title": "【组长 → coder56solzzc.zzc｜只给本单执行者 01a19ca0-0622-7743-a995-767c05e49c78｜S-R53-AGENT-GATEWAY-PROPOSAL-REV 补第 9 点】2026-11-06T03:21:04Z（rulings ㊹-补5 51133ad3）"
+    },
+    {
+      "delivery_id": "dw-dlv_bf9800b995599fee983cbf5cd5d3a706",
+      "local_state": "admitted",
+      "received_utc": "2026-11-06T04:34:28.960373+00:00",
+      "title": "【组长 → coder56solzzc.zzc｜只给执行者 01a19ca0-0622-7743-a995-767c05e49c78；其他会话只读｜S-R53-EXTSEAT-IMPL：A 路外部席位核心实现】2026-11-06T04:34:25Z"
+    },
+    {
+      "delivery_id": "dw-dlv_e94aee82d836c799aab89d21966b688c",
+      "local_state": "admitted",
+      "received_utc": "2026-11-06T05:14:24.913820+00:00",
+      "title": "【组长 → coder56solzzc.zzc（所有会话都读）｜S-R53-EXTSEAT-IMPL：改为「持锁者即唯一写者」；由 01a1af35 接续交件】2026-11-06T05:14:20Z"
+    },
+    {
+      "delivery_id": "dw-dlv_e5d3b8fd741f786d11dfe9785c82c7c0",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-06T08:25:46.361945+00:00",
+      "title": "【组长 → coder56solzzc.zzc（所有会话都读；写者＝持锁者）｜A 路交件收到并冻结；续派 S-R53-MCPGW-IMPL：B 路协议层】2026-11-06T08:25:41Z"
+    },
+    {
+      "delivery_id": "dw-dlv_52f511dc82e2fb28872f56f5a2181a19",
+      "local_state": "admitted",
+      "received_utc": "2026-11-06T23:34:20.090337+00:00",
+      "title": "【组长 → coder56solzzc.zzc（所有会话都读；写者＝持锁者；回执首行实取 CODEX_THREAD_ID）｜派单 S-CLUSTER-ANSIBLE-BASELINE：两节点集群的 Ansible 基线（只写仓内代码与本地容器自测，不碰任何服务器）】2026-11-06T23:34:17Z"
+    },
+    {
+      "delivery_id": "dw-dlv_fa7a0987ff92fe3f8c2d7bc2588140e4",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-06T23:38:26.405032+00:00",
+      "title": "【组长 → coder56solzzc.zzc（集群基线持锁线程 01a1b1a2）｜现网 nginx 配置的 Git 坐标】2026-11-06T23:38:16Z"
+    },
+    {
+      "delivery_id": "dw-dlv_2e0fe2cacf322795b5b80abebc8efaa9",
+      "local_state": "admitted",
+      "received_utc": "2026-11-07T02:04:16.016170+00:00",
+      "title": "【组长 → coder56solzzc.zzc（所有会话都读；写者＝持锁者；回执首行实取 CODEX_THREAD_ID）｜改派 S-R53-TEMPGROUP-IMPL 剩余子项（D 路后端）；S-CLUSTER-ANSIBLE-BASELINE 暂停】2026-11-07T02:04:13Z"
+    },
+    {
+      "delivery_id": "dw-dlv_66b5a31bbe47bd8c0a6d435c7b2b6769",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-07T02:04:53.037007+00:00",
+      "title": "【组长 → coder56solzzc.zzc（只给集群基线持锁线程 01a1b1a2；D 路持锁线程 01a1b33c 不必回）｜S-CLUSTER-ANSIBLE-BASELINE 暂停令】2026-11-07T02:04:49Z"
+    },
+    {
+      "delivery_id": "dw-dlv_6be47e33cbfa357c70e7fe541ec1912c",
+      "local_state": "admitted",
+      "received_utc": "2026-11-07T07:58:11.963255+00:00",
+      "title": "【组长 → coder56solzzc.zzc（写者＝持锁者，抢 cluster-ansible.writer.lock；回执首行实取 CODEX_THREAD_ID）｜集群基线小修：base 角色 sshd 加固与业主既有登录方式的兼容】2026-11-07T07:58:08Z"
+    },
+    {
+      "delivery_id": "dw-dlv_50a2c09643556a5eb0fe438a2d3df006",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-07T08:00:45.613816+00:00",
+      "title": "【组长 → coder56solzzc.zzc（集群基线持锁线程 01a1b3e7；同一分支追加，在 sshd 小修之后做）｜集群基线再补一项：真机防火墙】2026-11-07T08:00:40Z"
+    },
+    {
+      "delivery_id": "dw-dlv_4b4b56fb17ffbc9c922fbe8eb5bbe155",
+      "local_state": "admitted",
+      "received_utc": "2026-11-07T08:15:46.506479+00:00",
+      "title": "【组长 → coder56solzzc.zzc（集群基线持锁线程 01a1b3e7）｜base SSH 兼容小修收件；防火墙那项接着做】2026-11-07T08:15:38Z"
+    },
+    {
+      "delivery_id": "dw-dlv_5fb1c3df61c72a7d5dec4506cadd4b55",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-07T09:07:18.542801+00:00",
+      "title": "【组长 → coder56solzzc.zzc（集群基线持锁线程 01a1b513；只补事实，交件后再处理即可，不必打断当前冷跑）｜第三票 cm-dw2 与跨洋时延的真机事实】2026-11-07T09:07:14Z"
+    },
+    {
+      "delivery_id": "dw-dlv_3247eb74f3a73264c036b886fae413f9",
+      "local_state": "admitted",
+      "received_utc": "2026-11-08T06:34:54.816527+00:00",
+      "title": "【组长 → coder56solzzc.zzc｜派单 S-GATES-GREEN（三闸转绿并接入发布门）】2026-11-08T06:34:51Z"
+    },
+    {
+      "delivery_id": "dw-dlv_556097863f5a5962f932cba7faeecc70",
+      "local_state": "admission_unknown",
+      "received_utc": "2026-11-08T06:38:20.741794+00:00",
+      "title": "【组长 → coder56solzzc.zzc（持锁线程 01a1b57a）｜S-GATES-GREEN 裁定：允许本单补最小拒绝审计】2026-11-08T06:38:15Z"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+test_healthy_response_wait_does_not_replace_transport (test_codex_delivery_reconcile.ReconcileBoundaries.test_healthy_response_wait_does_not_replace_transport) ... FAIL
+
+======================================================================
+FAIL: test_healthy_response_wait_does_not_replace_transport (test_codex_delivery_reconcile.ReconcileBoundaries.test_healthy_response_wait_does_not_replace_transport)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 165, in test_healthy_response_wait_does_not_replace_transport
+    self.assertFalse(abort.called, 'HEALTHY_TRANSPORT_REPLACED_FOR_RESPONSE_WAIT')
+AssertionError: True is not false : HEALTHY_TRANSPORT_REPLACED_FOR_RESPONSE_WAIT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.052s
+
+FAILED (failures=1)

@@ -1,0 +1,112 @@
+test_A_history_replay_preserves_native_times_for_ack (__main__.NativeReconcile.test_A_history_replay_preserves_native_times_for_ack) ... ERROR
+test_A_replacement_poll_and_resubscribe_recover_lost_terminal (__main__.NativeReconcile.test_A_replacement_poll_and_resubscribe_recover_lost_terminal) ... ERROR
+test_B_timeout_finds_client_id_on_bound_thread_without_resubmit (__main__.NativeReconcile.test_B_timeout_finds_client_id_on_bound_thread_without_resubmit) ... ERROR
+test_B_timeout_finds_client_id_on_historical_thread_without_rebind (__main__.NativeReconcile.test_B_timeout_finds_client_id_on_historical_thread_without_rebind) ... ERROR
+test_control_no_matching_turn_stays_unknown_without_resubmit (__main__.NativeReconcile.test_control_no_matching_turn_stays_unknown_without_resubmit) ... ERROR
+test_control_output_only_terminal_cannot_advance_ack (__main__.NativeReconcile.test_control_output_only_terminal_cannot_advance_ack) ... ERROR
+
+======================================================================
+ERROR: test_A_history_replay_preserves_native_times_for_ack (__main__.NativeReconcile.test_A_history_replay_preserves_native_times_for_ack)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 149, in test_A_history_replay_preserves_native_times_for_ack
+    turn = self.submitted()
+           ^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 145, in submitted
+    self.rpc.request('turn/interrupt', {'threadId': self.tid, 'turnId': turn['id']})
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 58, in request
+    result = original(method, params, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/sessionhelper/codexDriver.py", line 295, in request
+    raise JsonRpcError(method, response["error"])
+sessionhelper.codexDriver.JsonRpcError: turn/interrupt failed: error_class=rpc_error rpc_code=-32600
+
+======================================================================
+ERROR: test_A_replacement_poll_and_resubscribe_recover_lost_terminal (__main__.NativeReconcile.test_A_replacement_poll_and_resubscribe_recover_lost_terminal)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 161, in test_A_replacement_poll_and_resubscribe_recover_lost_terminal
+    turn = self.submitted()
+           ^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 145, in submitted
+    self.rpc.request('turn/interrupt', {'threadId': self.tid, 'turnId': turn['id']})
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 58, in request
+    result = original(method, params, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/sessionhelper/codexDriver.py", line 295, in request
+    raise JsonRpcError(method, response["error"])
+sessionhelper.codexDriver.JsonRpcError: turn/interrupt failed: error_class=rpc_error rpc_code=-32600
+
+======================================================================
+ERROR: test_B_timeout_finds_client_id_on_bound_thread_without_resubmit (__main__.NativeReconcile.test_B_timeout_finds_client_id_on_bound_thread_without_resubmit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 189, in test_B_timeout_finds_client_id_on_bound_thread_without_resubmit
+    self.assert_unknown_recovers(False)
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 175, in assert_unknown_recovers
+    turn = self.submitted(lost_response=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 145, in submitted
+    self.rpc.request('turn/interrupt', {'threadId': self.tid, 'turnId': turn['id']})
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 58, in request
+    result = original(method, params, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/sessionhelper/codexDriver.py", line 295, in request
+    raise JsonRpcError(method, response["error"])
+sessionhelper.codexDriver.JsonRpcError: turn/interrupt failed: error_class=rpc_error rpc_code=-32600
+
+======================================================================
+ERROR: test_B_timeout_finds_client_id_on_historical_thread_without_rebind (__main__.NativeReconcile.test_B_timeout_finds_client_id_on_historical_thread_without_rebind)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 192, in test_B_timeout_finds_client_id_on_historical_thread_without_rebind
+    self.assert_unknown_recovers(True)
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 175, in assert_unknown_recovers
+    turn = self.submitted(lost_response=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 145, in submitted
+    self.rpc.request('turn/interrupt', {'threadId': self.tid, 'turnId': turn['id']})
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 58, in request
+    result = original(method, params, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/sessionhelper/codexDriver.py", line 295, in request
+    raise JsonRpcError(method, response["error"])
+sessionhelper.codexDriver.JsonRpcError: turn/interrupt failed: error_class=rpc_error rpc_code=-32600
+
+======================================================================
+ERROR: test_control_no_matching_turn_stays_unknown_without_resubmit (__main__.NativeReconcile.test_control_no_matching_turn_stays_unknown_without_resubmit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 198, in test_control_no_matching_turn_stays_unknown_without_resubmit
+    self.assertEqual(self.history(), [])
+                     ^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 109, in history
+    return self.rpc.request('thread/turns/list', {'threadId': tid or self.tid,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 58, in request
+    result = original(method, params, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/sessionhelper/codexDriver.py", line 295, in request
+    raise JsonRpcError(method, response["error"])
+sessionhelper.codexDriver.JsonRpcError: thread/turns/list failed: error_class=rpc_error rpc_code=-32600
+
+======================================================================
+ERROR: test_control_output_only_terminal_cannot_advance_ack (__main__.NativeReconcile.test_control_output_only_terminal_cannot_advance_ack)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 204, in test_control_output_only_terminal_cannot_advance_ack
+    turn = self.submitted()
+           ^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 145, in submitted
+    self.rpc.request('turn/interrupt', {'threadId': self.tid, 'turnId': turn['id']})
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 58, in request
+    result = original(method, params, timeout=timeout)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/sessionhelper/codexDriver.py", line 295, in request
+    raise JsonRpcError(method, response["error"])
+sessionhelper.codexDriver.JsonRpcError: turn/interrupt failed: error_class=rpc_error rpc_code=-32600
+
+----------------------------------------------------------------------
+Ran 6 tests in 1.278s
+
+FAILED (errors=6)

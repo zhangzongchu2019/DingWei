@@ -1,0 +1,10 @@
+{
+  "tests": 8,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "binary_sha256": "1748767b230ebfc3d4ab7e4e254920d0c0ad9691fd8c11f190e7d44511a4a92e",
+  "baseline": "6e2c8364",
+  "product_code_modified": true,
+  "external_inference": false
+}

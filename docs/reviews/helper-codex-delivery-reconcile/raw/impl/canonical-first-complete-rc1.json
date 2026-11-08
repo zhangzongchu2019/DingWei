@@ -1,0 +1,14 @@
+{
+  "command": "scripts/run-build-tests.sh",
+  "python": "/tmp/coder-0232-locked-venv/bin/python3",
+  "started_at": "2026-11-08T11:23:17.130731+00:00",
+  "commit": "aae6222db35d2f3ea343afaf506537c7a83e5112",
+  "product_sha256": {
+    "tools/sessionhelper/sessionhelper/codexDriver.py": "bb388a804c1d0f3844481d67123a129129b06fbc7650e358dbd6c82aa67a358e",
+    "tools/sessionhelper/sessionhelper/driver_adapter.py": "9fb9bd89b9f25c256387335f9dda0e31dc168c9c51428db13a48a7bdfca3c1aa",
+    "tools/sessionhelper/sessionhelper/inbox_lifecycle.py": "d4090a4f07781527847ac053bc103fc79efb3d4e8708d15e34288ec7b585ff9c"
+  },
+  "rc": 1,
+  "finished_at": "2026-11-08T11:30:57.963729+00:00",
+  "log_sha256": "d62ba425fdcf518080a629c4e9d49dd92e181f98ec6dad0e5220d87992f6f490"
+}

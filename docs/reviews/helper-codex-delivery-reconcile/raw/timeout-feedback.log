@@ -1,0 +1,16 @@
+test_busy_wait_without_turn_start_must_not_replace_healthy_transport (__main__.TimeoutFeedback.test_busy_wait_without_turn_start_must_not_replace_healthy_transport) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb admission_timeout; admission/terminal not assumed; no automatic replay
+{"protocol_methods": ["thread/read", "thread/turns/list", "thread/turns/list"], "turn_start_count": 0, "replacement_requests": 1, "new_delivery_state": "admission_unknown", "active_turn": "long-existing", "transport_healthy": true}
+FAIL
+
+======================================================================
+FAIL: test_busy_wait_without_turn_start_must_not_replace_healthy_transport (__main__.TimeoutFeedback.test_busy_wait_without_turn_start_must_not_replace_healthy_transport)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/timeout_feedback.py", line 71, in test_busy_wait_without_turn_start_must_not_replace_healthy_transport
+    self.assertEqual(recovery.call_count, 0,
+AssertionError: 1 != 0 : BUSY_WAIT_TIMEOUT_REQUESTS_TRANSPORT_REPLACEMENT_BEFORE_ANY_TURN_START
+
+----------------------------------------------------------------------
+Ran 1 test in 0.108s
+
+FAILED (failures=1)

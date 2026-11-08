@@ -1,0 +1,18 @@
+[delivery][INVALID_NATIVE_EVIDENCE] id=dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee; pending retained
+test_native_seconds_replace_fractional_receipt_observation (test_codex_delivery_reconcile.ReconcileBoundaries.test_native_seconds_replace_fractional_receipt_observation) ... FAIL
+
+======================================================================
+FAIL: test_native_seconds_replace_fractional_receipt_observation (test_codex_delivery_reconcile.ReconcileBoundaries.test_native_seconds_replace_fractional_receipt_observation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 177, in test_native_seconds_replace_fractional_receipt_observation
+    self.assertEqual(row['state'], 'processed', 'NATIVE_SECONDS_REJECTED_AFTER_LIVE_RECEIPT')
+AssertionError: 'admitted' != 'processed'
+- admitted
++ processed
+ : NATIVE_SECONDS_REJECTED_AFTER_LIVE_RECEIPT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.063s
+
+FAILED (failures=1)

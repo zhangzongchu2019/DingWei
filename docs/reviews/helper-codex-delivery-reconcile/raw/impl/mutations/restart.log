@@ -1,0 +1,17 @@
+test_restart_process_replays_persisted_proof_without_rpc (test_codex_delivery_reconcile.ReconcileBoundaries.test_restart_process_replays_persisted_proof_without_rpc) ... FAIL
+
+======================================================================
+FAIL: test_restart_process_replays_persisted_proof_without_rpc (test_codex_delivery_reconcile.ReconcileBoundaries.test_restart_process_replays_persisted_proof_without_rpc)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 284, in test_restart_process_replays_persisted_proof_without_rpc
+    self.assertEqual(self.inbox.lifecycle(self.did)['state'], 'processed', 'PROCESS_RESTART_LOST_PROOF')
+AssertionError: 'admission_unknown' != 'processed'
+- admission_unknown
++ processed
+ : PROCESS_RESTART_LOST_PROOF
+
+----------------------------------------------------------------------
+Ran 1 test in 0.194s
+
+FAILED (failures=1)

@@ -1,0 +1,7 @@
+test_busy_wait_without_turn_start_must_not_replace_healthy_transport (__main__.TimeoutFeedback.test_busy_wait_without_turn_start_must_not_replace_healthy_transport) ... {"protocol_methods": ["thread/read", "thread/turns/list", "thread/turns/list"], "turn_start_count": 0, "replacement_requests": 0, "new_delivery_state": "processing", "active_turn": "long-existing", "transport_healthy": true}
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.238s
+
+OK

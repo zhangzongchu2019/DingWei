@@ -1,0 +1,53 @@
+test_A_history_replay_preserves_native_times_for_ack (__main__.NativeReconcile.test_A_history_replay_preserves_native_times_for_ack) ... [delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa turn=01a1bac2-6055-79f0-802e-b0b89246bf01; missing original native times, no ACK advancement
+FAIL
+test_A_replacement_poll_and_resubscribe_recover_lost_terminal (__main__.NativeReconcile.test_A_replacement_poll_and_resubscribe_recover_lost_terminal) ... FAIL
+test_B_timeout_finds_client_id_on_bound_thread_without_resubmit (__main__.NativeReconcile.test_B_timeout_finds_client_id_on_bound_thread_without_resubmit) ... FAIL
+test_B_timeout_finds_client_id_on_historical_thread_without_rebind (__main__.NativeReconcile.test_B_timeout_finds_client_id_on_historical_thread_without_rebind) ... FAIL
+test_control_complete_native_evidence_can_settle_terminal (__main__.NativeReconcile.test_control_complete_native_evidence_can_settle_terminal) ... ok
+test_control_no_matching_turn_stays_unknown_without_resubmit (__main__.NativeReconcile.test_control_no_matching_turn_stays_unknown_without_resubmit) ... ok
+test_control_output_only_terminal_cannot_advance_ack (__main__.NativeReconcile.test_control_output_only_terminal_cannot_advance_ack) ... [delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa turn=01a1bac2-6a07-7032-8842-d1fe1be3b406; missing original native times, no ACK advancement
+ok
+
+======================================================================
+FAIL: test_A_history_replay_preserves_native_times_for_ack (__main__.NativeReconcile.test_A_history_replay_preserves_native_times_for_ack)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 178, in test_A_history_replay_preserves_native_times_for_ack
+    self.assertEqual(self.inbox.lifecycle(self.did)['state'], 'processed',
+AssertionError: 'admitted' != 'processed'
+- admitted
++ processed
+ : A_NATIVE_HISTORY_TERMINAL_NOT_COMMITTED
+
+======================================================================
+FAIL: test_A_replacement_poll_and_resubscribe_recover_lost_terminal (__main__.NativeReconcile.test_A_replacement_poll_and_resubscribe_recover_lost_terminal)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 194, in test_A_replacement_poll_and_resubscribe_recover_lost_terminal
+    self.assertTrue(terminal, 'A_REPLACEMENT_HAS_NO_TERMINAL_RECONCILIATION')
+AssertionError: [] is not true : A_REPLACEMENT_HAS_NO_TERMINAL_RECONCILIATION
+
+======================================================================
+FAIL: test_B_timeout_finds_client_id_on_bound_thread_without_resubmit (__main__.NativeReconcile.test_B_timeout_finds_client_id_on_bound_thread_without_resubmit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 221, in test_B_timeout_finds_client_id_on_bound_thread_without_resubmit
+    self.assert_unknown_recovers(False)
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 209, in assert_unknown_recovers
+    self.assertEqual(self.driver._envelope_to_turn.get(self.did), turn['id'],
+AssertionError: None != '01a1bac2-6633-74b2-a152-6b23aaed11f8' : B_CLIENT_ID_NATIVE_TURN_NOT_RECONCILED
+
+======================================================================
+FAIL: test_B_timeout_finds_client_id_on_historical_thread_without_rebind (__main__.NativeReconcile.test_B_timeout_finds_client_id_on_historical_thread_without_rebind)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 224, in test_B_timeout_finds_client_id_on_historical_thread_without_rebind
+    self.assert_unknown_recovers(True)
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tests/helper-codex-delivery-reconcile/real_protocol.py", line 209, in assert_unknown_recovers
+    self.assertEqual(self.driver._envelope_to_turn.get(self.did), turn['id'],
+AssertionError: None != '01a1bac2-6726-7583-93b8-3747402df322' : B_CLIENT_ID_NATIVE_TURN_NOT_RECONCILED
+
+----------------------------------------------------------------------
+Ran 7 tests in 2.724s
+
+FAILED (failures=4)

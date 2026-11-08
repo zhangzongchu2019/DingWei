@@ -1,0 +1,23 @@
+test_native_second_precision_one_second_tolerance (test_codex_delivery_reconcile.ReconcileBoundaries.test_native_second_precision_one_second_tolerance) ... FAIL
+
+======================================================================
+FAIL: test_native_second_precision_one_second_tolerance (test_codex_delivery_reconcile.ReconcileBoundaries.test_native_second_precision_one_second_tolerance)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 252, in test_native_second_precision_one_second_tolerance
+    self.inbox.record_native_terminal(self.did, 'native-turn', intent - .999, intent, 'interrupted')
+  File "/tmp/reconcile-mutation-ut_qs0jw/sessionhelper/inbox_lifecycle.py", line 147, in record_native_terminal
+    raise ValueError('native terminal predates dispatch intent')
+ValueError: native terminal predates dispatch intent
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 254, in test_native_second_precision_one_second_tolerance
+    self.fail('SECOND_PRECISION_REJECTED')
+AssertionError: SECOND_PRECISION_REJECTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.046s
+
+FAILED (failures=1)

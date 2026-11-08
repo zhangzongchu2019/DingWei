@@ -1,0 +1,71 @@
+{
+  "product_commit": "35515ea14183ba66a9c08dd904a4683c9da73779",
+  "product_sha256": {
+    "tools/sessionhelper/sessionhelper/codexDriver.py": "bb388a804c1d0f3844481d67123a129129b06fbc7650e358dbd6c82aa67a358e",
+    "tools/sessionhelper/sessionhelper/driver_adapter.py": "63140c3bb77175892f78a01b24e1d0a7e34a1e65ff17369986fb2b53b40f7a4e",
+    "tools/sessionhelper/sessionhelper/inbox_lifecycle.py": "d4090a4f07781527847ac053bc103fc79efb3d4e8708d15e34288ec7b585ff9c"
+  },
+  "native": {
+    "tests": 8,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "log": "native.log",
+    "binary_sha256": "1748767b230ebfc3d4ab7e4e254920d0c0ad9691fd8c11f190e7d44511a4a92e"
+  },
+  "boundaries": {
+    "tests": 24,
+    "rc": 0,
+    "log": "boundaries.log"
+  },
+  "mutations": {
+    "tests": 21,
+    "target_assertion_red": 21,
+    "errors": 0,
+    "path": "mutations/RESULT.json"
+  },
+  "timeout": {
+    "tests": 1,
+    "rc": 0,
+    "log": "timeout.log"
+  },
+  "openspec": {
+    "change": "helper-codex-delivery-reconcile",
+    "strict": true,
+    "rc": 0,
+    "log": "openspec.log"
+  },
+  "canonical": {
+    "command": "scripts/run-build-tests.sh",
+    "python": "/tmp/coder-0232-locked-venv/bin/python3",
+    "started_at": "2026-11-08T11:41:44.860429+00:00",
+    "commit": "ec7f259a9d68c110f4814fd06fef9fd3ac674e93",
+    "product_commit": "35515ea1",
+    "product_sha256": {
+      "tools/sessionhelper/sessionhelper/codexDriver.py": "bb388a804c1d0f3844481d67123a129129b06fbc7650e358dbd6c82aa67a358e",
+      "tools/sessionhelper/sessionhelper/driver_adapter.py": "63140c3bb77175892f78a01b24e1d0a7e34a1e65ff17369986fb2b53b40f7a4e",
+      "tools/sessionhelper/sessionhelper/inbox_lifecycle.py": "d4090a4f07781527847ac053bc103fc79efb3d4e8708d15e34288ec7b585ff9c"
+    },
+    "rc": 0,
+    "finished_at": "2026-11-08T11:50:34.456585+00:00",
+    "log_sha256": "5121f264ba4af6368234ef5a157fe977ebeb9d6b5a0161733863d120b580d7db",
+    "log": "canonical.log.gz"
+  },
+  "blocker": {
+    "tests": 16,
+    "rc": 0,
+    "log": "blocker.log"
+  },
+  "stale": {
+    "tests": 23,
+    "rc": 0,
+    "log": "stale.log"
+  },
+  "pagination_201": {
+    "source_turns": 201,
+    "queried_turns": 200,
+    "requests": 1,
+    "rc": 0,
+    "log": "pagination-201.log"
+  }
+}

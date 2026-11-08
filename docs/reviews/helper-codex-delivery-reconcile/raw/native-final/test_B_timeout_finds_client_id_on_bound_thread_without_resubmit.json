@@ -1,0 +1,269 @@
+{
+  "calls": [
+    {
+      "method": "initialize",
+      "params": {
+        "clientInfo": {
+          "name": "transport-v2-codex-driver",
+          "version": "0"
+        },
+        "capabilities": {
+          "experimentalApi": true
+        }
+      }
+    },
+    {
+      "method": "thread/start",
+      "params": {
+        "cwd": "/tmp/reconcile-hvjnsk2j",
+        "ephemeral": false,
+        "sandbox": "read-only",
+        "approvalPolicy": "never"
+      }
+    },
+    {
+      "method": "turn/start",
+      "params": {
+        "threadId": "01a1bac2-6603-7502-9a77-bd117fe6268e",
+        "input": [
+          {
+            "type": "text",
+            "text": "LOCAL_PROTOCOL_TEST_ONLY"
+          }
+        ],
+        "clientUserMessageId": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-6603-7502-9a77-bd117fe6268e",
+        "limit": 100,
+        "itemsView": "full",
+        "sortDirection": "asc"
+      }
+    },
+    {
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a1bac2-6603-7502-9a77-bd117fe6268e",
+        "includeTurns": true
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-6603-7502-9a77-bd117fe6268e",
+        "limit": 100,
+        "itemsView": "full",
+        "sortDirection": "asc"
+      }
+    },
+    {
+      "method": "turn/interrupt",
+      "params": {
+        "threadId": "01a1bac2-6603-7502-9a77-bd117fe6268e",
+        "turnId": "01a1bac2-6633-74b2-a152-6b23aaed11f8"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1bac2-6603-7502-9a77-bd117fe6268e",
+        "limit": 100,
+        "itemsView": "full",
+        "sortDirection": "asc"
+      }
+    }
+  ],
+  "responses": [
+    {
+      "method": "initialize",
+      "result": {
+        "userAgent": "transport-v2-codex-driver/0.159.2 (Ubuntu 24.4.0; x86_64) unknown (transport-v2-codex-driver; 0)",
+        "codexHome": "/tmp/reconcile-hvjnsk2j/codex",
+        "platformFamily": "unix",
+        "platformOs": "linux"
+      }
+    },
+    {
+      "method": "thread/start",
+      "result": {
+        "thread": {
+          "id": "01a1bac2-6603-7502-9a77-bd117fe6268e",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/reconcile-hvjnsk2j",
+              "runtimeWorkspaceRoots": [
+                "/tmp/reconcile-hvjnsk2j"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1bac2-6603-7502-9a77-bd117fe6268e",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1794134664,
+          "updatedAt": 1794134664,
+          "recencyAt": 1794134664,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/reconcile-hvjnsk2j/codex/sessions/2026/11/08/rollout-2026-11-08T10-44-24-01a1bac2-6603-7502-9a77-bd117fe6268e.jsonl",
+          "cwd": "/tmp/reconcile-hvjnsk2j",
+          "cliVersion": "0.159.2",
+          "originator": "transport-v2-codex-driver",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "model": "probe-no-inference",
+        "modelProvider": "local_probe",
+        "serviceTier": null,
+        "disabledPluginIds": [],
+        "cwd": "/tmp/reconcile-hvjnsk2j",
+        "runtimeWorkspaceRoots": [
+          "/tmp/reconcile-hvjnsk2j"
+        ],
+        "instructionSources": [],
+        "approvalPolicy": "never",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        },
+        "activePermissionProfile": null,
+        "reasoningEffort": null,
+        "multiAgentMode": "explicitRequestOnly"
+      }
+    },
+    {
+      "method": "turn/start",
+      "result": {
+        "turn": {
+          "id": "01a1bac2-6633-74b2-a152-6b23aaed11f8",
+          "items": [],
+          "itemsView": "notLoaded",
+          "status": "inProgress",
+          "error": null,
+          "startedAt": null,
+          "completedAt": null,
+          "durationMs": null
+        }
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "error_code": -32601,
+      "error_message": "list_turns is not supported yet"
+    },
+    {
+      "method": "thread/read",
+      "error_code": -32601,
+      "error_message": "list_turns is not supported yet"
+    },
+    {
+      "method": "thread/turns/list",
+      "result": {
+        "data": [
+          {
+            "id": "01a1bac2-6633-74b2-a152-6b23aaed11f8",
+            "items": [
+              {
+                "type": "userMessage",
+                "id": "01a1bac2-6658-71c1-8265-cb553f8e4244",
+                "clientId": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "LOCAL_PROTOCOL_TEST_ONLY",
+                    "text_elements": []
+                  }
+                ]
+              }
+            ],
+            "itemsView": "full",
+            "status": "inProgress",
+            "error": null,
+            "startedAt": 1794134664,
+            "completedAt": null,
+            "durationMs": null
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "{\"requestedThreadId\":\"01a1bac2-6603-7502-9a77-bd117fe6268e\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+      }
+    },
+    {
+      "method": "turn/interrupt",
+      "result": {}
+    },
+    {
+      "method": "thread/turns/list",
+      "result": {
+        "data": [
+          {
+            "id": "01a1bac2-6633-74b2-a152-6b23aaed11f8",
+            "items": [
+              {
+                "type": "userMessage",
+                "id": "01a1bac2-6658-71c1-8265-cb553f8e4244",
+                "clientId": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "LOCAL_PROTOCOL_TEST_ONLY",
+                    "text_elements": []
+                  }
+                ]
+              }
+            ],
+            "itemsView": "full",
+            "status": "interrupted",
+            "error": null,
+            "startedAt": 1794134664,
+            "completedAt": 1794134664,
+            "durationMs": 51
+          }
+        ],
+        "nextCursor": null,
+        "backwardsCursor": "{\"requestedThreadId\":\"01a1bac2-6603-7502-9a77-bd117fe6268e\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+      }
+    }
+  ],
+  "lifecycle": {
+    "delivery_id": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "session_name": "fixture",
+    "envelope_json": "{\"id\":\"fixture\",\"body\":\"LOCAL_PROTOCOL_TEST_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+    "state": "admission_unknown",
+    "attempts": 1,
+    "error": "model_admission_unknown",
+    "received_at": 1794134664.739479,
+    "updated_at": 1794134664.760386,
+    "ack_protocol": 2,
+    "processing_mode": "driver",
+    "ack_generation": 1,
+    "dispatch_intent_at": 1794134664.7476935,
+    "request_id": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "turn_id": null,
+    "admitted_at": null,
+    "processed_at": null,
+    "turn_outcome": null
+  }
+}

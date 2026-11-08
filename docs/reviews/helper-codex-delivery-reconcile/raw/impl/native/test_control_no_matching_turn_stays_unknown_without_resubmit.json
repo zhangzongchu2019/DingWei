@@ -1,0 +1,162 @@
+{
+  "calls": [
+    {
+      "method": "initialize",
+      "params": {
+        "clientInfo": {
+          "name": "transport-v2-codex-driver",
+          "version": "0"
+        },
+        "capabilities": {
+          "experimentalApi": true
+        }
+      }
+    },
+    {
+      "method": "thread/start",
+      "params": {
+        "cwd": "/tmp/reconcile-ojm8vtfj",
+        "ephemeral": false,
+        "sandbox": "read-only",
+        "approvalPolicy": "never"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1baef-7ec8-7eb2-adf2-a7996256ef4d",
+        "limit": 100,
+        "itemsView": "full",
+        "sortDirection": "asc"
+      }
+    },
+    {
+      "method": "thread/read",
+      "params": {
+        "threadId": "01a1baef-7ec8-7eb2-adf2-a7996256ef4d",
+        "includeTurns": true
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "params": {
+        "threadId": "01a1baef-7ec8-7eb2-adf2-a7996256ef4d",
+        "limit": 200,
+        "itemsView": "full",
+        "sortDirection": "asc"
+      }
+    }
+  ],
+  "responses": [
+    {
+      "method": "initialize",
+      "result": {
+        "userAgent": "transport-v2-codex-driver/0.159.2 (Ubuntu 24.4.0; x86_64) unknown (transport-v2-codex-driver; 0)",
+        "codexHome": "/tmp/reconcile-ojm8vtfj/codex",
+        "platformFamily": "unix",
+        "platformOs": "linux"
+      }
+    },
+    {
+      "method": "thread/start",
+      "result": {
+        "thread": {
+          "id": "01a1baef-7ec8-7eb2-adf2-a7996256ef4d",
+          "environments": [
+            {
+              "environmentId": "local",
+              "cwd": "/tmp/reconcile-ojm8vtfj",
+              "runtimeWorkspaceRoots": [
+                "/tmp/reconcile-ojm8vtfj"
+              ]
+            }
+          ],
+          "extra": null,
+          "sessionId": "01a1baef-7ec8-7eb2-adf2-a7996256ef4d",
+          "forkedFromId": null,
+          "parentThreadId": null,
+          "preview": "",
+          "ephemeral": false,
+          "section": null,
+          "sectionEnteredAt": null,
+          "projectId": null,
+          "historyMode": "paginated",
+          "modelProvider": "local_probe",
+          "model": "probe-no-inference",
+          "reasoningEffort": null,
+          "createdAt": 1794137620,
+          "updatedAt": 1794137620,
+          "recencyAt": 1794137620,
+          "status": {
+            "type": "idle"
+          },
+          "path": "/tmp/reconcile-ojm8vtfj/codex/sessions/2026/11/08/rollout-2026-11-08T11-33-40-01a1baef-7ec8-7eb2-adf2-a7996256ef4d.jsonl",
+          "cwd": "/tmp/reconcile-ojm8vtfj",
+          "cliVersion": "0.159.2",
+          "originator": "transport-v2-codex-driver",
+          "source": "vscode",
+          "canAcceptDirectInput": true,
+          "threadSource": null,
+          "agentNickname": null,
+          "agentRole": null,
+          "gitInfo": null,
+          "name": null,
+          "daybreakEnabled": null,
+          "turns": []
+        },
+        "model": "probe-no-inference",
+        "modelProvider": "local_probe",
+        "serviceTier": null,
+        "disabledPluginIds": [],
+        "cwd": "/tmp/reconcile-ojm8vtfj",
+        "runtimeWorkspaceRoots": [
+          "/tmp/reconcile-ojm8vtfj"
+        ],
+        "instructionSources": [],
+        "approvalPolicy": "never",
+        "approvalsReviewer": "user",
+        "sandbox": {
+          "type": "readOnly",
+          "networkAccess": false
+        },
+        "activePermissionProfile": null,
+        "reasoningEffort": null,
+        "multiAgentMode": "explicitRequestOnly"
+      }
+    },
+    {
+      "method": "thread/turns/list",
+      "error_code": -32600,
+      "error_message": "thread 01a1baef-7ec8-7eb2-adf2-a7996256ef4d is not materialized yet; thread/turns/list is unavailable before first user message"
+    },
+    {
+      "method": "thread/read",
+      "error_code": -32601,
+      "error_message": "list_turns is not supported yet"
+    },
+    {
+      "method": "thread/turns/list",
+      "error_code": -32601,
+      "error_message": "list_turns is not supported yet"
+    }
+  ],
+  "lifecycle": {
+    "delivery_id": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "session_name": "fixture",
+    "envelope_json": "{\"id\":\"fixture\",\"body\":\"LOCAL_PROTOCOL_TEST_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+    "state": "admission_unknown",
+    "attempts": 1,
+    "error": "model_admission_unknown",
+    "received_at": 1794137620.199713,
+    "updated_at": 1794137620.2200208,
+    "ack_protocol": 2,
+    "processing_mode": "driver",
+    "ack_generation": 1,
+    "dispatch_intent_at": 1794137620.210465,
+    "request_id": "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "turn_id": null,
+    "admitted_at": null,
+    "processed_at": null,
+    "turn_outcome": null
+  }
+}
