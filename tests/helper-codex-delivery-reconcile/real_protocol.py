@@ -89,6 +89,10 @@ stream_max_retries=0
             store_path=str(self.home / 'driver.db'))
         d._rpc = self.rpc
         d._initialized = True
+        def context(delivery_id):
+            row = self.inbox.lifecycle(delivery_id)
+            return {k: row[k] for k in ('ack_generation', 'dispatch_intent_at', 'request_id')} if row else None
+        d.reconcile_context = context
         return d
 
     @staticmethod
@@ -270,7 +274,7 @@ def main():
     (OUTPUT / 'RESULT.json').write_text(json.dumps({'tests': result.testsRun,
         'failures': len(result.failures), 'errors': len(result.errors), 'skips': len(result.skipped),
         'binary_sha256': BINARY_SHA, 'baseline': '6e2c8364',
-        'product_code_modified': False, 'external_inference': False}, indent=2) + '\n')
+        'product_code_modified': True, 'external_inference': False}, indent=2) + '\n')
     raise SystemExit(not result.wasSuccessful())
 
 

@@ -80,7 +80,8 @@ class DispatchLifecycleTest(unittest.TestCase):
 
     def test_native_terminal_preserves_turn_and_original_times(self):
         adapter=self.adapter(SimpleNamespace())
-        self.inbox.begin_dispatch('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        with patch('time.time', return_value=99):
+            self.inbox.begin_dispatch('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
         self.inbox.record_admitted('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','turn',100)
         event=SessionEvent(kind='state_change',delivery_id='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',turn_id='turn',data={'change':'turn_completed','status':'completed','admitted_at':100,'processed_at':__import__('time').time()})
         adapter._record_event_lifecycle(event)
@@ -220,7 +221,7 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
     def test_persisted_native_terminal_advances_despite_stale_poll(self):
         did='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
         def poll(identifier):
-            adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='native-turn',data={'change':'turn_completed','status':'completed','admitted_at':100,'processed_at':__import__('time').time()}))
+            adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='native-turn',data={'change':'turn_completed','status':'completed','admitted_at':self.inbox.lifecycle(did)['dispatch_intent_at'],'processed_at':__import__('time').time()}))
             return DeliveryReceipt(did,'processing','fixture','turn=native-turn')
         driver=SimpleNamespace(deliver=lambda identifier,body:DeliveryReceipt(did,'processing','fixture','turn=native-turn'),poll_receipt=poll)
         adapter=self.adapter(driver)
@@ -239,7 +240,7 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         adapter._commands.enqueue(self.env)
         command=adapter._commands.start_next()
         self.inbox.begin_dispatch(did)
-        adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='native-turn',data={'change':'turn_completed','status':'completed','admitted_at':100,'processed_at':__import__('time').time()}))
+        adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=did,turn_id='native-turn',data={'change':'turn_completed','status':'completed','admitted_at':self.inbox.lifecycle(did)['dispatch_intent_at'],'processed_at':__import__('time').time()}))
         adapter._admission_callbacks[did]=(lambda:callbacks.append(adapter._commands.current.delivery_id),None)
         adapter._settle_command(command,DeliveryReceipt(did,'processing','fixture','submitted, awaiting ack, turn=native-turn'))
         self.assertEqual(callbacks,[did],'持久原生证据推进前须完成admission回调')
@@ -267,6 +268,12 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         def deliver(did,body):
             calls.append(did)
             if did==first and not admitted:adapter._admission_timeout=.1
+            if did==second and which=='codex':
+                # A done receipt alone no longer fabricates native completion.
+                adapter._record_event_lifecycle(SessionEvent(kind='state_change', delivery_id=did, turn_id='turn-second',
+                    data={'change':'turn_completed','status':'completed',
+                          'admitted_at':self.inbox.lifecycle(did)['dispatch_intent_at'],
+                          'processed_at':__import__('time').time()}))
             return DeliveryReceipt(did,'processing' if did==first else 'done','fixture','turn=turn-first' if did==first else 'turn=turn-second')
         driver=SimpleNamespace(deliver=deliver,poll_receipt=lambda did:DeliveryReceipt(did,'processing','fixture','turn=turn-first'))
         driver.abort_transport=lambda:None;driver.stop=lambda:None;driver.start=lambda:None
@@ -293,7 +300,7 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         adapter._deliver_regular_command(adapter._commands.start_next())
         self.assertEqual(calls,[first,second],'watchdog未知离场必须推进下一件')
         self.assertEqual(self.inbox.lifecycle(second)['state'],'processed')
-        adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=first,turn_id='turn-first',data={'change':'turn_completed','status':'completed','admitted_at':100,'processed_at':__import__('time').time()}))
+        adapter._record_event_lifecycle(SessionEvent(kind='state_change',delivery_id=first,turn_id='turn-first',data={'change':'turn_completed','status':'completed','admitted_at':self.inbox.lifecycle(first)['dispatch_intent_at'],'processed_at':__import__('time').time()}))
         after=self.inbox.lifecycle(first)
         self.assertEqual(after['state'],'processed','迟到真实终态仍须补记原件')
         self.assertIsNone(after['error'],'真实终态须清除旧transport unknown诊断')
@@ -475,7 +482,9 @@ class AdmissionDeadlineRaceTest(unittest.TestCase):
     def test_admission_committed_before_deadline_wins(self):self.exercise_order('early_admitted')
 
     def test_unknown_terminal_without_original_times_is_evidence_only(self):
-        did=self.env['meta']['delivery_id'];self.inbox.begin_dispatch(did);self.inbox.expire_admission(did,0)
+        did=self.env['meta']['delivery_id']
+        with patch('time.time', return_value=122):self.inbox.begin_dispatch(did)
+        self.inbox.expire_admission(did,0)
         adapter=self.adapter(SimpleNamespace(),'claude')
         before=self.inbox.lifecycle(did)
         for extra in ({},{'admitted_at':123},{'processed_at':124}):
@@ -487,7 +496,8 @@ class AdmissionDeadlineRaceTest(unittest.TestCase):
         self.assertEqual((after['state'],after['admitted_at'],after['processed_at']),('processed',123,124),'完整原始双时刻的终态可补账')
 
     def test_unknown_requires_complete_native_evidence_to_reconcile_atomically(self):
-        did=self.env['meta']['delivery_id'];self.inbox.begin_dispatch(did)
+        did=self.env['meta']['delivery_id']
+        with patch('time.time', return_value=122):self.inbox.begin_dispatch(did)
         self.assertTrue(self.inbox.expire_admission(did,0))
         adapter=self.adapter(SimpleNamespace(),'claude')
         adapter._commands.enqueue(self.env);command=adapter._commands.start_next()

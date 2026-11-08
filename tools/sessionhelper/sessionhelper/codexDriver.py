@@ -7,8 +7,10 @@ available as a helper-owned stdio fallback.
 from __future__ import annotations
 
 import hashlib
+import fcntl
 import json
 import logging
+import math
 import os
 import queue
 import base64
@@ -49,6 +51,23 @@ ACCEPTED_STALL_TIMEOUT = 90.0
 ABSOLUTE_TURN_TIMEOUT = 900.0
 EVENT_DRAIN_TIMEOUT = 5.0
 FANOUT_QUEUE_MAX = 1000
+NATIVE_TIME_TOLERANCE_SECONDS = 1.0
+RECONCILE_THREAD_INTERVAL_SECONDS = 15.0
+RECONCILE_TURN_LIMIT = 200
+_RECONCILE_GUARDS_LOCK = threading.Lock()
+_RECONCILE_GUARDS = {}
+
+
+def _native_time(value):
+    return type(value) in (int, float) and math.isfinite(value) and value > 0
+
+
+def _reconcile_metadata(detail):
+    try:
+        return json.loads(detail.split("\nreconcile=", 1)[1])
+    except (IndexError, ValueError, TypeError):
+        return {}
+
 
 
 class JsonRpcError(RuntimeError):
@@ -169,6 +188,25 @@ class _DeliveryStore:
             ).fetchone()
         return _DeliveryRecord(*row) if row is not None else None
 
+    def records(self, envelope_id=None):
+        with self._lock, self._connect() as db:
+            query = "SELECT envelope_id,thread_id,turn_id,body_hash,state,detail,created_at,updated_at FROM deliveries"
+            rows = db.execute(query + (" WHERE envelope_id=?" if envelope_id else ""),
+                              (envelope_id,) if envelope_id else ()).fetchall()
+        return [_DeliveryRecord(*row) for row in rows]
+
+    def reconciliation_note(self, record, metadata, *, turn_id=None, state=None):
+        # CAS protects live notifications and a concurrent delivery writer.
+        with self._lock, self._connect() as db:
+            detail = record.detail.split("\nreconcile=", 1)[0]
+            if turn_id is not None:
+                detail = "turn status=" + metadata['evidence']['status']
+            return db.execute("""UPDATE deliveries SET turn_id=?,state=?,detail=?,updated_at=?
+                WHERE thread_id=? AND envelope_id=? AND updated_at=?""",
+                (record.turn_id if turn_id is None else turn_id, state or record.state,
+                 detail + "\nreconcile=" + json.dumps(metadata, separators=(',', ':')),
+                 time.time(), record.thread_id, record.envelope_id, record.updated_at)).rowcount == 1
+
     def upsert(
         self,
         thread_id: str,
@@ -203,6 +241,10 @@ class _DeliveryStore:
         detail: str = "",
     ) -> None:
         with self._lock, self._connect() as db:
+            previous = db.execute("SELECT detail FROM deliveries WHERE thread_id=? AND envelope_id=?", (thread_id, envelope_id)).fetchone()
+            metadata = _reconcile_metadata(previous[0]) if previous else {}
+            if metadata:
+                detail = detail.split("\nreconcile=", 1)[0] + "\nreconcile=" + json.dumps(metadata, separators=(',', ':'))
             db.execute(
                 """
                 UPDATE deliveries
@@ -276,11 +318,16 @@ class StdioJsonRpc:
             if params is not None:
                 msg["params"] = params
             try:
+                self._write_started = time.monotonic()
+                if method == "turn/start" and callable(getattr(self, "on_turn_start", None)):
+                    self.on_turn_start(params or {})
                 self._proc.stdin.write(json.dumps(msg, separators=(",", ":")) + "\n")
                 self._proc.stdin.flush()
             except Exception:
                 self._pending.pop(request_id, None)
                 raise
+            finally:
+                self._write_started = None
 
         try:
             response = response_q.get(timeout=timeout)
@@ -444,10 +491,15 @@ class UnixWebSocketJsonRpc:
             if params is not None:
                 msg["params"] = params
             try:
+                self._write_started = time.monotonic()
+                if method == "turn/start" and callable(getattr(self, "on_turn_start", None)):
+                    self.on_turn_start(params or {})
                 self._send_text(json.dumps(msg, separators=(",", ":")))
             except Exception:
                 self._pending.pop(request_id, None)
                 raise
+            finally:
+                self._write_started = None
         try:
             response = response_q.get(timeout=timeout)
         except queue.Empty as exc:
@@ -642,6 +694,11 @@ class CodexProtocolDriver(Driver):
         self._anonymous_tool_seq = 0
         self._done_seen_at: dict[str, float] = {}
         self._events_drained: set[str] = set()
+        self._submission_started = {}
+        self.reconcile_context = None
+        self._reconcile_emitted = set()
+        with _RECONCILE_GUARDS_LOCK:
+            self._reconcile_guard = _RECONCILE_GUARDS.setdefault(str(Path(store_path).resolve()), threading.Lock())
         self._delivery_lock = threading.Lock()
         self._interrupt_requested_turns: set[str] = set()
         self._turn_item_counts: dict[str, int] = {}
@@ -901,8 +958,7 @@ class CodexProtocolDriver(Driver):
                     return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
                 idle_error = self._wait_until_idle_for_delivery()
                 if idle_error:
-                    self._envelope_states[envelope_id] = "failed"
-                    return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=idle_error)
+                    return DeliveryReceipt(id=envelope_id, state="queued", source="local_queue", detail=idle_error)
                 params = {
                     "threadId": self._thread_id,
                     "input": [{"type": "text", "text": body}],
@@ -926,9 +982,13 @@ class CodexProtocolDriver(Driver):
                 if not isinstance(turn_id, str) or not turn_id:
                     return self._admission_failure(envelope_id, body_hash, ThreadUnavailable("missing turn id"), uncertain=True)
                 if not hasattr(self,'_native_turn_admitted_at'):self._native_turn_admitted_at={}
-                self._native_turn_admitted_at.setdefault(turn_id,time.time())
+                self._native_turn_admitted_at.setdefault(turn_id,turn.get("startedAt") if _native_time(turn.get("startedAt")) else time.time())
                 state: ReceiptState = "processing" if turn.get("status") == "inProgress" else "accepted"
                 detail = f"turn={turn_id} status={turn.get('status')}"
+                settled = self._store.get(self._thread_id, envelope_id)
+                if settled is not None and _reconcile_metadata(settled.detail).get('evidence', {}).get('status') in ('completed', 'interrupted', 'failed'):
+                    self._reconcile_event(settled)
+                    return DeliveryReceipt(id=envelope_id, state=settled.state, source='protocol', detail=settled.detail)
                 self._store.upsert(self._thread_id, envelope_id, turn_id, body_hash, state, detail)
                 self._remember_delivery(envelope_id, turn_id, state)
                 self._delivery_timestamps[envelope_id] = time.monotonic()
@@ -943,8 +1003,145 @@ class CodexProtocolDriver(Driver):
         self._envelope_states[envelope_id] = "failed"
         return DeliveryReceipt(id=envelope_id, state="failed", source="protocol", detail=detail)
 
+    def _reconcile_event(self, record):
+        metadata = _reconcile_metadata(record.detail)
+        proof = metadata.get('evidence')
+        if not proof or proof.get('status') not in ('inProgress', 'completed', 'interrupted', 'failed'):
+            return
+        key = (record.thread_id, record.envelope_id, proof['turn_id'], proof['status'], proof['completed_at'])
+        if key in self._reconcile_emitted:
+            return
+        self._reconcile_emitted.add(key)
+        self._remember_delivery(record.envelope_id, proof['turn_id'], record.state)
+        self._emit_event(SessionEvent(kind='state_change', session_id=record.thread_id,
+            delivery_id=record.envelope_id, turn_id=proof['turn_id'],
+            cursor='reconcile:' + proof['turn_id'], data={
+                'change': 'turn_started' if proof['status'] == 'inProgress' else 'turn_completed', 'raw_method': 'reconcile/native',
+                'status': proof['status'], 'admitted_at': proof['started_at'],
+                'processed_at': proof['completed_at'], 'native_evidence': proof}))
+
+    def reconcile_pending(self, envelope_id=None):
+        """Bounded read-only native scan. The existing ledger is the pending journal.
+
+        No start/resume, no negative settlement. Every trusted thread must be
+        completely scanned before a clientId can be called unique.
+        """
+        if not self._reconcile_guard.acquire(blocking=False):
+            return 'pending'
+        process_lock = None
+        try:
+            process_lock = open(self._store._path + '.reconcile.lock', 'a')
+            try:
+                fcntl.flock(process_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return 'pending'
+            records = self._store.records()
+            targets = [r for r in records if (envelope_id is None or r.envelope_id == envelope_id)]
+            for record in targets:
+                self._reconcile_event(record)
+            targets = [r for r in targets if _reconcile_metadata(r.detail).get('evidence', {}).get('status') not in ('completed', 'interrupted', 'failed')]
+            if not targets or self._rpc is None or not self._rpc.healthy():
+                return 'pending'
+            threads = {r.thread_id for r in records if r.thread_id}
+            # Every real submission is journaled before turn/start. A fresh
+            # binding without a ledger row has no dispatch to reconcile and may
+            # not yet be materialized on the native server.
+            now = time.time()
+            # Query timestamps live in existing rows, so reconnect/restart cannot
+            # reset the rate limit. No payload or credentials enter this journal.
+            last = {tid: max((_reconcile_metadata(r.detail).get('queried_at', 0)
+                    for r in records if r.thread_id == tid), default=0) for tid in threads}
+            if any(now - stamp < RECONCILE_THREAD_INTERVAL_SECONDS for stamp in last.values()):
+                return 'pending'
+            contexts = {}
+            for r in targets:
+                contexts[r.envelope_id] = self.reconcile_context(r.envelope_id) if callable(self.reconcile_context) else None
+            turns = []
+            remaining = RECONCILE_TURN_LIMIT
+            for tid in sorted(threads):
+                for r in records:
+                    if r.thread_id == tid:
+                        meta = _reconcile_metadata(r.detail)
+                        meta['queried_at'] = now
+                        self._store.reconciliation_note(r, meta)
+                cursor = None
+                seen = set()
+                while True:
+                    params = {'threadId': tid, 'limit': remaining, 'itemsView': 'full', 'sortDirection': 'asc'}
+                    if cursor is not None:
+                        params['cursor'] = cursor
+                    result = self._request('thread/turns/list', params)
+                    page = result.get('data')
+                    if not isinstance(page, list) or len(page) > remaining:
+                        return 'incomplete'
+                    turns.extend((tid, turn) for turn in page)
+                    remaining -= len(page)
+                    cursor = result.get('nextCursor')
+                    if remaining <= 0:
+                        log.info('[delivery][RECONCILE_INCOMPLETE] turn budget reached; pending retained')
+                        return 'incomplete'
+                    if cursor is None:
+                        break
+                    if not isinstance(cursor, str) or not cursor or cursor in seen:
+                        return 'incomplete'
+                    seen.add(cursor)
+            for old in targets:
+                candidates = [(tid, t) for tid, t in turns if isinstance(t, dict) and
+                    any(isinstance(i, dict) and i.get('type') == 'userMessage' and
+                        i.get('clientId') == old.envelope_id for i in t.get('items', []))]
+                if len(candidates) != 1:
+                    continue
+                tid, turn = candidates[0]
+                turn_id, status = turn.get('id'), turn.get('status')
+                started, completed = turn.get('startedAt'), turn.get('completedAt')
+                if (tid != old.thread_id or turn.get('threadId', tid) != tid or not isinstance(turn_id, str) or not turn_id
+                        or (old.turn_id and old.turn_id != turn_id)
+                        or not _native_time(started) or started + NATIVE_TIME_TOLERANCE_SECONDS < old.created_at
+                        or started > time.time() + NATIVE_TIME_TOLERANCE_SECONDS):
+                    continue
+                terminal = status in ('completed', 'interrupted', 'failed')
+                if terminal:
+                    if not _native_time(completed) or completed < started or completed > time.time() + NATIVE_TIME_TOLERANCE_SECONDS:
+                        continue
+                elif status != 'inProgress' or completed is not None:
+                    continue
+                current = self._store.get(tid, old.envelope_id)
+                if not current or (current.turn_id and current.turn_id != turn_id):
+                    continue
+                # A conflicting native terminal must never replace the first.
+                if current.state in ('done', 'failed') and ('status=' in current.detail):
+                    prior = current.detail.split('status=', 1)[1].split()[0]
+                    if prior in ('completed', 'interrupted', 'failed') and prior != status:
+                        continue
+                proof = {'thread_id': tid, 'turn_id': turn_id, 'client_id': old.envelope_id,
+                    'status': status, 'started_at': started, 'completed_at': completed,
+                    'queried_at': now, 'context': contexts[old.envelope_id],
+                    'source': 'codex/thread/turns/list', 'scan_complete': True,
+                    'response_sha256': hashlib.sha256(json.dumps(turn, sort_keys=True, separators=(',', ':')).encode()).hexdigest()}
+                meta = _reconcile_metadata(current.detail)
+                meta['evidence'] = proof
+                if self._store.reconciliation_note(current, meta, turn_id=turn_id,
+                        state=('done' if status == 'completed' else 'failed') if terminal else 'processing'):
+                    self._reconcile_event(self._store.get(tid, old.envelope_id))
+            return 'complete'
+        except Exception as exc:
+            log.info('[delivery][RECONCILE_INCOMPLETE] %s; pending retained', type(exc).__name__)
+            return 'incomplete'
+        finally:
+            if process_lock is not None:
+                process_lock.close()
+            self._reconcile_guard.release()
+
+    def local_receipt(self, envelope_id):
+        """Nonblocking protocol evidence while a turn/start response is pending."""
+        turn_id = self._envelope_to_turn.get(envelope_id, '')
+        state = self._envelope_states.get(envelope_id, 'processing')
+        return DeliveryReceipt(id=envelope_id, state=state, source='protocol',
+            detail=f'turn={turn_id}' if turn_id else 'awaiting turn/start response')
+
     def poll_receipt(self, envelope_id: str) -> DeliveryReceipt:
         self._sync_thread_alias()
+        self.reconcile_pending(envelope_id)
         current_state = self._envelope_states.get(envelope_id)
         record = self._store.get(self._thread_id, envelope_id) or self._store.get_by_envelope(envelope_id)
         if record is not None and record.state == "unknown" and not record.turn_id:
@@ -1051,6 +1248,7 @@ class CodexProtocolDriver(Driver):
             # Subscribe first: notifications received while the bounded history
             # snapshot is read remain queued and are merged by stable item_id in
             # the View. The snapshot itself is read-only and never starts a turn.
+            self.reconcile_pending()
             for ev in self._take_completed_item_backfill():
                 self._emit_event(ev)
             with self._event_log_lock:
@@ -1062,13 +1260,14 @@ class CodexProtocolDriver(Driver):
                     ev = consumer_q.get(timeout=0.5)
                     if ev is None:
                         return
-                    if self._session_id and ev.session_id != self._session_id:
+                    if self._session_id and ev.session_id != self._session_id and ev.data.get('raw_method') != 'reconcile/native':
                         continue
                     # Dedup: skip the very objects already replayed from the buffer
                     if replayed.get(id(ev)) is ev:
                         continue
                     yield ev
                 except queue.Empty:
+                    self.reconcile_pending()
                     if self._rpc is None or not self._rpc.healthy():
                         return
         finally:
@@ -1280,9 +1479,28 @@ class CodexProtocolDriver(Driver):
             raise ThreadUnavailable("thread identity, directory or admission status mismatch")
         self._verified_binding = self._binding_key()
 
+    def transport_recovery_required(self, timeout):
+        if not self.health():
+            return True
+        writing = getattr(self._rpc, '_write_started', None)
+        return writing is not None and time.monotonic() - writing >= timeout
+
+    def submission_started(self, envelope_id):
+        """None means locally waiting; the transport writer has not sent yet."""
+        return self._submission_started.get(envelope_id)
+
+    def _turn_start_writing(self, params):
+        envelope_id = params.get("clientUserMessageId")
+        if envelope_id:
+            self._submission_started.setdefault(envelope_id, time.monotonic())
+
     def _request(self, method: str, params: dict | None = None, *, timeout: float = JSONRPC_TIMEOUT) -> dict:
         if self._rpc is None:
             raise ConnectionError("driver not started")
+        if method == 'turn/start':
+            # Called under the actual RPC write lock, after endpoint admission.
+            # A blocked write is uncertain; waiting for that lock is still local.
+            self._rpc.on_turn_start = self._turn_start_writing
         if self._private_endpoint is not None and method in ('thread/start', 'turn/start'):
             with self._private_endpoint.admission(self._rpc.peer_identity):
                 return self._rpc.request(method, params or {}, timeout=timeout)
@@ -1340,7 +1558,7 @@ class CodexProtocolDriver(Driver):
             self._active_turn_id = turn.get("id", self._active_turn_id)
             if self._active_turn_id:
                 if not hasattr(self,'_native_turn_admitted_at'):self._native_turn_admitted_at={}
-                self._native_turn_admitted_at.setdefault(self._active_turn_id,time.time())
+                self._native_turn_admitted_at.setdefault(self._active_turn_id,turn.get("startedAt") if _native_time(turn.get("startedAt")) else time.time())
             return None  # 纯生命周期通知，对用户无意义
 
         if method == "turn/completed":
@@ -1369,7 +1587,7 @@ class CodexProtocolDriver(Driver):
             # 把 turn 里的 usage/模型信息带到事件数据里,新 view 状态栏用
             extra = {"change": "turn_completed", "status": status,
                      "admitted_at": getattr(self,"_native_turn_admitted_at",{}).get(turn_id),
-                     "processed_at": time.time()}
+                     "processed_at": turn.get("completedAt") if _native_time(turn.get("completedAt")) else time.time()}
             model_used = turn.get("model") or params.get("model", "")
             if model_used:
                 extra["model"] = model_used
@@ -1545,7 +1763,8 @@ class CodexProtocolDriver(Driver):
             yield SessionEvent(
                 kind="state_change",
                 text="",
-                data={"raw_method": "history/turn", "change": "turn_completed", "turn": turn, "status": turn.get("status")},
+                data={"raw_method": "history/turn", "change": "turn_completed", "turn": turn, "status": turn.get("status"),
+                      "admitted_at": turn.get("startedAt"), "processed_at": turn.get("completedAt")},
                 session_id=self._thread_id,
                 cursor=f"{base}:event:9999",
                 delivery_id=delivery_id,
@@ -1656,15 +1875,25 @@ class CodexProtocolDriver(Driver):
         self._done_seen_at.pop(event.delivery_id, None)
 
     def _wait_until_idle_for_delivery(self) -> str:
-        deadline = time.monotonic() + self._stall_timeout
-        while True:
-            turn_id = self._active_turn_id or self._latest_in_progress_turn_id()
+        while not self._stop_event.is_set():
+            if not self.health():
+                return 'local queue transport disconnected'
+            try:
+                turn_id = self._active_turn_id or self._latest_in_progress_turn_id()
+            except Exception:
+                if not self.health():
+                    return 'local queue transport disconnected'
+                time.sleep(0.5)
+                continue
             if not turn_id:
                 return ""
             try:
                 state, detail = self._read_turn_state(turn_id)
-            except Exception as exc:
-                return f"failed while waiting for active turn {turn_id}: {exc}"
+            except Exception:
+                if not self.health():
+                    return 'local queue transport disconnected'
+                time.sleep(0.5)
+                continue
             if state in ("done", "failed"):
                 if turn_id == self._active_turn_id:
                     self._active_turn_id = ""
@@ -1672,9 +1901,10 @@ class CodexProtocolDriver(Driver):
             if state == "unknown":
                 self._active_turn_id = ""
                 return ""
-            if time.monotonic() > deadline:
-                return f"session busy: active turn {turn_id} still {detail} after {self._stall_timeout:.0f}s"
+            # Healthy native work can run beyond both admission and stall
+            # windows. This delivery has not been submitted yet.
             time.sleep(0.5)
+        return 'local queue stopped'
 
     def _read_record_turn_state(self, turn_id: str, record: _DeliveryRecord | None) -> tuple[ReceiptState, str]:
         if record is not None and record.thread_id != self._thread_id:

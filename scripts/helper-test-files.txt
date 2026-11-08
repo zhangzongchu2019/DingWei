@@ -6,6 +6,7 @@ tools/sessionhelper/tests/test_claim_enroll.py
 tools/sessionhelper/tests/test_claude_launch_contract.py
 tools/sessionhelper/tests/test_cli_exit_visible.py
 tools/sessionhelper/tests/test_codex_daemon_disk_workdir.py
+tools/sessionhelper/tests/test_codex_delivery_reconcile.py
 tools/sessionhelper/tests/test_codex_item_backfill.py
 tools/sessionhelper/tests/test_codex_stale_thread.py
 tools/sessionhelper/tests/test_connection_claim_cancellation.py

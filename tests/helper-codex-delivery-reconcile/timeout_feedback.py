@@ -21,7 +21,7 @@ class BusyProtocol:
         self.cwd, self.entered, self.release = cwd, entered, release
         self.calls = []
     def healthy(self):
-        return True
+        return not self.release.is_set()
     def request(self, method, params, timeout=0):
         self.calls.append(method)
         if method == 'thread/read':
@@ -59,12 +59,24 @@ class TimeoutFeedback(unittest.TestCase):
                 a.handle_delivery(env); cmd = a._commands.start_next()
                 # 不做真实替换：观察生产代码是否请求替换；finally释放并join自己的worker。
                 with patch.object(a, '_recover_transport') as recovery:
+                    finished, results = threading.Event(), []
+                    def bounded():
+                        try:
+                            results.append(a._bounded_deliver(cmd))
+                        except Exception as exc:
+                            results.append(exc)
+                        finally:
+                            finished.set()
+                    worker_thread = threading.Thread(target=bounded)
+                    worker_thread.start()
                     try:
-                        result = a._bounded_deliver(cmd)
-                        assert entered.is_set(), 'FIXTURE_DID_NOT_REACH_BUSY_PROTOCOL_READ'
-                        assert result is None, 'FIXTURE_DID_NOT_EXPIRE_ADMISSION'
+                        assert entered.wait(1), 'FIXTURE_DID_NOT_REACH_BUSY_PROTOCOL_READ'
+                        # Observe beyond the former admission deadline. The busy
+                        # reader remains blocked until finally releases it.
+                        self.assertFalse(finished.wait(.18), 'BUSY_WAIT_EXPIRED_BEFORE_SUBMISSION')
                         assert 'turn/start' not in rpc.calls, 'FIXTURE_UNEXPECTED_MODEL_SUBMISSION'
-                        assert inbox.lifecycle(did)['state'] == 'admission_unknown'
+                        self.assertEqual(inbox.lifecycle(did)['state'], 'processing',
+                            'LOCAL_QUEUE_MUST_NOT_BECOME_UNKNOWN')
                         print(json.dumps({'protocol_methods': rpc.calls, 'turn_start_count': 0,
                             'replacement_requests': recovery.call_count, 'new_delivery_state': inbox.lifecycle(did)['state'],
                             'active_turn': 'long-existing', 'transport_healthy': rpc.healthy()}), flush=True)
@@ -72,6 +84,8 @@ class TimeoutFeedback(unittest.TestCase):
                             'BUSY_WAIT_TIMEOUT_REQUESTS_TRANSPORT_REPLACEMENT_BEFORE_ANY_TURN_START')
                     finally:
                         release.set()
+                        worker_thread.join(3)
+                        assert not worker_thread.is_alive(), "FIXTURE_BOUNDED_WORKER_NOT_JOINED"
                         worker = getattr(cmd, '_delivery_worker', None)
                         if worker is not None:
                             assert worker.wait(3), 'FIXTURE_WORKER_NOT_JOINED'
