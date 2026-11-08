@@ -1,0 +1,242 @@
+[
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeviceClaimAcrossActualClientAndHub",
+    "output": "=== RUN   TestDeviceClaimAcrossActualClientAndHub\n    claim_client_integration_test.go:33: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment\n--- SKIP: TestDeviceClaimAcrossActualClientAndHub (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeviceClaimAcrossActualClientAndPostgres",
+    "output": "=== RUN   TestDeviceClaimAcrossActualClientAndPostgres\n    claim_client_integration_test.go:45: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment\n--- SKIP: TestDeviceClaimAcrossActualClientAndPostgres (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestChangeEvidenceConsoleBrowser",
+    "output": "=== RUN   TestChangeEvidenceConsoleBrowser\n    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration\n--- SKIP: TestChangeEvidenceConsoleBrowser (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestMuxProductHTTP1EightSeats",
+    "output": "=== RUN   TestMuxProductHTTP1EightSeats\n    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration\n--- SKIP: TestMuxProductHTTP1EightSeats (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestConsolePlatformPayloadDump",
+    "output": "=== RUN   TestConsolePlatformPayloadDump\n    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)\n--- SKIP: TestConsolePlatformPayloadDump (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+    "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+    "output": "=== RUN   TestConsoleTaskLegacyDODMigrationPendingProductionCount\n    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision\n--- SKIP: TestConsoleTaskLegacyDODMigrationPendingProductionCount (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+    "test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+    "output": "=== RUN   TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling\n    console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed\n--- SKIP: TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+    "test": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+    "output": "=== RUN   TestFeishuStickyOldHubMigrationRollbackCompatibility\n    feishu_sticky_compat_test.go:116: R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate\n--- SKIP: TestFeishuStickyOldHubMigrationRollbackCompatibility (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+    "output": "=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel\n    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically\n--- SKIP: TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+    "output": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude\n2026/11/08 22:44:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.17s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+    "output": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex\n2026/11/08 22:44:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.20s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+    "output": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit\n2026/11/08 22:44:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit (0.20s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+    "output": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected\n2026/11/08 22:44:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.17s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+    "output": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm\n2026/11/08 22:44:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.17s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+    "output": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected\n2026/11/08 22:44:52 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:52 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.18s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+    "output": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm\n2026/11/08 22:44:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm (0.18s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+    "output": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread\n2026/11/08 22:44:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.18s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+    "output": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist\n2026/11/08 22:44:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.18s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+    "output": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread\n2026/11/08 22:44:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.18s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+    "output": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist\n2026/11/08 22:44:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist (0.19s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+    "output": "=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/claude\n2026/11/08 22:44:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.20s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+    "output": "=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/codex\n2026/11/08 22:44:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/codex (0.16s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+    "output": "=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude\n2026/11/08 22:44:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.31s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+    "output": "=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex\n2026/11/08 22:44:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex (0.27s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLILateWireTerminal",
+    "output": "=== RUN   TestDeliveryACKActualCLILateWireTerminal\n2026/11/08 22:44:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/08 22:44:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILateWireTerminal (0.17s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDesktopMCPRoundTripAcrossRealHub",
+    "output": "=== RUN   TestDesktopMCPRoundTripAcrossRealHub\n    desktop_mcp_roundtrip_test.go:25: run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate\n--- SKIP: TestDesktopMCPRoundTripAcrossRealHub (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestFailureNoticeDriverTurnEndToEnd",
+    "output": "=== RUN   TestFailureNoticeDriverTurnEndToEnd\n    failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime\n--- SKIP: TestFailureNoticeDriverTurnEndToEnd (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+    "test": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+    "output": "=== RUN   TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy\n    task_dispatch_compat_test.go:196: exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate\n--- SKIP: TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+    "test": "TestR10RestartChildAuthority",
+    "output": "=== RUN   TestR10RestartChildAuthority\n    task_dispatch_restart_test.go:22: subprocess-only probe, exercised by TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice\n--- SKIP: TestR10RestartChildAuthority (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestGroupReplyMCP",
+    "output": "=== RUN   TestGroupReplyMCP\n    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON\n--- SKIP: TestGroupReplyMCP (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+    "output": "=== RUN   TestHelperSelfUpdateEndToEnd/install_restart_confirm\n    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python\n--- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+    "output": "=== RUN   TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory\n    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python\n--- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+    "output": "=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason\n    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python\n--- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelper0232MixedVersionEndToEnd",
+    "output": "=== RUN   TestHelper0232MixedVersionEndToEnd\n    helper_update_e2e_test.go:55: explicit immutable release pins required\n--- SKIP: TestHelper0232MixedVersionEndToEnd (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHostedBodySendAcrossRealHub",
+    "output": "=== RUN   TestHostedBodySendAcrossRealHub\n    hosted_body_send_test.go:23: set explicit isolated integration interpreter\n--- SKIP: TestHostedBodySendAcrossRealHub (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestEnvelopeReadTimeoutEnvironmentChild",
+    "output": "=== RUN   TestEnvelopeReadTimeoutEnvironmentChild\n    hub_timeout_contract_test.go:50: subprocess probe only\n--- SKIP: TestEnvelopeReadTimeoutEnvironmentChild (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestNPSessionPG8To9AndR50BinaryCompatibility",
+    "output": "=== RUN   TestNPSessionPG8To9AndR50BinaryCompatibility\n    np_session_migration_binary_test.go:26: set independently built current and certified R50 binary paths\n--- SKIP: TestNPSessionPG8To9AndR50BinaryCompatibility (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+    "output": "=== RUN   TestPilotQuestionAcrossRealHTTPHelperIPCMCP\n    pilot_question_roundtrip_test.go:17: set locked helper Python; canonical runs this local integration\n--- SKIP: TestPilotQuestionAcrossRealHTTPHelperIPCMCP (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+    "output": "=== RUN   TestPilotTemplateAcrossRealHTTPHelperIPCMCP\n    pilot_template_roundtrip_test.go:17: set locked helper Python; canonical runs loopback integration\n--- SKIP: TestPilotTemplateAcrossRealHTTPHelperIPCMCP (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+    "output": "=== RUN   TestProjectContextAcrossRealHTTPHelperIPCMCP\n    project_context_roundtrip_test.go:17: set DW_DESKTOP_INTEGRATION_PYTHON to the locked helper test venv; canonical shell gate runs the cross-runtime set\n--- SKIP: TestProjectContextAcrossRealHTTPHelperIPCMCP (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestR31OldBinarySchemaReadCompatibility",
+    "output": "=== RUN   TestR31OldBinarySchemaReadCompatibility\n    r31_rollback_compat_test.go:23: requires independently built R30 binary via R31_R30_BINARY\n--- SKIP: TestR31OldBinarySchemaReadCompatibility (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCFaultProcessMatrix",
+    "output": "=== RUN   TestHLCFaultProcessMatrix\n    shutdown_fault_process_test.go:94: isolated fault/watchdog runner tests/hlc/fault_matrix.py\n--- SKIP: TestHLCFaultProcessMatrix (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCBindFailure",
+    "output": "=== RUN   TestHLCBindFailure\n    shutdown_fault_process_test.go:329: isolated startup failure runner\n--- SKIP: TestHLCBindFailure (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestSessionHistoryTwentyAgentPublishP99",
+    "output": "=== RUN   TestSessionHistoryTwentyAgentPublishP99\n    session_history_test.go:356: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate\n--- SKIP: TestSessionHistoryTwentyAgentPublishP99 (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCLoadMatrix",
+    "output": "=== RUN   TestHLCLoadMatrix\n    shutdown_load_test.go:563: isolated actual-process matrix: tests/hlc/process_matrix.py\n--- SKIP: TestHLCLoadMatrix (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCS007Full",
+    "output": "=== RUN   TestHLCS007Full\n    shutdown_mixed_fault_process_test.go:164: isolated full mixed fault: tests/hlc/s007_full.py\n--- SKIP: TestHLCS007Full (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestSpecMCPEndToEnd",
+    "output": "=== RUN   TestSpecMCPEndToEnd\n    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses\n--- SKIP: TestSpecMCPEndToEnd (0.00s)\n"
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestBlockerAcrossRealHTTPHelperIPCMCP",
+    "output": "=== RUN   TestBlockerAcrossRealHTTPHelperIPCMCP\n    task_blocker_roundtrip_test.go:21: set locked helper Python; canonical runs this local integration\n--- SKIP: TestBlockerAcrossRealHTTPHelperIPCMCP (0.00s)\n"
+  }
+]

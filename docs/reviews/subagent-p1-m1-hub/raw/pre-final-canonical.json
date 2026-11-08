@@ -1,0 +1,11 @@
+{
+  "command": [
+    "bash",
+    "scripts/run-build-tests.sh"
+  ],
+  "start": "2026-11-08T22:33:01.175793+00:00",
+  "end": "2026-11-08T22:42:58.857160+00:00",
+  "rc": 1,
+  "uid": 1001,
+  "env": "isolated HOME/TMPDIR; stripped SH_/DINGWEI_/DW_/DATAD_; locked Python; UTC"
+}

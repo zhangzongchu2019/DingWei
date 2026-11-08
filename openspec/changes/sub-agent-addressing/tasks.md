@@ -14,8 +14,8 @@
 
 - [x] T-11 M1 核对 79a60a1e 基线、写者锁与设计；Hub parser、当前连接能力协商、全量树与墓碑／别名持久化。
 - [x] T-12 M1 加法迁移0075、Hub来源／路由、节点代次delivery ID及旧唯一索引作用域、原子sidecar、出队／ACK拒收。
-- [ ] T-13 M1 正负与逐项变异、旧数据迁移、m8整包、canonical、strict、future保护及证据归档。
-- [ ] T-14 M1 提交推送、核远端坐标并交组长独立复核；M2／M3另派。
+- [x] T-13 M1 正负与逐项变异、旧数据迁移、m8整包、canonical、strict、future保护及证据归档。
+- [x] T-14 M1 提交推送、核远端坐标并交组长独立复核；M2／M3另派。
 
 ## 交接记录
 
@@ -30,3 +30,5 @@
 2026-11-08 togpt60lunazzc.zzc；基于实现分支父提交 `d6657823`。后续裁定〔51〕-补10（rulings `89bda3bc`）已批准生命周期默认，故本次更新AA-007及设计表；前述“等待业主决策”是历史状态记录。完成：T09兼容拒收实现与三项变异、T10默认值及验证；原始证据见`docs/reviews/subagent-p1-compat-guard/`。不包含创建/注册/子投递能力；不部署。下一步：推送并核ls-remote坐标，提交组长复核。
 
 2026-11-08 coder56solzzc.zzc；CODEX_THREAD_ID=01a1bd1c-c28e-7c60-9594-7894d0078533；执行源见本分支父链。完成：T11～12，专项正负通过，future保护保持绿；产品仅Hub范围，无helper改动。新协议／旧索引兼容／feature-off边界见docs/design/SUBAGENT-P1-M1-HUB-PROTOCOL.md。阻塞：无。下一步：T13正式最终门和每格变异，T14交审；不启动M2／M3，不部署。
+
+2026-11-08 coder56solzzc.zzc；冻结源59c02c90e614af9fb2f14f832caf8807a3b8b6fd（tree760cb23fee405a16dcbcda5c36bef3419229c878，工蜂已核）。完成：T13最终m8整包1524/0、mcpgw125/0、store604/0、extseat与cmd全部过；canonical两profile各1129/1129、27Python/2shell、rc0；strict27/27、build、race、future全过；26刀逐项目标红。跳过条件及失败首跑原文全部保留，报告docs/reviews/subagent-p1-m1-hub/REPORT.md，源码哈希保持不变。本证据提交推进T14 Git交审，独立验收待组长；不自验收，不启动M2/M3，不部署。阻塞：无开发交件阻塞。下一步：核本证据提交远端SHA并投递坐标，等待独立复核。

@@ -1,0 +1,48 @@
+{
+  "counts": {
+    "github.com/zhangzongchu2019/dingwei/internal/subagent": {
+      "pass": 8,
+      "top_level_pass": 2
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/nodeagent": {
+      "pass": 2,
+      "top_level_pass": 2
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "pass": 125,
+      "top_level_pass": 30
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/file-service": {
+      "pass": 2,
+      "top_level_pass": 2
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store": {
+      "pass": 604,
+      "top_level_pass": 379,
+      "skip": 5,
+      "top_level_skip": 5
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/m8": {
+      "pass": 1524,
+      "top_level_pass": 904,
+      "skip": 37,
+      "top_level_skip": 19
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extseat": {
+      "pass": 26,
+      "top_level_pass": 14
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout": {
+      "pass": 9,
+      "top_level_pass": 9
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "pass": 259,
+      "top_level_pass": 169,
+      "skip": 6,
+      "top_level_skip": 6
+    }
+  },
+  "skips": 48,
+  "source_commit": "59c02c90e614af9fb2f14f832caf8807a3b8b6fd"
+}

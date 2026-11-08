@@ -1,0 +1,18 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./internal/m8",
+    "./internal/store",
+    "./internal/subagent",
+    "-run",
+    "^TestSubAgent|^TestRouteParser|^TestSnapshotCanonicalDigest",
+    "-count=1"
+  ],
+  "start": "2026-11-08T22:43:09.806543+00:00",
+  "end": "2026-11-08T22:45:01.142109+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "env": "isolated HOME/TMPDIR; stripped SH_/DINGWEI_/DW_/DATAD_; locked Python; UTC"
+}

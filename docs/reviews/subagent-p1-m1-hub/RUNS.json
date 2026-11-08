@@ -1,0 +1,119 @@
+{
+  "packages-final": {
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "./internal/m8",
+      "./internal/store",
+      "./internal/subagent",
+      "./internal/mcpgw",
+      "./internal/extseat",
+      "./cmd/...",
+      "-count=1"
+    ],
+    "start": "2026-11-08T22:43:09.658751+00:00",
+    "end": "2026-11-08T22:47:58.870581+00:00",
+    "rc": 0,
+    "uid": 1001,
+    "env": "isolated HOME/TMPDIR; stripped SH_/DINGWEI_/DW_/DATAD_; locked Python; UTC"
+  },
+  "canonical-final": {
+    "command": [
+      "bash",
+      "scripts/run-build-tests.sh"
+    ],
+    "start": "2026-11-08T22:43:09.658699+00:00",
+    "end": "2026-11-08T22:52:08.143653+00:00",
+    "rc": 0,
+    "uid": 1001,
+    "env": "isolated HOME/TMPDIR; stripped SH_/DINGWEI_/DW_/DATAD_; locked Python; UTC"
+  },
+  "mutations-final": {
+    "command": [
+      "python3",
+      "tests/subagent-p1-m1/run_mutations.py",
+      "--output",
+      "/tmp/subagent-m1-mutations-final"
+    ],
+    "start": "2026-11-08T22:43:09.658809+00:00",
+    "end": "2026-11-08T22:46:58.725477+00:00",
+    "rc": 0,
+    "uid": 1001,
+    "env": "isolated HOME/TMPDIR; stripped SH_/DINGWEI_/DW_/DATAD_; locked Python; UTC"
+  },
+  "race-final": {
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "./internal/m8",
+      "./internal/store",
+      "./internal/subagent",
+      "-run",
+      "^TestSubAgent|^TestRouteParser|^TestSnapshotCanonicalDigest",
+      "-count=1"
+    ],
+    "start": "2026-11-08T22:43:09.806543+00:00",
+    "end": "2026-11-08T22:45:01.142109+00:00",
+    "rc": 0,
+    "uid": 1001,
+    "env": "isolated HOME/TMPDIR; stripped SH_/DINGWEI_/DW_/DATAD_; locked Python; UTC"
+  },
+  "future-final": {
+    "command": [
+      "python3",
+      "tests/subagent-addressing-design/run_legacy_probe.py",
+      "--future",
+      "--output",
+      "/tmp/subagent-m1-future-final"
+    ],
+    "start": "2026-11-08T22:43:09.713598+00:00",
+    "end": "2026-11-08T22:43:27.121498+00:00",
+    "rc": 0,
+    "uid": 1001,
+    "env": "isolated HOME/TMPDIR; stripped SH_/DINGWEI_/DW_/DATAD_; locked Python; UTC"
+  },
+  "build-final": {
+    "command": [
+      "go",
+      "build",
+      "./..."
+    ],
+    "start": "2026-11-08T22:43:09.671336+00:00",
+    "end": "2026-11-08T22:43:18.731278+00:00",
+    "rc": 0,
+    "uid": 1001,
+    "env": "isolated HOME/TMPDIR; stripped SH_/DINGWEI_/DW_/DATAD_; locked Python; UTC"
+  },
+  "strict-final": {
+    "command": [
+      "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+      "validate",
+      "--all",
+      "--strict",
+      "--no-interactive"
+    ],
+    "start": "2026-11-08T22:43:09.805235+00:00",
+    "end": "2026-11-08T22:43:10.609985+00:00",
+    "rc": 0,
+    "uid": 1001,
+    "env": "isolated HOME/TMPDIR; stripped SH_/DINGWEI_/DW_/DATAD_; locked Python; UTC"
+  },
+  "model-extshared-final": {
+    "command": [
+      "go",
+      "test",
+      "-json",
+      "./internal/model",
+      "./internal/extshared",
+      "-count=1"
+    ],
+    "start": "2026-11-08T22:51:16.705443+00:00",
+    "end": "2026-11-08T22:51:16.879688+00:00",
+    "rc": 0,
+    "uid": 1001,
+    "source_commit": "59c02c90e614af9fb2f14f832caf8807a3b8b6fd",
+    "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+  }
+}
