@@ -18,7 +18,7 @@ S-R10-R9-PROPOSALS第一阶段R10；唯一执行者coder56solzzc.zzc；初始单
 - [x] T-07 实施R10-007漂移监测/提醒/提交重核，补四类实质变化、已批豁免、比较失败及撤提醒/同步守卫反证。
 - [x] T-08 实施R10-008/009跨仓隔离/逐项结果、outbox幂等及审计，补跨仓ACL、回执未知/重复通知、去掉repo维度/幂等变异。
 - [x] T-09 逐执行design九行正反共18场景，负载/并发/时序50轮及race、重启恢复、相关构建门与strict，交独立验收；未执行须写状态和原因，不能凭tasks全勾宣布业务完成。
-- [ ] T-10 独立验收后另申请预发/生产GO与迁移，交发布事实；本提案不部署、不创建真实锁、不archive/apply。
+- [x] T-10 独立验收后另申请预发/生产GO与迁移，交发布事实；本提案不部署、不创建真实锁、不archive/apply。 【甲；证据：docs/reviews/r50-r10-acceptance/REPORT.md @ 8fc3e22d8981483192d0d963632618e1c862470f; docs/reviews/prodops-r50-prod-closeout-20261105/RESULT.md @ 559c8fcc9e98e6562a99eda5d072f5c9774de35d】
 
 ## 交接记录
 

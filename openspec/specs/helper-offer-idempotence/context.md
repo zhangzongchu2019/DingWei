@@ -1,0 +1,11 @@
+# Helper首offer最小基线与上下文
+
+基线固定r48 1e17255f28ced042784337903914ca8c126ef4cf；派单S-R49-HELPER-OFFER-RACE，来源组长6921ce22db01（delivery_inbox dw-dlv_a33b03fc3320bb4ad4de114c83b2764e），及5eb72fe45778最终四条件。当前唯一执行者01a19c8c-6b8b-7f23-8a6a-f7b69fd0aafb；R14交件84dc58255422之后开工，先于R10。没有从提交作者推导发布或授权。
+
+按读取顺序核hub-lifecycle/context.md、spec.md及进行中的变更目录；r48树未收录helper独立主规格或平台能力时间线文件，此处只记录源码可核的最小原态，不扩写上线事实。
+
+internal/m8/helper_update.go:407起的recordHelperUpdateOfferConnection注释要求冻结首次连接；IssueHelperUpdate与能力帧后台resumeHelperUpdateOffer可持同一个未冻结快照。旧函数重新读取后不检查已冻结值，会覆盖OfferConnSeq并增加Revision；两方读同一raw后同时CAS，则一方报offer changed concurrently。SQLite.CompareAndSwapAppConfig在internal/store/sqlite.go:3634以完整value_json相等作CAS，不是数据竞争。
+
+helper_update.go的recordHelperUpdateReceipt、confirmHelperUpdateHealth、helperUpdateTerminal仍分别负责receipt阶段、后启动连接和终态约束。本单保留既有授权、阶段、数据结构、错误码和数据库schema，只修首offer写幂等。测试包装Repository在New之前安装，不运行期替换共享指针。
+
+验证用普通dev、锁依赖、短隔离HOME/TMPDIR、临时SQLite和loopback端口、剥继承SH/DINGWEI/DW/WP/PG配置；不启动生产helper或Hub，不改版本、PG schema，不部署、apply/archive或自验收。
