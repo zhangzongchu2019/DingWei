@@ -950,6 +950,9 @@ func (p *amrProcessor) process(job amrRouteJob) {
 		}
 		return
 	}
+	if feedback != "" {
+		p.notifySourceVisible(job.key, "route_notice", feedback, false, job.body)
+	}
 	prepared := make([]amrPreparedTarget, 0, len(candidates))
 	results := make([]amrTargetResult, 0, len(candidates))
 	// S-MENTION-BESTEFFORT ③ 的连锁处置(原样送达后,收件方引用原文会让提及再被解析):
@@ -1473,6 +1476,9 @@ func amrHasUnfencedTrigger(text string) bool {
 // from authorization failures. The latter stay fail-closed; unsupported names
 // are ordinary text and return to the origin with this explanatory notice.
 func amrParseFeedback(text string, candidates []amrCandidate, looked bool, maxTargets int) string {
+	if amrHasUnsupportedChildMention(text) {
+		return "三段及以上子 Agent 提及当前不受支持，已跳过；同正文中的合法主会话提及仍会处理"
+	}
 	if len(candidates) > 0 {
 		for _, candidate := range candidates {
 			if candidate.channel != "" && amrHasUnfencedTrigger(candidate.body) {
@@ -1492,6 +1498,34 @@ func amrParseFeedback(text string, candidates []amrCandidate, looked bool, maxTa
 		return "提及后没有可发送的正文，请补充正文"
 	}
 	return fmt.Sprintf("提及格式正确但目标无权限、不可达或超过数量限制（上限 %d）", maxTargets)
+}
+
+var amrMentionToken = regexp.MustCompile(`@[A-Za-z0-9_.-]+!?`)
+
+// amrHasUnsupportedChildMention identifies syntactically valid mentions deeper
+// than a root address, while ignoring paired Markdown code fences.
+func amrHasUnsupportedChildMention(text string) bool {
+	lines := strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n")
+	fenced := pairedMarkdownFenceLines(lines)
+	for i, line := range lines {
+		if fenced[i] {
+			continue
+		}
+		for _, span := range amrMentionToken.FindAllStringIndex(line, -1) {
+			if span[0] > 0 {
+				previous, _ := utf8.DecodeLastRuneInString(line[:span[0]])
+				if !unicode.IsSpace(previous) && !strings.ContainsRune("([{,;:，。！？、", previous) {
+					continue
+				}
+			}
+			token := line[span[0]:span[1]]
+			name := strings.TrimSuffix(strings.TrimPrefix(token, "@"), "!")
+			if amrTokenName.MatchString(name) && strings.Count(name, ".") >= 2 {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // pairedMarkdownFenceLines marks only closed fenced blocks. A fence delimiter
@@ -1600,7 +1634,13 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 		if i <= 1 {
 			return nil, true
 		}
-		tokens = append(tokens, remaining[1:i])
+		token := remaining[1:i]
+		// Unsupported child paths are not delivery candidates and do not spend
+		// the configured budget reserved for valid root recipients.
+		name := strings.TrimSuffix(token, "!")
+		if !amrTokenName.MatchString(name) || strings.Count(name, ".") < 2 {
+			tokens = append(tokens, token)
+		}
 		remaining = strings.TrimLeftFunc(remaining[i:], unicode.IsSpace)
 		if len(tokens) > maxTargets {
 			return nil, true
@@ -1637,6 +1677,10 @@ func parseAMRCandidateBlock(text, sourceSession string, maxTargets int) ([]amrCa
 			// 但要靠他自己察觉。**这是"部分成功报成功",与 T-071 同类。**
 			// 未补的原因:补回显要改 parseAMRCandidatesDetailed 签名(2 处生产 + 9 处测试),
 			// 且业主裁定是「直接跳过,后期再看做集中处理」⇒ 不在本单擅自扩围,另开卡。
+			skipped = append(skipped, token)
+			continue
+		}
+		if strings.Count(token, ".") >= 2 {
 			skipped = append(skipped, token)
 			continue
 		}

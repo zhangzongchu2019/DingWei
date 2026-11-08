@@ -1,0 +1,355 @@
+[
+  {
+    "method": "initialize",
+    "params": {
+      "clientInfo": {
+        "name": "dingwei_design_probe",
+        "version": "0.1"
+      },
+      "capabilities": {
+        "experimentalApi": true
+      }
+    },
+    "result": {
+      "userAgent": "dingwei_design_probe/0.159.2 (Ubuntu 24.4.0; x86_64) unknown (dingwei_design_probe; 0.1)",
+      "codexHome": "/tmp/subagent-native-5d2llubh/codex",
+      "platformFamily": "unix",
+      "platformOs": "linux"
+    }
+  },
+  {
+    "method": "thread/start",
+    "params": {
+      "cwd": "/tmp/subagent-native-5d2llubh",
+      "ephemeral": false,
+      "sandbox": "read-only",
+      "approvalPolicy": "never"
+    },
+    "result": {
+      "thread": {
+        "id": "01a1bb23-e243-7000-acb5-515032041d5d",
+        "environments": [
+          {
+            "environmentId": "local",
+            "cwd": "/tmp/subagent-native-5d2llubh",
+            "runtimeWorkspaceRoots": [
+              "/tmp/subagent-native-5d2llubh"
+            ]
+          }
+        ],
+        "extra": null,
+        "sessionId": "01a1bb23-e243-7000-acb5-515032041d5d",
+        "forkedFromId": null,
+        "parentThreadId": null,
+        "preview": "",
+        "ephemeral": false,
+        "section": null,
+        "sectionEnteredAt": null,
+        "projectId": null,
+        "historyMode": "paginated",
+        "modelProvider": "local_probe",
+        "model": "probe-local",
+        "reasoningEffort": null,
+        "createdAt": 1794141053,
+        "updatedAt": 1794141053,
+        "recencyAt": 1794141053,
+        "status": {
+          "type": "idle"
+        },
+        "path": "/tmp/subagent-native-5d2llubh/codex/sessions/2026/11/08/rollout-2026-11-08T12-30-53-01a1bb23-e243-7000-acb5-515032041d5d.jsonl",
+        "cwd": "/tmp/subagent-native-5d2llubh",
+        "cliVersion": "0.159.2",
+        "originator": "dingwei_design_probe",
+        "source": "vscode",
+        "canAcceptDirectInput": true,
+        "threadSource": null,
+        "agentNickname": null,
+        "agentRole": null,
+        "gitInfo": null,
+        "name": null,
+        "daybreakEnabled": null,
+        "turns": []
+      },
+      "model": "probe-local",
+      "modelProvider": "local_probe",
+      "serviceTier": null,
+      "disabledPluginIds": [],
+      "cwd": "/tmp/subagent-native-5d2llubh",
+      "runtimeWorkspaceRoots": [
+        "/tmp/subagent-native-5d2llubh"
+      ],
+      "instructionSources": [],
+      "approvalPolicy": "never",
+      "approvalsReviewer": "user",
+      "sandbox": {
+        "type": "readOnly",
+        "networkAccess": false
+      },
+      "activePermissionProfile": null,
+      "reasoningEffort": null,
+      "multiAgentMode": "explicitRequestOnly"
+    }
+  },
+  {
+    "method": "turn/start",
+    "params": {
+      "threadId": "01a1bb23-e243-7000-acb5-515032041d5d",
+      "clientUserMessageId": "design-0",
+      "input": [
+        {
+          "type": "text",
+          "text": "LOCAL_SYNTHETIC_NO_REAL_INFERENCE_0"
+        }
+      ]
+    },
+    "result": {
+      "turn": {
+        "id": "01a1bb23-e24d-7303-a85a-a89d2a01fa13",
+        "items": [],
+        "itemsView": "notLoaded",
+        "status": "inProgress",
+        "error": null,
+        "startedAt": null,
+        "completedAt": null,
+        "durationMs": null
+      }
+    }
+  },
+  {
+    "method": "thread/start",
+    "params": {
+      "cwd": "/tmp/subagent-native-5d2llubh",
+      "ephemeral": false,
+      "sandbox": "read-only",
+      "approvalPolicy": "never"
+    },
+    "result": {
+      "thread": {
+        "id": "01a1bb23-e254-70c3-9ece-ac693d6c1f62",
+        "environments": [
+          {
+            "environmentId": "local",
+            "cwd": "/tmp/subagent-native-5d2llubh",
+            "runtimeWorkspaceRoots": [
+              "/tmp/subagent-native-5d2llubh"
+            ]
+          }
+        ],
+        "extra": null,
+        "sessionId": "01a1bb23-e254-70c3-9ece-ac693d6c1f62",
+        "forkedFromId": null,
+        "parentThreadId": null,
+        "preview": "",
+        "ephemeral": false,
+        "section": null,
+        "sectionEnteredAt": null,
+        "projectId": null,
+        "historyMode": "paginated",
+        "modelProvider": "local_probe",
+        "model": "probe-local",
+        "reasoningEffort": null,
+        "createdAt": 1794141053,
+        "updatedAt": 1794141053,
+        "recencyAt": 1794141053,
+        "status": {
+          "type": "idle"
+        },
+        "path": "/tmp/subagent-native-5d2llubh/codex/sessions/2026/11/08/rollout-2026-11-08T12-30-53-01a1bb23-e254-70c3-9ece-ac693d6c1f62.jsonl",
+        "cwd": "/tmp/subagent-native-5d2llubh",
+        "cliVersion": "0.159.2",
+        "originator": "dingwei_design_probe",
+        "source": "vscode",
+        "canAcceptDirectInput": true,
+        "threadSource": null,
+        "agentNickname": null,
+        "agentRole": null,
+        "gitInfo": null,
+        "name": null,
+        "daybreakEnabled": null,
+        "turns": []
+      },
+      "model": "probe-local",
+      "modelProvider": "local_probe",
+      "serviceTier": null,
+      "disabledPluginIds": [],
+      "cwd": "/tmp/subagent-native-5d2llubh",
+      "runtimeWorkspaceRoots": [
+        "/tmp/subagent-native-5d2llubh"
+      ],
+      "instructionSources": [],
+      "approvalPolicy": "never",
+      "approvalsReviewer": "user",
+      "sandbox": {
+        "type": "readOnly",
+        "networkAccess": false
+      },
+      "activePermissionProfile": null,
+      "reasoningEffort": null,
+      "multiAgentMode": "explicitRequestOnly"
+    }
+  },
+  {
+    "method": "turn/start",
+    "params": {
+      "threadId": "01a1bb23-e254-70c3-9ece-ac693d6c1f62",
+      "clientUserMessageId": "design-1",
+      "input": [
+        {
+          "type": "text",
+          "text": "LOCAL_SYNTHETIC_NO_REAL_INFERENCE_1"
+        }
+      ]
+    },
+    "result": {
+      "turn": {
+        "id": "01a1bb23-e26e-7843-ac84-376d1cb1edab",
+        "items": [],
+        "itemsView": "notLoaded",
+        "status": "inProgress",
+        "error": null,
+        "startedAt": null,
+        "completedAt": null,
+        "durationMs": null
+      }
+    }
+  },
+  {
+    "method": "thread/turns/list",
+    "params": {
+      "threadId": "01a1bb23-e243-7000-acb5-515032041d5d",
+      "limit": 10,
+      "sortDirection": "asc",
+      "itemsView": "full"
+    },
+    "result": {
+      "data": [
+        {
+          "id": "01a1bb23-e24d-7303-a85a-a89d2a01fa13",
+          "items": [
+            {
+              "type": "userMessage",
+              "id": "01a1bb23-e275-7be0-b6cc-54dc556b58e0",
+              "clientId": "design-0",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "LOCAL_SYNTHETIC_NO_REAL_INFERENCE_0",
+                  "text_elements": []
+                }
+              ]
+            }
+          ],
+          "itemsView": "full",
+          "status": "inProgress",
+          "error": null,
+          "startedAt": 1794141053,
+          "completedAt": null,
+          "durationMs": null
+        }
+      ],
+      "nextCursor": null,
+      "backwardsCursor": "{\"requestedThreadId\":\"01a1bb23-e243-7000-acb5-515032041d5d\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+    }
+  },
+  {
+    "method": "thread/turns/list",
+    "params": {
+      "threadId": "01a1bb23-e254-70c3-9ece-ac693d6c1f62",
+      "limit": 10,
+      "sortDirection": "asc",
+      "itemsView": "full"
+    },
+    "result": {
+      "data": [
+        {
+          "id": "01a1bb23-e26e-7843-ac84-376d1cb1edab",
+          "items": [
+            {
+              "type": "userMessage",
+              "id": "01a1bb23-e279-7210-8ca8-602b28be0467",
+              "clientId": "design-1",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "LOCAL_SYNTHETIC_NO_REAL_INFERENCE_1",
+                  "text_elements": []
+                }
+              ]
+            }
+          ],
+          "itemsView": "full",
+          "status": "inProgress",
+          "error": null,
+          "startedAt": 1794141053,
+          "completedAt": null,
+          "durationMs": null
+        }
+      ],
+      "nextCursor": null,
+      "backwardsCursor": "{\"requestedThreadId\":\"01a1bb23-e254-70c3-9ece-ac693d6c1f62\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+    }
+  },
+  {
+    "method": "turn/interrupt",
+    "params": {
+      "threadId": "01a1bb23-e243-7000-acb5-515032041d5d",
+      "turnId": "01a1bb23-e24d-7303-a85a-a89d2a01fa13"
+    },
+    "result": {}
+  },
+  {
+    "method": "thread/unsubscribe",
+    "params": {
+      "threadId": "01a1bb23-e243-7000-acb5-515032041d5d"
+    },
+    "result": {
+      "status": "unsubscribed"
+    }
+  },
+  {
+    "method": "thread/turns/list",
+    "params": {
+      "threadId": "01a1bb23-e254-70c3-9ece-ac693d6c1f62",
+      "limit": 10,
+      "sortDirection": "asc",
+      "itemsView": "full"
+    },
+    "result": {
+      "data": [
+        {
+          "id": "01a1bb23-e26e-7843-ac84-376d1cb1edab",
+          "items": [
+            {
+              "type": "userMessage",
+              "id": "01a1bb23-e279-7210-8ca8-602b28be0467",
+              "clientId": "design-1",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "LOCAL_SYNTHETIC_NO_REAL_INFERENCE_1",
+                  "text_elements": []
+                }
+              ]
+            }
+          ],
+          "itemsView": "full",
+          "status": "inProgress",
+          "error": null,
+          "startedAt": 1794141053,
+          "completedAt": null,
+          "durationMs": null
+        }
+      ],
+      "nextCursor": null,
+      "backwardsCursor": "{\"requestedThreadId\":\"01a1bb23-e254-70c3-9ece-ac693d6c1f62\",\"rolloutOrdinal\":1,\"includeAnchor\":true,\"scope\":{\"kind\":\"turns\"}}"
+    }
+  },
+  {
+    "method": "turn/interrupt",
+    "params": {
+      "threadId": "01a1bb23-e254-70c3-9ece-ac693d6c1f62",
+      "turnId": "01a1bb23-e26e-7843-ac84-376d1cb1edab"
+    },
+    "result": {}
+  }
+]

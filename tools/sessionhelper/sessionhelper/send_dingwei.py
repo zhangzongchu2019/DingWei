@@ -39,6 +39,12 @@ def complete_addr(to: str) -> str:
     return f"{to}#{key}" if key else to
 
 
+def unsupported_sub_agent_target(to: str) -> bool:
+    """Phase 1 does not negotiate child routing; never truncate to the root."""
+    name = to.strip().split("#", 1)[0]
+    return bool(name) and len(name.split(".")) >= 3
+
+
 def ipc_send(to: str, body: str) -> dict:
     payload = {"type": "mcp_send", "to": to, "body": body,
                "request_id": uuid.uuid4().hex[:12],
@@ -80,6 +86,8 @@ def main() -> None:
     args = sys.argv[1:]
     if len(args) < 2:
         sys.exit("用法: send.py <收件会话名或地址> <正文>   或   send.py <收件> --file <正文文件>")
+    if unsupported_sub_agent_target(args[0]):
+        sys.exit("发送失败：三段及以上子 Agent 目标当前不受支持；未降级为父会话，未发送。")
     recipient = complete_addr(args[0])
     if args[1] == "--file":
         if len(args) < 3:

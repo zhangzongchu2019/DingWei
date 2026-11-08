@@ -1,0 +1,14 @@
+Command: bash scripts/run-build-tests.sh
+Environment: /tmp/r52-delivery-status-venv/bin first on PATH; check-runtime-deps.py matched tools/sessionhelper/requirements-runtime.lock; SH_, DINGWEI_, DW_, DATAD_ variables removed; TMPDIR=/tmp/sbp1tf
+Exit: 0
+Helper Claude: 1129/1129 (1120 + 9), rc=0
+Helper Codex: 1129/1129 (1120 + 9), rc=0
+Other Python tests: 27 files; shell tests: 2
+Final marker: BUILD_TESTS_OK helper_profiles=2 python=27 shell=2
+
+Command: go test ./internal/m8 -count=1
+Exit: 0; package output reports 225.703s
+
+Command: OPENSPEC_TELEMETRY=0 NODE_OPTIONS=--disable-warning=ExperimentalWarning openspec validate --all --strict --no-interactive
+Version: OpenSpec 1.16.0
+Exit: 0; 27 passed, 0 failed

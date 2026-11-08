@@ -1,0 +1,17 @@
+{
+  "binary_sha256": "1748767b230ebfc3d4ab7e4e254920d0c0ad9691fd8c11f190e7d44511a4a92e",
+  "one_app_server": true,
+  "distinct_threads": 2,
+  "parallel_native_states": [
+    "inProgress",
+    "inProgress"
+  ],
+  "loopback_provider_requests": 2,
+  "sibling_survives_interrupt_and_unsubscribe": true,
+  "real_inference": false,
+  "schema_extracts": [
+    "DynamicToolCallParams.json",
+    "v2/TurnStartParams.json",
+    "v2/ThreadStartParams.json"
+  ]
+}

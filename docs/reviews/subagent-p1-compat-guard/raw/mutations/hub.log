@@ -1,0 +1,5 @@
+--- FAIL: TestUnnegotiatedSubPathNeverReachesParent (0.00s)
+    subagent_compat_guard_test.go:32: UNNEGOTIATED_SUBPATH_REACHED_PARENT err=<nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.008s
+FAIL

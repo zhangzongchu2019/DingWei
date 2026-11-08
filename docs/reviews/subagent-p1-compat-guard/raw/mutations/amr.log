@@ -1,0 +1,5 @@
+--- FAIL: TestSubagentAMRMentionSkippedButRootKept (0.00s)
+    subagent_compat_guard_test.go:14: AA005_CHILD_MENTION_NOT_SKIPPED_WITH_VALID_ROOT_RETAINED candidates=[{channel: channelAddr: selector:#r2.agent.user body:please review replyPolicy:expect_reply} {channel: channelAddr: selector:#agent.user body:please review replyPolicy:expect_reply}] looked=true
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.008s
+FAIL

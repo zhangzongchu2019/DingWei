@@ -3,6 +3,7 @@ package m8
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -585,6 +586,7 @@ func TestAMRRoutesMentionsAnywhereAndHonorsPairedFences(t *testing.T) {
 		wantBody string
 	}{
 		{name: "mid sentence", body: "先写说明，再请 @target 核对这一项", wantBody: "核对这一项"},
+		{name: "child skipped while root retained", body: "@r2.agent.user @target keep the original bytes", wantBody: "keep the original bytes"},
 		{name: "paired fence", body: "引用日志：\n```text\n@target 围栏内不得投递\n```\n围栏外同一句仍请 @target 围栏外应投递", wantBody: "围栏外应投递"},
 		{name: "unmatched opener does not swallow", body: "```text\n@target 未闭合围栏仍应投递", wantBody: "未闭合围栏仍应投递"},
 	} {
@@ -636,6 +638,7 @@ func TestAMRRoutesMentionsAnywhereAndHonorsPairedFences(t *testing.T) {
 			p.mu.Lock()
 			p.stats.opened, p.stats.queued = 1, 1
 			p.mu.Unlock()
+			originalHash := sha256.Sum256([]byte(tc.body))
 			p.process(amrRouteJob{key: amrTurnKey{KeyID: key.ID, Session: sourceName, DeliveryID: "d", TurnID: "t"}, body: tc.body})
 
 			got := readEnvelope(t, ctx, target)
@@ -643,6 +646,15 @@ func TestAMRRoutesMentionsAnywhereAndHonorsPairedFences(t *testing.T) {
 			// 它同时承担"解析器选中了哪一个提及"的区分(如围栏内外)——该区分改在解析层断言,不丢。
 			if got.Body != tc.body {
 				t.Fatalf("real AMR route body=%q want original=%q", got.Body, tc.body)
+			}
+			if deliveredHash := sha256.Sum256([]byte(got.Body)); deliveredHash != originalHash {
+				t.Fatalf("real AMR route changed original body hash: got=%x want=%x", deliveredHash, originalHash)
+			}
+			if tc.name == "child skipped while root retained" {
+				notice := readEnvelope(t, ctx, source)
+				if !strings.Contains(notice.Body, "三段及以上子 Agent 提及当前不受支持") {
+					t.Fatalf("source did not receive child mention notice: %q", notice.Body)
+				}
 			}
 			if picked, _ := parseAMRCandidatesDetailed(tc.body, sourceName, 20); len(picked) == 0 || picked[0].body != tc.wantBody {
 				t.Fatalf("parser picked=%+v want candidate body=%q", picked, tc.wantBody)

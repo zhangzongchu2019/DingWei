@@ -1334,6 +1334,10 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, "", "信封解析失败："+err.Error()))
 			continue
 		}
+		if err := rejectUnnegotiatedSubAgentEnvelope(env); err != nil {
+			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, err.Error()))
+			continue
+		}
 		if coordinateReviewEnvelope(env) || specReviewType(specReviewEnvelopeType(env)) || metaString(env.Meta, "kind") == "task_assigned" || metaString(env.Meta, "kind") == "task_blocker_ready" || metaBool(env.Meta, "task_flow_internal") {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, env.ID, "task notification is Hub-only"))
 			continue
@@ -3253,7 +3257,25 @@ func feishuDispatchLogSource(addr address) (openID, botChannel string) {
 	return "", ""
 }
 
+// rejectUnnegotiatedSubAgentEnvelope fails closed while this Hub has no
+// sub_agents_v1 negotiation. These fields are Hub-owned routing attestations;
+// a sender cannot create trust by supplying them in envelope metadata.
+func rejectUnnegotiatedSubAgentEnvelope(env model.Envelope) error {
+	for _, key := range []string{
+		"sub_path", "target_full_name", "target_node_id", "lane_generation", "subtree_revision",
+		"from_full_name", "from_node_id", "from_generation",
+	} {
+		if _, present := env.Meta[key]; present {
+			return fmt.Errorf("sub_agent_unsupported: reserved route field %q requires negotiated sub-agent capability", key)
+		}
+	}
+	return nil
+}
+
 func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
+	if err := rejectUnnegotiatedSubAgentEnvelope(env); err != nil {
+		return err
+	}
 	if err := h.taskDispatchEnvelopeAllowed(ctx, env); err != nil {
 		return err
 	}

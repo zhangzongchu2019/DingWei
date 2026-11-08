@@ -1,5 +1,17 @@
 """T-092:ipc_send 必须把裸会话名补全为 <名>#<key_id>,否则 Hub 判 invalid address。"""
 import unittest
+import importlib.util
+from pathlib import Path
+from unittest import mock
+import sys
+
+SEND_SCRIPT = Path(__import__("os").environ.get(
+    "SEND_DINGWEI_TEST_MODULE",
+    Path(__file__).parents[1] / "sessionhelper" / "send_dingwei.py",
+))
+_spec = importlib.util.spec_from_file_location("send_dingwei_under_test", SEND_SCRIPT)
+send_dingwei = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(send_dingwei)
 
 
 def complete(to: str, key_id: str) -> str:
@@ -24,6 +36,18 @@ class TestIPCSendAddressCompletion(unittest.TestCase):
         # 指向别的 key 的地址必须原样保留,不得被本机 key 覆盖
         other = "zzc-someone-1234#FB-other-key"
         self.assertEqual(complete(other, self.KEY), other)
+
+    def test_three_segment_target_rejected_before_ipc(self):
+        with mock.patch.object(sys, "argv", [str(SEND_SCRIPT), "r2.agent.user#key", "hello"]), \
+             mock.patch.object(send_dingwei, "ipc_send", side_effect=AssertionError("IPC must not run")):
+            with self.assertRaisesRegex(SystemExit, "三段及以上子 Agent 目标当前不受支持"):
+                send_dingwei.main()
+
+    def test_root_two_segment_target_stays_supported(self):
+        with mock.patch.object(sys, "argv", [str(SEND_SCRIPT), "agent.user#key", "hello"]), \
+             mock.patch.object(send_dingwei, "ipc_send", return_value={"ok": True, "outcome": {"to": "agent.user#key"}}) as ipc:
+            send_dingwei.main()
+        ipc.assert_called_once_with("agent.user#key", "hello")
 
 
 if __name__ == "__main__":

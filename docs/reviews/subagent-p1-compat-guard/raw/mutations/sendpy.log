@@ -1,0 +1,30 @@
+sent to=agent.user#key bytes=5 request_id=
+test_bare_session_name_is_completed (tools.sessionhelper.tests.test_ipc_send_addr.TestIPCSendAddressCompletion.test_bare_session_name_is_completed) ... ok
+test_cross_key_address_preserved (tools.sessionhelper.tests.test_ipc_send_addr.TestIPCSendAddressCompletion.test_cross_key_address_preserved) ... ok
+test_full_address_is_left_alone (tools.sessionhelper.tests.test_ipc_send_addr.TestIPCSendAddressCompletion.test_full_address_is_left_alone) ... ok
+test_root_two_segment_target_stays_supported (tools.sessionhelper.tests.test_ipc_send_addr.TestIPCSendAddressCompletion.test_root_two_segment_target_stays_supported) ... ok
+test_three_segment_target_rejected_before_ipc (tools.sessionhelper.tests.test_ipc_send_addr.TestIPCSendAddressCompletion.test_three_segment_target_rejected_before_ipc) ... FAIL
+
+======================================================================
+FAIL: test_three_segment_target_rejected_before_ipc (tools.sessionhelper.tests.test_ipc_send_addr.TestIPCSendAddressCompletion.test_three_segment_target_rejected_before_ipc)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/subagent-p1-compat-guard/tools/sessionhelper/tests/test_ipc_send_addr.py", line 44, in test_three_segment_target_rejected_before_ipc
+    send_dingwei.main()
+  File "/tmp/subagent-mutants-7dox973o/send-mutant.py", line 101, in main
+    resp = ipc_send(recipient, body)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1193, in _execute_mock_call
+    raise effect
+AssertionError: IPC must not run
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.001s
+
+FAILED (failures=1)

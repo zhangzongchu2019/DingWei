@@ -1,0 +1,22 @@
+package hubdriver
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestSubagentDesignLegacyOnlineListIsSubstringNotTree(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "online.list")
+	if err := os.WriteFile(path, []byte("全名:r2.kimi.zzc\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	list := &OnlineList{Path: path}
+	if err := list.alive("r2.kimi.zzc"); err != nil {
+		t.Fatal(err)
+	}
+	if err := list.alive("kimi.zzc"); err != nil {
+		t.Fatalf("baseline substring behavior changed: %v", err)
+	}
+	t.Log(`OBSERVATION {"entry":"legacy_online_list","child_string_accepted":true,"root_substring_also_alive":true,"tree_authority":false}`)
+}
