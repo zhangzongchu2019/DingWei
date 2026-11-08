@@ -21,3 +21,8 @@
 ## extseat拒绝审计（㊾-补7 c71bc54e）
 
 IssueToken在原tenant拒绝分支复用Identity.Store.AppendAudit（同一个audit_log）；Actor为provider/issuer/subject派生摘要，不含调用方tenant；Detail仅server配置tenant、固定op及deny。Target为空，时刻取服务时钟。资源解析前仅允许这笔审计写，不读目标或选择器；写失败只记固定日志，返回仍为原ErrTenantRejected与空值。PG用例实际验证存在helper.ho与不存在missing.ho均无resolver调用、持久审计同形。该方法没有HTTP写口，原error对象/文本/空返回钉死，现有上层整包回归另跑。静态或时间比较不替代人工时延复核。
+
+
+## store拒绝审计（㊾-补7 c71bc54e）
+
+StageClarificationInbound的两种元数据前置拒绝（Permission/Invalid）复用既有audit_log，源主体由issuer/subject派生摘要；不信任未通过校验的tenant，派生tenant明确标为unresolved，不通过查绑定来填值。固定op、deny与调用方服务时钟；target为空，不记录消息正文、parent、消息ID或调用方tenant。审计失败只写固定日志，原错误对象和零返回不变。没有新增表或迁移。测试包装真实隔离SQLite连接，分别统计审计写与所有其它SQL，资源spy=0且审计=1。此测试连接器需要一处OpenDB，仅精确测试文件登记例外，不增加产品建库或放宽escape。存在/不存在parent实际预置并核实，除随机行ID外五个审计字段逐字相同。该接口没有HTTP响应写口，保留原error对象和零结果；上层Hub原有状态/正文/头回归由m8整包门验证。时延仅证明没有目标解析，不作统计等时承诺。

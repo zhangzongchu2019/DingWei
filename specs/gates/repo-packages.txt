@@ -19,3 +19,6 @@ cmd/workpulse/session_history_config_test.go
 # 72aa64b4：一处；独立 history 库显式 BeginTx/Commit/Rollback、单连接写队列与游标寿命不能由现有回调 Pool 无损替代。
 # 已考察 repo.OpenSQLite：返回 Pool 不返回裸句柄；改用须重写全部历史事务及测试注入，超出不改产品行为的本单。仅此文件例外。
 internal/store/session_history.go
+
+# S-GATES-GREEN拒绝审计负测：仅测试连接器包装同一隔离SQLite驱动，统计资源查询与审计写入；不导出句柄、不改产品连接。
+internal/store/tenant_deny_test.go

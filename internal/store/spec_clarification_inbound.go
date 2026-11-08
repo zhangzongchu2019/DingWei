@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log"
 	"reflect"
 	"strings"
 	"time"
@@ -35,10 +36,12 @@ func (s *SQLite) StageClarificationInbound(ctx context.Context, m model.Message,
 	var out ClarificationInbound
 	r := m.FeishuReply
 	if r == nil || !r.Authenticated || m.IngressProvenance != model.IngressFeishuWSAuthenticated || m.ChatType != model.ChatPersonal || r.SenderType != "user" || r.MessageType != "text" || r.ParentID == "" || r.EventID == "" || r.MessageID == "" || r.MessageID != m.FeishuMsgID || r.Tenant == "" || r.AppID == "" || r.ChatID == "" || len(r.ContentSHA) != 64 || m.BotChannelID == "" || m.SenderOpenID == "" || !questionNonempty(body, 8192) {
+		s.auditClarificationStageDeny(ctx, m, now)
 		return out, ErrTaskFlowPermission
 	}
 	for _, id := range []string{r.EventID, r.MessageID, r.ParentID, r.RootID, r.Tenant, r.AppID, r.ChatID, m.BotChannelID, m.SenderOpenID} {
 		if len(id) > 256 || strings.ContainsAny(id, "\x00\r\n") {
+			s.auditClarificationStageDeny(ctx, m, now)
 			return out, ErrTaskFlowInvalid
 		}
 	}
@@ -238,4 +241,19 @@ func (s *SQLite) FinishClarificationReceipt(ctx context.Context, in Clarificatio
 	}
 	_, err := s.db.ExecContext(ctx, `UPDATE spec_clarification_inbound SET receipt_state=? WHERE issuer=? AND tenant=? AND message_id=? AND receipt_state='attempted'`, state, in.Message.BotChannelID, in.Message.FeishuReply.Tenant, in.Message.FeishuMsgID)
 	return err
+}
+
+// Invalid ingress has no trusted tenant binding. Record unresolved, never the
+// rejected input tenant; resolving a binding here would violate the PEP order.
+func (s *SQLite) auditClarificationStageDeny(ctx context.Context, m model.Message, now time.Time) {
+	if s == nil || s.db == nil {
+		log.Print("store: clarification deny audit unavailable")
+		return
+	}
+	details, _ := json.Marshal(map[string]string{"tenant": "unresolved", "op": "clarification.stage", "decision": "deny"})
+	actor := blockerHash([]string{m.BotChannelID, m.SenderOpenID})
+	_, err := s.db.ExecContext(ctx, `INSERT INTO audit_log(id,actor,action,target,after_json,ts) VALUES(?,?,?,'',?,?)`, newID(), actor, "clarification.stage_denied", string(details), now.UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		log.Print("store: clarification deny audit write failed")
+	}
 }
