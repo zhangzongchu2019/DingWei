@@ -72,7 +72,7 @@ class DriverAdapter:
 
     @property
     def delivery_lifecycle(self):
-        return self._delivery_lifecycle
+        return getattr(self, '_delivery_lifecycle', None)
 
     @delivery_lifecycle.setter
     def delivery_lifecycle(self, ledger):
@@ -442,13 +442,13 @@ class DriverAdapter:
         timeout = getattr(self, '_admission_timeout', 60.0)
         ledger = getattr(self, 'delivery_lifecycle', None)
         row = ledger.lifecycle(command.delivery_id) if ledger is not None else None
-        if self._which == 'codex' and callable(getattr(self.driver, 'submission_started', None)) and row:
+        if getattr(self, '_which', None) == 'codex' and callable(getattr(self.driver, 'submission_started', None)) and row:
             return max(0.0, time.time() - row['dispatch_intent_at'] + timeout - self._admission_elapsed(command))
         return timeout
 
     def _admission_elapsed(self, command):
         submitted = getattr(self.driver, 'submission_started', None)
-        if self._which == 'codex' and callable(submitted):
+        if getattr(self, '_which', None) == 'codex' and callable(submitted):
             started = submitted(command.delivery_id)
             return 0.0 if started is None else time.monotonic() - started
         return time.monotonic() - self._dispatch_clock(command)
@@ -477,7 +477,7 @@ class DriverAdapter:
         admitted = False
         while not done.wait(0.02):
             required = getattr(old_driver, 'transport_recovery_required', None)
-            if (self._which == 'codex' and callable(required)
+            if (getattr(self, '_which', None) == 'codex' and callable(required)
                     and old_driver.submission_started(command.delivery_id) is None
                     and required(self._admission_timeout)):
                 command._delivery_worker = done
@@ -487,7 +487,7 @@ class DriverAdapter:
             # poll_receipt is a local ledger lookup in the supported drivers.
             # Its evidence can precede return from deliver (e.g. Claude isReplay).
             try:
-                if self._which == 'codex' and callable(getattr(old_driver, 'submission_started', None)):
+                if getattr(self, '_which', None) == 'codex' and callable(getattr(old_driver, 'submission_started', None)):
                     receipt = old_driver.local_receipt(command.delivery_id)
                 else:
                     receipt = old_driver.poll_receipt(command.delivery_id)
@@ -522,7 +522,7 @@ class DriverAdapter:
     def _recover_transport(self, command):
         old = self.driver
         required = getattr(old, 'transport_recovery_required', None)
-        if self._which == 'codex' and callable(required) and not required(self._admission_timeout):
+        if getattr(self, '_which', None) == 'codex' and callable(required) and not required(self._admission_timeout):
             # Waiting for a response on a healthy connection is not a stuck
             # writer. The next worker may wait on the delivery lock locally.
             return

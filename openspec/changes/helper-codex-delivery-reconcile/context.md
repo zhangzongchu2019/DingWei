@@ -12,3 +12,5 @@ codexDriver的poll对unknown且无turn ID直接返回内部failed receipt；原�
 唯一写者实取CODEX_THREAD_ID=01a1bacf-9317-7b91-bf86-0a0c88c834f6；入口仍同分支5ed477a5，已从工蜂独立fetch并核rulings fe4ad167。实现位置为tools/sessionhelper/sessionhelper/codexDriver.py、driver_adapter.py、inbox_lifecycle.py；新增常规库存tests/test_codex_delivery_reconcile.py并登记scripts/helper-test-files.txt。既有dispatch测试的合成原生时刻改为与dispatch intent一致，保留100/123/124断言的用例明确给其合成intent 99/122；未放宽产品证据门。
 
 锁依赖解释器 /tmp/coder-0232-locked-venv/bin/python3；OpenSpec /tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec；原生二进制仍/tmp/coder-stale-protocol-01592/codex及第一步同SHA。变异入口tests/helper-codex-delivery-reconcile/mutations.py只复制Git跟踪的.py到一次性本地目录，不上传包。原生原文、反测、变异与规范门最终读数见docs/reviews/helper-codex-delivery-reconcile/IMPLEMENTATION.md及raw/impl/。
+
+完整门暴露轻量__new__ adapter调用约定：新计时/证据属性对尚未完整初始化的caller提供既有缺省值；不改blocker授权/路由语义。test_codex_stale_thread.py中的断线锁竞争夹具现要求未提交queued及turn/start=0，保留RECONNECT_CROSSED_ADMISSION_LOCK原断言。

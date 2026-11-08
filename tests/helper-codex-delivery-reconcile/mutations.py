@@ -53,7 +53,7 @@ MUTATIONS = [
     ('unknown-no-ledger', 'driver_adapter.py', "and local_row['state'] == 'processing' and local_row['admitted_at'] is None", "and local_row['admitted_at'] is None",
      'test_unknown_without_driver_row_never_automatically_resubmits', 'UNKNOWN_AUTOMATICALLY_RESUBMITTED'),
 
-    ('healthy-response', 'driver_adapter.py', "if self._which == 'codex' and callable(required) and not required(self._admission_timeout):", 'if False:',
+    ('healthy-response', 'driver_adapter.py', "if getattr(self, '_which', None) == 'codex' and callable(required) and not required(self._admission_timeout):", 'if False:',
      'test_healthy_response_wait_does_not_replace_transport', 'HEALTHY_TRANSPORT_REPLACED_FOR_RESPONSE_WAIT'),
 
     ('fractional-observation', 'inbox_lifecycle.py', "if expected_context is None:\n                    admitted_at=row['admitted_at']", "if True:\n                    admitted_at=row['admitted_at']",
