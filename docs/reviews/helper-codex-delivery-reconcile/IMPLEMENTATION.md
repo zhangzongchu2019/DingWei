@@ -62,3 +62,5 @@
 补充过程证据：独立诊断剩余测试时把一个Bash脚本用sh调用造成解释器错误，按标准入口bash重跑rc0；该诊断不作为总门PASS，原文保留development-remainder-diagnostic与development-view-bash-fixed。最终标准脚本已自行完整执行其bash入口并rc0。
 
 最终漂移核验（2026-11-08T11:53:06.359838+00:00）：工蜂本分支仍5ed477a5153b066f221dd2b1ae2af85d2b7ab1f5；rulings最新5ec4905447446982159a7965601e6c181e53c54f，已读相对fe4ad167的追加，仅〔52〕r54运维准备/预发裁定，不改变本单〔51〕-补3。无并发源分支改动；不合入其他派工。
+
+原始nullable-time变异日志含unittest原生尾空格，已无损压缩为raw/impl/mutations/nullable-time.log.gz；解压字节SHA与RESULT.json的原始log_sha256一致，不修剪原文。其余逐刀原文保留.log。
