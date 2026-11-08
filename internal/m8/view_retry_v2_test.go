@@ -64,6 +64,51 @@ func signedRetryRequest(t *testing.T, h *Hub, secret []byte, requestID, delivery
 	return rr
 }
 
+func waitACKV2Update(t *testing.T, events <-chan string, label string, want func(map[string]any) bool) map[string]any {
+	t.Helper()
+	timer := time.NewTimer(time.Second)
+	defer timer.Stop()
+	for {
+		select {
+		case raw := <-events:
+			var event map[string]any
+			if err := json.Unmarshal([]byte(raw), &event); err != nil {
+				t.Fatalf("decode %s event %q: %v", label, raw, err)
+			}
+			if event["kind"] != "delivery_update" || event["observed_delivery_id"] != "ack-wire" {
+				continue
+			}
+			if !want(event) {
+				t.Fatalf("unexpected ACK v2 delivery event while waiting for %s: %+v", label, event)
+			}
+			return event
+		case <-timer.C:
+			t.Fatalf("timed out waiting for ACK v2 delivery event %s", label)
+		}
+	}
+}
+
+func assertNoACKV2Convergence(t *testing.T, events <-chan string, window time.Duration) {
+	t.Helper()
+	timer := time.NewTimer(window)
+	defer timer.Stop()
+	for {
+		select {
+		case raw := <-events:
+			var event map[string]any
+			if err := json.Unmarshal([]byte(raw), &event); err != nil {
+				t.Fatalf("decode session event %q: %v", raw, err)
+			}
+			if event["kind"] == "delivery_update" && event["observed_delivery_id"] == "ack-wire" &&
+				event["delivery_status"] == "unconfirmed_retryable" && event["reason"] == "unconfirmed_retryable" && event["cancellable"] == false {
+				t.Fatalf("unknown delivery converged without a matching turn end: %+v", event)
+			}
+		case <-timer.C:
+			return
+		}
+	}
+}
+
 func TestViewRetryV2ReplaysExactEnvelopeOnce(t *testing.T) {
 	f := newACKV2Fixture(t, true)
 	f.sendAndConfirm("queued", "", "", f.stamp)
@@ -127,30 +172,24 @@ func TestViewRetryV2ReplaysExactEnvelopeOnce(t *testing.T) {
 
 func TestAnotherMessagesTurnEndConvergesUnknownDelivery(t *testing.T) {
 	f := newACKV2Fixture(t, true)
-	f.sendAndConfirm("queued", "", "", f.stamp)
-	f.sendAndConfirm("admission_unknown", "", "", f.stamp)
 	_, events, unsub := f.hub.subscribeSessionEvents(f.client.keyID, f.client.sessionName, "converge-test")
 	defer unsub()
+	f.sendAndConfirm("queued", "", "", f.stamp)
+	waitACKV2Update(t, events, "queued receipt", func(event map[string]any) bool {
+		return event["delivery_stage"] == "helper_queued" && event["reason"] == "" && event["delivery_status"] == nil
+	})
+	f.sendAndConfirm("admission_unknown", "", "", f.stamp)
+	waitACKV2Update(t, events, "admission unknown", func(event map[string]any) bool {
+		return event["delivery_stage"] == "helper_queued" && event["reason"] == "model_admission_unknown" && event["delivery_status"] == nil
+	})
 	unrelated, _ := json.Marshal(amrSessionEvent{Kind: "state_change", DeliveryID: "another-message-delivery", Data: map[string]any{"change": "turn_completed"}})
 	f.hub.convergeAdmissionUnknownAfterTurn("other-key", f.client.sessionName, string(unrelated))
-	select {
-	case got := <-events:
-		t.Fatalf("different session owner converged delivery: %s", got)
-	default:
-	}
+	assertNoACKV2Convergence(t, events, 25*time.Millisecond)
 	f.hub.convergeAdmissionUnknownAfterTurn(f.client.keyID, f.client.sessionName, string(unrelated))
-	select {
-	case got := <-events:
-		var event map[string]any
-		if err := json.Unmarshal([]byte(got), &event); err != nil {
-			t.Fatal(err)
-		}
-		if event["delivery_status"] != "unconfirmed_retryable" || event["reason"] != "unconfirmed_retryable" || event["cancellable"] != false {
-			t.Fatalf("bad terminal projection: %s", got)
-		}
-	case <-time.After(time.Second):
-		t.Fatal("matching terminal event did not converge unknown delivery")
-	}
+	waitACKV2Update(t, events, "converged terminal projection", func(event map[string]any) bool {
+		return event["delivery_stage"] == "helper_queued" && event["delivery_status"] == "unconfirmed_retryable" &&
+			event["reason"] == "unconfirmed_retryable" && event["cancellable"] == false
+	})
 	if row := f.record(); row.State != "admission_unknown" {
 		t.Fatalf("helper ledger projection mutated Hub row: %+v", row)
 	}
@@ -158,15 +197,17 @@ func TestAnotherMessagesTurnEndConvergesUnknownDelivery(t *testing.T) {
 
 func TestAdmissionUnknownStaysPendingUntilAnySameSessionTurnEnds(t *testing.T) {
 	f := newACKV2Fixture(t, true)
-	f.sendAndConfirm("queued", "", "", f.stamp)
-	f.sendAndConfirm("admission_unknown", "", "", f.stamp)
 	_, events, unsub := f.hub.subscribeSessionEvents(f.client.keyID, f.client.sessionName, "no-turn-end")
 	defer unsub()
-	select {
-	case got := <-events:
-		t.Fatalf("unknown delivery unexpectedly converged without a turn end: %s", got)
-	default:
-	}
+	f.sendAndConfirm("queued", "", "", f.stamp)
+	waitACKV2Update(t, events, "queued receipt", func(event map[string]any) bool {
+		return event["delivery_stage"] == "helper_queued" && event["reason"] == "" && event["delivery_status"] == nil
+	})
+	f.sendAndConfirm("admission_unknown", "", "", f.stamp)
+	waitACKV2Update(t, events, "admission unknown", func(event map[string]any) bool {
+		return event["delivery_stage"] == "helper_queued" && event["reason"] == "model_admission_unknown" && event["delivery_status"] == nil
+	})
+	assertNoACKV2Convergence(t, events, 25*time.Millisecond)
 	if row := f.record(); row.State != "admission_unknown" {
 		t.Fatalf("unknown delivery row changed without a turn end: %+v", row)
 	}
@@ -176,25 +217,34 @@ func TestLateAdmissionAndProcessedConfirmationsSupersedeUnknownProjection(t *tes
 	for _, phase := range []string{"injected", "processed"} {
 		t.Run(phase, func(t *testing.T) {
 			f := newACKV2Fixture(t, true)
+			_, events, unsub := f.hub.subscribeSessionEvents(f.client.keyID, f.client.sessionName, "late-confirmation-"+phase)
+			defer unsub()
 			f.sendAndConfirm("queued", "", "", f.stamp)
+			waitACKV2Update(t, events, "queued receipt", func(event map[string]any) bool {
+				return event["delivery_stage"] == "helper_queued" && event["reason"] == "" && event["delivery_status"] == nil
+			})
 			f.sendAndConfirm("admission_unknown", "", "", f.stamp)
+			waitACKV2Update(t, events, "admission unknown", func(event map[string]any) bool {
+				return event["delivery_stage"] == "helper_queued" && event["reason"] == "model_admission_unknown" && event["delivery_status"] == nil
+			})
 			if phase == "processed" {
 				f.sendAndConfirm("injected", "late-turn", "", f.stamp.Add(time.Second))
+				waitACKV2Update(t, events, "late admission", func(event map[string]any) bool {
+					return event["delivery_stage"] == "cli_injected" && event["reason"] == "" && event["delivery_status"] == nil
+				})
 			}
 			outcome := ""
 			if phase == "processed" {
 				outcome = "completed"
 			}
 			f.sendAndConfirm(phase, "late-turn", outcome, f.stamp.Add(2*time.Second))
-			updates := f.updates()
-			last := updates[len(updates)-1]
 			wantStage := "cli_injected"
 			if phase == "processed" {
 				wantStage = "turn_processed"
 			}
-			if last["delivery_stage"] != wantStage || last["reason"] != "" {
-				t.Fatalf("late confirmation did not restore normal status: %+v", last)
-			}
+			waitACKV2Update(t, events, "late confirmation", func(event map[string]any) bool {
+				return event["delivery_stage"] == wantStage && event["reason"] == "" && event["delivery_status"] == nil
+			})
 		})
 	}
 }
