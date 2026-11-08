@@ -28,4 +28,4 @@
 无新增产品假设。
 
 ## 待 PM 决策
-已向组长登记真实落库域缺最小拒绝审计与“不改产品行为”的冲突，等裁定；不以标记替代行为。
+已决：rulings㊾-补7 c71bc54e授权extseat.IssueToken与store.StageClarificationInbound两处最小拒绝审计，各独立提交；复用既有表、响应不变、审计失败仍拒，不扩至其它拒绝路径。

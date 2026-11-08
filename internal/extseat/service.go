@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"strings"
 	"time"
 
@@ -77,6 +78,7 @@ func (s *Service) IssueToken(ctx context.Context, p extshared.Principal, short, 
 		return "", seat, "", extshared.ErrNotPermitted
 	}
 	if s.TenantKey == "" || p.TenantKey != s.TenantKey {
+		s.auditTenantDeny(ctx, p)
 		return "", seat, "", extshared.ErrTenantRejected
 	}
 	if !validPrincipal(p) || !extshared.ValidShortName(short) {
@@ -320,4 +322,18 @@ func (s *Service) current(a Seat, g Group) (time.Time, error) {
 		return now, extshared.ErrGroupDissolved
 	}
 	return now, nil
+}
+
+// auditTenantDeny reuses the identity audit store (the same audit_log as seat
+// issuance). No resource lookup, target name, supplied tenant or token is logged.
+func (s *Service) auditTenantDeny(ctx context.Context, p extshared.Principal) {
+	if s.Identity.Store == nil {
+		log.Print("extseat: deny audit store unavailable")
+		return
+	}
+	detail, _ := json.Marshal(map[string]string{"tenant": s.TenantKey, "op": "extseat.issue_token", "decision": "deny"})
+	event := identity.AuditEvent{Actor: digest([]string{p.Provider, p.Issuer, p.Subject}), Action: "extseat.issue_denied", Detail: string(detail), At: s.now()}
+	if err := s.Identity.Store.AppendAudit(ctx, event); err != nil {
+		log.Print("extseat: deny audit write failed")
+	}
 }
