@@ -1,0 +1,271 @@
+{
+  "transcript": [
+    {
+      "send": {
+        "id": 1,
+        "method": "initialize",
+        "params": {
+          "clientInfo": {
+            "name": "isolated-codex-interop",
+            "version": "1"
+          },
+          "capabilities": {
+            "experimentalApi": true
+          }
+        }
+      }
+    },
+    {
+      "receive": {
+        "id": 1,
+        "result": {
+          "userAgent": "isolated-codex-interop/0.167.0 (Ubuntu 24.4.0; x86_64) unknown (isolated-codex-interop; 1)",
+          "codexHome": "/tmp/coder-r56-compat-mutant-codec/native/codex",
+          "platformFamily": "unix",
+          "platformOs": "linux"
+        }
+      }
+    },
+    {
+      "send": {
+        "id": 2,
+        "method": "thread/start",
+        "params": {
+          "cwd": "/tmp/coder-r56-compat-mutant-codec/native",
+          "ephemeral": true,
+          "approvalPolicy": "never",
+          "sandbox": "read-only",
+          "baseInstructions": "Local transport test; no inference or turn/start."
+        }
+      }
+    },
+    {
+      "receive": {
+        "method": "configWarning",
+        "params": {
+          "summary": "Codex could not find bubblewrap on PATH. Install bubblewrap with your OS package manager. See the sandbox prerequisites: https://developers.openai.com/codex/concepts/sandboxing#prerequisites. Codex will use the bundled bubblewrap in the meantime.",
+          "details": null
+        },
+        "emittedAtMs": 1794172564168
+      }
+    },
+    {
+      "receive": {
+        "method": "remoteControl/status/changed",
+        "params": {
+          "status": "disabled",
+          "serverName": "VM-4-12-ubuntu",
+          "installationId": "82a4167d-ecaf-4b75-b429-0b52b955135d",
+          "environmentId": null
+        },
+        "emittedAtMs": 1794172564168
+      }
+    },
+    {
+      "receive": {
+        "id": 2,
+        "result": {
+          "thread": {
+            "id": "01a1bd04-b2ca-7131-b2db-5819bb07e299",
+            "environments": [
+              {
+                "environmentId": "local",
+                "cwd": "/tmp/coder-r56-compat-mutant-codec/native",
+                "runtimeWorkspaceRoots": [
+                  "/tmp/coder-r56-compat-mutant-codec/native"
+                ]
+              }
+            ],
+            "extra": null,
+            "sessionId": "01a1bd04-b2ca-7131-b2db-5819bb07e299",
+            "forkedFromId": null,
+            "parentThreadId": null,
+            "preview": "",
+            "ephemeral": true,
+            "section": null,
+            "sectionEnteredAt": null,
+            "projectId": null,
+            "historyMode": "paginated",
+            "modelProvider": "openai",
+            "model": "gpt-6.1-sol",
+            "reasoningEffort": null,
+            "createdAt": 1794172564,
+            "updatedAt": 1794172564,
+            "recencyAt": 1794172564,
+            "status": {
+              "type": "idle"
+            },
+            "path": null,
+            "cwd": "/tmp/coder-r56-compat-mutant-codec/native",
+            "cliVersion": "0.167.0",
+            "originator": "isolated-codex-interop",
+            "source": "vscode",
+            "canAcceptDirectInput": true,
+            "threadSource": null,
+            "agentNickname": null,
+            "agentRole": null,
+            "gitInfo": null,
+            "name": null,
+            "daybreakEnabled": null,
+            "turns": []
+          },
+          "model": "gpt-6.1-sol",
+          "modelProvider": "openai",
+          "serviceTier": null,
+          "disabledPluginIds": [],
+          "cwd": "/tmp/coder-r56-compat-mutant-codec/native",
+          "runtimeWorkspaceRoots": [
+            "/tmp/coder-r56-compat-mutant-codec/native"
+          ],
+          "instructionSources": [],
+          "approvalPolicy": "never",
+          "approvalsReviewer": "user",
+          "sandbox": {
+            "type": "readOnly",
+            "networkAccess": false
+          },
+          "activePermissionProfile": null,
+          "reasoningEffort": null,
+          "multiAgentMode": "explicitRequestOnly"
+        }
+      }
+    },
+    {
+      "send": {
+        "id": 3,
+        "method": "mcpServerStatus/list",
+        "params": {
+          "threadId": "01a1bd04-b2ca-7131-b2db-5819bb07e299",
+          "detail": "full",
+          "limit": 20
+        }
+      }
+    },
+    {
+      "receive": {
+        "method": "thread/started",
+        "params": {
+          "thread": {
+            "id": "01a1bd04-b2ca-7131-b2db-5819bb07e299",
+            "environments": [
+              {
+                "environmentId": "local",
+                "cwd": "/tmp/coder-r56-compat-mutant-codec/native",
+                "runtimeWorkspaceRoots": [
+                  "/tmp/coder-r56-compat-mutant-codec/native"
+                ]
+              }
+            ],
+            "extra": null,
+            "sessionId": "01a1bd04-b2ca-7131-b2db-5819bb07e299",
+            "forkedFromId": null,
+            "parentThreadId": null,
+            "preview": "",
+            "ephemeral": true,
+            "section": null,
+            "sectionEnteredAt": null,
+            "projectId": null,
+            "historyMode": "paginated",
+            "modelProvider": "openai",
+            "model": "gpt-6.1-sol",
+            "reasoningEffort": null,
+            "createdAt": 1794172564,
+            "updatedAt": 1794172564,
+            "recencyAt": 1794172564,
+            "status": {
+              "type": "idle"
+            },
+            "path": null,
+            "cwd": "/tmp/coder-r56-compat-mutant-codec/native",
+            "cliVersion": "0.167.0",
+            "originator": "isolated-codex-interop",
+            "source": "vscode",
+            "canAcceptDirectInput": true,
+            "threadSource": null,
+            "agentNickname": null,
+            "agentRole": null,
+            "gitInfo": null,
+            "name": null,
+            "daybreakEnabled": null,
+            "turns": []
+          }
+        },
+        "emittedAtMs": 1794172564180
+      }
+    },
+    {
+      "receive": {
+        "method": "mcpServer/startupStatus/updated",
+        "params": {
+          "threadId": "01a1bd04-b2ca-7131-b2db-5819bb07e299",
+          "name": "dingwei",
+          "status": "starting",
+          "error": null,
+          "failureReason": null
+        },
+        "emittedAtMs": 1794172564180
+      }
+    },
+    {
+      "receive": {
+        "method": "mcpServer/startupStatus/updated",
+        "params": {
+          "threadId": "01a1bd04-b2ca-7131-b2db-5819bb07e299",
+          "name": "dingwei",
+          "status": "failed",
+          "error": "MCP client for `dingwei` failed to start: MCP startup failed: handshaking with MCP server failed: JSON-RPC error: -32700: invalid JSON request: JSON-RPC error: -32700: invalid JSON request",
+          "failureReason": null
+        },
+        "emittedAtMs": 1794172564183
+      }
+    },
+    {
+      "receive": {
+        "id": 3,
+        "result": {
+          "data": [
+            {
+              "name": "dingwei",
+              "runtimeStatus": "failed",
+              "pluginId": null,
+              "httpOrigin": "https://127.0.0.1:33073",
+              "serverInfo": null,
+              "serverCapabilities": null,
+              "toolListMeta": null,
+              "tools": {},
+              "toolsError": "MCP startup failed: handshaking with MCP server failed: JSON-RPC error: -32700: invalid JSON request: JSON-RPC error: -32700: invalid JSON request",
+              "resources": [],
+              "resourceTemplates": [],
+              "authStatus": "oAuth"
+            }
+          ],
+          "nextCursor": null
+        }
+      }
+    },
+    {
+      "send": {
+        "id": 4,
+        "method": "mcpServer/tool/call",
+        "params": {
+          "threadId": "01a1bd04-b2ca-7131-b2db-5819bb07e299",
+          "server": "dingwei",
+          "tool": "list_online",
+          "arguments": {}
+        }
+      }
+    },
+    {
+      "receive": {
+        "error": {
+          "code": -32603,
+          "message": "failed to get client: MCP startup failed: handshaking with MCP server failed: JSON-RPC error: -32700: invalid JSON request: JSON-RPC error: -32700: invalid JSON request"
+        },
+        "id": 4
+      }
+    }
+  ],
+  "native_process_exit": 0,
+  "turn_start_sent": false,
+  "real_credentials_used": false
+}

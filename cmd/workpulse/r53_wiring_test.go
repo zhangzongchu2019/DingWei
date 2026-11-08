@@ -175,7 +175,7 @@ func TestR53WiringPG(t *testing.T) {
 	if err := wireR53(ctx, cfg, checker, group, d); err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource/mcp", "/api/external/", "/feishu/connect", "/healthz", "/mcp", "/mcp/oauth/feishu/callback", "/oauth/authorize", "/oauth/token"}
+	want := []string{"/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource/mcp", "/api/external/", "/feishu/connect", "/healthz", "/mcp", "/mcp/oauth/feishu/callback", "/mcp/clients/codex.json", "/oauth/authorize", "/oauth/token"}
 	sort.Strings(want)
 	if !reflect.DeepEqual(wiringPaths(t, mux), want) {
 		t.Fatalf("registered routes %v", wiringPaths(t, mux))
