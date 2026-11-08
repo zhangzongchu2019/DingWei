@@ -6,7 +6,7 @@ never acquire model admission/terminal evidence during migration.
 from __future__ import annotations
 
 import sqlite3
-from .inbox_ack import DeliveryACKOutbox, initialize_ack_cursor
+from .inbox_ack import DeliveryACKOutbox, initialize_ack_cursor, utc_stamp
 
 
 LIFECYCLE_COLUMNS = """
@@ -128,6 +128,26 @@ class DeliveryLifecycle(DeliveryACKOutbox):
             self._lifecycle_ack(db,delivery_id,'admission_unknown')
             return True
 
+    def _terminal_precedes_injected_ack(self, db, row, processed_at):
+        """Compare wire times, including an immutable, possibly sent outbox row."""
+        if row['ack_protocol'] != 2:
+            return False
+        import json
+        from datetime import datetime
+        pending = db.execute("""SELECT payload_json FROM delivery_ack_outbox
+            WHERE session_name=? AND delivery_id=? AND phase='injected'""",
+            (self.session_name, row['delivery_id'])).fetchone()
+        if pending is not None:
+            original = json.loads(pending['payload_json'])['occurred_at']
+        elif row['admitted_at'] is not None:
+            # Confirming an ACK removes its payload, but retains this original
+            # admission. Compare before reconciliation can replace that value.
+            original = utc_stamp(row['admitted_at'])
+        else:
+            return False
+        return (datetime.fromisoformat(utc_stamp(processed_at).replace('Z', '+00:00'))
+                < datetime.fromisoformat(original.replace('Z', '+00:00')))
+
     def record_native_terminal(self, delivery_id, turn_id, admitted_at, processed_at, outcome, *, expected_context=None):
         """Commit complete native evidence and its two ACK phases together."""
         import math
@@ -158,6 +178,15 @@ class DeliveryLifecycle(DeliveryACKOutbox):
             if row['state']=='processed':
                 if row['turn_outcome']!=outcome:raise ValueError('native terminal cannot replace original outcome')
                 return
+            if self._terminal_precedes_injected_ack(db, row, processed_at):
+                # No new phase ACK and no rewritten occurrence time. Returning
+                # False commits only this durable diagnostic, leaving native
+                # proof in the driver journal and the delivery pending.
+                db.execute("""UPDATE delivery_inbox SET error=?,updated_at=?
+                    WHERE session_name=? AND delivery_id=?""",
+                    ('native_terminal_precedes_acked_injected', time.time(),
+                     self.session_name, delivery_id))
+                return False
             if processed_at < admitted_at:raise ValueError('native terminal precedes admission')
             db.execute("UPDATE delivery_inbox SET state='admitted',turn_id=?,admitted_at=?,error=NULL,updated_at=? WHERE session_name=? AND delivery_id=?",(turn_id,admitted_at,processed_at,self.session_name,delivery_id))
             self._lifecycle_ack(db,delivery_id,'injected')

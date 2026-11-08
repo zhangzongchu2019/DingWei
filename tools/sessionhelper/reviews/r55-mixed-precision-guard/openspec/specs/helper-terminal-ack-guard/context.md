@@ -1,0 +1,3 @@
+# 时钟护栏现状
+
+基线7b123ca4；已读仓根helper-codex-delivery-reconcile的context/spec/design。现状record_native_terminal可用native时间替换观察行，但ACK outbox原phase不可变；Hub严格拒绝早于原injected的processed。分析24b4b644已复核mixed例。代码位置inbox_lifecycle、inbox_ack、driver_adapter及test_codex_delivery_reconcile。本单唯一写者/范围见变更context；不触节点。

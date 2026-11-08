@@ -828,10 +828,15 @@ class DriverAdapter:
                     or proof.get('thread_id') != ev.session_id or not isinstance(context, dict)):
                 return
         try:
-            ledger.record_native_terminal(ev.delivery_id,ev.turn_id,admitted_at,processed_at,outcome,
+            committed = ledger.record_native_terminal(ev.delivery_id,ev.turn_id,admitted_at,processed_at,outcome,
                 expected_context=context)
         except ValueError:
             print(f'[delivery][INVALID_NATIVE_EVIDENCE] id={ev.delivery_id}; pending retained', flush=True)
+            return
+        if committed is False:
+            pending = ledger.lifecycle(ev.delivery_id)
+            reason = pending['error'] if pending is not None else 'native_terminal_pending'
+            print(f'[delivery][NATIVE_TERMINAL_PENDING] id={ev.delivery_id} reason={reason}; pending retained', flush=True)
             return
         observe(getattr(self, "delivery_progress", None), ev.delivery_id, "model_admitted")
         observe(getattr(self, "delivery_progress", None), ev.delivery_id, "terminal")

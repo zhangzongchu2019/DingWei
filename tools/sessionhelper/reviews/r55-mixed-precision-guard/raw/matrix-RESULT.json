@@ -1,0 +1,11 @@
+{
+  "refs": {
+    "r54": "6e2c836491f8ba506833d6f849fbe73530e13f92",
+    "r55": "7b123ca4a51fdde77a417d3ce7f03d01235d23ca"
+  },
+  "cases": 9,
+  "negative_injected": 5,
+  "go_rc": 0,
+  "node_access": false,
+  "native_server_started": false
+}

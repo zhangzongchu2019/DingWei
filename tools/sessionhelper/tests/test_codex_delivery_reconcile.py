@@ -12,7 +12,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from sessionhelper.codexDriver import CodexProtocolDriver, NATIVE_TIME_TOLERANCE_SECONDS
+from sessionhelper.codexDriver import CodexProtocolDriver, NATIVE_TIME_TOLERANCE_SECONDS, _reconcile_metadata
 from sessionhelper.driver_adapter import DriverAdapter
 from sessionhelper.inbox import DeliveryInbox
 
@@ -168,15 +168,20 @@ class ReconcileBoundaries(unittest.TestCase):
         self.rpc._write_started = None
         self.assertFalse(self.driver.transport_recovery_required(60), 'HEALTHY_WRITER_MISCLASSIFIED')
 
-    def test_native_seconds_replace_fractional_receipt_observation(self):
-        # 通知/响应先记录浮点观察；同秒原生终态的结束时刻整数可比它小。
+    def test_native_seconds_preserve_fractional_acked_admission_boundary(self):
+        # 通知先有原始微秒ACK；更早的秒级terminal不能生成Hub必拒的回执。
         observed = time.time()
         self.inbox.record_admitted(self.did, 'native-turn', observed)
+        original=next(a['payload_json'] for a in self.inbox.delivery_ack_chain() if a['phase']=='injected')
         self.scan()
         row = self.inbox.lifecycle(self.did)
-        self.assertEqual(row['state'], 'processed', 'NATIVE_SECONDS_REJECTED_AFTER_LIVE_RECEIPT')
-        self.assertEqual(row['admitted_at'], self.turn['startedAt'])
-        self.assertEqual(row['processed_at'], self.turn['completedAt'])
+        self.assertEqual(row['state'], 'admitted', 'MIXED_PRECISION_MUST_REMAIN_PENDING')
+        self.assertEqual(row['error'],'native_terminal_precedes_acked_injected')
+        self.assertEqual(row['admitted_at'], observed,'ORIGINAL_ADMISSION_REWRITTEN')
+        self.assertIsNone(row['processed_at'])
+        chain=self.inbox.delivery_ack_chain()
+        self.assertNotIn('processed',[a['phase'] for a in chain])
+        self.assertEqual(next(a['payload_json'] for a in chain if a['phase']=='injected'),original)
 
     def test_late_response_preserves_query_rate_and_pending_proof(self):
         self.turn['status'] = 'inProgress'; self.turn['completedAt'] = None
@@ -333,6 +338,45 @@ print(json.dumps([{'session_id':e.session_id,'delivery_id':e.delivery_id,'turn_i
             release.set(); worker.join(3)
         self.assertFalse(worker.is_alive())
         self.assertEqual(len(self.rpc.calls), 1)
+
+
+    def test_mixed_precision_pending_retains_original_driver_proof(self):
+        # A real read-only reconciliation persists its native proof before the
+        # lifecycle handler sees the conflicting, second-resolution terminal.
+        with patch('time.time', return_value=5000.8):
+            self.inbox = DeliveryInbox(str(self.path/'mixed-inbox.sqlite'),session_name='seat')
+            envelope={'id':'source','body':'synthetic','meta':{'delivery_id':self.did,
+                'delivery_ack_protocol':2,'processing_mode':'driver','ack_generation':1}}
+            self.inbox.accept(self.did,envelope);self.inbox.claim_next();self.inbox.begin_dispatch(self.did)
+            self.driver = CodexProtocolDriver(workdir=str(self.path),store_path=str(self.path/'mixed-driver.db'))
+            self.driver._initialized=True
+            self.driver._thread_id=self.driver._session_id='bound'
+            self.driver._store.upsert('bound',self.did,'native-turn','hash','processing')
+        with patch('time.time',return_value=5000.875):
+            self.inbox.record_admitted_before_deadline(self.did,'native-turn',60,5000.875)
+        for phase in ('queued','injected'):
+            head=self.inbox.pending_delivery_acks()[0]['payload']
+            self.assertEqual(head['state'],phase)
+            self.assertTrue(self.inbox.confirm_delivery_ack(dict(head,type='delivery_ack_confirm')))
+        self.turn.update(startedAt=5000,completedAt=5000)
+        self.driver._rpc=self.rpc
+        self.adapter=self.new_adapter(self.driver)
+        with patch('time.time',return_value=5002):
+            self.assertEqual(self.scan(),'complete')
+        row=self.inbox.lifecycle(self.did)
+        self.assertEqual((row['state'],row['error']),('admitted','native_terminal_precedes_acked_injected'),
+            'MIXED_PRECISION_MUST_REMAIN_PENDING')
+        self.assertIsNone(row['processed_at'])
+        self.assertEqual(self.inbox.pending_delivery_acks(),[],'REJECTABLE_PROCESSED_ACK_CREATED')
+        proof=_reconcile_metadata(self.driver._store.get('bound',self.did).detail)['evidence']
+        self.assertEqual((proof['started_at'],proof['completed_at']),(5000,5000),'NATIVE_PROOF_WAS_CLAMPED')
+        before=self.driver._store.get('bound',self.did).detail
+        with patch('time.time',return_value=5003):
+            self.driver.reconcile_pending(self.did)
+        self.assertEqual(len(self.rpc.calls),1,'CACHED_CONFLICT_TRIGGERED_UNBOUNDED_RPC_RETRY')
+        self.assertEqual(self.driver._store.get('bound',self.did).detail,before)
+        replacement=CodexProtocolDriver(workdir=str(self.path),store_path=str(self.path/'mixed-driver.db'))
+        self.assertEqual(replacement._store.get('bound',self.did).detail,before,'RESTART_LOST_NATIVE_PROOF')
 
 
 if __name__ == '__main__':

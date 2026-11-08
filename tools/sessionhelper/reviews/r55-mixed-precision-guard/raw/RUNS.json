@@ -1,0 +1,81 @@
+{
+  "thread_id": "01a1bacf-9317-7b91-bf86-0a0c88c834f6",
+  "to": "opus50tc2k.zzc",
+  "recorded_at": "2026-11-08T17:37:55.413423+00:00",
+  "base": "7b123ca4a51fdde77a417d3ce7f03d01235d23ca",
+  "analysis": "24b4b644f6288a620058fe11023bb397153a7dfa",
+  "related": {
+    "rc": 0,
+    "cases": 86
+  },
+  "matrix": {
+    "rc": 0,
+    "cases": 9,
+    "unchanged_controls": 8
+  },
+  "remove_guard_mutation": {
+    "rc": 1,
+    "assertion": "MIXED_PRECISION_MUST_REMAIN_PENDING",
+    "worktree_mutated": false
+  },
+  "canonical": {
+    "rc": 0,
+    "profiles": [
+      {
+        "actual": 1127,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1127,
+        "files": 91,
+        "groups": [
+          1118,
+          9
+        ],
+        "profile": "claude",
+        "rc": 0
+      },
+      {
+        "actual": 1127,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1127,
+        "files": 91,
+        "groups": [
+          1118,
+          9
+        ],
+        "profile": "codex",
+        "rc": 0
+      }
+    ],
+    "python_files": 27,
+    "shell_files": 2
+  },
+  "strict_task_local_change_rc": 0,
+  "strict_task_local_baseline_rc": 0,
+  "no_migration": true,
+  "lifecycle_columns_identical": true,
+  "frozen_source_unchanged": {
+    "tools/sessionhelper/sessionhelper/codexDriver.py": "bb388a804c1d0f3844481d67123a129129b06fbc7650e358dbd6c82aa67a358e",
+    "tools/sessionhelper/sessionhelper/inbox_ack.py": "8be1ffb18f2282360e3cb98a626d2c05e5cc94376429af9e32e54441724be50b"
+  },
+  "product_sha256": {
+    "tools/sessionhelper/sessionhelper/inbox_lifecycle.py": "d2798f59dbb151f62ae955c224f205f1f7331d730133b60f8618efa2e9bd48c4",
+    "tools/sessionhelper/sessionhelper/driver_adapter.py": "08599b3a60c7af7382b5cf075fd2b3e077c40e5bbc3ad540adf64e6a95dafec3"
+  },
+  "nodes_accessed": false,
+  "deployment": false,
+  "log_written_utc": {
+    "related-final.stdout.gz": "2026-11-08T17:25:23.427663+00:00",
+    "canonical.stdout.gz": "2026-11-08T17:35:45.892752+00:00",
+    "mutation.stdout": "2026-11-08T17:30:35.789972+00:00",
+    "change-strict.stdout": "2026-11-08T17:37:02.931799+00:00",
+    "baseline-strict.stdout": "2026-11-08T17:37:03.118797+00:00",
+    "matrix.stdout.gz": "2026-11-08T17:30:36.328945+00:00"
+  },
+  "final_quality_gates": {
+    "boundary": 0,
+    "dependency": 0,
+    "tenant": 0
+  },
+  "scope_only_tools_sessionhelper": true,
+  "final_verified_utc": "2026-11-08T17:38:26.608761+00:00"
+}

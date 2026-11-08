@@ -1,0 +1,120 @@
+package store
+
+import (
+	"encoding/json"
+	"os"
+	"testing"
+	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/model"
+)
+
+func TestAckClockActualHelperWireAndHubStore(t *testing.T) {
+	var input struct {
+		Cases []struct {
+			Name        string `json:"name"`
+			Created     string `json:"hub_created_at"`
+			Queued      string `json:"hub_queued_at"`
+			Expected    string `json:"expected_state"`
+			RejectPhase string `json:"expected_reject_phase"`
+			Negative    bool   `json:"injected_before_created"`
+			Wire        []struct {
+				ID       string `json:"delivery_id"`
+				Phase    string `json:"state"`
+				Occurred string `json:"occurred_at"`
+				Turn     string `json:"turn_id"`
+				Outcome  string `json:"turn_outcome"`
+			} `json:"wire"`
+		} `json:"cases"`
+	}
+	data, err := os.ReadFile(os.Getenv("ACK_CLOCK_MATRIX"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = json.Unmarshal(data, &input); err != nil {
+		t.Fatal(err)
+	}
+	parse := func(s string) time.Time {
+		v, e := time.Parse(time.RFC3339Nano, s)
+		if e != nil {
+			t.Fatal(e)
+		}
+		return v
+	}
+	for _, c := range input.Cases {
+		t.Run(c.Name, func(t *testing.T) {
+			db, ctx := newTestSQLite(t)
+			created := parse(c.Created)
+			hubQueued := parse(c.Queued)
+			id := c.Wire[0].ID
+			if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: id, KeyID: "owner", SessionName: "seat", Envelope: `{}`, State: "sent", CreatedAt: created}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := db.BindSessionDeliveryACK(ctx, id, "owner", "seat", 2, "driver"); err != nil {
+				t.Fatal(err)
+			}
+			var current *model.SessionDelivery
+			var originalInjection model.SessionDeliveryACK
+			rejectedExpectedPhase := false
+			for i, a := range c.Wire {
+				ack := model.SessionDeliveryACK{DeliveryID: id, KeyID: "owner", SessionName: "seat", Protocol: 2, ProcessingMode: "driver", Generation: 1, Phase: a.Phase, OccurredAt: parse(a.Occurred), TurnID: a.Turn, TurnOutcome: a.Outcome}
+				now := hubQueued.Add(time.Duration(i) * 3 * time.Second)
+				current, _, err = db.ApplySessionDeliveryACK(ctx, ack, now)
+				if err != nil {
+					if a.Phase != c.RejectPhase {
+						t.Fatal(err)
+					}
+					rejectedExpectedPhase = true
+					current, err = db.GetSessionDelivery(ctx, id)
+					if err != nil {
+						t.Fatal(err)
+					}
+					continue
+				}
+				if a.Phase == "injected" {
+					originalInjection = ack
+				}
+			}
+			if (c.RejectPhase != "") != rejectedExpectedPhase {
+				t.Fatal("expected mixed-clock terminal rejection missing")
+			}
+			if current.State != c.Expected || current.DeliveredAt == nil || !current.DeliveredAt.Equal(hubQueued) {
+				t.Fatalf("Hub state/receive clock mismatch: %+v", current)
+			}
+			negative := current.InjectedAt != nil && current.InjectedAt.Before(created)
+			if negative != c.Negative {
+				t.Fatal("unexpected cross-clock sign")
+			}
+			if current.ProcessedAt != nil && current.ProcessedAt.Before(*current.InjectedAt) {
+				t.Fatal("helper chronology was inverted")
+			}
+			// 重投同ID与晚到ACK不能重建created或覆盖原发生时刻。
+			if err = db.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: id, KeyID: "owner", SessionName: "seat", Envelope: `{}`, CreatedAt: created.Add(time.Hour)}); err != nil {
+				t.Fatal(err)
+			}
+			afterRetry, e := db.GetSessionDelivery(ctx, id)
+			if e != nil || !afterRetry.CreatedAt.Equal(created) {
+				t.Fatal("retry changed original created timestamp")
+			}
+			if originalInjection.Phase != "" {
+				next, changed, e := db.ApplySessionDeliveryACK(ctx, originalInjection, created.Add(time.Hour))
+				if e != nil || changed || !next.CreatedAt.Equal(created) || !next.InjectedAt.Equal(*current.InjectedAt) {
+					t.Fatalf("replay rebased original evidence: %v", e)
+				}
+				bad := originalInjection
+				bad.Phase = "processed"
+				bad.TurnOutcome = "completed"
+				bad.OccurredAt = originalInjection.OccurredAt.Add(-time.Millisecond)
+				if _, _, e = db.ApplySessionDeliveryACK(ctx, bad, created.Add(time.Hour)); e == nil {
+					t.Fatal("processed-before-injected was accepted")
+				}
+				bad = originalInjection
+				bad.TurnID = "wrong-turn"
+				if _, _, e = db.ApplySessionDeliveryACK(ctx, bad, created.Add(time.Hour)); e == nil {
+					t.Fatal("replay replaced original turn")
+				}
+			}
+			t.Logf("OBSERVATION case=%s state=%s injected_before_created=%t delivered_uses_hub_clock=true replay_preserved=true terminal_rejected=%t", c.Name, current.State, negative, rejectedExpectedPhase)
+		})
+	}
+}
