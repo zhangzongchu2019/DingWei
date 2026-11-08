@@ -55,7 +55,7 @@ func main() {
 		portFlag    = flag.Uint("port", 0, "监听端口;0=自动挑一个空闲端口")
 		listen      = flag.String("listen", "127.0.0.1", "监听地址(只应留在环回)")
 		version     = flag.String("version", "", "PostgreSQL 版本串;空=库默认(当前 V18)")
-		cacheRoot   = flag.String("cache-root", "", "下载与解压缓存根(二进制解压在其下 extracted/);空=$HOME/.embedded-postgres-go;与 -runtime 无关")
+		cacheRoot   = flag.String("cache-root", "", "下载与解压缓存根(二进制解压在其下 extracted/);缺省依次用 HOME、用户缓存或系统临时目录;与 -runtime 无关")
 		runtime     = flag.String("runtime", "", "本次运行目录(数据目录在其下);空=新建临时目录,退出时删除")
 		db          = flag.String("db", "hubtest", "库名")
 		user        = flag.String("user", "hubtest", "用户名")
@@ -70,6 +70,32 @@ func main() {
 		fmt.Fprintf(os.Stderr, "pgtest: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// resolveCacheRoot never delegates cache placement to embedded-postgres' relative
+// .embedded-postgres-go default. Explicit paths remain supported; otherwise the
+// preference is the user's home, the OS user-cache directory, then a stable
+// directory under the system temp root.
+func resolveCacheRoot(explicit string) (string, error) {
+	root := explicit
+	if root == "" {
+		if home, err := os.UserHomeDir(); err == nil && home != "" {
+			root = filepath.Join(home, ".embedded-postgres-go")
+		}
+	}
+	if root == "" {
+		if cache, err := os.UserCacheDir(); err == nil && cache != "" {
+			root = filepath.Join(cache, ".embedded-postgres-go")
+		}
+	}
+	if root == "" {
+		root = filepath.Join(os.TempDir(), "dingwei-pgtest-cache")
+	}
+	absolute, err := filepath.Abs(root)
+	if err != nil {
+		return "", err
+	}
+	return absolute, nil
 }
 
 func run(port uint, listen, version, cacheRoot, runtime, db, user, password string, startTO time.Duration, keepRuntime bool, staleCut time.Duration) error {
@@ -120,6 +146,10 @@ func run(port uint, listen, version, cacheRoot, runtime, db, user, password stri
 		}
 		port = free
 	}
+	cache, err := resolveCacheRoot(cacheRoot)
+	if err != nil {
+		return fmt.Errorf("解析绝对 PG 缓存目录: %w", err)
+	}
 
 	// 运行目录:每次全新,退出即删。二进制与下载缓存放在它【外面】,
 	// 因为 Start() 会 RemoveAll(runtimePath),放里面等于每次都重新下载解压。
@@ -164,19 +194,12 @@ func run(port uint, listen, version, cacheRoot, runtime, db, user, password stri
 	// 每次都要重新解压一遍:实测那条反证用例 8.4s,而默认路径只要 3.0s;
 	// -count=50 就是 50 次解压(每次约 250MB 写)。
 	// 旧版还有两处自相矛盾:①-cache-root 与 -runtime 同时给时,binaries 仍指向 runtime/binaries,
-	// -cache-root 的字面意思被吃掉;②取不到 HOME 时 cache 为空,binaries 会变成相对路径 "extracted"。
-	// 现在统一:cache 由 -cache-root 决定(缺省 ~/.embedded-postgres-go),binaries 在 cache 下;
+	// -cache-root 的字面意思被吃掉;②取不到 HOME 时 cache 为空且不调用 CachePath,
+	// embedded-postgres 就回退到当前工作目录下的相对 .embedded-postgres-go。
+	// 现在统一:cache 由 -cache-root 或 resolveCacheRoot 决定(缺省依次 HOME、用户缓存、
+	// 系统临时目录),binaries 在 cache 下;两者始终是显式绝对路径。
 	// -runtime 只管数据目录,以及「留着给人看的现场」—— 那才是它存在的理由。
-	cache := cacheRoot
-	if cache == "" {
-		if home, err := os.UserHomeDir(); err == nil {
-			cache = filepath.Join(home, ".embedded-postgres-go")
-		}
-	}
-	binaries := filepath.Join(runtime, "binaries") // cache 取不到时的退路:至少能跑,代价是每次重新解压
-	if cache != "" {
-		binaries = filepath.Join(cache, "extracted")
-	}
+	binaries := filepath.Join(cache, "extracted")
 
 	cfg := embeddedpostgres.DefaultConfig().
 		Port(uint32(port)).
@@ -185,12 +208,10 @@ func run(port uint, listen, version, cacheRoot, runtime, db, user, password stri
 		Password(password).
 		RuntimePath(runtime).
 		DataPath(dataPath).
+		CachePath(cache).
 		BinariesPath(binaries).
 		StartTimeout(startTO).
 		Logger(os.Stderr) // 🔴 不进 stdout:stdout 只留协议行
-	if cache != "" {
-		cfg = cfg.CachePath(cache)
-	}
 	if version != "" {
 		cfg = cfg.Version(embeddedpostgres.PostgresVersion(version))
 	}
