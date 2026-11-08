@@ -1,11 +1,11 @@
 dcd39d70478bbfcfd93ce1f7741e306edd49b4f0933c7fd274f39b880f494f0c  cmd/workpulse/r53_wiring_test.go
-9b3b08f7ff33e868bb57cff4a08e0921922ae6064721c7d518029fd6f70c178f  docs/guides/CODEX-DINGWEI-MCP.md
-d1555a8a76bbcf6ce16fd175b0076520bfada89f3db6e536a93d2c3248bfc5d5  docs/reviews/r56-mcpgw-codex-compat/RESULT.md
+c61021346100bfd515f048a892f44451fece0c63ef4bd129a7f2187658b75ffd  docs/guides/CODEX-DINGWEI-MCP.md
+bf888dca2651dcada4f1f5dcad5d3bdcd217c308b278a60af147161eba22ea5b  docs/reviews/r56-mcpgw-codex-compat/RESULT.md
 3baee4e20e3c31e58b4e07174c9a7bd355ec9b22bf7e0b8b6ae73186f4a05883  docs/reviews/r56-mcpgw-codex-compat/hub_probe_test.go.txt
 854654b3a1526ed0d6c79ca06793f06f71624e7e0f4910507799a0bac9529e90  docs/reviews/r56-mcpgw-codex-compat/native_probe.py
 dd98ae150ffed5a44d98f2023a1ce669979897c3b1e1e671eacd18343e1a146e  docs/reviews/r56-mcpgw-codex-compat/probe_launcher.py
-9140a31f0caa93286fb2a192402e01fc21930bb3d96a10e53367d51b4b170eff  docs/reviews/r56-mcpgw-codex-compat/raw/RUNS.json
-d2e9a0963de8e367d8c336d3a06445123628e197b2b831734a5d2b282b1d30d3  docs/reviews/r56-mcpgw-codex-compat/raw/SHA256SUMS
+deb8f9b33b1dc815c14084a34b7226e297e30cb048f35c0c52dcd5dde06b6d45  docs/reviews/r56-mcpgw-codex-compat/raw/RUNS.json
+addeb37d2369d83d9b830d3726d71b5e737c01190290950a32b20d268d207bc2  docs/reviews/r56-mcpgw-codex-compat/raw/SHA256SUMS
 9f15bb196e9361e87e447921396f714927ab881b8cd91033c9b4e3f15a6d360f  docs/reviews/r56-mcpgw-codex-compat/raw/baseline-strict.stdout.gz
 34b594e599ac63f619000b1938359b001522d7ff6a3d337363ef4acb99fa4739  docs/reviews/r56-mcpgw-codex-compat/raw/canonical.stdout.gz
 54bc37cb7fd2dd61f93f1035c2da87d928b962b13ec6be6a2d52cc380910afda  docs/reviews/r56-mcpgw-codex-compat/raw/change-strict.stdout.gz
@@ -44,6 +44,7 @@ af81731aef47fe4cb5390a78530ad4d348d235fc84543cdeaf04586f512eb40e  docs/reviews/r
 c2cbafba286f49338de5d8c33ed428ebc96c5808edf5c1a9d269916786d0a360  docs/reviews/r56-mcpgw-codex-compat/raw/native/hub.stdout.gz
 7b3fbe3759a5c3618b63a7de717c13508ca3d72288e6421bf04bbf3e7f27cdba  docs/reviews/r56-mcpgw-codex-compat/raw/native/ready.json
 d31dd68a6b710238e047ff63b3c21da1c8641db6ad37eb548c30f24785a0cd57  docs/reviews/r56-mcpgw-codex-compat/raw/ports-mutation.stdout.gz
+54bc37cb7fd2dd61f93f1035c2da87d928b962b13ec6be6a2d52cc380910afda  docs/reviews/r56-mcpgw-codex-compat/raw/primary-cimd-strict.stdout.gz
 a40a6be6a6432cceefa5f933b23cd864f73cdfc2a3cac4afbd220ea96b36c175  docs/reviews/r56-mcpgw-codex-compat/raw/related-first.stdout.gz
 ae53023fc0fec21da82151062aa8a5b401994fe5d68ee9f18038173a6bda9337  docs/reviews/r56-mcpgw-codex-compat/raw/strict-all.stdout.gz
 b06ea6c9c8e23edf37bf32a56b89b303835e01d4980f6253a96bcd7e5d2ef68e  docs/reviews/r56-mcpgw-codex-compat/raw/unit-final.stdout.gz
@@ -55,7 +56,7 @@ b09cf6425a3b884c370791188f5dc5ea8254ea06635bdf354e55dcd6ca0e2753  docs/reviews/r
 2d16d1a285655e122cd725a21d18ca98fcc4dd0793bee78708e6caa7fbd92ec4  docs/reviews/r56-mcpgw-codex-compat/raw/unit-mutants/tenant-mutant.stdout.gz
 d77193df3ec88c3017173224d4c6e75ce6abae6306cf7cc2bab259d56a8c053b  docs/reviews/r56-mcpgw-codex-compat/rpc_probe.py
 e6f2a3efe623fdc86d004a42dc31011b22f0d162c0b838ac710bbd867cf1909a  docs/reviews/r56-mcpgw-codex-compat/unit_mutations.py
-27b04f624924a2e426b77c0ca9a6c9c9eda69dee33ede0c470f9a81bcaca3b3d  docs/runbooks/MCPGW-CODEX-PATHS.md
+bc18919795194434faff2d02166e282780571ffe9df218fabcd8d249167cb50d  docs/runbooks/MCPGW-CODEX-PATHS.md
 8169d2a432b82b98070cd7b0428f40cf5bc03c2fb7651f5eaddd4dd5ca3ce652  internal/mcpgw/INTERFACE.md
 316f28ff12233e0d4294ef79d61b53f550a9de21723a6087529aa4e659e66163  internal/mcpgw/clients.go
 53b0a1598d31db8fad7f13524eb5b09047c889f18a3e086d1ca08b66452eb6fc  internal/mcpgw/codec2025.go
@@ -64,10 +65,10 @@ e6f2a3efe623fdc86d004a42dc31011b22f0d162c0b838ac710bbd867cf1909a  docs/reviews/r
 8a986dba05439f9dd54957bbe00c59924334850f80a0d4ba7964206494f8e659  internal/mcpgw/gateway.go
 88e9b6a1641e98a0bd9af797ddb4dc5123302bb8aac3785ce4b29181bc618d30  internal/mcpgw/oauth.go
 e0a1e8db796c26b059d5986c386c7314da7a1d388e9e8b558b58a120defa2c68  internal/mcpgw/oauth_test.go
-2a3c873dc14ebf21e4e131eff3aaab34c12b9e129b400c9ca4a06853eeef6e5e  openspec/changes/mcpgw-codex-compat/context.md
+30846cac43c82d3b0e572eb5f2e2257ed835c703843c804ceff0d6752458d6e2  openspec/changes/mcpgw-codex-compat/context.md
 519a7b2d801a4dbaba183504e01354f40f1ac060f6ecac71fa70b81d88316ab9  openspec/changes/mcpgw-codex-compat/design.md
-164340c30fbba404e7b08e9b26352497ec980645edf6088e15bc68781a2c462f  openspec/changes/mcpgw-codex-compat/proposal.md
-83779cce7117ce8ef22a8f241dddb916d3655642ca479838fcc968a26aa4a602  openspec/changes/mcpgw-codex-compat/specs/mcpgw-codex-compat/spec.md
-dce5fd9f77a6c2fa71b0a9287566d7b91c1e1cd653032d21e7439779dc93ba7e  openspec/changes/mcpgw-codex-compat/tasks.md
+37ba9fe567534dc7593670f176f0df68d7518e811c8b644a22e731157ea89c03  openspec/changes/mcpgw-codex-compat/proposal.md
+bac03ad8a516dca6266e2194c8ca44d8e6efa0b5c41ab2c92dd1a2c4bfacf2ea  openspec/changes/mcpgw-codex-compat/specs/mcpgw-codex-compat/spec.md
+5b65871c471abdaf4695dd0029ec9f223311f4415503c00a1eb073b8a9d79280  openspec/changes/mcpgw-codex-compat/tasks.md
 6c3abe71253f67332c3577c4d586489199ea2c0da9ec8eb857447ce7b897d00f  openspec/specs/mcpgw-codex-compat/context.md
 cc180c700032d43811aed162b65016cc40e80e6648d48ccd379edd868f27649e  openspec/specs/mcpgw-codex-compat/spec.md

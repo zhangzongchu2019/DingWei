@@ -14,7 +14,7 @@
 | /oauth/token | POST | 兑换 | 同上 | 同上 |
 | /feishu/connect | GET/POST | 组织登录表单 | 同上 | 同上 |
 | /mcp/oauth/feishu/callback | GET | 飞书回调 | 同上 | 同上 |
-| **/mcp/clients/codex.json（新增）** | **GET** | **备用静态CIMD；不读业务身份** | **同上** | **同上** |
+| **/mcp/clients/codex.json（新增）** | **GET** | **本域静态CIMD主路径；不读业务身份** | **同上** | **同上** |
 
 如现网另有已批:50443入口，也须对照同一九类清单；issuer/resource/client_id始终由Hub配置PublicOrigin决定，不由访问Host/转发头决定，不得混用端口构造另一身份。
 
@@ -32,6 +32,6 @@ Hub由Gateway.Register新增精确路由；默认关闭/密钥缺失等关闭态
 
 ## 集成验证与回退
 
-本地原生0.167.0 add/login/列四工具/list_online通过并有四刀目标红后，再独立复核与预发换版。请求逐次鉴权，不能以一次initialize缓存授权。检查2026原封套和REST不变、非法Origin/tenant/AG/PKCE拒绝、localhost拒绝；备用文档开启/关闭态与上述清单一致。
+本地原生0.167.0 add/login/列四工具/list_online通过并有四刀目标红后，再独立复核与预发换版。请求逐次鉴权，不能以一次initialize缓存授权。检查2026原封套和REST不变、非法Origin/tenant/AG/PKCE拒绝、localhost拒绝；本域文档主路径开启/关闭态与上述清单一致。
 
 回退兼容版本时移除新增静态location或恢复旧MCP开关/路由集，保留数据库与业务身份数据；无需schema回退。旧网关不保证Codex可用，因此回退须同步通知PM暂停此入口。具体上线/回退命令、制品与时间由发布单提供，本件不执行。

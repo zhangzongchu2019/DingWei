@@ -11,7 +11,7 @@ codex --version
 ## 添加与登录
 
 ```sh
-codex mcp add dingwei --url https://dw123.cmjrt.com/mcp
+codex mcp add dingwei --url https://dw123.cmjrt.com/mcp --oauth-client-id https://dw123.cmjrt.com/mcp/clients/codex.json
 codex mcp login dingwei
 ```
 
@@ -19,7 +19,7 @@ codex mcp login dingwei
 
 **不要添加 `--oauth-resource`，也不要手写 `oauth_resource` 配置。** Codex 会从网关发现资源；额外配置可能产生重复参数，导致登录被拒绝。
 
-默认流程使用 Codex 的外部客户端元数据文档。如果网络无法获取它，请改用 DingWei 提供的备用文档；已有同名配置时先移除再添加，让新版本保存正确回调：
+以上使用 DingWei 本域的客户端元数据文档，这是主接入路径。当前 Hub 出口无法取得 Codex 默认外部文档，因此不要省略 `--oauth-client-id`。若已添加过旧配置，先移除再按同样的本域地址添加，让新版本保存正确回调：
 
 ```sh
 codex mcp remove dingwei
@@ -47,4 +47,4 @@ DingWei 提供四个通讯工具：查看在线清单、发送消息、等待收
 - “缺少 issuer”或初始化错误：确认版本至少0.167.0，以及目标环境已发布兼容网关；0.145.0不提供兼容兜底。
 - 目录或清单为空：清单为空可以是没有授权目标在线；工具目录为空或握手报错则联系管理员核网关版本。
 
-外部文档连通性、预发来源放行和正式开放时间以管理员通知为准。本文不是部署或开放预发/现网的授权。
+外部文档解析仍保留，但不作为本流程前提。预发来源放行和正式开放时间以管理员通知为准。本文不是部署或开放预发/现网的授权。

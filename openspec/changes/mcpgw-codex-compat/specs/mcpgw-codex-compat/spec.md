@@ -33,7 +33,7 @@
 - **THEN** 自有文档可用且不受请求Host污染，其他ID保持原取件校验，未授权不得读业务
 
 ### Requirement: MCC-005 客户端最低版本与路径清单
-文档 MUST 要求Codex至少0.167.0，提供add/login与备用CIMD说明，禁止配置oauth-resource；记录现网/预发新增静态路由，不部署。关闭态不登记新路径。
+文档 MUST 要求Codex至少0.167.0，提供显式本域oauth-client-id的add/login主路径说明，禁止配置oauth-resource；记录现网/预发新增静态路由，不部署。关闭态不登记新路径。
 
 #### Scenario: MCC-005-S01 PM接入与关闭态
 - **WHEN** PM按文档使用新add/login，或Hub关闭r53

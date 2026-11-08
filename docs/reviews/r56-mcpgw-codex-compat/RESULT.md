@@ -8,7 +8,7 @@ CODEX_THREAD_ID=01a1bacf-9317-7b91-bf86-0a0c88c834f6；to=opus50tc2k.zzc。基�
 - 五类2025请求每次走同一Authenticate/Seats，Origin共用guard；新codec不存Mcp-Session-Id或握手令牌快照。四工具仍g.call，现核tenant/scope/audience/AG/过期/吊销。OAuth scope/resource/PKCE/token绑定不动。
 - clients.go只对相同127.0.0.1或::1忽略有效端口，其余scheme、escaped path、query及URI组件精确；localhost拒绝，非回环逐字匹配。token仍绑定授权时实际redirect原文。
 - codex_client.go生成本域GET /mcp/clients/codex.json，client_id来自配置PublicOrigin，redirect_uris为http://127.0.0.1/callback与http://[::1]/callback，无端口。只对此精确自有URL直接解析同一生成值，适用于本地/预发高端口且不进行私网网络访问；外部resolver的HTTPS443/全公有IP/无跳转防回绑仍保持。不是允许任意本域路径/私网URL。
-- PM接入见docs/guides/CODEX-DINGWEI-MCP.md，nginx两环境九类路径见docs/runbooks/MCPGW-CODEX-PATHS.md。包含add/login、外部CIMD与备用命令，不配oauth-resource；已有旧callback配置需新add保存稳定路径。无配置包/二进制发布。
+- PM接入见docs/guides/CODEX-DINGWEI-MCP.md，nginx两环境九类路径见docs/runbooks/MCPGW-CODEX-PATHS.md。包含add/login、外部CIMD与显式本域client ID命令，不配oauth-resource；已有旧callback配置需新add保存稳定路径。无配置包/二进制发布。
 
 ## 实测与边界
 
@@ -54,6 +54,8 @@ python3 docs/reviews/r56-mcpgw-codex-compat/unit_mutations.py --output /tmp/new-
 
 ## 进度与交接
 
-编解码＋回调与备用CIMD已实现，真实正向和四刀验证已完成；当前canonical及相关包结果在RUNS记录。canonical rc0（双profile各1127/1127、27 Python与2 shell全过），mcpgw/extseat rc0，strict新变更/基线及全量均rc0；m8/cmd重跑进行中。相关包首轮m8两项在产品断言前因缺ec40752d6f059aa46b998b2a58965ad4bfc0607c历史Git对象失败，cmd两项因本单私有TMPDIR过长导致Unix socket bind失败；从同一工蜂仓补取后原样重跑，不修改历史用例。保留首轮失败，不当产品红或通过。
+编解码＋回调与本域CIMD主路径已实现，真实正向和四刀验证已完成；当前canonical及相关包结果在RUNS记录。canonical rc0（双profile各1127/1127、27 Python与2 shell全过），mcpgw/extseat rc0，strict新变更/基线及全量均rc0；m8/cmd重跑进行中。相关包首轮m8两项在产品断言前因缺ec40752d6f059aa46b998b2a58965ad4bfc0607c历史Git对象失败，cmd两项因本单私有TMPDIR过长导致Unix socket bind失败；从同一工蜂仓补取后原样重跑，不修改历史用例。保留首轮失败，不当产品红或通过。
 
 OpenSpec新变更mcpgw-codex-compat与现状基线均有独立strict；原冻结2026能力不被全局改写。后续本地结果通过后交中间坐标，再追加最终完整包验证/清单坐标；不自验收、不放行P2b、不开始子Agent主体。所有本地探针Hub/PG已正常停止。
+
+输入追加（㊿补11 cf9235d7）：prodops报Hub同出口取外部ChatGPT CIMD四次403，属于prodops实测，本席未访问节点。本域文档现为主路径；PM说明已明确--oauth-client-id，外部解析保留但不作为本单验收前提。此项追加不改已测试产品字节。

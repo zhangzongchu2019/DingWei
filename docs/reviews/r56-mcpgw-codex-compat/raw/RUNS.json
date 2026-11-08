@@ -85,5 +85,7 @@
   "no_deployment": true,
   "no_real_credentials": true,
   "no_nodes_accessed": true,
-  "strict_all_rc": 0
+  "strict_all_rc": 0,
+  "latest_rulings": "cf9235d782f4e7050842387bb42072bd3c27277e",
+  "local_cimd_is_primary": true
 }

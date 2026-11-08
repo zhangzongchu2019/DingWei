@@ -11,3 +11,5 @@
 2026-11-08 coder56solzzc.zzc；commit为本次中间实现（父f2a5db5f）。完成T01/02/04代码；阻塞：无授权外动作，原生与验证进行中；下一步T03验证并回中间坐标，最终T05交审。不得自放行P2b或开始子Agent主体。
 
 2026-11-08 coder56solzzc.zzc；本次中间提交。完成T03的native add/login/四工具目录/list_online、四刀目标红、外组织原生登录拒绝、canonical rc0（双profile1127）、strict通过；阻塞：相关包首轮缺历史Git pin与过长TMPDIR，不是产品断言；已补pin/短目录重跑m8与cmd。下一步追加最终包原文与SHA，不自验收、不部署。
+
+2026-11-08 coder56solzzc.zzc；追加于已推3fddb44a后，不改写。完成：fetch/读rulings至cf9235d7，㊿补11把本域CIMD升为主路径，已同步PM显式client ID命令、规格与路径清单；产品字节/本地native主路径不变。阻塞：m8/cmd最终重跑未齐；下一步中间坐标/最终验证追加，不碰节点。
