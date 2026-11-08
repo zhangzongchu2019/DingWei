@@ -1,0 +1,47 @@
+GATE repo-boundary-gate
+⑦ 仓储包边界（SP7a 甲组·收口 / §22.2c #1 两半）
+  仓储包允许清单（本次生效的全部条目）：
+    - internal/repo
+    - tests/r32-task-flow/compat-probe/main.go
+    - cmd/workpulse/session_history_config_test.go
+    - internal/store/session_history.go
+    - internal/store/tenant_deny_test.go
+  判据一·仓储包外建库句柄：5 处（基线 5，终值 0）
+    internal/fileservice/repository.go:24:	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path)+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)")
+    internal/datad/assignment_pg_integration_test.go:58:	w.appDB, err = sql.Open("pgx", dsn)
+    internal/datad/assignment_pg_integration_test.go:64:		w.setupDB, err = sql.Open("pgx", sup)
+    internal/store/sqlite.go:60:	db, err := sql.Open("sqlite", dsn)
+    internal/mcs/board/board.go:62:	db, err := sql.Open("sqlite", path)
+  债·尚未租户化的调用点：90 处（基线 90，终值 0，随 SP7b 归零）
+    ↳ 按效果判（specs/tools/pending-debt），按领域各记各的棘轮：
+       · datad：25 处（基线 25，SP7b 收口时本领域须归零）
+       · fanout：29 处（基线 29，SP7b 收口时本领域须归零）
+       · hosted：36 处（基线 36，SP7b 收口时本领域须归零）
+  债·显式 SystemCtx 调用点：17 处（基线 17；每处都是评审面，不许悄悄增长）
+  判据二·裸库句柄逃出包外：1 处（基线 1，终值 0；允许清单对本条不豁免）
+    internal/mcs/board/board.go:84:func-returns-handle DB
+  ⑦ 持平（建库 5 · 逃逸 1）✓ 未回升；终值均为 0，尚未达标
+GATE dependency-ratchet
+  直接依赖：9（基线 9）
+  ✓ 依赖清单棘轮未回升
+  ⚠️ 本闸判【数是否回升】，🔴 判不了【该不该加】，也判不了【等价替换】—— 归门方。
+GATE tenant-isolation-gate
+  ⑩ 领域表已出现租户列 7 处 —— 触发乙组四项负测前置（逐领域验）：
+      extseat	internal/store/migrate/migrations/0105_extseat.sql:1:np_external_principal.tenant_key
+      store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_event_key.tenant
+      store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_inbound.tenant
+      store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_notice.tenant
+      store	internal/store/migrations/0062_spec_clarification_transport.sql:1:spec_clarification_transport_key.tenant
+      store	internal/store/migrations/0074_pm_decision_request.sql:1:r9_pm_inbound_key.tenant
+      store	internal/store/migrations/0074_pm_decision_request.sql:1:r9_pm_response.tenant
+    · extseat：四项均已就位 ✓
+    · store：四项均已就位 ✓
+  ⑩ 各领域乙组四项负测均已就位 ✓（存在性由机器判；语义正确性归乙域人审，本闸不代判）
+HELPER_INVENTORY_OK files=91
+HELPER_GATE_START profiles=claude,codex python=/usr/bin/python3
+HELPER_GATE_PROFILE selected=claude actual_SH_DRIVER=claude
+helper files without collected cases: ['test_desktop_endpoint', 'test_guide_staging', 'test_ipc_socket_path_isolation', 'test_sessionhelper']
+HELPER_GATE_RESULT {"error": "helper case discovery failed", "profile": "claude", "rc": 1}
+HELPER_GATE_PROFILE selected=codex actual_SH_DRIVER=codex
+helper files without collected cases: ['test_desktop_endpoint', 'test_guide_staging', 'test_ipc_socket_path_isolation', 'test_sessionhelper']
+HELPER_GATE_RESULT {"error": "helper case discovery failed", "profile": "codex", "rc": 1}
