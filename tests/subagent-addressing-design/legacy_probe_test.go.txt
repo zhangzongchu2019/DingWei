@@ -1,0 +1,112 @@
+package m8
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http/httptest"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/zhangzongchu2019/dingwei/internal/model"
+)
+
+func TestSubagentDesignWireParserIsNotFullNameValidation(t *testing.T) {
+	a, err := parseAddress("r2.kimi.zzc#u_zzc")
+	if err != nil || a.SessionName != "r2.kimi.zzc" {
+		t.Fatalf("wire shape changed: %+v %v", a, err)
+	}
+	t.Log(`OBSERVATION {"entry":"parseAddress","accepts_three_segments":true,"is_route_authority":false}`)
+}
+
+func TestSubagentDesignIdentityAndSelectorRejectChild(t *testing.T) {
+	e := newAgentEnv(t)
+	if _, _, err := e.svc.ResolveFullName(e.ctx, "opus50ts.zzc"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := e.svc.ResolveFullName(e.ctx, "r2.opus50ts.zzc"); err == nil {
+		t.Fatal("legacy identity accepted child")
+	}
+	handled, _, err := e.hub.prepareSessionSelector(e.ctx, AgentKeyID("zzc"), "opus50ts", model.Envelope{To: "#r2.opus50ts.zzc", Body: "synthetic"})
+	if !handled || err == nil {
+		t.Fatal("legacy selector did not reject child")
+	}
+	t.Log(`OBSERVATION {"entry":"identity+selector","root_resolves":true,"child_rejected":true}`)
+}
+
+func TestSubagentDesignConsoleRejectsThreePartScope(t *testing.T) {
+	data, _ := json.Marshal(map[string]any{"request_id": strings.Repeat("a", 32), "subscriptions": []map[string]string{{"full_name": "r2.opus50ts.zzc", "iframe_instance": strings.Repeat("b", 32)}}})
+	request := httptest.NewRequest("POST", "/probe", bytes.NewReader(data))
+	_, _, _, err := muxDecode(httptest.NewRecorder(), request)
+	if err == nil || !strings.Contains(err.Error(), "invalid subscription") {
+		t.Fatalf("unexpected console result: %v", err)
+	}
+	t.Log(`OBSERVATION {"entry":"console_mux","child_scope_rejected":true}`)
+}
+
+func TestSubagentDesignAMRDoesNotYetSkipChildMention(t *testing.T) {
+	candidates, looked := parseAMRCandidatesDetailed("@r2.kimi.zzc @opus50ts.zzc synthetic", "source", 20)
+	child, root := false, false
+	for _, candidate := range candidates {
+		child = child || candidate.selector == "#r2.kimi.zzc"
+		root = root || candidate.selector == "#opus50ts.zzc"
+	}
+	t.Logf("OBSERVATION {\"entry\":\"amr\",\"child_candidate\":%v,\"root_candidate\":%v,\"looked\":%v}", child, root, looked)
+	if os.Getenv("SUBAGENT_EXPECT_PHASE1") == "1" {
+		if child || !root {
+			t.Fatal("AA005_CHILD_MENTION_NOT_SKIPPED_WITH_VALID_ROOT_RETAINED")
+		}
+	} else if !child || !root {
+		t.Fatal("legacy AMR sample changed")
+	}
+}
+
+func TestSubagentDesignUnknownMetadataCanReachLegacyParent(t *testing.T) {
+	e := newAgentEnv(t)
+	codes, err := e.svc.Store.ListAgentGroups(e.ctx, e.agID)
+	if err != nil || len(codes) == 0 {
+		t.Fatal(err)
+	}
+	target := e.enrollInGroup("design-only-child-probe", "Kimi", codes[0])
+	a, _, _ := e.dial(e.cred, "")
+	b, _, _ := e.dial(target, "")
+	defer a.CloseNow()
+	defer b.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "kimi")
+	env := model.Envelope{ID: "design-subpath-only", From: sessionAddress("opus50ts", AgentKeyID("zzc")), To: sessionAddress("kimi", AgentKeyID("zzc")), Body: "DESIGN_ONLY_SYNTHETIC", Meta: map[string]any{"sub_path": []string{"r2"}}}
+	routeErr := e.hub.RouteEnvelope(e.ctx, env)
+	received := e.readEnvUntil(b, 350*time.Millisecond, func(got model.Envelope) bool { return got.Body == env.Body })
+	leaked := received != nil
+	t.Logf("OBSERVATION {\"entry\":\"legacy_hub_root_plus_meta\",\"parent_received\":%v,\"route_rejected\":%v}", leaked, routeErr != nil)
+	if os.Getenv("SUBAGENT_EXPECT_PHASE1") == "1" {
+		if leaked || routeErr == nil {
+			t.Fatal("UNNEGOTIATED_SUBPATH_REACHED_PARENT")
+		}
+	} else if !leaked || routeErr != nil {
+		t.Fatalf("legacy root+unknown-meta sample changed: %v", routeErr)
+	}
+}
+
+func TestSubagentDesignLegacyHubFullChildTargetRejectsWithoutParent(t *testing.T) {
+	e := newAgentEnv(t)
+	codes, err := e.svc.Store.ListAgentGroups(e.ctx, e.agID)
+	if err != nil || len(codes) == 0 {
+		t.Fatal(err)
+	}
+	target := e.enrollInGroup("design-full-child-probe", "Kimi", codes[0])
+	a, _, _ := e.dial(e.cred, "")
+	b, _, _ := e.dial(target, "")
+	defer a.CloseNow()
+	defer b.CloseNow()
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "opus50ts")
+	waitSessionOnline(t, e.hub, AgentKeyID("zzc"), "kimi")
+	env := model.Envelope{ID: "design-full-child-target", From: sessionAddress("opus50ts", AgentKeyID("zzc")), To: sessionAddress("r2.kimi.zzc", AgentKeyID("zzc")), Body: "DESIGN_ONLY_CHILD_TARGET"}
+	routeErr := e.hub.RouteEnvelope(e.ctx, env)
+	received := e.readEnvUntil(b, 350*time.Millisecond, func(got model.Envelope) bool { return got.Body == env.Body })
+	if routeErr == nil || received != nil {
+		t.Fatalf("LEGACY_FULL_CHILD_TARGET_REACHED_PARENT err=%v received=%v", routeErr, received != nil)
+	}
+	t.Logf("OBSERVATION {\"entry\":\"legacy_hub_full_child_target\",\"parent_received\":false,\"route_rejected\":true,\"error\":%q}", routeErr.Error())
+}

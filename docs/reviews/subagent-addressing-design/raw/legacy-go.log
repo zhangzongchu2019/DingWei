@@ -1,0 +1,36 @@
+=== RUN   TestSubagentDesignWireParserIsNotFullNameValidation
+    subagent_design_probe_test.go:20: OBSERVATION {"entry":"parseAddress","accepts_three_segments":true,"is_route_authority":false}
+--- PASS: TestSubagentDesignWireParserIsNotFullNameValidation (0.00s)
+=== RUN   TestSubagentDesignIdentityAndSelectorRejectChild
+2026/11/08 04:48:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/08 04:48:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/08 04:48:17 feishu dispatch rejected reason=short_name_not_resolvable open_id="" target="r2.opus50ts.zzc" bot_channel=""
+    subagent_design_probe_test.go:35: OBSERVATION {"entry":"identity+selector","root_resolves":true,"child_rejected":true}
+--- PASS: TestSubagentDesignIdentityAndSelectorRejectChild (0.15s)
+=== RUN   TestSubagentDesignConsoleRejectsThreePartScope
+    subagent_design_probe_test.go:45: OBSERVATION {"entry":"console_mux","child_scope_rejected":true}
+--- PASS: TestSubagentDesignConsoleRejectsThreePartScope (0.00s)
+=== RUN   TestSubagentDesignAMRDoesNotYetSkipChildMention
+    subagent_design_probe_test.go:55: OBSERVATION {"entry":"amr","child_candidate":true,"root_candidate":true,"looked":true}
+--- PASS: TestSubagentDesignAMRDoesNotYetSkipChildMention (0.00s)
+=== RUN   TestSubagentDesignUnknownMetadataCanReachLegacyParent
+2026/11/08 04:48:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/08 04:48:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/08 04:48:18 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/08 04:48:18 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+    subagent_design_probe_test.go:82: OBSERVATION {"entry":"legacy_hub_root_plus_meta","parent_received":true,"route_rejected":false}
+--- PASS: TestSubagentDesignUnknownMetadataCanReachLegacyParent (0.17s)
+=== RUN   TestSubagentDesignLegacyHubFullChildTargetRejectsWithoutParent
+2026/11/08 04:48:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/08 04:48:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/08 04:48:18 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/08 04:48:18 session handshake timing key_id=u_zzc session=kimi total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+    subagent_design_probe_test.go:111: OBSERVATION {"entry":"legacy_hub_full_child_target","parent_received":false,"route_rejected":true,"error":"组内找不到该Agent"}
+--- PASS: TestSubagentDesignLegacyHubFullChildTargetRejectsWithoutParent (0.53s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.862s
+=== RUN   TestSubagentDesignLegacyOnlineListIsSubstringNotTree
+    subagent_design_probe_test.go:21: OBSERVATION {"entry":"legacy_online_list","child_string_accepted":true,"root_substring_also_alive":true,"tree_authority":false}
+--- PASS: TestSubagentDesignLegacyOnlineListIsSubstringNotTree (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver	0.003s
