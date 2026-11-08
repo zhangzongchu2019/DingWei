@@ -15,7 +15,7 @@
   - 阻塞：无。
   - 完成：最终审阅通过；实现与证据已提交到获准分支并核验推送坐标。
 
-- [ ] T-07 修正 renderer 的 trusted-origin 常量重名，合入 R51 epoch replay 修正，并在最终 tip 完成全量浏览器回归与非强制推送。
+- [x] T-07 修正 renderer 的 trusted-origin 常量重名，合入 R51 epoch replay 修正，并在最终 tip 完成全量浏览器回归与非强制推送。 【甲；证据：docs/reviews/r52-trusted-origins-impl/EVIDENCE.md @ togpt60lunazzc/r52-trusted-origins-impl 425f6452】
 
 ## 交接记录（2026-11-06 补充）
 

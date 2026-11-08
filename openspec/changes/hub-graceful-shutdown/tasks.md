@@ -34,8 +34,8 @@
 
 - [x] T-08 执行HLC-S001空载、S002有限慢HTTP、S003不释放HTTP、S004活跃SSE、S005活跃WS/注册竞争、S006混合、S007混合超时、S008持久化失败、S010重复信号/启动失败、S012内网独立错误、S013超过12秒有界排空/看门狗连续性；按design数值/退出码逐格记录，负载格随机50轮及race，原始日志附固定坐标。
 - [x] T-09 执行HLC-S009主动取消/WS关闭撤除及S005屏障撤除、S012错误采集撤除、S013停喂触发SIGABRT反向控制；每个变异在目标断言红、恢复后绿，无效变异保持未通过。
-- [ ] T-10 执行HLC-S011隔离stop→ready和helper/三类流恢复格，记录502/503/EOF/WS观察、消息ID/游标/gap及重复/缺失数，核对HLC-PM04冻结数值；交独立验收，不自验收。
-- [ ] T-11 未来实现完成后跑相关Go/race/构建门、全OpenSpec strict，更新代码context/逐格证据；另行申请预发及生产GO，不能以提案归档或tasks勾选代替发布。
+- [ ] T-10 执行HLC-S011隔离stop→ready和helper/三类流恢复格，记录502/503/EOF/WS观察、消息ID/游标/gap及重复/缺失数，核对HLC-PM04冻结数值；交独立验收，不自验收。 【乙；交接：HLC-S011 自动恢复仍有 gap=1/missing=2，需实现修复并按冻结数值完成隔离 stop→ready 三类流矩阵；由实现席修复、QA独立复验。】
+- [ ] T-11 未来实现完成后跑相关Go/race/构建门、全OpenSpec strict，更新代码context/逐格证据；另行申请预发及生产GO，不能以提案归档或tasks勾选代替发布。 【乙；交接：HLC-S011 未闭环且独立验收/GO 未完成；修复后由实现席跑全门，QA独立验收，业主另批预发/生产GO。】
 
 ## Workflow follow-up
 
@@ -140,3 +140,11 @@ strict规划通过不代表实现/业务验收/发布完成；不archive、不�
   - 完成：27e2f6ca六文件独立提交→145acdc8普通merge修复路2a8be0ab，五处冲突逐项说明；A2/B/d8及ba96独立完整S007测试已普通推送。S006 race50全部退0；S014三格各race3及撤分类红；S007-full普通10/race3全部退2、约8秒，正常完整负载收尾/HTTP100持久化，真实pending内网SSE1/公网HTTP1，撤退出码目标红。其余故障格/有效反向控制与独立SDK进程完成；PG严格相关整包、最终cmd普通/race、14项strict及canonical rc0（helper各1097/Python27/shell2）。T-04～09依据逐项见最终报告；原始日志/SKIP逐项保留。
   - 保留：S011自动格红（mux缺2），同feed显式resync后缺失0/重复0，210ms及stop→output8759ms分列；m8完整race2648.265s rc1，仅既有50ms时限失败，r47/d8四组各10次对照符合组长a7d6e937判据，FINDING另存，不改阈值。原409八轮无逐次UTC/SIGTERM，禁止补造时差；22/100与9/30对照支持保留单套ready屏障。
   - 待办：T-10/11保持未勾，交组长独立验收/例外处置及后续GO；无部署、apply/archive或新项目授权。当前无测试进程。
+
+### 本次清账交接（2026-11-08）
+- T-10：HLC-S011 自动恢复仍有 gap=1/missing=2，需实现修复并按冻结数值完成隔离 stop→ready 三类流矩阵；由实现席修复、QA独立复验。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ opus50tc2k/hub-graceful-shutdown-impl 81849a38。
+- T-11：HLC-S011 未闭环且独立验收/GO 未完成；修复后由实现席跑全门，QA独立验收，业主另批预发/生产GO。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ opus50tc2k/hub-graceful-shutdown-impl 81849a38。
+
+### 本次清账交接（2026-11-08）
+- T-10：HLC-S011 自动恢复仍有 gap=1/missing=2，需实现修复并按冻结数值完成隔离 stop→ready 三类流矩阵；由实现席修复、QA独立复验。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ opus50tc2k/hub-graceful-shutdown-impl 81849a38。
+- T-11：HLC-S011 未闭环且独立验收/GO 未完成；修复后由实现席跑全门，QA独立验收，业主另批预发/生产GO。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ opus50tc2k/hub-graceful-shutdown-impl 81849a38。

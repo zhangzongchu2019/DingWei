@@ -18,8 +18,8 @@
 - [x] T-06 实现R14-006/008/009的候选纯text、复制回贴/仅选择指令、持久/幂等/并发与可追溯结果，保持原命令/群聊/AMR边界。
 - [x] T-10 托管 Agent 生成页与自备 Agent 审核页在提交前按当前属主对短名查重并明确提示；保留数据库唯一索引兜底。旧平台 session_endpoint 名不纳入该新增前置检查。
 - [x] T-07 隔离临时DB/HOME/假飞书/固定时钟执行R14-S001～023全部场景；撤owner/channel/显式优先/时钟边界/当前核权/候选块/稳定ID/幂等保护/短名查重分别在目标断言红，恢复后绿，无效变异或未执行不记PASS。
-- [ ] T-08 另获授权做真实飞书桌面/移动端复制回入、Hub重启和迟到/并发读数，逐格记录实际目标、重复/缺失、TTL与候选格式；不向真实业主/Agent发送未授权探测。
-- [ ] T-09 未来实施完成后跑相关整包/race、全仓strict与构建门、独立验收，再另申请预发/生产GO；不以apply/archive、T-01/02勾选或旧测试通过代替业务验收。
+- [ ] T-08 另获授权做真实飞书桌面/移动端复制回入、Hub重启和迟到/并发读数，逐格记录实际目标、重复/缺失、TTL与候选格式；不向真实业主/Agent发送未授权探测。 【乙；交接：缺真实飞书桌面/移动端复制回入及Hub重启、迟到/并发矩阵；业主授权并提供真实客户端后由 QA/prodops 执行。】
+- [x] T-09 未来实施完成后跑相关整包/race、全仓strict与构建门、独立验收，再另申请预发/生产GO；不以apply/archive、T-01/02勾选或旧测试通过代替业务验收。 【甲；证据：docs/reviews/r14-t09-acceptance/REPORT.md @ review/togpt60/r49-r14-t09-acceptance f0801adb; review/prodops/r49-prod-closeout-20261102 @ ad1c2b63】
 
 
 ## 4. 阻断返修（01a19c8c 唯一执行）
@@ -75,3 +75,9 @@
   - 规范run-build-tests、m8全包、严格embedded PG、浏览器Chrome/headless shell、registry、benchmark及全仓strict均实际rc0；28刀Go/store在最终锚均目标语义红、恢复后相关包rc0；两渠道6刀浏览器目标红且正常/旧回归绿。FCS与默认开关两刀及0072修复反测有独立原文与产品字节钉锚，早期无效/撤回轮次不计最终覆盖。
   - 精确r48 Hub创建/停净/复制的70行账隔离同构库，升0072三轮均71行，旧70行version/digest/applied_at排序哈希不变、重复迁移和旧Hub副本重启成功；旧70份SQL字节不变。未取生产数据或连接生产DB。原45m超时、两份disposition和另席r48无结果状态照录，不冒充PASS。
   - T-07/T-14开发验证关闭；T-08真实飞书、T-09独立验收保持未勾，旧fc7de19d/11b2d545交件仍作废。最终源码及独立docs-only证据Git坐标以交件消息为准，不自验收/部署/重启/改版本/PG schema/apply/archive。R14重新交件后先S-R49-HELPER-OFFER-RACE（精确r48基线）再R10。
+
+### 本次清账交接（2026-11-08）
+- T-08：缺真实飞书桌面/移动端复制回入及Hub重启、迟到/并发矩阵；业主授权并提供真实客户端后由 QA/prodops 执行。 证据边界：docs/reviews/r14-t09-acceptance/REPORT.md @ review/togpt60/r49-r14-t09-acceptance f0801adb; docs/reviews/prodops-r53-prod-closeout-20261107/RESULT.md @ review/prodops/r53-prod-closeout-20261107 2965ace9。
+
+### 本次清账交接（2026-11-08）
+- T-08：缺真实飞书桌面/移动端复制回入及Hub重启、迟到/并发矩阵；业主授权并提供真实客户端后由 QA/prodops 执行。 证据边界：docs/reviews/r14-t09-acceptance/REPORT.md @ review/togpt60/r49-r14-t09-acceptance f0801adb; docs/reviews/prodops-r53-prod-closeout-20261107/RESULT.md @ review/prodops/r53-prod-closeout-20261107 2965ace9。
