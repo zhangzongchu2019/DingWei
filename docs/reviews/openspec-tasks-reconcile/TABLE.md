@@ -29,7 +29,7 @@
 | `r11-freeze-legacy-console-spec` | T-08 | 乙 | 无预发授权与切换发布证据；业主授权后由 prodops 验证并交审。 证据/核对：未找到允许来源内的结项证据 |
 | `r15-session-history-persist` | T-03 | 甲 | ruling ㊲ @ a5a4de214cc9c28ea08aabb8952a4c9b1387522e; docs/reviews/togpt60-r50-r15-final-20261103/REPORT.md @ 43b4d20d1268e6974dde6edc2508ed9a9d8edce5 |
 | `r15-session-history-persist` | T-04 | 乙 | 最终重构后尚缺独立执行者完整重启/重连/撤权/迁移回退矩阵；由 QA 在最终源锚复验。 证据/核对：docs/reviews/r15-accept-browser-20261103/README.md @ fdcf455a6ebf2a0139f98ad9386e67dbd86adb93; docs/reviews/togpt60-r50-r15-final-20261103/REPORT.md @ 43b4d20d1268e6974dde6edc2508ed9a9d8edce5 |
-| `r15-session-history-persist` | T-09 | 甲 | ruling ㊲ @ a5a4de214cc9c28ea08aabb8952a4c9b1387522e; ruling ㊲ @ a5a4de214cc9c28ea08aabb8952a4c9b1387522e |
+| `r15-session-history-persist` | T-09 | 甲 | ruling ㊲ @ a5a4de214cc9c28ea08aabb8952a4c9b1387522e |
 | `r5-binding-admin-page` | T-04 | 甲 | docs/reviews/r49-r5-page-t04-acceptance/REPORT.md @ 852ae658dcb6bc1a7ddfbc3b9a5cba61e89f823b |
 | `r5-render-openspec-readonly` | T-07 | 乙 | 缺真实受控 Git 托管测试仓及获权/失权主体完整CSR矩阵；由 QA 与提供方负责人补真实权限验证。 证据/核对：docs/reviews/r5-readonly/REPORT.md @ 7f63b3805e5e741db073120dd648fd8be541ebc5 |
 | `r5-render-openspec-readonly` | T-08 | 乙 | 缺获授权预发的网络/审计/凭据路径验收；由业主授权后 prodops 与独立审阅者执行。 证据/核对：docs/reviews/r5-readonly/REPORT.md @ 7f63b3805e5e741db073120dd648fd8be541ebc5 |

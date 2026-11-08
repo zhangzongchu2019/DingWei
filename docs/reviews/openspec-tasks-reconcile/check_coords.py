@@ -6,8 +6,8 @@ import subprocess
 import sys
 
 TABLE = Path(__file__).with_name("TABLE.md")
-DOC_COORD = re.compile(r"(docs/reviews/[A-Za-z0-9._/-]+)\s+@\s+([0-9a-f]{40})")
-RULING_COORD = re.compile(r"ruling\s+(㊲|㊸|㊹|㊺|㊻|㊼|㊽|㊾|㊿)\s+@\s+([0-9a-f]{40})")
+DOC_COORD = re.compile(r"(docs/reviews/[A-Za-z0-9._/-]+)\s+@\s+([^\s;|]+)")
+RULING_COORD = re.compile(r"ruling\s+(㊲|㊸|㊹|㊺|㊻|㊼|㊽|㊾|㊿)\s+@\s+([^\s;|]+)")
 
 def git(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["git", *args], text=True, capture_output=True)
@@ -18,6 +18,10 @@ def main() -> int:
     misses = 0
     for path, commit in DOC_COORD.findall(table):
         checks += 1
+        if not re.fullmatch(r"[0-9a-f]{40}", commit):
+            misses += 1
+            print(f"MISSING malformed-commit {commit}:{path}")
+            continue
         result = git("cat-file", "-e", f"{commit}:{path}")
         if result.returncode == 0:
             print(f"OK docs {commit}:{path}")
@@ -26,6 +30,10 @@ def main() -> int:
             print(f"MISSING docs {commit}:{path}")
     for ruling, commit in RULING_COORD.findall(table):
         checks += 1
+        if not re.fullmatch(r"[0-9a-f]{40}", commit):
+            misses += 1
+            print(f"MISSING malformed-ruling-commit {ruling} @ {commit}")
+            continue
         result = git("grep", "-F", ruling, commit, "--", "docs/rulings")
         if result.returncode == 0 and result.stdout.strip():
             matches = [line for line in result.stdout.splitlines() if ruling in line]
