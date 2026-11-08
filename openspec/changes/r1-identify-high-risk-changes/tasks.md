@@ -13,10 +13,10 @@
 
 ## 3. 后续实现（另行派单）
 
-- [x] T-04 实现R1-001/002纯函数与规则版本；对S01/S02的七类×三路21格正例、21格近似反例、多路并集、仅新增行、截断/未知和重放逐格验证，补漏报/误报变异，不把默认表草案冒作运行事实。 【甲；证据：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1】
+- [x] T-04 实现R1-001/002纯函数与规则版本；对S01/S02的七类×三路21格正例、21格近似反例、多路并集、仅新增行、截断/未知和重放逐格验证，补漏报/误报变异，不把默认表草案冒作运行事实。 【甲；证据：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395】
 - [ ] T-05 实现R1-003/004提供方和双端投递；验证各S01/S02的GitHub/工蜂、越权/撤权/缺scope、错误坐标、部分失败、查回去重、无源码/秘密外发，记录实际接口及secret位置。 【乙；交接：GitHub 与工蜂仍为 ErrUnavailable stub，真实权限及双端投递未接；由实现席按提供方事实接线并独立验证。】
-- [x] T-06 实现R1-005/006知悉、合并时刻和追加commit；按各S01/S02验证负责人冒认/ACK、时刻不混淆、合并后追加命中仍双端再提醒、无命中不提醒及同输入重试幂等；另按R1-006-S03～S05验证同commit标签/规则变化更新原提醒、修订可追溯、集合变化重置/集合未变不重置、归零保留历史、重放/迟到旧知悉/取件失败及双端部分失败。 【甲；证据：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1】
-- [x] T-07 实现R1-007/008界面与边界；按各S01/S02验证风险/未知/投递失败均不新增合并门，知悉不替PM/委员会确认，R9未就绪不假闭环。 【甲；证据：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1】
+- [x] T-06 实现R1-005/006知悉、合并时刻和追加commit；按各S01/S02验证负责人冒认/ACK、时刻不混淆、合并后追加命中仍双端再提醒、无命中不提醒及同输入重试幂等；另按R1-006-S03～S05验证同commit标签/规则变化更新原提醒、修订可追溯、集合变化重置/集合未变不重置、归零保留历史、重放/迟到旧知悉/取件失败及双端部分失败。 【甲；证据：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395】
+- [x] T-07 实现R1-007/008界面与边界；按各S01/S02验证风险/未知/投递失败均不新增合并门，知悉不替PM/委员会确认，R9未就绪不假闭环。 【甲；证据：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395】
 
 ## 4. 独立验收
 
@@ -36,11 +36,6 @@ OpenSpec status 的 planningComplete/isComplete 仅表示规划文件齐备，�
   - 剩余：R1-A01～04与真实提供方接口仍待核；本次不代表T-03整项完成，T-04～08未执行，产品场景未执行。R1／R8实现仍排r45并另派；R8文件不变，无迁移、部署、重启或真实评论。过渡期只推工蜂。
 
 ### 本次清账交接（2026-11-08）
-- T-03：真实 GitHub/工蜂 ACL、审阅/评论/合并接口及凭据位置未核；由 prodops/提供方负责人补事实后更新规格。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1。
-- T-05：GitHub 与工蜂仍为 ErrUnavailable stub，真实权限及双端投递未接；由实现席按提供方事实接线并独立验证。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1。
-- T-08：缺真实隔离 MR 双端验收与独立 QA；由 QA 用真实受控仓库完成，获得授权后再申预发GO。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1。
-
-### 本次清账交接（2026-11-08）
-- T-03：真实 GitHub/工蜂 ACL、审阅/评论/合并接口及凭据位置未核；由 prodops/提供方负责人补事实后更新规格。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1。
-- T-05：GitHub 与工蜂仍为 ErrUnavailable stub，真实权限及双端投递未接；由实现席按提供方事实接线并独立验证。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1。
-- T-08：缺真实隔离 MR 双端验收与独立 QA；由 QA 用真实受控仓库完成，获得授权后再申预发GO。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1。
+- T-03：真实 GitHub/工蜂 ACL、审阅/评论/合并接口及凭据位置未核；由 prodops/提供方负责人补事实后更新规格。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395。
+- T-05：GitHub 与工蜂仍为 ErrUnavailable stub，真实权限及双端投递未接；由实现席按提供方事实接线并独立验证。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395。
+- T-08：缺真实隔离 MR 双端验收与独立 QA；由 QA 用真实受控仓库完成，获得授权后再申预发GO。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395。

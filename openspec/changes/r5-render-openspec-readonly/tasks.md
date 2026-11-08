@@ -55,9 +55,5 @@ OpenSpec status 的 planningComplete/isComplete 只说明规划文件齐备，�
 - 下一步：证据提交后仅推工蜂并核远端 tip，冻结交组长独立审阅；等待另发预发复测令。不部署、不动 r46 或其它冻结分支。最终 tip/tree 以承载本记录的提交及交件消息为准。
 
 ### 本次清账交接（2026-11-08）
-- T-07：缺真实受控 Git 托管测试仓及获权/失权主体完整CSR矩阵；由 QA 与提供方负责人补真实权限验证。 证据边界：docs/reviews/r5-readonly/REPORT.md @ opus50tc2k/openspec-r5-r11 2c*。
-- T-08：缺获授权预发的网络/审计/凭据路径验收；由业主授权后 prodops 与独立审阅者执行。 证据边界：docs/reviews/r5-readonly/REPORT.md @ opus50tc2k/openspec-r5-r11 2c*。
-
-### 本次清账交接（2026-11-08）
-- T-07：缺真实受控 Git 托管测试仓及获权/失权主体完整CSR矩阵；由 QA 与提供方负责人补真实权限验证。 证据边界：docs/reviews/r5-readonly/REPORT.md @ opus50tc2k/openspec-r5-r11 2c*。
-- T-08：缺获授权预发的网络/审计/凭据路径验收；由业主授权后 prodops 与独立审阅者执行。 证据边界：docs/reviews/r5-readonly/REPORT.md @ opus50tc2k/openspec-r5-r11 2c*。
+- T-07：缺真实受控 Git 托管测试仓及获权/失权主体完整CSR矩阵；由 QA 与提供方负责人补真实权限验证。 证据边界：docs/reviews/r5-readonly/REPORT.md @ 7f63b3805e5e741db073120dd648fd8be541ebc5。
+- T-08：缺获授权预发的网络/审计/凭据路径验收；由业主授权后 prodops 与独立审阅者执行。 证据边界：docs/reviews/r5-readonly/REPORT.md @ 7f63b3805e5e741db073120dd648fd8be541ebc5。

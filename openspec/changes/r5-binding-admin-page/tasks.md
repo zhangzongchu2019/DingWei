@@ -10,7 +10,7 @@
 ## 2. 后续（另行授权）
 
 - [x] T-03 提案已获批并完成页面实现；仅新增管理员页面和平台管理区入口，复用既有 API/权限/校验/存储/审计，开发验证不代替 T-04 独立验收。
-- [x] T-04 独立验收管理员/非管理员、创建/查询/删除、非法字段、upsert 与审计；实现和验收不得由同一执行者自验收。 【甲；证据：docs/reviews/r49-r5-page-t04-acceptance/REPORT.md @ review/togpt60/r49-r5-page-t04-acceptance 852ae658】
+- [x] T-04 独立验收管理员/非管理员、创建/查询/删除、非法字段、upsert 与审计；实现和验收不得由同一执行者自验收。 【甲；证据：docs/reviews/r49-r5-page-t04-acceptance/REPORT.md @ 852ae658dcb6bc1a7ddfbc3b9a5cba61e89f823b】
 
 ## 交接记录
 

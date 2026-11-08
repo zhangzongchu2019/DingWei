@@ -49,17 +49,9 @@
   - 剩余：T-03～08 仍未完成，真实提供方/委员会/ACL、比较审计、归档历史发现与完整生命周期待后续；无激活/迁移/发布配置变化或预发授权。最终 tip/tree 以承载本交接的提交为准，追加交件后冻结。
 
 ### 本次清账交接（2026-11-08）
-- T-03：实际 GitHub/工蜂主体ACL、目录查询事实及secret位置未核；prodops/提供方负责人补事实。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1; docs/reviews/r7-impl/REPORT.md @ opus50tc2k/r7-impl f1d26de8。
-- T-04：当前 R7 bridge 默认503、提供方/ACL接线未完成；由实现席按核实接口完成并测撤权/异常矩阵。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1; docs/reviews/r7-impl/REPORT.md @ opus50tc2k/r7-impl f1d26de8。
-- T-05：缺真实版本策略读取与全场景失效判定，核心实现未完成；实现席补齐。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1; docs/reviews/r7-impl/REPORT.md @ opus50tc2k/r7-impl f1d26de8。
-- T-06：缺R7真实提醒/拒绝路径和追加历史验收；实现席完成后交独立QA。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1; docs/reviews/r7-impl/REPORT.md @ opus50tc2k/r7-impl f1d26de8。
-- T-07：缺真实受控Git仓、独立权限主体与全场景独立复核；由 QA 执行。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1。
-- T-08：缺预发授权与环境GO证据；业主授权后 prodops 验证。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1。
-
-### 本次清账交接（2026-11-08）
-- T-03：实际 GitHub/工蜂主体ACL、目录查询事实及secret位置未核；prodops/提供方负责人补事实。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1; docs/reviews/r7-impl/REPORT.md @ opus50tc2k/r7-impl f1d26de8。
-- T-04：当前 R7 bridge 默认503、提供方/ACL接线未完成；由实现席按核实接口完成并测撤权/异常矩阵。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1; docs/reviews/r7-impl/REPORT.md @ opus50tc2k/r7-impl f1d26de8。
-- T-05：缺真实版本策略读取与全场景失效判定，核心实现未完成；实现席补齐。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1; docs/reviews/r7-impl/REPORT.md @ opus50tc2k/r7-impl f1d26de8。
-- T-06：缺R7真实提醒/拒绝路径和追加历史验收；实现席完成后交独立QA。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1; docs/reviews/r7-impl/REPORT.md @ opus50tc2k/r7-impl f1d26de8。
-- T-07：缺真实受控Git仓、独立权限主体与全场景独立复核；由 QA 执行。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1。
-- T-08：缺预发授权与环境GO证据；业主授权后 prodops 验证。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ opus50tc2k/r1-r8-impl 397fafb1。
+- T-03：实际 GitHub/工蜂主体ACL、目录查询事实及secret位置未核；prodops/提供方负责人补事实。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395; 。
+- T-04：当前 R7 bridge 默认503、提供方/ACL接线未完成；由实现席按核实接口完成并测撤权/异常矩阵。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395; 。
+- T-05：缺真实版本策略读取与全场景失效判定，核心实现未完成；实现席补齐。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395; 。
+- T-06：缺R7真实提醒/拒绝路径和追加历史验收；实现席完成后交独立QA。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395; 。
+- T-07：缺真实受控Git仓、独立权限主体与全场景独立复核；由 QA 执行。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395。
+- T-08：缺预发授权与环境GO证据；业主授权后 prodops 验证。 证据边界：docs/reviews/r1-r8-core/REPORT.md @ 397fafb1c307f624742e4bf477c0ad68d40a2395。

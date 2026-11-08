@@ -19,7 +19,7 @@
 - [x] T-10 托管 Agent 生成页与自备 Agent 审核页在提交前按当前属主对短名查重并明确提示；保留数据库唯一索引兜底。旧平台 session_endpoint 名不纳入该新增前置检查。
 - [x] T-07 隔离临时DB/HOME/假飞书/固定时钟执行R14-S001～023全部场景；撤owner/channel/显式优先/时钟边界/当前核权/候选块/稳定ID/幂等保护/短名查重分别在目标断言红，恢复后绿，无效变异或未执行不记PASS。
 - [ ] T-08 另获授权做真实飞书桌面/移动端复制回入、Hub重启和迟到/并发读数，逐格记录实际目标、重复/缺失、TTL与候选格式；不向真实业主/Agent发送未授权探测。 【乙；交接：缺真实飞书桌面/移动端复制回入及Hub重启、迟到/并发矩阵；业主授权并提供真实客户端后由 QA/prodops 执行。】
-- [x] T-09 未来实施完成后跑相关整包/race、全仓strict与构建门、独立验收，再另申请预发/生产GO；不以apply/archive、T-01/02勾选或旧测试通过代替业务验收。 【甲；证据：docs/reviews/r14-t09-acceptance/REPORT.md @ review/togpt60/r49-r14-t09-acceptance f0801adb; review/prodops/r49-prod-closeout-20261102 @ ad1c2b63】
+- [ ] T-09 未来实施完成后跑相关整包/race、全仓strict与构建门、独立验收，再另申请预发/生产GO；不以apply/archive、T-01/02勾选或旧测试通过代替业务验收。 【乙；交接：独立验收报告记录 F-01 安全阻断；实现负责人修复后，由 QA 在最终源锚独立复验，再申请 GO。证据：docs/reviews/togpt60-r49-r14-t09-acceptance/REPORT.md @ f0801adbdc9946a803067610d0d106b0e0e61ce2】
 
 
 ## 4. 阻断返修（01a19c8c 唯一执行）
@@ -77,7 +77,5 @@
   - T-07/T-14开发验证关闭；T-08真实飞书、T-09独立验收保持未勾，旧fc7de19d/11b2d545交件仍作废。最终源码及独立docs-only证据Git坐标以交件消息为准，不自验收/部署/重启/改版本/PG schema/apply/archive。R14重新交件后先S-R49-HELPER-OFFER-RACE（精确r48基线）再R10。
 
 ### 本次清账交接（2026-11-08）
-- T-08：缺真实飞书桌面/移动端复制回入及Hub重启、迟到/并发矩阵；业主授权并提供真实客户端后由 QA/prodops 执行。 证据边界：docs/reviews/r14-t09-acceptance/REPORT.md @ review/togpt60/r49-r14-t09-acceptance f0801adb; docs/reviews/prodops-r53-prod-closeout-20261107/RESULT.md @ review/prodops/r53-prod-closeout-20261107 2965ace9。
-
-### 本次清账交接（2026-11-08）
-- T-08：缺真实飞书桌面/移动端复制回入及Hub重启、迟到/并发矩阵；业主授权并提供真实客户端后由 QA/prodops 执行。 证据边界：docs/reviews/r14-t09-acceptance/REPORT.md @ review/togpt60/r49-r14-t09-acceptance f0801adb; docs/reviews/prodops-r53-prod-closeout-20261107/RESULT.md @ review/prodops/r53-prod-closeout-20261107 2965ace9。
+- T-08：缺真实飞书桌面/移动端复制回入及Hub重启、迟到/并发矩阵；业主授权并提供真实客户端后由 QA/prodops 执行。 证据边界：docs/reviews/togpt60-r49-r14-t09-acceptance/REPORT.md @ f0801adbdc9946a803067610d0d106b0e0e61ce2; docs/reviews/prodops-r53-prod-closeout-20261107/RESULT.md @ 2965ace9d9d5935dae78df0a5bf58ba5222e7804。
+- T-09：F-01安全阻断未修复/未有通过复验；实现负责人修复，QA独立复验后另申GO。证据：docs/reviews/togpt60-r49-r14-t09-acceptance/REPORT.md @ f0801adbdc9946a803067610d0d106b0e0e61ce2。

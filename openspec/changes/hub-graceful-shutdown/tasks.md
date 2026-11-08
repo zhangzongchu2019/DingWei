@@ -142,9 +142,5 @@ strict规划通过不代表实现/业务验收/发布完成；不archive、不�
   - 待办：T-10/11保持未勾，交组长独立验收/例外处置及后续GO；无部署、apply/archive或新项目授权。当前无测试进程。
 
 ### 本次清账交接（2026-11-08）
-- T-10：HLC-S011 自动恢复仍有 gap=1/missing=2，需实现修复并按冻结数值完成隔离 stop→ready 三类流矩阵；由实现席修复、QA独立复验。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ opus50tc2k/hub-graceful-shutdown-impl 81849a38。
-- T-11：HLC-S011 未闭环且独立验收/GO 未完成；修复后由实现席跑全门，QA独立验收，业主另批预发/生产GO。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ opus50tc2k/hub-graceful-shutdown-impl 81849a38。
-
-### 本次清账交接（2026-11-08）
-- T-10：HLC-S011 自动恢复仍有 gap=1/missing=2，需实现修复并按冻结数值完成隔离 stop→ready 三类流矩阵；由实现席修复、QA独立复验。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ opus50tc2k/hub-graceful-shutdown-impl 81849a38。
-- T-11：HLC-S011 未闭环且独立验收/GO 未完成；修复后由实现席跑全门，QA独立验收，业主另批预发/生产GO。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ opus50tc2k/hub-graceful-shutdown-impl 81849a38。
+- T-10：HLC-S011 自动恢复仍有 gap=1/missing=2，需实现修复并按冻结数值完成隔离 stop→ready 三类流矩阵；由实现席修复、QA独立复验。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ 81849a388d28bec732848227b548be9a894addc3。
+- T-11：HLC-S011 未闭环且独立验收/GO 未完成；修复后由实现席跑全门，QA独立验收，业主另批预发/生产GO。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ 81849a388d28bec732848227b548be9a894addc3。
