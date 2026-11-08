@@ -163,11 +163,13 @@ class SubAgentStore:
     def bind(self, node_id, thread_id):
         with self.transaction() as db:
             row = db.execute('SELECT * FROM helper_sub_agent WHERE root=? AND node_id=?', (self.root, node_id)).fetchone()
-            if row is None or row['state'] != 'allocating' or row['creation_status'] != 'submitted': raise ValueError('invalid creation binding')
+            if row is None or row['state'] not in ('allocating', 'draining', 'ended') or row['creation_status'] != 'submitted': raise ValueError('invalid creation binding')
             occupied = {r[0] for r in db.execute('SELECT alias FROM helper_sub_agent_alias WHERE root=?', (self.root,))}
             name = default_name(thread_id, occupied)
             revision = self._bump(db)
-            db.execute("UPDATE helper_sub_agent SET native_thread_id=?,canonical_name=?,state='active',creation_status='bound',changed_revision=? WHERE root=? AND node_id=?", (thread_id, name, revision, self.root, node_id))
+            bound_state = 'active' if row['state'] == 'allocating' else row['state']
+            status = 'bound' if bound_state == 'active' else 'bound_closed'
+            db.execute("UPDATE helper_sub_agent SET native_thread_id=?,canonical_name=?,state=?,creation_status=?,changed_revision=? WHERE root=? AND node_id=?", (thread_id, name, bound_state, status, revision, self.root, node_id))
             db.execute('INSERT INTO helper_sub_agent_alias(root,alias,node_id) VALUES(?,?,?)', (self.root, name, node_id))
             return name
 

@@ -462,6 +462,34 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(len([m for _, _, m, _ in replacement.calls if m == 'initialize']), 1)
 
 
+    def test_slow_creation_does_not_block_parent_lifecycle_seal(self):
+        entered, release = threading.Event(), threading.Event()
+        original = self.native.wait_request
+        outcomes = []
+        def slow(token, method, timeout=30):
+            if method == 'thread/start':
+                entered.set(); release.wait(3)
+            return original(token, method, timeout=timeout)
+        self.native.wait_request = slow
+        def create():
+            try: outcomes.append(self.runtime.create('slow-create'))
+            except Exception as exc: outcomes.append(type(exc).__name__)
+        creator = threading.Thread(target=create)
+        creator.start(); self.assertTrue(entered.wait(2))
+        closer = threading.Thread(target=self.runtime.close_parent)
+        closer.start()
+        try:
+            closer.join(.2)
+            self.assertFalse(closer.is_alive(), 'NATIVE_CREATE_BLOCKED_LIFECYCLE_SEAL')
+        finally:
+            release.set(); creator.join(3); closer.join(3)
+        node = self.runtime.store.nodes()[0]
+        self.assertEqual(node['state'], 'draining')
+        self.assertEqual(node['reason'], 'parent_closed')
+        self.assertFalse(self.runtime.public_node(node)['registered'])
+        self.assertEqual(len([m for _, _, m, _ in self.native.calls if m == 'thread/start']), 1)
+
+
 
 class ConnectionTests(unittest.IsolatedAsyncioTestCase):
     async def test_controls_only_trusted_connection_and_ack_scoped(self):

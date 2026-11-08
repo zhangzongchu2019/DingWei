@@ -125,15 +125,16 @@ class SubAgentRuntime:
                 developerInstructions='你是 DingWei 受控一级子分道；只使用本线程 dynamicTools。用 dingwei_self_context 查询自己的完整名、父、孩子及策略；不得从环境变量、IPC或参数声明来源。')
             for key, value in [('model', root._model), ('modelProvider', root._model_provider), ('sandbox', root._sandbox), ('approvalPolicy', root._approval_policy)]:
                 if value is not None: params[key] = value
-            # Submitted is committed before thread/start. A lost response or
-            # crash leaves an uncertain creation; repeating request_id never
-            # issues a second thread/start or adopts arbitrary thread/list data.
-            try:
-                result = broker.request(None, 'thread/start', params)
-                self.store.bind(node['node_id'], result['thread']['id'])
-            except Exception:
-                self.error = 'sub_agent_creation_unknown'
-                raise RuntimeError('sub_agent_creation_unknown: native result uncertain; no retry') from None
+        # Submitted is committed before thread/start. A lost response or
+        # crash leaves an uncertain creation; repeating request_id never
+        # issues a second thread/start or adopts arbitrary thread/list data.
+        try:
+            result = broker.request(None, 'thread/start', params)
+            self.store.bind(node['node_id'], result['thread']['id'])
+        except Exception:
+            self.error = 'sub_agent_creation_unknown'
+            raise RuntimeError('sub_agent_creation_unknown: native result uncertain; no retry') from None
+        with self._lock:
             node = self.store.node(node['node_id'])
             self._restore(node)
             return self.public_node(node)

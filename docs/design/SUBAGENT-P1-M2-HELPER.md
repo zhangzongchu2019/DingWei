@@ -14,7 +14,7 @@
 
 `sub_agent_store.py` 为 helper inbox SQLite 添加 `helper_sub_agent_tree`、`helper_sub_agent`、`helper_sub_agent_alias`、`helper_sub_agent_return`、`helper_sub_agent_native_tools`、`helper_sub_agent_tool_send`。既有 inbox、driver ledger 只加列及索引，旧数据默认主席作用域；不 DROP 表。所有旧 inbox 查询仍用 session_name，其内部存储值对子节点编码 root+lane_id+generation；这不是新 Agent 身份或对外地址。行中也保存显式 lane_id/generation。driver 的 get、get_by_envelope、枚举、更新、reconcile CAS 都显式限制节点与代次；回调再匹配 lane/generation 和原 dispatch/ACK generation。
 
-创建先持久 intent，再 CAS 到 submitted，才发一次 thread/start。重复 request_id 必须策略和别名一致；submitted 无结果在崩溃后保留 creation_unknown，绝不再建第二条 native thread、也不从 thread/list 猜归属。绑定后预备 active 快照，但公开 registered=false，接信 guard 仍等对应 revision ACK；只有已 ACK 且 active 的节点可接信。默认名字用原生 UUID 无连字符的随机末8位，冲突依次加至10/12…32位；别名与墓碑永久保留，完整 UUID 冲突拒绝。
+创建先持久 intent，再 CAS 到 submitted，才发一次 thread/start。重复 request_id 必须策略和别名一致；submitted 无结果在崩溃后保留 creation_unknown，绝不再建第二条 native thread、也不从 thread/list 猜归属。创建 RPC 的等待不持有管理锁，不能挡住父关闭或生命周期封口；响应回来时节点若已 draining/ended，只登记原生绑定和墓碑，不复活。绑定后预备 active 快照，但公开 registered=false，接信 guard 仍等对应 revision ACK；只有已 ACK 且 active 的节点可接信。默认名字用原生 UUID 无连字符的随机末8位，冲突依次加至10/12…32位；别名与墓碑永久保留，完整 UUID 冲突拒绝。
 
 五参数显式解析并持久：完成即退开、idle3600s、max172800s、每节点 cap432000s、grace600s。idle/max 允许显式 null，平台 cap 和 grace 保持上界；不把0解释成禁用。显式 task_completed 才触发完成策略，turn/completed 只结算投递。排队、执行、待工具和不确定工作不算 idle；重启时直接查持久账本，不能等 adapter 恢复后才发现旧工作。绝对寿命与原 created_at 累计，离线和重启不清零。父结束级联，运输断线不等于父结束。
 
