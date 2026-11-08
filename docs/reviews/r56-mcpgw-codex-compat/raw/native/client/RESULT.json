@@ -1,0 +1,124 @@
+{
+  "version": "codex-cli 0.167.0",
+  "origin": "https://127.0.0.1:46495",
+  "client_document": {
+    "client_id": "https://127.0.0.1:46495/mcp/clients/codex.json",
+    "client_name": "DingWei Codex public client",
+    "redirect_uris": [
+      "http://127.0.0.1/callback",
+      "http://[::1]/callback"
+    ],
+    "token_endpoint_auth_method": "none",
+    "grant_types": [
+      "authorization_code"
+    ],
+    "response_types": [
+      "code"
+    ]
+  },
+  "foreign_tenant": false,
+  "commands": [
+    {
+      "command": [
+        "/home/dev/.local/bin/codex",
+        "mcp",
+        "add",
+        "dingwei",
+        "--url",
+        "https://127.0.0.1:46495/mcp",
+        "--oauth-client-id",
+        "https://127.0.0.1:46495/mcp/clients/codex.json"
+      ],
+      "stdout": "add.stdout",
+      "authorization_params": {
+        "response_type": [
+          "code"
+        ],
+        "client_id": [
+          "https://127.0.0.1:46495/mcp/clients/codex.json"
+        ],
+        "state": [
+          "0_-BIXjdXmqAn7lu4G1Unw"
+        ],
+        "code_challenge": [
+          "2Hqjgi0XAsUgOTUVdnZ7I5-7lL7D5Lq5kQNUXYOjAsY"
+        ],
+        "code_challenge_method": [
+          "S256"
+        ],
+        "redirect_uri": [
+          "http://127.0.0.1:44663/callback"
+        ],
+        "scope": [
+          "list_online send_message wait_for_messages ack"
+        ],
+        "resource": [
+          "https://127.0.0.1:46495/mcp"
+        ]
+      },
+      "authorize_status": 302,
+      "feishu_callback_status": 302,
+      "native_callback_status": 200,
+      "rc": 0
+    },
+    {
+      "command": [
+        "/home/dev/.local/bin/codex",
+        "mcp",
+        "login",
+        "dingwei"
+      ],
+      "stdout": "login.stdout",
+      "authorization_params": {
+        "response_type": [
+          "code"
+        ],
+        "client_id": [
+          "https://127.0.0.1:46495/mcp/clients/codex.json"
+        ],
+        "state": [
+          "6T1kRra7pM5nzDCF2lYBzw"
+        ],
+        "code_challenge": [
+          "Y1IIXqpcoN26CVbzqqO1fR9FKPVjfLkFkSoRjMkOz0I"
+        ],
+        "code_challenge_method": [
+          "S256"
+        ],
+        "redirect_uri": [
+          "http://127.0.0.1:44017/callback"
+        ],
+        "scope": [
+          "list_online send_message wait_for_messages ack"
+        ],
+        "resource": [
+          "https://127.0.0.1:46495/mcp"
+        ]
+      },
+      "authorize_status": 302,
+      "feishu_callback_status": 302,
+      "native_callback_status": 200,
+      "rc": 0
+    }
+  ],
+  "real_credentials_used": false,
+  "tool_names": [
+    "list_online",
+    "send_message",
+    "wait_for_messages",
+    "ack"
+  ],
+  "read_only_call": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"agents\":[]}"
+      }
+    ],
+    "structuredContent": {
+      "agents": []
+    },
+    "isError": false
+  },
+  "native_e2e_passed": true
+}

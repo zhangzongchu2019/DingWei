@@ -51,3 +51,11 @@ scope 按集合精确核固定四项，允许顺序不同，不接受子集/额�
 每次 Put 在同一事务先清本resource的过期行，再检查未清记录数（10000阈值）并插入。没有请求时不启动独立worker；下次写入清理，所有读取/兑换仍即时检查期限，晚清不延长授权。Take 用单条 DELETE…RETURNING 跨连接/进程原子消费，失败/过期不能兑换。此表是短期OAuth状态，不改变A的令牌14天、AG3天或投递/ACK权威。
 
 错误表集中在 gateway.go 的 errorRules，按 errors.Is 映射；业务错误使用JSON-RPC保留区之外的正整数1001/1003/1008/1009/1029，MCP保留区只用于标准定义的头/版本错误；未识别错误统一 internal_error，不返回底层异常。认证失败401并给 protected-resource 元数据挑战；权限403、幂等冲突409、队列满429。OAuth失败只返固定错误名，不带上游正文或令牌。
+
+## r56 Codex compatibility（㊿-补10）
+
+并存2025-06-18与2026-07-28：前者initialize、notifications/initialized、ping、tools/list、tools/call用独立严格codec；后者原封套/字段/标准头/resultType不变。所有有效请求包括初始化/通知均独立Authenticate，Origin守卫共用；无Mcp-Session-Id或握手授权缓存。
+
+回调登记仅同一IP字面127.0.0.1/::1忽略端口，其余scheme/path/query/组件精确，localhost不认可；token兑换仍精确绑定授权时的实际redirect。非loopback逐字匹配。
+
+新增GET /mcp/clients/codex.json，只在开态登记，由配置PublicOrigin生成client_id与两种无端口/callback回环URI。精确自有client_id直接解析同份常量配置，其他CIMD仍走外部resolver原有防护。最低Codex0.167.0，不为0.145 issuer做兼容，接入不要显式oauth_resource。PM与nginx清单见docs/guides/CODEX-DINGWEI-MCP.md、docs/runbooks/MCPGW-CODEX-PATHS.md。

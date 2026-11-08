@@ -73,6 +73,7 @@ func New(cfg Config) (*Gateway, error) {
 // Register 只登记新路径，不替换 helper 或 Console 的现有处理器。
 func (g *Gateway) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/mcp", g.guard(g.mcp))
+	mux.HandleFunc(codexClientPath, g.guard(g.codexClientMetadata))
 	mux.HandleFunc("/api/external/", g.guard(g.rest))
 	mux.HandleFunc("/.well-known/oauth-protected-resource/mcp", g.guard(g.resourceMetadata))
 	mux.HandleFunc("/.well-known/oauth-authorization-server", g.guard(g.serverMetadata))
@@ -243,6 +244,9 @@ func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {
 	}
 	if !accepts(r.Header.Get("Accept"), "application/json") || !accepts(r.Header.Get("Accept"), "text/event-stream") {
 		rpcError(w, 406, nil, wireError{Code: -32600, Message: "Accept must include JSON and SSE"})
+		return
+	}
+	if g.route2025(w, r) {
 		return
 	}
 	var q rpcRequest

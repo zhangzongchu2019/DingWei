@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -113,7 +114,7 @@ func validRedirect(raw string) bool {
 	if u.Scheme == "https" {
 		return true
 	}
-	// 原生客户端只支持精确登记的 IP loopback 回调，不放宽任意端口匹配。
+	// Native callbacks must use an IP literal, never the localhost hostname.
 	ip := net.ParseIP(u.Hostname())
 	return u.Scheme == "http" && ip != nil && ip.IsLoopback()
 }
@@ -139,10 +140,34 @@ func validateClient(c Client, id string) error {
 	return nil
 }
 func registered(c Client, redirect string) bool {
-	for _, r := range c.Redirects {
-		if r == redirect {
+	if !validRedirect(redirect) {
+		return false
+	}
+	requested, _ := url.Parse(redirect)
+	for _, raw := range c.Redirects {
+		if raw == redirect {
 			return true
 		}
+		allowed, err := url.Parse(raw)
+		if err != nil || !validRedirect(raw) {
+			continue
+		}
+		host := allowed.Hostname()
+		if (host != "127.0.0.1" && host != "::1") || requested.Hostname() != host {
+			continue
+		}
+		// RFC 8252 7.3: ignore only the port of the same loopback IP literal.
+		// Preserve query/escaped path and all other URI components exactly.
+		if allowed.Scheme != requested.Scheme || strings.SplitN(raw, ":", 2)[0] != strings.SplitN(redirect, ":", 2)[0] || allowed.EscapedPath() != requested.EscapedPath() || allowed.RawQuery != requested.RawQuery || allowed.ForceQuery != requested.ForceQuery {
+			continue
+		}
+		if port := requested.Port(); port != "" {
+			n, err := strconv.Atoi(port)
+			if err != nil || n < 1 || n > 65535 {
+				continue
+			}
+		}
+		return true
 	}
 	return false
 }

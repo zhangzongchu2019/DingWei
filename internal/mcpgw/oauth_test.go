@@ -245,7 +245,7 @@ func TestOAuthMetadataAndOrigin(t *testing.T) {
 			t.Fatal("unsupported grant/registration advertised")
 		}
 	}
-	for _, path := range []string{"/mcp", "/api/external/list_online", "/oauth/authorize", "/oauth/token", "/feishu/connect", "/mcp/oauth/feishu/callback", "/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource/mcp"} {
+	for _, path := range []string{"/mcp", "/mcp/clients/codex.json", "/api/external/list_online", "/oauth/authorize", "/oauth/token", "/feishu/connect", "/mcp/oauth/feishu/callback", "/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource/mcp"} {
 		r := httptest.NewRequest("POST", testOrigin+path, strings.NewReader(`{}`))
 		r.Header.Set("Origin", "https://evil.example")
 		if w := serve(mux, r); w.Code != 403 {

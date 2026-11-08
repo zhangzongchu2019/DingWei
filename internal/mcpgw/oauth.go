@@ -100,8 +100,16 @@ func (g *Gateway) authorize(w http.ResponseWriter, r *http.Request) {
 		oauthError(w, 400, "invalid_scope")
 		return
 	}
-	client, e := g.cfg.Clients.Resolve(r.Context(), q.Get("client_id"))
-	if e != nil || validateClient(client, q.Get("client_id")) != nil || !registered(client, q.Get("redirect_uri")) {
+	localClient := q.Get("client_id") == g.cfg.PublicOrigin+codexClientPath
+	var client Client
+	if localClient {
+		// The generated, exact same-origin document is trusted server config.
+		// No DNS/network request or arbitrary private-address exception is made.
+		client = g.codexClient()
+	} else {
+		client, e = g.cfg.Clients.Resolve(r.Context(), q.Get("client_id"))
+	}
+	if e != nil || (!localClient && validateClient(client, q.Get("client_id")) != nil) || !registered(client, q.Get("redirect_uri")) {
 		oauthError(w, 400, "invalid_client")
 		return
 	}
