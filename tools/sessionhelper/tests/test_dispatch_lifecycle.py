@@ -402,22 +402,29 @@ class AdmissionDeadlineTest(unittest.TestCase):
         self.assertFalse(previous.terminal_seen.is_set(),'abort不得伪造旧回合终态')
 
     def test_clock_includes_time_since_persisted_dispatch_intent(self):
-        import time
         calls=[]
-        driver=SimpleNamespace(deliver=lambda did,body:calls.append(did) or DeliveryReceipt(did,'processing','fixture','submitted'),
-            poll_receipt=lambda did:DeliveryReceipt(did,'processing','fixture','submitted'),abort_transport=lambda:None,stop=lambda:None,start=lambda:None)
+        driver=SimpleNamespace(deliver=lambda did,body:calls.append(did) or DeliveryReceipt(did,'unknown','fixture','no admission'),
+            poll_receipt=lambda did:DeliveryReceipt(did,'unknown','fixture','no admission'),abort_transport=lambda:None,stop=lambda:None,start=lambda:None)
         adapter=self.adapter(driver,'claude');adapter._admission_timeout=.1;adapter._build_driver=lambda which:driver
         original=self.inbox.begin_dispatch
-        def slow_intent(did):
-            won=original(did);time.sleep(.15);return won
-        self.inbox.begin_dispatch=slow_intent
+        clock={'wall':1000.0,'monotonic':200.0}
+        def delayed_intent(did):
+            won=original(did)
+            # Simulate time spent after the real SQLite intent commit, before
+            # deliver is considered. No scheduler-dependent sleep or duration.
+            clock['wall']+=1.0;clock['monotonic']+=1.0
+            return won
+        self.inbox.begin_dispatch=delayed_intent
         adapter._commands.enqueue(self.env)
-        started=time.monotonic()
-        adapter._deliver_regular_command(adapter._commands.start_next())
-        self.assertLess(time.monotonic()-started,.23,'admission截止须自intent落盘起计，不能在deliver返回后重新起计')
-        self.assertEqual(calls,[],'admission截止已过的intent不得再派发')
-        self.assertEqual(self.inbox.lifecycle(self.env['meta']['delivery_id'])['state'],'admission_unknown','admission截止须自intent落盘起计')
-        self.assertTrue(adapter._transport_recovery.wait(1))
+        command=adapter._commands.start_next()
+        with patch('time.time',side_effect=lambda:clock['wall']), patch('time.monotonic',side_effect=lambda:clock['monotonic']):
+            adapter._deliver_regular_command(command)
+            self.assertEqual(calls,[],'PERSISTED_INTENT_DEADLINE_RESET: expired intent must not reach deliver')
+            row=self.inbox.lifecycle(command.delivery_id)
+            self.assertEqual(row['dispatch_intent_at'],1000.0,'fixture must persist the original intent clock')
+            self.assertEqual(adapter._admission_elapsed(command),1.0,'deadline must include the time since persisted intent')
+            self.assertEqual(row['state'],'admission_unknown','admission截止须自intent落盘起计')
+            self.assertTrue(adapter._transport_recovery.wait(1),'transport recovery must finish before clock patches leave scope')
 
     def test_failed_recovery_quarantines_following_pipe_writes(self):
         did=self.env['meta']['delivery_id'];calls=[]

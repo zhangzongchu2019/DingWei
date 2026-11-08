@@ -1,0 +1,75 @@
+{
+  "thread_id": "01a1bacf-9317-7b91-bf86-0a0c88c834f6",
+  "to": "opus50tc2k.zzc",
+  "base": "41b3e9ad0ba060bf346a9aaba7fb6f8e979944ce",
+  "ruling": "d55ad52d3e1858ea43acd20e955eee72314332ab",
+  "recorded_utc": "2026-11-08T18:51:03.603274+00:00",
+  "target_rc": 0,
+  "repeat": {
+    "requested": 50,
+    "completed": 50,
+    "failures": 0,
+    "cases_per_run": 38,
+    "total_cases": 1900,
+    "load1m_min": 0.97607421875,
+    "load1m_max": 2.5673828125,
+    "elapsed_seconds_sum": 196.2428473464679
+  },
+  "mutation": {
+    "rc": 1,
+    "assertion": "PERSISTED_INTENT_DEADLINE_RESET",
+    "method": "isolated override of _bounded_deliver: deliver then reset _dispatch_started",
+    "worktree_mutated": false
+  },
+  "canonical": {
+    "rc": 0,
+    "profiles": [
+      {
+        "actual": 1127,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1127,
+        "files": 91,
+        "groups": [
+          1118,
+          9
+        ],
+        "profile": "claude",
+        "rc": 0
+      },
+      {
+        "actual": 1127,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1127,
+        "files": 91,
+        "groups": [
+          1118,
+          9
+        ],
+        "profile": "codex",
+        "rc": 0
+      }
+    ],
+    "python": 27,
+    "shell": 2
+  },
+  "strict": {
+    "rc": 0,
+    "passed": 25,
+    "failed": 0
+  },
+  "final_gates": {
+    "boundary": 0,
+    "dependency": 0,
+    "tenant": 0
+  },
+  "test_sha256": "db635fca3d0c0f21f455c4ab945c99ed558ff2ba4f9a8eb2b94d34453b2037f4",
+  "production_files_changed": 0,
+  "nodes_accessed": false,
+  "deployment": false,
+  "log_written_utc": {
+    "target": "2026-11-08T18:40:57.888469+00:00",
+    "mutation": "2026-11-08T18:42:09.842461+00:00",
+    "canonical": "2026-11-08T18:50:23.655352+00:00",
+    "strict": "2026-11-08T18:41:40.639012+00:00"
+  }
+}

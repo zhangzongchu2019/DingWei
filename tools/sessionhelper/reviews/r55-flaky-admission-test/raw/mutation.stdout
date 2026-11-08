@@ -1,0 +1,22 @@
+test_clock_includes_time_since_persisted_dispatch_intent (tools.sessionhelper.tests.test_dispatch_lifecycle.AdmissionDeadlineTest.test_clock_includes_time_since_persisted_dispatch_intent) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> unknown (no admission)
+FAIL
+
+======================================================================
+FAIL: test_clock_includes_time_since_persisted_dispatch_intent (tools.sessionhelper.tests.test_dispatch_lifecycle.AdmissionDeadlineTest.test_clock_includes_time_since_persisted_dispatch_intent)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r55-flaky-admission-test/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 422, in test_clock_includes_time_since_persisted_dispatch_intent
+    self.assertEqual(calls,[],'PERSISTED_INTENT_DEADLINE_RESET: expired intent must not reach deliver')
+AssertionError: Lists differ: ['dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+
+- ['dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa']
++ [] : PERSISTED_INTENT_DEADLINE_RESET: expired intent must not reach deliver
+
+----------------------------------------------------------------------
+Ran 1 test in 0.047s
+
+FAILED (failures=1)
