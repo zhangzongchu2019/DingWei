@@ -13,6 +13,8 @@ PREFIX = 'tools.sessionhelper.tests.test_sub_agent_helper.'
 
 # (criterion, name, file, exact guard, replacement, test)
 CASES = [
+('AA009', 'confirmation_scope', 'sub_agent_store.py', "return True, dict(rows[0])", "return False, None", 'RuntimeTests.test_m1_confirmation_without_lane_echo_uses_immutable_scope'),
+('AA004', 'wire_destination', 'sub_agent_connection.py', "target = args['to'] if '#' in args['to'] else session_addr(args['to'], self.book.key_id)", "target = args['to']", 'ConnectionTests.test_native_send_full_route_transport_and_durable_receipt'),
 ('AA007', 'creation_lock', 'sub_agent_runtime.py', "result = broker.request(None, 'thread/start', params)", "with self._lock:\n                result = broker.request(None, 'thread/start', params)", 'RuntimeTests.test_slow_creation_does_not_block_parent_lifecycle_seal'),
 ('AA004', 'send_journal', 'sub_agent_store.py', 'if prior is not None:\n                if prior[0]: return json.loads(prior[0])', 'if prior is not None:\n                return None\n                if prior[0]: return json.loads(prior[0])', 'RuntimeTests.test_native_send_journal_survives_restart'),
 ('AA004', 'outer_source', 'sub_agent_runtime.py', "or params.get('threadId') != facade.thread_id", '', 'RuntimeTests.test_aa004_trusted_native_context_source_and_forgery'),

@@ -65,6 +65,10 @@ class SubAgentStore:
         self.root_inbox = DeliveryInbox(path, session_name=root)
         with self.transaction() as db:
             db.executescript('''
+            CREATE TABLE IF NOT EXISTS helper_sub_agent_delivery_scope (
+                root TEXT NOT NULL, delivery_id TEXT NOT NULL, node_id TEXT NOT NULL,
+                generation INTEGER NOT NULL, ack_generation INTEGER NOT NULL,
+                PRIMARY KEY(root,delivery_id,node_id,generation));
             CREATE TABLE IF NOT EXISTS helper_sub_agent_tool_send (
                 root TEXT NOT NULL, lane_id TEXT NOT NULL, generation INTEGER NOT NULL,
                 thread_id TEXT NOT NULL, turn_id TEXT NOT NULL, call_id TEXT NOT NULL,
@@ -206,8 +210,25 @@ class SubAgentStore:
         def guard(db, env):
             if ready is not None and not ready(): raise ValueError('sub_agent_registry_unavailable')
             self.guard(db, node_id, generation, env)
+            meta = env['meta']
+            db.execute('INSERT OR IGNORE INTO helper_sub_agent_delivery_scope VALUES(?,?,?,?,?)',
+                (self.root, meta['delivery_id'], node_id, generation, meta['ack_generation']))
             db.execute('UPDATE helper_sub_agent SET last_activity=? WHERE root=? AND node_id=?', (self.clock(), self.root, node_id))
         return ScopedDeliveryInbox(self.path, self.root, node_id, generation, capacity=capacity, guard=guard)
+
+    def confirmation_scope(self, meta):
+        # M1 confirms the globally unique Hub delivery_id without echoing lane
+        # fields. Resolve only this immutable routing sidecar, never LIMIT 1 on
+        # receipts/evidence. Duplicated identities are an explicit ambiguity.
+        with self.transaction() as db:
+            rows = db.execute('SELECT node_id,generation,ack_generation FROM helper_sub_agent_delivery_scope WHERE root=? AND delivery_id=?',
+                (self.root, meta.get('delivery_id'))).fetchall()
+            if not rows: return False, None
+            if len(rows) != 1 or type(meta.get('ack_generation')) is not int or rows[0]['ack_generation'] != meta['ack_generation']:
+                return True, None
+            root_collision = db.execute('SELECT 1 FROM delivery_inbox WHERE session_name=? AND delivery_id=?', (self.root, meta['delivery_id'])).fetchone()
+            if root_collision: return True, None
+            return True, dict(rows[0])
 
     def mark_native_write(self, node, delivery_id):
         with self.transaction() as db:

@@ -12,7 +12,7 @@
 
 ## 持久化与生命周期
 
-`sub_agent_store.py` 为 helper inbox SQLite 添加 `helper_sub_agent_tree`、`helper_sub_agent`、`helper_sub_agent_alias`、`helper_sub_agent_return`、`helper_sub_agent_native_tools`、`helper_sub_agent_tool_send`。既有 inbox、driver ledger 只加列及索引，旧数据默认主席作用域；不 DROP 表。所有旧 inbox 查询仍用 session_name，其内部存储值对子节点编码 root+lane_id+generation；这不是新 Agent 身份或对外地址。行中也保存显式 lane_id/generation。driver 的 get、get_by_envelope、枚举、更新、reconcile CAS 都显式限制节点与代次；回调再匹配 lane/generation 和原 dispatch/ACK generation。
+`sub_agent_store.py` 为 helper inbox SQLite 添加 `helper_sub_agent_tree`、`helper_sub_agent`、`helper_sub_agent_alias`、`helper_sub_agent_return`、`helper_sub_agent_native_tools`、`helper_sub_agent_tool_send`、`helper_sub_agent_delivery_scope`。既有 inbox、driver ledger 只加列及索引，旧数据默认主席作用域；不 DROP 表。所有旧 inbox 查询仍用 session_name，其内部存储值对子节点编码 root+lane_id+generation；这不是新 Agent 身份或对外地址。行中也保存显式 lane_id/generation。driver 的 get、get_by_envelope、枚举、更新、reconcile CAS 都显式限制节点与代次；回调再匹配 lane/generation 和原 dispatch/ACK generation。M1现有确认帧不回显节点字段，故收信同事务保存不可变投递作用域sidecar；确认按Hub delivery_id唯一匹配该sidecar后进入scoped inbox，歧义拒绝，禁止从账本LIMIT 1猜兄弟。
 
 创建先持久 intent，再 CAS 到 submitted，才发一次 thread/start。重复 request_id 必须策略和别名一致；submitted 无结果在崩溃后保留 creation_unknown，绝不再建第二条 native thread、也不从 thread/list 猜归属。创建 RPC 的等待不持有管理锁，不能挡住父关闭或生命周期封口；响应回来时节点若已 draining/ended，只登记原生绑定和墓碑，不复活。绑定后预备 active 快照，但公开 registered=false，接信 guard 仍等对应 revision ACK；只有已 ACK 且 active 的节点可接信。默认名字用原生 UUID 无连字符的随机末8位，冲突依次加至10/12…32位；别名与墓碑永久保留，完整 UUID 冲突拒绝。
 
@@ -22,7 +22,7 @@
 
 ## 原生工具来源与告知
 
-只为新 thread 安装 dynamicTools：dingwei_self_context、sub_agent_control、dingwei_send_message。控制创建限主席，孩子只能关闭/完成自己；严格拒绝未知参数、兄弟目标和后代创建。发信来源从原生 server request 的外层 threadId，经 facade 的持久 node/generation 与当前 turn 双重绑定生成。arguments 只有 to/body/reply_policy；不接受参数、环境变量或 IPC 自报 from。工具发信在网络发送前持久占用 thread/turn/callId 和节点代次；重复调用返回已记回执或明确 unknown，崩溃不重发。共享 send.py/IPC 继续主席入口，未增加任何子来源选择开关。
+只为新 thread 安装 dynamicTools：dingwei_self_context、sub_agent_control、dingwei_send_message。控制创建限主席，孩子只能关闭/完成自己；严格拒绝未知参数、兄弟目标和后代创建。发信来源从原生 server request 的外层 threadId，经 facade 的持久 node/generation 与当前 turn 双重绑定生成。arguments 只有 to/body/reply_policy；完整目标保留子路径并补既有#key传输封装；不接受参数、环境变量或 IPC 自报 from。工具发信在网络发送前持久占用 thread/turn/callId 和节点代次；重复调用返回已记回执或明确 unknown，崩溃不重发。共享 send.py/IPC 继续主席入口，未增加任何子来源选择开关。
 
 钉版0.159.2 的真实动态工具调用已用独立 app-server 和 loopback 合成 SSE 验证，不涉及真实模型请求或凭据。该版 thread/start 支持 dynamicTools，thread/resume 没有补装字段：历史主 thread 若创建时未安装工具，不能声称重连后获得工具。helper 保存工具安装记录并标记 `sub_agent_existing_root_tools_unavailable`；不更换现有主 thread，不伪造来源。新建孩子始终在 thread/start 安装工具。历史主 thread 的控制入口需要运营方显式建立带工具的新主 thread；本单不执行迁移。此限制随交件明确报告，不把 schema 支持误报成已验证所有旧主 thread。
 

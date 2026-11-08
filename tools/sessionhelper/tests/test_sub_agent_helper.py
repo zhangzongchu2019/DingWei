@@ -266,7 +266,10 @@ for line in sys.stdin:
   print(json.dumps({'id':m['id'],'result':{'actual_response':True}}),flush=True)
 '''
         fixture = tempfile.TemporaryDirectory(); self.addCleanup(fixture.cleanup)
-        rpc = StdioJsonRpc([sys.executable, '-u', '-c', code], cwd=fixture.name,
+        # Earlier module fixtures reload codexDriver. Resolve the current class
+        # instead of a discovery-time class retaining another fixture's patch.
+        from sessionhelper.codexDriver import StdioJsonRpc as CurrentStdioJsonRpc
+        rpc = CurrentStdioJsonRpc([sys.executable, '-u', '-c', code], cwd=fixture.name,
                            env={'HOME': fixture.name, 'PATH': '/usr/bin:/bin'})
         rpc.start()
         process = rpc._proc
@@ -490,8 +493,49 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(len([m for _, _, m, _ in self.native.calls if m == 'thread/start']), 1)
 
 
+    def test_m1_confirmation_without_lane_echo_uses_immutable_scope(self):
+        a, b = self.child('a'), self.child('b'); self.acknowledge()
+        helper = SubAgentConnection(); helper.sub_agents = self.runtime
+        helper.cfg = self.runtime.cfg; helper.delivery_inbox = self.runtime.store.root_inbox
+        self.runtime.accept(delivery(a, 'dw-ack-a'))
+        meta = dict(type='delivery_ack_confirm', delivery_id='dw-ack-a', ack_protocol=2, processing_mode='driver', ack_generation=1, state='queued')
+        inbox = helper.sub_agent_ack_inbox(meta)
+        self.assertIs(inbox, self.runtime.inboxes[a['node_id']])
+        self.assertTrue(inbox.confirm_delivery_ack(meta))
+        self.assertEqual(inbox.pending_delivery_acks(), [])
+        self.assertIsNone(helper.sub_agent_ack_inbox(dict(meta, ack_generation=2)))
+        self.runtime.inboxes.pop(a['node_id'])
+        restored = helper.sub_agent_ack_inbox(meta)
+        self.assertEqual(restored.lane_id, a['node_id'])
+        self.runtime.accept(delivery(b, 'dw-ack-a'))
+        self.assertIsNone(helper.sub_agent_ack_inbox(meta), 'AMBIGUOUS_CONFIRMATION_SELECTED_SIBLING')
+        self.assertIs(helper.sub_agent_ack_inbox(dict(meta, delivery_id='root-only')), helper.delivery_inbox)
+
+
 
 class ConnectionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_native_send_full_route_transport_and_durable_receipt(self):
+        from sessionhelper.outbound_receipt import OutboundReceiptBroker
+        helper = SubAgentConnection()
+        helper.book = types.SimpleNamespace(self_addr='root.owner#key', key_id='key')
+        helper.outbound_receipts = OutboundReceiptBroker(('root.owner',))
+        wires = []
+        class WS:
+            async def send(self, raw):
+                env = json.loads(raw); wires.append(env)
+                helper.outbound_receipts.receive(self, {'from': 'workpulse#key', 'to': 'root.owner#key', 'meta': {
+                    'type': 'outbound_receipt', 'source_message_id': env['id'], 'nonce': env['meta']['outbound_receipt_nonce'],
+                    'version': 1, 'state': 'queued', 'durable': True, 'delivery_id': 'dw-dlv_'+'1'*32}})
+        ws = WS(); helper.outbound_receipts.prepare(ws); helper.outbound_receipts.negotiated = True
+        source = {'node_id': 'native-bound-node', 'generation': 3, 'full_name': 'child.root.owner'}
+        result = await helper.sub_agent_send_native(ws, source, {'to': 'sibling.root.owner', 'body': 'original'})
+        self.assertEqual(result['stage'], 'hub_durable_queued')
+        self.assertEqual(wires[0]['to'], 'sibling.root.owner#key', 'NATIVE_TARGET_TRANSPORT_KEY_MISSING')
+        self.assertEqual(wires[0]['from'], 'root.owner#key')
+        self.assertEqual(wires[0]['meta']['from_node_id'], 'native-bound-node')
+        self.assertEqual(wires[0]['meta']['from_generation'], 3)
+        self.assertEqual(wires[0]['body'], 'original')
+
     async def test_controls_only_trusted_connection_and_ack_scoped(self):
         helper = SubAgentConnection()
         helper.enroll_credential = object(); helper._connection_delivery_ack_source = 'workpulse#key'

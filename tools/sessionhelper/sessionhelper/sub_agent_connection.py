@@ -32,12 +32,25 @@ class SubAgentConnection:
 
     def sub_agent_ack_inbox(self, meta):
         node_id = meta.get('target_node_id')
-        if not node_id: return self.delivery_inbox
         runtime = getattr(self, 'sub_agents', None)
-        if runtime is None: return None
+        if not node_id:
+            if runtime is None: return self.delivery_inbox
+            found, binding = runtime.store.confirmation_scope(meta)
+            if not found: return self.delivery_inbox
+            if binding is None: return None
+            node_id = binding['node_id']
+            generation = binding['generation']
+        else:
+            if runtime is None: return None
+            generation = meta.get('lane_generation')
+        if type(generation) is not int: return None
         inbox = runtime.inboxes.get(node_id)
-        if inbox is None or type(meta.get('lane_generation')) is not int or meta['lane_generation'] != inbox.lane_generation: return None
-        return inbox
+        if inbox is None:
+            node = runtime.store.node(node_id)
+            if node is None or node['generation'] != generation: return None
+            inbox = runtime.store.inbox(node, ready=lambda: runtime.ready, capacity=self.cfg.busy_buffer_max)
+            runtime.inboxes[node_id] = inbox
+        return inbox if generation == inbox.lane_generation else None
 
     async def accept_sub_agent_delivery(self, ws, env):
         meta = env.get('meta') or {}
@@ -62,23 +75,24 @@ class SubAgentConnection:
             reason=reason, retryable=retryable, **identity), ensure_ascii=False))
         return True
 
+    async def sub_agent_send_native(self, ws, source, args):
+        meta = {'reply_policy': args.get('reply_policy', 'no_reply')}
+        if source['node_id']:
+            meta.update(from_full_name=source['full_name'], from_node_id=source['node_id'], from_generation=source['generation'])
+        # Preserve the complete route while adding the existing transport key.
+        target = args['to'] if '#' in args['to'] else session_addr(args['to'], self.book.key_id)
+        return await self.outbound_receipts.send(ws, target, args['body'], self.book.self_addr, meta)
+
     async def sub_agent_loop(self, ws):
         runtime = getattr(self, 'sub_agents', None)
         if runtime is None or not getattr(self, 'enroll_credential', None):
             await asyncio.Event().wait()
         loop = asyncio.get_running_loop()
 
-        async def send_native(source, args):
-            meta = {'reply_policy': args.get('reply_policy', 'no_reply')}
-            if source['node_id']:
-                meta.update(from_full_name=source['full_name'], from_node_id=source['node_id'], from_generation=source['generation'])
-            # Transport From remains the authenticated root. Sub-source metadata
-            # comes exclusively from native thread binding and is checked by Hub.
-            return await self.outbound_receipts.send(ws, args['to'], args['body'], self.book.self_addr, meta)
-
         async def send_return(item):
             source = json.loads(item['source_json'])
             target = source.get('from_full_name') or source['address']
+            if '#' not in target: target = session_addr(target, self.book.key_id)
             result = await self.outbound_receipts.send(ws, target,
                 '子会话已结束；此信确认未执行。', self.book.self_addr,
                 {'type': 'sub_agent_delivery_return', 'original_delivery_id': item['delivery_id'],
@@ -87,7 +101,7 @@ class SubAgentConnection:
 
         def submit(coroutine):
             return asyncio.run_coroutine_threadsafe(coroutine, loop).result(timeout=15)
-        runtime.send_from_native = lambda source, args: submit(send_native(source, args))
+        runtime.send_from_native = lambda source, args: submit(self.sub_agent_send_native(ws, source, args))
         runtime.return_to_source = lambda item: submit(send_return(item))
         last_sent = {}
         try:
