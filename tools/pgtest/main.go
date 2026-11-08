@@ -78,6 +78,7 @@ func main() {
 // directory under the system temp root.
 func resolveCacheRoot(explicit string) (string, error) {
 	root := explicit
+	tempFallback := false
 	if root == "" {
 		if home, err := os.UserHomeDir(); err == nil && home != "" {
 			root = filepath.Join(home, ".embedded-postgres-go")
@@ -89,13 +90,54 @@ func resolveCacheRoot(explicit string) (string, error) {
 		}
 	}
 	if root == "" {
-		root = filepath.Join(os.TempDir(), "dingwei-pgtest-cache")
+		var err error
+		root, err = privateTempCacheRoot()
+		if err != nil {
+			return "", err
+		}
+		tempFallback = true
 	}
 	absolute, err := filepath.Abs(root)
 	if err != nil {
 		return "", err
 	}
+	if tempFallback {
+		if err := ensurePrivateCacheRoot(absolute); err != nil {
+			return "", err
+		}
+	}
 	return absolute, nil
+}
+
+// ensurePrivateCacheRoot creates only the selected per-uid temp fallback. An
+// existing path is never repaired or replaced: it must already be a private,
+// real directory owned by this process, since extracted binaries are executed.
+func ensurePrivateCacheRoot(path string) error {
+	created := false
+	if err := os.Mkdir(path, 0o700); err == nil {
+		created = true
+	} else if !os.IsExist(err) {
+		return fmt.Errorf("创建 PG 临时缓存目录 %s: %w", path, err)
+	}
+	if created {
+		if err := os.Chmod(path, 0o700); err != nil {
+			return fmt.Errorf("设置 PG 临时缓存目录权限 %s: %w", path, err)
+		}
+	}
+	info, err := os.Lstat(path)
+	if err != nil {
+		return fmt.Errorf("检查 PG 临时缓存目录 %s: %w", path, err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+		return fmt.Errorf("PG 临时缓存路径不是实际目录: %s", path)
+	}
+	if err := checkCacheRootOwner(info, path); err != nil {
+		return err
+	}
+	if info.Mode().Perm()&0o022 != 0 {
+		return fmt.Errorf("PG 临时缓存目录对组或其他用户可写: %s mode=%04o", path, info.Mode().Perm())
+	}
+	return nil
 }
 
 func run(port uint, listen, version, cacheRoot, runtime, db, user, password string, startTO time.Duration, keepRuntime bool, staleCut time.Duration) error {

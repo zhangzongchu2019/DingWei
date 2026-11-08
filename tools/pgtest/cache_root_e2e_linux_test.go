@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -33,7 +34,7 @@ func TestNoHomeCacheStaysOutOfWorkingTreeEndToEnd(t *testing.T) {
 		t.Fatalf("pgtest without HOME failed: %v\nstdout: %s\nstderr: %s", err, out, stderrOf(cmd))
 	}
 	kv := parseProtocolLines(string(out))
-	wantCache := filepath.Join("/tmp", "dingwei-pgtest-cache")
+	wantCache := filepath.Join("/tmp", "dingwei-pgtest-cache-"+strconv.Itoa(os.Getuid()))
 	wantBinaries := filepath.Join(wantCache, "extracted")
 	if cache := firstOf(kv["CACHE"]); cache != wantCache || !filepath.IsAbs(cache) {
 		t.Errorf("CACHE=%q, want absolute fallback %q; protocol=%v", cache, wantCache, kv)
