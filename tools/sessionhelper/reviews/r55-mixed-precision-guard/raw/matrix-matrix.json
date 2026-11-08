@@ -1,0 +1,543 @@
+{
+  "refs": {
+    "r54": "6e2c836491f8ba506833d6f849fbe73530e13f92",
+    "r55": "7b123ca4a51fdde77a417d3ce7f03d01235d23ca"
+  },
+  "candidate_source_sha256": {
+    "tools/sessionhelper/sessionhelper/inbox_lifecycle.py": "d2798f59dbb151f62ae955c224f205f1f7331d730133b60f8618efa2e9bd48c4",
+    "tools/sessionhelper/sessionhelper/driver_adapter.py": "08599b3a60c7af7382b5cf075fd2b3e077c40e5bbc3ad540adf64e6a95dafec3"
+  },
+  "cases": [
+    {
+      "name": "r54/same_clock",
+      "hub_created_at": "2026-11-08T16:00:00.750000Z",
+      "hub_queued_at": "2026-11-08T16:00:00.925000Z",
+      "wire": [
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000000",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "queued",
+          "occurred_at": "2026-11-08T16:00:00.900000Z",
+          "no_mirror": true
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000000",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "injected",
+          "occurred_at": "2026-11-08T16:00:00.950000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn"
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000000",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "processed",
+          "occurred_at": "2026-11-08T16:00:04.750000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn",
+          "turn_outcome": "completed"
+        }
+      ],
+      "helper_rejected": false,
+      "expected_state": "processed",
+      "expected_reject_phase": "",
+      "injected_before_created": false,
+      "helper_lifecycle_after_restart": {
+        "delivery_id": "dw-dlv_00000000000000000000000000000000",
+        "session_name": "seat",
+        "envelope_json": "{\"id\":\"synthetic-source\",\"body\":\"SYNTHETIC_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_00000000000000000000000000000000\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+        "state": "processed",
+        "attempts": 1,
+        "error": null,
+        "received_at": 1794153600.9,
+        "updated_at": 1794153604.75,
+        "ack_protocol": 2,
+        "processing_mode": "driver",
+        "ack_generation": 1,
+        "dispatch_intent_at": 1794153600.93,
+        "request_id": "dw-dlv_00000000000000000000000000000000",
+        "turn_id": "synthetic-turn",
+        "admitted_at": 1794153600.95,
+        "processed_at": 1794153604.75,
+        "turn_outcome": "completed"
+      }
+    },
+    {
+      "name": "r54/helper_minus_2s",
+      "hub_created_at": "2026-11-08T16:00:00.750000Z",
+      "hub_queued_at": "2026-11-08T16:00:00.925000Z",
+      "wire": [
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000001",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "queued",
+          "occurred_at": "2026-11-08T15:59:58.900000Z",
+          "no_mirror": true
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000001",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "injected",
+          "occurred_at": "2026-11-08T15:59:58.950000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn"
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000001",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "processed",
+          "occurred_at": "2026-11-08T16:00:04.750000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn",
+          "turn_outcome": "completed"
+        }
+      ],
+      "helper_rejected": false,
+      "expected_state": "processed",
+      "expected_reject_phase": "",
+      "injected_before_created": true,
+      "helper_lifecycle_after_restart": {
+        "delivery_id": "dw-dlv_00000000000000000000000000000001",
+        "session_name": "seat",
+        "envelope_json": "{\"id\":\"synthetic-source\",\"body\":\"SYNTHETIC_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_00000000000000000000000000000001\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+        "state": "processed",
+        "attempts": 1,
+        "error": null,
+        "received_at": 1794153598.9,
+        "updated_at": 1794153604.75,
+        "ack_protocol": 2,
+        "processing_mode": "driver",
+        "ack_generation": 1,
+        "dispatch_intent_at": 1794153598.93,
+        "request_id": "dw-dlv_00000000000000000000000000000001",
+        "turn_id": "synthetic-turn",
+        "admitted_at": 1794153598.95,
+        "processed_at": 1794153604.75,
+        "turn_outcome": "completed"
+      }
+    },
+    {
+      "name": "r54/wall_clock_step_back",
+      "hub_created_at": "2026-11-08T16:00:00.750000Z",
+      "hub_queued_at": "2026-11-08T16:00:00.925000Z",
+      "wire": [
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000002",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "queued",
+          "occurred_at": "2026-11-08T16:00:00.900000Z",
+          "no_mirror": true
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000002",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "injected",
+          "occurred_at": "2026-11-08T15:59:58.950000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn"
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000002",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "processed",
+          "occurred_at": "2026-11-08T16:00:04.750000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn",
+          "turn_outcome": "completed"
+        }
+      ],
+      "helper_rejected": false,
+      "expected_state": "processed",
+      "expected_reject_phase": "",
+      "injected_before_created": true,
+      "helper_lifecycle_after_restart": {
+        "delivery_id": "dw-dlv_00000000000000000000000000000002",
+        "session_name": "seat",
+        "envelope_json": "{\"id\":\"synthetic-source\",\"body\":\"SYNTHETIC_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_00000000000000000000000000000002\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+        "state": "processed",
+        "attempts": 1,
+        "error": null,
+        "received_at": 1794153600.9,
+        "updated_at": 1794153604.75,
+        "ack_protocol": 2,
+        "processing_mode": "driver",
+        "ack_generation": 1,
+        "dispatch_intent_at": 1794153600.93,
+        "request_id": "dw-dlv_00000000000000000000000000000002",
+        "turn_id": "synthetic-turn",
+        "admitted_at": 1794153598.95,
+        "processed_at": 1794153604.75,
+        "turn_outcome": "completed"
+      }
+    },
+    {
+      "name": "r54/stale_timestamp_argument",
+      "hub_created_at": "2026-11-08T16:00:00.750000Z",
+      "hub_queued_at": "2026-11-08T16:00:00.925000Z",
+      "wire": [
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000003",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "queued",
+          "occurred_at": "2026-11-08T16:00:00.900000Z",
+          "no_mirror": true
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000003",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "injected",
+          "occurred_at": "2026-11-08T15:58:30.750000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn"
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000003",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "processed",
+          "occurred_at": "2026-11-08T16:00:04.750000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn",
+          "turn_outcome": "completed"
+        }
+      ],
+      "helper_rejected": false,
+      "expected_state": "processed",
+      "expected_reject_phase": "",
+      "injected_before_created": true,
+      "helper_lifecycle_after_restart": {
+        "delivery_id": "dw-dlv_00000000000000000000000000000003",
+        "session_name": "seat",
+        "envelope_json": "{\"id\":\"synthetic-source\",\"body\":\"SYNTHETIC_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_00000000000000000000000000000003\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+        "state": "processed",
+        "attempts": 1,
+        "error": null,
+        "received_at": 1794153600.9,
+        "updated_at": 1794153604.75,
+        "ack_protocol": 2,
+        "processing_mode": "driver",
+        "ack_generation": 1,
+        "dispatch_intent_at": 1794153600.93,
+        "request_id": "dw-dlv_00000000000000000000000000000003",
+        "turn_id": "synthetic-turn",
+        "admitted_at": 1794153510.75,
+        "processed_at": 1794153604.75,
+        "turn_outcome": "completed"
+      }
+    },
+    {
+      "name": "r55/native_seconds_floor",
+      "hub_created_at": "2026-11-08T16:00:00.750000Z",
+      "hub_queued_at": "2026-11-08T16:00:00.925000Z",
+      "wire": [
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000000",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "queued",
+          "occurred_at": "2026-11-08T16:00:00.900000Z",
+          "no_mirror": true
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000000",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "injected",
+          "occurred_at": "2026-11-08T16:00:00.000000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn"
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000000",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "processed",
+          "occurred_at": "2026-11-08T16:00:04.000000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn",
+          "turn_outcome": "completed"
+        }
+      ],
+      "helper_rejected": false,
+      "expected_state": "processed",
+      "expected_reject_phase": "",
+      "injected_before_created": true,
+      "helper_lifecycle_after_restart": {
+        "delivery_id": "dw-dlv_00000000000000000000000000000000",
+        "session_name": "seat",
+        "envelope_json": "{\"id\":\"synthetic-source\",\"body\":\"SYNTHETIC_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_00000000000000000000000000000000\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+        "state": "processed",
+        "attempts": 1,
+        "error": null,
+        "received_at": 1794153600.9,
+        "updated_at": 1794153604.0,
+        "ack_protocol": 2,
+        "processing_mode": "driver",
+        "ack_generation": 1,
+        "dispatch_intent_at": 1794153600.93,
+        "request_id": "dw-dlv_00000000000000000000000000000000",
+        "turn_id": "synthetic-turn",
+        "admitted_at": 1794153600.0,
+        "processed_at": 1794153604.0,
+        "turn_outcome": "completed"
+      }
+    },
+    {
+      "name": "r55/native_too_old",
+      "hub_created_at": "2026-11-08T16:00:00.750000Z",
+      "hub_queued_at": "2026-11-08T16:00:00.925000Z",
+      "wire": [
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000001",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "queued",
+          "occurred_at": "2026-11-08T16:00:00.900000Z",
+          "no_mirror": true
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000001",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "admission_unknown",
+          "occurred_at": "2026-11-08T17:30:34.425990Z",
+          "no_mirror": true,
+          "reason": "model_admission_unknown"
+        }
+      ],
+      "helper_rejected": true,
+      "expected_state": "admission_unknown",
+      "expected_reject_phase": "",
+      "injected_before_created": false,
+      "helper_lifecycle_after_restart": {
+        "delivery_id": "dw-dlv_00000000000000000000000000000001",
+        "session_name": "seat",
+        "envelope_json": "{\"id\":\"synthetic-source\",\"body\":\"SYNTHETIC_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_00000000000000000000000000000001\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+        "state": "admission_unknown",
+        "attempts": 1,
+        "error": null,
+        "received_at": 1794153600.9,
+        "updated_at": 1794159034.42599,
+        "ack_protocol": 2,
+        "processing_mode": "driver",
+        "ack_generation": 1,
+        "dispatch_intent_at": 1794153600.93,
+        "request_id": "dw-dlv_00000000000000000000000000000001",
+        "turn_id": null,
+        "admitted_at": null,
+        "processed_at": null,
+        "turn_outcome": null
+      }
+    },
+    {
+      "name": "r55/native_milliseconds_rejected",
+      "hub_created_at": "2026-11-08T16:00:00.750000Z",
+      "hub_queued_at": "2026-11-08T16:00:00.925000Z",
+      "wire": [
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000002",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "queued",
+          "occurred_at": "2026-11-08T16:00:00.900000Z",
+          "no_mirror": true
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000002",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "admission_unknown",
+          "occurred_at": "2026-11-08T17:30:34.463473Z",
+          "no_mirror": true,
+          "reason": "model_admission_unknown"
+        }
+      ],
+      "helper_rejected": true,
+      "expected_state": "admission_unknown",
+      "expected_reject_phase": "",
+      "injected_before_created": false,
+      "helper_lifecycle_after_restart": {
+        "delivery_id": "dw-dlv_00000000000000000000000000000002",
+        "session_name": "seat",
+        "envelope_json": "{\"id\":\"synthetic-source\",\"body\":\"SYNTHETIC_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_00000000000000000000000000000002\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+        "state": "admission_unknown",
+        "attempts": 1,
+        "error": null,
+        "received_at": 1794153600.9,
+        "updated_at": 1794159034.4634728,
+        "ack_protocol": 2,
+        "processing_mode": "driver",
+        "ack_generation": 1,
+        "dispatch_intent_at": 1794153600.93,
+        "request_id": "dw-dlv_00000000000000000000000000000002",
+        "turn_id": null,
+        "admitted_at": null,
+        "processed_at": null,
+        "turn_outcome": null
+      }
+    },
+    {
+      "name": "r55/live_stale_timestamp_argument",
+      "hub_created_at": "2026-11-08T16:00:00.750000Z",
+      "hub_queued_at": "2026-11-08T16:00:00.925000Z",
+      "wire": [
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000003",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "queued",
+          "occurred_at": "2026-11-08T16:00:00.900000Z",
+          "no_mirror": true
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000003",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "injected",
+          "occurred_at": "2026-11-08T15:58:30.750000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn"
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000003",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "processed",
+          "occurred_at": "2026-11-08T16:00:04.750000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn",
+          "turn_outcome": "completed"
+        }
+      ],
+      "helper_rejected": false,
+      "expected_state": "processed",
+      "expected_reject_phase": "",
+      "injected_before_created": true,
+      "helper_lifecycle_after_restart": {
+        "delivery_id": "dw-dlv_00000000000000000000000000000003",
+        "session_name": "seat",
+        "envelope_json": "{\"id\":\"synthetic-source\",\"body\":\"SYNTHETIC_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_00000000000000000000000000000003\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+        "state": "processed",
+        "attempts": 1,
+        "error": null,
+        "received_at": 1794153600.9,
+        "updated_at": 1794153604.75,
+        "ack_protocol": 2,
+        "processing_mode": "driver",
+        "ack_generation": 1,
+        "dispatch_intent_at": 1794153600.93,
+        "request_id": "dw-dlv_00000000000000000000000000000003",
+        "turn_id": "synthetic-turn",
+        "admitted_at": 1794153510.75,
+        "processed_at": 1794153604.75,
+        "turn_outcome": "completed"
+      }
+    },
+    {
+      "name": "r55/mixed_live_precise_native_floor",
+      "hub_created_at": "2026-11-08T16:00:00.750000Z",
+      "hub_queued_at": "2026-11-08T16:00:00.925000Z",
+      "wire": [
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000004",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "queued",
+          "occurred_at": "2026-11-08T16:00:00.900000Z",
+          "no_mirror": true
+        },
+        {
+          "type": "delivery_ack",
+          "delivery_id": "dw-dlv_00000000000000000000000000000004",
+          "ack_protocol": 2,
+          "processing_mode": "driver",
+          "ack_generation": 1,
+          "state": "injected",
+          "occurred_at": "2026-11-08T16:00:00.950000Z",
+          "no_mirror": true,
+          "turn_id": "synthetic-turn"
+        }
+      ],
+      "helper_rejected": false,
+      "expected_state": "injected",
+      "expected_reject_phase": "",
+      "injected_before_created": false,
+      "helper_lifecycle_after_restart": {
+        "delivery_id": "dw-dlv_00000000000000000000000000000004",
+        "session_name": "seat",
+        "envelope_json": "{\"id\":\"synthetic-source\",\"body\":\"SYNTHETIC_ONLY\",\"meta\":{\"delivery_id\":\"dw-dlv_00000000000000000000000000000004\",\"delivery_ack_protocol\":2,\"processing_mode\":\"driver\",\"ack_generation\":1}}",
+        "state": "admitted",
+        "attempts": 1,
+        "error": "native_terminal_precedes_acked_injected",
+        "received_at": 1794153600.9,
+        "updated_at": 1794153604.85,
+        "ack_protocol": 2,
+        "processing_mode": "driver",
+        "ack_generation": 1,
+        "dispatch_intent_at": 1794153600.93,
+        "request_id": "dw-dlv_00000000000000000000000000000004",
+        "turn_id": "synthetic-turn",
+        "admitted_at": 1794153600.95,
+        "processed_at": null,
+        "turn_outcome": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+# 护栏决策
+
+HTG-001：record_native_terminal事务内先按原ACK payload或原admitted恢复wire边界，再比较候选processed的现有UTC微秒编码；不以未舍入float误拒wire相等值。outbox未确认不代表未发送，全部原文不可改。
+
+HTG-002：False只提交error原因/诊断更新时间，原state/turn/时刻及outcome不变，无processed ACK；Adapter不产生terminal观察。原生proof已在driver原账本保留，不改码值。
+
+HTG-003：同证据不产生新ACK/RPC/任务，重启保留pending；独立一致原证据可按既有校验关闭，否则人工对证另派。缓存的immutable native终态不会等待后自动变晚，不承诺自动终结；既有合法ACK运输不改。
+
+新原因native_terminal_precedes_acked_injected、False返回和诊断对应HTG002；wire读取对应HTG001；收口与非重试边界对应HTG003。没有新产品schema或外部接口。

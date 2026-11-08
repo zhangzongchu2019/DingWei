@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r55-mixed-precision-guard/tools/sessionhelper/reviews/r55-mixed-precision-guard/reproduce_matrix.py", line 156, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/data/ai-dev-data/r55-mixed-precision-guard/tools/sessionhelper/reviews/r55-mixed-precision-guard/reproduce_matrix.py", line 101, in main
+    worker(args.source,args.worker,args.version);return
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/r55-mixed-precision-guard/tools/sessionhelper/reviews/r55-mixed-precision-guard/reproduce_matrix.py", line 76, in worker
+    assert inbox.lifecycle(did)['state']=='admitted','MIXED_PRECISION_MUST_REMAIN_PENDING'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: MIXED_PRECISION_MUST_REMAIN_PENDING
+Traceback (most recent call last):
+  File "/data/ai-dev-data/r55-mixed-precision-guard/tools/sessionhelper/reviews/r55-mixed-precision-guard/reproduce_matrix.py", line 156, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/data/ai-dev-data/r55-mixed-precision-guard/tools/sessionhelper/reviews/r55-mixed-precision-guard/reproduce_matrix.py", line 123, in main
+    subprocess.run([sys.executable,'-B',str(Path(__file__).resolve()),'--worker',str(target),'--source',str(source),'--version',label],env=clean,cwd=ROOT,check=True,timeout=45)
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/tmp/coder-0232-locked-venv/bin/python3', '-B', '/data/ai-dev-data/r55-mixed-precision-guard/tools/sessionhelper/reviews/r55-mixed-precision-guard/reproduce_matrix.py', '--worker', '/tmp/r55-guard-mutant-delivery/r55-helper.json', '--source', '/tmp/ack-clock-repro-97escuvn/r55', '--version', 'r55']' returned non-zero exit status 1.

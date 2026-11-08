@@ -1,0 +1,4 @@
+schema: spec-driven
+context: |
+  Language: zh-CN
+  本任务限于tools/sessionhelper，本目录是交审用独立OpenSpec项目；不改变仓根规格与运行配置。

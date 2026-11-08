@@ -540,4 +540,90 @@ class NativeEvidenceTimeTest(unittest.TestCase):
         self.assertEqual((event.data['admitted_at'],event.data['processed_at']),(101,105))
         self.assertIsNone(missing.data['admitted_at'],'缺原始接纳观察不得在terminal补造')
 
-if __name__=='__main__':unittest.main()
+
+class MixedPrecisionGuardTest(unittest.TestCase):
+    """The helper must not commit a terminal ACK that the Hub rejects."""
+    setUp = DispatchLifecycleTest.setUp
+
+    def original_admission(self, *, confirmed=False, at=5000.875):
+        did = self.env['meta']['delivery_id']
+        with patch('time.time', return_value=5000.8):
+            self.inbox.begin_dispatch(did)
+        with patch('time.time', return_value=at):
+            self.inbox.record_admitted_before_deadline(did, 'original', 60, at)
+        original = {row['phase']:row['payload_json'] for row in self.inbox.delivery_ack_chain()}
+        if confirmed:
+            for phase in ('queued', 'injected'):
+                head = self.inbox.pending_delivery_acks()[0]['payload']
+                self.assertEqual(head['state'], phase)
+                self.assertTrue(self.inbox.confirm_delivery_ack(dict(head, type='delivery_ack_confirm')))
+        return did, original
+
+    def terminal(self, did, completed=5000):
+        row = self.inbox.lifecycle(did)
+        context = {key:row[key] for key in ('ack_generation','dispatch_intent_at','request_id')}
+        with patch('time.time', return_value=5002):
+            return self.inbox.record_native_terminal(did, 'original', 5000, completed,
+                'completed', expected_context=context)
+
+    def test_mixed_precision_blocks_pending_and_confirmed_injected_ack(self):
+        for confirmed in (False, True):
+            with self.subTest(confirmed=confirmed):
+                if confirmed:
+                    self.inbox = DeliveryInbox(str(Path(self.tmp.name)/'confirmed.sqlite'),session_name='seat')
+                    self.inbox.accept(self.env['meta']['delivery_id'],self.env);self.inbox.claim_next()
+                did, original = self.original_admission(confirmed=confirmed)
+                before = dict(self.inbox.lifecycle(did))
+                self.assertIs(self.terminal(did),False,'MIXED_PRECISION_MUST_REMAIN_PENDING')
+                row = self.inbox.lifecycle(did)
+                self.assertEqual(row['state'],'admitted','MIXED_PRECISION_MUST_REMAIN_PENDING')
+                self.assertEqual(row['error'],'native_terminal_precedes_acked_injected')
+                self.assertEqual((row['admitted_at'],row['processed_at'],row['turn_outcome']),
+                    (before['admitted_at'],None,None),'GUARD_REWROTE_ORIGINAL_TIME')
+                chain={a['phase']:a['payload_json'] for a in self.inbox.delivery_ack_chain()}
+                self.assertNotIn('processed',chain,'REJECTABLE_PROCESSED_ACK_CREATED')
+                if not confirmed:self.assertEqual(chain,original,'INJECTED_ACK_ORIGINAL_REWRITTEN')
+                else:self.assertFalse(chain)
+
+    def test_pending_survives_restart_and_identical_evidence_without_new_ack(self):
+        did, _ = self.original_admission(confirmed=True)
+        self.assertIs(self.terminal(did),False)
+        self.inbox=DeliveryInbox(self.path,session_name='seat')
+        for _ in range(3):
+            self.assertIs(self.terminal(did),False)
+        row=self.inbox.lifecycle(did)
+        self.assertEqual((row['state'],row['error']),('admitted','native_terminal_precedes_acked_injected'))
+        self.assertIsNone(row['processed_at'])
+        self.assertEqual(self.inbox.pending_delivery_acks(),[],'PENDING_CREATED_UNCONFIRMABLE_ACK_RETRY')
+        self.assertIsNone(self.inbox.claim_next(),'PENDING_DELIVERY_WAS_RESUBMITTED')
+
+    def test_consistent_original_terminal_can_close_pending(self):
+        did, original = self.original_admission(confirmed=True)
+        self.assertIs(self.terminal(did),False)
+        self.assertIsNone(self.terminal(did,5001))
+        row=self.inbox.lifecycle(did)
+        self.assertEqual((row['state'],row['processed_at'],row['error']),('processed',5001,None))
+        heads=self.inbox.pending_delivery_acks()
+        self.assertEqual([a['phase'] for a in heads],['processed'])
+        self.assertEqual(heads[0]['payload']['occurred_at'],'1970-01-01T01:23:21.000000Z')
+        self.assertNotIn('injected',{a['phase'] for a in heads},'CONFIRMED_ACK_WAS_REWRITTEN')
+
+    def test_compare_serialized_wire_time_not_unrounded_float(self):
+        did, _ = self.original_admission(confirmed=True,at=5000.8750004)
+        self.assertIsNone(self.terminal(did,5000.8750003),'WIRE_EQUAL_TIME_FALSELY_BLOCKED')
+        self.assertEqual(self.inbox.lifecycle(did)['state'],'processed')
+        self.assertEqual(self.inbox.pending_delivery_acks()[0]['payload']['occurred_at'],
+            '1970-01-01T01:23:20.875000Z')
+
+    def test_pending_wire_timestamp_is_authoritative_over_inbox_value(self):
+        did, original = self.original_admission()
+        with self.inbox._lock, self.inbox._connect() as db:
+            db.execute('UPDATE delivery_inbox SET admitted_at=? WHERE session_name=? AND delivery_id=?',
+                (5000.25,'seat',did))
+        self.assertIs(self.terminal(did,5000.5),False,'PENDING_ACK_ORIGINAL_TIME_IGNORED')
+        self.assertEqual({a['phase']:a['payload_json'] for a in self.inbox.delivery_ack_chain()},original)
+        self.assertEqual(self.inbox.lifecycle(did)['state'],'admitted')
+
+
+if __name__=='__main__':
+    unittest.main()
