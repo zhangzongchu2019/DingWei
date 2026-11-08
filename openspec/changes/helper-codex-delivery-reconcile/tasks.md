@@ -8,7 +8,7 @@
 - [x] T-05 核〔51〕-补3、原子实现锁与同分支远端tip；六项冻结边界落代码/规格。
 - [x] T-06 实现实际turn/start写出计时、本地健康忙队列与无迁移的持久只读对账。
 - [x] T-07 首步五红转绿、三控制格保持；补边界反测与逐刀变异并保留原生完整请求响应。
-- [ ] T-08 锁依赖run-build-tests及本变更strict通过；最终漂移核验、普通推送/ls-remote核对、交件后释放自有锁。
+- [x] T-08 锁依赖run-build-tests及本变更strict通过；最终漂移核验、普通推送/ls-remote核对、交件后释放自有锁。
 
 ## 交接记录
 
@@ -35,3 +35,7 @@
 - 2026-11-08T11:33:01.253510+00:00，coder56solzzc.zzc；完整规范门首个完成轮rc1（aae6222d），双profile各1121项中同3红：轻量__new__ blocker adapter缺省_which兼容两红，旧reconnect测试要求已断开的RPC仍turn/start一红。修复新计时/属性对轻量caller的缺省兼容，reconnect仍验锁不交叉，并加强断线未发出时queued且turn/start为0的断言；独立blocker16/16、stale23/23绿。原rc1原文保留，随后重跑完整规范门。
 
 - 2026-11-08T11:41:44.764273+00:00，coder56solzzc.zzc；完整门第二轮35515ea1双profile各1121/1121绿，随后发布入口库存断言仍固定90而当前新增测试后为91，rc1。只将显式已审库存数同步为91，保持逐文件缺失与manifest负测；独立build-entrypoints17/17绿。完整原文与rc1元数据保留；继续跑完整门，不把helper子门代替总门。
+
+- 2026-11-08T11:52:25.977882+00:00，coder56solzzc.zzc；最终规范门ec7f259a（产品35515ea1）rc0，11:41:44.860429Z～11:50:34.456585Z，helper双profile各1121/1121、27 Python＋2 shell全过；原生8/8、边界24/24、21刀目标红、201条源只读200/1请求incomplete、strict rc0。完整原文和指纹已归档raw/impl，两个先前完整rc1与开发中断原文保留。T-08测试和证据完成；最后普通push/ls-remote与DingWei交件按最终回执坐标闭环，随后仅释放本线程自有实现锁。无部署/修库/子Agent设计。
+
+- 2026-11-08T11:53:06.359838+00:00，coder56solzzc.zzc；最终fetch/read rulings 5ec4905447446982159a7965601e6c181e53c54f，本分支远端仍5ed477a5；仅其他〔52〕追加，本单冻结无漂移。最终提交只补报告、原文/校验清单、201分页显式验证和已冻结proposal状态同步；三产品文件仍35515ea1，与canonical源指纹一致。
