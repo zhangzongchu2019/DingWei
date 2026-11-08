@@ -1,0 +1,9 @@
+{
+  "temporary_root": "/tmp/hs11final/hlc-matrix-ilvn93s6",
+  "home": "/tmp/hs11final/hlc-matrix-ilvn93s6/home",
+  "tmp": "/tmp/hs11final/hlc-matrix-ilvn93s6/tmp",
+  "ipc": "No sessionhelper; isolated NOTIFY_SOCKET beneath Go test temp root",
+  "ports": "loopback ephemeral ports selected by kernel; actual addresses recorded before Hub starts in RESOURCE lines",
+  "sqlite": "unique hub.db beneath Go test temp root",
+  "pg": "pgtest owned embedded instance, no external DSN inherited"
+}

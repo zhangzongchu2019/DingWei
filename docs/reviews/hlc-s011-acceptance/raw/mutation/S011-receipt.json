@@ -1,0 +1,230 @@
+{
+  "case": "S011",
+  "command": [
+    "go",
+    "test",
+    "-overlay",
+    "/tmp/hs11m/hlc-matrix-l6dt6q3t/overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCLoadMatrix$",
+    "-count=1",
+    "-shuffle=on",
+    "-timeout=20m",
+    "-v"
+  ],
+  "started_utc": "2026-11-08T17:11:20.895416+00:00",
+  "ended_utc": "2026-11-08T17:11:37.621665+00:00",
+  "rc": 0,
+  "log": "S011-first.log",
+  "log_sha256": "2e9cb16e80f6a6b7a58ef4567ee82215e559381c0aa4afdd5ca6ac61931729e4",
+  "overlays": "Fixture setup + SDK transport; S014 additionally pins tracked socket snapshot; S014-live-failure injects real listener close-frame write timeout; classification/coordinator unchanged",
+  "race": false,
+  "repetitions": 1,
+  "sources": {
+    "cmd/workpulse/main.go": "fb42c6f0538422e8592eb654ebf46a2c7fe4a9908c31e71d1c2946e5304a23db",
+    "internal/feishu/lifecycle.go": "52c8bcbbee78cacb930e1e971c729dee897d9d41f18d747f1ffc294c88fc048e",
+    "cmd/workpulse/shutdown_load_test.go": "26f0189d5ca3cd507af3de9a2e4ce64293509efa840533a664f7e0b79ba38a0e",
+    "tests/hlc/sdk_fixture.go.txt": "13520d21e8ef84fe8d254af8630f95ffd884760d9ddeed671ea570d7970d475f",
+    "internal/m8/lifecycle.go": "a39cb795c019b5707e02f20b8fd0c7e77ebb8b52b590e811e389b21be1adab61",
+    "tests/hlc/process_matrix.py": "fb5af6fe031864c370adf1430198ec774c339815bc6018a13f6374daa9de0e70"
+  },
+  "mutation": "no-new-iframe-instance",
+  "target_red": false,
+  "target_assertion": "S011_EXPLICIT_RESYNC_MISSING_OR_TIMING",
+  "mutation_readout": {
+    "automatic_recovery_pass": false,
+    "click_to_output_ms": 247,
+    "click_utc": "2026-11-08T17:11:36.432076002Z",
+    "duplicates_after": 0,
+    "explicit_output_delivery_id": "hlc-after-00",
+    "fates": [
+      {
+        "after_resync_count": 1,
+        "before_resync_count": 0,
+        "delivery_id": "hlc-after-00",
+        "fate": "\u663e\u5f0f\u91cd\u65b0\u540c\u6b65\u540e\u8865\u56de",
+        "mux_cursor": "f9f7197fd8b41816-1",
+        "mux_observed_utc": "2026-11-08T17:11:36.679690218Z",
+        "new_hub_sse_cursor": "f9f7197fd8b41816-1",
+        "old_hub_memory_loss": false,
+        "published_after_new_ready_ms": 1,
+        "published_after_stop_ms": 2247,
+        "published_send_started_utc": "2026-11-08T17:11:31.432469767Z",
+        "session_event_envelope_id": "hlc-after-00-event",
+        "sse_observed_utc": "2026-11-08T17:11:31.467777068Z"
+      },
+      {
+        "after_resync_count": 1,
+        "before_resync_count": 0,
+        "delivery_id": "hlc-after-verify",
+        "fate": "\u663e\u5f0f\u91cd\u65b0\u540c\u6b65\u540e\u8865\u56de",
+        "mux_cursor": "f9f7197fd8b41816-2",
+        "mux_observed_utc": "2026-11-08T17:11:36.680073221Z",
+        "new_hub_sse_cursor": "f9f7197fd8b41816-2",
+        "old_hub_memory_loss": false,
+        "published_after_new_ready_ms": 44,
+        "published_after_stop_ms": 2290,
+        "published_send_started_utc": "2026-11-08T17:11:31.475242408Z",
+        "session_event_envelope_id": "hlc-after-verify-event",
+        "sse_observed_utc": "2026-11-08T17:11:31.475717852Z"
+      }
+    ],
+    "frames_after": [
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"791d885c8b2bdfb47e78062b684bc322\",\"replay_round\":\"1\",\"epoch\":\"d109b63c30e097f4\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:11:31.477663431Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"791d885c8b2bdfb47e78062b684bc322\",\"replay_round\":\"1\",\"epoch\":\"d109b63c30e097f4\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-01\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-01\",\"turn_id\":\"hlc-turn\"}}",
+        "At": "2026-11-08T17:11:31.477670911Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"791d885c8b2bdfb47e78062b684bc322\",\"replay_round\":\"1\",\"epoch\":\"d109b63c30e097f4\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:11:31.477696958Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"b6ce012b4e5211af11a3857ff9ea79ed\",\"replay_round\":\"1\",\"epoch\":\"891978b5868f8a02\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:11:31.478329866Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"b6ce012b4e5211af11a3857ff9ea79ed\",\"replay_round\":\"1\",\"epoch\":\"891978b5868f8a02\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-02\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-02\",\"turn_id\":\"hlc-turn\"}}",
+        "At": "2026-11-08T17:11:31.478410069Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"b6ce012b4e5211af11a3857ff9ea79ed\",\"replay_round\":\"1\",\"epoch\":\"891978b5868f8a02\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:11:31.478413808Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"gap\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"188fb2a5d79b781d5167f1a99fd3a5db\",\"replay_round\":\"1\",\"epoch\":\"f9f7197fd8b41816\",\"floor\":\"1\",\"H\":\"2\",\"reason\":\"resync_required\",\"cause\":\"epoch_changed\"}",
+        "At": "2026-11-08T17:11:31.478471003Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"35b60b44a511dd213c5755a64f98e4b5\",\"replay_round\":\"1\",\"epoch\":\"f5e9569292fbcfc1\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:11:31.47850458Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"35b60b44a511dd213c5755a64f98e4b5\",\"replay_round\":\"1\",\"epoch\":\"f5e9569292fbcfc1\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-03\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-03\",\"turn_id\":\"hlc-turn\"}}",
+        "At": "2026-11-08T17:11:31.478610459Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"35b60b44a511dd213c5755a64f98e4b5\",\"replay_round\":\"1\",\"epoch\":\"f5e9569292fbcfc1\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:11:31.478618868Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"35b60b44a511dd213c5755a64f98e4b5\",\"replay_round\":\"1\",\"epoch\":\"f5e9569292fbcfc1\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:11:36.439627174Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"35b60b44a511dd213c5755a64f98e4b5\",\"replay_round\":\"1\",\"epoch\":\"f5e9569292fbcfc1\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:11:36.439931724Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"64fecdc2d4b196f550add5af5921e535\",\"replay_round\":\"2\",\"epoch\":\"f9f7197fd8b41816\",\"floor\":\"1\",\"H\":\"2\"}",
+        "At": "2026-11-08T17:11:36.679322654Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"64fecdc2d4b196f550add5af5921e535\",\"replay_round\":\"2\",\"epoch\":\"f9f7197fd8b41816\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-00\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-00\",\"turn_id\":\"hlc-turn\"}}",
+        "At": "2026-11-08T17:11:36.679690218Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"64fecdc2d4b196f550add5af5921e535\",\"replay_round\":\"2\",\"epoch\":\"f9f7197fd8b41816\",\"seq\":\"2\",\"payload\":{\"delivery_id\":\"hlc-after-verify\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-verify\",\"turn_id\":\"hlc-turn\"}}",
+        "At": "2026-11-08T17:11:36.680073221Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"64fecdc2d4b196f550add5af5921e535\",\"replay_round\":\"2\",\"epoch\":\"f9f7197fd8b41816\",\"floor\":\"1\",\"H\":\"2\"}",
+        "At": "2026-11-08T17:11:36.680426736Z"
+      }
+    ],
+    "gap_informed": 1,
+    "id_counts_after": {
+      "hlc-after-00": 1,
+      "hlc-after-01": 1,
+      "hlc-after-02": 1,
+      "hlc-after-03": 1,
+      "hlc-after-verify": 1
+    },
+    "method": "\u771f\u5b9eHub/VS\uff1b\u6309console_auth.go closeTab remove(true)\u4e0econsole_mux_broker.js resetIntents/sync\u534f\u8bae\u6a21\u62df\u663e\u5f0f\u64cd\u4f5c\uff1b\u975e\u6d4f\u89c8\u5668\u70b9\u51fb\u8bfb\u6570",
+    "missing_after": 0,
+    "missing_before": 2,
+    "output_utc": "2026-11-08T17:11:36.679690218Z",
+    "reset_response": {
+      "closed": false,
+      "feed_id": "bee436b4c1ec1c802cec2e3a497528a9",
+      "protocol_version": 1,
+      "revision": 2,
+      "streaming": true,
+      "subscriptions": [
+        {
+          "after": "f9f7197fd8b41816-0",
+          "agent_id": "hlcagent00",
+          "full_name": "hlcagent00.hlcowner0",
+          "generation": "64fecdc2d4b196f550add5af5921e535",
+          "iframe_instance": "00000000000000000000000000000064",
+          "replay_round": "2",
+          "reset_baseline": "f9f7197fd8b41816-0"
+        },
+        {
+          "after": "d109b63c30e097f4-1",
+          "agent_id": "hlcagent01",
+          "full_name": "hlcagent01.hlcowner0",
+          "generation": "791d885c8b2bdfb47e78062b684bc322",
+          "iframe_instance": "00000000000000000000000000000065",
+          "replay_round": "1",
+          "reset_baseline": ""
+        },
+        {
+          "after": "891978b5868f8a02-1",
+          "agent_id": "hlcagent02",
+          "full_name": "hlcagent02.hlcowner0",
+          "generation": "b6ce012b4e5211af11a3857ff9ea79ed",
+          "iframe_instance": "00000000000000000000000000000066",
+          "replay_round": "1",
+          "reset_baseline": ""
+        },
+        {
+          "after": "f5e9569292fbcfc1-1",
+          "agent_id": "hlcagent03",
+          "full_name": "hlcagent03.hlcowner0",
+          "generation": "35b60b44a511dd213c5755a64f98e4b5",
+          "iframe_instance": "00000000000000000000000000000067",
+          "replay_round": "1",
+          "reset_baseline": ""
+        }
+      ]
+    },
+    "stop_to_output_ms": 7495
+  }
+}
