@@ -203,7 +203,7 @@ exit 1
         gate = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(gate)
         files = gate.inventory(ROOT)
-        self.assertEqual(len(files), 90)  # 89 under tests/ plus the top-level regression.
+        self.assertEqual(len(files), 91)  # 90 under tests/ plus the top-level regression.
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             (root / "scripts").mkdir()

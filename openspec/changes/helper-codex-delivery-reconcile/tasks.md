@@ -33,3 +33,5 @@
 - 2026-11-08T11:23:17.046684+00:00，coder56solzzc.zzc；收尾复核补迟到turn/start响应保护：upsert/update_state事务保留已落原生证据及15s查询时刻，避免乱序响应清空限流或pending证明。新增第24项反测与第21刀变异，24/24绿、21/21目标红；原生8/8保持。此前全量开发试跑在产品追加后主动终止并保留原文，不记为完成；最终固定字节规范门随后重跑。
 
 - 2026-11-08T11:33:01.253510+00:00，coder56solzzc.zzc；完整规范门首个完成轮rc1（aae6222d），双profile各1121项中同3红：轻量__new__ blocker adapter缺省_which兼容两红，旧reconnect测试要求已断开的RPC仍turn/start一红。修复新计时/属性对轻量caller的缺省兼容，reconnect仍验锁不交叉，并加强断线未发出时queued且turn/start为0的断言；独立blocker16/16、stale23/23绿。原rc1原文保留，随后重跑完整规范门。
+
+- 2026-11-08T11:41:44.764273+00:00，coder56solzzc.zzc；完整门第二轮35515ea1双profile各1121/1121绿，随后发布入口库存断言仍固定90而当前新增测试后为91，rc1。只将显式已审库存数同步为91，保持逐文件缺失与manifest负测；独立build-entrypoints17/17绿。完整原文与rc1元数据保留；继续跑完整门，不把helper子门代替总门。
