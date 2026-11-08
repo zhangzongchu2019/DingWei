@@ -24,6 +24,6 @@ Stdio与WebSocket真实request写锁取得后、写出开始前触发本地提�
 
 ## HCD-005：崩溃恢复与合并
 
-先订阅consumer，再只读pending journal对账；完整证据先CAS落driver detail，再发独立终态event，inbox事务原代次验证后推进ACK。重启从detail恢复，不依赖旧对象id/通知；稳定thread/delivery/turn/status/原生结束时刻键在对象内去重，跨对象靠inbox事务幂等。普通receipt done不再让Codex用当前时刻补造processed；晚响应不能覆盖已落的对账终态证明。实时delta沿原对象去重，不按同cursor吞片。
+先订阅consumer，再只读pending journal对账；完整证据先CAS落driver detail，再发独立终态event，inbox事务原代次验证后推进ACK。重启从detail恢复，不依赖旧对象id/通知；稳定thread/delivery/turn/status/原生结束时刻键在对象内去重，跨对象靠inbox事务幂等。普通receipt done不再让Codex用当前时刻补造processed；晚响应不能覆盖已落的对账终态证明，inProgress证明和最近查询时刻也在账本upsert/update_state事务中保留，避免迟到响应重置15秒限流。实时delta沿原对象去重，不按同cursor吞片。
 
 原第一步分析及工期讨论保留在docs/reviews/helper-codex-delivery-reconcile/ANALYSIS.md，不能把历史“待实现”段落理解为当前实施状态。

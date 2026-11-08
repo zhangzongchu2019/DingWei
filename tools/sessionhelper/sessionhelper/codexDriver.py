@@ -218,6 +218,14 @@ class _DeliveryStore:
     ) -> None:
         now = time.time()
         with self._lock, self._connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            previous = db.execute("SELECT detail,turn_id,state FROM deliveries WHERE thread_id=? AND envelope_id=?", (thread_id, envelope_id)).fetchone()
+            preserved = _reconcile_metadata(previous[0]) if previous else {}
+            if preserved:
+                if preserved.get('evidence', {}).get('status') in ('completed', 'interrupted', 'failed'):
+                    detail, turn_id, state = previous
+                else:
+                    detail = detail.split("\nreconcile=", 1)[0] + "\nreconcile=" + json.dumps(preserved, separators=(',', ':'))
             db.execute(
                 """
                 INSERT INTO deliveries
@@ -241,6 +249,7 @@ class _DeliveryStore:
         detail: str = "",
     ) -> None:
         with self._lock, self._connect() as db:
+            db.execute('BEGIN IMMEDIATE')
             previous = db.execute("SELECT detail FROM deliveries WHERE thread_id=? AND envelope_id=?", (thread_id, envelope_id)).fetchone()
             metadata = _reconcile_metadata(previous[0]) if previous else {}
             if metadata:

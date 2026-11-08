@@ -178,6 +178,21 @@ class ReconcileBoundaries(unittest.TestCase):
         self.assertEqual(row['admitted_at'], self.turn['startedAt'])
         self.assertEqual(row['processed_at'], self.turn['completedAt'])
 
+    def test_late_response_preserves_query_rate_and_pending_proof(self):
+        self.turn['status'] = 'inProgress'; self.turn['completedAt'] = None
+        self.scan()
+        # turn/start晚响应不得把既有detail证据/15s查询时刻覆盖掉。
+        self.driver._store.upsert('bound', self.did, 'native-turn', 'hash', 'processing', 'turn=native-turn status=inProgress')
+        replacement = self.new_driver(); replacement._rpc = self.rpc
+        adapter = self.new_adapter(replacement)
+        replacement.reconcile_pending(self.did)
+        self.assertEqual(len(self.rpc.calls), 1, 'LATE_RESPONSE_RESET_RATE_OR_PROOF')
+        events = self.events(replacement)
+        self.assertTrue(events, 'LATE_RESPONSE_RESET_RATE_OR_PROOF')
+        for event in events:
+            adapter._record_event_lifecycle(event)
+        self.assertEqual(self.inbox.lifecycle(self.did)['state'], 'admitted')
+
     def test_duplicate_client_id_is_ambiguous(self):
         other = copy.deepcopy(self.turn); other['id'] = 'duplicate'
         self.rpc.pages[None]['data'].append(other)

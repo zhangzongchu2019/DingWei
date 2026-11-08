@@ -59,6 +59,9 @@ MUTATIONS = [
     ('fractional-observation', 'inbox_lifecycle.py', "if expected_context is None:\n                    admitted_at=row['admitted_at']", "if True:\n                    admitted_at=row['admitted_at']",
      'test_native_seconds_replace_fractional_receipt_observation', 'NATIVE_SECONDS_REJECTED_AFTER_LIVE_RECEIPT'),
 
+    ('late-response-metadata', 'codexDriver.py', 'preserved = _reconcile_metadata(previous[0]) if previous else {}', 'preserved = {}',
+     'test_late_response_preserves_query_rate_and_pending_proof', 'LATE_RESPONSE_RESET_RATE_OR_PROOF'),
+
 ]
 
 
