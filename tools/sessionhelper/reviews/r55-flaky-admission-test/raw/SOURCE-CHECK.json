@@ -1,0 +1,11 @@
+{
+  "thread_id": "01a1bacf-9317-7b91-bf86-0a0c88c834f6",
+  "base": "41b3e9ad0ba060bf346a9aaba7fb6f8e979944ce",
+  "recorded_utc": "2026-11-08T18:43:25.005847+00:00",
+  "existing_changed_files": [
+    "tools/sessionhelper/tests/test_dispatch_lifecycle.py"
+  ],
+  "only_target_method_ast_changed": true,
+  "production_files_changed": 0,
+  "test_sha256": "db635fca3d0c0f21f455c4ab945c99ed558ff2ba4f9a8eb2b94d34453b2037f4"
+}

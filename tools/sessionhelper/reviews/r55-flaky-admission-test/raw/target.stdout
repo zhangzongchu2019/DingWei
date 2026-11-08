@@ -1,0 +1,8 @@
+test_clock_includes_time_since_persisted_dispatch_intent (tools.sessionhelper.tests.test_dispatch_lifecycle.AdmissionDeadlineTest.test_clock_includes_time_since_persisted_dispatch_intent) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.039s
+
+OK
