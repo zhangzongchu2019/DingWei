@@ -4,7 +4,7 @@
 - [x] T-02 2025独立编解码与逐请求边界，保留2026；IP回环端口例外与localhost拒绝。
 - [x] T-03 原生0.167.0本地E2E、四刀变异、mcpgw/extseat与canonical验证后交中间坐标；m8/cmd环境重跑结果随最终追加。
 - [x] T-04 自有静态CIMD产品路由/精确自解析，外部resolver保留。
-- [ ] T-05 PM说明与现网/预发九类路径清单，strict/SHA/远端坐标/交审；不部署。
+- [x] T-05 PM说明与现网/预发九类路径清单，strict/SHA/远端坐标/交审；不部署。
 
 ## 交接记录
 
@@ -13,3 +13,5 @@
 2026-11-08 coder56solzzc.zzc；本次中间提交。完成T03的native add/login/四工具目录/list_online、四刀目标红、外组织原生登录拒绝、canonical rc0（双profile1127）、strict通过；阻塞：相关包首轮缺历史Git pin与过长TMPDIR，不是产品断言；已补pin/短目录重跑m8与cmd。下一步追加最终包原文与SHA，不自验收、不部署。
 
 2026-11-08 coder56solzzc.zzc；追加于已推3fddb44a后，不改写。完成：fetch/读rulings至cf9235d7，㊿补11把本域CIMD升为主路径，已同步PM显式client ID命令、规格与路径清单；产品字节/本地native主路径不变。阻塞：m8/cmd最终重跑未齐；下一步中间坐标/最终验证追加，不碰节点。
+
+2026-11-08 coder56solzzc.zzc；最终追加提交（中间89dc872c不改写）。完成T05：按㊿补11主路径PM文档/九类路由清单，HTTPS localhost漏角补齐；最终native正向/四刀重跑、m8默认/cmd/mcpgw/extseat与canonical rc0、strict27/0，SHA齐。m8可选37条跳过按现有旗标列全，额外误启非默认CLI/View验收失败单列不作绿。阻塞：无本单技术阻塞。下一步普通push/ls-remote交审，不自验收、不部署。

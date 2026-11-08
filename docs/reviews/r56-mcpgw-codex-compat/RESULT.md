@@ -12,7 +12,7 @@ CODEX_THREAD_ID=01a1bacf-9317-7b91-bf86-0a0c88c834f6；to=opus50tc2k.zzc。基�
 
 ## 实测与边界
 
-实际0.167.0二进制＋真实cmd/workpulse wireR53开态＋真实临时PG/Hub SQLite，假飞书HTTP上游；TLS运行期根CA/叶证书仅进入私有子进程信任，不改系统。白名单环境、不读真实凭据或旧HOME，所有监听仅loopback。无turn/start/推理请求。
+实际0.167.0二进制＋真实cmd/workpulse wireR53开态＋真实临时PG/Hub SQLite，假飞书HTTP上游；TLS运行期根CA/叶证书仅进入私有子进程信任，不改系统。白名单环境、不读真实凭据或旧HOME，所有监听仅loopback。本单MCP探针无turn/start/推理请求。
 
 **原生正向**：真实add与同配置再次显式login均rc0，使用默认随机端口、不预置固定端口；读取的是产品自有CIMD，没有CIMD resolver替身。真实app-server初始化/列工具得四工具，mcpServer/tool/call list_online成功，isError=false、agents=[]。空清单源于本地没有在线目标，不冒充真实团队。RPC/schema均来自实际二进制；原文在raw/native。
 
@@ -59,3 +59,13 @@ python3 docs/reviews/r56-mcpgw-codex-compat/unit_mutations.py --output /tmp/new-
 OpenSpec新变更mcpgw-codex-compat与现状基线均有独立strict；原冻结2026能力不被全局改写。后续本地结果通过后交中间坐标，再追加最终完整包验证/清单坐标；不自验收、不放行P2b、不开始子Agent主体。所有本地探针Hub/PG已正常停止。
 
 输入追加（㊿补11 cf9235d7）：prodops报Hub同出口取外部ChatGPT CIMD四次403，属于prodops实测，本席未访问节点。本域文档现为主路径；PM说明已明确--oauth-client-id，外部解析保留但不作为本单验收前提。此项追加不改已测试产品字节。
+
+## 中间件之后的追加
+
+89dc872c之后自查补齐HTTPS localhost（含大小写）从旧HTTPS通用分支漏过的边界，按冻结“localhost主机名仍拒绝”处理；新增测试覆盖HTTP/HTTPS，不扩大回环IP例外。最终产品字节下重跑真实native add/login/catalog/list_online、codec/port两刀原生变异、localhost/tenant两刀及mcpgw单测，均得到相应正向/目标红。原中间原文不覆盖，最终新增原文在raw/final。
+
+m8/cmd最终默认包测试均rc0。m8有预置可选验收跳过，完整名称/条件在raw/final/m8-skips.json及默认-v日志；canonical另跑其六项跨runtime本地集成。为排环境问题，曾额外设DW_ACK_V2_E2E_PYTHON开启非默认真实CLI/View验收，因私有环境不具备其View/模型终态条件而失败；该次原文保留在m8-optional-attempt，不作本单通过/变异或网关产品缺陷，也未修改这些用例、伪造凭据或驱动结果。最终包命令恢复白名单洁净环境，不设该可选旗标。
+
+相关包复跑需私有但足够短的TMPDIR（避免Unix socket 108字节限制），并确保历史ec40752 Git对象已fetch；不改测试时限或跳过条件。HTTPS localhost补齐后最终cmd全包215.805s rc0；m8默认229.649s rc0；mcpgw最终4.007s rc0；extseat首轮25.751s rc0且其源码/依赖未被本次兼容变更修改。
+
+最终状态：上述最终产品字节的canonical再次rc0，双profile各1127/1127、27 Python/2 shell；m8/cmd/mcpgw/extseat相关包默认命令rc0（预置可选跳过已列），strict全量27/0，三质量闸rc0；最终native及四刀原文在raw/final，产品SHA在RUNS.final_product_sha256。所有探针Hub/PG已关闭，不部署、不开始子Agent主体；待独立复核。

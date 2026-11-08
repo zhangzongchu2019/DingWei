@@ -11,3 +11,5 @@ MCC-004：/mcp/clients/codex.json为配置PublicOrigin生成的公开只读JSON�
 MCC-005：PM最低0.167.0，新add保存issuer绑定的/callback，备用静态ID可选；不配oauth-resource，不兼容0.145。Hub开关关闭时新路径也不登记；现网与预发nginx九类路径清单记录新增文档，不执行配置或开放来源。
 
 MCC-006：真实native add/login/list/call、原始HTTP/RPC和四刀目标红分开计。只读控制或假上游不当真实飞书通过；任何原生失败不记E2E绿。开发夹具失败与有效变异分开保留。没有新增错误码或业务状态。
+
+中间件后补齐MCC-003的HTTPS localhost大小写拒绝（旧HTTPS通用分支漏角）；外部非localhost HTTPS登记仍逐字匹配。所有原生正向/四刀按最终字节重跑，不以中间旧原文替代。

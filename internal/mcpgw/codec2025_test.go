@@ -159,8 +159,11 @@ func TestLoopbackPortMatchingAndLocalhostRejection(t *testing.T) {
 	}
 	id := "https://client.example/codex.json"
 	c := Client{ID: id, Name: "invalid localhost", Redirects: []string{"http://localhost:43123/callback"}, AuthMethod: "none"}
-	if validateClient(c, id) == nil {
-		t.Fatal("LOCALHOST_METADATA_MUST_BE_REJECTED")
+	for _, local := range []string{"http://localhost:43123/callback", "https://localhost/callback", "https://LOCALHOST:43123/callback"} {
+		c.Redirects = []string{local}
+		if validateClient(c, id) == nil {
+			t.Fatal("LOCALHOST_METADATA_MUST_BE_REJECTED", local)
+		}
 	}
 	c.Redirects = []string{"https://client.example:443/callback"}
 	if !registered(c, c.Redirects[0]) || registered(c, "https://client.example:444/callback") {

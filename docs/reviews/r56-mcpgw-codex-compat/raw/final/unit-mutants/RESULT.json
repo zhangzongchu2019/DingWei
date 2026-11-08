@@ -1,0 +1,18 @@
+[
+  {
+    "kind": "localhost",
+    "baseline_rc": 0,
+    "mutant_rc": 1,
+    "target": "LOCALHOST_METADATA_MUST_BE_REJECTED",
+    "original_sha256": "0d96fcebb576a6a25531ccaf71e9cbb6f7404649b349913f30aa98e44e763342",
+    "worktree_unchanged": true
+  },
+  {
+    "kind": "tenant",
+    "baseline_rc": 0,
+    "mutant_rc": 1,
+    "target": "wrong tenant was not rejected before issuance",
+    "original_sha256": "bedcae593368e1de68878708b613ae8fa9374a1a402d9482c7f7c79eab2177bf",
+    "worktree_unchanged": true
+  }
+]

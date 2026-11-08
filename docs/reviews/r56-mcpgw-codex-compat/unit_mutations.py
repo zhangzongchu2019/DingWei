@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse,hashlib,json,os,subprocess,tempfile
 ROOT=Path(__file__).resolve().parents[3]
 ap=argparse.ArgumentParser();ap.add_argument('--output',type=Path,required=True);a=ap.parse_args();a.output.mkdir(parents=True,exist_ok=False)
-items=[('localhost','internal/mcpgw/clients.go','return u.Scheme == "http" && ip != nil && ip.IsLoopback()','return u.Scheme == "http" && ((ip != nil && ip.IsLoopback()) || u.Hostname() == "localhost")','./internal/mcpgw','^TestLoopbackPortMatchingAndLocalhostRejection$','LOCALHOST_METADATA_MUST_BE_REJECTED'),('tenant','internal/feishulogin/identity.go','if info.TenantKey == "" || info.TenantKey != allowedTenant {','if info.TenantKey == "" {','./internal/feishulogin','^TestCallbackRejectsWrongTenant$','wrong tenant was not rejected before issuance')]
+items=[('localhost','internal/mcpgw/clients.go','return !strings.EqualFold(u.Hostname(), "localhost") && (u.Scheme == "https" || u.Scheme == "http" && httpLoopback)','return u.Scheme == "https" || u.Scheme == "http" && (httpLoopback || strings.EqualFold(u.Hostname(), "localhost"))','./internal/mcpgw','^TestLoopbackPortMatchingAndLocalhostRejection$','LOCALHOST_METADATA_MUST_BE_REJECTED'),('tenant','internal/feishulogin/identity.go','if info.TenantKey == "" || info.TenantKey != allowedTenant {','if info.TenantKey == "" {','./internal/feishulogin','^TestCallbackRejectsWrongTenant$','wrong tenant was not rejected before issuance')]
 results=[]
 for name,relative,needle,replacement,package,pattern,target in items:
  before=(ROOT/relative).read_bytes();assert needle in before.decode()

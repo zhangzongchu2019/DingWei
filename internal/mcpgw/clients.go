@@ -111,12 +111,11 @@ func validRedirect(raw string) bool {
 	if e != nil || u.Host == "" || u.User != nil || u.Fragment != "" || u.Opaque != "" {
 		return false
 	}
-	if u.Scheme == "https" {
-		return true
-	}
-	// Native callbacks must use an IP literal, never the localhost hostname.
+	// The localhost hostname is never a native callback identity, including
+	// HTTPS spelling variants. Other HTTPS redirects retain exact matching.
 	ip := net.ParseIP(u.Hostname())
-	return u.Scheme == "http" && ip != nil && ip.IsLoopback()
+	httpLoopback := ip != nil && ip.IsLoopback()
+	return !strings.EqualFold(u.Hostname(), "localhost") && (u.Scheme == "https" || u.Scheme == "http" && httpLoopback)
 }
 func validateClient(c Client, id string) error {
 	if c.ID != id || !metadataURL(id) || strings.TrimSpace(c.Name) == "" || len(c.Redirects) == 0 || (c.AuthMethod != "" && c.AuthMethod != "none") {

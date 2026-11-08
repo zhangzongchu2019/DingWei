@@ -1,0 +1,63 @@
+{
+  "version": "codex-cli 0.167.0",
+  "origin": "https://127.0.0.1:41601",
+  "client_document": {
+    "client_id": "https://127.0.0.1:41601/mcp/clients/codex.json",
+    "client_name": "DingWei Codex public client",
+    "redirect_uris": [
+      "http://127.0.0.1/callback",
+      "http://[::1]/callback"
+    ],
+    "token_endpoint_auth_method": "none",
+    "grant_types": [
+      "authorization_code"
+    ],
+    "response_types": [
+      "code"
+    ]
+  },
+  "foreign_tenant": false,
+  "commands": [
+    {
+      "command": [
+        "/home/dev/.local/bin/codex",
+        "mcp",
+        "add",
+        "dingwei",
+        "--url",
+        "https://127.0.0.1:41601/mcp",
+        "--oauth-client-id",
+        "https://127.0.0.1:41601/mcp/clients/codex.json"
+      ],
+      "stdout": "add.stdout",
+      "authorization_params": {
+        "response_type": [
+          "code"
+        ],
+        "client_id": [
+          "https://127.0.0.1:41601/mcp/clients/codex.json"
+        ],
+        "state": [
+          "-yWJYzetD3YvjTn-6Y9BbQ"
+        ],
+        "code_challenge": [
+          "lZTLegGwAadwaabqau0gSQLiSvROHzv-myA8pE-P8mQ"
+        ],
+        "code_challenge_method": [
+          "S256"
+        ],
+        "redirect_uri": [
+          "http://127.0.0.1:39221/callback"
+        ],
+        "scope": [
+          "list_online send_message wait_for_messages ack"
+        ],
+        "resource": [
+          "https://127.0.0.1:41601/mcp"
+        ]
+      },
+      "authorize_status": 400
+    }
+  ],
+  "real_credentials_used": false
+}

@@ -3,7 +3,7 @@
   "to": "opus50tc2k.zzc",
   "base": "f2a5db5fa80cec664403a11b4a31d56fa7bd0e4a",
   "recorded_utc": "2026-11-08T21:22:55.459079+00:00",
-  "phase": "intermediate",
+  "phase": "final",
   "product_sha256": {
     "internal/mcpgw/codec2025.go": "53b0a1598d31db8fad7f13524eb5b09047c889f18a3e086d1ca08b66452eb6fc",
     "internal/mcpgw/clients.go": "316f28ff12233e0d4294ef79d61b53f550a9de21723a6087529aa4e659e66163",
@@ -78,8 +78,16 @@
     "python": 27,
     "shell": 2
   },
-  "m8_final": "pending",
-  "cmd_final": "pending",
+  "m8_final": {
+    "rc": 0,
+    "mode": "default clean environment; pre-existing optional flags unset",
+    "skipped_entries": 37,
+    "skip_manifest": "final/m8-skips.json"
+  },
+  "cmd_final": {
+    "rc": 0,
+    "short_private_tmp": true
+  },
   "mcpgw_rc": 0,
   "extseat_rc": 0,
   "no_deployment": true,
@@ -87,5 +95,68 @@
   "no_nodes_accessed": true,
   "strict_all_rc": 0,
   "latest_rulings": "cf9235d782f4e7050842387bb42072bd3c27277e",
-  "local_cimd_is_primary": true
+  "local_cimd_is_primary": true,
+  "final_product_sha256": {
+    "internal/mcpgw/codec2025.go": "53b0a1598d31db8fad7f13524eb5b09047c889f18a3e086d1ca08b66452eb6fc",
+    "internal/mcpgw/clients.go": "0d96fcebb576a6a25531ccaf71e9cbb6f7404649b349913f30aa98e44e763342",
+    "internal/mcpgw/gateway.go": "8a986dba05439f9dd54957bbe00c59924334850f80a0d4ba7964206494f8e659",
+    "internal/mcpgw/oauth.go": "88e9b6a1641e98a0bd9af797ddb4dc5123302bb8aac3785ce4b29181bc618d30",
+    "internal/mcpgw/codex_client.go": "70c03570c3242d090c7faa04c20a18273ae556912bcb288a79c62f550e47a661"
+  },
+  "product_changed_after_intermediate": [
+    "internal/mcpgw/clients.go: reject HTTPS localhost spelling variants as frozen; tests extended"
+  ],
+  "canonical_final": {
+    "rc": 0,
+    "profiles": [
+      {
+        "actual": 1127,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1127,
+        "files": 91,
+        "groups": [
+          1118,
+          9
+        ],
+        "profile": "claude",
+        "rc": 0
+      },
+      {
+        "actual": 1127,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1127,
+        "files": 91,
+        "groups": [
+          1118,
+          9
+        ],
+        "profile": "codex",
+        "rc": 0
+      }
+    ],
+    "python": 27,
+    "shell": 2
+  },
+  "mcpgw_final_rc": 0,
+  "extseat_final_rc": 0,
+  "final_native_e2e_rc": 0,
+  "final_mutations": {
+    "codec": 1,
+    "ports": 1,
+    "localhost": 1,
+    "tenant": 1
+  },
+  "strict_all_final": {
+    "rc": 0,
+    "passed": 27,
+    "failed": 0
+  },
+  "quality_gates_final": {
+    "boundary": 0,
+    "dependency": 0,
+    "tenant": 0
+  },
+  "m8_nondefault_optional_attempt_rc": 1,
+  "final_verified_utc": "2026-11-08T21:37:21.420193+00:00",
+  "first_optional_attempt_is_not_acceptance": true
 }
