@@ -21,5 +21,8 @@
 #              🔴 实证这条糊不过去：手工把该行标回 `// indirect`，本闸立刻变绿（7 vs 7），但紧接着
 #              `go mod tidy` 会把标注改回来（改回后 go.mod 与 tidy 结果逐字相同）⇒ 只有删依赖或登记两条路。
 #   新集合＝原 7 项 ＋ golang.org/x/sys（minio-go/v7 从未入过基线：它一直是既有红，本批随死代码删除移出）
-direct_count=8
-direct_sha256=ba89fadfb091a9cacbbe174ac02204134e52dbc2ce132c2f9e1a3f3708888538
+direct_count=9
+direct_sha256=e2018c8362ef4435b4f9d74277ef9642e311d034702db0d4e313b94dd6b58ef0
+
+# S-GATES-GREEN：8→9仅新增github.com/mozillazg/go-pinyin（97671b3a）；
+# 突破三栏、MIT许可证与空传递依赖清单：openspec/changes/s-gates-green/specs/release-quality-gates/spec.md §⑤。

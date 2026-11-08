@@ -22,4 +22,14 @@
 
 ### ⑤ 约束与突破（SpecDoc §4.7.1）
 
-依赖突破见下一独立提交。未经执行的用例不得声称通过；保留边界闸原有债而不声称全部归零。
+| 栏 | 本次登记 |
+| --- | --- |
+| Violation | 违反§4.7.1a默认“依赖不增”：r53提交97671b3a引入github.com/mozillazg/go-pinyin v0.21.0，直接依赖8→9。 |
+| Why Needed | internal/feishulogin/identity.go在飞书未提供英文名时，把中文姓名转为无声调拼音并只保留小写ASCII，满足r53已复核的身份显示名契约。本单仅补登记，不改变实现。 |
+| Simpler Alternative Rejected Because | 标准库unicode只识别字符类别而无汉字读音字典；直接丢弃汉字会把有效中文名变成空值并拒绝登录；自带拼音表等于复制维护字典且增大代码面。r53 C实现已通过复核，替换算法违反本次不换实现的范围。 |
+
+许可证：MIT，模块LICENSE版权2016 mozillazg；保留上游版权/许可文本，发行时遵守MIT notice条件。模块版本v0.21.0的go.mod仅含module与go1.11、没有require。
+传递依赖清单：**空（0项第三方模块）**；产品源仅import标准库fmt、regexp、strings，字典随模块自带。许可证与依赖依据为本机Go模块缓存github.com/mozillazg/go-pinyin@v0.21.0/{LICENSE,go.mod,pinyin.go}及go.sum校验；不把主模块其它已有indirect项算作该依赖引入。
+直接依赖集合与sha256严格按dependency-ratchet.sh相同排序/换行算法生成；基线文件登记9项，未改go.mod/go.sum。
+
+未经执行的用例不得声称通过；保留边界闸原有债而不声称全部归零。
