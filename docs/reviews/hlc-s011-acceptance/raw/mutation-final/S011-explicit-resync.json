@@ -1,0 +1,112 @@
+{
+  "automatic_recovery_pass": false,
+  "click_to_output_ms": -9223372036854,
+  "click_utc": "2026-11-08T17:16:33.75633571Z",
+  "duplicates_after": 0,
+  "explicit_output_delivery_id": "hlc-after-00",
+  "fates": [
+    {
+      "after_resync_count": 0,
+      "before_resync_count": 0,
+      "delivery_id": "hlc-after-00",
+      "fate": "未补回，需核查，不据此推断旧Hub内存丢失",
+      "new_hub_sse_cursor": "d1aebaaf333d2523-1",
+      "old_hub_memory_loss": false,
+      "published_after_new_ready_ms": 1,
+      "published_after_stop_ms": 2186,
+      "published_send_started_utc": "2026-11-08T17:16:28.749292932Z",
+      "session_event_envelope_id": "hlc-after-00-event",
+      "sse_observed_utc": "2026-11-08T17:16:28.786560251Z"
+    },
+    {
+      "after_resync_count": 0,
+      "before_resync_count": 0,
+      "delivery_id": "hlc-after-verify",
+      "fate": "未补回，需核查，不据此推断旧Hub内存丢失",
+      "new_hub_sse_cursor": "d1aebaaf333d2523-2",
+      "old_hub_memory_loss": false,
+      "published_after_new_ready_ms": 48,
+      "published_after_stop_ms": 2233,
+      "published_send_started_utc": "2026-11-08T17:16:28.796074681Z",
+      "session_event_envelope_id": "hlc-after-verify-event",
+      "sse_observed_utc": "2026-11-08T17:16:28.796581782Z"
+    }
+  ],
+  "frames_after": [
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"54d30a3a36582cda24e9b0ccaa41b827\",\"replay_round\":\"1\",\"epoch\":\"b94f78ce6250c309\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-08T17:16:28.798767388Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"54d30a3a36582cda24e9b0ccaa41b827\",\"replay_round\":\"1\",\"epoch\":\"b94f78ce6250c309\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-02\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-02\",\"turn_id\":\"hlc-turn\"}}",
+      "At": "2026-11-08T17:16:28.798824083Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"54d30a3a36582cda24e9b0ccaa41b827\",\"replay_round\":\"1\",\"epoch\":\"b94f78ce6250c309\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-08T17:16:28.79885261Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"71332aa790ac2bb992323925a4801633\",\"replay_round\":\"1\",\"epoch\":\"5e061ae18f71275f\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-08T17:16:28.79946938Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"gap\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"0c9a2d2b9263bfae42a76c2164419622\",\"replay_round\":\"1\",\"epoch\":\"d1aebaaf333d2523\",\"floor\":\"1\",\"H\":\"2\",\"reason\":\"resync_required\",\"cause\":\"epoch_changed\"}",
+      "At": "2026-11-08T17:16:28.799548142Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"71332aa790ac2bb992323925a4801633\",\"replay_round\":\"1\",\"epoch\":\"5e061ae18f71275f\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-01\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-01\",\"turn_id\":\"hlc-turn\"}}",
+      "At": "2026-11-08T17:16:28.799551801Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"82928c44a5c825016481d289e15e7057\",\"replay_round\":\"1\",\"epoch\":\"179b20d73a29f795\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-08T17:16:28.799577059Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"71332aa790ac2bb992323925a4801633\",\"replay_round\":\"1\",\"epoch\":\"5e061ae18f71275f\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-08T17:16:28.799590418Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"82928c44a5c825016481d289e15e7057\",\"replay_round\":\"1\",\"epoch\":\"179b20d73a29f795\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-03\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-03\",\"turn_id\":\"hlc-turn\"}}",
+      "At": "2026-11-08T17:16:28.799610136Z"
+    },
+    {
+      "Event": "",
+      "ID": "",
+      "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"82928c44a5c825016481d289e15e7057\",\"replay_round\":\"1\",\"epoch\":\"179b20d73a29f795\",\"floor\":\"1\",\"H\":\"1\"}",
+      "At": "2026-11-08T17:16:28.799618295Z"
+    }
+  ],
+  "gap_informed": 1,
+  "id_counts_after": {
+    "hlc-after-01": 1,
+    "hlc-after-02": 1,
+    "hlc-after-03": 1
+  },
+  "method": "真实Hub/VS；按console_auth.go closeTab remove(true)与console_mux_broker.js resetIntents/sync协议模拟显式操作；非浏览器点击读数",
+  "missing_after": 2,
+  "missing_before": 2,
+  "output_utc": "0001-01-01T00:00:00Z",
+  "reset_response": {
+    "_body": "{\"error\":\"invalid_control\"}\n",
+    "_http_status": 400
+  },
+  "stop_to_output_ms": -9223372036854
+}

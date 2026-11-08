@@ -380,6 +380,9 @@ func hlcJSON(t *testing.T, method, url, origin, token string, body any) map[stri
 	raw, _ := io.ReadAll(res.Body)
 	var v map[string]any
 	if res.StatusCode < 200 || res.StatusCode > 299 {
+		if os.Getenv("HLC_S011_EXPECT_RESET_REJECT") == "1" {
+			return map[string]any{"_http_status": res.StatusCode, "_body": string(raw)}
+		}
 		t.Fatalf("control %s status=%d body=%s", method, res.StatusCode, raw)
 	}
 	if err := json.Unmarshal(raw, &v); err != nil {
@@ -760,9 +763,13 @@ func TestHLCLoadMatrix(t *testing.T) {
 	ready := c2.ready
 	helpersReady := time.Now()
 	published := map[string]time.Time{}
+	helperRecovery := make([]map[string]any, 0, 20)
 	agents2 := make([]*hlcAgent, 20)
 	for i := range agents2 {
+		dialStarted := time.Now()
 		agents2[i] = hlcDialAgent(t, c2, i)
+		connected := time.Now()
+		helperRecovery = append(helperRecovery, map[string]any{"helper_id": i, "dial_started_utc": dialStarted.UTC(), "connected_utc": connected.UTC(), "from_ready_ms": connected.Sub(ready).Milliseconds()})
 		id := fmt.Sprintf("hlc-after-%02d", i)
 		published[id] = time.Now()
 		hlcPublish(t, agents2[i], i, id)
@@ -877,7 +884,7 @@ func TestHLCLoadMatrix(t *testing.T) {
 		"sse_ready_utc": sseReady.UTC(), "mux_ready_utc": muxReady.UTC(), "ws_ready_utc": wsReady.UTC(), "stop_to_ready_ms": ready.Sub(stopped).Milliseconds(), "helpers_from_ready_ms": helpersReady.Sub(ready).Milliseconds(),
 		"sse_from_ready_ms": elapsed(sseReady), "mux_from_ready_ms": elapsed(muxReady), "ws_from_ready_ms": elapsed(wsReady), "old_cursor": oldCursor, "sse_gap_count": gap, "mux_gap_count": muxGap,
 		"sse_duplicate_cursors": duplicates, "sse_id_counts": sseCounts, "sse_missing": sseMissing, "sse_duplicate_messages": sseDups, "mux_id_counts": muxCounts, "mux_missing": muxMissing, "mux_duplicate_messages": muxDups,
-		"sse_frames": resumed.snapshot(), "mux_frames": muxResumed.snapshot(), "automatic_reset_performed": false, "helper_count": 20}
+		"sse_frames": resumed.snapshot(), "mux_frames": muxResumed.snapshot(), "automatic_reset_performed": false, "helper_count": 20, "helper_recovery": helperRecovery}
 	for _, frame := range muxResumed.snapshot() {
 		var row map[string]any
 		json.Unmarshal([]byte(frame.Data), &row)
@@ -894,7 +901,13 @@ func TestHLCLoadMatrix(t *testing.T) {
 	t.Logf("S011 recovery=%s", b)
 	// Preserve automatic recovery as a red observation. Explicit reset is a separate
 	// user action, matching closeTab(remove(..., true)) + openTab in the real broker.
-	if ready.Sub(stopped) > 20500*time.Millisecond || helpersReady.Sub(ready) > 5*time.Second || sseReady.IsZero() || wsReady.IsZero() || gap == 0 || muxGap != 1 || duplicates+sseDups+muxDups+sseMissing != 0 || muxMissing != 2 {
+	helperOverLimit := false
+	for _, item := range helperRecovery {
+		if item["from_ready_ms"].(int64) > 5000 {
+			helperOverLimit = true
+		}
+	}
+	if ready.Sub(stopped) > 20*time.Second || helpersReady.Sub(ready) > 5*time.Second || helperOverLimit || sseReady.IsZero() || sseReady.Sub(ready) > 5*time.Second || wsReady.IsZero() || wsReady.Sub(ready) > 5*time.Second || gap == 0 || muxGap != 1 || duplicates+sseDups+muxDups+sseMissing != 0 || muxMissing != 2 {
 		t.Fatal("S011_AUTO_OBSERVATION_CHANGED: inspect raw evidence before reset")
 	}
 	base := "http://" + c2.public
@@ -927,8 +940,21 @@ func TestHLCLoadMatrix(t *testing.T) {
 		"expected_revision": feed["revision"], "subscriptions": subscriptions, "reset": reset,
 	})
 	var output time.Time
+	outputID := "hlc-after-00"
 	for time.Now().Before(click.Add(5 * time.Second)) {
-		output = first(muxResumed)
+		for _, frame := range muxResumed.snapshot() {
+			var row map[string]any
+			if json.Unmarshal([]byte(frame.Data), &row) != nil {
+				continue
+			}
+			if payload, ok := row["payload"].(map[string]any); ok {
+				row = payload
+			}
+			if row["delivery_id"] == outputID && frame.At.After(click) {
+				output = frame.At
+				break
+			}
+		}
 		if !output.IsZero() {
 			break
 		}
@@ -966,7 +992,7 @@ func TestHLCLoadMatrix(t *testing.T) {
 	explicit := map[string]any{"automatic_recovery_pass": false, "gap_informed": muxGap, "click_utc": click.UTC(), "output_utc": output.UTC(),
 		"click_to_output_ms": output.Sub(click).Milliseconds(), "stop_to_output_ms": output.Sub(stopped).Milliseconds(),
 		"missing_before": muxMissing, "missing_after": missingAfter, "duplicates_after": dupsAfter, "id_counts_after": countsAfter,
-		"fates": fates, "reset_response": meta, "frames_after": muxResumed.snapshot(),
+		"fates": fates, "reset_response": meta, "frames_after": muxResumed.snapshot(), "explicit_output_delivery_id": outputID,
 		"method": "真实Hub/VS；按console_auth.go closeTab remove(true)与console_mux_broker.js resetIntents/sync协议模拟显式操作；非浏览器点击读数"}
 	b, _ = json.MarshalIndent(explicit, "", "  ")
 	os.WriteFile(filepath.Join(out, "S011-explicit-resync.json"), b, 0644)

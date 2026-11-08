@@ -1,0 +1,253 @@
+-test.shuffle 1794158148274086275
+=== RUN   TestHLCLoadMatrix
+2026/11/08 17:15:52 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0104_np_session_created_at.sql, 0105_extseat.sql, 0106_tempgroup.sql, 0107_mcpgw_oauth.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+    shutdown_load_test.go:581: RESOURCE tmp=/tmp/hs11final/hlc-matrix-ilvn93s6/tmp/TestHLCLoadMatrix1931187736/001 sqlite=/tmp/hs11final/hlc-matrix-ilvn93s6/tmp/TestHLCLoadMatrix1931187736/001/hub.db public=127.0.0.1:39029 internal=127.0.0.1:39489 pg=127.0.0.1:35787 database=/hubtest
+    shutdown_load_test.go:583: RESOURCE view=hlc-vs0 port=127.0.0.1:43835 directory=/tmp/hs11final/hlc-matrix-ilvn93s6/tmp/TestHLCLoadMatrix1931187736/001
+    shutdown_load_test.go:583: RESOURCE view=hlc-vs1 port=127.0.0.1:39713 directory=/tmp/hs11final/hlc-matrix-ilvn93s6/tmp/TestHLCLoadMatrix1931187736/001
+    shutdown_load_test.go:583: RESOURCE view=hlc-vs2 port=127.0.0.1:39367 directory=/tmp/hs11final/hlc-matrix-ilvn93s6/tmp/TestHLCLoadMatrix1931187736/001
+    shutdown_load_test.go:584: RESOURCE home=/tmp/hs11final/hlc-matrix-ilvn93s6/tmp/TestHLCLoadMatrix1931187736/001 sqlite=/tmp/hs11final/hlc-matrix-ilvn93s6/tmp/TestHLCLoadMatrix1931187736/001/hub.db public=127.0.0.1:39029 internal=127.0.0.1:39489 pg=private-pgtest notify=/tmp/hs11final/hlc-matrix-ilvn93s6/tmp/TestHLCLoadMatrix1931187736/001
+    shutdown_load_test.go:589: fixture_random_seed=1794158152739188395
+    shutdown_load_test.go:703: S011 stop_ms=2168 process_error=<nil> report_exit=0 stages=[{Name:access Started:2026-11-08 17:15:52.910947453 +0000 UTC Ended:2026-11-08 17:15:52.911012976 +0000 UTC ElapsedMS:0 BudgetMS:1000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:1 outbound:1] durable_counts:<nil> feishu_ingress:map[active_callbacks:1 close_completed:false rejected_after_seal:0 sdk_start_not_joined:1 sealed:false] http_overlaps_streams:map[internal_http:165 public_http:77] hub:map[background_owned:62 internal_bridge:15 internal_sse:100 public_mux:5 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:20 view_ws:1] hub_ws_close:map[already_closed:0 failed:0 records:[]] persistence:unknown producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[failed:0 first_error:nil remaining:1] outbound:map[failed:0 first_error:nil remaining:0]] servers:map[] watchdog_enabled:false watchdog_window_ms:0]} {Name:drain Started:2026-11-08 17:15:52.911030004 +0000 UTC Ended:2026-11-08 17:15:55.065325535 +0000 UTC ElapsedMS:2154 BudgetMS:8000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:<nil> feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:0 failed:0 records:[map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:view_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed]]] persistence:unknown producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[failed:0 first_error:nil remaining:0] outbound:map[failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:15:55.00918481Z error:nil listener_closed_utc:2026-11-08T17:15:52.911007907Z] public:map[drained_utc:2026-11-08T17:15:55.065293038Z error:nil listener_closed_utc:2026-11-08T17:15:52.911008416Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:queue Started:2026-11-08 17:15:55.065354152 +0000 UTC Ended:2026-11-08 17:15:55.065603388 +0000 UTC ElapsedMS:0 BudgetMS:3000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_queued:1] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:0 failed:0 records:[map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:view_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed]]] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:15:55.00918481Z error:nil listener_closed_utc:2026-11-08T17:15:52.911007907Z] public:map[drained_utc:2026-11-08T17:15:55.065293038Z error:nil listener_closed_utc:2026-11-08T17:15:52.911008416Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:storage Started:2026-11-08 17:15:55.065615287 +0000 UTC Ended:2026-11-08 17:15:55.074029865 +0000 UTC ElapsedMS:8 BudgetMS:1000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_queued:1] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:0 failed:0 records:[map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:view_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed]]] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:15:55.00918481Z error:nil listener_closed_utc:2026-11-08T17:15:52.911007907Z] public:map[drained_utc:2026-11-08T17:15:55.065293038Z error:nil listener_closed_utc:2026-11-08T17:15:52.911008416Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:finalize Started:2026-11-08 17:15:55.074063411 +0000 UTC Ended:2026-11-08 17:15:55.07407494 +0000 UTC ElapsedMS:0 BudgetMS:2000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_queued:1] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:0 failed:0 records:[map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:view_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed]]] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:15:55.00918481Z error:nil listener_closed_utc:2026-11-08T17:15:52.911007907Z] public:map[drained_utc:2026-11-08T17:15:55.065293038Z error:nil listener_closed_utc:2026-11-08T17:15:52.911008416Z]] watchdog_enabled:false watchdog_window_ms:0]}]
+    shutdown_load_test.go:901: S011 recovery={
+          "automatic_reset_performed": false,
+          "helper_count": 20,
+          "helper_recovery": [
+            {
+              "connected_utc": "2026-11-08T17:15:55.129984927Z",
+              "dial_started_utc": "2026-11-08T17:15:55.128541688Z",
+              "from_ready_ms": 1,
+              "helper_id": 0
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.136444136Z",
+              "dial_started_utc": "2026-11-08T17:15:55.130029583Z",
+              "from_ready_ms": 7,
+              "helper_id": 1
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.137567726Z",
+              "dial_started_utc": "2026-11-08T17:15:55.13650985Z",
+              "from_ready_ms": 9,
+              "helper_id": 2
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.143299346Z",
+              "dial_started_utc": "2026-11-08T17:15:55.137621381Z",
+              "from_ready_ms": 14,
+              "helper_id": 3
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.144501039Z",
+              "dial_started_utc": "2026-11-08T17:15:55.14336203Z",
+              "from_ready_ms": 15,
+              "helper_id": 4
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.146037479Z",
+              "dial_started_utc": "2026-11-08T17:15:55.144560643Z",
+              "from_ready_ms": 17,
+              "helper_id": 5
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.147489697Z",
+              "dial_started_utc": "2026-11-08T17:15:55.146084844Z",
+              "from_ready_ms": 18,
+              "helper_id": 6
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.14889276Z",
+              "dial_started_utc": "2026-11-08T17:15:55.147527373Z",
+              "from_ready_ms": 20,
+              "helper_id": 7
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.15052767Z",
+              "dial_started_utc": "2026-11-08T17:15:55.148930236Z",
+              "from_ready_ms": 21,
+              "helper_id": 8
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.151854121Z",
+              "dial_started_utc": "2026-11-08T17:15:55.150585185Z",
+              "from_ready_ms": 23,
+              "helper_id": 9
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.153268643Z",
+              "dial_started_utc": "2026-11-08T17:15:55.151893187Z",
+              "from_ready_ms": 24,
+              "helper_id": 10
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.154442458Z",
+              "dial_started_utc": "2026-11-08T17:15:55.153319987Z",
+              "from_ready_ms": 25,
+              "helper_id": 11
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.155561479Z",
+              "dial_started_utc": "2026-11-08T17:15:55.15451771Z",
+              "from_ready_ms": 27,
+              "helper_id": 12
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.157001678Z",
+              "dial_started_utc": "2026-11-08T17:15:55.155609394Z",
+              "from_ready_ms": 28,
+              "helper_id": 13
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.158337347Z",
+              "dial_started_utc": "2026-11-08T17:15:55.157043474Z",
+              "from_ready_ms": 29,
+              "helper_id": 14
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.159650699Z",
+              "dial_started_utc": "2026-11-08T17:15:55.158393442Z",
+              "from_ready_ms": 31,
+              "helper_id": 15
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.161390199Z",
+              "dial_started_utc": "2026-11-08T17:15:55.159705163Z",
+              "from_ready_ms": 32,
+              "helper_id": 16
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.162890752Z",
+              "dial_started_utc": "2026-11-08T17:15:55.161446433Z",
+              "from_ready_ms": 34,
+              "helper_id": 17
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.164282766Z",
+              "dial_started_utc": "2026-11-08T17:15:55.162936508Z",
+              "from_ready_ms": 35,
+              "helper_id": 18
+            },
+            {
+              "connected_utc": "2026-11-08T17:15:55.166027016Z",
+              "dial_started_utc": "2026-11-08T17:15:55.16434619Z",
+              "from_ready_ms": 37,
+              "helper_id": 19
+            }
+          ],
+          "helpers_from_ready_ms": 37,
+          "helpers_ready_utc": "2026-11-08T17:15:55.166109568Z",
+          "mux_duplicate_messages": 0,
+          "mux_frames": [
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"10e8d03d4f06f2b240578f8cfa68df3f\",\"replay_round\":\"1\",\"epoch\":\"26eb73844258bb82\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:15:55.180593773Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"10e8d03d4f06f2b240578f8cfa68df3f\",\"replay_round\":\"1\",\"epoch\":\"26eb73844258bb82\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-01\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-01\",\"turn_id\":\"hlc-turn\"}}",
+              "At": "2026-11-08T17:15:55.180604452Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"10e8d03d4f06f2b240578f8cfa68df3f\",\"replay_round\":\"1\",\"epoch\":\"26eb73844258bb82\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:15:55.180605312Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"gap\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"dc277e573558199b1be54cc64e1087d3\",\"replay_round\":\"1\",\"epoch\":\"e329665bf8baa18f\",\"floor\":\"1\",\"H\":\"2\",\"reason\":\"resync_required\",\"cause\":\"epoch_changed\"}",
+              "At": "2026-11-08T17:15:55.181434291Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"fc719e924817e89e75d0c7da4d4153c0\",\"replay_round\":\"1\",\"epoch\":\"76c81f5359c1a4c0\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:15:55.181507653Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"fc719e924817e89e75d0c7da4d4153c0\",\"replay_round\":\"1\",\"epoch\":\"76c81f5359c1a4c0\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-03\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-03\",\"turn_id\":\"hlc-turn\"}}",
+              "At": "2026-11-08T17:15:55.181516903Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"828afff0821e882f6d506294a938df40\",\"replay_round\":\"1\",\"epoch\":\"3d9d4956b656700a\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:15:55.181571877Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"fc719e924817e89e75d0c7da4d4153c0\",\"replay_round\":\"1\",\"epoch\":\"76c81f5359c1a4c0\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:15:55.181589085Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"828afff0821e882f6d506294a938df40\",\"replay_round\":\"1\",\"epoch\":\"3d9d4956b656700a\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-02\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-02\",\"turn_id\":\"hlc-turn\"}}",
+              "At": "2026-11-08T17:15:55.181688576Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"828afff0821e882f6d506294a938df40\",\"replay_round\":\"1\",\"epoch\":\"3d9d4956b656700a\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:15:55.181697945Z"
+            }
+          ],
+          "mux_from_ready_ms": null,
+          "mux_gap_count": 1,
+          "mux_gap_from_stop_ms": 2270,
+          "mux_id_counts": {
+            "hlc-after-01": 1,
+            "hlc-after-02": 1,
+            "hlc-after-03": 1
+          },
+          "mux_missing": 2,
+          "mux_ready_utc": "0001-01-01T00:00:00Z",
+          "new_listener_observed_utc": "2026-11-08T17:15:55.12852753Z",
+          "new_ready_utc": "2026-11-08T17:15:55.128533129Z",
+          "old_cursor": "e7d45ff44009f052-1",
+          "old_exit_utc": "2026-11-08T17:15:55.079456735Z",
+          "sse_duplicate_cursors": 0,
+          "sse_duplicate_messages": 0,
+          "sse_frames": [
+            {
+              "Event": "replay_gap",
+              "ID": "",
+              "Data": "{\"reason\":\"epoch_changed\",\"epoch\":\"e329665bf8baa18f\"}",
+              "At": "2026-11-08T17:15:55.172163246Z"
+            },
+            {
+              "Event": "",
+              "ID": "e329665bf8baa18f-1",
+              "Data": "{\"delivery_id\":\"hlc-after-00\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-00\",\"turn_id\":\"hlc-turn\"}",
+              "At": "2026-11-08T17:15:55.172164696Z"
+            },
+            {
+              "Event": "",
+              "ID": "e329665bf8baa18f-2",
+              "Data": "{\"delivery_id\":\"hlc-after-verify\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-verify\",\"turn_id\":\"hlc-turn\"}",
+              "At": "2026-11-08T17:15:55.178233543Z"
+            }
+          ],
+          "sse_from_ready_ms": 49,
+          "sse_gap_count": 1,
+          "sse_id_counts": {
+            "hlc-after-00": 1,
+            "hlc-after-verify": 1
+          },
+          "sse_missing": 0,
+          "sse_ready_utc": "2026-11-08T17:15:55.178233543Z",
+          "stop_to_ready_ms": 2217,
+          "stop_utc": "2026-11-08T17:15:52.910901267Z",
+          "ws_from_ready_ms": 49,
+          "ws_ready_utc": "2026-11-08T17:15:55.178383289Z"
+        }
+    shutdown_load_test.go:1009: S011-new-cleanup stop_ms=177 process_error=<nil> report_exit=0 stages=[{Name:access Started:2026-11-08 17:16:00.382723949 +0000 UTC Ended:2026-11-08 17:16:00.382763395 +0000 UTC ElapsedMS:0 BudgetMS:1000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:1 outbound:1] durable_counts:<nil> feishu_ingress:map[active_callbacks:0 close_completed:false rejected_after_seal:0 sdk_start_not_joined:1 sealed:false] http_overlaps_streams:map[internal_http:3 public_http:21] hub:map[background_directory_timer:0 background_owned:1 internal_bridge:3 internal_sse:0 public_mux:1 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:20 view_ws:0] hub_ws_close:map[already_closed:0 failed:0 records:[]] persistence:unknown producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[failed:0 first_error:nil remaining:0] outbound:map[failed:0 first_error:nil remaining:0]] servers:map[] watchdog_enabled:false watchdog_window_ms:0]} {Name:drain Started:2026-11-08 17:16:00.382776924 +0000 UTC Ended:2026-11-08 17:16:00.547163152 +0000 UTC ElapsedMS:164 BudgetMS:8000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:<nil> feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_directory_timer:0 background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:20 failed:0 records:[map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed]]] persistence:unknown producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[failed:0 first_error:nil remaining:0] outbound:map[failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:16:00.383982686Z error:nil listener_closed_utc:2026-11-08T17:16:00.382759846Z] public:map[drained_utc:2026-11-08T17:16:00.383977997Z error:nil listener_closed_utc:2026-11-08T17:16:00.382760216Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:queue Started:2026-11-08 17:16:00.547195499 +0000 UTC Ended:2026-11-08 17:16:00.547467942 +0000 UTC ElapsedMS:0 BudgetMS:3000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_done:2] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_directory_timer:0 background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:20 failed:0 records:[map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed]]] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:16:00.383982686Z error:nil listener_closed_utc:2026-11-08T17:16:00.382759846Z] public:map[drained_utc:2026-11-08T17:16:00.383977997Z error:nil listener_closed_utc:2026-11-08T17:16:00.382760216Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:storage Started:2026-11-08 17:16:00.547482261 +0000 UTC Ended:2026-11-08 17:16:00.55547567 +0000 UTC ElapsedMS:7 BudgetMS:1000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_done:2] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_directory_timer:0 background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:20 failed:0 records:[map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed]]] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:16:00.383982686Z error:nil listener_closed_utc:2026-11-08T17:16:00.382759846Z] public:map[drained_utc:2026-11-08T17:16:00.383977997Z error:nil listener_closed_utc:2026-11-08T17:16:00.382760216Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:finalize Started:2026-11-08 17:16:00.555495508 +0000 UTC Ended:2026-11-08 17:16:00.555504397 +0000 UTC ElapsedMS:0 BudgetMS:2000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_done:2] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_directory_timer:0 background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:20 failed:0 records:[map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: use of closed network connection kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed] map[error:failed to close WebSocket: failed to read frame header: EOF kind:session_ws result:already_closed]]] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:16:00.383982686Z error:nil listener_closed_utc:2026-11-08T17:16:00.382759846Z] public:map[drained_utc:2026-11-08T17:16:00.383977997Z error:nil listener_closed_utc:2026-11-08T17:16:00.382760216Z]] watchdog_enabled:false watchdog_window_ms:0]}]
+--- PASS: TestHLCLoadMatrix (13.03s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	13.049s

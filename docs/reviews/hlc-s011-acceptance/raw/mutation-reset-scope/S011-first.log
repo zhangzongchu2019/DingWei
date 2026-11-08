@@ -1,0 +1,4 @@
+# github.com/zhangzongchu2019/dingwei/cmd/workpulse [github.com/zhangzongchu2019/dingwei/cmd/workpulse.test]
+../hs11m2/hlc-matrix-i7ojk2yy/shutdown_load_test.go:916:6: reset declared and not used
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse [build failed]
+FAIL

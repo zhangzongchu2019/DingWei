@@ -1,0 +1,254 @@
+-test.shuffle 1794158181617994708
+=== RUN   TestHLCLoadMatrix
+2026/11/08 17:16:26 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0104_np_session_created_at.sql, 0105_extseat.sql, 0106_tempgroup.sql, 0107_mcpgw_oauth.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+    shutdown_load_test.go:581: RESOURCE tmp=/tmp/hs11mutfinal/hlc-matrix-57s8ngpd/tmp/TestHLCLoadMatrix271234343/001 sqlite=/tmp/hs11mutfinal/hlc-matrix-57s8ngpd/tmp/TestHLCLoadMatrix271234343/001/hub.db public=127.0.0.1:38433 internal=127.0.0.1:35179 pg=127.0.0.1:46401 database=/hubtest
+    shutdown_load_test.go:583: RESOURCE view=hlc-vs0 port=127.0.0.1:33859 directory=/tmp/hs11mutfinal/hlc-matrix-57s8ngpd/tmp/TestHLCLoadMatrix271234343/001
+    shutdown_load_test.go:583: RESOURCE view=hlc-vs1 port=127.0.0.1:33025 directory=/tmp/hs11mutfinal/hlc-matrix-57s8ngpd/tmp/TestHLCLoadMatrix271234343/001
+    shutdown_load_test.go:583: RESOURCE view=hlc-vs2 port=127.0.0.1:44411 directory=/tmp/hs11mutfinal/hlc-matrix-57s8ngpd/tmp/TestHLCLoadMatrix271234343/001
+    shutdown_load_test.go:584: RESOURCE home=/tmp/hs11mutfinal/hlc-matrix-57s8ngpd/tmp/TestHLCLoadMatrix271234343/001 sqlite=/tmp/hs11mutfinal/hlc-matrix-57s8ngpd/tmp/TestHLCLoadMatrix271234343/001/hub.db public=127.0.0.1:38433 internal=127.0.0.1:35179 pg=private-pgtest notify=/tmp/hs11mutfinal/hlc-matrix-57s8ngpd/tmp/TestHLCLoadMatrix271234343/001
+    shutdown_load_test.go:589: fixture_random_seed=1794158186407600851
+    shutdown_load_test.go:703: S011 stop_ms=2135 process_error=<nil> report_exit=0 stages=[{Name:access Started:2026-11-08 17:16:26.562393827 +0000 UTC Ended:2026-11-08 17:16:26.562435333 +0000 UTC ElapsedMS:0 BudgetMS:1000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:1 outbound:1] durable_counts:<nil> feishu_ingress:map[active_callbacks:1 close_completed:false rejected_after_seal:0 sdk_start_not_joined:1 sealed:false] http_overlaps_streams:map[internal_http:165 public_http:77] hub:map[background_owned:62 internal_bridge:15 internal_sse:100 public_mux:5 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:20 view_ws:1] hub_ws_close:map[already_closed:0 failed:0 records:[]] persistence:unknown producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[failed:0 first_error:nil remaining:1] outbound:map[failed:0 first_error:nil remaining:0]] servers:map[] watchdog_enabled:false watchdog_window_ms:0]} {Name:drain Started:2026-11-08 17:16:26.562451261 +0000 UTC Ended:2026-11-08 17:16:28.685097534 +0000 UTC ElapsedMS:2122 BudgetMS:8000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:<nil> feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:0 failed:0 records:[map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:view_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed]]] persistence:unknown producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[failed:0 first_error:nil remaining:0] outbound:map[failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:16:28.685069647Z error:nil listener_closed_utc:2026-11-08T17:16:26.562431313Z] public:map[drained_utc:2026-11-08T17:16:28.664932245Z error:nil listener_closed_utc:2026-11-08T17:16:26.562431823Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:queue Started:2026-11-08 17:16:28.685134731 +0000 UTC Ended:2026-11-08 17:16:28.685389906 +0000 UTC ElapsedMS:0 BudgetMS:3000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_queued:1] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:0 failed:0 records:[map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:view_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed]]] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:16:28.685069647Z error:nil listener_closed_utc:2026-11-08T17:16:26.562431313Z] public:map[drained_utc:2026-11-08T17:16:28.664932245Z error:nil listener_closed_utc:2026-11-08T17:16:26.562431823Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:storage Started:2026-11-08 17:16:28.685407024 +0000 UTC Ended:2026-11-08 17:16:28.69393996 +0000 UTC ElapsedMS:8 BudgetMS:1000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_queued:1] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:0 failed:0 records:[map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:view_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed]]] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:16:28.685069647Z error:nil listener_closed_utc:2026-11-08T17:16:26.562431313Z] public:map[drained_utc:2026-11-08T17:16:28.664932245Z error:nil listener_closed_utc:2026-11-08T17:16:26.562431823Z]] watchdog_enabled:false watchdog_window_ms:0]} {Name:finalize Started:2026-11-08 17:16:28.693985756 +0000 UTC Ended:2026-11-08 17:16:28.693995545 +0000 UTC ElapsedMS:0 BudgetMS:2000 Timeout:false ForcedClose:false Result:completed Error:nil Snapshot:map[consumers:map[inbound:0 outbound:0] durable_counts:map[message_queued:1] feishu_ingress:map[active_callbacks:0 close_completed:true rejected_after_seal:1 sdk_start_not_joined:1 sealed:true] http_overlaps_streams:map[internal_http:0 public_http:0] hub:map[background_owned:0 internal_bridge:0 internal_sse:0 public_mux:0 registration_internal_bridge:0 registration_internal_sse:0 registration_public_mux:0 registration_session_ws:0 registration_view_ws:0 session_ws:0 view_ws:0] hub_ws_close:map[already_closed:0 failed:0 records:[map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:view_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed] map[error: kind:session_ws result:closed]]] persistence:snapshot_captured producers:map[cron_reload:0 receiver:0 reminders:0] queue:map[inbound:map[error:nil failed:0 first_error:nil remaining:0] outbound:map[error:nil failed:0 first_error:nil remaining:0]] servers:map[internal:map[drained_utc:2026-11-08T17:16:28.685069647Z error:nil listener_closed_utc:2026-11-08T17:16:26.562431313Z] public:map[drained_utc:2026-11-08T17:16:28.664932245Z error:nil listener_closed_utc:2026-11-08T17:16:26.562431823Z]] watchdog_enabled:false watchdog_window_ms:0]}]
+    shutdown_load_test.go:901: S011 recovery={
+          "automatic_reset_performed": false,
+          "helper_count": 20,
+          "helper_recovery": [
+            {
+              "connected_utc": "2026-11-08T17:16:28.749289472Z",
+              "dial_started_utc": "2026-11-08T17:16:28.747580979Z",
+              "from_ready_ms": 1,
+              "helper_id": 0
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.750979707Z",
+              "dial_started_utc": "2026-11-08T17:16:28.749411811Z",
+              "from_ready_ms": 3,
+              "helper_id": 1
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.758408951Z",
+              "dial_started_utc": "2026-11-08T17:16:28.75105811Z",
+              "from_ready_ms": 10,
+              "helper_id": 2
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.759914754Z",
+              "dial_started_utc": "2026-11-08T17:16:28.75852161Z",
+              "from_ready_ms": 12,
+              "helper_id": 3
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.76169698Z",
+              "dial_started_utc": "2026-11-08T17:16:28.759992557Z",
+              "from_ready_ms": 14,
+              "helper_id": 4
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.763604694Z",
+              "dial_started_utc": "2026-11-08T17:16:28.761807069Z",
+              "from_ready_ms": 16,
+              "helper_id": 5
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.765082719Z",
+              "dial_started_utc": "2026-11-08T17:16:28.763671187Z",
+              "from_ready_ms": 17,
+              "helper_id": 6
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.766749556Z",
+              "dial_started_utc": "2026-11-08T17:16:28.76517355Z",
+              "from_ready_ms": 19,
+              "helper_id": 7
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.768393906Z",
+              "dial_started_utc": "2026-11-08T17:16:28.766819619Z",
+              "from_ready_ms": 20,
+              "helper_id": 8
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.769905458Z",
+              "dial_started_utc": "2026-11-08T17:16:28.76844664Z",
+              "from_ready_ms": 22,
+              "helper_id": 9
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.77131658Z",
+              "dial_started_utc": "2026-11-08T17:16:28.769970392Z",
+              "from_ready_ms": 23,
+              "helper_id": 10
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.77285628Z",
+              "dial_started_utc": "2026-11-08T17:16:28.771389513Z",
+              "from_ready_ms": 25,
+              "helper_id": 11
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.774089729Z",
+              "dial_started_utc": "2026-11-08T17:16:28.772934092Z",
+              "from_ready_ms": 26,
+              "helper_id": 12
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.775750977Z",
+              "dial_started_utc": "2026-11-08T17:16:28.774154203Z",
+              "from_ready_ms": 28,
+              "helper_id": 13
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.777292576Z",
+              "dial_started_utc": "2026-11-08T17:16:28.7758253Z",
+              "from_ready_ms": 29,
+              "helper_id": 14
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.779106109Z",
+              "dial_started_utc": "2026-11-08T17:16:28.777350551Z",
+              "from_ready_ms": 31,
+              "helper_id": 15
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.780564947Z",
+              "dial_started_utc": "2026-11-08T17:16:28.779166813Z",
+              "from_ready_ms": 32,
+              "helper_id": 16
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.78227274Z",
+              "dial_started_utc": "2026-11-08T17:16:28.780648359Z",
+              "from_ready_ms": 34,
+              "helper_id": 17
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.783566243Z",
+              "dial_started_utc": "2026-11-08T17:16:28.782344623Z",
+              "from_ready_ms": 35,
+              "helper_id": 18
+            },
+            {
+              "connected_utc": "2026-11-08T17:16:28.784688284Z",
+              "dial_started_utc": "2026-11-08T17:16:28.783621668Z",
+              "from_ready_ms": 37,
+              "helper_id": 19
+            }
+          ],
+          "helpers_from_ready_ms": 37,
+          "helpers_ready_utc": "2026-11-08T17:16:28.784752547Z",
+          "mux_duplicate_messages": 0,
+          "mux_frames": [
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"54d30a3a36582cda24e9b0ccaa41b827\",\"replay_round\":\"1\",\"epoch\":\"b94f78ce6250c309\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:16:28.798767388Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"54d30a3a36582cda24e9b0ccaa41b827\",\"replay_round\":\"1\",\"epoch\":\"b94f78ce6250c309\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-02\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-02\",\"turn_id\":\"hlc-turn\"}}",
+              "At": "2026-11-08T17:16:28.798824083Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"54d30a3a36582cda24e9b0ccaa41b827\",\"replay_round\":\"1\",\"epoch\":\"b94f78ce6250c309\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:16:28.79885261Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"71332aa790ac2bb992323925a4801633\",\"replay_round\":\"1\",\"epoch\":\"5e061ae18f71275f\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:16:28.79946938Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"gap\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"0c9a2d2b9263bfae42a76c2164419622\",\"replay_round\":\"1\",\"epoch\":\"d1aebaaf333d2523\",\"floor\":\"1\",\"H\":\"2\",\"reason\":\"resync_required\",\"cause\":\"epoch_changed\"}",
+              "At": "2026-11-08T17:16:28.799548142Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"71332aa790ac2bb992323925a4801633\",\"replay_round\":\"1\",\"epoch\":\"5e061ae18f71275f\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-01\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-01\",\"turn_id\":\"hlc-turn\"}}",
+              "At": "2026-11-08T17:16:28.799551801Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"82928c44a5c825016481d289e15e7057\",\"replay_round\":\"1\",\"epoch\":\"179b20d73a29f795\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:16:28.799577059Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"71332aa790ac2bb992323925a4801633\",\"replay_round\":\"1\",\"epoch\":\"5e061ae18f71275f\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:16:28.799590418Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"82928c44a5c825016481d289e15e7057\",\"replay_round\":\"1\",\"epoch\":\"179b20d73a29f795\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-03\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-03\",\"turn_id\":\"hlc-turn\"}}",
+              "At": "2026-11-08T17:16:28.799610136Z"
+            },
+            {
+              "Event": "",
+              "ID": "",
+              "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"82928c44a5c825016481d289e15e7057\",\"replay_round\":\"1\",\"epoch\":\"179b20d73a29f795\",\"floor\":\"1\",\"H\":\"1\"}",
+              "At": "2026-11-08T17:16:28.799618295Z"
+            }
+          ],
+          "mux_from_ready_ms": null,
+          "mux_gap_count": 1,
+          "mux_gap_from_stop_ms": 2237,
+          "mux_id_counts": {
+            "hlc-after-01": 1,
+            "hlc-after-02": 1,
+            "hlc-after-03": 1
+          },
+          "mux_missing": 2,
+          "mux_ready_utc": "0001-01-01T00:00:00Z",
+          "new_listener_observed_utc": "2026-11-08T17:16:28.747562421Z",
+          "new_ready_utc": "2026-11-08T17:16:28.74757206Z",
+          "old_cursor": "763744f2e61c41af-1",
+          "old_exit_utc": "2026-11-08T17:16:28.697793134Z",
+          "sse_duplicate_cursors": 0,
+          "sse_duplicate_messages": 0,
+          "sse_frames": [
+            {
+              "Event": "replay_gap",
+              "ID": "",
+              "Data": "{\"reason\":\"epoch_changed\",\"epoch\":\"d1aebaaf333d2523\"}",
+              "At": "2026-11-08T17:16:28.786558561Z"
+            },
+            {
+              "Event": "",
+              "ID": "d1aebaaf333d2523-1",
+              "Data": "{\"delivery_id\":\"hlc-after-00\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-00\",\"turn_id\":\"hlc-turn\"}",
+              "At": "2026-11-08T17:16:28.786560251Z"
+            },
+            {
+              "Event": "",
+              "ID": "d1aebaaf333d2523-2",
+              "Data": "{\"delivery_id\":\"hlc-after-verify\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-verify\",\"turn_id\":\"hlc-turn\"}",
+              "At": "2026-11-08T17:16:28.796581782Z"
+            }
+          ],
+          "sse_from_ready_ms": 49,
+          "sse_gap_count": 1,
+          "sse_id_counts": {
+            "hlc-after-00": 1,
+            "hlc-after-verify": 1
+          },
+          "sse_missing": 0,
+          "sse_ready_utc": "2026-11-08T17:16:28.796581782Z",
+          "stop_to_ready_ms": 2185,
+          "stop_utc": "2026-11-08T17:16:26.562351091Z",
+          "ws_from_ready_ms": 49,
+          "ws_ready_utc": "2026-11-08T17:16:28.796711959Z"
+        }
+    shutdown_load_test.go:1000: S011_EXPLICIT_RESYNC_MISSING_OR_TIMING: see fate evidence
+--- FAIL: TestHLCLoadMatrix (17.88s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/workpulse	17.895s
+FAIL

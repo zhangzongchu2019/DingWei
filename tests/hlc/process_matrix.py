@@ -16,7 +16,7 @@ def main():
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--repeat', type=int, default=1)
     p.add_argument('--race', action='store_true')
-    p.add_argument('--mutant', choices=['no-sse-cancel', 'no-ws-close', 'no-callback-seal'])
+    p.add_argument('--mutant', choices=['no-sse-cancel', 'no-ws-close', 'no-callback-seal', 'no-reset-scope-binding'])
     args = p.parse_args()
     root = Path(__file__).resolve().parents[2]
     out = args.output.resolve()
@@ -77,6 +77,17 @@ def main():
             assert body.count(close) == 1
             (temp / 'lifecycle.go').write_text(body.replace(close, '_ = c; err := error(nil)'))
             replacements[str(source)] = str(temp / 'lifecycle.go')
+        if args.mutant == 'no-reset-scope-binding':
+            if args.case != 'S011':
+                raise SystemExit('no-reset-scope-binding mutant is specific to S011')
+            source = root / 'cmd/workpulse/shutdown_load_test.go'
+            body = source.read_text()
+            reset_scope = '\t\t"expected_revision": feed["revision"], "subscriptions": subscriptions, "reset": reset,'
+            wrong_scope = '\t\t"expected_revision": feed["revision"], "subscriptions": subscriptions, "reset": map[string]any{"full_name": reset["full_name"], "iframe_instance": "stale", "generation": reset["generation"], "replay_round": reset["replay_round"]},'
+            assert body.count(reset_scope) == 1
+            body = body.replace(reset_scope, wrong_scope + ' // MUTATION: reset_scope no longer matches the active iframe scope')
+            (temp / 'shutdown_load_test.go').write_text(body)
+            replacements[str(source)] = str(temp / 'shutdown_load_test.go')
         if args.mutant == 'no-callback-seal':
             source = root / 'internal/feishu/feishu.go'
             body = source.read_text()
@@ -89,7 +100,7 @@ def main():
         env = dict(TMPDIR=str(temp / 'tmp'), HOME=str(temp / 'home'), PATH='/data/ai-dev-data/helper-deps-lock-venv/bin:/usr/lib/go-1.22/bin:/usr/local/bin:/usr/bin:/bin',
                    GOCACHE='/home/dev/.cache/go-build', GOMODCACHE='/home/dev/go/pkg/mod', GOPATH='/home/dev/go',
                    LANG='C.UTF-8', TZ='UTC', HUB_TEST_PG_STRICT='1', HLC_LOAD_ENABLED='1',
-                   HLC_CASE=args.case, HLC_MATRIX_EVIDENCE=str(out), HLC_REPO=str(root), HLC_REPEAT=str(args.repeat))
+                   HLC_CASE=args.case, HLC_MATRIX_EVIDENCE=str(out), HLC_REPO=str(root), HLC_REPEAT=str(args.repeat), HLC_S011_EXPECT_RESET_REJECT='1' if args.mutant == 'no-reset-scope-binding' else '0')
         command = ['go', 'test'] + (['-race'] if args.race else []) + ['-overlay', str(overlay), './cmd/workpulse', '-run', '^TestHLCLoadMatrix$', '-count='+str(args.repeat), '-shuffle=on', '-timeout=20m', '-v']
         source_hashes = {str(x.relative_to(root)): hashlib.sha256(x.read_bytes()).hexdigest() for x in
                          [main_source, sdk_source, root / 'cmd/workpulse/shutdown_load_test.go',
@@ -117,6 +128,12 @@ def main():
             timeout = report.get('exit_code') == 2 and len(stages) == 5 and stages[1]['timeout']
             if args.mutant == 'no-callback-seal':
                 receipt['target_red'] = result.returncode == 1 and 'S006_POST_SEAL_DB_ZERO' in log.read_text()
+            elif args.mutant == 'no-reset-scope-binding':
+                explicit = json.loads((out / 'S011-explicit-resync.json').read_text()) if (out / 'S011-explicit-resync.json').exists() else {}
+                target_assertion = 'S011_EXPLICIT_RESYNC_MISSING_OR_TIMING'
+                receipt['target_red'] = result.returncode == 1 and target_assertion in log.read_text() and (explicit.get('missing_after', 0) > 0 or explicit.get('duplicates_after', 0) > 0)
+                receipt['target_assertion'] = target_assertion
+                receipt['mutation_readout'] = explicit
             else:
                 initial = json.loads((out / (args.case + '-load.json')).read_text()) if (out / (args.case + '-load.json')).exists() else {}
                 receipt['target_red'] = result.returncode == 1 and timeout and initial.get('hub', {}).get('session_ws') == 20 and 'UNEXPECTED_EXIT' in log.read_text()

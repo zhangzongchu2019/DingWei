@@ -1,0 +1,147 @@
+{
+  "case": "S011",
+  "command": [
+    "go",
+    "test",
+    "-overlay",
+    "/tmp/hs11mutfinal/hlc-matrix-57s8ngpd/overlay.json",
+    "./cmd/workpulse",
+    "-run",
+    "^TestHLCLoadMatrix$",
+    "-count=1",
+    "-shuffle=on",
+    "-timeout=20m",
+    "-v"
+  ],
+  "started_utc": "2026-11-08T17:16:20.326985+00:00",
+  "ended_utc": "2026-11-08T17:16:39.521415+00:00",
+  "rc": 1,
+  "log": "S011-first.log",
+  "log_sha256": "d98291221fcc851922766d07e56e7fc105847840ddb387cc75f6ee35084801ef",
+  "overlays": "Fixture setup + SDK transport; S014 additionally pins tracked socket snapshot; S014-live-failure injects real listener close-frame write timeout; classification/coordinator unchanged",
+  "race": false,
+  "repetitions": 1,
+  "sources": {
+    "cmd/workpulse/main.go": "fb42c6f0538422e8592eb654ebf46a2c7fe4a9908c31e71d1c2946e5304a23db",
+    "internal/feishu/lifecycle.go": "52c8bcbbee78cacb930e1e971c729dee897d9d41f18d747f1ffc294c88fc048e",
+    "cmd/workpulse/shutdown_load_test.go": "d0e8df3d5c96db61ff752688a77125148bd6b115643d2e442417c8f128d86811",
+    "tests/hlc/sdk_fixture.go.txt": "13520d21e8ef84fe8d254af8630f95ffd884760d9ddeed671ea570d7970d475f",
+    "internal/m8/lifecycle.go": "a39cb795c019b5707e02f20b8fd0c7e77ebb8b52b590e811e389b21be1adab61",
+    "tests/hlc/process_matrix.py": "44e5114b2cd3d10ea5d155458cc3b87ec47eda94cebbfc77f7b6029ef22c9f00"
+  },
+  "mutation": "no-reset-scope-binding",
+  "target_red": true,
+  "target_assertion": "S011_EXPLICIT_RESYNC_MISSING_OR_TIMING",
+  "mutation_readout": {
+    "automatic_recovery_pass": false,
+    "click_to_output_ms": -9223372036854,
+    "click_utc": "2026-11-08T17:16:33.75633571Z",
+    "duplicates_after": 0,
+    "explicit_output_delivery_id": "hlc-after-00",
+    "fates": [
+      {
+        "after_resync_count": 0,
+        "before_resync_count": 0,
+        "delivery_id": "hlc-after-00",
+        "fate": "\u672a\u8865\u56de\uff0c\u9700\u6838\u67e5\uff0c\u4e0d\u636e\u6b64\u63a8\u65ad\u65e7Hub\u5185\u5b58\u4e22\u5931",
+        "new_hub_sse_cursor": "d1aebaaf333d2523-1",
+        "old_hub_memory_loss": false,
+        "published_after_new_ready_ms": 1,
+        "published_after_stop_ms": 2186,
+        "published_send_started_utc": "2026-11-08T17:16:28.749292932Z",
+        "session_event_envelope_id": "hlc-after-00-event",
+        "sse_observed_utc": "2026-11-08T17:16:28.786560251Z"
+      },
+      {
+        "after_resync_count": 0,
+        "before_resync_count": 0,
+        "delivery_id": "hlc-after-verify",
+        "fate": "\u672a\u8865\u56de\uff0c\u9700\u6838\u67e5\uff0c\u4e0d\u636e\u6b64\u63a8\u65ad\u65e7Hub\u5185\u5b58\u4e22\u5931",
+        "new_hub_sse_cursor": "d1aebaaf333d2523-2",
+        "old_hub_memory_loss": false,
+        "published_after_new_ready_ms": 48,
+        "published_after_stop_ms": 2233,
+        "published_send_started_utc": "2026-11-08T17:16:28.796074681Z",
+        "session_event_envelope_id": "hlc-after-verify-event",
+        "sse_observed_utc": "2026-11-08T17:16:28.796581782Z"
+      }
+    ],
+    "frames_after": [
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"54d30a3a36582cda24e9b0ccaa41b827\",\"replay_round\":\"1\",\"epoch\":\"b94f78ce6250c309\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:16:28.798767388Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"54d30a3a36582cda24e9b0ccaa41b827\",\"replay_round\":\"1\",\"epoch\":\"b94f78ce6250c309\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-02\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-02\",\"turn_id\":\"hlc-turn\"}}",
+        "At": "2026-11-08T17:16:28.798824083Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent02\",\"full_name\":\"hlcagent02.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000066\",\"generation\":\"54d30a3a36582cda24e9b0ccaa41b827\",\"replay_round\":\"1\",\"epoch\":\"b94f78ce6250c309\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:16:28.79885261Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"71332aa790ac2bb992323925a4801633\",\"replay_round\":\"1\",\"epoch\":\"5e061ae18f71275f\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:16:28.79946938Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"gap\",\"agent_id\":\"hlcagent00\",\"full_name\":\"hlcagent00.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000064\",\"generation\":\"0c9a2d2b9263bfae42a76c2164419622\",\"replay_round\":\"1\",\"epoch\":\"d1aebaaf333d2523\",\"floor\":\"1\",\"H\":\"2\",\"reason\":\"resync_required\",\"cause\":\"epoch_changed\"}",
+        "At": "2026-11-08T17:16:28.799548142Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"71332aa790ac2bb992323925a4801633\",\"replay_round\":\"1\",\"epoch\":\"5e061ae18f71275f\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-01\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-01\",\"turn_id\":\"hlc-turn\"}}",
+        "At": "2026-11-08T17:16:28.799551801Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_begin\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"82928c44a5c825016481d289e15e7057\",\"replay_round\":\"1\",\"epoch\":\"179b20d73a29f795\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:16:28.799577059Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent01\",\"full_name\":\"hlcagent01.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000065\",\"generation\":\"71332aa790ac2bb992323925a4801633\",\"replay_round\":\"1\",\"epoch\":\"5e061ae18f71275f\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:16:28.799590418Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"event\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"82928c44a5c825016481d289e15e7057\",\"replay_round\":\"1\",\"epoch\":\"179b20d73a29f795\",\"seq\":\"1\",\"payload\":{\"delivery_id\":\"hlc-after-03\",\"kind\":\"assistant_text\",\"text\":\"hlc-after-03\",\"turn_id\":\"hlc-turn\"}}",
+        "At": "2026-11-08T17:16:28.799610136Z"
+      },
+      {
+        "Event": "",
+        "ID": "",
+        "Data": "{\"type\":\"replay_end\",\"agent_id\":\"hlcagent03\",\"full_name\":\"hlcagent03.hlcowner0\",\"iframe_instance\":\"00000000000000000000000000000067\",\"generation\":\"82928c44a5c825016481d289e15e7057\",\"replay_round\":\"1\",\"epoch\":\"179b20d73a29f795\",\"floor\":\"1\",\"H\":\"1\"}",
+        "At": "2026-11-08T17:16:28.799618295Z"
+      }
+    ],
+    "gap_informed": 1,
+    "id_counts_after": {
+      "hlc-after-01": 1,
+      "hlc-after-02": 1,
+      "hlc-after-03": 1
+    },
+    "method": "\u771f\u5b9eHub/VS\uff1b\u6309console_auth.go closeTab remove(true)\u4e0econsole_mux_broker.js resetIntents/sync\u534f\u8bae\u6a21\u62df\u663e\u5f0f\u64cd\u4f5c\uff1b\u975e\u6d4f\u89c8\u5668\u70b9\u51fb\u8bfb\u6570",
+    "missing_after": 2,
+    "missing_before": 2,
+    "output_utc": "0001-01-01T00:00:00Z",
+    "reset_response": {
+      "_body": "{\"error\":\"invalid_control\"}\n",
+      "_http_status": 400
+    },
+    "stop_to_output_ms": -9223372036854
+  }
+}

@@ -34,7 +34,7 @@
 
 - [x] T-08 执行HLC-S001空载、S002有限慢HTTP、S003不释放HTTP、S004活跃SSE、S005活跃WS/注册竞争、S006混合、S007混合超时、S008持久化失败、S010重复信号/启动失败、S012内网独立错误、S013超过12秒有界排空/看门狗连续性；按design数值/退出码逐格记录，负载格随机50轮及race，原始日志附固定坐标。
 - [x] T-09 执行HLC-S009主动取消/WS关闭撤除及S005屏障撤除、S012错误采集撤除、S013停喂触发SIGABRT反向控制；每个变异在目标断言红、恢复后绿，无效变异保持未通过。
-- [ ] T-10 执行HLC-S011隔离stop→ready和helper/三类流恢复格，记录502/503/EOF/WS观察、消息ID/游标/gap及重复/缺失数，核对HLC-PM04冻结数值；交独立验收，不自验收。 【乙；交接（组长 2026-11-08 更正）：按 HLC-008 与组长裁定 3f698b77d848，mux 以用户显式 resync 后 ≤5 秒恢复为准，自动恢复格照实记红、gap 送达另列，属既定设计，不是待修缺陷；剩余工作是由独立 QA 按冻结数值执行 S011 隔离 stop→ready 矩阵（实现席 81849a38 的自测读数：显式 resync 210ms、缺 0）。】
+- [x] T-10 执行HLC-S011隔离stop→ready和helper/三类流恢复格，记录消息ID/游标/gap及重复/缺失数，核对HLC-PM04冻结数值。mux自动恢复格按HLC-008与裁定3f698b77d848照实记gap/缺失；显式resync后5秒内恢复是验收门。独立验收证据：`docs/reviews/hlc-s011-acceptance/RESULT.md`及同目录`raw/`。
 - [ ] T-11 未来实现完成后跑相关Go/race/构建门、全OpenSpec strict，更新代码context/逐格证据；另行申请预发及生产GO，不能以提案归档或tasks勾选代替发布。 【乙；交接（组长 2026-11-08 更正）：停机修复已随 r48 上线；本项剩独立 QA 对 S011 的验收与证据回写，不需另行实现。】
 
 ## Workflow follow-up
@@ -141,6 +141,6 @@ strict规划通过不代表实现/业务验收/发布完成；不archive、不�
   - 保留：S011自动格红（mux缺2），同feed显式resync后缺失0/重复0，210ms及stop→output8759ms分列；m8完整race2648.265s rc1，仅既有50ms时限失败，r47/d8四组各10次对照符合组长a7d6e937判据，FINDING另存，不改阈值。原409八轮无逐次UTC/SIGTERM，禁止补造时差；22/100与9/30对照支持保留单套ready屏障。
   - 待办：T-10/11保持未勾，交组长独立验收/例外处置及后续GO；无部署、apply/archive或新项目授权。当前无测试进程。
 
-### 本次清账交接（2026-11-08）
-- T-10：HLC-S011 自动恢复仍有 gap=1/missing=2，需实现修复并按冻结数值完成隔离 stop→ready 三类流矩阵；由实现席修复、QA独立复验。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ 81849a388d28bec732848227b548be9a894addc3。
-- T-11：HLC-S011 未闭环且独立验收/GO 未完成；修复后由实现席跑全门，QA独立验收，业主另批预发/生产GO。 证据边界：docs/reviews/hlc-primary-integrated/REPORT.md @ 81849a388d28bec732848227b548be9a894addc3。
+### S-HLC-S011-ACCEPTANCE 交接（2026-11-08）
+- T-10：已完成并勾选。基于 `opus50tc2k/r55-integration` `7b123ca4a51fdde77a417d3ce7f03d01235d23ca` 独立执行本地隔离矩阵；停机至ready、20个假helper、SSE、普通WS及显式mux resync均满足冻结上限。mux自动格仍如实记录gap及2条缺失，按HLC-008和裁定 `3f698b77d848` 属既定设计，不作为此项的失败条件。证据：`docs/reviews/hlc-s011-acceptance/RESULT.md` 与同目录 `raw/`。
+- T-11：未完成、保持未勾。S011独立验收已完成，但本任务不包括全量交付门、预发/生产GO及业主批准；由组长安排后续结项及GO。
