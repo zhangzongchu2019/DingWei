@@ -1,0 +1,14 @@
+test_before_intent_more_than_one_second_rejected (test_codex_delivery_reconcile.ReconcileBoundaries.test_before_intent_more_than_one_second_rejected) ... FAIL
+
+======================================================================
+FAIL: test_before_intent_more_than_one_second_rejected (test_codex_delivery_reconcile.ReconcileBoundaries.test_before_intent_more_than_one_second_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 259, in test_before_intent_more_than_one_second_rejected
+    with self.assertRaises(ValueError, msg='OLD_TIME_ADVANCED_ACK'):
+AssertionError: ValueError not raised : OLD_TIME_ADVANCED_ACK
+
+----------------------------------------------------------------------
+Ran 1 test in 0.047s
+
+FAILED (failures=1)

@@ -1,0 +1,32 @@
+test_before_intent_more_than_one_second_rejected (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_before_intent_more_than_one_second_rejected) ... ok
+test_conflicting_terminal_never_replaces_first_outcome (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_conflicting_terminal_never_replaces_first_outcome) ... [delivery][INVALID_NATIVE_EVIDENCE] id=dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee; pending retained
+ok
+test_duplicate_client_id_is_ambiguous (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_duplicate_client_id_is_ambiguous) ... ok
+test_duplicate_client_id_on_historical_binding_is_ambiguous (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_duplicate_client_id_on_historical_binding_is_ambiguous) ... ok
+test_healthy_busy_wait_has_no_stall_deadline (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_healthy_busy_wait_has_no_stall_deadline) ... ok
+test_healthy_response_wait_does_not_replace_transport (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_healthy_response_wait_does_not_replace_transport) ... ok
+test_in_progress_native_admission_then_terminal (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_in_progress_native_admission_then_terminal) ... ok
+test_late_response_preserves_query_rate_and_pending_proof (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_late_response_preserves_query_rate_and_pending_proof) ... ok
+test_local_queue_does_not_use_dispatch_intent_clock (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_local_queue_does_not_use_dispatch_intent_clock) ... ok
+test_native_second_precision_one_second_tolerance (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_native_second_precision_one_second_tolerance) ... ok
+test_native_seconds_replace_fractional_receipt_observation (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_native_seconds_replace_fractional_receipt_observation) ... ok
+test_notification_before_response_and_duplicate_merge (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_notification_before_response_and_duplicate_merge) ... ok
+test_nullable_and_nonfinite_times_keep_pending (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) ... ok
+test_old_generation_snapshot_cannot_advance_ack (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_old_generation_snapshot_cannot_advance_ack) ... [delivery][INVALID_NATIVE_EVIDENCE] id=dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee; pending retained
+ok
+test_one_reconcile_request_per_seat_across_objects (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_one_reconcile_request_per_seat_across_objects) ... ok
+test_one_reconcile_request_per_seat_across_processes (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_one_reconcile_request_per_seat_across_processes) ... ok
+test_opaque_cursor_and_whole_scan_uniqueness (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_opaque_cursor_and_whole_scan_uniqueness) ... ok
+test_page_limit_200_is_incomplete_even_if_match_seen (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_page_limit_200_is_incomplete_even_if_match_seen) ... ok
+test_restart_process_replays_persisted_proof_without_rpc (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_restart_process_replays_persisted_proof_without_rpc) ... ok
+test_thread_rate_limit_survives_driver_replacement (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_thread_rate_limit_survives_driver_replacement) ... ok
+test_turn_start_clock_begins_after_transport_write_lock (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_turn_start_clock_begins_after_transport_write_lock) ... ok
+test_unique_complete_evidence_recovers_and_is_idempotent (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_unique_complete_evidence_recovers_and_is_idempotent) ... ok
+test_unknown_without_driver_row_never_automatically_resubmits (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_unknown_without_driver_row_never_automatically_resubmits) ... [driver-adapter] deliver id=dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee -> unknown (no terminal state yet)
+ok
+test_wrong_thread_and_wrong_turn_keep_pending (tools.sessionhelper.tests.test_codex_delivery_reconcile.ReconcileBoundaries.test_wrong_thread_and_wrong_turn_keep_pending) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 1.931s
+
+OK

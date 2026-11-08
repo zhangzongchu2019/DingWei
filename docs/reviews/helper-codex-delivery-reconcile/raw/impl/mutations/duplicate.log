@@ -1,0 +1,19 @@
+test_duplicate_client_id_is_ambiguous (test_codex_delivery_reconcile.ReconcileBoundaries.test_duplicate_client_id_is_ambiguous) ... FAIL
+
+======================================================================
+FAIL: test_duplicate_client_id_is_ambiguous (test_codex_delivery_reconcile.ReconcileBoundaries.test_duplicate_client_id_is_ambiguous)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 200, in test_duplicate_client_id_is_ambiguous
+    self.assert_pending('DUPLICATE_CLIENT_ID_ADVANCED_ACK')
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 83, in assert_pending
+    self.assertEqual(self.inbox.lifecycle(self.did)['state'], 'admission_unknown', marker)
+AssertionError: 'processed' != 'admission_unknown'
+- processed
++ admission_unknown
+ : DUPLICATE_CLIENT_ID_ADVANCED_ACK
+
+----------------------------------------------------------------------
+Ran 1 test in 0.082s
+
+FAILED (failures=1)

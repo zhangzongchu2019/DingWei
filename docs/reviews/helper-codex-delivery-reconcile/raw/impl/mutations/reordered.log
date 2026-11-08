@@ -1,0 +1,17 @@
+test_notification_before_response_and_duplicate_merge (test_codex_delivery_reconcile.ReconcileBoundaries.test_notification_before_response_and_duplicate_merge) ... FAIL
+
+======================================================================
+FAIL: test_notification_before_response_and_duplicate_merge (test_codex_delivery_reconcile.ReconcileBoundaries.test_notification_before_response_and_duplicate_merge)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 293, in test_notification_before_response_and_duplicate_merge
+    self.assertEqual(self.inbox.lifecycle(self.did)['state'], 'processed', 'REORDERED_NOTIFICATION_LOST_TERMINAL')
+AssertionError: 'admission_unknown' != 'processed'
+- admission_unknown
++ processed
+ : REORDERED_NOTIFICATION_LOST_TERMINAL
+
+----------------------------------------------------------------------
+Ran 1 test in 0.057s
+
+FAILED (failures=1)

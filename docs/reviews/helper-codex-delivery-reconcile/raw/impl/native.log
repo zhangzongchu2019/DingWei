@@ -1,0 +1,14 @@
+test_A_history_replay_preserves_native_times_for_ack (__main__.NativeReconcile.test_A_history_replay_preserves_native_times_for_ack) ... ok
+test_A_replacement_poll_and_resubscribe_recover_lost_terminal (__main__.NativeReconcile.test_A_replacement_poll_and_resubscribe_recover_lost_terminal) ... ok
+test_B_timeout_finds_client_id_on_bound_thread_without_resubmit (__main__.NativeReconcile.test_B_timeout_finds_client_id_on_bound_thread_without_resubmit) ... ok
+test_B_timeout_finds_client_id_on_historical_thread_without_rebind (__main__.NativeReconcile.test_B_timeout_finds_client_id_on_historical_thread_without_rebind) ... ok
+test_control_complete_native_evidence_can_settle_terminal (__main__.NativeReconcile.test_control_complete_native_evidence_can_settle_terminal) ... ok
+test_control_no_matching_turn_stays_unknown_without_resubmit (__main__.NativeReconcile.test_control_no_matching_turn_stays_unknown_without_resubmit) ... ok
+test_control_output_only_terminal_cannot_advance_ack (__main__.NativeReconcile.test_control_output_only_terminal_cannot_advance_ack) ... [delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa turn=01a1baef-7fe5-7bb0-ab11-f90ba2857aa9; missing original native times, no ACK advancement
+ok
+test_native_second_terminal_after_fractional_live_admission (__main__.NativeReconcile.test_native_second_terminal_after_fractional_live_admission) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 2.465s
+
+OK

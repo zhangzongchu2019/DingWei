@@ -1,0 +1,19 @@
+test_opaque_cursor_and_whole_scan_uniqueness (test_codex_delivery_reconcile.ReconcileBoundaries.test_opaque_cursor_and_whole_scan_uniqueness) ... FAIL
+
+======================================================================
+FAIL: test_opaque_cursor_and_whole_scan_uniqueness (test_codex_delivery_reconcile.ReconcileBoundaries.test_opaque_cursor_and_whole_scan_uniqueness)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 220, in test_opaque_cursor_and_whole_scan_uniqueness
+    self.assert_pending('PAGINATION_EARLY_MATCH_ADVANCED_ACK')
+  File "/data/ai-dev-data/helper-codex-delivery-reconcile/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 83, in assert_pending
+    self.assertEqual(self.inbox.lifecycle(self.did)['state'], 'admission_unknown', marker)
+AssertionError: 'processed' != 'admission_unknown'
+- processed
++ admission_unknown
+ : PAGINATION_EARLY_MATCH_ADVANCED_ACK
+
+----------------------------------------------------------------------
+Ran 1 test in 0.093s
+
+FAILED (failures=1)
