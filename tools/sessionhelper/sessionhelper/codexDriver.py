@@ -129,6 +129,8 @@ class _DeliveryRecord:
     detail: str
     created_at: float
     updated_at: float
+    lane_id: str = ""
+    lane_generation: int = 1
 
 
 class _DeliveryStore:
@@ -140,11 +142,13 @@ class _DeliveryStore:
     cannot create a second user message for an already accepted envelope.
     """
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, *, lane_id="", lane_generation=1):
+        self.lane_id, self.lane_generation = lane_id, lane_generation
         self._path = path
         self._lock = threading.Lock()
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
             db.execute(
                 """
                 CREATE TABLE IF NOT EXISTS deliveries (
@@ -161,6 +165,11 @@ class _DeliveryStore:
                 """
             )
 
+            columns={row[1] for row in db.execute("PRAGMA table_info(deliveries)")}
+            if 'lane_id' not in columns:db.execute("ALTER TABLE deliveries ADD COLUMN lane_id TEXT NOT NULL DEFAULT ''")
+            if 'lane_generation' not in columns:db.execute("ALTER TABLE deliveries ADD COLUMN lane_generation INTEGER NOT NULL DEFAULT 1")
+            db.execute("CREATE INDEX IF NOT EXISTS idx_driver_lane_envelope ON deliveries(lane_id,lane_generation,envelope_id)")
+
     def _connect(self) -> AbstractContextManager[sqlite3.Connection]:
         return sqlite_connection(self._path, timeout=10)
 
@@ -168,11 +177,11 @@ class _DeliveryStore:
         with self._lock, self._connect() as db:
             row = db.execute(
                 """
-                SELECT envelope_id, thread_id, turn_id, body_hash, state, detail, created_at, updated_at
+                SELECT envelope_id, thread_id, turn_id, body_hash, state, detail, created_at, updated_at, lane_id, lane_generation
                 FROM deliveries
-                WHERE thread_id = ? AND envelope_id = ?
+                WHERE thread_id = ? AND envelope_id = ? AND lane_id=? AND lane_generation=?
                 """,
-                (thread_id, envelope_id),
+                (thread_id, envelope_id, self.lane_id, self.lane_generation),
             ).fetchone()
         if row is None:
             return None
@@ -182,30 +191,32 @@ class _DeliveryStore:
         """Recovery lookup independent of a freshly initialized thread alias."""
         with self._lock, self._connect() as db:
             row = db.execute(
-                """SELECT envelope_id, thread_id, turn_id, body_hash, state, detail, created_at, updated_at
-                   FROM deliveries WHERE envelope_id = ? ORDER BY updated_at DESC LIMIT 1""",
-                (envelope_id,),
+                """SELECT envelope_id, thread_id, turn_id, body_hash, state, detail, created_at, updated_at, lane_id, lane_generation
+                   FROM deliveries WHERE envelope_id = ? AND lane_id=? AND lane_generation=? ORDER BY updated_at DESC LIMIT 1""",
+                (envelope_id,self.lane_id,self.lane_generation),
             ).fetchone()
         return _DeliveryRecord(*row) if row is not None else None
 
     def records(self, envelope_id=None):
         with self._lock, self._connect() as db:
-            query = "SELECT envelope_id,thread_id,turn_id,body_hash,state,detail,created_at,updated_at FROM deliveries"
-            rows = db.execute(query + (" WHERE envelope_id=?" if envelope_id else ""),
-                              (envelope_id,) if envelope_id else ()).fetchall()
+            query = "SELECT envelope_id,thread_id,turn_id,body_hash,state,detail,created_at,updated_at,lane_id,lane_generation FROM deliveries"
+            query += " WHERE lane_id=? AND lane_generation=?"
+            rows = db.execute(query + (" AND envelope_id=?" if envelope_id else ""),
+                              (self.lane_id,self.lane_generation)+((envelope_id,) if envelope_id else ())).fetchall()
         return [_DeliveryRecord(*row) for row in rows]
 
     def reconciliation_note(self, record, metadata, *, turn_id=None, state=None):
         # CAS protects live notifications and a concurrent delivery writer.
+        if (record.lane_id,record.lane_generation)!=(self.lane_id,self.lane_generation):return False
         with self._lock, self._connect() as db:
             detail = record.detail.split("\nreconcile=", 1)[0]
             if turn_id is not None:
                 detail = "turn status=" + metadata['evidence']['status']
             return db.execute("""UPDATE deliveries SET turn_id=?,state=?,detail=?,updated_at=?
-                WHERE thread_id=? AND envelope_id=? AND updated_at=?""",
+                WHERE thread_id=? AND envelope_id=? AND updated_at=? AND lane_id=? AND lane_generation=?""",
                 (record.turn_id if turn_id is None else turn_id, state or record.state,
                  detail + "\nreconcile=" + json.dumps(metadata, separators=(',', ':')),
-                 time.time(), record.thread_id, record.envelope_id, record.updated_at)).rowcount == 1
+                 time.time(), record.thread_id, record.envelope_id, record.updated_at,self.lane_id,self.lane_generation)).rowcount == 1
 
     def upsert(
         self,
@@ -219,7 +230,9 @@ class _DeliveryStore:
         now = time.time()
         with self._lock, self._connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            previous = db.execute("SELECT detail,turn_id,state FROM deliveries WHERE thread_id=? AND envelope_id=?", (thread_id, envelope_id)).fetchone()
+            previous = db.execute("SELECT detail,turn_id,state FROM deliveries WHERE thread_id=? AND envelope_id=? AND lane_id=? AND lane_generation=?", (thread_id, envelope_id,self.lane_id,self.lane_generation)).fetchone()
+            binding=db.execute("SELECT lane_id,lane_generation FROM deliveries WHERE thread_id=? AND envelope_id=?",(thread_id,envelope_id)).fetchone()
+            if binding is not None and tuple(binding)!=(self.lane_id,self.lane_generation):raise ValueError("driver ledger scope conflict")
             preserved = _reconcile_metadata(previous[0]) if previous else {}
             if preserved:
                 if preserved.get('evidence', {}).get('status') in ('completed', 'interrupted', 'failed'):
@@ -229,16 +242,17 @@ class _DeliveryStore:
             db.execute(
                 """
                 INSERT INTO deliveries
-                    (thread_id, envelope_id, turn_id, body_hash, state, detail, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    (thread_id, envelope_id, turn_id, body_hash, state, detail, created_at, updated_at,lane_id,lane_generation)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?,?,?)
                 ON CONFLICT(thread_id, envelope_id) DO UPDATE SET
                     turn_id = excluded.turn_id,
                     body_hash = excluded.body_hash,
                     state = excluded.state,
                     detail = excluded.detail,
                     updated_at = excluded.updated_at
+                WHERE deliveries.lane_id=excluded.lane_id AND deliveries.lane_generation=excluded.lane_generation
                 """,
-                (thread_id, envelope_id, turn_id, body_hash, state, detail, now, now),
+                (thread_id, envelope_id, turn_id, body_hash, state, detail, now, now,self.lane_id,self.lane_generation),
             )
 
     def update_state(
@@ -250,7 +264,7 @@ class _DeliveryStore:
     ) -> None:
         with self._lock, self._connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            previous = db.execute("SELECT detail FROM deliveries WHERE thread_id=? AND envelope_id=?", (thread_id, envelope_id)).fetchone()
+            previous = db.execute("SELECT detail FROM deliveries WHERE thread_id=? AND envelope_id=? AND lane_id=? AND lane_generation=?", (thread_id, envelope_id,self.lane_id,self.lane_generation)).fetchone()
             metadata = _reconcile_metadata(previous[0]) if previous else {}
             if metadata:
                 detail = detail.split("\nreconcile=", 1)[0] + "\nreconcile=" + json.dumps(metadata, separators=(',', ':'))
@@ -258,13 +272,59 @@ class _DeliveryStore:
                 """
                 UPDATE deliveries
                 SET state = ?, detail = ?, updated_at = ?
-                WHERE thread_id = ? AND envelope_id = ?
+                WHERE thread_id = ? AND envelope_id = ? AND lane_id=? AND lane_generation=?
                 """,
-                (state, detail, time.time(), thread_id, envelope_id),
+                (state, detail, time.time(), thread_id, envelope_id,self.lane_id,self.lane_generation),
             )
 
 
-class StdioJsonRpc:
+class _BrokerRpc:
+    """Split submission/wait for the seat broker; legacy request() stays unchanged."""
+    def submit_request(self, method, params, *, on_write=None):
+        with self._write_lock:
+            request_id=self._next_id;self._next_id+=1
+            response_q=queue.Queue(maxsize=1);self._pending[request_id]=response_q
+            message={"id":request_id,"method":method,"params":params}
+            try:
+                self._write_started=time.monotonic()
+                if method=="turn/start" and callable(on_write):on_write(params)
+                if hasattr(self,"_proc"):
+                    if self._proc is None or self._proc.stdin is None:raise ConnectionError("native transport stopped")
+                    self._proc.stdin.write(json.dumps(message,separators=(",",":"))+"\n");self._proc.stdin.flush()
+                else:self._send_text(json.dumps(message,separators=(",",":")))
+            except Exception:
+                self._pending.pop(request_id,None);raise
+            finally:self._write_started=None
+        return request_id,response_q
+
+    def wait_request(self,token,method,*,timeout=30):
+        request_id,response_q=token
+        try:response=response_q.get(timeout=timeout)
+        except queue.Empty as exc:raise TimeoutError("native response timed out") from exc
+        finally:self._pending.pop(request_id,None)
+        if response.get("_transport_closed"):raise ConnectionError("native transport closed")
+        if "error" in response:raise JsonRpcError(method,response["error"])
+        return response.get("result",{})
+
+    def _publish_notification(self, message):
+        try: self.notifications.put_nowait(message)
+        except queue.Full:
+            self.notification_overflow = min(getattr(self, 'notification_overflow', 0) + 1, 2**63-1)
+
+    def respond(self,request_id,*,result=None,error=None):
+        message={"id":request_id,"error":error} if error is not None else {"id":request_id,"result":result}
+        with self._write_lock:
+            self._write_started=time.monotonic()
+            try:
+                raw=json.dumps(message,separators=(",",":"))
+                if hasattr(self,"_proc"):
+                    if self._proc is None or self._proc.stdin is None:raise ConnectionError("native transport stopped")
+                    self._proc.stdin.write(raw+"\n");self._proc.stdin.flush()
+                else:self._send_text(raw)
+            finally: self._write_started=None
+
+
+class StdioJsonRpc(_BrokerRpc):
     """Newline-delimited JSON-RPC over a long-lived stdio process."""
 
     def __init__(self, cmd: list[str], *, cwd: str, env: dict[str, str] | None = None):
@@ -373,10 +433,12 @@ class StdioJsonRpc:
                     log.warning("codex app-server emitted non-JSON stdout: %r", line[:300])
                     continue
                 request_id = msg.get("id")
-                if request_id in self._pending:
-                    self._pending[request_id].put(msg)
+                pending = self._pending.get(request_id) if "method" not in msg else None
+                if pending is not None:
+                    try:pending.put_nowait(msg)
+                    except queue.Full:pass
                 else:
-                    self.notifications.put(msg)
+                    self._publish_notification(msg)
         finally:
             if not self._stop.is_set():
                 self._reader_dead.set()
@@ -395,7 +457,7 @@ class StdioJsonRpc:
             log.debug("codex app-server stderr: %s", line.rstrip("\n"))
 
 
-class UnixWebSocketJsonRpc:
+class UnixWebSocketJsonRpc(_BrokerRpc):
     """JSON-RPC over a WebSocket carried by the daemon's Unix control socket."""
 
     def __init__(self, socket_path: str, *, identity_check: str = "observe",
@@ -543,10 +605,12 @@ class UnixWebSocketJsonRpc:
                     log.warning("codex websocket emitted non-JSON message: %r", text[:300])
                     continue
                 request_id = msg.get("id")
-                if request_id in self._pending:
-                    self._pending[request_id].put(msg)
+                pending = self._pending.get(request_id) if "method" not in msg else None
+                if pending is not None:
+                    try:pending.put_nowait(msg)
+                    except queue.Full:pass
                 else:
-                    self.notifications.put(msg)
+                    self._publish_notification(msg)
         finally:
             if not self._stop.is_set():
                 self._reader_dead.set()
@@ -650,7 +714,19 @@ class CodexProtocolDriver(Driver):
         endpoint_state_dir: str | None = None,
         endpoint_seat: str | None = None,
         endpoint_codex_home: str | None = None,
+        broker_enabled: bool = False,
+        shared_facade=None,
+        bound_thread_id: str = "",
+        lane_id: str = "",
+        lane_generation: int = 1,
     ):
+        self._broker_enabled=broker_enabled
+        self._shared_facade=shared_facade
+        self._broker=None
+        self.lane_id,self.lane_generation=lane_id,lane_generation
+        self.context_provider=None
+        self.dynamic_tools=None
+        self.native_tools_bound=False
         self._workdir = workdir
         self._transport_mode = transport_mode
         self._daemon_verified = daemon_verified
@@ -683,12 +759,12 @@ class CodexProtocolDriver(Driver):
         self._backfill_pending = False
         self._backfill_lock = threading.Lock()
         self._absolute_timeout = ABSOLUTE_TURN_TIMEOUT
-        self._store = _DeliveryStore(store_path)
+        self._store = _DeliveryStore(store_path,lane_id=lane_id,lane_generation=lane_generation)
 
         self._rpc: StdioJsonRpc | None = None
         self._initialized = False
-        self._thread_id = ""
-        self._session_id = ""  # compatibility with the conformance draft
+        self._thread_id = bound_thread_id
+        self._session_id = bound_thread_id  # compatibility with the conformance draft
         self._connection_generation = 0
         self._verified_binding = None
         self._active_turn_id = ""
@@ -788,6 +864,15 @@ class CodexProtocolDriver(Driver):
         with lock:
             if self._rpc is not None and self._rpc.healthy():
                 return
+            if self._rpc is not None and hasattr(self._rpc, 'broker') and not self._rpc.closed:
+                # Reuse this seat's broker on reconnect. A lane never creates
+                # or independently tears down the shared physical transport.
+                self._rpc.start()
+                self._initialize()
+                if self._event_thread is None or not self._event_thread.is_alive():
+                    self._event_thread = threading.Thread(target=self._pump_notifications, daemon=True)
+                    self._event_thread.start()
+                return
             # A few lifecycle tests construct the driver with __new__ to
             # exercise start() without running __init__. Treat that as a
             # never-connected instance, matching the initialized value.
@@ -804,6 +889,15 @@ class CodexProtocolDriver(Driver):
         self._notify_activity()
 
     def _start_locked(self) -> None:
+        if getattr(self,'_shared_facade',None) is not None:
+            self._rpc=self._shared_facade
+            self._rpc.start()
+            self._broker=self._rpc.broker
+            self._initialize()
+            self._stop_event.clear()
+            self._event_thread=threading.Thread(target=self._pump_notifications,daemon=True)
+            self._event_thread.start()
+            return
         if self._transport_mode == "daemon_ws":
             self._initialized = False
             self._verified_binding = None
@@ -839,12 +933,14 @@ class CodexProtocolDriver(Driver):
                     owned_identity=self._owned_daemon_identity,
                     connector=(lambda: self._private_endpoint.open_app(live)) if self._private_endpoint is not None else None)
                 self._rpc.start()
+                self._attach_broker()
                 self._initialize()
                 if self._private_endpoint is not None and not self._thread_id:
                     # Persisted current binding is a hint, not admission.
                     # The next new delivery still read/resumes this exact ID.
                     self._thread_id = self._private_endpoint.bound_thread()
                     self._session_id = self._thread_id
+                    if self._thread_id and hasattr(self._rpc,'bind_thread'):self._rpc.bind_thread(self._thread_id)
                 peer = self._rpc.peer_identity
                 if self._rpc.identity_warning is not None:
                     self._emit_event(SessionEvent(kind='state_change',
@@ -893,15 +989,38 @@ class CodexProtocolDriver(Driver):
 
         self._rpc = StdioJsonRpc(cmd, cwd=self._workdir, env=env)
         self._rpc.start()
+        self._attach_broker()
         self._initialize()
         self._stop_event.clear()
         self._event_thread = threading.Thread(target=self._pump_notifications, daemon=True)
         self._event_thread.start()
 
-    def abort_transport(self) -> None:
+    def _attach_broker(self):
+        if not getattr(self,'_broker_enabled',False):return
+        from .app_server_broker import AppServerBroker
+        raw=self._rpc
+        def factory():
+            if isinstance(raw,StdioJsonRpc):return StdioJsonRpc(raw._cmd,cwd=raw._cwd,env=raw._env)
+            connector=raw._connector
+            owned_identity=raw._owned_identity
+            if self._private_endpoint is not None:
+                live=self._private_endpoint.ensure()
+                child=live['child']
+                owned_identity=OwnedDaemonIdentity(child['pid'],child['starttime'])
+                connector=lambda:self._private_endpoint.open_app(live)
+            return UnixWebSocketJsonRpc(raw._socket_path,identity_check=raw._identity_check,
+                expected_exe=raw._expected_exe,owned_identity=owned_identity,connector=connector)
+        admission=(lambda transport:self._private_endpoint.admission(transport.peer_identity)) if self._private_endpoint is not None else None
+        self._broker=AppServerBroker(raw,transport_factory=factory,admission=admission)
+        self._rpc=self._broker.facade('',1,self._thread_id,root=True)
+
+    def abort_transport(self, *, timeout=60) -> None:
         """Abort only this connection; never kill a shared daemon."""
         rpc = self._rpc
         if rpc is None:
+            return
+        if hasattr(rpc,'broker'):
+            rpc.broker.recover(stuck_after=timeout)
             return
         proc = getattr(rpc, '_proc', None)
         if proc is not None:
@@ -924,10 +1043,11 @@ class CodexProtocolDriver(Driver):
                     q.put_nowait(None)
                 except queue.Full:
                     pass
+        broker_owned=hasattr(self._rpc,'broker')
         if self._rpc is not None:
             self._rpc.stop()
             self._rpc = None
-        if self._private_endpoint is not None:
+        if self._private_endpoint is not None and not broker_owned:
             self._private_endpoint.release_writer()
         self._initialized = False
 
@@ -973,6 +1093,9 @@ class CodexProtocolDriver(Driver):
                     "input": [{"type": "text", "text": body}],
                     "clientUserMessageId": envelope_id,
                 }
+                if callable(getattr(self,'context_provider',None)):
+                    context=self.context_provider(instructions=False)
+                    if context:params['input'].insert(0,{'type':'text','text':context})
                 # Close the crash/EOF window before dispatch: uncertainty is
                 # durable and cannot turn into a second submission after restart.
                 self._store.upsert(self._thread_id, envelope_id, "", body_hash, "unknown", "model_admission_unknown: dispatch pending")
@@ -983,7 +1106,7 @@ class CodexProtocolDriver(Driver):
                     # server did nothing. Only explicit known rejections can be
                     # labelled not admitted; every other dispatch result stays
                     # durably uncertain, without automatic submission again.
-                    rejected = (isinstance(exc, PrivateEndpointError)
+                    rejected = (getattr(exc,'not_written',False) is True or isinstance(exc, PrivateEndpointError)
                                 or (isinstance(exc, JsonRpcError) and exc.classify(self._thread_id) in ("missing_thread", "authentication")))
                     return self._admission_failure(envelope_id, body_hash, exc, uncertain=not rejected)
                 turn = result.get("turn", {})
@@ -1052,6 +1175,7 @@ class CodexProtocolDriver(Driver):
             if not targets or self._rpc is None or not self._rpc.healthy():
                 return 'pending'
             threads = {r.thread_id for r in records if r.thread_id}
+            if hasattr(self._rpc,'readonly_threads'):self._rpc.readonly_threads=threads
             # Every real submission is journaled before turn/start. A fresh
             # binding without a ledger row has no dispatch to reconcile and may
             # not yet be materialized on the native server.
@@ -1076,6 +1200,10 @@ class CodexProtocolDriver(Driver):
                 cursor = None
                 seen = set()
                 while True:
+                    seat_budget=getattr(self._rpc,'read_budget',None)
+                    if seat_budget is not None:
+                        remaining=min(remaining,seat_budget.available())
+                        if remaining<=0:return 'incomplete'
                     params = {'threadId': tid, 'limit': remaining, 'itemsView': 'full', 'sortDirection': 'asc'}
                     if cursor is not None:
                         params['cursor'] = cursor
@@ -1084,6 +1212,7 @@ class CodexProtocolDriver(Driver):
                     if not isinstance(page, list) or len(page) > remaining:
                         return 'incomplete'
                     turns.extend((tid, turn) for turn in page)
+                    if seat_budget is not None:seat_budget.consume(len(page))
                     remaining -= len(page)
                     cursor = result.get('nextCursor')
                     if remaining <= 0:
@@ -1456,16 +1585,20 @@ class CodexProtocolDriver(Driver):
             params["model"] = self._model
         if self._model_provider is not None:
             params["modelProvider"] = self._model_provider
+        if getattr(self,'dynamic_tools',None):params['dynamicTools']=self.dynamic_tools
+        if callable(getattr(self,'context_provider',None)):params['developerInstructions']=self.context_provider(instructions=True)
         result = self._request("thread/start", params)
         thread = result.get("thread", {})
         self._thread_id = thread["id"]
+        self.native_tools_bound=bool(getattr(self,"dynamic_tools",None))
         self._session_id = self._thread_id
+        if hasattr(self._rpc,'bind_thread'):self._rpc.bind_thread(self._thread_id)
         if self._private_endpoint is not None:
             self._private_endpoint.save_thread(self._thread_id)
         self._verified_binding = self._binding_key()
 
     def _binding_key(self):
-        return (self._rpc, self._connection_generation, self._thread_id)
+        return (self._rpc, self._connection_generation, self._thread_id,getattr(self._rpc,"generation",0))
 
     def _validate_bound_thread(self) -> None:
         if self._verified_binding == self._binding_key():
@@ -1510,7 +1643,7 @@ class CodexProtocolDriver(Driver):
             # Called under the actual RPC write lock, after endpoint admission.
             # A blocked write is uncertain; waiting for that lock is still local.
             self._rpc.on_turn_start = self._turn_start_writing
-        if self._private_endpoint is not None and method in ('thread/start', 'turn/start'):
+        if self._private_endpoint is not None and not hasattr(self._rpc,'broker') and method in ('thread/start', 'turn/start'):
             with self._private_endpoint.admission(self._rpc.peer_identity):
                 return self._rpc.request(method, params or {}, timeout=timeout)
         return self._rpc.request(method, params or {}, timeout=timeout)
@@ -1518,7 +1651,9 @@ class CodexProtocolDriver(Driver):
     def _pump_notifications(self) -> None:
         assert self._rpc is not None
         rpc = self._rpc
-        while rpc is not None and rpc.healthy():
+        while rpc is not None and (
+                (hasattr(rpc, 'broker') and not rpc.closed and not rpc.broker._stop.is_set())
+                or (not hasattr(rpc, 'broker') and rpc.healthy())):
             try:
                 msg = rpc.notifications.get(timeout=0.5)
             except queue.Empty:
@@ -1528,6 +1663,8 @@ class CodexProtocolDriver(Driver):
                 self._emit_event(event)
 
     def _emit_event(self, event: SessionEvent) -> None:
+        if getattr(self,'_broker_enabled',False) or getattr(self,'_shared_facade',None) is not None:
+            event.data={**(event.data or {}),'lane_id':self.lane_id,'lane_generation':self.lane_generation}
         # Store in in-memory buffer so events() can replay them even if it
         # subscribes after this event was emitted (Bug1 fix: events were lost
         # for late subscribers).

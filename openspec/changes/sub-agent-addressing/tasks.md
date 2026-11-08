@@ -17,6 +17,11 @@
 - [x] T-13 M1 正负与逐项变异、旧数据迁移、m8整包、canonical、strict、future保护及证据归档。
 - [x] T-14 M1 提交推送、核远端坐标并交组长独立复核；M2／M3另派。
 
+- [x] T-15 M2 锁定 eae9eca1 基线、唯一写者、r57 版本线；单 broker、独立分道与 scoped 账本。
+- [x] T-16 M2 原生控制与可信来源、幂等创建、树 ACK、五参数生命周期和逐条原子退信。
+- [ ] T-17 M2 正负/逐项变异、r55九格、原生工具、canonical双profile、strict与证据。
+- [ ] T-18 M2 冻结提交、推送核坐标、交组长独立复核；M3另派。
+
 ## 交接记录
 
 2026-11-08 coder56solzzc.zzc；commit：本设计提交（由Git父链定位，避免自指SHA）。完成：T01～05，默认参数未定单列PM01～03；基线行为7控制与2个目标红，native并行证据。阻塞：无设计交付阻塞；生命周期默认/平台上限/墓碑策略等待业主决策，不阻止本次交审。下一步：T06完成后由组长复核，产品实现另派；不启动二期或部署。
@@ -32,3 +37,5 @@
 2026-11-08 coder56solzzc.zzc；CODEX_THREAD_ID=01a1bd1c-c28e-7c60-9594-7894d0078533；执行源见本分支父链。完成：T11～12，专项正负通过，future保护保持绿；产品仅Hub范围，无helper改动。新协议／旧索引兼容／feature-off边界见docs/design/SUBAGENT-P1-M1-HUB-PROTOCOL.md。阻塞：无。下一步：T13正式最终门和每格变异，T14交审；不启动M2／M3，不部署。
 
 2026-11-08 coder56solzzc.zzc；冻结源59c02c90e614af9fb2f14f832caf8807a3b8b6fd（tree760cb23fee405a16dcbcda5c36bef3419229c878，工蜂已核）。完成：T13最终m8整包1524/0、mcpgw125/0、store604/0、extseat与cmd全部过；canonical两profile各1129/1129、27Python/2shell、rc0；strict27/27、build、race、future全过；26刀逐项目标红。跳过条件及失败首跑原文全部保留，报告docs/reviews/subagent-p1-m1-hub/REPORT.md，源码哈希保持不变。本证据提交推进T14 Git交审，独立验收待组长；不自验收，不启动M2/M3，不部署。阻塞：无开发交件阻塞。下一步：核本证据提交远端SHA并投递坐标，等待独立复核。
+
+2026-11-08 coder56solzzc.zzc；父eae9eca1，CODEX_THREAD_ID=01a1bd1c-c28e-7c60-9594-7894d0078533；锁/tmp/coder56-subagent-m2.lock。完成：T15～16，锁版原生工具正负探针及r55九格通过；19刀目标红。阻塞：无；旧主thread不能补装dynamicTools的原生限制已显式记录，未自动替换主绑定。下一步：T17正式冻结门、T18交审；不部署、不启动真实推理，M3另派。

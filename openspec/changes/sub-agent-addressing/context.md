@@ -10,3 +10,5 @@
 复核〔51〕-补5（review/opus50tc2k/rulings ad1a1ee0）通过并冻结bbfbf95b；追加三项修订只改设计/规格与证据。旧输入提案SUB-LANE-ROUTING-PROPOSAL.md保留历史原文，其前8位命名建议已由本裁定及当前AA006替代。
 
 M1 2026-11-08：基线79a60a1e351c207ff0b46bdf9151e846ec83f5d4；唯一写者线程01a1bd1c，锁/tmp/coder56-subagent-m1.lock；工作树/data/ai-dev-data/subagent-p1-m1-hub。代码位置：internal/subagent纯结构与解析；internal/m8/sub_agent.go当前连接协商、控制帧及路由；internal/store/sub_agent.go持久注册和sidecar；migrations/0075_sub_agent_registry.sql加法迁移。实现无新增第三方依赖。验证用隔离HOME/TMPDIR、剥离SH_/DINGWEI_/DW_/DATAD_，沿用锁定Python环境；不读取真实席位数据库、不调用在线helper。新回退开关DW_SUB_AGENTS_V1=0；M2/M3仍另派。报告入口docs/reviews/subagent-p1-m1-hub/REPORT.md。
+
+M2（2026-11-08）：M1获〔51〕-补12，子Agent走r57；基线eae9eca1。helper实现位置tools/sessionhelper/sessionhelper/{app_server_broker,sub_agent_store,sub_agent_runtime,sub_agent_connection}.py；原有CodexDriver/Adapter/inbox加作用域，默认SH_SUB_AGENTS_V1关闭。协议与原生历史主thread限制见docs/design/SUBAGENT-P1-M2-HELPER.md。只用Git交件，本地隔离验证，不部署。

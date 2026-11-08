@@ -16,3 +16,7 @@
 ## M1 Hub 实施补充（2026-11-08）
 
 派单S-SUBAGENT-P1-M1，以79a60a1e为父；具体协议、根授权顺序、sidecar、旧唯一索引加作用域及回退边界见../../../docs/design/SUBAGENT-P1-M1-HUB-PROTOCOL.md。映射AA001～004、008、009，未扩展Requirement数量。current conn_seq＋仅内存ready门防重连继承；source_type只对子投递追加节点代次摘要，保留旧索引和原消息ID；最终写与封口按连接互斥，不持Hub全局锁等待网络。
+
+## M2 实施决定（2026-11-08）
+
+对AA004/006/007/008/009复用r55同一驱动与对账护栏；inbox内部session存储命名空间编码lane/generation，行和回调保留显式作用域。创建submitted先于native写入，未知结果不重建；封口先事务draining及逐条退信。连接ACK才开放收信。详细状态、迁移及回退依据docs/design/SUBAGENT-P1-M2-HELPER.md；原生0.159.2旧主thread无法补装dynamicTools是已核实协议限制，不自动更换主席thread。M3展示与回退演练另派。

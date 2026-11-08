@@ -18,44 +18,51 @@ def initialize_ack_cursor(db):
         PRIMARY KEY(session_name,delivery_id))""")
 
 
+def enqueue_lifecycle_ack(db, session_name, delivery_id, phase):
+    row = db.execute('SELECT * FROM delivery_inbox WHERE session_name=? AND delivery_id=?',
+                     (session_name, delivery_id)).fetchone()
+    if row is None or row['ack_protocol'] is None or row['state'] == 'cancelled':
+        return  # Historical unknown provenance never gains v2 evidence.
+    if db.execute('SELECT 1 FROM delivery_ack_outbox WHERE session_name=? AND delivery_id=? AND phase=?',
+                  (session_name, delivery_id, phase)).fetchone():
+        return
+    cursor = db.execute('SELECT confirmed_sequence,confirmed_phases FROM delivery_ack_cursor WHERE session_name=? AND delivery_id=?',
+                        (session_name, delivery_id)).fetchone()
+    confirmed = cursor[0] if cursor else 0
+    if cursor and phase in json.loads(cursor[1]):
+        return
+    if phase == 'queued' and confirmed:
+        return
+    pending = db.execute('SELECT COALESCE(MAX(sequence),0) FROM delivery_ack_outbox WHERE session_name=? AND delivery_id=?',
+                         (session_name, delivery_id)).fetchone()[0]
+    sequence = max(confirmed, pending) + 1
+    stamp = row['received_at'] if phase == 'queued' else row['admitted_at'] if phase == 'injected' else row['processed_at'] if phase == 'processed' else row['updated_at']
+    payload = {'type':'delivery_ack','delivery_id':delivery_id,'ack_protocol':row['ack_protocol'],
+               'processing_mode':row['processing_mode'],'ack_generation':row['ack_generation'],
+               'state':'delivered' if phase == 'queued' and row['ack_protocol'] == 1 else phase,
+               'occurred_at':utc_stamp(stamp),'no_mirror':True}
+    if 'lane_id' in row.keys() and row['lane_id']:
+        payload.update(target_node_id=row['lane_id'],lane_generation=row['lane_generation'])
+    if phase in ('injected','processed'):
+        payload['turn_id']=row['turn_id']
+    if phase == 'processed':
+        payload['turn_outcome']=row['turn_outcome']
+        had_unknown = bool(cursor and 'admission_unknown' in json.loads(cursor[1])) or bool(db.execute(
+            "SELECT 1 FROM delivery_ack_outbox WHERE session_name=? AND delivery_id=? AND phase='admission_unknown'",
+            (session_name,delivery_id)).fetchone())
+        if had_unknown:payload['late_confirmation']=True
+    if phase == 'failed':payload.update(reason='session_unavailable',retryable=False)
+    if phase == 'admission_unknown':payload['reason']='turn_terminal_unknown' if row['admitted_at'] is not None else 'model_admission_unknown'
+    # v1 has no truthful wire state for unknown; receipt stays delivered.
+    if phase == 'admission_unknown' and row['ack_protocol'] == 1:payload['state']='delivered'
+    db.execute('INSERT INTO delivery_ack_outbox VALUES(?,?,?,?,?,?)',
+               (session_name,delivery_id,phase,sequence,json.dumps(payload,separators=(',',':')),time.time()))
+
+
+
 class DeliveryACKOutbox:
     def _lifecycle_ack(self, db, delivery_id, phase):
-        row = db.execute('SELECT * FROM delivery_inbox WHERE session_name=? AND delivery_id=?',
-                         (self.session_name, delivery_id)).fetchone()
-        if row is None or row['ack_protocol'] is None or row['state'] == 'cancelled':
-            return  # Historical unknown provenance never gains v2 evidence.
-        if db.execute('SELECT 1 FROM delivery_ack_outbox WHERE session_name=? AND delivery_id=? AND phase=?',
-                      (self.session_name, delivery_id, phase)).fetchone():
-            return
-        cursor = db.execute('SELECT confirmed_sequence,confirmed_phases FROM delivery_ack_cursor WHERE session_name=? AND delivery_id=?',
-                            (self.session_name, delivery_id)).fetchone()
-        confirmed = cursor[0] if cursor else 0
-        if cursor and phase in json.loads(cursor[1]):
-            return
-        if phase == 'queued' and confirmed:
-            return
-        pending = db.execute('SELECT COALESCE(MAX(sequence),0) FROM delivery_ack_outbox WHERE session_name=? AND delivery_id=?',
-                             (self.session_name, delivery_id)).fetchone()[0]
-        sequence = max(confirmed, pending) + 1
-        stamp = row['received_at'] if phase == 'queued' else row['admitted_at'] if phase == 'injected' else row['processed_at'] if phase == 'processed' else row['updated_at']
-        payload = {'type':'delivery_ack','delivery_id':delivery_id,'ack_protocol':row['ack_protocol'],
-                   'processing_mode':row['processing_mode'],'ack_generation':row['ack_generation'],
-                   'state':'delivered' if phase == 'queued' and row['ack_protocol'] == 1 else phase,
-                   'occurred_at':utc_stamp(stamp),'no_mirror':True}
-        if phase in ('injected','processed'):
-            payload['turn_id']=row['turn_id']
-        if phase == 'processed':
-            payload['turn_outcome']=row['turn_outcome']
-            had_unknown = bool(cursor and 'admission_unknown' in json.loads(cursor[1])) or bool(db.execute(
-                "SELECT 1 FROM delivery_ack_outbox WHERE session_name=? AND delivery_id=? AND phase='admission_unknown'",
-                (self.session_name,delivery_id)).fetchone())
-            if had_unknown:payload['late_confirmation']=True
-        if phase == 'failed':payload.update(reason='session_unavailable',retryable=False)
-        if phase == 'admission_unknown':payload['reason']='turn_terminal_unknown' if row['admitted_at'] is not None else 'model_admission_unknown'
-        # v1 has no truthful wire state for unknown; receipt stays delivered.
-        if phase == 'admission_unknown' and row['ack_protocol'] == 1:payload['state']='delivered'
-        db.execute('INSERT INTO delivery_ack_outbox VALUES(?,?,?,?,?,?)',
-                   (self.session_name,delivery_id,phase,sequence,json.dumps(payload,separators=(',',':')),time.time()))
+        enqueue_lifecycle_ack(db, self.session_name, delivery_id, phase)
 
     def pending_delivery_acks(self):
         with self._lock, self._connect() as db:

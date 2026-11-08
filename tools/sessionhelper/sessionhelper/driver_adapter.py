@@ -29,11 +29,14 @@ DRIVER_HEALTHY_RESET = 60.0          # 持续健康 60 s 复位退避
 
 
 class DriverAdapter:
-    def __init__(self, cfg):
+    def __init__(self, cfg, *, driver=None, driver_factory=None):
         self.cfg = cfg
         which = (env_get("SH_DRIVER") or "codex").strip().lower()
         self._which = which
-        self.driver = self._build_driver(which)
+        self._lane_driver_factory=driver_factory
+        self._lane_stop=threading.Event()
+        self._lane_closing=threading.Event()
+        self.driver = driver if driver is not None else self._build_driver(which)
         self._term_q: queue.Queue[str] = queue.Queue(maxsize=4000)
         self._event_q: queue.Queue[str] = queue.Queue(maxsize=4000)  # C5:结构化 session_event(JSON)
         self._started = False
@@ -84,9 +87,14 @@ class DriverAdapter:
         row = ledger.lifecycle(delivery_id) if ledger is not None else None
         if row is None:
             return None
-        return {key: row[key] for key in ('ack_generation', 'dispatch_intent_at', 'request_id')}
+        result={key: row[key] for key in ('ack_generation', 'dispatch_intent_at', 'request_id')}
+        if getattr(getattr(self,'driver',None),'lane_id',''):
+            result.update(lane_id=self.driver.lane_id,lane_generation=self.driver.lane_generation)
+        return result
 
     def _build_driver(self, which: str):
+        factory=getattr(self,'_lane_driver_factory',None)
+        if factory is not None:return factory()
         # 按机器取路径,别写死 pilot 开发机路径(否则每台都挂):
         cwd = env_get("SH_CLI_CWD") or os.path.expanduser("~")
         store = (os.path.join(self.cfg.state_dir, f"{which}-ledger.sqlite3") if getattr(self.cfg, "state_dir", "")
@@ -108,6 +116,7 @@ class DriverAdapter:
         # 默认 codex —— sandbox/approval 给足权限(对齐 claude 的 --dangerously-skip-permissions 意图),可用 env 收紧
         from .codexDriver import CodexProtocolDriver
         return CodexProtocolDriver(store_path=store, workdir=cwd, model=model or None,
+                                   broker_enabled=bool(getattr(self.cfg,'sub_agents_v1',False)),
                                    sandbox=env_get("SH_CODEX_SANDBOX", "danger-full-access"),
                                    approval_policy=env_get("SH_CODEX_APPROVAL", "never"),
                                    endpoint_mode=getattr(self.cfg, 'codex_endpoint_mode', 'legacy'),
@@ -146,13 +155,16 @@ class DriverAdapter:
             if self._started:
                 return
             self.driver.start()
-            threading.Thread(target=self._event_bridge, daemon=True).start()
-            threading.Thread(target=self._command_worker, daemon=True).start()
+            self._bridge_thread = threading.Thread(target=self._event_bridge, daemon=True)
+            self._worker_thread = threading.Thread(target=self._command_worker, daemon=True)
+            self._bridge_thread.start()
+            self._worker_thread.start()
             self._maybe_start_sidecar()
             self._started = True
             print(f"[driver-adapter] started, driver={self._which}", flush=True)
 
     def _maybe_start_sidecar(self) -> None:
+        if getattr(self.driver, 'lane_id', ''): return
         port = env_get("SH_SIDECAR_PORT")
         if not port:
             return
@@ -261,7 +273,8 @@ class DriverAdapter:
         return result
 
     def _command_worker(self) -> None:
-        while True:
+        while not getattr(self,'_lane_stop',threading.Event()).is_set():
+            if getattr(self,'_lane_closing',threading.Event()).is_set():return
             try:
                 self._restore_delivery_commands()
             except Exception:
@@ -476,6 +489,7 @@ class DriverAdapter:
         threading.Thread(target=run, daemon=True, name='delivery-admission').start()
         admitted = False
         while not done.wait(0.02):
+            if getattr(self, '_lane_stop', threading.Event()).is_set(): return None
             required = getattr(old_driver, 'transport_recovery_required', None)
             if (getattr(self, '_which', None) == 'codex' and callable(required)
                     and old_driver.submission_started(command.delivery_id) is None
@@ -534,7 +548,8 @@ class DriverAdapter:
                 abort = getattr(old, 'abort_transport', None)
                 if not callable(abort):
                     raise RuntimeError('driver has no safe transport abort')
-                abort()
+                if getattr(getattr(old,'_rpc',None),'broker',None) is not None:abort(timeout=self._admission_timeout)
+                else:abort()
                 if worker is not None and not worker.wait(5):
                     raise RuntimeError('delivery writer did not stop after transport abort')
                 old.stop()
@@ -594,6 +609,7 @@ class DriverAdapter:
         progress_admitted = False
         settle_started = time.monotonic()
         while True:
+            if getattr(self, '_lane_stop', threading.Event()).is_set(): return
             if not admitted:
                 admitted = self._admit_from_receipt(command, receipt)
             ledger = getattr(self, "delivery_lifecycle", None)
@@ -779,6 +795,7 @@ class DriverAdapter:
         return True
 
     def _record_event_lifecycle(self, ev):
+        if getattr(getattr(self,'driver',None),'lane_id','') and (ev.data.get('lane_id'),ev.data.get('lane_generation'))!=(self.driver.lane_id,self.driver.lane_generation):return
         ledger = getattr(self, "delivery_lifecycle", None)
         if (ledger is not None and ev.kind == 'state_change' and ev.data.get('change') == 'turn_started'
                 and ev.data.get('raw_method') == 'reconcile/native'):
@@ -893,7 +910,7 @@ class DriverAdapter:
         reconnect_failures = 0
         last_failure_log = 0.0
         healthy_since = None
-        while True:
+        while not getattr(self,"_lane_stop",threading.Event()).is_set():
             subscriptions += 1
             skipped = 0
             forwarded = 0
@@ -955,6 +972,7 @@ class DriverAdapter:
                     last_failure_log = self._bridge_clock()
                 delay = DRIVER_RECONNECT_BACKOFF[min(reconnect_attempt, len(DRIVER_RECONNECT_BACKOFF) - 1)]
                 self._bridge_sleep(delay)
+                if getattr(self, '_lane_stop', threading.Event()).is_set(): return
                 reconnect_attempt += 1
                 error = ""
                 try:
@@ -1135,3 +1153,16 @@ class DriverAdapter:
                 fn(rows, cols)
             except Exception:
                 pass
+
+    def seal_dispatch(self):
+        self._lane_closing.set()
+        self._commands.seal()
+        self._work_available.set()
+
+    def close_lane(self):
+        self.seal_dispatch()
+        self._lane_stop.set()
+        self._bridge_wake.set()
+        self.driver.stop()
+        for worker in (getattr(self, '_worker_thread', None), getattr(self, '_bridge_thread', None)):
+            if worker is not None and worker is not threading.current_thread(): worker.join(timeout=2)

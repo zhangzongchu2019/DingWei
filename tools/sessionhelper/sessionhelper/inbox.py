@@ -24,6 +24,9 @@ class DeliveryInbox(DeliveryLifecycle):
         registered_session_name: str = "",
         key_id: str = "",
     ):
+        self.lane_id=getattr(self,'lane_id','')
+        self.lane_generation=getattr(self,'lane_generation',1)
+        self.admission_guard=getattr(self,'admission_guard',None)
         self.path = os.path.expanduser(path)
         self.capacity = max(1, capacity)
         self.session_name = (session_name or "default").strip() or "default"
@@ -60,6 +63,10 @@ class DeliveryInbox(DeliveryLifecycle):
             self._migrate_schema(db)
             self._migrate_state_check(db)
             migrate_lifecycle(db)
+            columns={r['name'] for r in db.execute('PRAGMA table_info(delivery_inbox)')}
+            for name,definition in (('lane_id',"TEXT NOT NULL DEFAULT ''"),('lane_generation','INTEGER NOT NULL DEFAULT 1'),('native_dispatch_at','REAL')):
+                if name not in columns:db.execute(f'ALTER TABLE delivery_inbox ADD COLUMN {name} {definition}')
+            db.execute('CREATE INDEX IF NOT EXISTS idx_inbox_lane_generation ON delivery_inbox(lane_id,lane_generation,delivery_id)')
             db.execute("""CREATE TABLE IF NOT EXISTS delivery_inbox_read (
                 session_name TEXT NOT NULL, delivery_id TEXT NOT NULL, read_at REAL NOT NULL,
                 PRIMARY KEY(session_name,delivery_id))""")
@@ -160,6 +167,7 @@ class DeliveryInbox(DeliveryLifecycle):
         return os.path.join(os.path.dirname(self.path) or ".", "sessionhelper_inbox.db")
 
     def _import_legacy_shared_inbox(self) -> None:
+        if self.lane_id:return
         legacy_path = self._legacy_shared_path()
         if os.path.abspath(legacy_path) == os.path.abspath(self.path) or not os.path.exists(legacy_path):
             return
@@ -306,6 +314,8 @@ class DeliveryInbox(DeliveryLifecycle):
         payload = json.dumps(env, ensure_ascii=False, separators=(",", ":"))
         protocol, mode, generation = delivery_protocol(env)
         with self._lock, self.progress.lock, self._connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if self.admission_guard is not None:self.admission_guard(db,env)
             row = db.execute(
                 "SELECT state,received_at,ack_protocol,processing_mode,ack_generation,dispatch_intent_at FROM delivery_inbox WHERE delivery_id=? AND session_name=?",
                 (delivery_id, self.session_name),
@@ -319,8 +329,8 @@ class DeliveryInbox(DeliveryLifecycle):
                     raise OverflowError("queue_full")
                 db.execute(
                     """INSERT INTO delivery_inbox(delivery_id,session_name,envelope_json,state,received_at,updated_at,
-                        ack_protocol,processing_mode,ack_generation) VALUES(?,?,?,'received',?,?,?,?,?)""",
-                    (delivery_id, self.session_name, payload, now, now, protocol, mode, generation),
+                        ack_protocol,processing_mode,ack_generation,lane_id,lane_generation) VALUES(?,?,?,'received',?,?,?,?,?,?,?)""",
+                    (delivery_id, self.session_name, payload, now, now, protocol, mode, generation,self.lane_id,self.lane_generation),
                 )
                 self.progress.accepted(db, delivery_id, now)
                 self._lifecycle_ack(db, delivery_id, 'queued')
