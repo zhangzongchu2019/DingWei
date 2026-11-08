@@ -5,22 +5,25 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+
+	"github.com/zhangzongchu2019/dingwei/internal/repo"
 )
 
 // A legacy database can lose its ledger while retaining the new immutable
 // table. Verify every table/index/trigger definition before backfilling: neither
 // replay CREATE nor IF NOT EXISTS may conceal a missing protection trigger.
 func (s *SQLite) migrateOpenSpecConfirmation(ctx context.Context, name, body, digest string) error {
-	expectedDB, err := sql.Open("sqlite", ":memory:")
+	expectedDB, err := repo.OpenSQLite(ctx, ":memory:", repo.MaxOpenConns(1))
 	if err != nil {
 		return err
 	}
 	defer expectedDB.Close()
-	expectedDB.SetMaxOpenConns(1)
-	if _, err = expectedDB.ExecContext(ctx, body); err != nil {
+	// This isolated in-memory catalog contains schema only, never tenant records.
+	access := repo.SystemCtx()
+	if _, err = expectedDB.Exec(ctx, access, body); err != nil {
 		return err
 	}
-	rows, err := expectedDB.QueryContext(ctx, `SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name`)
+	rows, err := expectedDB.Query(ctx, access, `SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name`)
 	if err != nil {
 		return err
 	}

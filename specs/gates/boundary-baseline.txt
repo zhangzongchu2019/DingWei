@@ -114,9 +114,12 @@ pending:hosted 36  # 调用点单位（htx() 与 dtx/ftx 同型）
 #    同批按组长 2026-10-02T12:44:05Z「boundary-baseline 注释指针更新准（数值不动）」把上面
 #    「12 → 16 → 15」那段里四处过期行号改成合并树实数：spool.go 68→103、49→55，
 #    migrate.go 303→332、258→277（migrate_test.go:54 与 datad／identity 各指针未位移）。
-system 16
+system 17
 
 # R31 coder56solzzc: hosted registration now uses explicit platform/actor AccessCtx;
 # retired legacy RegisterNode PendingCtx transaction: hosted37->36, total91->90.
 # ApplySchema delegates to the unified migration runner: SystemCtx17->16.
 # New test fixture SQL uses explicit test actor contexts; no broader tenant isolation claim.
+
+# S-GATES-GREEN：system +1，openspec_confirmation_migration.go 的离线内存 schema 比对从裸连接改走 repo，显式 SystemCtx；无租户数据。
+# open 保持 5：新增5处逐项处理＝迁移校验改repo(-1)、compat探针2处/启动测试1处/history仓储1处精确文件例外(-4)。

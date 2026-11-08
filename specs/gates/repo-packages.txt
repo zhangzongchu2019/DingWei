@@ -10,3 +10,12 @@
 #   对象严格限定为目录 internal/repo/（精确目录及其子路径）；此授权不覆盖其他路径；
 #   新增或改名仍须甲域复核。落清单前置（路径边界漏洞须先修）已于锚 01640ec 完成并实证。
 internal/repo
+
+# S-GATES-GREEN / ㊾-补3 问11：精确文件例外；每项仅覆盖判据一，不豁免句柄逃逸或租户隔离。
+# 313aa64a：两处；跨版本兼容探针必须直读旧 schema ledger 并种 final 状态，不能依赖新版本仓储方法。
+tests/r32-task-flow/compat-probe/main.go
+# ccce2e21：一处；测试先破坏独立 history 文件再验证启动/关闭开关，须保留独立原始连接夹具。
+cmd/workpulse/session_history_config_test.go
+# 72aa64b4：一处；独立 history 库显式 BeginTx/Commit/Rollback、单连接写队列与游标寿命不能由现有回调 Pool 无损替代。
+# 已考察 repo.OpenSQLite：返回 Pool 不返回裸句柄；改用须重写全部历史事务及测试注入，超出不改产品行为的本单。仅此文件例外。
+internal/store/session_history.go
