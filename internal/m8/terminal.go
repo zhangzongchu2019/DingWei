@@ -302,7 +302,7 @@ func (h *Hub) HandleSessionHistory(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
-		owner, agent = ag.OwnerLC, ag.ID
+		owner, agent, session = AgentKeyID(ag.OwnerLC), ag.ID, ag.NameLC()
 	} else {
 		ag, ok := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
 		principal, principalOK := r.Context().Value(consolePrincipalContextKey{}).(string)

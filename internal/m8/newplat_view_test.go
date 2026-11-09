@@ -53,6 +53,7 @@ func newViewEnv(t *testing.T) *viewEnv {
 	mux.HandleFunc("GET /view/{sessionName}", e.hub.RequireConsoleAgent("view", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = io.WriteString(w, "page:"+r.PathValue("sessionName"))
 	}))
+	mux.HandleFunc("GET /view/{sessionName}/history", e.hub.RequireConsoleAgent("view", e.hub.HandleSessionHistory))
 	mux.HandleFunc("/view/{sessionName}/{rest...}", e.hub.RequireConsoleViewSubPath(func(w http.ResponseWriter, r *http.Request) { _, _ = io.WriteString(w, "sub:"+r.PathValue("rest")) }))
 	v.srv = httptest.NewServer(mux)
 	t.Cleanup(v.srv.Close)

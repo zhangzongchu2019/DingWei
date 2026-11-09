@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
@@ -114,6 +115,51 @@ func TestSessionHistoryRouteRequiresAgentOwner(t *testing.T) {
 		}
 		if tc.principal == "owner" && !strings.Contains(w.Body.String(), `"reason":"feature_disabled"`) {
 			t.Errorf("history API omitted feature-disabled gap: %s", w.Body.String())
+		}
+	}
+}
+
+func TestNewPlatformSessionHistoryRoundTripByFullName(t *testing.T) {
+	v := newViewEnv(t)
+	history, err := store.OpenSessionHistory(filepath.Join(t.TempDir(), "workpulse-history.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer history.Close()
+	if err := history.SetEnabled(v.ctx, true, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	v.hub.SessionHistory, v.hub.SessionHistoryEnabled = history, true
+
+	helper, status, body := v.dial(v.zKimiCred, "")
+	if helper == nil {
+		t.Fatalf("helper dial status=%d body=%s", status, body)
+	}
+	defer helper.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, v.hub, AgentKeyID("zzc"), "kimi")
+	const marker = "HISTORY_NEWPLAT_ROUNDTRIP"
+	event := `{"kind":"assistant_text","text":"` + marker + `","turn_id":"history-roundtrip"}`
+	if err := writeEnvelope(v.ctx, helper, model.Envelope{ID: "history-newplat-event", From: "kimi#enrolled", Body: event, Meta: map[string]any{"type": terminalSessionEventType}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, 3*time.Second, "new platform session event persisted", func() bool {
+		rows, _, statErr := history.HistoryStats(v.ctx)
+		return statErr == nil && rows == 1
+	})
+
+	status, raw := v.get(http.MethodGet, "/view/Kimi.zzc/history", v.tokZZC, "")
+	if status != http.StatusOK || !strings.Contains(raw, marker) {
+		t.Fatalf("HISTORY_NEWPLAT_ROUNDTRIP status=%d body=%s", status, raw)
+	}
+
+	for _, tc := range []struct{ path, token string }{
+		{"/view/Kimi.zzc/history", v.tokLBL}, // another owner cannot read this Agent
+		{"/view/kimi/history", v.tokZZC},     // short name is not a history identity
+		{"/view/Kimi.zzz/history", v.tokZZC}, // malformed/wrong full name
+	} {
+		gotStatus, gotBody := v.get(http.MethodGet, tc.path, tc.token, "")
+		if gotStatus != http.StatusNotFound {
+			t.Fatalf("HISTORY_NEWPLAT_OWNER_ONLY path=%s status=%d body=%s", tc.path, gotStatus, gotBody)
 		}
 	}
 }
