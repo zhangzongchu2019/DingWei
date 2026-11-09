@@ -18,3 +18,5 @@ M2收口（2026-11-09）：产品冻结eed6ac54762bb2cf756f78934fbfb2db46f73d64�
 2026-11-09 〔51〕-补13复核补件，基线d48f3576951a2247233018aab7a091cfc1dfff55，rulings已核ac2bc40e0。沿用同分支与01a1bd1c写者锁。产品仅sub_agent_runtime.py及app_server_broker.py；测试复用test_sub_agent_helper.py，新增ExistingRootToolsTests四例，mutations.py新增ROOT1～ROOT4四刀。新证据单列docs/reviews/subagent-p1-m2-root-tools/，冻结原交件报告原文不改。测试全为临时SQLite/合成原生传输，重开只操作fixture，无真实席位或推理。
 
 M3（2026-11-09）：基线0b47a585，分支coder56solzzc/subagent-p1-m3-view；唯一写者01a1bd1c持/tmp/coder56-subagent-m3.lock。scope实现在internal/m8/sub_agent_view.go，View加法scope/cursor/cost表沿用原投影DB；Hub迁移0076保留回退barrier/逐封隔离。tools/sessionhelper/sub_agent_connection与store支持feature-off只退信，不启动broker。新浏览器专项已登记全量runner；旧Hub/claimer只读源码锚79a60a1e，测试overlay不改旧树。所有测试隔离HOME/TMPDIR并剥离在线环境，不使用真实推理。
+
+2026-11-09 M3必补：ZERO-CONSENT已先交ea63d294f。本机08:57:40Z远端9662deb0、旧树clean/同HEAD、ps与/proc无相关进程后，常设规则接管写者01a1bf6a-20da-7533-8984-532fd2ec65a3；旧锁stale-20261109T085804Z保留。新树/data/ai-dev-data/subagent-p1-m3-01a1bf6a，原交件及旧树不改写；rulings实取dcfd24ef含〔51〕-补15。新增internal/store/sub_agent_rollback_check.go与cmd/subagent-rollback --check-all，无新依赖／迁移／版本位，测试使用普通uid1001和隔离临时数据库，canonical使用锁定Python与短TMPDIR=/tmp。

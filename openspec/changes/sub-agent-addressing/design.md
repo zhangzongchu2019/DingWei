@@ -32,3 +32,7 @@ AA008-S03：在任何节点intent落库前验证主thread的工具安装记录�
 ## M3 View与回退实施
 
 按〔51〕-补14在0b47a585上追加；规格AA010-S01～03。根授权后展开root/node/generation scope，独立预算/签名票据/事件/缓存/费用，旧文本目录只列根。新树JSON与只读Console树见docs/design/SUBAGENT-P1-M3-VIEW.md；子不获主输入/管理权。Hub迁移0076保留rollback barrier与逐投递隔离审计，helper feature-off有不启动原生的退信维护路径；不DROP、不删ACK/墓碑。混部和旧源claimer在隔离临时环境实跑；无部署授权。用户说明草稿docs/releases/r57-sub-agent-seat-guide-draft.md。
+
+## M3 〔51〕-补15 全库门
+
+对应 AA009-S03：cmd/subagent-rollback 新增互斥 --check-all；store.OpenSQLiteReadOnly 复用既有打开路径但用字面路径转义的 mode=ro＋query_only，不改 journal_mode、不自动迁移。CheckSubAgentRollback 使用 NOT EXISTS 扫描全部sidecar而非注册根，有to按接收根，否则from按来源根归组，未知／损坏根 fail closed。输出pending及roots/count/delivery_ids；有残留rc1、全空rc0、参数错误rc2。不使用immutable，须包含已提交WAL记录；只读连接可创建SQLite运行旁文件，DB与WAL内容不变。runbook第3和5步以同库自检rc0为降级前提，原发布授权边界保持。

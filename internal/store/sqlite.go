@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -56,7 +57,25 @@ const messageProcessingLease = 5 * time.Minute
 
 // OpenSQLite 打开（或创建）SQLite 主库，启用 WAL + busy_timeout（§13.2）。
 func OpenSQLite(path string) (*SQLite, error) {
+	return openSQLite(path, false)
+}
+
+// OpenSQLiteReadOnly opens an existing database without creating it, changing
+// its journal mode, or running migrations. SQLite also rejects write queries.
+func OpenSQLiteReadOnly(path string) (*SQLite, error) {
+	return openSQLite(path, true)
+}
+
+func openSQLite(path string, readOnly bool) (*SQLite, error) {
 	dsn := fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)", path)
+	if readOnly {
+		absolute, err := filepath.Abs(path)
+		if err != nil {
+			return nil, err
+		}
+		// Treat the operator's path as a literal filename, never as URI options.
+		dsn = (&url.URL{Scheme: "file", Path: absolute}).String() + "?mode=ro&_pragma=query_only(ON)&_pragma=busy_timeout(5000)"
+	}
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
@@ -64,6 +83,7 @@ func OpenSQLite(path string) (*SQLite, error) {
 	// 单写者纪律：写连接数限 1（§13.1），读用 WAL 并发。
 	db.SetMaxOpenConns(1)
 	if err := db.Ping(); err != nil {
+		db.Close()
 		return nil, err
 	}
 	lockPath := ""

@@ -42,10 +42,16 @@ tests/subagent-p1-m3/run_old_hub.py 使用旧锚实际HTTP/WS处理器加只读�
 
 1. 停止所有相关写者；为Hub core、helper inbox/注册、driver ledger、View投影做一致水位备份，记录摘要；库仅留受控本地，不上传。
 2. 用新版本关闭创建/子投递；执行helper prepare_rollback，确认returns_pending=0。pending/uncertain尚未查明时禁止降级；绝对不能手改成returned。歧义执行行保留其lane namespace、unknown账本及原ACK。
-3. 对Hub每个持久根执行新工具：go run ./cmd/subagent-rollback --hub-db <隔离或已停写的明确路径> --root-agent-id <ID> --writers-stopped --feature-off --helper-sealed。参数是运维前置确认，不替代授权。工具不会联网，也不会自动迁移或恢复库。
+3. 对Hub每个持久根执行新工具：go run ./cmd/subagent-rollback --hub-db <隔离或已停写的明确路径> --root-agent-id <ID> --writers-stopped --feature-off --helper-sealed。参数是运维前置确认，不替代授权。工具不会联网，也不会自动迁移或恢复库。 随后必须执行全库只读门：go run ./cmd/subagent-rollback --hub-db <同一明确路径> --check-all，必须 rc0；不能以人工根清单或单根命令成功代替全库检查。
 4. 事务内：Hub所有未执行子信逐条写原失败通知队列并终止原信；已送出/执行不明信不改成processed；所有子投递移到保留隔离session。回给本树子来源的通知同样隔离，不能被旧claimer投父。新增rollback及逐delivery审计表；重跑幂等。墓碑/ACK/别名/sidecar均保留。退信不可达时原信/审计仍可检索，不伪造接收。
-5. 使用旧源claimer实读备份的演练副本，证明根仍可读、子一封也读不到，核所有根的子sidecar均已隔离；不能完成则保留新二进制feature-off。上旧程序仍需独立发布批准，本单不执行。
+5. 在一致水位、所有相关写者仍停写的前提下，再对实际拟降级数据库执行 --check-all 并记录 JSON／UTC／退出码，必须 rc0 才可继续。使用旧源claimer实读备份的演练副本，证明根仍可读、子一封也读不到；任一门不能完成则保留新二进制feature-off。上旧程序仍需独立发布批准，本单不执行。
 
 0076为纯加法；legacy迁移补账复用exact-DDL预检。回退不DROP、不删除ACK、墓碑、失败通知或rollback barrier。barrier阻止重连重建树，重新前进启用另行设计/授权，不通过删表/清标记恢复。
 
 run_old_claimer.py 先由新源准备隔离库，再由79a60a1e旧源实际ClaimSessionDelivery读取同一库，原文附commit/UTC/rc。helper测试用旧根claim语义读取已封口lane库；尚未确定的执行保持unknown，不冒称安全重放。
+
+## 〔51〕-补15：全库只读回退自检
+
+--check-all 不能与单根准备参数混用，只接收明确的既有普通数据库文件。它以 mode=ro＋query_only 打开，不创建数据库、不迁移、不 checkpoint，不调用单根准备事务；逐条列出 session_delivery_sub_route 中没有 sub_agent_rollback_delivery 对应审计的投递，JSON 输出 pending 与按 root_agent_id 排序的 count／delivery_ids。终态投递仍需逐封审计，不依赖注册表枚举；优先按 to 根归组，只有 from 的记录仍按来源根列为未完成，不会遗漏。错误／缺表／损坏路由／缺根均非零；有待处理投递 rc1，无待处理投递 rc0，参数错误 rc2。源侧残留若不能由现有准备事务消除，应保持 feature-off 并交负责人处置，不自行补审计或删除 sidecar。
+
+SQLite 的只读 WAL 连接允许创建运行所需的 -wal／-shm 旁文件，业务数据库及已提交 WAL 内容不被自检更改；不使用 immutable，因为它会漏读未 checkpoint 的已提交投递。实际降级门仍要求前述停写及一致水位，读一次 rc0 不授权后续写入。依据 [SQLite WAL 只读说明](https://www.sqlite.org/wal.html#read_only_databases) 与隔离测试原文；自检回退边界属于 AA-009。

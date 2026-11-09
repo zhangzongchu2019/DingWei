@@ -30,6 +30,9 @@
 - [x] T-23 M3 混部五格、feature-off及旧二进制隔离回退实跑、席位说明。
 - [x] T-24 M3 AA010正负/一刀变异、全量浏览器runner、m8/canonical/strict与Git证据交审。
 
+- [ ] T-25 〔51〕-补15：全库只读回退自检、按根清单／非零门、runbook3/5及正反／变异。
+- [ ] T-26 必补冻结源、store／工具全包、canonical／strict及同分支Git追加交审。
+
 ## 交接记录
 
 2026-11-08 coder56solzzc.zzc；commit：本设计提交（由Git父链定位，避免自指SHA）。完成：T01～05，默认参数未定单列PM01～03；基线行为7控制与2个目标红，native并行证据。阻塞：无设计交付阻塞；生命周期默认/平台上限/墓碑策略等待业主决策，不阻止本次交审。下一步：T06完成后由组长复核，产品实现另派；不启动二期或部署。
@@ -71,3 +74,5 @@
 
 
 2026-11-09 coder56solzzc.zzc；CODEX_THREAD_ID=01a1bd1c-c28e-7c60-9594-7894d0078533；产品冻结18cae8bf5，交审执行候选9ae19c5a1（之后仅补测试工具/证据，不改产品）。完成T24：canonical完整rc0，claude/codex各1165/1165、92文件、27Python/2shell；全量浏览器39/39、未选格；m8全包1533/0/37SKIP，store605/0/5SKIP、consolemux及cmd全部通过；M3变异28/28目标红，旧Hub两格父fallback各目标红；实际旧源claimer隔离实跑/future通过；strict29/0，交接更新后再验证。源37件及证据SHA清单、完整原文/初始失败/输入等价证明见docs/reviews/subagent-p1-m3-view/REPORT.md和raw/SUMMARY.json。r55九格继承在canonical双profile保持。阻塞：无开发交件阻塞。下一步：Git推送证据追加并核ls-remote，交组长独立复核；唯一写者01a1bd1c持M3锁，另一路只读。未部署，不碰现网/预发/在线席位，不启动真实推理；不自验收或启动新里程碑。
+
+2026-11-09 coder56solzzc.zzc；CODEX_THREAD_ID=01a1bf6a-20da-7533-8984-532fd2ec65a3；ZERO-CONSENT已先交件。三条核验满足后接管M3，新树以9662deb0为父，旧锁保留。完成只读清单／CLI退出码与多根正反例首跑；首轮测试错误地要求SQLite只读连接不产生旁文件，实际mode=ro可创建运行WAL/SHM，已明确DB/WAL不变边界并补已提交WAL不得漏读断言，未用immutable绕过。阻塞无；下一步完整门与逐刀变异，未部署／不操作线上／不做真实推理。
