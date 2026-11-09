@@ -1,0 +1,17 @@
+{
+  "affected": {
+    "feishulogin.pass": 99,
+    "mcpgw.pass": 237
+  },
+  "m8": {
+    "m8.pass": 1512,
+    "m8.skip": 37
+  },
+  "canonical": {
+    "claude": 1129,
+    "codex": 1129,
+    "python": 27,
+    "shell": 2,
+    "rc": 0
+  }
+}

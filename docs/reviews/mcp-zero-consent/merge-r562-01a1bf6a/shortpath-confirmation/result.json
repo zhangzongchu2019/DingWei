@@ -1,0 +1,19 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-p",
+    "1",
+    "./internal/m8",
+    "-run",
+    "^TestDeviceClaimAcrossActualClientAnd(Hub|Postgres)$",
+    "-count=1",
+    "-timeout=180s",
+    "-v"
+  ],
+  "start": "2026-11-09T08:47:22.753289+00:00",
+  "end": "2026-11-09T08:47:42.696418+00:00",
+  "rc": 0,
+  "TMPDIR": "/tmp",
+  "source_commit": "2c403d430dd60e882cfb5ebcaaa82181324cbfd0"
+}

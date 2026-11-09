@@ -1,0 +1,14 @@
+{
+  "go": "go version go1.22.2 linux/amd64",
+  "node": "v22.23.1",
+  "python": "/tmp/coder-0232-locked-venv/bin/python3",
+  "websockets": "15.0.1",
+  "openspec": "1.16.0 explicit pinned local installation",
+  "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+  "canonical_TMPDIR": "/tmp (each test creates its own temporary directory)",
+  "HOME": "isolated task home; public embedded PG cache only symlinked",
+  "browser": "Chromium 141.0.7390.37 (1194)",
+  "inherited_SH_DINGWEI_DW_DATAD": false,
+  "real_credentials_used": false,
+  "uid": 1001
+}

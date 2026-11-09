@@ -26,6 +26,8 @@
 
 - 2026-11-09 coder56solzzc，冻结源10e6c2213整条多包命令重跑rc0（packages-final），无FAIL；前轮vet并行写入失败仅在superseded。实现后仅追加本次证据/任务交接，不改产品与测试字节；下一步同分支快进推送核验并交组长独立复核。
 
-- [ ] T-11 合并 r56.2 新 tip d5a6fbbc，连接页采用 r56.2 CSP、选择页保留已验证回调源；重跑浏览器两格／两条 CSP 变异／两包／m8／canonical。
+- [x] T-11 合并 r56.2 新 tip d5a6fbbc，连接页采用 r56.2 CSP、选择页保留已验证回调源；重跑浏览器两格／两条 CSP 变异／两包／m8／canonical。
 
 - 2026-11-09 coder56solzzc，写者01a1bf6a；三条实读满足后接管，旧锁保留，新工作树追加合并 d5a6fbbc，无 rebase／改写；读数与首轮相同的 rulings dcfd24ef 和任务板 7afbfebc 已核。完成连接页 CSP 冲突处置与飞书 HTTPS 确认页夹具；下一步冻结源并重跑指定门，M3 仍后置，不部署。
+
+- 2026-11-09 coder56solzzc，冻结merge 2c403d430（父d311864c、d5a6fbbc），所有指定门通过：真Chromium单／多目标、两条实际CSP撤除红、feishulogin99／mcpgw237、m8全包1512/0/37、canonical两profile各1129/1129及27Python／2shell rc0、strict29/0。长TMPDIR/socket124字符引起的中间canonical失败保留，短TMPDIR下10格及完整重跑均绿。下一步同工蜂分支快进推送核远端后交独立复核，再核M3接管条件；未部署、不自验收。
