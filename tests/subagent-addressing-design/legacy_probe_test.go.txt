@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+ "github.com/zhangzongchu2019/dingwei/internal/consolemux"
 )
 
 func TestSubagentDesignWireParserIsNotFullNameValidation(t *testing.T) {
@@ -38,11 +39,19 @@ func TestSubagentDesignIdentityAndSelectorRejectChild(t *testing.T) {
 func TestSubagentDesignConsoleRejectsThreePartScope(t *testing.T) {
 	data, _ := json.Marshal(map[string]any{"request_id": strings.Repeat("a", 32), "subscriptions": []map[string]string{{"full_name": "r2.opus50ts.zzc", "iframe_instance": strings.Repeat("b", 32)}}})
 	request := httptest.NewRequest("POST", "/probe", bytes.NewReader(data))
-	_, _, _, err := muxDecode(httptest.NewRecorder(), request)
-	if err == nil || !strings.Contains(err.Error(), "invalid subscription") {
-		t.Fatalf("unexpected console result: %v", err)
-	}
-	t.Log(`OBSERVATION {"entry":"console_mux","child_scope_rejected":true}`)
+    decoded, _, _, err := muxDecode(httptest.NewRecorder(), request)
+    if err != nil {
+        if !strings.Contains(err.Error(), "invalid subscription") { t.Fatal(err) }
+        t.Log(`OBSERVATION {"entry":"console_mux","child_scope_rejected":true,"stage":"legacy_decode"}`)
+        return
+    }
+    // M3 permits a structured child name. Decoding grants no authority: an
+    // ungranted child must still fail before target lookup or any parent feed.
+    e:=newAgentEnv(t)
+    m:=&consoleMuxRegistry{h:e.hub}
+    _,code,scopeErr:=m.resolveScopes(consolemux.Authorization{Agents:map[string]consolemux.Agent{}},decoded,nil)
+    if scopeErr==nil||code!=404 { t.Fatalf("AA010_UNAUTHORIZED_CONSOLE_CHILD_SCOPE code=%d err=%v",code,scopeErr) }
+    t.Log(`OBSERVATION {"entry":"console_mux","child_scope_rejected":true,"stage":"scope_authorization","decode_grants_nothing":true}`)
 }
 
 func TestSubagentDesignAMRSkipsChildAndRetainsRoot(t *testing.T) {

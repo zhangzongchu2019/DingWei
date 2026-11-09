@@ -65,3 +65,6 @@
 
 
 2026-11-09 coder56solzzc.zzc；产品源18cae8bf5保持不变。完整canonical发现接收静默性测试的SimpleNamespace夹具未补write_online_tree接口；本追加仅修测试夹具并断言旧目录清树快照且不注入。cache变异首次因隔离副本缺view_page_store依赖路径而未进入断言，补依赖搜索路径；原失败不计目标红。重新完整canonical与变异，浏览器/Go产品输入不变。阻塞：无。下一步：最终门禁证据交审。
+
+
+2026-11-09 coder56solzzc.zzc；产品18cae8bf5不变，canonical执行候选3723e263a。历史future探针的Console辅助断言原先要求纯decode拒绝三段名，现与M3结构化scope授权冲突；原红原文保留。本追加将辅助断言升级为「旧版decode可拒；新版decode不授予权限，未授权scope在resolveScopes以404拒绝」，原AMR/未协商父误投两条future保护不改，既有设计证据目录不改。此测试工具不在canonical/Go默认发现路径，正式future重跑。阻塞：无。下一步：汇总全门与SHA交审。
