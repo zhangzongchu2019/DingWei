@@ -16,7 +16,10 @@ import (
 func TestConsentRecentTrustedPrincipalPG(t *testing.T) {
 	ctx := context.Background()
 	pool := pgtest.Pool(t)
-	ac := repo.SystemCtx()
+	ac, accessErr := repo.NewAccessCtx("test", "consent-defaults")
+	if accessErr != nil {
+		t.Fatal(accessErr)
+	}
 	if _, e := migrate.Migrate(ctx, pool, migrate.HubDomains()); e != nil {
 		t.Fatal(e)
 	}
