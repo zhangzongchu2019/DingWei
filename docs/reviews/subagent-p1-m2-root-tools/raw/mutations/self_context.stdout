@@ -1,0 +1,20 @@
+test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+FAIL
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+
+======================================================================
+FAIL: test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 350, in test_aa004_trusted_native_context_source_and_forgery
+    self.assertEqual(context['parent'], 'root.owner')
+AssertionError: '' != 'root.owner'
++ root.owner
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.131s
+
+FAILED (failures=1)

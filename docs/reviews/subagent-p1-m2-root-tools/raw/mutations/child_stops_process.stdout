@@ -1,0 +1,15 @@
+test_aa008_parallel_response_wait_and_single_physical_writer (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_aa008_parallel_response_wait_and_single_physical_writer) ... FAIL
+
+======================================================================
+FAIL: test_aa008_parallel_response_wait_and_single_physical_writer (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_aa008_parallel_response_wait_and_single_physical_writer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 224, in test_aa008_parallel_response_wait_and_single_physical_writer
+    self.a.stop(); self.assertTrue(self.b.healthy()); self.assertTrue(self.native.live)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+FAILED (failures=1)

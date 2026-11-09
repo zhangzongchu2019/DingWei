@@ -1,0 +1,14 @@
+test_aa009_inbox_ledger_query_callback_generation_scope (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa009_inbox_ledger_query_callback_generation_scope) ... FAIL
+
+======================================================================
+FAIL: test_aa009_inbox_ledger_query_callback_generation_scope (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa009_inbox_ledger_query_callback_generation_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 161, in test_aa009_inbox_ledger_query_callback_generation_scope
+    self.assertIsNone(root.lifecycle('same'))
+AssertionError: {'delivery_id': 'same', 'session_name': 'root', 'envelope_json': '{"id":"original-envelope","to":"root.owner#key","body":"original business bytes","from":"sender.owner#key","meta":{"delivery_id":"same","delivery_ack_protocol":2,"processing_mode":"driver","ack_generation":1,"target_node_id":"e5c1f90a3c144bf0853b930b71fa13f4","lane_generation":1}}', 'state': 'received', 'attempts': 0, 'error': None, 'received_at': 1794184979.5341682, 'updated_at': 1794184979.5341682, 'ack_protocol': 2, 'processing_mode': 'driver', 'ack_generation': 1, 'dispatch_intent_at': None, 'request_id': None, 'turn_id': None, 'admitted_at': None, 'processed_at': None, 'turn_outcome': None, 'lane_id': 'e5c1f90a3c144bf0853b930b71fa13f4', 'lane_generation': 1, 'native_dispatch_at': None} is not None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.086s
+
+FAILED (failures=1)

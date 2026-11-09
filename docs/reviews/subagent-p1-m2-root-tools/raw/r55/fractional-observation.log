@@ -1,0 +1,17 @@
+test_native_seconds_preserve_fractional_acked_admission_boundary (test_codex_delivery_reconcile.ReconcileBoundaries.test_native_seconds_preserve_fractional_acked_admission_boundary) ... FAIL
+
+======================================================================
+FAIL: test_native_seconds_preserve_fractional_acked_admission_boundary (test_codex_delivery_reconcile.ReconcileBoundaries.test_native_seconds_preserve_fractional_acked_admission_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 178, in test_native_seconds_preserve_fractional_acked_admission_boundary
+    self.assertEqual(row['state'], 'admitted', 'MIXED_PRECISION_MUST_REMAIN_PENDING')
+AssertionError: 'processed' != 'admitted'
+- processed
++ admitted
+ : MIXED_PRECISION_MUST_REMAIN_PENDING
+
+----------------------------------------------------------------------
+Ran 1 test in 0.077s
+
+FAILED (failures=1)

@@ -23,7 +23,7 @@
 - [x] T-18 M2 冻结提交、推送核坐标、交组长独立复核；M3另派。
 
 - [x] T-19 按〔51〕-补13补旧主工具硬门、明确重开错误、无节点/树副作用、原绑定保留及显式重开恢复；四例四刀。
-- [ ] T-20 补件canonical双profile、strict、原生探针及证据；同分支追加推送交审。
+- [x] T-20 补件canonical双profile、strict、原生探针及证据；同分支追加推送交审。
 
 ## 交接记录
 
@@ -46,3 +46,5 @@
 2026-11-09 coder56solzzc.zzc；CODEX_THREAD_ID=01a1bd1c-c28e-7c60-9594-7894d0078533；产品冻结eed6ac54762bb2cf756f78934fbfb2db46f73d64，最终候选826a7c0ecf3d3b5634f69eed479d6c5abdf3b119（只追加测试隔离/turn与task区分断言/精确库存92）。完成：T17最终canonical rc0，双profile各1158/1158、27Python/2shell；24刀M2与21刀r55目标红；r55九格不变；锁版原生create/source工具与future绿；strict29/0；m8 1524/0/37可选SKIP且Go源不变。T18证据追加在本提交，源19件哈希与证据哈希归档，原始失败全部保留，交组长独立复核，不自验收。rulings已核16af735c，派单后仅r56预发结项，无M2规格漂移。阻塞：无交件阻塞；旧主thread无法补装dynamicTools的原生限制已显式报告，不替换主绑定。下一步：核证据提交远端SHA、发送最终回执后等复核，M2锁保留，另一路只读；M3另派，不部署、不动在线席位、不做真实推理。
 
 2026-11-09 coder56solzzc.zzc；父d48f3576，唯一写者01a1bd1c持原M2锁。完成T19：33例与28刀通过（新四刀各对应四项），真实broker响应验证重开提示。阻塞：无。下一步：冻结本补件，T20双profile总门与证据；不改写原交件，不部署，不开M3，不启动真实推理。
+
+2026-11-09 coder56solzzc.zzc；补件冻结源e509b44a59b48ffad5fd52e167fe5e23eff8a848（tree8fc3a383ae3dc5892664e97307f367fad00fab7e）。完成T20：完整canonical rc0，双profile各1162/1162、92文件、27Python/2shell；四新例纳入33例，新四刀加原24刀共28目标红；r55继承21刀、锁版原生合成SSE探针与strict通过。独立补件证据在docs/reviews/subagent-p1-m2-root-tools，原d48交件目录未改，Go零改动。阻塞：无。下一步：推送证据追加提交并核ls-remote后报组长独立复核；唯一写者01a1bd1c保留原M2锁，另一路只读，M3另派、不部署。

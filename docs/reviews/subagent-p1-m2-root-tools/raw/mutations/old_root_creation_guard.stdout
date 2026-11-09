@@ -1,0 +1,17 @@
+test_old_root_create_reports_restart_without_nodes_or_tree (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_old_root_create_reports_restart_without_nodes_or_tree) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+[driver-adapter] started, driver=codex
+FAIL
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+
+======================================================================
+FAIL: test_old_root_create_reports_restart_without_nodes_or_tree (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_old_root_create_reports_restart_without_nodes_or_tree)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 569, in test_old_root_create_reports_restart_without_nodes_or_tree
+    with self.assertRaisesRegex(RuntimeError, 'sub_agent_existing_root_tools_unavailable.*需重开主会话', msg='OLD_ROOT_CREATE_NOT_EXPLICITLY_REJECTED'):
+AssertionError: RuntimeError not raised : OLD_ROOT_CREATE_NOT_EXPLICITLY_REJECTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.580s
+
+FAILED (failures=1)

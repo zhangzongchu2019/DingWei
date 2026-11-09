@@ -1,0 +1,79 @@
+test_aa004_native_tool_source_and_stale_unknown_rejection (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_aa004_native_tool_source_and_stale_unknown_rejection) ... ok
+test_aa008_outer_thread_only_and_bounded_quarantine (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_aa008_outer_thread_only_and_bounded_quarantine) ... ok
+test_aa008_parallel_response_wait_and_single_physical_writer (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_aa008_parallel_response_wait_and_single_physical_writer) ... ok
+test_aa009_seat_read_budget_shared_200_not_per_lane (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_aa009_seat_read_budget_shared_200_not_per_lane) ... ok
+test_native_request_id_collision_with_client_pending (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_native_request_id_collision_with_client_pending) ... ok
+test_recovery_does_not_kill_healthy_sibling (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_recovery_does_not_kill_healthy_sibling) ... ok
+test_writer_rechecks_closed_node_and_starts_clock_at_write (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_writer_rechecks_closed_node_and_starts_clock_at_write) ... ok
+test_controls_only_trusted_connection_and_ack_scoped (tools.sessionhelper.tests.test_sub_agent_helper.ConnectionTests.test_controls_only_trusted_connection_and_ack_scoped) ... ok
+test_native_send_full_route_transport_and_durable_receipt (tools.sessionhelper.tests.test_sub_agent_helper.ConnectionTests.test_native_send_full_route_transport_and_durable_receipt) ... ok
+test_unavailable_child_never_enters_parent_inbox (tools.sessionhelper.tests.test_sub_agent_helper.ConnectionTests.test_unavailable_child_never_enters_parent_inbox) ... ok
+test_old_root_create_reports_restart_without_nodes_or_tree (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_old_root_create_reports_restart_without_nodes_or_tree) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+ok
+test_old_root_does_not_expose_control_tool (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_old_root_does_not_expose_control_tool) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+ok
+test_old_root_preserves_private_endpoint_binding (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_old_root_preserves_private_endpoint_binding) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+ok
+test_reopened_root_installs_tools_and_can_create (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_reopened_root_installs_tools_and_can_create) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa007_completion_idle_cap_restart_and_parent_cascade (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa007_completion_idle_cap_restart_and_parent_cascade) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa007_idle_progress_and_pending_work_are_distinct (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa007_idle_progress_and_pending_work_are_distinct) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa007_restart_unknown_work_does_not_become_idle (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa007_restart_unknown_work_does_not_become_idle) ... [driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa008_ack_gate_reconnect_and_child_delivery_no_parent_fallback (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa008_ack_gate_reconnect_and_child_delivery_no_parent_fallback) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-5 status=inProgress)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[delivery][LATE_ACCEPTED] id=dw-same; accepted-only cannot reopen admission
+ok
+test_aa009_return_outcomes_are_lane_and_generation_scoped (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa009_return_outcomes_are_lane_and_generation_scoped) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_broker_recovery_keeps_lane_notification_pump (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_broker_recovery_keeps_lane_notification_pump) ... [driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_create_repeated_unknown_native_response_never_second_thread (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_create_repeated_unknown_native_response_never_second_thread) ... ok
+test_ended_lane_ack_restores_without_native_activation (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_ended_lane_ack_restores_without_native_activation) ... [driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_m1_confirmation_without_lane_echo_uses_immutable_scope (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_m1_confirmation_without_lane_echo_uses_immutable_scope) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_native_send_journal_survives_restart (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_native_send_journal_survives_restart) ... ok
+test_slow_creation_does_not_block_parent_lifecycle_seal (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_slow_creation_does_not_block_parent_lifecycle_seal) ... [driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa006_random_tail_collision_alias_and_tombstone (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa006_random_tail_collision_alias_and_tombstone) ... ok
+test_aa007_atomic_seal_returns_only_definitely_unexecuted (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa007_atomic_seal_returns_only_definitely_unexecuted) ... ok
+test_aa007_policy_defaults_and_negative_bounds (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa007_policy_defaults_and_negative_bounds) ... ok
+test_aa009_inbox_ledger_query_callback_generation_scope (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa009_inbox_ledger_query_callback_generation_scope) ... ok
+test_additive_legacy_root_data_readable (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_additive_legacy_root_data_readable) ... ok
+test_create_idempotent_before_after_crash_and_conflicts (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_create_idempotent_before_after_crash_and_conflicts) ... ok
+test_tree_ack_current_connection_required_and_ended_not_revived (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_tree_ack_current_connection_required_and_ended_not_revived) ... ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 3.644s
+
+OK

@@ -1,0 +1,15 @@
+test_old_root_does_not_expose_control_tool (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_old_root_does_not_expose_control_tool) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+FAIL
+
+======================================================================
+FAIL: test_old_root_does_not_expose_control_tool (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_old_root_does_not_expose_control_tool)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 560, in test_old_root_does_not_expose_control_tool
+    self.assertNotIn('sub_agent_control', [tool['name'] for tool in runtime.root_adapter.driver.dynamic_tools], 'OLD_ROOT_EXPOSED_CONTROL_TOOL')
+AssertionError: 'sub_agent_control' unexpectedly found in ['dingwei_self_context', 'sub_agent_control', 'dingwei_send_message'] : OLD_ROOT_EXPOSED_CONTROL_TOOL
+
+----------------------------------------------------------------------
+Ran 1 test in 0.060s
+
+FAILED (failures=1)

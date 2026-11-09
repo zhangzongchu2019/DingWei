@@ -1,0 +1,15 @@
+test_reopened_root_installs_tools_and_can_create (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_reopened_root_installs_tools_and_can_create) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+FAIL
+
+======================================================================
+FAIL: test_reopened_root_installs_tools_and_can_create (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_reopened_root_installs_tools_and_can_create)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 602, in test_reopened_root_installs_tools_and_can_create
+    self.assertIn('sub_agent_control', [tool['name'] for tool in root_start.get('dynamicTools', [])], 'REOPENED_ROOT_MISSING_NATIVE_TOOLS')
+AssertionError: 'sub_agent_control' not found in [] : REOPENED_ROOT_MISSING_NATIVE_TOOLS
+
+----------------------------------------------------------------------
+Ran 1 test in 0.062s
+
+FAILED (failures=1)
