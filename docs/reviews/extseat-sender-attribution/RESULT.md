@@ -46,4 +46,4 @@ PG outbox 事务锁定 source owner 显示名/短名和 target owner 短名并�
 - 前文“`send_message` 的 `reply_policy` 已提供可选 `expect_reply`”属于实现前的错误描述；随后更正已说明 `expect_reply` 的 MCP/REST 参数、outbox 持久化、request_hash 与 true-only reply policy 投影均已真正实现。本次只修正迁移编号，不改变该实现。
 - 改号后门禁：`go test -p 1 -count=1 ./internal/store/...` PASS（store、migrate、pgtest）；extseat、mcpgw、tempgroup PASS；`go test -p 1 -run '^$' ./cmd/workpulse` PASS（编译）；`HUB_TEST_PG_STRICT=1 go test -p 1 -count=1 ./internal/m8` PASS（223.907s）；OpenSpec 1.16.0 strict 31/31；八刀变异 `MUTATION_SUMMARY 8/8 semantic reds`。原始变异与 OpenSpec 输出保存在 evidence 目录。
 - `PATH=/tmp/mcp-auth-diag-gate-venv/bin:/opt/node22/bin:$PATH scripts/run-build-tests.sh`：PASS，`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`。
-- 新 tip、tree 与远端 `ls-remote` 核对结果待追加提交后补录。
+- 改号代码提交：`2d8739a47006d3ff36b2db3083461aabd5377ed9`，tree `d446bf6945688b7b285f6ba95d0a781343477bfc`，父提交 `428aef27047c1f9e3eebd7b3258a82b3e55047ef`。最终交付 tip/tree 与推送后 `ls-remote` 核对由本次交接记录补录并在交付回复报告。

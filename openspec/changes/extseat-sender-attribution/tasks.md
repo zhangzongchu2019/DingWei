@@ -29,4 +29,8 @@
 - 日期：2026-11-09；执行者：togpt60lunazzc；commit：待提交。
   - 完成：PG 0110 改号并同步账本；store/...、extseat/mcpgw/tempgroup、严格 PG m8 全包、workpulse 编译、OpenSpec strict 31/31、八刀语义变异 8/8、`scripts/run-build-tests.sh` 均通过（`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`）。
   - 阻塞：无。
-  - 下一步：提交并推送，核对远端坐标。
+  - 下一步：见下条交接记录。
+- 日期：2026-11-09；执行者：togpt60lunazzc；代码提交：`2d8739a47006d3ff36b2db3083461aabd5377ed9`。
+  - 完成：修正提交已追加，迁移文件重命名 100% 内容一致；全部指定门禁已通过。
+  - 阻塞：等待推送及 `ls-remote` 校验。
+  - 下一步：推送分支、核对远端 SHA/tree，并报告交付坐标。
