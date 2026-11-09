@@ -2,6 +2,7 @@ package m8
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -53,7 +54,7 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	seats := &extseat.Service{Pool: pool, Access: access, Identity: pgIdentity, Groups: groups, TenantKey: "tenant-e2e", Resource: "https://fixture.invalid/mcp", Now: func() time.Time { return now }}
 	principal := extshared.Principal{Provider: "feishu", TenantKey: "tenant-e2e", Issuer: "fixture-app", Subject: "mcp-asist", DisplayName: "MCP 授权人"}
 	targetFullName := v.svc.FullName(ctx, target)
-	_, seat, _, err := seats.IssueToken(ctx, principal, "asist", targetFullName)
+	_, seat, seatGroup, err := seats.IssueToken(ctx, principal, "asist", targetFullName)
 	if err != nil {
 		t.Fatalf("issue external seat: %v", err)
 	}
@@ -97,5 +98,63 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	}
 	if replies[0].From != targetFullName || replies[0].To != seat.FullName || replies[0].Body != reply.Body {
 		t.Fatalf("EXTSEAT_REPLY_ROUTE_E2E reply identity/body=%+v want from=%s to=%s", replies[0], targetFullName, seat.FullName)
+	}
+
+	// Two non-target Agents share an explicit ordinary group with the target.
+	// The first has the same owner; the second crosses owners. Both address the
+	// external seat by its exact full name and must still be denied by extseat's
+	// target identity check before anything is persisted or made visible to Wait.
+	peerOwner := "labs"
+	peerKey := AgentKeyID(peerOwner)
+	peerNow := now
+	if _, err = pool.Exec(ctx, access, `INSERT INTO np_user(user_id_lc,user_id,short_name,short_name_lc,display_name,type,state,created_at) VALUES($1,$1,$1,$1,$1,'member','active',$2)`, peerOwner, peerNow); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, access, `INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,created_at) VALUES('sender_same','zzc','sameOwner','sameowner','selfhost','active',$1),('sender_cross',$2,'crossOwner','crossowner','selfhost','active',$1)`, peerNow, peerOwner); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, access, `INSERT INTO np_group(code,short_name,creator_lc,leader_agent_id,created_at,updated_at) VALUES('reply-peers','reply-peers','zzc',$1,$2,$2)`, target.ID, peerNow); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, access, `INSERT INTO np_group_member(code,agent_id,created_at) VALUES('reply-peers',$1,$2),('reply-peers','sender_same',$2),('reply-peers','sender_cross',$2)`, target.ID, peerNow); err != nil {
+		t.Fatal(err)
+	}
+	// The temporary group is leader-only, but its membership rows still make
+	// both peers observably co-members alongside the target in the real PG.
+	if _, err = pool.Exec(ctx, access, `INSERT INTO np_group_member(code,agent_id,created_at) VALUES($1,'sender_same',$2),($1,'sender_cross',$2)`, seatGroup, peerNow); err != nil {
+		t.Fatal(err)
+	}
+	var inboxBefore int
+	row, queryErr := pool.QueryRow(ctx, access, `SELECT count(*) FROM np_extseat_inbox WHERE seat_id=$1`, seat.AgentID)
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
+	if err = row.Scan(&inboxBefore); err != nil {
+		t.Fatal(err)
+	}
+	for _, source := range []struct{ key, name, id string }{
+		{AgentKeyID("zzc"), "sameowner", "same-owner-nontarget"},
+		{peerKey, "crossowner", "cross-owner-same-group-nontarget"},
+	} {
+		env := model.Envelope{ID: "extseat-reply-deny-" + source.id, From: sessionAddress(source.name, source.key), To: seat.FullName + "#u_" + seat.OwnerLC, Body: source.id}
+		if err := v.hub.RouteEnvelope(ctx, env); !errors.Is(err, extshared.ErrTargetNotInAG) {
+			t.Fatalf("EXTSEAT_REPLY_ONLY_FROM_TARGET source=%s expected ErrTargetNotInAG, got %v", source.id, err)
+		}
+		waitCtx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+		got, waitErr := seats.Wait(waitCtx, seat, 0)
+		cancel()
+		if waitErr != nil || len(got) != 0 {
+			t.Fatalf("EXTSEAT_REPLY_ONLY_FROM_TARGET source=%s Wait=%+v err=%v", source.id, got, waitErr)
+		}
+	}
+	// The authorized round trip above already inserted and received one row;
+	// denied attempts must leave that count unchanged.
+	var inboxRows int
+	row, queryErr = pool.QueryRow(ctx, access, `SELECT count(*) FROM np_extseat_inbox WHERE seat_id=$1`, seat.AgentID)
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
+	if err = row.Scan(&inboxRows); err != nil || inboxRows != inboxBefore {
+		t.Fatalf("EXTSEAT_REPLY_ONLY_FROM_TARGET inbox rows before=%d after=%d err=%v", inboxBefore, inboxRows, err)
 	}
 }

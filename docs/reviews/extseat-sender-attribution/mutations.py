@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""五项逐个运行的语义变异；编译失败不计作成功。"""
+"""七项逐个运行的语义变异；编译失败不计作成功。"""
 from pathlib import Path
 import os
 import subprocess
@@ -24,6 +24,12 @@ CASES = [
     ("reply-route-skipped", "internal/m8/extseat.go",
      'if _, _, ok := extshared.SplitAgentName(strings.Replace(name, "_ag", "_AG", 1)); !ok {',
      'if _, _, ok := extshared.SplitAgentName(strings.Replace(name, "_ag", "_AG", 1)); ok {', "./internal/m8", "TestExternalSeatSenderReplyRoundTripPGAndHub", "EXTSEAT_REPLY_ROUTE_E2E"),
+    ("non-target-reply-guard-removed", "internal/extseat/inbox.go",
+     'if g.Target.ID != sourceAgentID {\n\t\t\treturn extshared.ErrTargetNotInAG\n\t\t}',
+     'if false {\n\t\t\treturn extshared.ErrTargetNotInAG\n\t\t}', "./internal/m8", "TestExternalSeatSenderReplyRoundTripPGAndHub", "EXTSEAT_REPLY_ONLY_FROM_TARGET"),
+    ("reply-route-after-grouping", "internal/m8/hub.go",
+     '\t\t\t\tif handled, routeErr := h.routeExternalSeat(ctx, full.keyID, full.sessionName, env); handled {\n\t\t\t\t\treturn routeErr\n\t\t\t\t}\n\t\t\t\tif err := h.enforceAgentGrouping(ctx, from, env, full.keyID, full.sessionName); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}',
+     '\t\t\t\tif err := h.enforceAgentGrouping(ctx, from, env, full.keyID, full.sessionName); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t\tif handled, routeErr := h.routeExternalSeat(ctx, full.keyID, full.sessionName, env); handled {\n\t\t\t\t\treturn routeErr\n\t\t\t\t}', "./internal/m8", "TestExternalSeatSenderReplyRoundTripPGAndHub", "EXTSEAT_REPLY_ONLY_FROM_TARGET"),
 ]
 
 BUILD_ERRORS = ("build failed", "syntax error", "undefined:", "expected '", "cannot use ")
