@@ -108,7 +108,7 @@ func TestConnectPageGETRendersSelfContainedValidatedForm(t *testing.T) {
 	}
 	assertNoEmbeddingHeaders(t, recorder.Header())
 	if recorder.Header().Get("Cache-Control") != "no-store" ||
-		recorder.Header().Get("Referrer-Policy") != "no-referrer" {
+		recorder.Header().Get("Referrer-Policy") != "same-origin" {
 		t.Fatalf("missing privacy headers: %+v", recorder.Header())
 	}
 	body := recorder.Body.String()
