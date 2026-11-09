@@ -1,0 +1,49 @@
+{
+  "name": "read-only",
+  "target": "AA009_READONLY_WRITE_ACCEPTED",
+  "target_red": true,
+  "runs": [
+    {
+      "phase": "baseline",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestSubAgentRollbackReadOnlyOpen$",
+        "-count=1",
+        "-v"
+      ],
+      "rc": 0,
+      "start": "2026-11-09T09:05:46.853632+00:00",
+      "end": "2026-11-09T09:05:47.608777+00:00"
+    },
+    {
+      "phase": "mutant",
+      "command": [
+        "go",
+        "test",
+        "-vet=off",
+        "-overlay=/tmp/m3-check-n0akhuoj/overlay.json",
+        "./internal/store",
+        "-run",
+        "^TestSubAgentRollbackReadOnlyOpen$",
+        "-count=1",
+        "-v"
+      ],
+      "rc": 1,
+      "start": "2026-11-09T09:05:47.608795+00:00",
+      "end": "2026-11-09T09:05:50.610378+00:00"
+    }
+  ],
+  "uid": 1001,
+  "environment_names": [
+    "GOCACHE",
+    "GOMODCACHE",
+    "GOPROXY",
+    "GOTOOLCHAIN",
+    "HOME",
+    "PATH",
+    "TMPDIR"
+  ]
+}

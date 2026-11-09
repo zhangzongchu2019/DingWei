@@ -1,0 +1,6 @@
+=== RUN   TestSubAgentRollbackReadOnlyIncludesCommittedWAL
+    sub_agent_rollback_check_test.go:183: AA009_COMMITTED_WAL_IGNORED {0 []} <nil>
+--- FAIL: TestSubAgentRollbackReadOnlyIncludesCommittedWAL (0.16s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.166s
+FAIL

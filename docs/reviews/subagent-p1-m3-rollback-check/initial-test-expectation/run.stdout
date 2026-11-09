@@ -1,0 +1,16 @@
+=== RUN   TestSubAgentRollbackCheckAllRoots
+--- PASS: TestSubAgentRollbackCheckAllRoots (0.15s)
+=== RUN   TestSubAgentRollbackCheckSourceOnlyAndInvalidRoute
+--- PASS: TestSubAgentRollbackCheckSourceOnlyAndInvalidRoute (0.14s)
+=== RUN   TestSubAgentRollbackReadOnlyOpen
+    sub_agent_rollback_check_test.go:149: AA009_READONLY_CREATED_FILES [- literal?mode=rw#snapshot.sqlite - literal?mode=rw#snapshot.sqlite-shm - literal?mode=rw#snapshot.sqlite-wal] <nil>
+--- FAIL: TestSubAgentRollbackReadOnlyOpen (0.15s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.447s
+=== RUN   TestCheckAllCommandBlocksUnpreparedRoot
+--- PASS: TestCheckAllCommandBlocksUnpreparedRoot (0.19s)
+=== RUN   TestCheckAllCommandRejectsUnsafeInputs
+--- PASS: TestCheckAllCommandRejectsUnsafeInputs (0.01s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/subagent-rollback	0.203s
+FAIL

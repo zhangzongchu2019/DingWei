@@ -1,0 +1,3 @@
+{"pending":1,"roots":[{"root_agent_id":"root","count":1,"delivery_ids":["unexecuted-a"]}]}
+unaudited child deliveries remain; binary downgrade forbidden
+exit status 1

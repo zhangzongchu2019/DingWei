@@ -1,0 +1,5 @@
+=== RUN   TestSubAgentOfflineRollbackLegacyClaimer
+    sub_agent_rollback_test.go:87: AA010_OFFLINE_ROLLBACK returned=2 unknown=1 terminal=1 legacy_claimer_child_rows=0; ACK and tombstones retained
+--- PASS: TestSubAgentOfflineRollbackLegacyClaimer (0.19s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.193s
