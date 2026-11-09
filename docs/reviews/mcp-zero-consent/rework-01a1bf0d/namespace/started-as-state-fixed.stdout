@@ -1,0 +1,6 @@
+=== RUN   TestConsentLoginNamespaceIsolation
+=== RUN   TestConsentLoginNamespaceIsolation/started-as-state
+--- PASS: TestConsentLoginNamespaceIsolation (0.15s)
+    --- PASS: TestConsentLoginNamespaceIsolation/started-as-state (0.15s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.160s

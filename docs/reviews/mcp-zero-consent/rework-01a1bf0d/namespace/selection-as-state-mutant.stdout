@@ -1,0 +1,9 @@
+=== RUN   TestConsentLoginNamespaceIsolation
+=== RUN   TestConsentLoginNamespaceIsolation/selection-as-state
+    consent_test.go:246: ZC_SELECTION_AS_STATE_CONSUMED
+    consent_test.go:251: ZC_REAL_SELECTION_LOST 400 []
+--- FAIL: TestConsentLoginNamespaceIsolation (0.10s)
+    --- FAIL: TestConsentLoginNamespaceIsolation/selection-as-state (0.09s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.102s
+FAIL

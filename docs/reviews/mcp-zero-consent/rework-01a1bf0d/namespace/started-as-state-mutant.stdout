@@ -1,0 +1,9 @@
+=== RUN   TestConsentLoginNamespaceIsolation
+=== RUN   TestConsentLoginNamespaceIsolation/started-as-state
+    consent_test.go:221: ZC_STARTED_AS_STATE_CONSUMED
+    consent_test.go:224: ZC_STARTED_AS_STATE_RESTART 303
+--- FAIL: TestConsentLoginNamespaceIsolation (0.17s)
+    --- FAIL: TestConsentLoginNamespaceIsolation/started-as-state (0.17s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.173s
+FAIL

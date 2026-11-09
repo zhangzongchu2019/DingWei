@@ -1,0 +1,9 @@
+browser request failed: /callback net::ERR_CONNECTION_REFUSED
+page.waitForURL: Timeout 30000ms exceeded.
+=========================== logs ===========================
+waiting for navigation to "http://127.0.0.1:18999/callback?**" until "load"
+  navigated to "chrome-error://chromewebdata/"
+============================================================
+    at /data/ai-dev-data/mcp-zero-consent-01a1bf0d/docs/reviews/mcp-zero-consent/browser_probe.js:37:14 {
+  name: 'TimeoutError'
+}

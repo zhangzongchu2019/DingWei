@@ -1,0 +1,6 @@
+=== RUN   TestConsentConfigIsolationAndValidation
+    defaults_test.go:18: ZC_CONFIG_TENANT_LEAK
+--- FAIL: TestConsentConfigIsolationAndValidation (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/extwire	0.003s
+FAIL

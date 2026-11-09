@@ -1,0 +1,8 @@
+=== RUN   TestConsentNameGeneration
+=== RUN   TestConsentNameGeneration/empty
+    defaults_test.go:57: ZC_NAME_empty got=bot261109080203 want=pm261109080203
+--- FAIL: TestConsentNameGeneration (0.00s)
+    --- FAIL: TestConsentNameGeneration/empty (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

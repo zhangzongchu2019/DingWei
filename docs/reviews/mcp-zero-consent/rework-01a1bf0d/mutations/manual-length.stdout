@@ -1,0 +1,8 @@
+=== RUN   TestConnectPageRejectsInvalidShortName
+=== RUN   TestConnectPageRejectsInvalidShortName/toolongname
+    connect_test.go:145: short "toolongname" status=303 OAuth states=1
+--- FAIL: TestConnectPageRejectsInvalidShortName (0.00s)
+    --- FAIL: TestConnectPageRejectsInvalidShortName/toolongname (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.007s
+FAIL

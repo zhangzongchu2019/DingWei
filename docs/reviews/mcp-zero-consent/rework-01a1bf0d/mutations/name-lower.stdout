@@ -1,0 +1,8 @@
+=== RUN   TestConsentNameGeneration
+=== RUN   TestConsentNameGeneration/english
+    defaults_test.go:57: ZC_NAME_english got=ce261109080203 want=alice261109080203
+--- FAIL: TestConsentNameGeneration (0.00s)
+    --- FAIL: TestConsentNameGeneration/english (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

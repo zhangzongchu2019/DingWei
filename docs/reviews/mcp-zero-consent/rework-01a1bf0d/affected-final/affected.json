@@ -1,0 +1,23 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-json",
+    "./internal/mcpgw",
+    "./internal/feishulogin"
+  ],
+  "rc": 0,
+  "start": "2026-11-09T07:59:35Z",
+  "end": "2026-11-09T07:59:46Z",
+  "environment_names": [
+    "GOCACHE",
+    "GOMODCACHE",
+    "GOPROXY",
+    "HOME",
+    "HUB_TEST_PG_STRICT",
+    "PATH",
+    "TMPDIR"
+  ],
+  "uid": 1001
+}

@@ -1,0 +1,512 @@
+[
+  {
+    "name": "outer-attempt-once",
+    "file": "internal/mcpgw/oauth.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/mcpgw",
+      "-run",
+      "TestConsentOneStartPerOAuthAttempt"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_OUTER_ATTEMPT_STARTED_TWICE",
+    "target_red": true
+  },
+  {
+    "name": "external-length",
+    "file": "internal/extshared/extshared.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/extshared",
+      "-run",
+      "TestShortNameRules"
+    ],
+    "rc": 1,
+    "target_assertion": "want invalid",
+    "target_red": true
+  },
+  {
+    "name": "external-long-parse",
+    "file": "internal/extshared/extshared.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/extseat",
+      "-run",
+      "TestConsentLongNameMigrationAndConcurrencyPG"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_LONG_ISSUE",
+    "target_red": true
+  },
+  {
+    "name": "name-lower",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentNameGeneration/english"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_NAME_english",
+    "target_red": true
+  },
+  {
+    "name": "name-symbols",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentNameGeneration/symbols"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_NAME_symbols",
+    "target_red": true
+  },
+  {
+    "name": "name-initials",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentNameGeneration/polyphonic"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_NAME_polyphonic",
+    "target_red": true
+  },
+  {
+    "name": "name-fallback",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentNameGeneration/empty"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_NAME_empty",
+    "target_red": true
+  },
+  {
+    "name": "name-eight",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentNameGeneration/long"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_NAME_long",
+    "target_red": true
+  },
+  {
+    "name": "name-UTC",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentNameGeneration/english"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_NAME_english",
+    "target_red": true
+  },
+  {
+    "name": "disabled-form",
+    "file": "internal/feishulogin/connect.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentSingleAndDisabled/empty"
+    ],
+    "rc": 1,
+    "target_assertion": "CSRF input not found",
+    "target_red": true
+  },
+  {
+    "name": "single-input",
+    "file": "internal/feishulogin/connect.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentSingleAndDisabled/single"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_FORM_MODE_single",
+    "target_red": true
+  },
+  {
+    "name": "manual-length",
+    "file": "internal/feishulogin/handler.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConnectPageRejectsInvalidShortName/toolongname"
+    ],
+    "rc": 1,
+    "target_assertion": "short \"toolongname\"",
+    "target_red": true
+  },
+  {
+    "name": "default-overrides",
+    "file": "internal/feishulogin/connect.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentOverridesAndRevocation/short-override"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_OVERRIDE_short-override",
+    "target_red": true
+  },
+  {
+    "name": "target-membership",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentSelectionRejectsChangedPolicy/outside"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_SELECTION_outside",
+    "target_red": true
+  },
+  {
+    "name": "target-valid",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentSingleAndDisabled/invalid"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_INVALID_TARGET",
+    "target_red": true
+  },
+  {
+    "name": "option-filter",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentMultipleSelectionBoundOnce"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_MULTI_FILTER",
+    "target_red": true
+  },
+  {
+    "name": "recent-scope",
+    "file": "internal/extwire/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/extwire",
+      "-run",
+      "TestConsentRecentTrustedPrincipalPG"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_RECENT_LATEST",
+    "target_red": true
+  },
+  {
+    "name": "recent-order",
+    "file": "internal/extwire/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/extwire",
+      "-run",
+      "TestConsentRecentTrustedPrincipalPG"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_RECENT_LATEST",
+    "target_red": true
+  },
+  {
+    "name": "recent-filter",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentSelectionRejectsChangedPolicy/recent-outside"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_RECENT_OUTSIDE",
+    "target_red": true
+  },
+  {
+    "name": "config-tenant",
+    "file": "internal/extwire/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/extwire",
+      "-run",
+      "TestConsentConfigIsolationAndValidation"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_CONFIG_TENANT_LEAK",
+    "target_red": true
+  },
+  {
+    "name": "subject-active",
+    "file": "internal/extwire/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/extwire",
+      "-run",
+      "TestConsentAuthoritativeValidity/owner-inactive"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_VALIDITY_owner-inactive",
+    "target_red": true
+  },
+  {
+    "name": "name-once",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentMultipleSelectionBoundOnce"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_SELECTION_NAME_ONCE",
+    "target_red": true
+  },
+  {
+    "name": "selection-purpose",
+    "file": "internal/feishulogin/defaults.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentSelectionRejectsChangedPolicy/wrong-purpose"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_SELECTION_wrong-purpose",
+    "target_red": true
+  },
+  {
+    "name": "selection-browser",
+    "file": "internal/mcpgw/oauth.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/mcpgw",
+      "-run",
+      "TestConsentGatewaySingleAndMultiBrowserGuards/no-cookie"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_GW_SELECTION_no-cookie",
+    "target_red": true
+  },
+  {
+    "name": "issue-expiry",
+    "file": "internal/feishulogin/handler.go",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentIssueExpiry"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_ISSUE_EXPIRED",
+    "target_red": true
+  },
+  {
+    "name": "migration-upper",
+    "file": "internal/store/migrate/migrations/0108_extseat_short_name.sql",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/store/migrate",
+      "-run",
+      "TestConsentMigrationLedgerPG"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_LEDGER_OVER20_ACCEPTED",
+    "target_red": true
+  },
+  {
+    "name": "migration-old",
+    "file": "internal/store/migrate/migrations/0108_extseat_short_name.sql",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/store/migrate",
+      "-run",
+      "TestConsentMigrationLedgerPG"
+    ],
+    "rc": 1,
+    "target_assertion": "violated by some row",
+    "target_red": true
+  },
+  {
+    "name": "rollback-close",
+    "file": "docs/reviews/mcp-zero-consent/RELEASE-NOTES.md",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentRollbackRunbook"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_ROLLBACK_RUNBOOK_MISSING",
+    "target_red": true
+  },
+  {
+    "name": "rollback-pending",
+    "file": "docs/reviews/mcp-zero-consent/RELEASE-NOTES.md",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentRollbackRunbook"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_ROLLBACK_RUNBOOK_MISSING",
+    "target_red": true
+  },
+  {
+    "name": "rollback-check",
+    "file": "docs/reviews/mcp-zero-consent/RELEASE-NOTES.md",
+    "command": [
+      "go",
+      "test",
+      "-count=1",
+      "-v",
+      "-timeout=5m",
+      "./internal/feishulogin",
+      "-run",
+      "TestConsentRollbackRunbook"
+    ],
+    "rc": 1,
+    "target_assertion": "ZC_ROLLBACK_RUNBOOK_MISSING",
+    "target_red": true
+  }
+]

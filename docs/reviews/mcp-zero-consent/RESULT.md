@@ -1,3 +1,7 @@
+# 首轮返工入口
+
+最新返工见 [rework-01a1bf0d/RESULT.md](rework-01a1bf0d/RESULT.md)，冻结源10e6c2213，已合入r56.2并补键分域与真实浏览器。下方原报告及原SHA清单保留为c85b4e93历史读数。
+
 # S-MCP-ZERO-CONSENT 作者交审结果
 
 执行会话：01a1be21-a016-7ff1-bf0f-a48b78f9d3d6；唯一写锁 `/tmp/coder56-mcp-zeroconsent.lock`，取得于2026-11-09T06:06:49.388462+00:00。基线严格为main fce2ede85150747cfa7ccdf728f060d1e498304a；依据rulings ㊿-补21、补29＠5641584ae1eeb83e199f80608019e3b89e855758及本次改派令。**作者自测门通过，交组长独立复核；不是部署或桌面验收通过。**

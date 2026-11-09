@@ -1,0 +1,8 @@
+=== RUN   TestConsentNameGeneration
+=== RUN   TestConsentNameGeneration/polyphonic
+    defaults_test.go:57: ZC_NAME_polyphonic got=zhongqin261109080203 want=zqdx261109080203
+--- FAIL: TestConsentNameGeneration (0.00s)
+    --- FAIL: TestConsentNameGeneration/polyphonic (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

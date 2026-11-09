@@ -1,0 +1,15 @@
+{
+  "source_commit": "10e6c2213291abf636a1b13c022ac0a6c4841786",
+  "source_tree": "de5cfaa9da54b3996475dfed68776f7dca066744",
+  "merge_commit": "4cf28d19885d38e1d9b25815e1857879cfb726ac",
+  "merged_r562": "d70016f3",
+  "reviewed_tip": "c85b4e93dd81559cd86feff53474b4a44db17bfd",
+  "rulings": "dcfd24ef530f7502c593dd88a4e5606bf52a56a8",
+  "tasks_board": "7afbfebcd2708e4d87108d5d778903fe326cf279",
+  "uid": 1001,
+  "go": "go version go1.22.2 linux/amd64",
+  "node": "v22.23.1",
+  "browser": "Chromium 141.0.7390.37",
+  "lock_owner": "01a1bf0d-d5c9-7613-9845-5a3707ec3c9b",
+  "production_actions": false
+}
