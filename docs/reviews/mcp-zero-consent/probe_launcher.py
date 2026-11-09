@@ -27,10 +27,10 @@ if args.mutation:
   pos=source.rfind('\t\treturn true');assert pos>0;source=source[:pos]+source[pos:].replace('return true','return false',1)
  mutant=p/'mutant.go';mutant.write_text(source);replacements[str(ROOT/relative)]=str(mutant)
 if args.browser_cut:
- relative={'connect-csp':'internal/feishulogin/connect.go','selection-csp':'internal/mcpgw/selection.go'}[args.browser_cut]
+ relative={'connect-csp':'internal/feishulogin/handler.go','selection-csp':'internal/mcpgw/selection.go'}[args.browser_cut]
  source=(ROOT/relative).read_text()
  if args.browser_cut=='connect-csp':
-  old='FormRedirectPolicy(connectPageCSP, authorizationURL)';new='FormRedirectPolicy(connectPageCSP)';source=source.replace('authorizationURL, err :=','_, err :=',1)
+  old='connectPageCSPFor(authorizeOriginOf(cfg.OAuth, cfg.RedirectURI))';new='connectPageCSPFor("")'
  else:
   old=', a.Redirect)';new=')'
  assert source.count(old)==1

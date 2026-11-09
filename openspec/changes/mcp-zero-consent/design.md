@@ -31,3 +31,9 @@
 ### 真浏览器发现的 CSP 跳转链阻断
 
 Chromium 会对表单 POST 后的跳转链检查原表单页面的 form-action。原 self 策略阻止连接页303飞书，以及选择POST后302回客户端。保持 default-src none、base-uri none、frame-ancestors none；连接页仅加入服务端OAuth适配器生成的飞书授权origin，网关再加入已校验且持久化的attempt客户端回调origin；选择页仅加入该回调origin。CSP不读取请求Host或未校验redirect，剥掉path/query，拒userinfo、非http(s)、空host、通配符和CSP分隔符，避免策略注入；仍保留Origin/CSRF/浏览器绑定与全部OAuth校验。来源为可信配置／已有校验结果，不扩大OAuth登记允许集合。两条CSP撤除变异由真Chromium分别命中连接跳转与选择完成跳转阻断。
+
+## r56.2 新 tip 合并裁定（01a1bf6a）
+
+本段覆盖上文首轮 CSP 连接页方案：合并 d5a6fbbca6cda0c0627342e8905372f052638b2a，保留 r56.2 的 NewHandler → authorizeOriginOf → connectPageCSPFor，连接页仅 self 与配置飞书 HTTPS 精确源，不包含 attempt 的回调／回环源；网关不再追加连接页 CSP。选择页继续只加本次已校验、持久化 redirect_uri 的源。defaults／自动命名／用途隔离保持原逻辑。
+
+隔离飞书替身改为 HTTPS（与 r56.2 源校验一致），落地确认页面后由真实 Chromium 点击身份确认链接，模拟上游身份确认的独立页面导航，不改 Origin／响应头或拦截导航。连接页撤除变异改为撤 NewHandler 内 authorizeOriginOf；选择页撤除仍移除 a.Redirect。

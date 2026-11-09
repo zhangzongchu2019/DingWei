@@ -5,9 +5,37 @@ import (
 	"errors"
 	"html/template"
 	"net/http"
+	"net/url"
+	"regexp"
 )
 
 const connectPageCSP = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+
+// connectPageCSPFor allows the form to follow its 303 to the Feishu authorize
+// origin. Browsers enforce form-action across redirects, so 'self' alone blocks
+// the hop to Feishu (r56.1 现网实测). Only one exact https origin is added.
+func connectPageCSPFor(authorizeOrigin string) string {
+	if authorizeOrigin == "" {
+		return connectPageCSP
+	}
+	return "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'self' " + authorizeOrigin + "; frame-ancestors 'none'"
+}
+
+var cspOriginHost = regexp.MustCompile(`^[A-Za-z0-9.-]+(:[0-9]{1,5})?$`)
+
+// authorizeOriginOf derives the exact origin of the configured Feishu authorize
+// endpoint without network access; anything unusual keeps form-action 'self'.
+func authorizeOriginOf(client OAuthClient, redirectURI string) string {
+	raw, err := client.AuthorizationURL("csp-origin-probe", redirectURI)
+	if err != nil {
+		return ""
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "https" || u.User != nil || !cspOriginHost.MatchString(u.Host) {
+		return ""
+	}
+	return "https://" + u.Host
+}
 
 var connectPageTemplate = template.Must(template.New("connect").Parse(`<!doctype html>
 <html lang="zh-CN">
@@ -57,11 +85,7 @@ type connectPageData struct {
 // validates its one-time CSRF token before entering Start on POST. It never
 // lists target Agents and never accepts an MCP client redirect_uri.
 func (h *Handler) ServeConnectPage(w http.ResponseWriter, r *http.Request) {
-	setConnectPageHeaders(w.Header())
-	// This configured endpoint is server-owned, not a browser-supplied redirect.
-	if authorizationURL, err := h.oauth.AuthorizationURL("csp-policy", h.redirectURI); err == nil {
-		w.Header().Set("Content-Security-Policy", FormRedirectPolicy(connectPageCSP, authorizationURL))
-	}
+	setConnectPageHeaders(w.Header(), h.connectCSP)
 	switch r.Method {
 	case http.MethodGet:
 		h.renderConnectPage(w, r, http.StatusOK, connectPageData{AttemptID: r.URL.Query().Get("attempt_id")})
@@ -73,8 +97,11 @@ func (h *Handler) ServeConnectPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func setConnectPageHeaders(header http.Header) {
-	header.Set("Content-Security-Policy", connectPageCSP)
+func setConnectPageHeaders(header http.Header, csp string) {
+	if csp == "" {
+		csp = connectPageCSP
+	}
+	header.Set("Content-Security-Policy", csp)
 	header.Set("X-Frame-Options", "DENY")
 	header.Set("Cache-Control", "no-store")
 	// same-origin, not no-referrer: under no-referrer browsers serialize the

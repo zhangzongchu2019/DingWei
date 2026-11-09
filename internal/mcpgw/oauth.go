@@ -198,8 +198,6 @@ func (g *Gateway) connect(w http.ResponseWriter, r *http.Request) {
 	// C 的重定向 state 与 B 事务关联，回调先验浏览器和期限再允许 C 签发。
 	captured := &loginResponse{header: make(http.Header)}
 	g.cfg.Login.ServeConnectPage(captured, r)
-	// a.Redirect was resolved and validated before persisting the attempt.
-	captured.header.Set("Content-Security-Policy", feishulogin.FormRedirectPolicy(captured.header.Get("Content-Security-Policy"), a.Redirect))
 	if captured.status == http.StatusSeeOther {
 		location, e := url.Parse(captured.header.Get("Location"))
 		if e != nil || location.Query().Get("state") == "" {

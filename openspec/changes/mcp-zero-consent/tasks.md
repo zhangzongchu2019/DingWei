@@ -25,3 +25,7 @@
 - 2026-11-09 coder56solzzc，冻结实现10e6c2213；三格用途隔离、去前缀两格目标红、原30刀与新增两条CSP浏览器变异均目标红；真Chromium单/多目标均完成换票，canonical双profile1129各、m8 1512/0/37、完整三包race三遍、strict29/0通过。已核最新rulings dcfd24ef，新增补30/31与本次合并r56.2一致，无另增本单需求；main仍fce2ede8，tasks/v0.1-B为7afbfebc。首次完整多包运行碰源码写入期间vet类型信息不一致，留作废原文，冻结后整条命令重跑中；本段下一步等rc0后追加证据提交并推送同远端分支交审；M3后置、不部署。
 
 - 2026-11-09 coder56solzzc，冻结源10e6c2213整条多包命令重跑rc0（packages-final），无FAIL；前轮vet并行写入失败仅在superseded。实现后仅追加本次证据/任务交接，不改产品与测试字节；下一步同分支快进推送核验并交组长独立复核。
+
+- [ ] T-11 合并 r56.2 新 tip d5a6fbbc，连接页采用 r56.2 CSP、选择页保留已验证回调源；重跑浏览器两格／两条 CSP 变异／两包／m8／canonical。
+
+- 2026-11-09 coder56solzzc，写者01a1bf6a；三条实读满足后接管，旧锁保留，新工作树追加合并 d5a6fbbc，无 rebase／改写；读数与首轮相同的 rulings dcfd24ef 和任务板 7afbfebc 已核。完成连接页 CSP 冲突处置与飞书 HTTPS 确认页夹具；下一步冻结源并重跑指定门，M3 仍后置，不部署。

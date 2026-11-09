@@ -29,7 +29,13 @@ const assert = require('assert/strict');
   assert.equal(await page.locator('input:not([type=hidden])').count(),0,'ZC_BROWSER_CONNECT_HAS_INPUT');
   const connectPolicy = connect.headers()['referrer-policy'];
   assert.equal(connectPolicy,'same-origin','ZC_BROWSER_CONNECT_REFERRER');
+  const connectCSP = connect.headers()['content-security-policy'];
+  assert.ok(!connectCSP.includes(new URL(redirect).origin),'ZC_BROWSER_CONNECT_CALLBACK_SOURCE');
   await page.locator('button[type=submit]').click();
+  await page.locator('#synthetic-feishu-authorize').waitFor();
+  const feishuOrigin = new URL(page.url()).origin;
+  assert.ok(connectCSP.includes("form-action 'self' "+feishuOrigin+';'),'ZC_BROWSER_CONNECT_AUTHORIZE_SOURCE');
+  await page.locator('#synthetic-feishu-authorize').click();
   if(mode==='multi') {
    await page.locator('input[type=radio][name=target_agent]').first().waitFor();
    assert.equal(await page.locator('input[type=radio][name=target_agent]').count(),2,'ZC_BROWSER_TARGET_OPTIONS');
