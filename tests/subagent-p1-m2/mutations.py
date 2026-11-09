@@ -57,7 +57,7 @@ def main():
             run = subprocess.run([sys.executable, '-B', '-m', 'unittest', '-v', PREFIX+test], cwd=ROOT, env=environment,
                 text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=45)
             (args.output/(name+'.stdout')).write_text(run.stdout)
-            target_red = run.returncode != 0 and ('FAIL: '+test.split('.')[-1]) in run.stdout and 'AssertionError' in run.stdout
+            target_red = run.returncode != 0 and ('FAIL: '+test.split('.')[-1]) in run.stdout and 'AssertionError' in run.stdout and not any(error in run.stdout for error in ('ImportError', 'ModuleNotFoundError', 'SyntaxError'))
             records.append(dict(criterion=criterion, name=name, target_test=test, rc=run.returncode, target_red=target_red))
             (args.output/'RESULT.json').write_text(json.dumps(records, indent=2)+'\n')
             print(json.dumps(records[-1]), flush=True)

@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import queue
 import sqlite3
+import subprocess
 import sys
 import tempfile
 import threading
@@ -266,25 +267,32 @@ for line in sys.stdin:
   print(json.dumps({'id':m['id'],'result':{'actual_response':True}}),flush=True)
 '''
         fixture = tempfile.TemporaryDirectory(); self.addCleanup(fixture.cleanup)
-        # Earlier module fixtures reload codexDriver. Resolve the current class
-        # instead of a discovery-time class retaining another fixture's patch.
-        from sessionhelper.codexDriver import StdioJsonRpc as CurrentStdioJsonRpc
-        rpc = CurrentStdioJsonRpc([sys.executable, '-u', '-c', code], cwd=fixture.name,
-                           env={'HOME': fixture.name, 'PATH': '/usr/bin:/bin'})
-        rpc.start()
-        process = rpc._proc
-        def cleanup():
-            rpc.stop()
-            for pipe in (process.stdin, process.stdout, process.stderr): pipe.close()
-        self.addCleanup(cleanup)
-        try:
-            response = rpc.request('probe', {})
-        except ConnectionError as exc:
-            errors = []
-            while not rpc._stderr.empty(): errors.append(rpc._stderr.get_nowait())
-            self.fail('STDIO_FIXTURE_EXITED: ' + repr(errors))
-        self.assertEqual(response, {'actual_response': True})
-        self.assertEqual(rpc.notifications.get(timeout=2)['method'], 'item/tool/call')
+        # Stock failure-face fixtures can leave a patched constructor after a
+        # module reload. A fresh Python process owns this transport experiment;
+        # its PYTHONPATH points at the currently tested (also mutated) package.
+        import sessionhelper.codexDriver as current_module
+        module_root = str(Path(current_module.__file__).resolve().parent.parent)
+        program = """import json,queue,sys
+from sessionhelper.codexDriver import StdioJsonRpc
+rpc=StdioJsonRpc([sys.executable,'-u','-c',SERVER],cwd='.',env={'PATH':'/usr/bin:/bin'})
+rpc.start();process=rpc._proc
+try:
+ result=rpc.request('probe',{})
+ try:notice=rpc.notifications.get(timeout=1)
+ except queue.Empty:notice={}
+ print(json.dumps({'response':result,'native_method':notice.get('method')}))
+finally:
+ rpc.stop()
+ for stream in (process.stdin,process.stdout,process.stderr):stream.close()
+""".replace('SERVER', repr(code))
+        run = subprocess.run([sys.executable, '-B', '-c', program], cwd=fixture.name,
+            env={'HOME': fixture.name, 'PATH': '/usr/bin:/bin', 'PYTHONPATH': module_root},
+            text=True, capture_output=True, timeout=5)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        actual = json.loads(run.stdout)
+        self.assertEqual(actual['response'], {'actual_response': True}, 'BIDIRECTIONAL_ID_COLLISION_CONSUMED_NATIVE_REQUEST')
+        self.assertEqual(actual['native_method'], 'item/tool/call')
+
 
 
 class RuntimeTests(unittest.TestCase):
