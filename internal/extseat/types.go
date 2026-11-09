@@ -54,7 +54,11 @@ type Groups interface {
 
 type Delivery struct {
 	// SourceAgent 仅供outbox内部适配，已在PG事务授权；不序列化到通讯响应。
-	SourceAgent                      identity.Agent `json:"-"`
+	SourceAgent identity.Agent `json:"-"`
+	// 身份抬头所需的属主信息与目标属主短名随锁内快照读取，不暴露给协议响应。
+	SourceOwnerDisplayName           string `json:"-"`
+	SourceOwnerShortName             string `json:"-"`
+	TargetOwnerShortName             string `json:"-"`
 	ID                               string
 	Generation                       int64
 	From, To, Body                   string

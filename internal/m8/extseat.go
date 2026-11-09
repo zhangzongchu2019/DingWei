@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/zhangzongchu2019/dingwei/internal/extseat"
@@ -110,6 +111,29 @@ func (p HubHelperPresence) Online(ctx context.Context) ([]extseat.OnlineAgent, e
 // HubExtseatProjector 只做稳定ID的持久入队及唤醒；保留helper现有ACK/重试语义。
 type HubExtseatProjector struct{ Hub *Hub }
 
+const externalSeatSenderHeaderFormat = "【来自外部 Agent %s（MCP，授权人 %s）→ %s；回复请发给 %s】"
+
+func externalSeatSenderHeader(sourceFullName, ownerDisplayName, ownerShortName, targetFullName string) string {
+	owner := strings.TrimSpace(ownerDisplayName)
+	if owner == "" {
+		owner = strings.TrimSpace(ownerShortName)
+	}
+	return fmt.Sprintf(externalSeatSenderHeaderFormat, sourceFullName, owner, targetFullName, sourceFullName)
+}
+
+func stripForgedExtseatAttribution(env *model.Envelope) {
+	if env == nil || metaString(env.Meta, "origin_kind") != "extseat" {
+		return
+	}
+	from, err := parseAddress(env.From)
+	if err != nil || from.Kind != addressSession {
+		return
+	}
+	delete(env.Meta, "origin_kind")
+	delete(env.Meta, "source_display_name")
+	delete(env.Meta, "source_external")
+}
+
 func (p HubExtseatProjector) Project(ctx context.Context, d extseat.Delivery, target identity.Agent) error {
 	h := p.Hub
 	if h == nil || h.Repo == nil || h.Identity == nil {
@@ -119,12 +143,14 @@ func (p HubExtseatProjector) Project(ctx context.Context, d extseat.Delivery, ta
 	// 否则小连接池/高并发下会形成持锁等连接的死锁。
 	current := target
 	source := d.SourceAgent
-	if current.ID == "" || current.State != identity.AgentActive || current.Origin == identity.OriginExternal || source.ID == "" || source.State != identity.AgentActive || source.Origin != identity.OriginExternal {
+	if current.ID == "" || current.State != identity.AgentActive || current.Origin == identity.OriginExternal || source.ID == "" || source.State != identity.AgentActive || source.Origin != identity.OriginExternal || d.SourceOwnerShortName == "" || d.TargetOwnerShortName == "" {
 		return extshared.ErrNotPermitted
 	}
+	sourceFullName := source.Name + "." + d.SourceOwnerShortName
+	targetFullName := current.Name + "." + d.TargetOwnerShortName
 	key := AgentKeyID(current.OwnerLC)
 	name := current.NameLC()
-	env := model.Envelope{ID: d.ID, From: sessionAddress(source.NameLC(), AgentKeyID(source.OwnerLC)), To: sessionAddress(name, key), Body: d.Body, TS: d.CreatedAt.Unix(), Meta: map[string]any{"type": "delivery", "delivery_id": d.ID, "delivery_version": 1, "ack_required": true, "source_message_id": d.ID}}
+	env := model.Envelope{ID: d.ID, From: sessionAddress(source.NameLC(), AgentKeyID(source.OwnerLC)), To: sessionAddress(name, key), Body: externalSeatSenderHeader(sourceFullName, d.SourceOwnerDisplayName, d.SourceOwnerShortName, targetFullName) + "\n" + d.Body, TS: d.CreatedAt.Unix(), Meta: map[string]any{"type": "delivery", "delivery_id": d.ID, "delivery_version": 1, "ack_required": true, "source_message_id": d.ID, "origin_kind": "extseat", "source_display_name": sourceFullName, "source_external": true}}
 	raw, e := json.Marshal(env)
 	if e != nil {
 		return e

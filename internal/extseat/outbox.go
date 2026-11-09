@@ -39,7 +39,7 @@ func (s *Service) ProjectOne(ctx context.Context, p Projector) (bool, error) {
 		}
 		a.ID = seatID
 		a.AgentID = seatID
-		err := tx.QueryRow(ctx, `SELECT a.id,a.owner_lc,a.name,a.origin,a.state FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE s.agent_id=$1 AND s.revoked_at IS NULL AND a.origin='external' AND a.state='active' AND u.state='active' FOR UPDATE OF s,a,u`, seatID).Scan(&d.SourceAgent.ID, &d.SourceAgent.OwnerLC, &d.SourceAgent.Name, &d.SourceAgent.Origin, &d.SourceAgent.State)
+		err := tx.QueryRow(ctx, `SELECT a.id,a.owner_lc,a.name,a.origin,a.state,u.display_name,u.short_name FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE s.agent_id=$1 AND s.revoked_at IS NULL AND a.origin='external' AND a.state='active' AND u.state='active' FOR UPDATE OF s,a,u`, seatID).Scan(&d.SourceAgent.ID, &d.SourceAgent.OwnerLC, &d.SourceAgent.Name, &d.SourceAgent.Origin, &d.SourceAgent.State, &d.SourceOwnerDisplayName, &d.SourceOwnerShortName)
 		if errors.Is(err, sql.ErrNoRows) {
 			return dead("seat_revoked")
 		}
@@ -56,7 +56,7 @@ func (s *Service) ProjectOne(ctx context.Context, p Projector) (bool, error) {
 		if g.Target.ID != targetID {
 			return dead("target_not_in_ag")
 		}
-		err = tx.QueryRow(ctx, `SELECT a.id,a.owner_lc,a.name,a.origin,a.state FROM np_agent a JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE a.id=$1 AND a.origin<>'external' AND a.state='active' AND u.state='active' FOR UPDATE OF a,u`, targetID).Scan(&g.Target.ID, &g.Target.OwnerLC, &g.Target.Name, &g.Target.Origin, &g.Target.State)
+		err = tx.QueryRow(ctx, `SELECT a.id,a.owner_lc,a.name,a.origin,a.state,u.short_name FROM np_agent a JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE a.id=$1 AND a.origin<>'external' AND a.state='active' AND u.state='active' FOR UPDATE OF a,u`, targetID).Scan(&g.Target.ID, &g.Target.OwnerLC, &g.Target.Name, &g.Target.Origin, &g.Target.State, &d.TargetOwnerShortName)
 		if errors.Is(err, sql.ErrNoRows) {
 			return dead("target_unavailable")
 		}
