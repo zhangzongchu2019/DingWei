@@ -1,0 +1,22 @@
+[
+  {
+    "name": "canonical",
+    "command": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "start_utc": "2026-11-09T02:30:57Z",
+    "end_utc": "2026-11-09T02:39:50Z",
+    "rc": 0,
+    "environment_names": [
+      "CODEX_HOME",
+      "GOCACHE",
+      "GOMODCACHE",
+      "HOME",
+      "OPENSPEC_TELEMETRY",
+      "PATH",
+      "TMPDIR"
+    ],
+    "uid": 1001
+  }
+]

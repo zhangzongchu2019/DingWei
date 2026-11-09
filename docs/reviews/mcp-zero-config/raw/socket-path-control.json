@@ -1,0 +1,38 @@
+[
+  {
+    "case": "long",
+    "tmpdir_length": 26,
+    "command": [
+      "go",
+      "test",
+      "-vet=off",
+      "-overlay=/tmp/zc-canonical-xc28gkht/overlay.json",
+      "./internal/m8",
+      "-run",
+      "^(TestDeviceClaimAcrossActualClientAndPostgres|TestDesktopMCPRoundTripAcrossRealHub)$/^(cancel_then_new|enrolled_group_removed)$",
+      "-count=1",
+      "-v"
+    ],
+    "start_utc": "2026-11-09T02:30:58Z",
+    "rc": 1,
+    "test_overlay": "only logs synthetic socket path byte length; no behavior/deadline/assertion changes"
+  },
+  {
+    "case": "short",
+    "tmpdir_length": 14,
+    "command": [
+      "go",
+      "test",
+      "-vet=off",
+      "-overlay=/tmp/z6za3egkq/overlay.json",
+      "./internal/m8",
+      "-run",
+      "^(TestDeviceClaimAcrossActualClientAndPostgres|TestDesktopMCPRoundTripAcrossRealHub)$/^(cancel_then_new|enrolled_group_removed)$",
+      "-count=1",
+      "-v"
+    ],
+    "start_utc": "2026-11-09T02:31:27Z",
+    "rc": 0,
+    "test_overlay": "only logs synthetic socket path byte length; no behavior/deadline/assertion changes"
+  }
+]

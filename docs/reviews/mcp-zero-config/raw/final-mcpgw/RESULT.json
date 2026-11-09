@@ -1,0 +1,25 @@
+[
+  {
+    "name": "mcpgw",
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-count=1",
+      "-json"
+    ],
+    "start_utc": "2026-11-09T02:41:58Z",
+    "end_utc": "2026-11-09T02:42:03Z",
+    "rc": 0,
+    "environment_names": [
+      "CODEX_HOME",
+      "GOCACHE",
+      "GOMODCACHE",
+      "HOME",
+      "OPENSPEC_TELEMETRY",
+      "PATH",
+      "TMPDIR"
+    ],
+    "uid": 1001
+  }
+]

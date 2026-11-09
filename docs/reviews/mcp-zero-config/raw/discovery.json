@@ -1,0 +1,138 @@
+{
+  "measured_at_utc": "2026-11-09T02:17:10Z",
+  "binary_sha256": "cdcb45aaa01d0f14e298985e09465aebccd47f64ecd298aea44814af7b62bbda",
+  "cases": [
+    {
+      "registration_endpoint_advertised": false,
+      "version": "codex-cli 0.167.0",
+      "command": [
+        "/home/dev/.local/bin/codex",
+        "mcp",
+        "add",
+        "dingwei",
+        "--url",
+        "http://127.0.0.1:35457/mcp"
+      ],
+      "authorization_params": {
+        "response_type": [
+          "code"
+        ],
+        "client_id": [
+          "https://chatgpt.com/oauth/codex/client.json"
+        ],
+        "state": [
+          "p-SWMbP_6Ow_2fCq-xD0Sg"
+        ],
+        "code_challenge": [
+          "9TJ4Lcm1Mm_hR-YcA2xSImNzAcxozY8I8mIykHKSdG8"
+        ],
+        "code_challenge_method": [
+          "S256"
+        ],
+        "redirect_uri": [
+          "http://127.0.0.1:45233/callback"
+        ],
+        "resource": [
+          "http://127.0.0.1:35457/mcp"
+        ]
+      },
+      "http_events": [
+        {
+          "method": "GET",
+          "path": "/mcp"
+        },
+        {
+          "method": "GET",
+          "path": "/.well-known/oauth-protected-resource"
+        },
+        {
+          "method": "GET",
+          "path": "/.well-known/oauth-authorization-server"
+        },
+        {
+          "method": "GET",
+          "path": "/mcp"
+        },
+        {
+          "method": "GET",
+          "path": "/.well-known/oauth-protected-resource"
+        },
+        {
+          "method": "GET",
+          "path": "/.well-known/oauth-authorization-server"
+        }
+      ],
+      "stdout": "Added global MCP server 'dingwei'.\nDetected OAuth support. Starting OAuth flow\u2026\nAuthorize `dingwei` by opening this URL in your browser:\nhttp://127.0.0.1:35457/oauth/authorize?response_type=code&client_id=https%3A%2F%2Fchatgpt.com%2Foauth%2Fcodex%2Fclient.json&state=p-SWMbP_6Ow_2fCq-xD0Sg&code_challenge=9TJ4Lcm1Mm_hR-YcA2xSImNzAcxozY8I8mIykHKSdG8&code_challenge_method=S256&redirect_uri=http%3A%2F%2F127.0.0.1%3A45233%2Fcallback&resource=http%3A%2F%2F127.0.0.1%3A35457%2Fmcp\n\n",
+      "dynamic_registration_attempted": false
+    },
+    {
+      "registration_endpoint_advertised": true,
+      "version": "codex-cli 0.167.0",
+      "command": [
+        "/home/dev/.local/bin/codex",
+        "mcp",
+        "add",
+        "dingwei",
+        "--url",
+        "http://127.0.0.1:37767/mcp"
+      ],
+      "authorization_params": {
+        "response_type": [
+          "code"
+        ],
+        "client_id": [
+          "https://chatgpt.com/oauth/codex/client.json"
+        ],
+        "state": [
+          "nFAApom4QTtn2szzJEA3Gw"
+        ],
+        "code_challenge": [
+          "F7nWQcfl4xZZsPlsj8af1z1dCbJkYGZgi-mMeSgTbnE"
+        ],
+        "code_challenge_method": [
+          "S256"
+        ],
+        "redirect_uri": [
+          "http://127.0.0.1:37009/callback"
+        ],
+        "resource": [
+          "http://127.0.0.1:37767/mcp"
+        ]
+      },
+      "http_events": [
+        {
+          "method": "GET",
+          "path": "/mcp"
+        },
+        {
+          "method": "GET",
+          "path": "/.well-known/oauth-protected-resource"
+        },
+        {
+          "method": "GET",
+          "path": "/.well-known/oauth-authorization-server"
+        },
+        {
+          "method": "GET",
+          "path": "/mcp"
+        },
+        {
+          "method": "GET",
+          "path": "/.well-known/oauth-protected-resource"
+        },
+        {
+          "method": "GET",
+          "path": "/.well-known/oauth-authorization-server"
+        }
+      ],
+      "stdout": "Added global MCP server 'dingwei'.\nDetected OAuth support. Starting OAuth flow\u2026\nAuthorize `dingwei` by opening this URL in your browser:\nhttp://127.0.0.1:37767/oauth/authorize?response_type=code&client_id=https%3A%2F%2Fchatgpt.com%2Foauth%2Fcodex%2Fclient.json&state=nFAApom4QTtn2szzJEA3Gw&code_challenge=F7nWQcfl4xZZsPlsj8af1z1dCbJkYGZgi-mMeSgTbnE&code_challenge_method=S256&redirect_uri=http%3A%2F%2F127.0.0.1%3A37009%2Fcallback&resource=http%3A%2F%2F127.0.0.1%3A37767%2Fmcp\n\n",
+      "dynamic_registration_attempted": false
+    }
+  ],
+  "desktop": {
+    "status": "\u672a\u6d4b",
+    "reason": "Linux workspace has no Codex desktop application installed; CLI results do not establish desktop behavior."
+  },
+  "real_credentials_used": false,
+  "inference_started": false
+}

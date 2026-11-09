@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "start_utc": "2026-11-09T02:26:22Z",
+  "end_utc": "2026-11-09T02:26:23Z",
+  "rc": 0,
+  "uid": 1001
+}

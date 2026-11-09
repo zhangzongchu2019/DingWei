@@ -1,0 +1,24 @@
+{
+  "name": "m8",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-count=1",
+    "-json",
+    "-timeout=20m"
+  ],
+  "start_utc": "2026-11-09T02:20:11Z",
+  "end_utc": "2026-11-09T02:24:04Z",
+  "rc": 0,
+  "environment_names": [
+    "CODEX_HOME",
+    "GOCACHE",
+    "GOMODCACHE",
+    "HOME",
+    "OPENSPEC_TELEMETRY",
+    "PATH",
+    "TMPDIR"
+  ],
+  "uid": 1001
+}

@@ -1,0 +1,11 @@
+{
+  "source": "https://registry.npmjs.org",
+  "package": "@openai/codex@0.167.0",
+  "platform_package": "@openai/codex@0.167.0-linux-x64",
+  "installed_at_utc": "2026-11-09T02:25:01Z",
+  "binary": "/tmp/zc-official-npm/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+  "sha256": "cdcb45aaa01d0f14e298985e09465aebccd47f64ecd298aea44814af7b62bbda",
+  "version": "codex-cli 0.167.0",
+  "isolated_prefix": "/tmp/zc-official-npm",
+  "install_rc": 0
+}

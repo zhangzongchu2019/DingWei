@@ -1,0 +1,14 @@
+{
+  "rc": 0,
+  "inherited_env_names": [
+    "CODEX_HOME",
+    "GOCACHE",
+    "GOMODCACHE",
+    "HOME",
+    "INTEROP_FOREIGN_TENANT",
+    "INTEROP_RUN_DIR",
+    "PATH",
+    "TMPDIR"
+  ],
+  "real_credentials_used": false
+}

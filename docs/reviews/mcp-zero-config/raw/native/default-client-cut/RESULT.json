@@ -1,0 +1,61 @@
+{
+  "version": "codex-cli 0.167.0",
+  "origin": "https://127.0.0.1:44285",
+  "legacy_explicit_client_document": {
+    "client_id": "https://127.0.0.1:44285/mcp/clients/codex.json",
+    "client_name": "DingWei Codex public client",
+    "redirect_uris": [
+      "http://127.0.0.1/callback",
+      "http://[::1]/callback"
+    ],
+    "token_endpoint_auth_method": "none",
+    "grant_types": [
+      "authorization_code"
+    ],
+    "response_types": [
+      "code"
+    ]
+  },
+  "foreign_tenant": false,
+  "commands": [
+    {
+      "command": [
+        "/tmp/zc-official-npm/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+        "mcp",
+        "add",
+        "dingwei",
+        "--url",
+        "https://127.0.0.1:44285/mcp"
+      ],
+      "stdout": "add.stdout",
+      "authorization_params": {
+        "response_type": [
+          "code"
+        ],
+        "client_id": [
+          "https://chatgpt.com/oauth/codex/client.json"
+        ],
+        "state": [
+          "1i8otTISJJf9l63jyIsn-g"
+        ],
+        "code_challenge": [
+          "SRJAVmvoX7o-WK_9yqskWtKiQOH_8JuvegK0FO-e28Q"
+        ],
+        "code_challenge_method": [
+          "S256"
+        ],
+        "redirect_uri": [
+          "http://127.0.0.1:36859/callback"
+        ],
+        "scope": [
+          "list_online send_message wait_for_messages ack"
+        ],
+        "resource": [
+          "https://127.0.0.1:44285/mcp"
+        ]
+      },
+      "authorize_status": 400
+    }
+  ],
+  "real_credentials_used": false
+}

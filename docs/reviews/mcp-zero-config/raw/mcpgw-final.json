@@ -1,0 +1,13 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "-count=1",
+    "-json"
+  ],
+  "start_utc": "2026-11-09T02:26:23Z",
+  "end_utc": "2026-11-09T02:26:30Z",
+  "rc": 0,
+  "uid": 1001
+}

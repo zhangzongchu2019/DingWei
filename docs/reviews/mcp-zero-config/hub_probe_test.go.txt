@@ -1,0 +1,74 @@
+package main
+
+import (
+ "context"
+ "crypto/x509"
+ "crypto/x509/pkix"
+ "crypto/ecdsa"
+ "crypto/elliptic"
+ "crypto/rand"
+ "crypto/tls"
+ "math/big"
+ "net"
+ "encoding/json"
+ "encoding/pem"
+ "io"
+ "net/http"
+ "net/http/httptest"
+ "os"
+ "path/filepath"
+ "strings"
+ "sync"
+ "testing"
+ "time"
+
+ "github.com/zhangzongchu2019/dingwei/internal/feishulogin"
+ "github.com/zhangzongchu2019/dingwei/internal/identity"
+ "github.com/zhangzongchu2019/dingwei/internal/lifecycle"
+ "github.com/zhangzongchu2019/dingwei/internal/mcpgw"
+ "github.com/zhangzongchu2019/dingwei/internal/repo"
+ "github.com/zhangzongchu2019/dingwei/internal/tempgroup"
+)
+
+func TestCodexInteropLocalHub(t *testing.T){
+ dir:=os.Getenv("INTEROP_RUN_DIR");if dir==""{t.Fatal("missing isolated run directory")}
+ t.Setenv("DW_R53_EXTSEAT","1");wiringKey(t)
+ jobs:=&lifecycle.Group{};ctx,cancel:=context.WithCancel(context.WithValue(context.Background(),runTasksKey{},jobs))
+ defer func(){cancel();wait,stop:=context.WithTimeout(context.Background(),5*time.Second);defer stop();if e:=jobs.Wait(wait);e!=nil{t.Error(e)}}()
+ store,pool,closeStore,e:=openNewPlatformStore(ctx,pgSchemaDSN(t,false));if e!=nil{t.Fatal(e)};defer closeStore()
+ hub:=newplatHub(t);hub.Identity=identity.NewService(store,nil,nil)
+ _,e=pool.Exec(ctx,repo.SystemCtx(),`INSERT INTO np_user(user_id,user_id_lc,short_name,short_name_lc,type,state,created_at) VALUES('ho','ho','ho','ho','member','active',now()); INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,created_at) VALUES('helper','ho','helper','helper','selfhost','active',now());`);if e!=nil{t.Fatal(e)}
+ mux:=http.NewServeMux();mux.HandleFunc("/healthz",func(w http.ResponseWriter,r *http.Request){w.WriteHeader(204)})
+ trace,e:=os.Create(filepath.Join(dir,"http-trace.jsonl"));if e!=nil{t.Fatal(e)};defer trace.Close();var mu sync.Mutex
+ handler:=http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
+  body,_:=io.ReadAll(r.Body);r.Body=io.NopCloser(strings.NewReader(string(body)));rec:=httptest.NewRecorder();mux.ServeHTTP(rec,r)
+  if os.Getenv("INTEROP_ISS_UNSUPPORTED")=="1" && r.URL.Path=="/.well-known/oauth-authorization-server" { var meta map[string]any; if json.Unmarshal(rec.Body.Bytes(),&meta)!=nil {t.Error("metadata fixture")}; delete(meta,"authorization_response_iss_parameter_supported"); rec.Body.Reset();json.NewEncoder(rec.Body).Encode(meta) }
+  loggedBody:=string(body);loggedResponse:=rec.Body.String();if r.URL.Path=="/oauth/token"{loggedBody="<synthetic token exchange form omitted>";loggedResponse="<synthetic token response omitted>"}
+  mu.Lock();json.NewEncoder(trace).Encode(map[string]any{"utc":time.Now().UTC(),"method":r.Method,"path":r.URL.RequestURI(),"body":loggedBody,"status":rec.Code,"response":loggedResponse,"authorization_present":r.Header.Get("Authorization")!="","mcp_protocol":r.Header.Get("MCP-Protocol-Version"),"mcp_method":r.Header.Get("Mcp-Method"),"location":rec.Header().Get("Location")});mu.Unlock()
+  for k,values:=range rec.Header(){for _,v:=range values{w.Header().Add(k,v)}};w.WriteHeader(rec.Code);w.Write(rec.Body.Bytes())
+ })
+ rootKey,_:=ecdsa.GenerateKey(elliptic.P256(),rand.Reader);leafKey,_:=ecdsa.GenerateKey(elliptic.P256(),rand.Reader)
+ now:=time.Now();rootTemplate:=&x509.Certificate{SerialNumber:big.NewInt(1),Subject:pkix.Name{CommonName:"Synthetic Interop Root"},NotBefore:now.Add(-time.Hour),NotAfter:now.Add(24*time.Hour),IsCA:true,BasicConstraintsValid:true,KeyUsage:x509.KeyUsageCertSign}
+ rootDER,e:=x509.CreateCertificate(rand.Reader,rootTemplate,rootTemplate,&rootKey.PublicKey,rootKey);if e!=nil{t.Fatal(e)}
+ leafTemplate:=&x509.Certificate{SerialNumber:big.NewInt(2),Subject:pkix.Name{CommonName:"Synthetic Interop Hub"},NotBefore:now.Add(-time.Hour),NotAfter:now.Add(24*time.Hour),BasicConstraintsValid:true,KeyUsage:x509.KeyUsageDigitalSignature,ExtKeyUsage:[]x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},IPAddresses:[]net.IP{net.ParseIP("127.0.0.1")}}
+ leafDER,e:=x509.CreateCertificate(rand.Reader,leafTemplate,rootTemplate,&leafKey.PublicKey,rootKey);if e!=nil{t.Fatal(e)}
+ srv:=httptest.NewUnstartedServer(handler);srv.TLS=&tls.Config{Certificates:[]tls.Certificate{{Certificate:[][]byte{leafDER,rootDER},PrivateKey:leafKey}}};srv.StartTLS();defer srv.Close();origin:=srv.URL
+ if e=os.WriteFile(filepath.Join(dir,"ca.pem"),pem.EncodeToMemory(&pem.Block{Type:"CERTIFICATE",Bytes:rootDER}),0600);e!=nil{t.Fatal(e)}
+ upstream:=httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
+  w.Header().Set("Content-Type","application/json")
+  switch r.URL.Path{
+  case "/token":r.ParseForm();if r.PostForm.Get("code")!="synthetic-feishu-code"||r.PostForm.Get("redirect_uri")!=origin+"/mcp/oauth/feishu/callback"{t.Error("fake upstream binding");w.WriteHeader(400);return};json.NewEncoder(w).Encode(map[string]any{"access_token":"synthetic-upstream-only","token_type":"Bearer"})
+  case "/user":if r.Header.Get("Authorization")!="Bearer synthetic-upstream-only"{t.Error("fake upstream auth")};json.NewEncoder(w).Encode(map[string]any{"code":0,"data":feishulogin.UserInfo{EnName:"Synthetic",OpenID:"synthetic-open",TenantKey:func() string { if os.Getenv("INTEROP_FOREIGN_TENANT")=="1" { return "foreign-team" }; return "synthetic-team" }()}})
+  default:w.WriteHeader(404)
+  }
+ }));defer upstream.Close()
+ oauth,e:=feishulogin.NewFeishuClient(feishulogin.OAuthConfig{AppID:"synthetic-app",AppSecret:"synthetic-not-real",RedirectURI:origin+"/mcp/oauth/feishu/callback",AuthorizeURL:upstream.URL+"/authorize",TokenURL:upstream.URL+"/token",UserInfoURL:upstream.URL+"/user",HTTPClient:upstream.Client()});if e!=nil{t.Fatal(e)}
+ cfg:=r53Config{tenantKey:"synthetic-team",publicOrigin:origin,resource:origin+"/mcp"}
+ e=wireR53(ctx,cfg,pgTableChecker{pool:pool},&tempgroup.Service{Pool:pool,Notifier:hub},r53Dependencies{mux:mux,hub:hub,pool:pool,appID:"synthetic-app",appSecret:"synthetic-not-real",oauth:oauth,clients:mcpgw.MetadataClients{}});if e!=nil{t.Fatal(e)}
+ if hub.ExternalSeats==nil{t.Fatal("r53 gateway not enabled")}
+ ready,_:=json.Marshal(map[string]any{"origin":origin,"resource":cfg.resource,"ca_file":filepath.Join(dir,"ca.pem"),"hub_open":true,"real_extseat_pg":true,"cimd_resolver":"production MetadataClients; exact own document resolved by product gateway","fake_feishu":true,"issuer_metadata_removed_for_cli_probe":os.Getenv("INTEROP_ISS_UNSUPPORTED")=="1"});os.WriteFile(filepath.Join(dir,"ready.json"),ready,0600)
+ t.Log("isolated real Hub+r53 main wiring ready, fake Feishu; production resolver plus product static CIMD; all business storage real temporary PG")
+ deadline:=time.Now().Add(25*time.Minute)
+ for time.Now().Before(deadline){if _,e:=os.Stat(filepath.Join(dir,"stop"));e==nil{return};time.Sleep(100*time.Millisecond)}
+ t.Fatal("local probe stop not received")
+}

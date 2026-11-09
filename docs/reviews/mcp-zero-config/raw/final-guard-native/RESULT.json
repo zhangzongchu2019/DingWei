@@ -1,0 +1,34 @@
+[
+  {
+    "case": "url-only",
+    "command": [
+      "python3",
+      "docs/reviews/mcp-zero-config/native_probe.py",
+      "--binary",
+      "/tmp/zc-official-npm/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+      "--label",
+      "final"
+    ],
+    "INTEROP_RUN_DIR": "/tmp/zc-guard-normal",
+    "start_utc": "2026-11-09T02:48:09Z",
+    "end_utc": "2026-11-09T02:48:10Z",
+    "rc": 0
+  },
+  {
+    "case": "explicit-suffix",
+    "command": [
+      "python3",
+      "docs/reviews/mcp-zero-config/native_probe.py",
+      "--binary",
+      "/tmp/zc-official-npm/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+      "--label",
+      "final",
+      "--client-mode",
+      "explicit"
+    ],
+    "INTEROP_RUN_DIR": "/tmp/zc-guard-explicit",
+    "start_utc": "2026-11-09T02:48:10Z",
+    "end_utc": "2026-11-09T02:48:10Z",
+    "rc": 0
+  }
+]

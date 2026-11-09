@@ -106,10 +106,18 @@ func (g *Gateway) authorize(w http.ResponseWriter, r *http.Request) {
 		// The generated, exact same-origin document is trusted server config.
 		// No DNS/network request or arbitrary private-address exception is made.
 		client = g.codexClient()
+	} else if q.Get("client_id") == codexDefaultClientID {
+		// Exact pinned ID only: no online fetch, DCR or private-CIMD exception.
+		// Any malformed local copy fails closed, without a network fallback.
+		client, e = defaultCodexClient()
 	} else {
 		client, e = g.cfg.Clients.Resolve(r.Context(), q.Get("client_id"))
 	}
-	if e != nil || (!localClient && validateClient(client, q.Get("client_id")) != nil) || !registered(client, q.Get("redirect_uri")) {
+	redirectAllowed := registered(client, q.Get("redirect_uri"))
+	if localClient || q.Get("client_id") == codexDefaultClientID {
+		redirectAllowed = registeredCodexRedirect(client, q.Get("redirect_uri"))
+	}
+	if e != nil || (!localClient && validateClient(client, q.Get("client_id")) != nil) || !redirectAllowed {
 		oauthError(w, 400, "invalid_client")
 		return
 	}
