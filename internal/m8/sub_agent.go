@@ -164,6 +164,11 @@ func (h *Hub) acceptSubAgentTree(ctx context.Context, c *sessionClient, snap sub
 	err = subAgentStorageError(err)
 	c.stateMu.Lock()
 	c.subTreeReady = err == nil
+	if err == nil {
+		for _, n := range snap.Nodes {
+			h.terminalForSession(c.keyID, subViewSession(c.sessionName, n.NodeID, n.Generation))
+		}
+	}
 	c.subTreeRevision = rev
 	c.stateMu.Unlock()
 	return rev, err
@@ -191,7 +196,10 @@ func (h *Hub) handleSubAgentControl(ctx context.Context, c *sessionClient, env m
 		_ = c.write(ctx, model.Envelope{From: sessionAddress(systemAddressName, c.keyID), To: sessionAddress(c.sessionName, c.keyID), Meta: meta})
 	}
 	if err == nil {
-		h.backgroundWork("owned", func() { h.drainSessionDeliveries(context.Background(), c) })
+		h.backgroundWork("owned", func() {
+			h.drainSessionDeliveries(context.Background(), c)
+			_ = h.broadcastNewPlatformDirectories(context.Background())
+		})
 	}
 	return true
 }

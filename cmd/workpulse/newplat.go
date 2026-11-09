@@ -161,6 +161,7 @@ func wireNewPlatform(ctx context.Context, mux httpapi.Mux, hub *m8.Hub, cfg newP
 		}
 		svc.OnSessionRevoked = hub.RevokeConsoleMuxSession
 		mux.HandleFunc("GET /api/console/event-context", hub.HandleConsoleMuxContext)
+		mux.HandleFunc("GET /api/console/agent-trees", hub.HandleConsoleSubAgentTrees)
 		mux.HandleFunc("POST /api/console/event-feeds", hub.HandleConsoleMuxCreate)
 		mux.HandleFunc("GET /api/console/event-feeds/{feed_id}", hub.HandleConsoleMuxMetadata)
 		mux.HandleFunc("PUT /api/console/event-feeds/{feed_id}", hub.HandleConsoleMuxReplace)

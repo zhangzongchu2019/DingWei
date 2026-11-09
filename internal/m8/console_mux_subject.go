@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
+	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
 	"net/http"
 	"os"
 	"strconv"
@@ -13,7 +15,7 @@ import (
 
 func (h *Hub) muxRouteOwner(r *http.Request, name string) string {
 	if h.Identity != nil {
-		if _, a, ok := h.newPlatformCanonicalName(r.Context(), name); ok {
+		if _, a, ok := h.newPlatformCanonicalName(r.Context(), viewRoot(name)); ok {
 			return a.OwnerLC
 		}
 	}
@@ -31,11 +33,11 @@ func (h *Hub) muxProjectionSubject(req *http.Request, session string) error {
 	if h.Identity == nil || req.Method != "GET" {
 		return nil
 	}
-	canon, a, ok := h.newPlatformCanonicalName(req.Context(), session)
-	if !ok {
+	a, resolveErr := h.projectionViewAgent(req.Context(), session)
+	if resolveErr != nil {
 		return errMuxSubjectUnavailable
 	}
-	targetName, target := loadViewRouting().resolve(canon, a.OwnerLC)
+	targetName, target := loadViewRouting().resolve(viewRoot(a.FullName), a.Owner)
 	if !target.ViewUnlockV2 {
 		return nil
 	}
@@ -43,7 +45,23 @@ func (h *Hub) muxProjectionSubject(req *http.Request, session string) error {
 	if err != nil || len(bytes.TrimSpace(key)) < 32 {
 		return errMuxSubjectUnavailable
 	}
-	body, _ := json.Marshal(map[string]string{"agent_id": a.ID, "full_name": canon})
+	subject := map[string]any{"agent_id": a.ID, "full_name": a.FullName}
+	if a.NodeID != "" {
+		cookie, e := req.Cookie(httpapi.SessionCookie)
+		if e != nil {
+			return errMuxSubjectUnavailable
+		}
+		hash := identity.HashSecret(cookie.Value)
+		_, user, e := h.Identity.Store.ResolveSession(req.Context(), hash, h.Identity.Now())
+		if e != nil || user.UserIDLC() != a.Owner {
+			return errMuxSubjectUnavailable
+		}
+		subject["viewer_session_hash"] = hash
+		subject["root_agent_id"] = a.RootID
+		subject["node_id"] = a.NodeID
+		subject["lane_generation"] = a.LaneGeneration
+	}
+	body, _ := json.Marshal(subject)
 	nonce, err := muxID()
 	if err != nil {
 		return errMuxSubjectUnavailable

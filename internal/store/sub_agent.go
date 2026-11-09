@@ -11,6 +11,13 @@ import (
 // BeginSubAgentConnection binds recovery to an authenticated connection. The Hub
 // additionally keeps readiness in memory; persisted conn_seq alone grants nothing.
 func (s *SQLite) BeginSubAgentConnection(ctx context.Context, root string, seq int) error {
+	var barred int
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM sub_agent_rollback WHERE root_agent_id=?`, root).Scan(&barred); err != nil {
+		return err
+	}
+	if barred != 0 {
+		return subagent.Fail("unsupported", "rollback barrier retained; remain feature-off")
+	}
 	result, err := s.db.ExecContext(ctx, `INSERT INTO sub_agent_registry(root_agent_id,node_id,generation,state,conn_seq) VALUES(?,'',1,'active',?) ON CONFLICT(root_agent_id,node_id) DO UPDATE SET conn_seq=excluded.conn_seq WHERE excluded.conn_seq>=sub_agent_registry.conn_seq`, root, seq)
 	if err != nil {
 		return err
@@ -214,4 +221,22 @@ func (s *SQLite) SubAgentRevision(ctx context.Context, root string) (int64, erro
 	var revision int64
 	err := s.db.QueryRowContext(ctx, `SELECT revision FROM sub_agent_registry WHERE root_agent_id=? AND node_id=''`, root).Scan(&revision)
 	return revision, err
+}
+
+// ListSubAgentNodes includes retained tombstones; it never makes offline nodes active.
+func (s *SQLite) ListSubAgentNodes(ctx context.Context, root string) ([]subagent.Node, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT node_id,parent_node_id,canonical_name,generation,state,reason FROM sub_agent_registry WHERE root_agent_id=? AND node_id<>'' ORDER BY canonical_name`, root)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []subagent.Node{}
+	for rows.Next() {
+		var n subagent.Node
+		if err := rows.Scan(&n.NodeID, &n.ParentID, &n.Name, &n.Generation, &n.State, &n.Reason); err != nil {
+			return nil, err
+		}
+		out = append(out, n)
+	}
+	return out, rows.Err()
 }

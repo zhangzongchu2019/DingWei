@@ -6,10 +6,13 @@ import (
 )
 
 type Agent struct {
-	ID       string
-	FullName string
-	Owner    string
-	Session  string
+	RootID         string
+	NodeID         string
+	LaneGeneration int64
+	ID             string
+	FullName       string
+	Owner          string
+	Session        string
 }
 type Authorization struct {
 	Principal string

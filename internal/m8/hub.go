@@ -4780,7 +4780,8 @@ func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, delivery
 		metadata["occurred_at"] = d.ProcessedAt.UTC().Format(time.RFC3339Nano)
 		metadata["turn_outcome"] = d.TurnOutcome
 	}
-	h.publishDeliveryUpdateWithMetadata(d.KeyID, d.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason, metadata)
+	targetKey, targetSession := h.subViewObservation(d.KeyID, d.SessionName, d.ID, false)
+	h.publishDeliveryUpdateWithMetadata(targetKey, targetSession, d.SourceMessageID, d.ID, deliveryState, stage, status, reason, metadata)
 	if deliveryState == "dead" {
 		h.mentionMirror.deliveryDead(d, reason) // R-V2-0103：view 提及转来的那封终未处理 ⇒ 发起页一行状态
 	}
@@ -4790,7 +4791,8 @@ func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, delivery
 	}
 	from, err := parseAddress(original.From)
 	if err == nil && from.Kind == addressSession && from.SessionName != "" && from.SessionName != "workpulse" {
-		h.publishDeliveryUpdateWithMetadata(from.KeyID, from.SessionName, d.SourceMessageID, d.ID, deliveryState, stage, status, reason, metadata)
+		sourceKey, sourceSession := h.subViewObservation(from.KeyID, from.SessionName, d.ID, true)
+		h.publishDeliveryUpdateWithMetadata(sourceKey, sourceSession, d.SourceMessageID, d.ID, deliveryState, stage, status, reason, metadata)
 	}
 }
 

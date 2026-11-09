@@ -273,9 +273,13 @@ class SessionHelper(SubAgentConnection):
             self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
         self.sub_agents = None
+        self.sub_agent_drainer = None
         if getattr(cfg, 'sub_agents_v1', False):
             from .sub_agent_runtime import SubAgentRuntime
             self.sub_agents = SubAgentRuntime(cfg, self.adapter, cfg.session_full_name)
+        else:
+            from .sub_agent_store import SubAgentStore
+            self.sub_agent_drainer = SubAgentStore.existing_tree(cfg.inbox_db, cfg.session_name)
 
         if self.cfg.mode == "driver":
             self.adapter.delivery_progress = self.delivery_inbox.progress
@@ -844,7 +848,7 @@ class SessionHelper(SubAgentConnection):
             # M2 protocol admission. This raises the bar above one-shot clients
             # such as send.py, but is not cryptographic helper identity: a
             # holder of the shared API secret can imitate this JSON message.
-            outbound_caps = self.outbound_receipts.prepare(ws) if (self.cfg.mode == "desktop" or bool(getattr(self, 'sub_agents', None)) or response_headers.get("X-DW-Inbox-Progress") == "inbox-progress/v1") else None
+            outbound_caps = self.outbound_receipts.prepare(ws) if (self.cfg.mode == "desktop" or bool(getattr(self, 'sub_agents', None)) or bool(getattr(self, 'sub_agent_drainer', None)) or response_headers.get("X-DW-Inbox-Progress") == "inbox-progress/v1") else None
             await ws.send(json.dumps(self.session_capabilities_envelope(outbound_caps), ensure_ascii=False))
             if self.cfg.producer:
                 recv_task = asyncio.create_task(self.recv_control_loop(ws))
@@ -872,7 +876,7 @@ class SessionHelper(SubAgentConnection):
                     await supervise_connection_loops([
                         self.recv_loop(ws),
                         self.delivery_worker_loop(ws),
-                        self.sub_agent_loop(ws) if getattr(self, 'sub_agents', None) is not None else asyncio.Event().wait(),
+                        self.sub_agent_loop(ws) if (getattr(self, 'sub_agents', None) is not None or getattr(self, 'sub_agent_drainer', None) is not None) else asyncio.Event().wait(),
                         self.delivery_ack_outbox_loop(ws),
                         self.pending_drain_loop(ws),
                         self.file_inbound_worker_loop(ws),
@@ -974,6 +978,7 @@ class SessionHelper(SubAgentConnection):
             body = str(env.get("body") or "")
             if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
                 self.write_online_list(body)
+                self.write_online_tree((env.get("meta") or {}))
                 continue
             if is_client_onboarding_text(body):
                 if not client_guide_logged:
@@ -1002,7 +1007,8 @@ class SessionHelper(SubAgentConnection):
                 continue
             body = str(env.get("body") or "")
             if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
-                self.write_online_list(body)  # 始终写最新到会话专属共享文件，供CLI按需读取（不注入对话、不刷屏）
+                self.write_online_list(body)
+                self.write_online_tree((env.get("meta") or {}))  # 始终写最新到会话专属共享文件，供CLI按需读取（不注入对话、不刷屏）
                 continue
             if is_no_mirror_envelope(env):
                 continue
@@ -1345,6 +1351,7 @@ class SessionHelper(SubAgentConnection):
         body = str(env.get("body") or "")
         if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
             await asyncio.to_thread(self.write_online_list, body)
+            await asyncio.to_thread(self.write_online_tree, env.get("meta") or {})
             if await self._skip_v2_model_delivery(env):
                 return
             await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else ""), ensure_ascii=False))
@@ -1868,6 +1875,16 @@ class SessionHelper(SubAgentConnection):
             return override
         base = os.path.expanduser(os.path.join("~", ".dingwei"))
         return os.path.join(base, f"{self.cfg.session_name}.DingWeiOnlineSessions.list")
+
+    def write_online_tree(self, meta):
+        # Full replacement, including an empty legacy snapshot, clears stale children.
+        value = dict(version=1, trees=meta.get('trees', []) if meta.get('tree_version') == 1 else [])
+        path = self.online_list_path() + '.tree.json'
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with self._online_list_lock:
+            tmp = path + '.tmp'
+            with open(tmp, 'w', encoding='utf-8') as fh: json.dump(value, fh, ensure_ascii=False)
+            os.replace(tmp, path)
 
     def write_online_list(self, body: str | None) -> None:
         """把最新在线清单原子写入共享文件，供 CLI（经 skill）按需读取。始终最新、不进对话。

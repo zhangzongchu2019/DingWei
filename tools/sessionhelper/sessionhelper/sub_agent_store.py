@@ -274,3 +274,33 @@ class SubAgentStore:
         # Uncertain outcomes are durable and never automatically retried.
         with self.transaction() as db:
             db.execute('UPDATE helper_sub_agent_return SET state=?,outcome_json=? WHERE root=? AND delivery_id=? AND node_id=? AND generation=? AND state IN (\'pending\',\'uncertain\')', (state, json.dumps(outcome), self.root, delivery_id, node_id, generation))
+
+
+    def prepare_rollback(self):
+        """Offline/feature-off: seal each lane using the normal atomic outbox path.
+
+        Caller must stop dispatch writers first. Pending returns and unknown
+        execution remain durable; downgrade is blocked until pending returns settle.
+        """
+        for node in self.nodes():
+            self.seal(node['node_id'], 'operator_closed')
+        with self._lock, connection(self.path, timeout=10, row_factory=sqlite3.Row) as db:
+            pending=db.execute("SELECT count(*) FROM helper_sub_agent_return WHERE root=? AND state IN ('pending','uncertain')", (self.root,)).fetchone()[0]
+            unknown=0
+            for node in self.nodes():
+                session=lane_session(self.root,node['node_id'],node['generation'])
+                unknown += db.execute("SELECT count(*) FROM delivery_inbox WHERE session_name=? AND state IN ('processing','admitted','admission_unknown')", (session,)).fetchone()[0]
+            return dict(returns_pending=pending, unknown_isolated=unknown, downgrade_ready=pending==0)
+
+
+    @staticmethod
+    def existing_tree(path, root):
+        """Read-only detection before feature-off maintenance; no DB creation."""
+        from pathlib import Path
+        if not Path(path).is_file(): return None
+        with sqlite3.connect(Path(path).resolve().as_uri()+'?mode=ro', uri=True) as db:
+            if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='helper_sub_agent'").fetchone(): return None
+            if not db.execute('SELECT 1 FROM helper_sub_agent WHERE root=? LIMIT 1',(root,)).fetchone(): return None
+        store=SubAgentStore(path,root)
+        store.prepare_rollback()
+        return store

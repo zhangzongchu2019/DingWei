@@ -97,7 +97,24 @@ func (h *Hub) broadcastNewPlatformDirectories(ctx context.Context) error {
 			}
 			return a.SessionName < b.SessionName
 		})
-		env := model.Envelope{ID: randomHex(16), To: sessionAddress(recipient.Session, recipient.KeyID), From: sessionAddress("workpulse", recipient.KeyID), Body: renderNewPlatformDirectory(owner, visible), TS: time.Now().Unix(), Meta: map[string]any{"type": "online_directory", "snapshot": true, "system": true, "no_mirror": true}}
+		trees := []subAgentTreeItem{}
+		treeOK := true
+		for _, peer := range visible {
+			ag, ok := h.newPlatformAgentAt(ctx, peer.Endpoint.KeyID, peer.Endpoint.SessionName)
+			if !ok {
+				continue
+			}
+			tree, e := h.subViewTree(ctx, ag.ID, peer.Endpoint.FullSessionName, peer.Client)
+			if e != nil {
+				treeOK = false
+				break
+			}
+			trees = append(trees, tree)
+		}
+		if !treeOK {
+			trees = []subAgentTreeItem{}
+		}
+		env := model.Envelope{ID: randomHex(16), To: sessionAddress(recipient.Session, recipient.KeyID), From: sessionAddress("workpulse", recipient.KeyID), Body: renderNewPlatformDirectory(owner, visible), TS: time.Now().Unix(), Meta: map[string]any{"tree_version": 1, "trees": trees, "type": "online_directory", "snapshot": true, "system": true, "no_mirror": true}}
 		writes.Add(1)
 		go func(c *sessionClient, e model.Envelope) {
 			defer writes.Done()

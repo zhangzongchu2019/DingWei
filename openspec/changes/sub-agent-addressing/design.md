@@ -28,3 +28,7 @@
 ## 〔51〕-补13：旧主会话控制工具硬门
 
 AA008-S03：在任何节点intent落库前验证主thread的工具安装记录；首次树报告前也先核该门，旧主会话不输出快照。旧主的dynamic_tools及上下文显式标为不可用，原生控制调用也拒绝。固定、可公开的NativeToolUnavailable异常由broker透传中文重开提示，其余异常保留原泛化策略。只有用户显式重开才走已有thread/start安装流程，产品不清空或替换已存在的private_endpoint绑定。四个独立测试及四刀分别覆盖工具、无副作用错误、保留绑定、重开恢复。
+
+## M3 View与回退实施
+
+按〔51〕-补14在0b47a585上追加；规格AA010-S01～03。根授权后展开root/node/generation scope，独立预算/签名票据/事件/缓存/费用，旧文本目录只列根。新树JSON与只读Console树见docs/design/SUBAGENT-P1-M3-VIEW.md；子不获主输入/管理权。Hub迁移0076保留rollback barrier与逐投递隔离审计，helper feature-off有不启动原生的退信维护路径；不DROP、不删ACK/墓碑。混部和旧源claimer在隔离临时环境实跑；无部署授权。用户说明草稿docs/releases/r57-sub-agent-seat-guide-draft.md。

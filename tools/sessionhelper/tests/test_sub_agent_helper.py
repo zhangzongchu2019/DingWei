@@ -90,6 +90,71 @@ class StoreTests(unittest.TestCase):
         return self.store.node(node['node_id'])
     def acknowledge(self): self.store.acknowledge(self.store.snapshot(1, 0)['subtree_revision'])
 
+    def test_aa010_offline_rollback_blocks_until_individual_returns_settle(self):
+        a = self.node(); self.acknowledge(); inbox = self.store.inbox(a)
+        for did in ('queued-a', 'queued-b', 'possibly-written'):
+            inbox.accept(did, delivery(a, did))
+        with inbox._connect() as db:
+            db.execute("UPDATE delivery_inbox SET state='processing' WHERE session_name=? AND delivery_id='possibly-written'", (inbox.session_name,))
+        inbox.begin_dispatch('possibly-written'); self.store.mark_native_write(a, 'possibly-written')
+        result=self.store.prepare_rollback()
+        self.assertFalse(result['downgrade_ready'], 'AA010_ROLLBACK_PENDING_RETURN_BARRIER')
+        self.assertEqual(result['returns_pending'],2,'AA010_ROLLBACK_INDIVIDUAL_RETURNS')
+        self.assertEqual(result['unknown_isolated'],1,'AA010_ROLLBACK_UNKNOWN_ISOLATED')
+        self.assertEqual(inbox.lifecycle('possibly-written')['state'],'admission_unknown','AA010_ROLLBACK_NO_FAKE_PROCESSED')
+        # Synthetic recipient durably accepts each separately; no network/model call.
+        received=[]
+        for item in self.store.returns():
+            received.append(item['delivery_id'])
+            self.store.return_result(item['delivery_id'],dict(status='accepted',delivery_id='return-'+item['delivery_id']), 'returned',node_id=item['node_id'],generation=item['generation'])
+        self.assertEqual(sorted(received),['queued-a','queued-b'],'AA010_ROLLBACK_INDIVIDUAL_RETURNS')
+        restored=SubAgentStore(self.store.path,'root')
+        self.assertTrue(restored.prepare_rollback()['downgrade_ready'],'AA010_ROLLBACK_RESTART_BARRIER')
+        self.assertEqual(len(restored.nodes()),1,'AA010_ROLLBACK_NO_DROP_TOMBSTONE')
+        self.assertEqual(restored.nodes()[0]['state'],'draining','AA010_ROLLBACK_SEALED')
+        root_inbox=DeliveryInbox(self.store.path,session_name='root')
+        self.assertIsNone(root_inbox.claim_next(),'AA010_LEGACY_HELPER_PARENT_QUEUE')
+        self.assertFalse(any(x['payload']['state']=='processed' for x in inbox.delivery_ack_chain()),'AA010_ROLLBACK_NO_FAKE_PROCESSED')
+
+    def test_aa010_feature_off_drains_without_native_or_capability(self):
+        a=self.node();self.acknowledge();inbox=self.store.inbox(a)
+        for did in ('off-a','off-b'):inbox.accept(did,delivery(a,did))
+        store=SubAgentStore.existing_tree(self.store.path,'root')
+        self.assertEqual(store.nodes()[0]['state'],'draining','AA010_FEATURE_OFF_SEAL')
+        helper=SubAgentConnection();helper.sub_agents=None;helper.sub_agent_drainer=store
+        helper.enroll_credential=object();helper.book=types.SimpleNamespace(key_id='key',self_addr='root.owner#key')
+        calls=[]
+        async def send(ws,target,body,source,meta):
+            calls.append(meta['original_delivery_id']);return dict(ok=True,stage='hub_durable_queued')
+        helper.outbound_receipts=types.SimpleNamespace(send=send)
+        self.assertEqual(helper.sub_agent_capabilities(),{},'AA010_FEATURE_OFF_NO_CAPABILITY')
+        async def run():
+            task=asyncio.create_task(helper.sub_agent_loop(object()))
+            try:
+                for _ in range(100):
+                    if len(calls)==2:break
+                    await asyncio.sleep(.01)
+                self.assertEqual(sorted(calls),['off-a','off-b'],'AA010_FEATURE_OFF_PER_MAIL_RETURN')
+                self.assertTrue(store.prepare_rollback()['downgrade_ready'],'AA010_FEATURE_OFF_RETURN_CONFIRMED')
+            finally:
+                task.cancel()
+                try:await task
+                except asyncio.CancelledError:pass
+        with patch.object(SubAgentRuntime,'_ensure_broker',side_effect=AssertionError('must not start native')):
+            asyncio.run(run())
+
+    def test_aa010_online_tree_json_never_enters_legacy_text(self):
+        from sessionhelper.app import SessionHelper
+        helper=object.__new__(SessionHelper);helper._online_list_lock=threading.Lock()
+        path=Path(self.tmp.name)/'legacy.list';helper.online_list_path=lambda:str(path)
+        path.write_text('root.owner\n')
+        meta=dict(tree_version=1,trees=[dict(full_name='root.owner',nodes=[dict(full_name='child.root.owner',state='ended',reason='completed')])])
+        helper.write_online_tree(meta)
+        self.assertEqual(path.read_text(),'root.owner\n','AA010_LEGACY_TEXT_ROOT_ONLY')
+        self.assertEqual(json.loads(Path(str(path)+'.tree.json').read_text())['trees'],meta['trees'],'AA010_TREE_JSON_FULL_SNAPSHOT')
+        helper.write_online_tree({})
+        self.assertEqual(json.loads(Path(str(path)+'.tree.json').read_text())['trees'],[],'AA010_OLD_HUB_CLEARS_STALE_CHILDREN')
+
     def test_aa006_random_tail_collision_alias_and_tombstone(self):
         self.assertEqual(default_name('019a6500-0000-7000-8000-5678abcdef12', {'abcdef12'}), '78abcdef12')
         a = self.node('a', native='019a6500-0000-7000-8000-1234abcdef12')

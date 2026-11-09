@@ -470,7 +470,7 @@ func (m *consoleMuxRegistry) runBridge(ctx context.Context, f *consoleMuxFeed, b
 	return muxReadCharged(ctx, resp.Body, f.Scratch, func(p *consoleMuxPacket) error {
 		meta := p.Meta
 		sc := b.Scopes[meta.FullName]
-		if sc == nil || sc.Agent.ID != meta.AgentID || sc.Generation != meta.Generation || sc.Desired.Instance != meta.Instance || muxSeq(sc.Round) != meta.Round {
+		if sc == nil || sc.Agent.RootID != meta.RootID || sc.Agent.NodeID != meta.NodeID || sc.Agent.LaneGeneration != meta.LaneGeneration || sc.Agent.ID != meta.AgentID || sc.Generation != meta.Generation || sc.Desired.Instance != meta.Instance || muxSeq(sc.Round) != meta.Round {
 			return errors.New("bridge scope mismatch")
 		}
 		if meta.Type == "event" {

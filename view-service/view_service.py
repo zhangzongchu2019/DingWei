@@ -887,6 +887,22 @@ def _sse_event_id(raw: str) -> str:
     raw = (raw or "").strip()
     return raw if _SSE_EVENT_ID_RE.fullmatch(raw) else ""
 
+def _projection_scope(subject):
+    """Only call on a signed subject or authenticated mux frame."""
+    node = subject.get('node_id')
+    if not node:
+        if any(k in subject for k in ('root_agent_id', 'lane_generation')):
+            raise ValueError('partial scope')
+        return None
+    root, generation = subject.get('root_agent_id'), subject.get('lane_generation')
+    if not isinstance(root, str) or not root or not isinstance(node, str) or type(generation) is not int or generation < 1:
+        raise ValueError('invalid scope')
+    identity = 'sub-v1-' + hashlib.sha256((root + '\x00' + node + '\x00' + str(generation)).encode()).hexdigest()
+    if subject.get('agent_id') != identity or subject.get('full_name', '').count('.') != 2:
+        raise ValueError('scope identity mismatch')
+    return (root, node, generation)
+
+
 class CostProjection:
     def __init__(self, path):
         _require_cost_active()
@@ -894,6 +910,16 @@ class CostProjection:
         self.lock = threading.Lock()
         with self._connect() as db:
             db.executescript("""
+            CREATE TABLE IF NOT EXISTS sub_agent_scope(
+              scope_id TEXT PRIMARY KEY,root_agent_id TEXT NOT NULL,node_id TEXT NOT NULL,generation INTEGER NOT NULL,
+              full_name TEXT NOT NULL,UNIQUE(root_agent_id,node_id,generation));
+            CREATE TABLE IF NOT EXISTS sub_agent_cursor(
+              root_agent_id TEXT NOT NULL,node_id TEXT NOT NULL,generation INTEGER NOT NULL,epoch TEXT NOT NULL,H TEXT NOT NULL,
+              PRIMARY KEY(root_agent_id,node_id,generation,epoch));
+            CREATE TABLE IF NOT EXISTS sub_agent_cost(
+              root_agent_id TEXT NOT NULL,node_id TEXT NOT NULL,generation INTEGER NOT NULL,
+              cost_total REAL NOT NULL,cost_last REAL NOT NULL,turns INTEGER NOT NULL,
+              PRIMARY KEY(root_agent_id,node_id,generation));
             CREATE TABLE IF NOT EXISTS mux_cost(agent_id TEXT PRIMARY KEY,
               full_name TEXT NOT NULL,cost_total REAL NOT NULL,cost_last REAL NOT NULL,turns INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS mux_seed_floor(agent_id TEXT NOT NULL,epoch TEXT NOT NULL,H TEXT NOT NULL,PRIMARY KEY(agent_id,epoch));
@@ -914,16 +940,29 @@ class CostProjection:
         finally:
             db.close()
 
-    def apply(self, agent_id, full_name, event_id, payload):
+    def apply(self, agent_id, full_name, event_id, payload, subject=None):
         _require_cost_active()
         match = re.fullmatch(r"([0-9a-f]{1,32})-(0|[1-9][0-9]{0,19})", event_id or "")
         if not agent_id or not full_name or not match or int(match[2]) > 2**64-1:
             raise ValueError("unsequenced projection")
+        scope = _projection_scope(subject) if subject else None
+        if full_name.count('.') > 1 and scope is None:
+            raise ValueError('child projection requires attested scope')
+        if scope and (subject['agent_id'] != agent_id or subject['full_name'] != full_name):
+            raise ValueError('projection scope mismatch')
         ev = json.loads(payload) if isinstance(payload, (bytes, str)) else payload
         if not isinstance(ev, dict):
             raise ValueError("invalid projection event")
         data = ev.get("data") or {}
+        def scope_cursor(db):
+            if not scope: return
+            db.execute('INSERT OR IGNORE INTO sub_agent_scope VALUES(?,?,?,?,?)', (agent_id,*scope,full_name))
+            row=db.execute('SELECT H FROM sub_agent_cursor WHERE root_agent_id=? AND node_id=? AND generation=? AND epoch=?', (*scope,match[1])).fetchone()
+            if row is None or int(match[2]) > int(row[0]):
+                db.execute('INSERT OR REPLACE INTO sub_agent_cursor VALUES(?,?,?,?,?)', (*scope,match[1],match[2]))
         if ev.get("kind") != "state_change" or not isinstance(data, dict) or data.get("change") != "turn_completed":
+            if scope:
+                with self.lock, self._connect() as db: scope_cursor(db)
             return False
         with self.lock, self._connect() as db:
             db.execute("BEGIN IMMEDIATE")
@@ -945,6 +984,9 @@ class CostProjection:
             db.execute("INSERT INTO mux_cost VALUES(?,?,?,?,?) ON CONFLICT(agent_id) DO UPDATE SET "
                        "full_name=excluded.full_name,cost_total=excluded.cost_total,"
                        "cost_last=excluded.cost_last,turns=excluded.turns", (agent_id, full_name, total, last, turns))
+            if scope:
+                db.execute('INSERT OR REPLACE INTO sub_agent_cost VALUES(?,?,?,?,?,?)', (*scope,total,last,turns))
+            scope_cursor(db)
             # Context manager commits both the unique key and all side effects, or rolls both back.
             return True
 
@@ -1108,6 +1150,16 @@ class _Handler(BaseHTTPRequestHandler):
         if COST_ACCOUNTING_MODE == "paused" and text.count(mode_marker) != 1:
             return self.send_error(503, "cost mode template unavailable")
         text = text.replace(mode_marker, json.dumps(COST_ACCOUNTING_MODE))
+        scope_key = ''
+        if self._session().count('.') > 1:
+            try:
+                subject = self._mux_subject()
+                if not subject or not _projection_scope(subject): return self.send_error(401)
+                scope_key = subject['agent_id']
+            except ValueError: return self.send_error(401)
+        if scope_key and text.count("/* VS_SCOPE_KEY */ ''") != 1:
+            return self.send_error(503, 'scope template unavailable')
+        text = text.replace("/* VS_SCOPE_KEY */ ''", json.dumps(scope_key))
         body = text.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -1119,6 +1171,7 @@ class _Handler(BaseHTTPRequestHandler):
     def _mux_subject(self):
         encoded = self.headers.get("X-DW-Mux-Subject", "")
         if not encoded:
+            if self._session().count('.') > 1: raise ValueError('scope ticket required')
             return None
         try:
             if len(encoded) > 2048:
@@ -1129,6 +1182,8 @@ class _Handler(BaseHTTPRequestHandler):
             subject = json.loads(raw)
             if not ok or subject.get("full_name") != self._session() or not subject.get("agent_id"):
                 raise ValueError("subject mismatch")
+            scope = _projection_scope(subject)
+            if subject['full_name'].count('.') > 1 and (scope is None or not subject.get('viewer_session_hash')): raise ValueError('scope required')
             return subject
         except Exception:
             raise ValueError("invalid projection subject")
@@ -1200,7 +1255,7 @@ class _Handler(BaseHTTPRequestHandler):
                             event = json.loads(line[6:])
                             if event.get("type") == "event" and COST_ACCOUNTING_MODE == "active":
                                 _cost_projection().apply(event["agent_id"], event["full_name"],
-                                     event["epoch"] + "-" + event["seq"], event["payload"])
+                                     event["epoch"] + "-" + event["seq"], event["payload"], subject=event)
                     self.wfile.write(frame)
                     self.wfile.flush()
             finally:
@@ -1231,6 +1286,9 @@ class _Handler(BaseHTTPRequestHandler):
             # R-V2-0105 件一：页面重连带 after=<纪元>-<seq>（或浏览器原生重连的 Last-Event-ID）⇒ 校验后转给 Hub，只补缺口。
             target = f"/internal/view/{session}/events"
             headers = {}
+            if subject and subject.get('node_id'):
+                for key in ('X-DW-Mux-Subject','X-DW-VS-Target','X-DW-Timestamp','X-DW-Nonce','X-DW-Signature'):
+                    headers[key]=self.headers.get(key,'')
             after = _sse_event_id(parse_qs(urlparse(self.path).query).get("after", [""])[0])
             if after:
                 target += "?after=" + quote(after, safe="")
@@ -1272,7 +1330,7 @@ class _Handler(BaseHTTPRequestHandler):
                     elif line.startswith(b"data: "):
                         if COST_ACCOUNTING_MODE == "active":
                             if subject:
-                                _cost_projection().apply(subject["agent_id"], session, event_id, line[6:])
+                                _cost_projection().apply(subject["agent_id"], session, event_id, line[6:], subject=subject)
                             else:
                                 self._track_cost(session, line[6:].strip())
                 self.wfile.write(frame)

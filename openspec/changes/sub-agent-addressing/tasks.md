@@ -25,6 +25,11 @@
 - [x] T-19 按〔51〕-补13补旧主工具硬门、明确重开错误、无节点/树副作用、原绑定保留及显式重开恢复；四例四刀。
 - [x] T-20 补件canonical双profile、strict、原生探针及证据；同分支追加推送交审。
 
+- [x] T-21 M3 View作用域、签名票据、独立投影与Console预算/整树撤权。
+- [x] T-22 M3 树JSON、兼容根文本、Console树状态和根提及边界。
+- [x] T-23 M3 混部五格、feature-off及旧二进制隔离回退实跑、席位说明。
+- [ ] T-24 M3 AA010正负/一刀变异、全量浏览器runner、m8/canonical/strict与Git证据交审。
+
 ## 交接记录
 
 2026-11-08 coder56solzzc.zzc；commit：本设计提交（由Git父链定位，避免自指SHA）。完成：T01～05，默认参数未定单列PM01～03；基线行为7控制与2个目标红，native并行证据。阻塞：无设计交付阻塞；生命周期默认/平台上限/墓碑策略等待业主决策，不阻止本次交审。下一步：T06完成后由组长复核，产品实现另派；不启动二期或部署。
@@ -48,3 +53,6 @@
 2026-11-09 coder56solzzc.zzc；父d48f3576，唯一写者01a1bd1c持原M2锁。完成T19：33例与28刀通过（新四刀各对应四项），真实broker响应验证重开提示。阻塞：无。下一步：冻结本补件，T20双profile总门与证据；不改写原交件，不部署，不开M3，不启动真实推理。
 
 2026-11-09 coder56solzzc.zzc；补件冻结源e509b44a59b48ffad5fd52e167fe5e23eff8a848（tree8fc3a383ae3dc5892664e97307f367fad00fab7e）。完成T20：完整canonical rc0，双profile各1162/1162、92文件、27Python/2shell；四新例纳入33例，新四刀加原24刀共28目标红；r55继承21刀、锁版原生合成SSE探针与strict通过。独立补件证据在docs/reviews/subagent-p1-m2-root-tools，原d48交件目录未改，Go零改动。阻塞：无。下一步：推送证据追加提交并核ls-remote后报组长独立复核；唯一写者01a1bd1c保留原M2锁，另一路只读，M3另派、不部署。
+
+
+2026-11-09 coder56solzzc.zzc；CODEX_THREAD_ID=01a1bd1c-c28e-7c60-9594-7894d0078533；M3基线0b47a585，M2锁获准释放，原子取得M3锁，另一路只读。完成T21～23：子scope签名/租约/独立事件费用游标缓存、根撤权/预算、树JSON与Console、根提及、feature-off退信和Hub隔离barrier、旧锚HTTP/WS五格与实际旧claimer隔离实跑。首轮全包发现0076 legacy补账预检缺项，已复用exact-DDL修复并专项通过；首轮浏览器变异缺浏览器路径及回退fixture选delivered而非可重试sent已分别改环境/强化fixture，保留原文不冒充目标红。技术说明及席位草稿入Git。派单后rulings核4cf77433（相对1228仅P2b来源补充），无M3规格漂移。阻塞：无。下一步：冻结本实施源，T24完整浏览器runner/m8/canonical/strict及逐格变异；证据追加后推送核ls-remote交组长独立复核，不部署/不动在线席位/不启动真实推理。

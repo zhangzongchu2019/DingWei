@@ -16,3 +16,5 @@ M2（2026-11-08）：M1获〔51〕-补12，子Agent走r57；基线eae9eca1。hel
 M2收口（2026-11-09）：产品冻结eed6ac54762bb2cf756f78934fbfb2db46f73d64，候选826a7c0ecf3d3b5634f69eed479d6c5abdf3b119；只用cfg.inbox_db本地SQLite加法表/列。实际M1确认不回显lane，由不可变投递作用域侧表定位；源工具调用在发送前持久去重。helper库存92文件，新增29例与24刀；r55九格和21刀继承护栏。所有本地测试使用隔离HOME、短TMPDIR、剥离席位环境，不访问在线数据库；原生仅loopback合成SSE。报告docs/reviews/subagent-p1-m2-helper/REPORT.md。
 
 2026-11-09 〔51〕-补13复核补件，基线d48f3576951a2247233018aab7a091cfc1dfff55，rulings已核ac2bc40e0。沿用同分支与01a1bd1c写者锁。产品仅sub_agent_runtime.py及app_server_broker.py；测试复用test_sub_agent_helper.py，新增ExistingRootToolsTests四例，mutations.py新增ROOT1～ROOT4四刀。新证据单列docs/reviews/subagent-p1-m2-root-tools/，冻结原交件报告原文不改。测试全为临时SQLite/合成原生传输，重开只操作fixture，无真实席位或推理。
+
+M3（2026-11-09）：基线0b47a585，分支coder56solzzc/subagent-p1-m3-view；唯一写者01a1bd1c持/tmp/coder56-subagent-m3.lock。scope实现在internal/m8/sub_agent_view.go，View加法scope/cursor/cost表沿用原投影DB；Hub迁移0076保留回退barrier/逐封隔离。tools/sessionhelper/sub_agent_connection与store支持feature-off只退信，不启动broker。新浏览器专项已登记全量runner；旧Hub/claimer只读源码锚79a60a1e，测试overlay不改旧树。所有测试隔离HOME/TMPDIR并剥离在线环境，不使用真实推理。

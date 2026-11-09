@@ -1,0 +1,9 @@
+package store
+import("context";"testing";"os";"time")
+func TestM3ActualOldClaimer(t *testing.T){
+ path:=os.Getenv("M3_ROLLBACK_DB");if path==""{t.Fatal("isolated database required")};db,err:=OpenSQLite(path);if err!=nil{t.Fatal(err)};defer db.Close();ctx:=context.Background()
+ for i:=0;i<3;i++{row,err:=db.ClaimSessionDelivery(ctx,"u_zzc","parent",time.Now().Add(time.Hour*time.Duration(24+i)));if err!=nil{t.Fatal(err)};if row!=nil&&row.ID!="legacy-root"{t.Fatal("AA010_ACTUAL_OLD_BINARY_PARENT_REPLAY",row.ID)}}
+ unknown,_:=db.GetSessionDelivery(ctx,"maybe-executed");ack,_:=db.GetSessionDelivery(ctx,"acknowledged")
+ if unknown.State!="sent"||unknown.ProcessedAt!=nil||ack.State!="processed"||ack.AckGeneration!=7{t.Fatal("AA010_OLD_BINARY_RETAINED_AUDIT")}
+ t.Log("actual pre-M1 source claimer: no child read; old root readable; unknown and ACK unchanged")
+}
