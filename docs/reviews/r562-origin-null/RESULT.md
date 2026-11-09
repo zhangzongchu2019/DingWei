@@ -28,3 +28,9 @@ coder56 在 S-MCP-ZERO-CONSENT 真 Chromium 测试中发现：Origin 修好后 c
 测试：`internal/feishulogin/connect_csp_test.go`（默认得精确源且其它指令保留；http、注入、带用户信息、非法 URL 均退回 'self'）；`internal/mcpgw/origin_null_test.go` 增一格经网关输出的连接页 CSP。
 变异：Handler 改回固定旧 CSP ⇒ `CSP_FORM_ACTION_MISSING_FEISHU` 与 `CSP_GATEWAY_FORM_ACTION` 红；去掉 https 校验 ⇒ `CSP_ORIGIN_ACCEPTED` 红。
 未覆盖：本席未做「真 Hub＋真浏览器＋飞书替身」全链路；该项在独立复核 S-R562-CR 中要求。
+
+## 追加：第三个阻断——已授权用户的整条跳转链到回环被 form-action 拦（本席写入 2026-11-09T09:07:19Z）
+togpt60 独立复核 d5a6fbbc（S-R562-CR）：真 Chromium 下服务端各跳均正确（connect POST 303 → 飞书替身 302 → Hub 回调 302 → http://127.0.0.1:端口/callback），但浏览器在最后一跳报 form-action 违例，未请求回环。成因：表单提交后的整条重定向链都按连接页 form-action 校验；飞书对已授权用户不显示同意页而直接 302 回来时，连接页 POST 到客户端回环成为同一次导航。现实中已授权过该飞书应用的用户必然撞上。
+修法：网关输出连接页时，在 form-action 追加本次 attempt 已校验 redirect_uri 的源，且只接受 `http://127.0.0.1:端口` 或 `http://[::1]:端口`（localhost、https、其它主机、带用户信息、带分隔符一律不追加）。来源守卫、飞书源、其它指令不变。
+测试：`internal/mcpgw/origin_null_test.go` 增两格（经网关连接页含回环源且无通配／localhost；精确回环判定正反例）；新增 `internal/mcpgw/browser_e2e_test.go`——真 Chromium＋TLS Hub＋立即 302 的 TLS 飞书替身＋回环监听，断言回环收到带 code 与原 state 的请求（需 DW_BROWSER_E2E=1 与 NODE_PATH，否则 Skip）。原文 `raw/browser-e2e-chain-fixed.txt`。
+变异（一次性工作树，各红）：去掉回环源 ⇒ 停在 connect、form-action 违例、BROWSER_CHAIN_BLOCKED（即 d5a6fbbc 现象）；去掉飞书源 ⇒ 同上；两处 Referrer-Policy 改回 no-referrer ⇒ BROWSER_LOOPBACK_NOT_REACHED；回环正则放宽到 localhost ⇒ LOOPBACK_ACCEPTED。
