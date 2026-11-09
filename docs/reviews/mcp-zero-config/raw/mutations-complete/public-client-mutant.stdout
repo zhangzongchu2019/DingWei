@@ -1,8 +1,0 @@
-=== RUN   TestZeroConfigInvalidCopyFailsClosed
-=== RUN   TestZeroConfigInvalidCopyFailsClosed/auth
-    zero_config_test.go:74: ZERO_COPY_auth: status=302 external=[]
---- FAIL: TestZeroConfigInvalidCopyFailsClosed (0.02s)
-    --- FAIL: TestZeroConfigInvalidCopyFailsClosed/auth (0.02s)
-FAIL
-FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.028s
-FAIL

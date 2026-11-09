@@ -1,6 +1,0 @@
-=== RUN   TestZeroConfigRedirectGuards
-=== RUN   TestZeroConfigRedirectGuards/userinfo
---- PASS: TestZeroConfigRedirectGuards (0.01s)
-    --- PASS: TestZeroConfigRedirectGuards/userinfo (0.00s)
-PASS
-ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.017s

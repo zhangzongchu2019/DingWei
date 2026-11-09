@@ -1,6 +1,0 @@
-=== RUN   TestZeroConfigPinnedDocument
-    zero_config_test.go:33: ZERO_PROVENANCE: original upstream bytes changed
---- FAIL: TestZeroConfigPinnedDocument (0.00s)
-FAIL
-FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.006s
-FAIL

@@ -1,6 +1,0 @@
-=== RUN   TestZeroConfigTokenBindings
-=== RUN   TestZeroConfigTokenBindings/client_id
---- PASS: TestZeroConfigTokenBindings (0.09s)
-    --- PASS: TestZeroConfigTokenBindings/client_id (0.09s)
-PASS
-ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.093s

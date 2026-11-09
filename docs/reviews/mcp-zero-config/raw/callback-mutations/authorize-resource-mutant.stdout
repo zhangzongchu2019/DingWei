@@ -1,9 +1,0 @@
-=== RUN   TestZeroConfigAuthorizationGuards
-=== RUN   TestZeroConfigAuthorizationGuards/resource
-    zero_config_test.go:151: ZERO_AUTH_resource: 302 <a href="/feishu/connect?attempt_id=4MkIsQrU221FFY2g0jNURwEoI1Yic6j0cw2htdEmFyQ">Found</a>.
-        
---- FAIL: TestZeroConfigAuthorizationGuards (0.02s)
-    --- FAIL: TestZeroConfigAuthorizationGuards/resource (0.00s)
-FAIL
-FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.027s
-FAIL

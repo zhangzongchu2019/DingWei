@@ -1,9 +1,0 @@
-=== RUN   TestZeroConfigAuthorizationGuards
-=== RUN   TestZeroConfigAuthorizationGuards/scope
-    zero_config_test.go:152: ZERO_AUTH_scope: 302 <a href="/feishu/connect?attempt_id=Ue2lO0oumGxLC0M08MKZ6PdoGAAEKxZYzy1H9OzI0vM">Found</a>.
-        
---- FAIL: TestZeroConfigAuthorizationGuards (0.02s)
-    --- FAIL: TestZeroConfigAuthorizationGuards/scope (0.01s)
-FAIL
-FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.028s
-FAIL

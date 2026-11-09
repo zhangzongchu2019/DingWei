@@ -1,6 +1,0 @@
-=== RUN   TestZeroConfigEveryRequestReauthenticates
-    zero_config_test.go:307: ZERO_REQUEST_AUTH: 200 calls=0
---- FAIL: TestZeroConfigEveryRequestReauthenticates (0.01s)
-FAIL
-FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.017s
-FAIL

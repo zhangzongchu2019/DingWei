@@ -1,8 +1,0 @@
-=== RUN   TestZeroConfigInvalidCopyFailsClosed
-=== RUN   TestZeroConfigInvalidCopyFailsClosed/external_https
-    zero_config_test.go:80: ZERO_COPY_external_https: invalid local document accepted
---- FAIL: TestZeroConfigInvalidCopyFailsClosed (0.02s)
-    --- FAIL: TestZeroConfigInvalidCopyFailsClosed/external_https (0.02s)
-FAIL
-FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.022s
-FAIL

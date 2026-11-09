@@ -1,8 +1,0 @@
-=== RUN   TestZeroConfigRedirectGuards
-=== RUN   TestZeroConfigRedirectGuards/port
-    zero_config_test.go:134: ZERO_REDIRECT_port: 400 {"error":"invalid_client"}
---- FAIL: TestZeroConfigRedirectGuards (0.01s)
-    --- FAIL: TestZeroConfigRedirectGuards/port (0.00s)
-FAIL
-FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.020s
-FAIL

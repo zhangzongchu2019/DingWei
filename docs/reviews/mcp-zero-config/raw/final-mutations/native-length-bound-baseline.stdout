@@ -1,6 +1,0 @@
-=== RUN   TestCodexNativeCallbackPathsBothClients
-=== RUN   TestCodexNativeCallbackPathsBothClients/default/over64
---- PASS: TestCodexNativeCallbackPathsBothClients (0.01s)
-    --- PASS: TestCodexNativeCallbackPathsBothClients/default/over64 (0.00s)
-PASS
-ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.020s

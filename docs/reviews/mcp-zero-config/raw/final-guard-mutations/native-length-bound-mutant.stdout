@@ -1,9 +1,0 @@
-=== RUN   TestCodexNativeCallbackPathsBothClients
-=== RUN   TestCodexNativeCallbackPathsBothClients/default/over64
-    zero_config_test.go:223: NATIVE_CALLBACK_over64: 302 <a href="/feishu/connect?attempt_id=h6kZz9sl6inQ8L1js3xC9uxhKfNT42_VAV1KX1GbpoM">Found</a>.
-        
---- FAIL: TestCodexNativeCallbackPathsBothClients (0.02s)
-    --- FAIL: TestCodexNativeCallbackPathsBothClients/default/over64 (0.01s)
-FAIL
-FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.026s
-FAIL

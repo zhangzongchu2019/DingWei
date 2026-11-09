@@ -1,4 +1,0 @@
-=== RUN   TestZeroConfigEveryRequestReauthenticates
---- PASS: TestZeroConfigEveryRequestReauthenticates (0.02s)
-PASS
-ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.026s

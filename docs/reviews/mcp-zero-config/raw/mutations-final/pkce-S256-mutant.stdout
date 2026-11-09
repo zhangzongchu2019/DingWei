@@ -1,9 +1,0 @@
-=== RUN   TestZeroConfigAuthorizationGuards
-=== RUN   TestZeroConfigAuthorizationGuards/code_challenge_method
-    zero_config_test.go:149: ZERO_AUTH_code_challenge_method: 302 <a href="/feishu/connect?attempt_id=OxcEaXA1fsdSXL137RenCK-cbKJsNSVPbqCq3UI-z2Y">Found</a>.
-        
---- FAIL: TestZeroConfigAuthorizationGuards (0.02s)
-    --- FAIL: TestZeroConfigAuthorizationGuards/code_challenge_method (0.01s)
-FAIL
-FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.028s
-FAIL

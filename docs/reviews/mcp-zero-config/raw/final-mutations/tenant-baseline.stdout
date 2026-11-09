@@ -1,4 +1,0 @@
-=== RUN   TestCallbackRejectsWrongTenant
---- PASS: TestCallbackRejectsWrongTenant (0.00s)
-PASS
-ok  	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s

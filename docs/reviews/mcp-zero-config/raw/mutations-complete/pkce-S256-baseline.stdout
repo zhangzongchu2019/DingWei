@@ -1,6 +1,0 @@
-=== RUN   TestZeroConfigAuthorizationGuards
-=== RUN   TestZeroConfigAuthorizationGuards/code_challenge_method
---- PASS: TestZeroConfigAuthorizationGuards (0.01s)
-    --- PASS: TestZeroConfigAuthorizationGuards/code_challenge_method (0.00s)
-PASS
-ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.018s

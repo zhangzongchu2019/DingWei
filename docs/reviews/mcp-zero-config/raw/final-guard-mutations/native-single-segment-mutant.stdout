@@ -1,9 +1,0 @@
-=== RUN   TestCodexNativeCallbackPathsBothClients
-=== RUN   TestCodexNativeCallbackPathsBothClients/default/slash
-    zero_config_test.go:223: NATIVE_CALLBACK_slash: 302 <a href="/feishu/connect?attempt_id=LxYi9HRr3SNax8_FCHC0YKfnBI8qO7bJHFOn_810fLo">Found</a>.
-        
---- FAIL: TestCodexNativeCallbackPathsBothClients (0.02s)
-    --- FAIL: TestCodexNativeCallbackPathsBothClients/default/slash (0.01s)
-FAIL
-FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.027s
-FAIL

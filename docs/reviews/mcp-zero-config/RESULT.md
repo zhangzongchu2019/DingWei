@@ -98,4 +98,4 @@ OPENSPEC_TELEMETRY=0 openspec validate --all --strict
 
 Go 由普通 uid1001 执行。canonical 使用 `/tmp/coder-0232-locked-venv/bin/python3`，环境白名单、私有 HOME/TMPDIR；仅复用公开 PostgreSQL 下载缓存。说明稿更新在 `docs/guides/CODEX-DINGWEI-MCP.md`，桌面未测状态明确。补19、21的官方直接设置入口和默认短名／默认目标全量影响、权限及旧版本回退方案在 `DEFAULT-CONSENT-PROPOSAL.md`；只出方案，不提前实施表单、数据库 CHECK 或权限改动。补22只涉及组长后续发布顺序，本件仍不改版本或部署；〔51〕-补15 的 M3 回退自检另排，不在本分支混入。待独立复核，不自验收、不释放写锁，后续只追加提交。
 
-最终状态：最终字节 mcpgw 218/0、m8 1510/0/37 SKIP、canonical 双 profile 各1129/1129及完整27 Python/2 shell、全量strict 30/0，34刀全部目标红；原生 URL-only 与显式本域安全段完整 E2E 通过，默认本地解析移除刀同探针目标红。桌面仍未测，默认授权仍只是方案。大于64KiB日志按gzip保留原文，SOURCE-SHA256SUMS与ARTIFACT-SHA256SUMS可独立复算。
+最终状态：最终字节 mcpgw 218/0、m8 1510/0/37 SKIP、canonical 双 profile 各1129/1129及完整27 Python/2 shell、全量strict 30/0，34刀全部目标红；原生 URL-only 与显式本域安全段完整 E2E 通过，默认本地解析移除刀同探针目标红。桌面仍未测，默认授权仍只是方案。stdout和响应头按gzip保留原文（保留原有尾空白，不改写日志），SOURCE-SHA256SUMS与ARTIFACT-SHA256SUMS可独立复算。

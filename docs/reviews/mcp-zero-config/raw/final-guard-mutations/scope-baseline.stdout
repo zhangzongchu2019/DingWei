@@ -1,6 +1,0 @@
-=== RUN   TestZeroConfigAuthorizationGuards
-=== RUN   TestZeroConfigAuthorizationGuards/scope
---- PASS: TestZeroConfigAuthorizationGuards (0.01s)
-    --- PASS: TestZeroConfigAuthorizationGuards/scope (0.00s)
-PASS
-ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.022s

@@ -1,4 +1,0 @@
-Authorize `dingwei` by opening this URL in your browser:
-https://127.0.0.1:33691/oauth/authorize?response_type=code&client_id=https%3A%2F%2Fchatgpt.com%2Foauth%2Fcodex%2Fclient.json&state=osSvsFYYepIRnJ3sBWkIEA&code_challenge=FO20DWH-LripuCw54jGJevVM4vd1ySb1tzXeYDfcPVM&code_challenge_method=S256&redirect_uri=http%3A%2F%2F127.0.0.1%3A43639%2Fcallback&scope=list_online+send_message+wait_for_messages+ack&resource=https%3A%2F%2F127.0.0.1%3A33691%2Fmcp
-
-Successfully logged in to MCP server 'dingwei'.

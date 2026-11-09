@@ -1,6 +1,0 @@
-=== RUN   TestZeroConfigTokenBindings
-=== RUN   TestZeroConfigTokenBindings/resource
---- PASS: TestZeroConfigTokenBindings (0.06s)
-    --- PASS: TestZeroConfigTokenBindings/resource (0.06s)
-PASS
-ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.067s
