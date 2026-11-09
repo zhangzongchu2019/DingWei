@@ -50,7 +50,7 @@ def main():
   with tempfile.TemporaryDirectory(prefix='m3mut-') as directory:
    tmp=Path(directory);e={**env,'HOME':str(tmp/'home'),'TMPDIR':str(tmp),'TZ':'UTC'};(tmp/'home').mkdir()
    if kind=='cache':
-    shutil.copy(ROOT/'view-service/test_mux_projection.py',tmp/'test_mux_projection.py');shutil.copy(ROOT/'view-service/view_service.py',tmp/'view_service.py');candidate=tmp/'renderer-canary-sse.html';source=ROOT/relative;module='test_mux_projection.'+test;e['PYTHONPATH']=str(tmp)
+    shutil.copy(ROOT/'view-service/test_mux_projection.py',tmp/'test_mux_projection.py');shutil.copy(ROOT/'view-service/view_service.py',tmp/'view_service.py');candidate=tmp/'renderer-canary-sse.html';source=ROOT/relative;module='test_mux_projection.'+test;e['PYTHONPATH']=str(tmp)+os.pathsep+str(ROOT/'view-service')
    elif kind=='view':
     candidate=tmp/'view_service.py';source=ROOT/relative;module='test_mux_projection.'+test;e['PYTHONPATH']=str(tmp)+os.pathsep+str(ROOT/'view-service')
    else:
