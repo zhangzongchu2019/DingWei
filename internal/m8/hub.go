@@ -3300,6 +3300,7 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 	if metaString(env.Meta, "kind") == "task_assigned" && ctx.Value(taskNotificationContextKey{}) != true {
 		return errors.New("task notification is Hub-only")
 	}
+	stripForgedExtseatAttribution(&env)
 
 	// reply-origin / loop-termination:conversation 类消息先过 R4 hop / R5 dedup 兜底 + origin 捕获。
 	// control 类与无新字段的 legacy 消息透传不变(向后兼容)。drop=静默丢弃,不回错给发方。
@@ -3400,6 +3401,13 @@ func (h *Hub) RouteEnvelope(ctx context.Context, env model.Envelope) error {
 			// Cross-owner addressing is deliberately exact-only: the sender must
 			// use the persisted FullSessionName, never a short/global fuzzy name.
 			if full := h.resolveNewPlatformVisibleSession(ctx, to.SessionName); full.fullName && full.found {
+				// External-seat replies are authorized by the external-seat route
+				// itself. Handle the exact full name before the ordinary shared-group
+				// gate, which intentionally does not grant every group member access
+				// to an external endpoint.
+				if handled, routeErr := h.routeExternalSeat(ctx, full.keyID, full.sessionName, env); handled {
+					return routeErr
+				}
 				if err := h.enforceAgentGrouping(ctx, from, env, full.keyID, full.sessionName); err != nil {
 					return err
 				}

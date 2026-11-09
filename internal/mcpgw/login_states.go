@@ -3,6 +3,7 @@ package mcpgw
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/feishulogin"
@@ -31,7 +32,10 @@ func (s LoginStates) Consume(ctx context.Context, key string, now time.Time) (fe
 	}
 	b, e := s.Store.Take(ctx, "cstate", key, now)
 	if e != nil {
-		return a, feishulogin.ErrInvalidState
+		if errors.Is(e, errRecord) {
+			return a, feishulogin.ErrInvalidState
+		}
+		return a, feishulogin.ErrStateUnavailable
 	}
 	if json.Unmarshal(b, &a) != nil {
 		return a, feishulogin.ErrInvalidState

@@ -31,7 +31,63 @@ var (
 	ErrIdentityIncomplete = errors.New("feishulogin: Feishu identity is incomplete")
 	ErrDisplayName        = errors.New("feishulogin: display name is empty")
 	ErrTokenIssue         = errors.New("feishulogin: local token issuance failed")
+	ErrStateUnavailable   = errors.New("feishulogin: state service unavailable")
 )
+
+type CallbackFailureReason string
+
+const (
+	FailureTargetUnavailable CallbackFailureReason = "target_unavailable"
+	FailureTenantRejected    CallbackFailureReason = "tenant_not_allowed"
+	FailureAuthorizationUsed CallbackFailureReason = "authorization_expired_or_used"
+	FailureFeishuUnavailable CallbackFailureReason = "feishu_temporarily_unavailable"
+	FailureOther             CallbackFailureReason = "other"
+)
+
+type CallbackTargetCategory string
+
+const (
+	TargetCategoryExists     CallbackTargetCategory = "exists"
+	TargetCategoryMissing    CallbackTargetCategory = "missing"
+	TargetCategoryUnverified CallbackTargetCategory = "unverified"
+)
+
+// CallbackFailure contains only allow-listed diagnostics. AttemptPrefix is
+// truncated before construction; neither target names nor upstream errors are
+// retained. Cause is always a package sentinel, never an upstream error.
+type CallbackFailure struct {
+	ReasonCode     CallbackFailureReason
+	AttemptPrefix  string
+	TargetCategory CallbackTargetCategory
+	cause          error
+}
+
+func (e *CallbackFailure) Error() string { return "feishulogin: callback failed" }
+func (e *CallbackFailure) Unwrap() error { return e.cause }
+
+func callbackFailure(reason CallbackFailureReason, target CallbackTargetCategory, attemptID string, cause error) error {
+	prefix := attemptID
+	if len(prefix) > 8 {
+		prefix = prefix[:8]
+	}
+	if prefix == "" {
+		prefix = "unknown"
+	}
+	if target == "" {
+		target = TargetCategoryUnverified
+	}
+	return &CallbackFailure{ReasonCode: reason, AttemptPrefix: prefix, TargetCategory: target, cause: cause}
+}
+
+// CallbackFailureDetails returns the safe, bounded diagnostic fields for the
+// gateway logger. It never returns callback state, code, identity, or target.
+func CallbackFailureDetails(err error) (CallbackFailureReason, string, CallbackTargetCategory, bool) {
+	var failure *CallbackFailure
+	if !errors.As(err, &failure) {
+		return FailureOther, "unknown", TargetCategoryUnverified, false
+	}
+	return failure.ReasonCode, failure.AttemptPrefix, failure.TargetCategory, true
+}
 
 // UserInfo contains only the non-sensitive fields returned by Feishu user_info.
 type UserInfo struct {
@@ -136,6 +192,9 @@ type StartResult struct {
 type CallbackRequest struct {
 	State string
 	Code  string
+	// AttemptID is supplied by the gateway from its own encrypted state record.
+	// It is never read from the Feishu callback query.
+	AttemptID string
 }
 
 // CallbackResult is the single local-token disclosure point in this package.

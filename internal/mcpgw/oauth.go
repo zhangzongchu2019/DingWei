@@ -7,6 +7,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -228,50 +229,66 @@ func (g *Gateway) connect(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(captured.body.Bytes())
 }
 func (g *Gateway) callback(w http.ResponseWriter, r *http.Request) {
-	if !method(w, r, "GET") {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", http.MethodGet)
+		g.failCallback(w, r, http.StatusMethodNotAllowed, "method_not_allowed", feishulogin.FailureOther, "", feishulogin.TargetCategoryUnverified)
 		return
 	}
 	q, e := url.ParseQuery(r.URL.RawQuery)
 	if e != nil || !unique(q) || q.Get("state") == "" || q.Get("code") == "" {
-		oauthError(w, 400, "invalid_request")
+		g.failCallback(w, r, http.StatusBadRequest, "invalid_request", feishulogin.FailureOther, "", feishulogin.TargetCategoryUnverified)
 		return
 	}
 	attemptRaw, e := g.cfg.Store.Get(r.Context(), "login", hash(q.Get("state")), g.cfg.Now())
 	if e != nil {
-		oauthError(w, 400, "invalid_request")
+		reason := feishulogin.FailureOther
+		if errors.Is(e, errRecord) {
+			reason = feishulogin.FailureAuthorizationUsed
+		}
+		g.failCallback(w, r, http.StatusBadRequest, "invalid_request", reason, "", feishulogin.TargetCategoryUnverified)
 		return
 	}
 	attempt := string(attemptRaw)
 	if _, e = g.readAttempt(r, attempt, false); e != nil {
-		oauthError(w, 400, "invalid_request")
+		g.failCallback(w, r, http.StatusBadRequest, "invalid_request", feishulogin.FailureAuthorizationUsed, attempt, feishulogin.TargetCategoryUnverified)
 		return
 	}
 	if _, e = g.cfg.Store.Take(r.Context(), "login", hash(q.Get("state")), g.cfg.Now()); e != nil {
-		oauthError(w, 400, "invalid_request")
+		reason := feishulogin.FailureOther
+		if errors.Is(e, errRecord) {
+			reason = feishulogin.FailureAuthorizationUsed
+		}
+		g.failCallback(w, r, http.StatusBadRequest, "invalid_request", reason, attempt, feishulogin.TargetCategoryUnverified)
 		return
 	}
 	// C 从一次性 state 内取 AttemptID 和主体，拒绝 query 中的签发意图覆盖。
-	issued, e := g.cfg.Login.Callback(r.Context(), feishulogin.CallbackRequestFromQuery(q))
+	callbackRequest := feishulogin.CallbackRequestFromQuery(q)
+	callbackRequest.AttemptID = attempt
+	issued, e := g.cfg.Login.Callback(r.Context(), callbackRequest)
 	if e != nil {
-		oauthError(w, 400, "access_denied")
+		reason, attemptPrefix, targetCategory, ok := feishulogin.CallbackFailureDetails(e)
+		if !ok {
+			reason, attemptPrefix, targetCategory = feishulogin.FailureOther, attempt, feishulogin.TargetCategoryUnverified
+		}
+		g.failCallback(w, r, http.StatusBadRequest, "access_denied", reason, attemptPrefix, targetCategory)
 		return
 	}
 	if issued.AttemptID != attempt {
-		oauthError(w, 400, "invalid_request")
+		g.failCallback(w, r, http.StatusBadRequest, "invalid_request", feishulogin.FailureOther, attempt, feishulogin.TargetCategoryUnverified)
 		return
 	}
 	a, e := g.readAttempt(r, attempt, true)
 	if e != nil {
-		oauthError(w, 400, "invalid_request")
+		g.failCallback(w, r, http.StatusBadRequest, "invalid_request", feishulogin.FailureAuthorizationUsed, attempt, feishulogin.TargetCategoryUnverified)
 		return
 	}
 	if issued.Token == "" || issued.Audience != g.cfg.Resource || !fixedScopes(strings.Join(issued.Scopes, " ")) || !issued.ExpiresAt.After(g.cfg.Now()) {
-		oauthError(w, 500, "server_error")
+		g.failCallback(w, r, http.StatusInternalServerError, "server_error", feishulogin.FailureOther, attempt, feishulogin.TargetCategoryUnverified)
 		return
 	}
 	code, e := randomValue()
 	if e != nil {
-		oauthError(w, 500, "server_error")
+		g.failCallback(w, r, http.StatusInternalServerError, "server_error", feishulogin.FailureOther, attempt, feishulogin.TargetCategoryUnverified)
 		return
 	}
 	grant := codeGrant{Authorization: a, Issued: issued}
@@ -282,7 +299,7 @@ func (g *Gateway) callback(w http.ResponseWriter, r *http.Request) {
 		expires = a.Expires
 	}
 	if e = g.cfg.Store.Put(r.Context(), "code", hash(code), raw, expires, now); e != nil {
-		oauthError(w, 503, "temporarily_unavailable")
+		g.failCallback(w, r, http.StatusServiceUnavailable, "temporarily_unavailable", feishulogin.FailureOther, attempt, feishulogin.TargetCategoryUnverified)
 		return
 	}
 	redirect, _ := url.Parse(a.Redirect)

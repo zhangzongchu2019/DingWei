@@ -144,6 +144,27 @@ func TestCallbackRejectsWrongTenant(t *testing.T) {
 	}
 }
 
+func TestCallbackAttemptMismatchRejectsBeforeIssueAndConsumesState(t *testing.T) {
+	now := time.Date(2026, 11, 9, 10, 0, 0, 0, time.UTC)
+	oauth, issuer := &fakeOAuth{profile: validProfile()}, &fakeIssuer{}
+	store := NewMemoryStateStore()
+	h := newTestHandler(t, "app-1", store, oauth, issuer, &now)
+	_, state := startForTest(t, h)
+
+	_, err := h.Callback(context.Background(), CallbackRequest{State: state, Code: "code", AttemptID: "different-attempt"})
+	reason, _, _, ok := CallbackFailureDetails(err)
+	if !errors.Is(err, ErrInvalidState) || !ok || reason != FailureAuthorizationUsed {
+		t.Fatalf("CALLBACK_ATTEMPT_MISMATCH_BEFORE_ISSUE expected authorization-used failure, got %v", err)
+	}
+	if issuer.calls != 0 {
+		t.Fatalf("CALLBACK_ATTEMPT_MISMATCH_BEFORE_ISSUE IssueToken calls=%d", issuer.calls)
+	}
+	_, replayErr := h.Callback(context.Background(), CallbackRequest{State: state, Code: "code", AttemptID: "login-attempt-1"})
+	if !errors.Is(replayErr, ErrInvalidState) {
+		t.Fatalf("CALLBACK_ATTEMPT_MISMATCH_BEFORE_ISSUE state was reusable: %v", replayErr)
+	}
+}
+
 func TestCallbackRejectsInvalidIdentityWithoutIssuance(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -273,6 +294,55 @@ func TestCallbackErrorsDoNotDiscloseTokens(t *testing.T) {
 			t.Fatalf("issuer error was not sanitized: result=%+v err=%v", result, err)
 		}
 	})
+}
+
+func TestCallbackFailureReasonCodesAndTargetCategory(t *testing.T) {
+	cases := []struct {
+		name       string
+		configure  func(*fakeOAuth, *fakeIssuer, *time.Time)
+		wantReason CallbackFailureReason
+		wantTarget CallbackTargetCategory
+	}{
+		{name: "target missing", configure: func(_ *fakeOAuth, issuer *fakeIssuer, _ *time.Time) {
+			issuer.err = errors.Join(extshared.ErrTargetNotInAG, extshared.ErrTargetMissing)
+		}, wantReason: FailureTargetUnavailable, wantTarget: TargetCategoryMissing},
+		{name: "tenant rejected", configure: func(oauth *fakeOAuth, _ *fakeIssuer, _ *time.Time) {
+			profile := validProfile()
+			profile.TenantKey = "other-tenant"
+			oauth.profile = profile
+		}, wantReason: FailureTenantRejected, wantTarget: TargetCategoryUnverified},
+		{name: "authorization expired", configure: func(_ *fakeOAuth, _ *fakeIssuer, now *time.Time) {
+			*now = now.Add(DefaultStateTTL)
+		}, wantReason: FailureAuthorizationUsed, wantTarget: TargetCategoryUnverified},
+		{name: "Feishu unavailable", configure: func(oauth *fakeOAuth, _ *fakeIssuer, _ *time.Time) {
+			oauth.exchangeErr = errors.New("private upstream detail")
+		}, wantReason: FailureFeishuUnavailable, wantTarget: TargetCategoryUnverified},
+		{name: "other identity error", configure: func(oauth *fakeOAuth, _ *fakeIssuer, _ *time.Time) {
+			profile := validProfile()
+			profile.OpenID = ""
+			oauth.profile = profile
+		}, wantReason: FailureOther, wantTarget: TargetCategoryUnverified},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			now := time.Date(2026, 11, 9, 10, 0, 0, 0, time.UTC)
+			oauth, issuer := &fakeOAuth{profile: validProfile()}, &fakeIssuer{}
+			h := newTestHandler(t, "app-1", NewMemoryStateStore(), oauth, issuer, &now)
+			_, state := startForTest(t, h)
+			tc.configure(oauth, issuer, &now)
+			_, err := h.Callback(context.Background(), CallbackRequest{State: state, Code: "callback-code-secret", AttemptID: "login-attempt-1"})
+			if err == nil {
+				t.Fatal("expected callback failure")
+			}
+			reason, prefix, target, ok := CallbackFailureDetails(err)
+			if !ok || reason != tc.wantReason || prefix != "login-at" || target != tc.wantTarget {
+				t.Fatalf("CALLBACK_FAILURE_REASON_MAPPING got=(%q,%q,%q,%v) want=(%q,login-at,%q,true)", reason, prefix, target, ok, tc.wantReason, tc.wantTarget)
+			}
+			if strings.Contains(err.Error(), "callback-code-secret") || strings.Contains(err.Error(), "open-1") || strings.Contains(err.Error(), "private upstream detail") {
+				t.Fatalf("CALLBACK_FAILURE_DISCLOSURE %v", err)
+			}
+		})
+	}
 }
 
 func TestCallbackDelegatesRevocationAndExpiryToA(t *testing.T) {

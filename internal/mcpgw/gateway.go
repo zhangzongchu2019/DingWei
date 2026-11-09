@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"mime"
 	"net/http"
 	"net/url"
@@ -26,7 +27,7 @@ const metaPrefix = "io.modelcontextprotocol/"
 type Seats interface {
 	Authenticate(context.Context, string) (extseat.Seat, error)
 	ListOnline(context.Context, extseat.Seat) ([]extseat.OnlineAgent, error)
-	Send(context.Context, extseat.Seat, string, string, string) (extseat.SendReceipt, error)
+	Send(context.Context, extseat.Seat, string, string, string, ...bool) (extseat.SendReceipt, error)
 	Wait(context.Context, extseat.Seat, time.Duration) ([]extseat.Delivery, error)
 	Ack(context.Context, extseat.Seat, string, int) error
 }
@@ -43,6 +44,7 @@ type Login interface {
 type Config struct {
 	PublicOrigin string
 	Resource     string
+	Logger       *slog.Logger
 	Seats        Seats
 	Origins      Origins
 	Login        Login
@@ -91,6 +93,10 @@ func (g *Gateway) guard(next http.HandlerFunc) http.HandlerFunc {
 		w.Header().Set("Referrer-Policy", "same-origin")
 		origins := r.Header.Values("Origin")
 		if len(origins) > 1 || (len(origins) == 1 && (origins[0] == "" || !g.trusted(r.Context(), origins[0]))) {
+			if r.URL.Path == "/mcp/oauth/feishu/callback" {
+				g.failCallback(w, r, http.StatusForbidden, "origin_rejected", feishulogin.FailureOther, "", feishulogin.TargetCategoryUnverified)
+				return
+			}
 			writeJSON(w, 403, map[string]string{"error": "origin_rejected"})
 			return
 		}

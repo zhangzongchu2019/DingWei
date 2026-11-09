@@ -115,10 +115,12 @@ func TestConnectPageGETRendersSelfContainedValidatedForm(t *testing.T) {
 	for _, want := range []string{
 		`name="short_name"`, `required`, `pattern="[a-z0-9]{1,8}"`,
 		`name="target_agent"`, `外部 Agent 名将为 短名_AG序号`,
+		`本次接入的 Codex 自己的名字`, `系统会自动追加 _AG 编号`,
+		`系统中已存在的另一个 Agent 全名`, `例如 opus50tc2k.zzc`, `只能与该目标 Agent 收发消息`,
 		`name="attempt_id" value="outer-attempt-1"`,
 	} {
 		if !strings.Contains(body, want) {
-			t.Errorf("form missing %q", want)
+			t.Errorf("CONNECT_PAGE_IDENTITY_HINTS missing %q", want)
 		}
 	}
 	if strings.Contains(strings.ToLower(body), "<script") || strings.Contains(body, "Helper.zzc") {

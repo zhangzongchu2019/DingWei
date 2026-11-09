@@ -85,6 +85,9 @@ func (s *Service) IssueToken(ctx context.Context, p extshared.Principal, short, 
 		return "", seat, "", extshared.ErrNotPermitted
 	}
 	ag, u, e := s.Identity.ResolveFullName(ctx, target)
+	if errors.Is(e, identity.ErrNotFound) {
+		return "", seat, "", errors.Join(extshared.ErrTargetNotInAG, extshared.ErrTargetMissing)
+	}
 	if e != nil || ag.State != identity.AgentActive || u.State != identity.UserActive || ag.Origin == identity.OriginExternal {
 		return "", seat, "", extshared.ErrTargetNotInAG
 	}

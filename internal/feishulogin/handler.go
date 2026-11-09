@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"io"
 	"net/url"
 	"strings"
@@ -86,34 +87,75 @@ func (h *Handler) Start(ctx context.Context, req StartRequest) (StartResult, err
 // server-fetched identity has passed tenant, subject, and display-name checks.
 func (h *Handler) Callback(ctx context.Context, req CallbackRequest) (CallbackResult, error) {
 	if req.State == "" {
-		return CallbackResult{}, ErrInvalidCallback
+		return CallbackResult{}, callbackFailure(FailureOther, TargetCategoryUnverified, req.AttemptID, ErrInvalidCallback)
 	}
 	attempt, err := h.states.Consume(ctx, hashState(req.State), h.now())
 	if err != nil {
-		return CallbackResult{}, err
+		reason := FailureOther
+		cause := ErrStateUnavailable
+		if errors.Is(err, ErrInvalidState) || errors.Is(err, ErrStateExpired) {
+			reason = FailureAuthorizationUsed
+			cause = ErrInvalidState
+			if errors.Is(err, ErrStateExpired) {
+				cause = ErrStateExpired
+			}
+		}
+		return CallbackResult{}, callbackFailure(reason, TargetCategoryUnverified, req.AttemptID, cause)
+	}
+	attemptID := attempt.Request.AttemptID
+	if attemptID == "" {
+		attemptID = req.AttemptID
+	}
+	if req.AttemptID != "" && attempt.Request.AttemptID != req.AttemptID {
+		return CallbackResult{}, callbackFailure(FailureAuthorizationUsed, TargetCategoryUnverified, req.AttemptID, ErrInvalidState)
 	}
 	if req.Code == "" {
-		return CallbackResult{}, ErrInvalidCallback
+		return CallbackResult{}, callbackFailure(FailureOther, TargetCategoryUnverified, attemptID, ErrInvalidCallback)
 	}
 	if attempt.Purpose != StatePurposeOAuth || attempt.AppID != h.appID || attempt.RedirectURI != h.redirectURI {
-		return CallbackResult{}, ErrInvalidState
+		return CallbackResult{}, callbackFailure(FailureAuthorizationUsed, TargetCategoryUnverified, attemptID, ErrInvalidState)
 	}
 	accessToken, err := h.oauth.ExchangeCode(ctx, req.Code, attempt.RedirectURI)
 	if err != nil {
-		return CallbackResult{}, ErrUpstream
+		return CallbackResult{}, callbackFailure(FailureFeishuUnavailable, TargetCategoryUnverified, attemptID, ErrUpstream)
 	}
 	profile, err := h.oauth.UserInfo(ctx, accessToken)
 	if err != nil {
-		return CallbackResult{}, ErrUpstream
+		return CallbackResult{}, callbackFailure(FailureFeishuUnavailable, TargetCategoryUnverified, attemptID, ErrUpstream)
 	}
 	proof, err := ResolvePrincipal(profile, h.appID, h.teamTenantKey)
 	if err != nil {
-		return CallbackResult{}, err
+		reason := FailureOther
+		if errors.Is(err, extshared.ErrTenantRejected) {
+			reason = FailureTenantRejected
+		}
+		cause := ErrInvalidCallback
+		if reason == FailureTenantRejected {
+			cause = extshared.ErrTenantRejected
+		} else if errors.Is(err, ErrIdentityIncomplete) {
+			cause = ErrIdentityIncomplete
+		} else if errors.Is(err, ErrDisplayName) {
+			cause = ErrDisplayName
+		}
+		return CallbackResult{}, callbackFailure(reason, TargetCategoryUnverified, attemptID, cause)
 	}
 	attempt.Request.Principal = proof
 	issued, err := h.tokens.IssueToken(ctx, attempt.Request)
 	if err != nil {
-		return CallbackResult{}, ErrTokenIssue
+		reason := FailureOther
+		targetCategory := TargetCategoryUnverified
+		cause := error(ErrTokenIssue)
+		if errors.Is(err, extshared.ErrTenantRejected) {
+			reason = FailureTenantRejected
+			cause = extshared.ErrTenantRejected
+		} else if errors.Is(err, extshared.ErrTargetNotInAG) {
+			reason = FailureTargetUnavailable
+			targetCategory = TargetCategoryExists
+			if errors.Is(err, extshared.ErrTargetMissing) {
+				targetCategory = TargetCategoryMissing
+			}
+		}
+		return CallbackResult{}, callbackFailure(reason, targetCategory, attemptID, cause)
 	}
 	return CallbackResult{
 		AttemptID: attempt.Request.AttemptID, Token: issued.Token, SeatID: issued.SeatID,
