@@ -129,9 +129,12 @@ var (
 	ErrTenantRejected  = errors.New("extshared: tenant not allowed")
 	ErrGroupDissolved  = errors.New("extshared: group dissolved or expired")
 	ErrTargetNotInAG   = errors.New("extshared: target not in this AG")
-	ErrIdempotencyKey  = errors.New("extshared: idempotency key reused with different request")
-	ErrQueueFull       = errors.New("extshared: queue full")
-	ErrNotPermitted    = errors.New("extshared: capability not permitted for external seat")
+	// ErrTargetMissing is an internal issuance detail. Protocol callers must
+	// continue mapping it through ErrTargetNotInAG to avoid target enumeration.
+	ErrTargetMissing  = errors.New("extshared: target unavailable by full name")
+	ErrIdempotencyKey = errors.New("extshared: idempotency key reused with different request")
+	ErrQueueFull      = errors.New("extshared: queue full")
+	ErrNotPermitted   = errors.New("extshared: capability not permitted for external seat")
 )
 
 // MVPScopes 外部席位 MVP 唯一授予的 scope 集合：固定四项通讯能力，不做子集（接口约定第 6 节）。

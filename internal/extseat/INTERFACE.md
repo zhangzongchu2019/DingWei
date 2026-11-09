@@ -31,3 +31,7 @@ Authenticate取得令牌行锁后重新采样时钟，在Group消费者返回后
 ## 集成补充（组长，rulings ㊹-补12 ②④）
 - RecheckGroup 的实现必须由 agent_id 反查权威 AG；入参 Seat 的 Group／Generation 只作断言，不作为查找依据（outbox 传入的 Seat 只有 ID／AgentID）。
 - TouchGroup 事件键：由调用方给并带方向前缀；去重由 D 路保证；同键重放为 no-op、不报错；同键异 kind 报 extshared.ErrIdempotencyKey。
+
+## S-MCP-AUTH-DIAG（2026-11-09）
+
+`IssueToken` 对全名解析不到的目标仍返回 `ErrTargetNotInAG`，并额外携带仅供内部安全诊断使用的 `extshared.ErrTargetMissing`。协议响应继续隐藏目标是否存在；C/B 只把它转换为页面原因说明和 `missing` 类别，不记录目标全名。

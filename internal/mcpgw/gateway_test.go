@@ -28,6 +28,7 @@ const clientRedirect = "http://127.0.0.1:43123/callback"
 type seatsFake struct {
 	mu                     sync.Mutex
 	authErr, errorBusiness error
+	issueErr               error
 	calls, authCalls       int
 	wait                   time.Duration
 	issued                 []feishulogin.IssueRequest
@@ -86,6 +87,9 @@ func (s *seatsFake) IssueToken(_ context.Context, p extshared.Principal, short, 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.issued = append(s.issued, feishulogin.IssueRequest{Principal: p, ShortName: short, TargetAgent: target})
+	if s.issueErr != nil {
+		return "", extseat.Seat{}, "", s.issueErr
+	}
 	return "local-token", extseat.Seat{ID: "seat", FullName: "bot_AG1.zzc", ExpiresAt: s.now.Add(extshared.TokenTTL)}, "AG1", nil
 }
 

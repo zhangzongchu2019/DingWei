@@ -389,6 +389,14 @@ func TestCorePG(t *testing.T) {
 	})
 }
 
+func TestIssueTokenMissingTargetClassificationPG(t *testing.T) {
+	f := newFixture(t, pgtest.DSN(t))
+	_, _, _, err := f.s.IssueToken(f.ctx, extshared.Principal{Provider: "feishu", TenantKey: "tenant", Issuer: "app", Subject: "open", DisplayName: "alice"}, "bot", "missing.zzc")
+	if !errors.Is(err, extshared.ErrTargetNotInAG) || !errors.Is(err, extshared.ErrTargetMissing) {
+		t.Fatalf("TARGET_MISSING_CLASSIFICATION err=%v", err)
+	}
+}
+
 type recordingProjector struct {
 	mu   sync.Mutex
 	ids  []string

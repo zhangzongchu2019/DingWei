@@ -87,3 +87,7 @@ CallbackRequestFromQuery(query url.Values) CallbackRequest // 只取 state、cod
 - state 不存在、已消费、应用或回调地址不符返回 `ErrInvalidState`；到期返回 `ErrStateExpired`。飞书失败返回 `ErrUpstream`，A 签发失败返回 `ErrTokenIssue`，均不回传上游错误正文。
 
 A 路必须自行保证本地令牌只存哈希、吊销立即生效、过期不复活及从最近有效使用起十四天滑动续期。本包的假签发用例只覆盖跨路接线与失败净化，不构成这些 A 路行为的验收。
+
+## S-MCP-AUTH-DIAG（2026-11-09）
+
+短名提示说明它是本次接入 Codex 自己的名字，系统会追加 `_AG` 编号；目标提示说明必须填写系统中已存在的另一个 Agent 全名（例如 `opus50tc2k.zzc`），且接入后收发仅限该目标。`CallbackRequest.AttemptID` 只由 B 从已校验的外层事务注入。失败以安全 `CallbackFailure` 暴露固定原因码、attempt 前缀与目标类别；`CallbackFailureDetails` 不返回底层错误正文，避免授权码、令牌及主体标识进入日志或浏览器响应。

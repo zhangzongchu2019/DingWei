@@ -59,3 +59,7 @@ scope 按集合精确核固定四项，允许顺序不同，不接受子集/额�
 回调登记仅同一IP字面127.0.0.1/::1忽略端口，其余scheme/path/query/组件精确，localhost不认可；token兑换仍精确绑定授权时的实际redirect。非loopback逐字匹配。
 
 新增GET /mcp/clients/codex.json，只在开态登记，由配置PublicOrigin生成client_id与两种无端口/callback回环URI。精确自有client_id直接解析同份常量配置，其他CIMD仍走外部resolver原有防护。最低Codex0.167.0，不为0.145 issuer做兼容，接入不要显式oauth_resource。PM与nginx清单见docs/guides/CODEX-DINGWEI-MCP.md、docs/runbooks/MCPGW-CODEX-PATHS.md。
+
+## S-MCP-AUTH-DIAG（2026-11-09）
+
+飞书回调失败统一由 `failCallback` 输出安全日志及浏览器错误页。日志字段固定为 `reason_code`、`attempt_prefix`、`target_category`、`utc`；不记录目标名、code、token、open_id 或请求正文。HTML 按原因码显示说明，并保留 OAuth `error` 字段语义；非 HTML 调用返回原 OAuth `error` 加 `error_description` JSON。原因码包括 `target_unavailable`、`tenant_not_allowed`、`authorization_expired_or_used`、`feishu_temporarily_unavailable`、`other`。

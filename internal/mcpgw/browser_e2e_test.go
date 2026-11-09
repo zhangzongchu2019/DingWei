@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -25,6 +26,15 @@ import (
 // as for an already-authorized user) → callback → client loopback. Opt-in:
 // DW_BROWSER_E2E=1 and NODE_PATH with playwright (r56.2 现网缺陷回归)。
 func TestBrowserAuthorizeChainReachesLoopback(t *testing.T) {
+	runBrowserAuthorizeChain(t, "target.zzc", false)
+}
+
+func TestBrowserCallbackExplainsMissingTarget(t *testing.T) {
+	runBrowserAuthorizeChain(t, "missing.zzc", true)
+}
+
+func runBrowserAuthorizeChain(t *testing.T, target string, expectMissingTarget bool) {
+	t.Helper()
 	if os.Getenv("DW_BROWSER_E2E") != "1" || os.Getenv("NODE_PATH") == "" {
 		t.Skip("browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>")
 	}
@@ -64,9 +74,12 @@ func TestBrowserAuthorizeChainReachesLoopback(t *testing.T) {
 
 	_, store := testDB(t)
 	seats := &seatsFake{now: time.Now()}
+	if expectMissingTarget {
+		seats.issueErr = errors.Join(extshared.ErrTargetNotInAG, extshared.ErrTargetMissing)
+	}
 	g, err := New(Config{PublicOrigin: hubURL, Resource: hubURL + "/mcp", Seats: seats, Login: loginFake{},
 		Clients: clientsFake{client: Client{ID: clientID, Name: "test client", Redirects: []string{clientRedirect}, AuthMethod: "none"}},
-		Store: store, Now: time.Now})
+		Store:   store, Now: time.Now})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,12 +106,15 @@ func TestBrowserAuthorizeChainReachesLoopback(t *testing.T) {
 	if err := os.WriteFile(script, []byte(`const { chromium } = require('playwright');
 (async () => {
   const b = await chromium.launch(); const ctx = await b.newContext({ ignoreHTTPSErrors: true });
-  const p = await ctx.newPage(); const msgs = []; p.on('console', m => msgs.push(m.text()));
+  const p = await ctx.newPage(); const msgs = []; let cspErrors = 0;
+  p.on('console', m => { msgs.push(m.text()); if (/Content Security Policy/i.test(m.text())) cspErrors++; });
   await p.goto(process.argv[2]);
-  await p.fill('input[name=short_name]', 'bot'); await p.fill('input[name=target_agent]', 'target.zzc');
+  await p.fill('input[name=short_name]', 'bot'); await p.fill('input[name=target_agent]', process.argv[3]);
   await p.click('button[type=submit], input[type=submit], button');
   await p.waitForTimeout(3000);
-  console.log('FINAL_URL ' + p.url()); for (const m of msgs) console.log('CONSOLE ' + m.replace(/\n/g, ' '));
+  console.log('FINAL_URL ' + p.url()); console.log('BODY ' + (await p.locator('body').innerText()).replace(/\n/g, ' '));
+  console.log('CSP_ERRORS ' + cspErrors);
+  for (const m of msgs) console.log('CONSOLE ' + m.replace(/\n/g, ' '));
   await b.close();
 })().catch(e => { console.log('DRIVER_ERROR ' + e); process.exit(2); });
 `), 0o600); err != nil {
@@ -106,13 +122,26 @@ func TestBrowserAuthorizeChainReachesLoopback(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	out, err := exec.CommandContext(ctx, "node", script, start).CombinedOutput()
+	mode := "success"
+	if expectMissingTarget {
+		mode = "target-missing"
+	}
+	out, err := exec.CommandContext(ctx, "node", script, start, target, mode).CombinedOutput()
 	t.Logf("driver output:\n%s", out)
 	if err != nil {
 		t.Fatalf("BROWSER_DRIVER_FAILED %v", err)
 	}
 	if strings.Contains(string(out), "origin_rejected") || strings.Contains(string(out), "violates the following Content Security Policy") {
 		t.Fatalf("BROWSER_CHAIN_BLOCKED")
+	}
+	if !strings.Contains(string(out), "CSP_ERRORS 0") {
+		t.Fatalf("BROWSER_CSP_ERRORS")
+	}
+	if expectMissingTarget {
+		if !strings.Contains(string(out), "目标 Agent 不存在或不可用") || !strings.Contains(string(out), "access_denied") {
+			t.Fatalf("BROWSER_TARGET_DIAGNOSTIC_MISSING")
+		}
+		return
 	}
 	select {
 	case hit := <-hits:
