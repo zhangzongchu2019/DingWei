@@ -56,3 +56,6 @@
 
 
 2026-11-09 coder56solzzc.zzc；CODEX_THREAD_ID=01a1bd1c-c28e-7c60-9594-7894d0078533；M3基线0b47a585，M2锁获准释放，原子取得M3锁，另一路只读。完成T21～23：子scope签名/租约/独立事件费用游标缓存、根撤权/预算、树JSON与Console、根提及、feature-off退信和Hub隔离barrier、旧锚HTTP/WS五格与实际旧claimer隔离实跑。首轮全包发现0076 legacy补账预检缺项，已复用exact-DDL修复并专项通过；首轮浏览器变异缺浏览器路径及回退fixture选delivered而非可重试sent已分别改环境/强化fixture，保留原文不冒充目标红。技术说明及席位草稿入Git。派单后rulings核4cf77433（相对1228仅P2b来源补充），无M3规格漂移。阻塞：无。下一步：冻结本实施源，T24完整浏览器runner/m8/canonical/strict及逐格变异；证据追加后推送核ls-remote交组长独立复核，不部署/不动在线席位/不启动真实推理。
+
+
+2026-11-09 coder56solzzc.zzc；源52465a95冻结门执行中。追加收口：旧文本formatter显式拒绝子行，并把混入子行作为负例/一刀；feature-off只读探测复用确定性关闭的SQLite connection工具，避免连接泄漏。此追加不改写52465a95，完整门禁在新冻结源上执行；已有原文保留。阻塞：无。下一步：T24最终门/证据/Git交审。

@@ -298,7 +298,7 @@ class SubAgentStore:
         """Read-only detection before feature-off maintenance; no DB creation."""
         from pathlib import Path
         if not Path(path).is_file(): return None
-        with sqlite3.connect(Path(path).resolve().as_uri()+'?mode=ro', uri=True) as db:
+        with connection(Path(path).resolve().as_uri()+'?mode=ro', uri=True) as db:
             if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='helper_sub_agent'").fetchone(): return None
             if not db.execute('SELECT 1 FROM helper_sub_agent WHERE root=? LIMIT 1',(root,)).fetchone(): return None
         store=SubAgentStore(path,root)

@@ -154,7 +154,7 @@ func TestSubAgentViewTreeLegacyAndFeatureOff(t *testing.T) {
 	if err != nil || len(tree.Nodes) != 2 || tree.Nodes[1].State != "ended" || tree.Nodes[1].Reason != "completed" || tree.Nodes[1].Online {
 		t.Fatal("AA010_TREE_TOMBSTONE", tree, err)
 	}
-	items := []onlineSessionItem{{Endpoint: model.SessionEndpoint{SessionName: root.Session, FullSessionName: root.FullName}}}
+	items := []onlineSessionItem{{Endpoint: model.SessionEndpoint{SessionName: root.Session, FullSessionName: root.FullName}}, {Endpoint: model.SessionEndpoint{SessionName: "aa", FullSessionName: "aa." + root.FullName}}}
 	text := renderNewPlatformDirectory(model.Member{OwnerKey: "zzc"}, items)
 	if strings.Contains(text, "aa.") || strings.Contains(text, "bb.") || !strings.Contains(text, root.FullName) {
 		t.Fatal("AA010_LEGACY_ROOT_ONLY", text)

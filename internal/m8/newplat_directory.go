@@ -128,6 +128,13 @@ func (h *Hub) broadcastNewPlatformDirectories(ctx context.Context) error {
 }
 
 func renderNewPlatformDirectory(owner model.Member, items []onlineSessionItem) string {
+	roots := make([]onlineSessionItem, 0, len(items))
+	for _, item := range items {
+		if strings.Count(item.Endpoint.FullSessionName, ".") <= 1 {
+			roots = append(roots, item)
+		}
+	}
+	items = roots
 	var b strings.Builder
 	fmt.Fprintf(&b, "【DingWei在线清单】可通讯的编组在线 Agent：%s\n", owner.OwnerKey)
 	if len(items) == 0 {

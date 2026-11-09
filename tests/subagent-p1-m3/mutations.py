@@ -3,6 +3,7 @@ import argparse,datetime,json,os,subprocess,tempfile,shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 GO=[
+ ('legacy-text-root-only','internal/m8/newplat_directory.go','strings.Count(item.Endpoint.FullSessionName, ".") <= 1','true','./internal/m8','TestSubAgentViewTreeLegacyAndFeatureOff','AA010_LEGACY_ROOT_ONLY'),
  ('input-sidecar','internal/m8/terminal.go','keyID, sessionName = h.subViewObservation(keyID, sessionName, deliveryID, role == "copy")','// removed sidecar routing','./internal/m8','TestSubAgentViewSidecarObservation','AA010_INPUT_SIDECAR_SCOPE'),
  ('new-new-negotiation','internal/m8/sub_agent.go','capable, ready := h.subAgentCapable(c)','_, ready := h.subAgentCapable(c); capable:=false','./internal/m8','TestSubAgentViewNewHubMixedMatrix/true','AA010_NEW_NEW_DELIVERY'),
  ('root-authority','internal/m8/sub_agent_view.go','if !ok {\n\t\t\tcontinue\n\t\t}','if !ok { root,_=m.h.projectionViewAgent(ctx,viewRoot(name)) }','./internal/m8','TestSubAgentViewAuthorizationBudgetAndRevocation','AA010_UNAUTHORIZED_CHILD_ENUMERATION'),
