@@ -1,0 +1,7 @@
+Added global MCP server 'dingwei'.
+OAuth callback URL: http://127.0.0.1/callback/9uP0QsubIFvx
+Detected OAuth support. Starting OAuth flow…
+Authorize `dingwei` by opening this URL in your browser:
+https://127.0.0.1:44995/oauth/authorize?response_type=code&client_id=https%3A%2F%2F127.0.0.1%3A44995%2Fmcp%2Fclients%2Fcodex.json&state=xVv0U-4VS0Qp2NTxguDs_A&code_challenge=a6QPTZI67Db0azgD4I5ZL9TF_0FdtlJBwn5NfXZU0EQ&code_challenge_method=S256&redirect_uri=http%3A%2F%2F127.0.0.1%3A42325%2Fcallback%2F9uP0QsubIFvx&scope=list_online+send_message+wait_for_messages+ack&resource=https%3A%2F%2F127.0.0.1%3A44995%2Fmcp
+
+Successfully logged in.

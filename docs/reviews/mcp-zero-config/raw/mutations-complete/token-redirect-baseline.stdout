@@ -1,0 +1,6 @@
+=== RUN   TestZeroConfigTokenBindings
+=== RUN   TestZeroConfigTokenBindings/redirect_uri
+--- PASS: TestZeroConfigTokenBindings (0.08s)
+    --- PASS: TestZeroConfigTokenBindings/redirect_uri (0.08s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.086s

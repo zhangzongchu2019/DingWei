@@ -1,0 +1,9 @@
+=== RUN   TestZeroConfigRedirectGuards
+=== RUN   TestZeroConfigRedirectGuards/ipv6_not_registered
+    zero_config_test.go:135: ZERO_REDIRECT_ipv6_not_registered: 302 <a href="/feishu/connect?attempt_id=S-bIXBy-3CQqZwUoye1PreBg_Kdb-xjFilDkmKigxQ8">Found</a>.
+        
+--- FAIL: TestZeroConfigRedirectGuards (0.02s)
+    --- FAIL: TestZeroConfigRedirectGuards/ipv6_not_registered (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.022s
+FAIL

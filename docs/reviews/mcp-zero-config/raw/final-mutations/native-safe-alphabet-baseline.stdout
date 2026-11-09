@@ -1,0 +1,8 @@
+=== RUN   TestCodexNativeCallbackPathsBothClients
+=== RUN   TestCodexNativeCallbackPathsBothClients/default/dot
+=== RUN   TestCodexNativeCallbackPathsBothClients/default/dotdot
+--- PASS: TestCodexNativeCallbackPathsBothClients (0.01s)
+    --- PASS: TestCodexNativeCallbackPathsBothClients/default/dot (0.00s)
+    --- PASS: TestCodexNativeCallbackPathsBothClients/default/dotdot (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.020s

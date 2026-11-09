@@ -1,0 +1,6 @@
+=== RUN   TestZeroConfigInvalidCopyFailsClosed
+=== RUN   TestZeroConfigInvalidCopyFailsClosed/external_https
+--- PASS: TestZeroConfigInvalidCopyFailsClosed (0.02s)
+    --- PASS: TestZeroConfigInvalidCopyFailsClosed/external_https (0.02s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.024s

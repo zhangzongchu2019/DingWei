@@ -1,0 +1,6 @@
+=== RUN   TestCodexCallbackExtensionDoesNotApplyToOtherClients
+    zero_config_test.go:236: NATIVE_CALLBACK_EXACT_CLIENTS_ONLY: 302
+--- FAIL: TestCodexCallbackExtensionDoesNotApplyToOtherClients (0.02s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.026s
+FAIL

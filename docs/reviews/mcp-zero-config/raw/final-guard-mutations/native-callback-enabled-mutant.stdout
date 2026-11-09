@@ -1,0 +1,8 @@
+=== RUN   TestCodexNativeCallbackPathsBothClients
+=== RUN   TestCodexNativeCallbackPathsBothClients/default/desktop12
+    zero_config_test.go:223: NATIVE_CALLBACK_desktop12: 400 {"error":"invalid_client"}
+--- FAIL: TestCodexNativeCallbackPathsBothClients (0.01s)
+    --- FAIL: TestCodexNativeCallbackPathsBothClients/default/desktop12 (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.021s
+FAIL

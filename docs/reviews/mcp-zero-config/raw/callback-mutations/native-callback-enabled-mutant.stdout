@@ -1,0 +1,5 @@
+=== RUN   TestCodexNativeCallbackPathsBothClients
+--- PASS: TestCodexNativeCallbackPathsBothClients (0.01s)
+testing: warning: no tests to run
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.018s [no tests to run]

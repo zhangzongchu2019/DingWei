@@ -1,0 +1,8 @@
+=== RUN   TestCodexInteropLocalHub
+2026/11/09 02:47:13 newplat migrate: applied 0001_core_baseline.sql, 0100_identity_baseline.sql, 0101_group_communication.sql, 0102_device_claim.sql, 0103_agent_last_source_r31.sql, 0104_np_session_created_at.sql, 0105_extseat.sql, 0106_tempgroup.sql, 0107_mcpgw_oauth.sql, 0200_hosted_r30_baseline.sql, 0201_hosted_node_access_r31.sql, 0300_console_transport_slot.sql
+2026/11/09 02:47:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/09 02:47:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    codex_interop_probe_test.go:70: isolated real Hub+r53 main wiring ready, fake Feishu; production resolver plus product static CIMD; all business storage real temporary PG
+--- PASS: TestCodexInteropLocalHub (60.31s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/workpulse	60.322s

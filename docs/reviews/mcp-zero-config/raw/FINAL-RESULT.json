@@ -1,0 +1,101 @@
+{
+  "checks": [
+    {
+      "name": "mcpgw",
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-count=1",
+        "-json"
+      ],
+      "start_utc": "2026-11-09T02:45:58Z",
+      "end_utc": "2026-11-09T02:46:05Z",
+      "rc": 0,
+      "environment_names": [
+        "CODEX_HOME",
+        "GOCACHE",
+        "GOMODCACHE",
+        "HOME",
+        "OPENSPEC_TELEMETRY",
+        "PATH",
+        "TMPDIR"
+      ],
+      "uid": 1001
+    },
+    {
+      "name": "m8",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-count=1",
+        "-json",
+        "-timeout=20m"
+      ],
+      "start_utc": "2026-11-09T02:45:58Z",
+      "end_utc": "2026-11-09T02:49:40Z",
+      "rc": 0,
+      "environment_names": [
+        "CODEX_HOME",
+        "GOCACHE",
+        "GOMODCACHE",
+        "HOME",
+        "OPENSPEC_TELEMETRY",
+        "PATH",
+        "TMPDIR"
+      ],
+      "uid": 1001
+    },
+    {
+      "name": "canonical",
+      "command": [
+        "sh",
+        "scripts/run-build-tests.sh"
+      ],
+      "start_utc": "2026-11-09T02:45:58Z",
+      "end_utc": "2026-11-09T02:54:48Z",
+      "rc": 0,
+      "environment_names": [
+        "CODEX_HOME",
+        "GOCACHE",
+        "GOMODCACHE",
+        "HOME",
+        "OPENSPEC_TELEMETRY",
+        "PATH",
+        "TMPDIR"
+      ],
+      "uid": 1001
+    }
+  ],
+  "helper_profiles": [
+    {
+      "actual": 1129,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1129,
+      "files": 91,
+      "groups": [
+        1120,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1129,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1129,
+      "files": 91,
+      "groups": [
+        1120,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "mutations": 34,
+  "desktop": "未测",
+  "primary_native_e2e_passed": true,
+  "explicit_native_suffix_e2e_passed": true
+}

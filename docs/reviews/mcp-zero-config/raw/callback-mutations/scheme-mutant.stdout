@@ -1,0 +1,9 @@
+=== RUN   TestZeroConfigRedirectGuards
+=== RUN   TestZeroConfigRedirectGuards/scheme
+    zero_config_test.go:134: ZERO_REDIRECT_scheme: 302 <a href="/feishu/connect?attempt_id=roxYgE1GqF0KkF2c8VX2Kx5slSdb7ku6qhAMmeeuUZE">Found</a>.
+        
+--- FAIL: TestZeroConfigRedirectGuards (0.02s)
+    --- FAIL: TestZeroConfigRedirectGuards/scheme (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.022s
+FAIL

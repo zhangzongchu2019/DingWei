@@ -1,0 +1,6 @@
+=== RUN   TestCallbackRejectsWrongTenant
+    handler_test.go:143: wrong tenant was not rejected before issuance: result={AttemptID:login-attempt-1 Token: SeatID: ExternalAgentFullName: Group: ExpiresAt:0001-01-01 00:00:00 +0000 UTC Audience: Scopes:[]} err=<nil> calls=1
+--- FAIL: TestCallbackRejectsWrongTenant (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

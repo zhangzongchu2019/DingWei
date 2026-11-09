@@ -1,0 +1,4 @@
+=== RUN   TestZeroConfigExactLocalResolution
+--- PASS: TestZeroConfigExactLocalResolution (0.02s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.030s

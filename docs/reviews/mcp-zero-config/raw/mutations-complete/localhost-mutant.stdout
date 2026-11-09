@@ -1,0 +1,6 @@
+=== RUN   TestLoopbackPortMatchingAndLocalhostRejection
+    codec2025_test.go:165: LOCALHOST_METADATA_MUST_BE_REJECTED http://localhost:43123/callback
+--- FAIL: TestLoopbackPortMatchingAndLocalhostRejection (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.007s
+FAIL

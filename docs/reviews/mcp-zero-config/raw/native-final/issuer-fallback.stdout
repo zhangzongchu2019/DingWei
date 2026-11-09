@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/data/ai-dev-data/mcp-zero-config/docs/reviews/mcp-zero-config/native_probe.py", line 69, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/data/ai-dev-data/mcp-zero-config/docs/reviews/mcp-zero-config/native_probe.py", line 40, in main
+    assert len(q['resource'])==1 and q['client_id']==[expected_id]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

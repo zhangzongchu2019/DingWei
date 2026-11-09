@@ -1,0 +1,6 @@
+=== RUN   TestZeroConfigExactLocalResolution
+    zero_config_test.go:102: ZERO_EXACT_ID: https://chatgpt.com/oauth/codex/client.json status=400 external=[https://chatgpt.com/oauth/codex/client.json]
+--- FAIL: TestZeroConfigExactLocalResolution (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.016s
+FAIL

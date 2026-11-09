@@ -1,0 +1,9 @@
+=== RUN   TestZeroConfigRedirectGuards
+=== RUN   TestZeroConfigRedirectGuards/port_invalid
+    zero_config_test.go:134: ZERO_REDIRECT_port_invalid: 302 <a href="/feishu/connect?attempt_id=4EV4CUj084utYyxqYVjvckW6Kin5w7wYtcIxIBjMDUs">Found</a>.
+        
+--- FAIL: TestZeroConfigRedirectGuards (0.02s)
+    --- FAIL: TestZeroConfigRedirectGuards/port_invalid (0.01s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.029s
+FAIL

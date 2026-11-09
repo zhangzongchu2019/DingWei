@@ -1,0 +1,6 @@
+=== RUN   TestZeroConfigAuthorizationGuards
+=== RUN   TestZeroConfigAuthorizationGuards/resource
+--- PASS: TestZeroConfigAuthorizationGuards (0.01s)
+    --- PASS: TestZeroConfigAuthorizationGuards/resource (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.016s

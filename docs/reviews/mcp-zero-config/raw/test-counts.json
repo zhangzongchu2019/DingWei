@@ -1,0 +1,179 @@
+{
+  "m8": {
+    "all_test_events": {
+      "run": 1547,
+      "output": 6834,
+      "pass": 1510,
+      "skip": 37
+    },
+    "top_level_tests": {
+      "run": 914,
+      "output": 4450,
+      "pass": 895,
+      "skip": 19
+    },
+    "skips": [
+      {
+        "name": "TestDeviceClaimAcrossActualClientAndHub",
+        "reason": "claim_client_integration_test.go:33: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment"
+      },
+      {
+        "name": "TestDeviceClaimAcrossActualClientAndPostgres",
+        "reason": "claim_client_integration_test.go:45: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment"
+      },
+      {
+        "name": "TestChangeEvidenceConsoleBrowser",
+        "reason": "console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+      },
+      {
+        "name": "TestMuxProductHTTP1EightSeats",
+        "reason": "console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+      },
+      {
+        "name": "TestConsolePlatformPayloadDump",
+        "reason": "console_platform_agentgroups_test.go:133: \u4ec5\u5728\u6d4f\u89c8\u5668\u95f8\u53d6\u771f\u8f7d\u8377\u65f6\u8fd0\u884c(\u8bbe DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+      },
+      {
+        "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+        "reason": "console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDeliveryACKActualCLILateWireTerminal",
+        "reason": "delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      },
+      {
+        "name": "TestDesktopMCPRoundTripAcrossRealHub",
+        "reason": "desktop_mcp_roundtrip_test.go:25: run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate"
+      },
+      {
+        "name": "TestFailureNoticeDriverTurnEndToEnd",
+        "reason": "failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime"
+      },
+      {
+        "name": "TestGroupReplyMCP",
+        "reason": "group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+        "reason": "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+        "reason": "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+        "reason": "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      },
+      {
+        "name": "TestHelper0232MixedVersionEndToEnd",
+        "reason": "helper_update_e2e_test.go:55: explicit immutable release pins required"
+      },
+      {
+        "name": "TestHostedBodySendAcrossRealHub",
+        "reason": "hosted_body_send_test.go:23: set explicit isolated integration interpreter"
+      },
+      {
+        "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+        "reason": "hub_timeout_contract_test.go:50: subprocess probe only"
+      },
+      {
+        "name": "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+        "reason": "pilot_question_roundtrip_test.go:17: set locked helper Python; canonical runs this local integration"
+      },
+      {
+        "name": "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+        "reason": "pilot_template_roundtrip_test.go:17: set locked helper Python; canonical runs loopback integration"
+      },
+      {
+        "name": "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+        "reason": "project_context_roundtrip_test.go:17: set DW_DESKTOP_INTEGRATION_PYTHON to the locked helper test venv; canonical shell gate runs the cross-runtime set"
+      },
+      {
+        "name": "TestSessionHistoryTwentyAgentPublishP99",
+        "reason": "session_history_test.go:356: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+      },
+      {
+        "name": "TestSpecMCPEndToEnd",
+        "reason": "spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+      },
+      {
+        "name": "TestBlockerAcrossRealHTTPHelperIPCMCP",
+        "reason": "task_blocker_roundtrip_test.go:21: set locked helper Python; canonical runs this local integration"
+      }
+    ]
+  },
+  "mcpgw": {
+    "all_test_events": {
+      "run": 161,
+      "output": 322,
+      "pass": 161
+    },
+    "top_level_tests": {
+      "run": 37,
+      "output": 74,
+      "pass": 37
+    },
+    "skips": []
+  }
+}

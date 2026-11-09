@@ -1,0 +1,4 @@
+=== RUN   TestTokenAudiencePG
+--- PASS: TestTokenAudiencePG (2.80s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/extseat	2.804s

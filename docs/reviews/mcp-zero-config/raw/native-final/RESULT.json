@@ -1,0 +1,32 @@
+[
+  {
+    "case": "normal",
+    "command": [
+      "python3",
+      "docs/reviews/mcp-zero-config/native_probe.py",
+      "--binary",
+      "/tmp/zc-official-npm/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+      "--label",
+      "official"
+    ],
+    "INTEROP_RUN_DIR": "/tmp/zc-final-normal",
+    "start_utc": "2026-11-09T02:42:25Z",
+    "end_utc": "2026-11-09T02:42:25Z",
+    "rc": 0
+  },
+  {
+    "case": "issuer-fallback",
+    "command": [
+      "python3",
+      "docs/reviews/mcp-zero-config/native_probe.py",
+      "--binary",
+      "/tmp/zc-official-npm/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+      "--label",
+      "official"
+    ],
+    "INTEROP_RUN_DIR": "/tmp/zc-final-suffix",
+    "start_utc": "2026-11-09T02:42:25Z",
+    "end_utc": "2026-11-09T02:42:25Z",
+    "rc": 1
+  }
+]

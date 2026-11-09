@@ -1,0 +1,6 @@
+=== RUN   TestTokenAudiencePG
+    core_pg_test.go:572: wrong audience accepted <nil>
+--- FAIL: TestTokenAudiencePG (2.58s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/extseat	2.584s
+FAIL

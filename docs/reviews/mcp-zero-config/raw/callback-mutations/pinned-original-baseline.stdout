@@ -1,0 +1,4 @@
+=== RUN   TestZeroConfigPinnedDocument
+--- PASS: TestZeroConfigPinnedDocument (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.007s

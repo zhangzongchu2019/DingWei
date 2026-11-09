@@ -1,0 +1,8 @@
+=== RUN   TestZeroConfigTokenBindings
+=== RUN   TestZeroConfigTokenBindings/resource
+    zero_config_test.go:181: ZERO_TOKEN_resource: 200 {"access_token":"local-token","expires_in":1209600,"scope":"list_online send_message wait_for_messages ack","token_type":"Bearer"}
+--- FAIL: TestZeroConfigTokenBindings (0.06s)
+    --- FAIL: TestZeroConfigTokenBindings/resource (0.06s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.070s
+FAIL

@@ -1,0 +1,4 @@
+Authorize `dingwei` by opening this URL in your browser:
+https://127.0.0.1:44995/oauth/authorize?response_type=code&client_id=https%3A%2F%2F127.0.0.1%3A44995%2Fmcp%2Fclients%2Fcodex.json&state=qCITlk7KpTkl4-NsBTJBDg&code_challenge=A20-CWyz_8CgUvHP0Ib3cryAPITPG-olvI3P5LtMKCU&code_challenge_method=S256&redirect_uri=http%3A%2F%2F127.0.0.1%3A41533%2Fcallback%2F9uP0QsubIFvx&scope=list_online+send_message+wait_for_messages+ack&resource=https%3A%2F%2F127.0.0.1%3A44995%2Fmcp
+
+Successfully logged in to MCP server 'dingwei'.

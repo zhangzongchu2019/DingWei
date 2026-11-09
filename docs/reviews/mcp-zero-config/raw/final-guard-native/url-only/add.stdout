@@ -1,0 +1,6 @@
+Added global MCP server 'dingwei'.
+Detected OAuth support. Starting OAuth flow…
+Authorize `dingwei` by opening this URL in your browser:
+https://127.0.0.1:33691/oauth/authorize?response_type=code&client_id=https%3A%2F%2Fchatgpt.com%2Foauth%2Fcodex%2Fclient.json&state=vUC_lTiuSPl3843OEuyjXg&code_challenge=yIc6HAYvH2PRYwkVbUCauvS34jVsu29jvX_w6jz8FBI&code_challenge_method=S256&redirect_uri=http%3A%2F%2F127.0.0.1%3A33467%2Fcallback&scope=list_online+send_message+wait_for_messages+ack&resource=https%3A%2F%2F127.0.0.1%3A33691%2Fmcp
+
+Successfully logged in.

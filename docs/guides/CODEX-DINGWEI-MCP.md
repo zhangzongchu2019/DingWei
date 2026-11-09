@@ -1,50 +1,45 @@
 # 产品经理用 Codex 接入 DingWei
 
-本说明用于管理员通知已发布的 r56 兼容网关。请使用 **Codex 0.167.0 或以上经管理员验证的版本**；0.145.0 不支持本接入流程。先运行：
+本说明为 S-MCP-ZERO-CONFIG 待发布草稿。目标客户端是 Codex 桌面版；最低验证的原生组件为官方 0.167.0。管理员通知兼容网关正式开放后再接入。本次没有部署，尚未在桌面版验证，不能视作现网已可用的承诺。
 
-```sh
-codex --version
+## 桌面版接入目标
+
+按[官方当前设置说明](https://developers.openai.com/codex/mcp/)，可直接从设置里的 MCP 服务器页新增服务器，选择 HTTP 传输；此路径不经过对话 Agent 执行命令。显示名需要填写时使用 DingWei，服务器地址填写：
+
+```text
+https://dw123.cmjrt.com/mcp
 ```
 
-以下以正式入口为例；预发请将两个地址都替换为管理员提供的预发域名和端口，不混用环境。
+不填写 client_id、客户端密钥或额外资源参数。按客户端引导打开授权页面，填写接入短名及要协作的目标 Agent 全名，用本组织飞书身份完成授权。授权完成后，让 Codex 调用 DingWei 的 `list_online`；能返回清单（可能为空）才表示调用成功。
 
-## 添加与登录
+本机未安装 Codex 桌面版，以上桌面操作是待实测的接入目标。已通过的是官方 0.167.0 CLI 的 URL-only 原生流程。按㊿-补20，两个精确 Codex client_id 支持 `/callback` 或 `/callback/<1～64 位安全字符单段>`，空尾斜杠仍拒。按钮名称及自动填显示名行为尚需实际桌面确认。当前授权页仍有短名和目标输入；免输入方案只交审，尚未实现，不把“飞书点同意”作为已发布功能承诺。
+
+## 管理员复现及既有配置
+
+0.167.0 CLI 只配 URL 即自动开始首次登录：
+
+```sh
+codex mcp add dingwei --url https://dw123.cmjrt.com/mcp
+```
+
+`codex mcp login dingwei` 只用于重新授权。不要加 `--oauth-resource` 或手写 `oauth_resource`；资源由网关发现。网关对默认外部 client_id 使用固定本地元数据副本，不依赖现网出口访问 chatgpt.com。
+
+已配置的显式本域 client_id 仍可继续使用；管理员需要复现旧路径时：
 
 ```sh
 codex mcp add dingwei --url https://dw123.cmjrt.com/mcp --oauth-client-id https://dw123.cmjrt.com/mcp/clients/codex.json
-codex mcp login dingwei
 ```
 
-`add` 可能直接开始第一次登录，之后的 `login` 可用于重新授权。打开 CLI 打印的授权链接，填写接入短名和要协作的目标 Agent 全名，使用本组织飞书身份完成授权。外组织账号不能接入。
+不需要固定本地回调端口。仅接受已登记的回环 IP、http 和受控回调路径；不要手改为 localhost。预发使用管理员提供的完整地址，不混用环境。
 
-**不要添加 `--oauth-resource`，也不要手写 `oauth_resource` 配置。** Codex 会从网关发现资源；额外配置可能产生重复参数，导致登录被拒绝。
+## 使用与问题处理
 
-以上使用 DingWei 本域的客户端元数据文档，这是主接入路径。当前 Hub 出口无法取得 Codex 默认外部文档，因此不要省略 `--oauth-client-id`。若已添加过旧配置，先移除再按同样的本域地址添加，让新版本保存正确回调：
+DingWei 提供查看在线清单、发送消息、等待收件、确认收到四个通讯工具。可协作目标由平台编组和账号权限决定。
 
-```sh
-codex mcp remove dingwei
-codex mcp add dingwei --url https://dw123.cmjrt.com/mcp --oauth-client-id https://dw123.cmjrt.com/mcp/clients/codex.json
-codex mcp login dingwei
-```
+- 飞书登录失败：确认属于本组织，使用本次新授权链接；不要转发链接或凭据。
+- `invalid_request`：检查是否额外配置了资源参数。
+- `invalid_client`：交管理员核客户端版本及实际回调形态；不要发送 token 或凭据文件。
+- 工具目录为空或初始化错误：核客户端至少 0.167.0、网关已发布兼容版本；0.145.0 不提供兜底。
+- 在线清单为空：可能没有授权目标在线；与工具目录为空不同。
 
-不需要填写客户端密钥，不需要固定本地回调端口。回调应由 Codex 自动生成 `http://127.0.0.1:<随机端口>/callback`；不要手工改成 `localhost`。若升级前保存过自定义回调，先移除旧配置再按以上命令添加。
-
-## 验证与使用
-
-```sh
-codex mcp list
-```
-
-此命令确认配置已添加；随后启动一个新的 Codex 会话，让它“调用 DingWei 的 list_online 列出可协作的在线 Agent，不发送消息”。能返回清单（可能为空）才说明工具调用成功。
-
-DingWei 提供四个通讯工具：查看在线清单、发送消息、等待收件和确认收到。它不会因此获得执行、升级、文件管理或宿主机权限；可协作目标由平台编组和账号权限决定。
-
-## 遇到问题
-
-- 登录未完成：打开本次 CLI 新打印的链接；确认飞书账号属于本组织。不要转发授权链接或登录凭据。
-- `invalid_request`：检查是否额外配置了 `--oauth-resource`／`oauth_resource`。
-- `invalid_client`：确认已升级并重新添加配置；把 CLI 显示的回调形态和错误交给管理员，不发送 token 或凭据文件。
-- “缺少 issuer”或初始化错误：确认版本至少0.167.0，以及目标环境已发布兼容网关；0.145.0不提供兼容兜底。
-- 目录或清单为空：清单为空可以是没有授权目标在线；工具目录为空或握手报错则联系管理员核网关版本。
-
-外部文档解析仍保留，但不作为本流程前提。预发来源放行和正式开放时间以管理员通知为准。本文不是部署或开放预发/现网的授权。
+本文不是部署、开放来源或变更现网的授权。

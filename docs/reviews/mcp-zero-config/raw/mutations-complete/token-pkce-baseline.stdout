@@ -1,0 +1,6 @@
+=== RUN   TestZeroConfigTokenBindings
+=== RUN   TestZeroConfigTokenBindings/code_verifier
+--- PASS: TestZeroConfigTokenBindings (0.08s)
+    --- PASS: TestZeroConfigTokenBindings/code_verifier (0.08s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.082s

@@ -1,0 +1,48 @@
+[
+  {
+    "guard": "default-local-resolution",
+    "source": "internal/mcpgw/oauth.go",
+    "test": "TestZeroConfigExactLocalResolution",
+    "assertion": "ZERO_EXACT_ID",
+    "baseline_rc": 0,
+    "mutant_rc": 1,
+    "status": "target_assertion_red",
+    "start_utc": "2026-11-09T02:21:22Z",
+    "command": [
+      "go",
+      "test",
+      "-vet=off",
+      "-overlay=/tmp/zc-mut-oaj4zbve/overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestZeroConfigExactLocalResolution$",
+      "-count=1",
+      "-v"
+    ],
+    "source_sha256": "75911e5bcbbc779f1bb6cf579e4ae47fbe44d158da865ddeaa70d990df47da8b",
+    "worktree_unchanged": true
+  },
+  {
+    "guard": "exact-id",
+    "source": "internal/mcpgw/oauth.go",
+    "test": "TestZeroConfigExactLocalResolution",
+    "assertion": "ZERO_EXACT_ID",
+    "baseline_rc": 0,
+    "mutant_rc": 1,
+    "status": "target_assertion_red",
+    "start_utc": "2026-11-09T02:21:24Z",
+    "command": [
+      "go",
+      "test",
+      "-vet=off",
+      "-overlay=/tmp/zc-mut-y_oawp7_/overlay.json",
+      "./internal/mcpgw",
+      "-run",
+      "^TestZeroConfigExactLocalResolution$",
+      "-count=1",
+      "-v"
+    ],
+    "source_sha256": "75911e5bcbbc779f1bb6cf579e4ae47fbe44d158da865ddeaa70d990df47da8b",
+    "worktree_unchanged": true
+  }
+]

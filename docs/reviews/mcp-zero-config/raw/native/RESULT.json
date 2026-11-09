@@ -1,0 +1,54 @@
+[
+  {
+    "case": "positive",
+    "command": [
+      "python3",
+      "docs/reviews/mcp-zero-config/native_probe.py",
+      "--binary",
+      "/tmp/zc-official-npm/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+      "--label",
+      "official-final"
+    ],
+    "INTEROP_RUN_DIR": "/tmp/zc-native-1",
+    "start_utc": "2026-11-09T02:25:52Z",
+    "end_utc": "2026-11-09T02:25:53Z",
+    "rc": 0,
+    "expected_rc": 0,
+    "target_assertion": "\"native_e2e_passed\": true"
+  },
+  {
+    "case": "default-client-cut",
+    "command": [
+      "python3",
+      "docs/reviews/mcp-zero-config/native_probe.py",
+      "--binary",
+      "/tmp/zc-official-npm/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+      "--label",
+      "cut-final"
+    ],
+    "INTEROP_RUN_DIR": "/tmp/zc-native-mut",
+    "start_utc": "2026-11-09T02:25:53Z",
+    "end_utc": "2026-11-09T02:25:53Z",
+    "rc": 1,
+    "expected_rc": 1,
+    "target_assertion": "NATIVE_OAUTH_AUTHORIZE_MUST_SUCCEED"
+  },
+  {
+    "case": "foreign",
+    "command": [
+      "python3",
+      "docs/reviews/mcp-zero-config/native_probe.py",
+      "--binary",
+      "/tmp/zc-official-npm/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+      "--label",
+      "foreign-final",
+      "--foreign"
+    ],
+    "INTEROP_RUN_DIR": "/tmp/zc-native-foreign",
+    "start_utc": "2026-11-09T02:25:53Z",
+    "end_utc": "2026-11-09T02:25:53Z",
+    "rc": 0,
+    "expected_rc": 0,
+    "target_assertion": "\"foreign_rejected\": true"
+  }
+]

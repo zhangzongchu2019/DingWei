@@ -1,0 +1,123 @@
+{
+  "version": "codex-cli 0.167.0",
+  "origin": "https://127.0.0.1:45035",
+  "legacy_explicit_client_document": {
+    "client_id": "https://127.0.0.1:45035/mcp/clients/codex.json",
+    "client_name": "DingWei Codex public client",
+    "redirect_uris": [
+      "http://127.0.0.1/callback",
+      "http://[::1]/callback"
+    ],
+    "token_endpoint_auth_method": "none",
+    "grant_types": [
+      "authorization_code"
+    ],
+    "response_types": [
+      "code"
+    ]
+  },
+  "foreign_tenant": false,
+  "commands": [
+    {
+      "command": [
+        "/tmp/zc-official-npm/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+        "mcp",
+        "add",
+        "dingwei",
+        "--url",
+        "https://127.0.0.1:45035/mcp"
+      ],
+      "stdout": "add.stdout",
+      "authorization_params": {
+        "response_type": [
+          "code"
+        ],
+        "client_id": [
+          "https://chatgpt.com/oauth/codex/client.json"
+        ],
+        "state": [
+          "BzuaxTyCLFubRJBr2fDgVw"
+        ],
+        "code_challenge": [
+          "JTiea0gpcNJp0Nd3KJSutE5rxi0fA3fS_OICizSmyh0"
+        ],
+        "code_challenge_method": [
+          "S256"
+        ],
+        "redirect_uri": [
+          "http://127.0.0.1:35403/callback"
+        ],
+        "scope": [
+          "list_online send_message wait_for_messages ack"
+        ],
+        "resource": [
+          "https://127.0.0.1:45035/mcp"
+        ]
+      },
+      "authorize_status": 302,
+      "feishu_callback_status": 302,
+      "native_callback_status": 200,
+      "rc": 0
+    },
+    {
+      "command": [
+        "/tmp/zc-official-npm/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+        "mcp",
+        "login",
+        "dingwei"
+      ],
+      "stdout": "login.stdout",
+      "authorization_params": {
+        "response_type": [
+          "code"
+        ],
+        "client_id": [
+          "https://chatgpt.com/oauth/codex/client.json"
+        ],
+        "state": [
+          "JS-n3Do4WASChEb6d7YQgA"
+        ],
+        "code_challenge": [
+          "qOR9U-o8dWDMGdoHBFyTALl4UZjryYKVvyDOYtgVq-g"
+        ],
+        "code_challenge_method": [
+          "S256"
+        ],
+        "redirect_uri": [
+          "http://127.0.0.1:46765/callback"
+        ],
+        "scope": [
+          "list_online send_message wait_for_messages ack"
+        ],
+        "resource": [
+          "https://127.0.0.1:45035/mcp"
+        ]
+      },
+      "authorize_status": 302,
+      "feishu_callback_status": 302,
+      "native_callback_status": 200,
+      "rc": 0
+    }
+  ],
+  "real_credentials_used": false,
+  "url_only_configuration": "mcp_oauth_credentials_store = \"file\"\n\n[mcp_servers.dingwei]\nurl = \"https://127.0.0.1:45035/mcp\"\n",
+  "tool_names": [
+    "ack",
+    "send_message",
+    "wait_for_messages",
+    "list_online"
+  ],
+  "read_only_call": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"agents\":[]}"
+      }
+    ],
+    "structuredContent": {
+      "agents": []
+    },
+    "isError": false
+  },
+  "native_e2e_passed": true
+}

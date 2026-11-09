@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/data/ai-dev-data/mcp-zero-config/docs/reviews/mcp-zero-config/native_probe.py", line 69, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/data/ai-dev-data/mcp-zero-config/docs/reviews/mcp-zero-config/native_probe.py", line 42, in main
+    assert status==302,'NATIVE_OAUTH_AUTHORIZE_MUST_SUCCEED: '+str((status,body))
+           ^^^^^^^^^^^
+AssertionError: NATIVE_OAUTH_AUTHORIZE_MUST_SUCCEED: (400, '{"error":"invalid_client"}\n')

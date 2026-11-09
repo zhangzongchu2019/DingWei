@@ -1,0 +1,6 @@
+=== RUN   TestZeroConfigRedirectGuards
+=== RUN   TestZeroConfigRedirectGuards/port
+--- PASS: TestZeroConfigRedirectGuards (0.02s)
+    --- PASS: TestZeroConfigRedirectGuards/port (0.01s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.032s
