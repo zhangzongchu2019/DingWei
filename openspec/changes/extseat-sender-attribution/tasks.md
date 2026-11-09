@@ -5,7 +5,7 @@
 - [x] T-03 通过真实 PG、Hub 路由、extseat Wait 验证回信闭环。
 - [x] T-04 为五项语义破坏编写带独立标记的变异验证脚本。
 - [x] T-05 运行指定 Go、helper、OpenSpec 门并记录读数。
-- [ ] T-06 提交单一变更并推送后核对远端分支坐标。
+- [x] T-06 提交单一变更并推送后核对远端分支坐标。
 - [x] T-07 为 `send_message` 增加可选 `expect_reply`，同步 MCP schema、REST 分发和接口文档。
 - [x] T-08 将回信选择纳入 request_hash 并持久化 PG outbox，true 投影才写 reply policy。
 - [x] T-09 以生产 completed-turn 路径覆盖 true 回程、false 缺省与 Wait 来源，并增加删策略写入的第八刀。
@@ -21,3 +21,7 @@
   - 完成：预审补项 T-07～T-10 已在该提交实现；`mcpgw`、`extseat`、`tempgroup` 全包通过，严格 PG+Hub completed-turn E2E 通过，迁移包通过，变异 8/8 语义判红。锁定运行时的标准构建门和远端提交核对待完成。
   - 阻塞：标准总门正在运行；尚未推送。
   - 下一步：门禁 rc=0 后追加验证读数，推送分支并核对 ls-remote。
+- 日期：2026-11-09；执行者：togpt60lunazzc；交付提交：`19c43b10857b8d0210e834c7f50b08f45f346d4b`。
+  - 完成：锁定 venv 标准构建门 `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`；OpenSpec strict 31/31；八刀语义判红；提交已推送，`git ls-remote` 核实远端为 `19c43b10857b8d0210e834c7f50b08f45f346d4b`（tree `3d9056896c226618f4c4ac99d653351ff81631c7`）。
+  - 阻塞：无。
+  - 下一步：由独立复核席复核。
