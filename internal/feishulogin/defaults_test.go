@@ -116,7 +116,7 @@ func TestConsentSingleTrustedIdentityAndReplay(t *testing.T) {
 	}
 }
 func TestConsentOverridesAndRevocation(t *testing.T) {
-	for _, mode := range []string{"short-override", "target-override", "revoked", "removed", "empty-profile", "wrong-tenant"} {
+	for _, mode := range []string{"short-override", "target-override", "revoked", "removed", "config-absent", "empty-profile", "wrong-tenant"} {
 		t.Run(mode, func(t *testing.T) {
 			f := newConnectFixture(t)
 			d := setDefaults(f, "Helper.zzc")
@@ -143,6 +143,9 @@ func TestConsentOverridesAndRevocation(t *testing.T) {
 			}
 			if mode == "removed" {
 				d.names = nil
+			}
+			if mode == "config-absent" {
+				f.handler.defaults = nil
 			}
 			if mode == "empty-profile" {
 				f.oauth.profile.Name = ""

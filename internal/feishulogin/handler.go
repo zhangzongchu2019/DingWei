@@ -128,7 +128,7 @@ func (h *Handler) Callback(ctx context.Context, req CallbackRequest) (CallbackRe
 	if attempt.Request.Automatic {
 		attempt.Request.ShortName = AutomaticShortName(profile, h.now())
 		targets := h.validTargets(ctx)
-		if len(h.defaults.Allowed(h.teamTenantKey)) > 1 {
+		if h.defaults != nil && len(h.defaults.Allowed(h.teamTenantKey)) > 1 {
 			return h.prepareSelection(ctx, attempt, targets)
 		}
 		if !h.allowedTarget(ctx, attempt.Request.TargetAgent) {
