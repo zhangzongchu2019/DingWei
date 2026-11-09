@@ -6,6 +6,10 @@
 - [x] T-04 为五项语义破坏编写带独立标记的变异验证脚本。
 - [x] T-05 运行指定 Go、helper、OpenSpec 门并记录读数。
 - [ ] T-06 提交单一变更并推送后核对远端分支坐标。
+- [x] T-07 为 `send_message` 增加可选 `expect_reply`，同步 MCP schema、REST 分发和接口文档。
+- [x] T-08 将回信选择纳入 request_hash 并持久化 PG outbox，true 投影才写 reply policy。
+- [x] T-09 以生产 completed-turn 路径覆盖 true 回程、false 缺省与 Wait 来源，并增加删策略写入的第八刀。
+- [x] T-10 更新 0108 迁移账本断言及 S-EXTSEAT-SENDER 预审更正记录。
 
 ## 交接记录
 
@@ -13,3 +17,7 @@
   - 完成：`mcpgw`（Node 22 浏览器）、`extseat`、`extshared` 全包通过；`m8 -p 1` 全包 PASS（230.810s）；锁定 venv helper 构建门 `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`；OpenSpec strict 31/31；五刀 5/5 命中各自语义标记。
   - 阻塞：无。
   - 下一步：单一提交、推送新分支并核对 `ls-remote`。
+- 日期：2026-11-09；执行者：togpt60lunazzc；commit：`71ba12c82825d620641b7af7b9db875bd08e0e8e`。
+  - 完成：预审补项 T-07～T-10 已在该提交实现；`mcpgw`、`extseat`、`tempgroup` 全包通过，严格 PG+Hub completed-turn E2E 通过，迁移包通过，变异 8/8 语义判红。锁定运行时的标准构建门和远端提交核对待完成。
+  - 阻塞：标准总门正在运行；尚未推送。
+  - 下一步：门禁 rc=0 后追加验证读数，推送分支并核对 ls-remote。

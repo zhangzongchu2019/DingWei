@@ -44,3 +44,22 @@ Hub MUST 接受接收方以抬头所列外部席位全名发出的合规回复�
 
 - WHEN 真实 session 通过 Hub 对外部席位全名发回复
 - THEN 真实 extseat Wait 可收到回复且 From 为发送 session 全名
+
+### Requirement: SR-005 外部席位自动回信选择
+
+`send_message` MUST 接受可选布尔参数 `expect_reply`，缺省值为 false。A MUST 在 outbox 中持久化该选择，并将其纳入同一 `client_message_id` 的 request_hash；同一 ID 的选择改变时 MUST 返回幂等冲突。Hub MUST 仅在值为 true 时于投影 envelope meta 写入 `reply_policy=expect_reply`。false 时 MUST 不自动回程。
+
+#### Scenario: 明确请求自动回信
+
+- WHEN 外部席位以 `expect_reply=true` 发送并且接收 Agent 回合产生无提及输出
+- THEN 生产 reply-origin 路径 MUST 将该输出回投至外部席位，Wait 返回且 From 为接收 Agent 全名
+
+#### Scenario: 缺省不自动回信
+
+- WHEN 外部席位省略 `expect_reply` 且接收 Agent 回合产生无提及输出
+- THEN 外部 Wait MUST 不收到该回合的自动回信
+
+#### Scenario: 幂等参数冲突
+
+- WHEN 同一 `client_message_id` 在重试时把 `expect_reply` 从 false 改为 true 或反向改变
+- THEN A MUST 返回幂等键冲突，且不得产生第二条投递
