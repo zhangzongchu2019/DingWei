@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Three semantic regressions for the R15 new-platform canonical history key."""
+"""Semantic regressions for R15 new-platform history keys and purge hooks."""
 from pathlib import Path
 import os
 import subprocess
@@ -7,38 +7,60 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[2]
 CASES = [
     (
+        "internal/m8/terminal.go",
         "reader-owner-reverts-to-owner-lc",
         'owner, agent, session = AgentKeyID(ag.OwnerLC), ag.ID, ag.NameLC()',
         'owner, agent, session = ag.OwnerLC, ag.ID, ag.NameLC()',
         "HISTORY_NEWPLAT_ROUNDTRIP",
+        "^TestNewPlatformSessionHistoryRoundTripByFullName$",
     ),
     (
+        "internal/m8/terminal.go",
         "reader-session-reverts-to-path-name",
         'owner, agent, session = AgentKeyID(ag.OwnerLC), ag.ID, ag.NameLC()',
         'owner, agent = AgentKeyID(ag.OwnerLC), ag.ID',
         "HISTORY_NEWPLAT_ROUNDTRIP",
+        "^TestNewPlatformSessionHistoryRoundTripByFullName$",
     ),
     (
+        "internal/m8/terminal.go",
         "writer-owner-drops-u-prefix",
         'Append(context.Background(), owner, agent, c.sessionName, eventID,',
         'Append(context.Background(), strings.TrimPrefix(owner, "u_"), agent, c.sessionName, eventID,',
         "HISTORY_NEWPLAT_ROUNDTRIP",
+        "^TestNewPlatformSessionHistoryRoundTripByFullName$",
+    ),
+    (
+        "internal/m8/newplat_shim.go",
+        "revoke-purge-owner-reverts-to-owner-lc",
+        "RequestAgentDeletion(context.Background(), AgentKeyID(agent.OwnerLC), agent.ID, h.now())",
+        "RequestAgentDeletion(context.Background(), agent.OwnerLC, agent.ID, h.now())",
+        "HISTORY_NEWPLAT_PURGE_ON_REVOKE",
+        "^TestNewPlatformSessionHistoryPurgeHooks/agent_revocation_removes_only_that_agent_history$",
+    ),
+    (
+        "internal/m8/newplat_shim.go",
+        "user-disable-purge-owner-reverts-to-owner-lc",
+        "RequestAgentDeletion(ctx, AgentKeyID(ag.OwnerLC), ag.ID, h.now())",
+        "RequestAgentDeletion(ctx, ag.OwnerLC, ag.ID, h.now())",
+        "HISTORY_NEWPLAT_PURGE_ON_USER_DISABLE",
+        "^TestNewPlatformSessionHistoryPurgeHooks/user_disable_removes_all_that_user's_Agent_history_only$",
     ),
 ]
 BUILD_ERRORS = ("build failed", "syntax error", "undefined:", "expected '", "cannot use ")
 
 
 def main():
-    path = ROOT / "internal/m8/terminal.go"
-    original = path.read_text()
-    for name, old, new, marker in CASES:
+    for relpath, name, old, new, marker, test_name in CASES:
+        path = ROOT / relpath
+        original = path.read_text()
         if old not in original:
             raise SystemExit(f"mutation source not found: {name}")
         path.write_text(original.replace(old, new, 1))
         try:
             env = dict(os.environ, HUB_TEST_PG_STRICT="1")
             proc = subprocess.run(
-                ["go", "test", "-p", "1", "-count=1", "./internal/m8", "-run", "^TestNewPlatformSessionHistoryRoundTripByFullName$"],
+                ["go", "test", "-p", "1", "-count=1", "./internal/m8", "-run", test_name],
                 cwd=ROOT,
                 env=env,
                 text=True,

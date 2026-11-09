@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
@@ -162,6 +163,123 @@ func TestNewPlatformSessionHistoryRoundTripByFullName(t *testing.T) {
 			t.Fatalf("HISTORY_NEWPLAT_OWNER_ONLY path=%s status=%d body=%s", tc.path, gotStatus, gotBody)
 		}
 	}
+}
+
+func TestNewPlatformSessionHistoryPurgeHooks(t *testing.T) {
+	t.Run("agent revocation removes only that agent history", func(t *testing.T) {
+		v := newViewEnv(t)
+		history := openEnabledNewPlatformHistory(t, v)
+		v.svc.OnRevoked = v.hub.NewPlatformAgentGone
+		ctx := v.ctx
+		target, err := v.svc.Store.FindAgentByName(ctx, "zzc", "kimi")
+		if err != nil {
+			t.Fatal(err)
+		}
+		other, err := v.svc.Store.GetAgent(ctx, v.agID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		appendNewPlatformHistoryEvent(t, v, history, v.zKimiCred, "zzc", target, "history-revoke-target")
+		appendNewPlatformHistoryEvent(t, v, history, v.cred, "zzc", other, "history-revoke-other")
+		if _, err := v.svc.Revoke(ctx, "zzc", target.ID); err != nil {
+			t.Fatal(err)
+		}
+		cleanupNewPlatformHistory(t, history, ctx)
+		if n := newPlatformHistoryEventCount(t, history, target); n != 0 {
+			t.Fatalf("HISTORY_NEWPLAT_PURGE_ON_REVOKE revoked agent retained %d rows", n)
+		}
+		if n := newPlatformHistoryEventCount(t, history, other); n != 1 {
+			t.Fatalf("HISTORY_NEWPLAT_PURGE_ON_REVOKE other same-owner Agent rows=%d want=1", n)
+		}
+	})
+
+	t.Run("user disable removes all that user's Agent history only", func(t *testing.T) {
+		v := newViewEnv(t)
+		history := openEnabledNewPlatformHistory(t, v)
+		v.ob.OnUserChanged = v.hub.NewPlatformUserChanged
+		manager := identity.User{UserID: "history-mgr", ShortName: "hmgr", Type: identity.UserManager, State: identity.UserActive, PasswordHash: "fixture"}
+		if err := v.svc.Store.CreateUser(v.ctx, manager); err != nil {
+			t.Fatal(err)
+		}
+		zzcKimi, err := v.svc.Store.FindAgentByName(v.ctx, "zzc", "kimi")
+		if err != nil {
+			t.Fatal(err)
+		}
+		zzcOpus, err := v.svc.Store.GetAgent(v.ctx, v.agID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		lblKimi, err := v.svc.Store.FindAgentByName(v.ctx, "lbl", "kimi")
+		if err != nil {
+			t.Fatal(err)
+		}
+		appendNewPlatformHistoryEvent(t, v, history, v.zKimiCred, "zzc", zzcKimi, "history-disable-zzc-kimi")
+		appendNewPlatformHistoryEvent(t, v, history, v.cred, "zzc", zzcOpus, "history-disable-zzc-opus")
+		appendNewPlatformHistoryEvent(t, v, history, v.lKimiCr, "lbl", lblKimi, "history-disable-lbl-kimi")
+		if _, err := v.ob.SetUserState(v.ctx, &manager, "zzc", identity.UserDisabled); err != nil {
+			t.Fatal(err)
+		}
+		cleanupNewPlatformHistory(t, history, v.ctx)
+		for _, ag := range []*identity.Agent{zzcKimi, zzcOpus} {
+			if n := newPlatformHistoryEventCount(t, history, ag); n != 0 {
+				t.Fatalf("HISTORY_NEWPLAT_PURGE_ON_USER_DISABLE Agent=%s retained %d rows", ag.ID, n)
+			}
+		}
+		if n := newPlatformHistoryEventCount(t, history, lblKimi); n != 1 {
+			t.Fatalf("HISTORY_NEWPLAT_PURGE_ON_USER_DISABLE other owner rows=%d want=1", n)
+		}
+	})
+}
+
+func cleanupNewPlatformHistory(t *testing.T, history *store.SessionHistory, ctx context.Context) {
+	t.Helper()
+	// CleanupBatch intentionally processes one queued identity per call.
+	for i := 0; i < 4; i++ {
+		if err := history.CleanupBatch(ctx, time.Now().Add(time.Second)); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func openEnabledNewPlatformHistory(t *testing.T, v *viewEnv) *store.SessionHistory {
+	t.Helper()
+	history, err := store.OpenSessionHistory(filepath.Join(t.TempDir(), "workpulse-history.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = history.Close() })
+	if err := history.SetEnabled(v.ctx, true, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	v.hub.SessionHistory, v.hub.SessionHistoryEnabled = history, true
+	return history
+}
+
+func appendNewPlatformHistoryEvent(t *testing.T, v *viewEnv, history *store.SessionHistory, credential, owner string, ag *identity.Agent, eventID string) {
+	t.Helper()
+	helper, status, body := v.dial(credential, "")
+	if helper == nil {
+		t.Fatalf("helper for %s dial status=%d body=%s", ag.ID, status, body)
+	}
+	defer helper.Close(websocket.StatusNormalClosure, "done")
+	waitSessionOnline(t, v.hub, AgentKeyID(owner), ag.NameLC())
+	event := `{"kind":"assistant_text","text":"` + eventID + `"}`
+	if err := writeEnvelope(v.ctx, helper, model.Envelope{ID: eventID, From: ag.NameLC() + "#enrolled", Body: event, Meta: map[string]any{"type": terminalSessionEventType}}); err != nil {
+		t.Fatal(err)
+	}
+	waitFor(t, 3*time.Second, "new platform history event", func() bool {
+		page, err := history.Page(v.ctx, AgentKeyID(ag.OwnerLC), ag.ID, ag.NameLC(), "", nil)
+		return err == nil && len(page.Events) == 1 && page.Events[0].EventID == eventID
+	})
+}
+
+func newPlatformHistoryEventCount(t *testing.T, history *store.SessionHistory, ag *identity.Agent) int {
+	t.Helper()
+	page, err := history.Page(context.Background(), AgentKeyID(ag.OwnerLC), ag.ID, ag.NameLC(), "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return len(page.Events)
 }
 
 func TestSessionHistoryDisabledKeepsEventRingPayloadAndSkipsWrites(t *testing.T) {

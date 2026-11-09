@@ -118,7 +118,7 @@ func (h *Hub) newPlatformAgentUnavailable(agentID string, purgeHistory bool) {
 	h.revokeConsoleMuxAgent(agentID)
 	if purgeHistory && h.SessionHistory != nil && h.Identity != nil {
 		if agent, err := h.Identity.Store.GetAgent(context.Background(), agentID); err == nil && agent != nil {
-			if err := h.SessionHistory.RequestAgentDeletion(context.Background(), agent.OwnerLC, agent.ID, h.now()); err != nil {
+			if err := h.SessionHistory.RequestAgentDeletion(context.Background(), AgentKeyID(agent.OwnerLC), agent.ID, h.now()); err != nil {
 				log.Printf("session history deletion enqueue failed agent=%q error_type=%T", agentID, err)
 			}
 		}
@@ -152,7 +152,7 @@ func (h *Hub) NewPlatformUserChanged(userLC string) {
 	}
 	for _, ag := range agents {
 		if h.SessionHistory != nil {
-			if err := h.SessionHistory.RequestAgentDeletion(ctx, ag.OwnerLC, ag.ID, h.now()); err != nil {
+			if err := h.SessionHistory.RequestAgentDeletion(ctx, AgentKeyID(ag.OwnerLC), ag.ID, h.now()); err != nil {
 				log.Printf("session history deletion enqueue failed agent=%q error_type=%T", ag.ID, err)
 			}
 		}
