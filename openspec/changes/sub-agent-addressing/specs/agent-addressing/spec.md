@@ -78,6 +78,12 @@ Hub/helper SHALL 协商 sub_agents_v1、支持深度和树 revision。结构化�
 - **WHEN** 当前专属凭据Codex连接协商一级能力并提交全量树，之后发生同版同摘要重报、同版异摘要、版本倒退或连接替换
 - **THEN** 持久成功才ACK且可投子节点；同版同摘要幂等，冲突请求重同步，旧连接拒绝，重连须重新协商并确认树；ended不能复活
 
+#### Scenario: AA-008-S03 既有主会话未安装原生控制工具
+- **WHEN** 既有主 thread 没有受控 dynamicTools 安装记录
+- **THEN** helper 不暴露子 Agent 控制工具；创建返回含「需重开主会话」的明确错误，不生成节点、不上报树，也不替换既有 private_endpoint 主绑定
+- **WHEN** 用户显式重开主会话，新 thread/start 安装受控工具并完成树确认
+- **THEN** helper 允许正常创建子 Agent，子 thread 不覆盖主绑定
+
 ### Requirement: AA-009 持久作用域与安全回退
 Hub SHALL 同事务保存投递与来源/目标路径；helper 账本及证据 MUST 按分道、代次、thread 隔离，旧记录为主分道。r55 对账保护（每席1请求、同thread间隔15s、每轮200条、时间容差1s、显示不ACK）不变。回旧二进制前 MUST 封口、逐条退信并隔离歧义子投递；不能让旧 claimer 按父地址执行，不删除墓碑或制造完成。
 

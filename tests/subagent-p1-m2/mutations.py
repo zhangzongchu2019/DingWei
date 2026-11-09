@@ -13,6 +13,10 @@ PREFIX = 'tools.sessionhelper.tests.test_sub_agent_helper.'
 
 # (criterion, name, file, exact guard, replacement, test)
 CASES = [
+('ROOT1', 'old_root_tool_exposure', 'sub_agent_runtime.py', 'driver.dynamic_tools = []', 'driver.dynamic_tools = dynamic_tools()', 'ExistingRootToolsTests.test_old_root_does_not_expose_control_tool'),
+('ROOT2', 'old_root_creation_guard', 'sub_agent_runtime.py', 'broker = self._require_root_tools()\n            if not self.ready:', 'broker = self._ensure_broker()\n            if not self.ready:', 'ExistingRootToolsTests.test_old_root_create_reports_restart_without_nodes_or_tree'),
+('ROOT3', 'old_root_binding_replace', 'sub_agent_runtime.py', "print('[sub-agent] ' + ROOT_TOOLS_UNAVAILABLE, flush=True)", "driver._private_endpoint.save_thread('replacement')\n                    print('[sub-agent] ' + ROOT_TOOLS_UNAVAILABLE, flush=True)", 'ExistingRootToolsTests.test_old_root_preserves_private_endpoint_binding'),
+('ROOT4', 'reopened_root_tools', 'codexDriver.py', "if getattr(self,'dynamic_tools',None):params['dynamicTools']=self.dynamic_tools", "if getattr(self,'dynamic_tools',None):pass", 'ExistingRootToolsTests.test_reopened_root_installs_tools_and_can_create'),
 ('AA007', 'turn_is_not_task_completion', 'sub_agent_runtime.py', 'self.store.touch(facade.identity.lane_id)', "self.store.touch(facade.identity.lane_id)\n            if message.get('method') == 'turn/completed': self.close(facade.identity.lane_id, 'completed')", 'RuntimeTests.test_aa007_idle_progress_and_pending_work_are_distinct'),
 ('AA009', 'confirmation_scope', 'sub_agent_store.py', "return True, dict(rows[0])", "return False, None", 'RuntimeTests.test_m1_confirmation_without_lane_echo_uses_immutable_scope'),
 ('AA004', 'wire_destination', 'sub_agent_connection.py', "target = args['to'] if '#' in args['to'] else session_addr(args['to'], self.book.key_id)", "target = args['to']", 'ConnectionTests.test_native_send_full_route_transport_and_durable_receipt'),

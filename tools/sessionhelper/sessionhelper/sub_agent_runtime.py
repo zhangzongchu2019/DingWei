@@ -6,11 +6,15 @@ import json
 import threading
 import time
 
-from .app_server_broker import LocalDispatchRejected
+from .app_server_broker import LocalDispatchRejected, NativeToolUnavailable
 from .codexDriver import CodexProtocolDriver
 from .driver_adapter import DriverAdapter
 from .outbound_receipt import OutboundRejected
 from .sub_agent_store import SubAgentStore, lane_session
+
+
+ROOT_TOOLS_UNAVAILABLE = ('sub_agent_existing_root_tools_unavailable: '
+    '当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。')
 
 
 def dynamic_tools():
@@ -50,7 +54,10 @@ class SubAgentRuntime:
         self.root_tools_available = None
         self.send_from_native = None  # bound by authenticated SessionHelper WS only
         self.return_to_source = None
-        root_adapter.driver.dynamic_tools = dynamic_tools()
+        driver = root_adapter.driver
+        known_tools = (not driver._thread_id or driver.native_tools_bound
+                       or self.store.has_native_tools(driver._thread_id))
+        driver.dynamic_tools = dynamic_tools() if known_tools else []
         root_adapter.driver.context_provider = lambda instructions=False: self.context_input('', instructions)
         if watchdog:
             self._watchdog = threading.Thread(target=self._watch, daemon=True, name='sub-agent-lifecycle')
@@ -74,9 +81,18 @@ class SubAgentRuntime:
                 self.root_tools_available = self.store.has_native_tools(driver._thread_id)
                 if not self.root_tools_available:
                     self.error = 'sub_agent_existing_root_tools_unavailable'
-                    print('[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable', flush=True)
+                    driver.dynamic_tools = []
+                    self.ready = False
+                    self._last_report = None
+                    print('[sub-agent] ' + ROOT_TOOLS_UNAVAILABLE, flush=True)
                 self.root_adapter._lane_driver_factory = lambda: self._driver_for('', 1, driver._thread_id)
             return self._broker
+
+    def _require_root_tools(self):
+        broker = self._ensure_broker()
+        if self.root_tools_available is not True:
+            raise NativeToolUnavailable(ROOT_TOOLS_UNAVAILABLE)
+        return broker
 
     def _driver_for(self, node_id, generation, thread_id):
         root = self.root_adapter.driver
@@ -90,7 +106,7 @@ class SubAgentRuntime:
             sandbox=root._sandbox, approval_policy=root._approval_policy, view_item_backfill=root._view_item_backfill,
             shared_facade=facade, bound_thread_id=thread_id, lane_id=node_id, lane_generation=generation)
         driver.context_provider = lambda instructions=False: self.context_input(node_id, instructions)
-        driver.dynamic_tools = dynamic_tools()
+        driver.dynamic_tools = dynamic_tools() if node_id or self.root_tools_available else []
         return driver
 
     def _restore(self, node):
@@ -114,11 +130,11 @@ class SubAgentRuntime:
     def create(self, request_id, policy=None, aliases=()):
         with self._lock:
             if self._closing_parent: raise ValueError('sub_agent_ended')
+            broker = self._require_root_tools()
             if not self.ready: raise ValueError('sub_agent_registry_unavailable')
             node, fresh = self.store.allocate(request_id, policy, aliases)
             if not fresh and node['creation_status'] != 'intent':
                 return self.public_node(node)
-            broker = self._ensure_broker()
             if not self.store.mark_creation_submitted(node['node_id']): return self.public_node(self.store.node(node['node_id']))
             root = self.root_adapter.driver
             params = dict(cwd=root._workdir, ephemeral=False, dynamicTools=dynamic_tools(),
@@ -180,7 +196,10 @@ class SubAgentRuntime:
             parent=self.root_full_name if node_id else '', node_id=node_id, generation=node['generation'] if node else 1,
             direct_children=children, policy=json.loads(node['policy_json']) if node else None,
             subtree_revision=self.store.snapshot(self.conn_seq or 0, self.hub_revision)['subtree_revision'],
-            source_tools='native_thread_bound_dynamicTools', max_supported_depth=1)
+            source_tools='unavailable_existing_root' if not node_id and self.root_tools_available is False else 'native_thread_bound_dynamicTools',
+            sub_agent_control_available=True if node_id else self.root_tools_available,
+            control_unavailable_reason=ROOT_TOOLS_UNAVAILABLE if not node_id and self.root_tools_available is False else '',
+            max_supported_depth=1)
 
     def context_input(self, node_id, instructions=False):
         context = self.context(node_id)
@@ -208,7 +227,9 @@ class SubAgentRuntime:
             self._pending_tools[node_id] = self._pending_tools.get(node_id, 0) + 1
         try:
             if tool == 'dingwei_self_context': return self.context(node_id)
-            if tool == 'sub_agent_control': return self.control(node_id, **args)
+            if tool == 'sub_agent_control':
+                if not node_id: self._require_root_tools()
+                return self.control(node_id, **args)
             if self.send_from_native is None or not self.ready: raise RuntimeError('sub_agent_send_unavailable')
             # Source is derived only here, from outer native thread binding.
             source = self.context(node_id)
@@ -241,6 +262,8 @@ class SubAgentRuntime:
     def report(self):
         with self._lock:
             if self.conn_seq is None: return None
+            self._ensure_broker()
+            if self.root_tools_available is not True: return None
             if self._last_report is not None:
                 if time.monotonic() - self._last_report_at < 5: return None
                 self._last_report_at = time.monotonic(); return self._last_report

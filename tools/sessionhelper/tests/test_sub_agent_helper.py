@@ -308,6 +308,7 @@ class RuntimeTests(unittest.TestCase):
         driver = CodexProtocolDriver(workdir=self.tmp.name, store_path=str(Path(self.tmp.name)/'driver.db'),
                                      shared_facade=facade, bound_thread_id='root-thread')
         driver._rpc = facade; driver._broker = self.broker; driver._initialized = True
+        driver.native_tools_bound = True  # fixture is an existing tool-equipped root
         root = DriverAdapter(cfg, driver=driver); root._started = True
         self.runtime = SubAgentRuntime(cfg, root, 'root.owner', clock=lambda: self.now[0], watchdog=False)
         self.addCleanup(self.runtime.shutdown)
@@ -521,6 +522,93 @@ class RuntimeTests(unittest.TestCase):
         self.runtime.accept(delivery(b, 'dw-ack-a'))
         self.assertIsNone(helper.sub_agent_ack_inbox(meta), 'AMBIGUOUS_CONFIRMATION_SELECTED_SIBLING')
         self.assertIs(helper.sub_agent_ack_inbox(dict(meta, delivery_id='root-only')), helper.delivery_inbox)
+
+
+
+class ExistingRootToolsTests(unittest.TestCase):
+    def setUp(self):
+        selected = patch.dict(os.environ, {'SH_DRIVER': 'codex'})
+        selected.start(); self.addCleanup(selected.stop)
+        self.tmp = tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
+        self.cfg = Config(session_name='root', key_id='key', secret='synthetic-only', session_full_name='root.owner', inbox_db=str(Path(self.tmp.name)/'inbox.db'))
+        self.runtime, self.native, self.endpoint = self.make_runtime('existing-root')
+
+    def make_runtime(self, thread_id):
+        class Endpoint:
+            def __init__(self, bound): self.bound, self.saved = bound, []
+            def bound_thread(self): return self.bound
+            def save_thread(self, value): self.bound = value; self.saved.append(value)
+            def release_writer(self): pass
+        native = Native(self.tmp.name)
+        broker = AppServerBroker(native); broker.initialize({})
+        facade = broker.facade('', 1, thread_id, root=True)
+        driver = CodexProtocolDriver(workdir=self.tmp.name, store_path=str(Path(self.tmp.name)/'driver.db'), shared_facade=facade, bound_thread_id=thread_id)
+        driver._rpc, driver._broker, driver._initialized = facade, broker, True
+        endpoint = Endpoint(thread_id); driver._private_endpoint = endpoint
+        adapter = DriverAdapter(self.cfg, driver=driver); adapter._started = True
+        runtime = SubAgentRuntime(self.cfg, adapter, 'root.owner', watchdog=False)
+        self.addCleanup(runtime.shutdown)
+        runtime.on_capability(dict(sub_agents_v1=True, conn_seq=7, max_supported_depth=1, subtree_revision=0))
+        return runtime, native, endpoint
+
+    def test_old_root_does_not_expose_control_tool(self):
+        runtime = self.runtime
+        runtime._ensure_broker()
+        self.assertFalse(runtime.root_tools_available)
+        self.assertFalse(runtime.context('')['sub_agent_control_available'])
+        self.assertIn('需重开主会话', runtime.context('')['control_unavailable_reason'])
+        self.assertNotIn('sub_agent_control', [tool['name'] for tool in runtime.root_adapter.driver.dynamic_tools], 'OLD_ROOT_EXPOSED_CONTROL_TOOL')
+        driver = runtime.root_adapter.driver; driver._active_turn_id = 'current-turn'
+        with self.assertRaisesRegex(RuntimeError, '需重开主会话'):
+            runtime.native_tool(driver._rpc, dict(threadId='existing-root', turnId='current-turn', callId='old-root-control', tool='sub_agent_control', arguments={'operation': 'close'}))
+
+    def test_old_root_create_reports_restart_without_nodes_or_tree(self):
+        runtime = self.runtime
+        runtime._ensure_broker()
+        runtime.ready = True  # even a stale/forged ready flag cannot bypass it
+        with self.assertRaisesRegex(RuntimeError, 'sub_agent_existing_root_tools_unavailable.*需重开主会话', msg='OLD_ROOT_CREATE_NOT_EXPLICITLY_REJECTED'):
+            runtime.control('', 'create', request_id='must-not-persist')
+        self.assertEqual(runtime.error, 'sub_agent_existing_root_tools_unavailable')
+        self.assertEqual(runtime.store.nodes(), [])
+        self.assertIsNone(runtime.report(), 'OLD_ROOT_REPORTED_TREE')
+        self.assertFalse(any(method == 'thread/start' for _, _, method, _ in self.native.calls))
+        driver = runtime.root_adapter.driver; driver._active_turn_id = 'current-turn'
+        self.native.notifications.put(dict(id=71, method='item/tool/call', params=dict(threadId='existing-root', turnId='current-turn', callId='native-create-attempt', tool='sub_agent_control', arguments={'operation': 'create', 'request_id': 'also-not-persisted'})))
+        eventually(lambda: bool(self.native.responses))
+        error = self.native.responses[0][3]
+        self.assertIn('需重开主会话', error['message'], 'OLD_ROOT_NATIVE_ERROR_LOST_REOPEN_HINT')
+        self.assertEqual(runtime.store.nodes(), [])
+        self.assertIsNone(runtime.report())
+
+    def test_old_root_preserves_private_endpoint_binding(self):
+        runtime = self.runtime
+        runtime._ensure_broker()
+        try: runtime.create('attempt')
+        except RuntimeError: pass
+        self.assertEqual(self.endpoint.bound_thread(), 'existing-root', 'OLD_ROOT_PRIVATE_BINDING_REPLACED')
+        self.assertEqual(self.endpoint.saved, [])
+        self.assertEqual(runtime.root_adapter.driver._thread_id, 'existing-root')
+        self.assertEqual(runtime.root_adapter.driver._rpc.thread_id, 'existing-root')
+        self.assertFalse(any(method == 'thread/start' for _, _, method, _ in self.native.calls))
+
+    def test_reopened_root_installs_tools_and_can_create(self):
+        self.runtime._ensure_broker()
+        self.runtime.shutdown()
+        # Explicit user reopen is a new driver with no saved root binding.
+        runtime, native, endpoint = self.make_runtime('')
+        report = runtime.report()
+        self.assertIsNotNone(report, 'REOPENED_ROOT_CANNOT_REPORT')
+        root_start = next(params for _, _, method, params in native.calls if method == 'thread/start')
+        self.assertIn('sub_agent_control', [tool['name'] for tool in root_start.get('dynamicTools', [])], 'REOPENED_ROOT_MISSING_NATIVE_TOOLS')
+        self.assertTrue(runtime.root_tools_available)
+        self.assertTrue(runtime.on_ack(dict(ok=True, conn_seq=7, subtree_revision=report['subtree_revision'])))
+        child = runtime.control('', 'create', request_id='reopened-create')
+        self.assertEqual(child['creation_status'], 'bound')
+        self.assertEqual(len(runtime.store.nodes()), 1)
+        self.assertNotEqual(endpoint.bound_thread(), 'existing-root')
+        self.assertEqual(endpoint.saved, [runtime.root_adapter.driver._thread_id])
+        self.assertEqual(self.endpoint.bound_thread(), 'existing-root')
+        self.assertEqual(len([method for _, _, method, _ in native.calls if method == 'thread/start']), 2)
 
 
 

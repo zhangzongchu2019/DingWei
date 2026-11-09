@@ -15,6 +15,10 @@ class LaneIdentity:
     generation: int = 1
 
 
+class NativeToolUnavailable(RuntimeError):
+    """A helper-owned, safe-to-display control error."""
+
+
 class LocalDispatchRejected(PermissionError):
     not_written = True
 
@@ -308,6 +312,8 @@ class AppServerBroker:
                     raise PermissionError('native tool source unavailable')
                 result = self.tool_handler(facade, message['params'])
                 self._enqueue_response(message['id'], epoch=epoch, result={'contentItems': [{'type': 'inputText', 'text': __import__('json').dumps(result, ensure_ascii=False)}], 'success': True})
+            except NativeToolUnavailable as exc:
+                self._reject_request(message, str(exc), epoch=epoch)
             except Exception:
                 self._reject_request(message, 'native tool rejected',epoch=epoch)
 
