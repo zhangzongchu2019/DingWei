@@ -399,6 +399,9 @@ class RuntimeTests(unittest.TestCase):
     def test_aa007_idle_progress_and_pending_work_are_distinct(self):
         a = self.child('a'); self.acknowledge()
         self.runtime.accept(delivery(a, 'dw-same'))
+        facade = self.runtime.adapters[a['node_id']].driver._rpc
+        self.runtime.native_progress(facade, {'method': 'turn/completed'})
+        self.assertEqual(self.runtime.store.node(a['node_id'])['state'], 'active', 'NATIVE_TURN_COMPLETION_ENDED_LONG_TASK')
         self.now[0] += 3601; self.runtime.tick()
         self.assertEqual(self.runtime.store.node(a['node_id'])['state'], 'active')
         b = self.child('b'); self.acknowledge()

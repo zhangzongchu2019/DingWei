@@ -13,6 +13,7 @@ PREFIX = 'tools.sessionhelper.tests.test_sub_agent_helper.'
 
 # (criterion, name, file, exact guard, replacement, test)
 CASES = [
+('AA007', 'turn_is_not_task_completion', 'sub_agent_runtime.py', 'self.store.touch(facade.identity.lane_id)', "self.store.touch(facade.identity.lane_id)\n            if message.get('method') == 'turn/completed': self.close(facade.identity.lane_id, 'completed')", 'RuntimeTests.test_aa007_idle_progress_and_pending_work_are_distinct'),
 ('AA009', 'confirmation_scope', 'sub_agent_store.py', "return True, dict(rows[0])", "return False, None", 'RuntimeTests.test_m1_confirmation_without_lane_echo_uses_immutable_scope'),
 ('AA004', 'wire_destination', 'sub_agent_connection.py', "target = args['to'] if '#' in args['to'] else session_addr(args['to'], self.book.key_id)", "target = args['to']", 'ConnectionTests.test_native_send_full_route_transport_and_durable_receipt'),
 ('AA007', 'creation_lock', 'sub_agent_runtime.py', "result = broker.request(None, 'thread/start', params)", "with self._lock:\n                result = broker.request(None, 'thread/start', params)", 'RuntimeTests.test_slow_creation_does_not_block_parent_lifecycle_seal'),
