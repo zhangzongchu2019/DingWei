@@ -1,10 +1,14 @@
 package mcpgw
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/zhangzongchu2019/dingwei/internal/extwire"
+	"github.com/zhangzongchu2019/dingwei/internal/feishulogin"
 )
 
 // Browsers serialize a form POST Origin as "null" when the page that holds the
@@ -46,5 +50,30 @@ func TestGatewayGuardStillRejectsNullOrigin(t *testing.T) {
 	w := serve(mux, r)
 	if w.Code != 403 || !strings.Contains(w.Body.String(), "origin_rejected") {
 		t.Fatalf("ORIGIN_NULL_GUARD_RELAXED %d %s", w.Code, w.Body)
+	}
+}
+
+// The shared oauthFixture points Feishu at an http test server, which by design
+// keeps form-action 'self'. Here the default production authorize endpoint is
+// used so the gateway must pass the Feishu origin through unchanged.
+func TestConnectPageCSPThroughGatewayAllowsFeishuHop(t *testing.T) {
+	g, seats, _ := oauthFixture(t)
+	oauth, e := feishulogin.NewFeishuClient(feishulogin.OAuthConfig{AppID: "app", AppSecret: "test-only-secret", RedirectURI: testOrigin + "/mcp/oauth/feishu/callback"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	login, e := feishulogin.NewHandler(feishulogin.Config{AppID: "app", TeamTenantKey: "team", RedirectURI: testOrigin + "/mcp/oauth/feishu/callback", OAuth: oauth, States: LoginStates{Store: g.cfg.Store}, Tokens: extwire.Issuer{Seats: seats, Resource: testOrigin + "/mcp"}, Now: g.cfg.Now})
+	if e != nil {
+		t.Fatal(e)
+	}
+	g.cfg.Login = login
+	mux := http.NewServeMux()
+	g.Register(mux)
+	attempt, cookies := browserStart(t, mux)
+	r := httptest.NewRequest("GET", testOrigin+"/feishu/connect?attempt_id="+url.QueryEscape(attempt), nil)
+	addCookies(r, cookies)
+	w := serve(mux, r)
+	if csp := w.Header().Get("Content-Security-Policy"); w.Code != 200 || !strings.Contains(csp, "form-action 'self' https://accounts.feishu.cn;") {
+		t.Fatalf("CSP_GATEWAY_FORM_ACTION %d %q", w.Code, csp)
 	}
 }

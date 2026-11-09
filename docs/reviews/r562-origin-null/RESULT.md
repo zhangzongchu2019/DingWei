@@ -21,3 +21,10 @@
 
 ## 范围
 仅两行响应头＋测试＋版本位 0.2.3.33；无迁移、无新开关、View 不变。S-MCP-ZERO-CONSENT 的选择页同样经网关守卫，合入时随本修复一并生效。
+
+## 追加：第二个阻断——CSP form-action 'self' 拦截跳往飞书的 303（本席写入 2026-11-09T07:59:13Z）
+coder56 在 S-MCP-ZERO-CONSENT 真 Chromium 测试中发现：Origin 修好后 connect POST 已得 303 且 Origin 正确，但连接页 CSP `form-action 'self'` 使浏览器拒绝跟随 303 到飞书授权源（浏览器按 form-action 校验重定向链）。本席本机 Chromium 独立复现：policy 仅 'self' 时同源 POST 被 303 到它源即被拦、页面不动、报 violates form-action 'self'；form-action 加上目标源后正常落地。原文 `raw/chromium-form-action-redirect.txt`，探针 `browser_csp_probe*.{py,js}`。
+修法：连接页 CSP 的 form-action 改为 `'self'` ＋ 飞书授权端点的精确源。源在 NewHandler 时由已配置 OAuth 客户端生成一次授权地址并解析得到（不联网），只接受 https、无用户信息、主机名仅字母数字点横线（可带端口）；任何异常退回仅 'self'。默认生产配置得 `https://accounts.feishu.cn`。default-src、frame-ancestors、base-uri 不变；来源守卫不变。
+测试：`internal/feishulogin/connect_csp_test.go`（默认得精确源且其它指令保留；http、注入、带用户信息、非法 URL 均退回 'self'）；`internal/mcpgw/origin_null_test.go` 增一格经网关输出的连接页 CSP。
+变异：Handler 改回固定旧 CSP ⇒ `CSP_FORM_ACTION_MISSING_FEISHU` 与 `CSP_GATEWAY_FORM_ACTION` 红；去掉 https 校验 ⇒ `CSP_ORIGIN_ACCEPTED` 红。
+未覆盖：本席未做「真 Hub＋真浏览器＋飞书替身」全链路；该项在独立复核 S-R562-CR 中要求。

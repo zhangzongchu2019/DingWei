@@ -27,6 +27,7 @@ type Handler struct {
 	stateTTL      time.Duration
 	now           func() time.Time
 	random        io.Reader
+	connectCSP    string
 }
 
 func NewHandler(cfg Config) (*Handler, error) {
@@ -50,6 +51,7 @@ func NewHandler(cfg Config) (*Handler, error) {
 		appID: cfg.AppID, teamTenantKey: cfg.TeamTenantKey, redirectURI: cfg.RedirectURI,
 		oauth: cfg.OAuth, states: cfg.States, tokens: cfg.Tokens, stateTTL: cfg.StateTTL,
 		now: cfg.Now, random: cfg.Random,
+		connectCSP: connectPageCSPFor(authorizeOriginOf(cfg.OAuth, cfg.RedirectURI)),
 	}, nil
 }
 
