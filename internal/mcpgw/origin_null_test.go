@@ -73,7 +73,43 @@ func TestConnectPageCSPThroughGatewayAllowsFeishuHop(t *testing.T) {
 	r := httptest.NewRequest("GET", testOrigin+"/feishu/connect?attempt_id="+url.QueryEscape(attempt), nil)
 	addCookies(r, cookies)
 	w := serve(mux, r)
-	if csp := w.Header().Get("Content-Security-Policy"); w.Code != 200 || !strings.Contains(csp, "form-action 'self' https://accounts.feishu.cn;") {
+	if csp := w.Header().Get("Content-Security-Policy"); w.Code != 200 || !strings.Contains(csp, "form-action 'self' ") || !strings.Contains(csp, " https://accounts.feishu.cn;") {
 		t.Fatalf("CSP_GATEWAY_FORM_ACTION %d %q", w.Code, csp)
+	}
+}
+
+// Already-authorized Feishu users get no consent page: connect POST → Feishu →
+// callback → loopback is one navigation, and form-action covers every hop.
+func TestConnectPageCSPAllowsValidatedLoopbackHop(t *testing.T) {
+	_, _, mux := oauthFixture(t)
+	attempt, cookies := browserStart(t, mux)
+	r := httptest.NewRequest("GET", testOrigin+"/feishu/connect?attempt_id="+url.QueryEscape(attempt), nil)
+	addCookies(r, cookies)
+	w := serve(mux, r)
+	csp := w.Header().Get("Content-Security-Policy")
+	if w.Code != 200 || !strings.Contains(csp, "form-action 'self' http://127.0.0.1:43123") {
+		t.Fatalf("CSP_LOOPBACK_FORM_ACTION %d %q", w.Code, csp)
+	}
+	if strings.Contains(csp, "*") || strings.Contains(csp, "localhost") {
+		t.Fatalf("CSP_LOOPBACK_TOO_WIDE %q", csp)
+	}
+}
+
+func TestWithLoopbackFormActionOnlyExactLoopback(t *testing.T) {
+	base := "default-src 'none'; form-action 'self' https://accounts.feishu.cn; frame-ancestors 'none'"
+	if got := withLoopbackFormAction(base, "http://127.0.0.1:43123/callback/Ab12"); got != "default-src 'none'; form-action 'self' http://127.0.0.1:43123 https://accounts.feishu.cn; frame-ancestors 'none'" {
+		t.Fatalf("LOOPBACK_V4 %q", got)
+	}
+	if got := withLoopbackFormAction(base, "http://[::1]:5000/callback"); !strings.Contains(got, "form-action 'self' http://[::1]:5000 https://accounts.feishu.cn;") {
+		t.Fatalf("LOOPBACK_V6 %q", got)
+	}
+	for _, redirect := range []string{
+		"http://localhost:43123/callback", "https://127.0.0.1:43123/callback",
+		"http://127.0.0.1/callback", "http://evil.example:80/callback",
+		"http://user@127.0.0.1:43123/callback", "http://127.0.0.1:43123;script-src/x", "::bad",
+	} {
+		if got := withLoopbackFormAction(base, redirect); got != base {
+			t.Fatalf("LOOPBACK_ACCEPTED %q -> %q", redirect, got)
+		}
 	}
 }

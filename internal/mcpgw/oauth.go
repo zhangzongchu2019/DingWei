@@ -198,6 +198,13 @@ func (g *Gateway) connect(w http.ResponseWriter, r *http.Request) {
 	// C 的重定向 state 与 B 事务关联，回调先验浏览器和期限再允许 C 签发。
 	captured := &loginResponse{header: make(http.Header)}
 	g.cfg.Login.ServeConnectPage(captured, r)
+	// Browsers check form-action on every hop of the form's redirect chain. When
+	// Feishu skips its consent page (already-authorized user) the chain runs
+	// connect POST → Feishu → callback → client loopback in one navigation, so
+	// the attempt's validated loopback origin must be allowed too (r56.2 CR).
+	if csp := captured.header.Get("Content-Security-Policy"); csp != "" {
+		captured.header.Set("Content-Security-Policy", withLoopbackFormAction(csp, a.Redirect))
+	}
 	if captured.status == http.StatusSeeOther {
 		location, e := url.Parse(captured.header.Get("Location"))
 		if e != nil || location.Query().Get("state") == "" {
@@ -365,4 +372,20 @@ func (w *loginResponse) Write(b []byte) (int, error) {
 		w.status = 200
 	}
 	return w.body.Write(b)
+}
+
+var loopbackFormSource = regexp.MustCompile(`^http://(127\.0\.0\.1|\[::1\]):[0-9]{1,5}$`)
+
+// withLoopbackFormAction appends exactly the validated loopback origin of the
+// attempt's redirect_uri to form-action; anything else leaves the policy as is.
+func withLoopbackFormAction(csp, redirect string) string {
+	u, err := url.Parse(redirect)
+	if err != nil || u.User != nil {
+		return csp
+	}
+	source := u.Scheme + "://" + u.Host
+	if !loopbackFormSource.MatchString(source) || !strings.Contains(csp, "form-action 'self'") {
+		return csp
+	}
+	return strings.Replace(csp, "form-action 'self'", "form-action 'self' "+source, 1)
 }

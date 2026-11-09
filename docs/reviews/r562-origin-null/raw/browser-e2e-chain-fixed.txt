@@ -1,0 +1,9 @@
+=== RUN   TestBrowserAuthorizeChainReachesLoopback
+2026/11/09 01:07:16 http: TLS handshake error from 127.0.0.1:50672: remote error: tls: unknown certificate
+2026/11/09 01:07:16 http: TLS handshake error from 127.0.0.1:50944: remote error: tls: unknown certificate
+    browser_e2e_test.go:110: driver output:
+        FINAL_URL http://127.0.0.1:43123/callback?code=E9f-k-8IbMg08sh2FhpZjI1Z6cMvni30h7UyNigEaDA&iss=https%3A%2F%2F127.0.0.1%3A42125&state=outer-state
+    browser_e2e_test.go:122: loopback hit /callback?code=E9f-k-8IbMg08sh2FhpZjI1Z6cMvni30h7UyNigEaDA&iss=https%3A%2F%2F127.0.0.1%3A42125&state=outer-state
+--- PASS: TestBrowserAuthorizeChainReachesLoopback (3.59s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	3.599s
