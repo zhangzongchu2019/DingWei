@@ -1,0 +1,22 @@
+{
+  "command": [
+    "bash",
+    "build.sh",
+    "--test-only"
+  ],
+  "start": "2026-11-09T13:23:44.713783+00:00",
+  "end": "2026-11-09T13:32:43.074845+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "environment_names": [
+    "CODEX_HOME",
+    "GOCACHE",
+    "GOMODCACHE",
+    "GOPROXY",
+    "HOME",
+    "HUB_TEST_PG_STRICT",
+    "OPENSPEC_TELEMETRY",
+    "PATH",
+    "TMPDIR"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "skip": 1,
+      "pass": 239
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extseat": {
+      "pass": 27
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extshared": {
+      "pass": 6
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extwire": {
+      "pass": 13
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/feishulogin": {
+      "pass": 99
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store": {
+      "pass": 599,
+      "skip": 5
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store/migrate": {
+      "pass": 43
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/identity": {
+      "pass": 215
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "pass": 259,
+      "skip": 6
+    }
+  },
+  "m8": {
+    "github.com/zhangzongchu2019/dingwei/internal/m8": {
+      "pass": 1512,
+      "skip": 37
+    }
+  }
+}

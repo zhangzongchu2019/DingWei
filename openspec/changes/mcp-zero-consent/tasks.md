@@ -31,3 +31,7 @@
 - 2026-11-09 coder56solzzc，写者01a1bf6a；三条实读满足后接管，旧锁保留，新工作树追加合并 d5a6fbbc，无 rebase／改写；读数与首轮相同的 rulings dcfd24ef 和任务板 7afbfebc 已核。完成连接页 CSP 冲突处置与飞书 HTTPS 确认页夹具；下一步冻结源并重跑指定门，M3 仍后置，不部署。
 
 - 2026-11-09 coder56solzzc，冻结merge 2c403d430（父d311864c、d5a6fbbc），所有指定门通过：真Chromium单／多目标、两条实际CSP撤除红、feishulogin99／mcpgw237、m8全包1512/0/37、canonical两profile各1129/1129及27Python／2shell rc0、strict29/0。长TMPDIR/socket124字符引起的中间canonical失败保留，短TMPDIR下10格及完整重跑均绿。下一步同工蜂分支快进推送核远端后交独立复核，再核M3接管条件；未部署、不自验收。
+
+- [x] T-12 按组长指定三项实测接管，merge第三发布值0de00bc4（不rebase），login三域/去前缀重跑，A/B单多目标四格真浏览器与三条CSP撤除红，完整门后只收尾冻结。
+
+- 2026-11-09 coder56solzzc（01a1bf9a，产品merge3bd3d97b9、测试源2e8878510、本次证据追加）：完成T-12，三域2刀、原30刀、CSP3刀红，A/B四格实际换票，mcpgw239/0、m8 1512/0/37、canonical双profile1129/1129及27Python/2shell rc0、strict29/0。首轮CSP源顺序断言作废原文保留；未改产品/既有断言或超时。阻塞：独立复核/是否发布待乙P1计划；下一步普通push核远端并交审后冻结，不增名单/Console功能、不部署，M3锁未动。

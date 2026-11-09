@@ -1,3 +1,5 @@
+最新安全收尾见 [final-01a1bf9a/RESULT.md](final-01a1bf9a/RESULT.md)，合并第三发布值0de00bc4、A/B单多目标四格及命名空间必改复跑；按补38冻结，待独立复核。
+
 # 首轮返工入口
 
 最新返工见 [rework-01a1bf0d/RESULT.md](rework-01a1bf0d/RESULT.md)，冻结源10e6c2213，已合入r56.2并补键分域与真实浏览器。下方原报告及原SHA清单保留为c85b4e93历史读数。
