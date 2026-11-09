@@ -1,0 +1,9 @@
+MUTATION_RED header-removed marker=EXTSEAT_SENDER_HEADER_FROM_LOCKED_IDENTITY
+MUTATION_RED meta-removed marker=EXTSEAT_SENDER_META
+MUTATION_RED header-from-body marker=EXTSEAT_SENDER_HEADER_FROM_LOCKED_IDENTITY
+MUTATION_RED header-time-breaks-idempotence marker=EXTSEAT_SENDER_IDEMPOTENCE
+MUTATION_RED reply-route-skipped marker=EXTSEAT_REPLY_ROUTE_E2E
+MUTATION_RED non-target-reply-guard-removed marker=EXTSEAT_REPLY_ONLY_FROM_TARGET
+MUTATION_RED reply-route-after-grouping marker=EXTSEAT_REPLY_ONLY_FROM_TARGET
+MUTATION_RED expect-reply-policy-write-removed marker=EXTSEAT_EXPECT_REPLY_POLICY
+MUTATION_SUMMARY 8/8 semantic reds

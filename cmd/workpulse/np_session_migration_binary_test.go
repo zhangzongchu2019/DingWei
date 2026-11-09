@@ -18,7 +18,7 @@ import (
 )
 
 // Opt-in proof with independently built product binaries. It starts from the exact
-// eight-entry Hub ledger, lets the current binary apply 0104, then starts the
+// eight-entry Hub ledger, lets the current binary apply pending Hub migrations, then starts the
 // certified R50 binary against that same PG schema and checks an authenticated API.
 func TestNPSessionPG8To9AndR50BinaryCompatibility(t *testing.T) {
 	current, old := os.Getenv("R51_NP_CURRENT_BINARY"), os.Getenv("R51_NP_R50_BINARY")
@@ -93,8 +93,8 @@ func TestNPSessionPG8To9AndR50BinaryCompatibility(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := row.Scan(&count); err != nil || count != 12 {
-		t.Fatalf("PG11 ledger count=%d err=%v (want 0104+0105+0107 applied)", count, err)
+	if err := row.Scan(&count); err != nil || count != 13 {
+		t.Fatalf("PG13 ledger count=%d err=%v (want 0104_np_session_created_at, 0105_extseat, 0106_tempgroup, 0107_mcpgw_oauth, 0110_extseat_expect_reply applied)", count, err)
 	}
 	var created, applied time.Time
 	row, err = pool.QueryRow(ctx, repo.SystemCtx(), `SELECT s.created_at,m.applied_at FROM np_session s CROSS JOIN schema_migrations m WHERE s.token_hash=$1 AND m.version='0104_np_session_created_at.sql'`, identity.HashSecret(token))
@@ -149,7 +149,7 @@ func TestNPSessionPG8To9AndR50BinaryCompatibility(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 	}
 	if !ready {
-		t.Fatal("certified R50 binary did not become healthy against PG9")
+		t.Fatal("certified R50 binary did not become healthy against PG13")
 	}
 	client := &http.Client{Timeout: 3 * time.Second}
 	loginBody := strings.NewReader(`{"user_id":"renew-admin","password":"R50-Renewal-Check-42"}`)
