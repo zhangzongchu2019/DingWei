@@ -27,6 +27,7 @@ type Handler struct {
 	stateTTL      time.Duration
 	now           func() time.Time
 	random        io.Reader
+	defaults      DefaultTargets
 }
 
 func NewHandler(cfg Config) (*Handler, error) {
@@ -49,13 +50,20 @@ func NewHandler(cfg Config) (*Handler, error) {
 	return &Handler{
 		appID: cfg.AppID, teamTenantKey: cfg.TeamTenantKey, redirectURI: cfg.RedirectURI,
 		oauth: cfg.OAuth, states: cfg.States, tokens: cfg.Tokens, stateTTL: cfg.StateTTL,
-		now: cfg.Now, random: cfg.Random,
+		now: cfg.Now, random: cfg.Random, defaults: cfg.Defaults,
 	}, nil
 }
 
 // Start begins Feishu login and binds the complete issuance intent to state.
 func (h *Handler) Start(ctx context.Context, req StartRequest) (StartResult, error) {
-	if !extshared.ValidShortName(req.ShortName) || !validTargetAgentFullName(req.TargetAgent) {
+	if req.Automatic {
+		if h.defaults == nil || len(h.defaults.Allowed(h.teamTenantKey)) == 0 || req.ShortName != "" {
+			return StartResult{}, ErrInvalidStart
+		}
+		if req.TargetAgent != "" && !h.allowedTarget(ctx, req.TargetAgent) {
+			return StartResult{}, ErrInvalidStart
+		}
+	} else if !extshared.ValidShortName(req.ShortName) || len(req.ShortName) > 8 || !validTargetAgentFullName(req.TargetAgent) {
 		return StartResult{}, ErrInvalidStart
 	}
 	state, err := h.newState()
@@ -70,7 +78,7 @@ func (h *Handler) Start(ctx context.Context, req StartRequest) (StartResult, err
 	attempt := LoginAttempt{
 		StateHash: hashState(state), Purpose: StatePurposeOAuth, AppID: h.appID, RedirectURI: h.redirectURI,
 		Request: IssueRequest{
-			ShortName: req.ShortName, TargetAgent: req.TargetAgent, AttemptID: req.AttemptID,
+			ShortName: req.ShortName, TargetAgent: req.TargetAgent, AttemptID: req.AttemptID, Automatic: req.Automatic,
 		},
 		CreatedAt: now, ExpiresAt: now.Add(h.stateTTL),
 	}
@@ -83,6 +91,9 @@ func (h *Handler) Start(ctx context.Context, req StartRequest) (StartResult, err
 // Callback consumes state before any upstream call and invokes A only after the
 // server-fetched identity has passed tenant, subject, and display-name checks.
 func (h *Handler) Callback(ctx context.Context, req CallbackRequest) (CallbackResult, error) {
+	if req.Selection != "" {
+		return h.selectTarget(ctx, req)
+	}
 	if req.State == "" {
 		return CallbackResult{}, ErrInvalidCallback
 	}
@@ -105,10 +116,35 @@ func (h *Handler) Callback(ctx context.Context, req CallbackRequest) (CallbackRe
 		return CallbackResult{}, ErrUpstream
 	}
 	proof, err := ResolvePrincipal(profile, h.appID, h.teamTenantKey)
+	if err == ErrDisplayName && attempt.Request.Automatic {
+		fallback := profile
+		fallback.EnName = "pm"
+		proof, err = ResolvePrincipal(fallback, h.appID, h.teamTenantKey)
+	}
 	if err != nil {
 		return CallbackResult{}, err
 	}
 	attempt.Request.Principal = proof
+	if attempt.Request.Automatic {
+		attempt.Request.ShortName = AutomaticShortName(profile, h.now())
+		targets := h.validTargets(ctx)
+		if len(h.defaults.Allowed(h.teamTenantKey)) > 1 {
+			return h.prepareSelection(ctx, attempt, targets)
+		}
+		if !h.allowedTarget(ctx, attempt.Request.TargetAgent) {
+			return CallbackResult{}, ErrInvalidStart
+		}
+	}
+	return h.issue(ctx, attempt)
+}
+
+func (h *Handler) issue(ctx context.Context, attempt LoginAttempt) (CallbackResult, error) {
+	if !h.now().Before(attempt.ExpiresAt) {
+		return CallbackResult{}, ErrStateExpired
+	}
+	if attempt.Request.Automatic && !h.allowedTarget(ctx, attempt.Request.TargetAgent) {
+		return CallbackResult{}, ErrInvalidStart
+	}
 	issued, err := h.tokens.IssueToken(ctx, attempt.Request)
 	if err != nil {
 		return CallbackResult{}, ErrTokenIssue

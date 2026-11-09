@@ -28,12 +28,18 @@ button{margin-top:1.5rem;padding:.65rem 1.2rem}.hint{color:#52606d}.error{color:
 <form method="post" action="" autocomplete="off">
 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 <input type="hidden" name="attempt_id" value="{{.AttemptID}}">
+{{if .Automatic}}
+<p class="hint">接入名称由飞书身份自动生成；允许查看在线成员、发送消息、接收消息与确认收件。</p>
+{{if .TargetAgent}}<p>本次协作目标：{{.TargetAgent}}</p>{{end}}
+<button type="submit">同意并进入飞书</button>
+{{else}}
 <label for="short_name">短名</label>
 <input id="short_name" name="short_name" type="text" required minlength="1" maxlength="8" pattern="[a-z0-9]{1,8}" value="{{.ShortName}}" aria-describedby="short_hint">
 <small id="short_hint" class="hint">1～8 位小写英文字母或数字</small>
 <label for="target_agent">目标 Agent 全名</label>
 <input id="target_agent" name="target_agent" type="text" required maxlength="50" placeholder="名称.属主简称" value="{{.TargetAgent}}">
 <button type="submit">前往飞书扫码</button>
+{{end}}
 </form>
 </body>
 </html>`))
@@ -44,6 +50,7 @@ type connectPageData struct {
 	ShortName   string
 	TargetAgent string
 	Error       string
+	Automatic   bool
 }
 
 // ServeConnectPage renders the self-contained connection form on GET and
@@ -92,8 +99,18 @@ func (h *Handler) postConnectPage(w http.ResponseWriter, r *http.Request) {
 		AttemptID: attempt.Request.AttemptID, ShortName: r.PostForm.Get("short_name"),
 		TargetAgent: r.PostForm.Get("target_agent"),
 	}
+	if attempt.Request.Automatic {
+		data.Automatic = true
+		data.ShortName = ""
+		data.TargetAgent = attempt.Request.TargetAgent
+		// Browser-supplied defaults are never trusted, including hidden fields.
+		if r.PostForm.Get("short_name") != "" || r.PostForm.Get("target_agent") != "" {
+			http.Error(w, "接入请求已失效，请重新授权。", http.StatusBadRequest)
+			return
+		}
+	}
 	started, err := h.Start(r.Context(), StartRequest{
-		ShortName: data.ShortName, TargetAgent: data.TargetAgent, AttemptID: data.AttemptID,
+		ShortName: data.ShortName, TargetAgent: data.TargetAgent, AttemptID: data.AttemptID, Automatic: data.Automatic,
 	})
 	if err != nil {
 		if !errors.Is(err, ErrInvalidStart) {
@@ -108,6 +125,17 @@ func (h *Handler) postConnectPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) renderConnectPage(w http.ResponseWriter, r *http.Request, status int, data connectPageData) {
+	if h.defaults != nil && len(h.defaults.Allowed(h.teamTenantKey)) > 0 {
+		data.Automatic = true
+		targets := h.validTargets(r.Context())
+		if len(targets) == 0 {
+			http.Error(w, "没有可用协作目标，请联系管理员。", http.StatusForbidden)
+			return
+		}
+		if len(h.defaults.Allowed(h.teamTenantKey)) == 1 {
+			data.TargetAgent = targets[0]
+		}
+	}
 	token, err := h.newState()
 	if err != nil {
 		http.Error(w, "login unavailable", http.StatusInternalServerError)
@@ -117,7 +145,7 @@ func (h *Handler) renderConnectPage(w http.ResponseWriter, r *http.Request, stat
 	attempt := LoginAttempt{
 		StateHash: hashState(token), Purpose: StatePurposeConnectForm,
 		AppID: h.appID, RedirectURI: h.redirectURI,
-		Request: IssueRequest{AttemptID: data.AttemptID}, CreatedAt: now, ExpiresAt: now.Add(h.stateTTL),
+		Request: IssueRequest{AttemptID: data.AttemptID, Automatic: data.Automatic, TargetAgent: data.TargetAgent}, CreatedAt: now, ExpiresAt: now.Add(h.stateTTL),
 	}
 	if err := h.states.Create(r.Context(), attempt); err != nil {
 		http.Error(w, "login unavailable", http.StatusInternalServerError)

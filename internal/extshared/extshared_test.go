@@ -3,12 +3,12 @@ package extshared
 import "testing"
 
 func TestShortNameRules(t *testing.T) {
-	for _, s := range []string{"a", "mybot", "abc12345", "0"} {
+	for _, s := range []string{"a", "mybot", "abc12345", "abcdefghijklmnopqrst", "0"} {
 		if !ValidShortName(s) {
 			t.Fatalf("want valid: %q", s)
 		}
 	}
-	for _, s := range []string{"", "abc123456", "MyBot", "my_bot", "my-bot", "机器人", "ab c"} {
+	for _, s := range []string{"", "abcdefghijklmnopqrstu", "MyBot", "my_bot", "my-bot", "机器人", "ab c"} {
 		if ValidShortName(s) {
 			t.Fatalf("want invalid: %q", s)
 		}

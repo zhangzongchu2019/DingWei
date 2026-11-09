@@ -52,9 +52,9 @@ func ParseAGCode(s string) (int64, bool) {
 	return n, err == nil && n >= 1
 }
 
-var shortNameRE = regexp.MustCompile(`^[a-z0-9]{1,8}$`)
+var shortNameRE = regexp.MustCompile(`^[a-z0-9]{1,20}$`)
 
-// ValidShortName 使用方自起的短名：仅小写字母与数字，1～8 位（㊹-补2）。
+// ValidShortName 使用方自起的短名：仅小写字母与数字，1～20 位（㊿-补29；普通名称规则不变）。
 func ValidShortName(s string) bool { return shortNameRE.MatchString(s) }
 
 // AgentName 外部 Agent 名＝短名＋"_"＋编组名，例如 "mybot_AG3"。

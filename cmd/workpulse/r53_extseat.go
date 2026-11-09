@@ -119,8 +119,13 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 				return mcpgw.Config{}, err
 			}
 		}
+		defaults, err := extwire.ParseConsentTargets(os.Getenv("DW_MCP_CONSENT_TARGETS_JSON"))
+		if err != nil {
+			return mcpgw.Config{}, err
+		}
+		defaults.Identity, defaults.Pool, defaults.Access = d.hub.Identity, d.pool, repo.SystemCtx()
 		login, err := feishulogin.NewHandler(feishulogin.Config{AppID: d.appID, TeamTenantKey: cfg.tenantKey, RedirectURI: redirect,
-			OAuth: oauth, States: mcpgw.LoginStates{Store: store}, Tokens: extwire.Issuer{Seats: seats, Resource: cfg.resource}})
+			Defaults: defaults, OAuth: oauth, States: mcpgw.LoginStates{Store: store}, Tokens: extwire.Issuer{Seats: seats, Resource: cfg.resource}})
 		if err != nil {
 			return mcpgw.Config{}, err
 		}

@@ -205,6 +205,13 @@ func (g *Gateway) connect(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		now := g.cfg.Now()
+		// Claim the enclosing OAuth attempt once, not merely each Feishu state.
+		// Multiple tabs/forms may have distinct CSRF tokens for the same attempt.
+		// Losing starts remain unbound and cannot reach profile/name generation.
+		if e = g.cfg.Store.Put(r.Context(), "login", hash("started:"+attempt), []byte(attempt), a.Expires, now); e != nil {
+			oauthError(w, 400, "invalid_request")
+			return
+		}
 		if e = g.cfg.Store.Put(r.Context(), "login", hash(location.Query().Get("state")), []byte(attempt), a.Expires, now); e != nil {
 			oauthError(w, 503, "temporarily_unavailable")
 			return
@@ -221,39 +228,63 @@ func (g *Gateway) connect(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(captured.body.Bytes())
 }
 func (g *Gateway) callback(w http.ResponseWriter, r *http.Request) {
-	if !method(w, r, "GET") {
+	var req feishulogin.CallbackRequest
+	kind, key := "login", ""
+	if r.Method == "POST" {
+		r.Body = http.MaxBytesReader(w, r.Body, 4096)
+		if r.ParseForm() != nil || !unique(r.PostForm) || r.URL.RawQuery != "" || r.PostForm.Get("selection") == "" || r.PostForm.Get("target_agent") == "" {
+			oauthError(w, 400, "invalid_request")
+			return
+		}
+		req = feishulogin.CallbackRequest{Selection: r.PostForm.Get("selection"), Target: r.PostForm.Get("target_agent")}
+		kind, key = "login", "selection:"+req.Selection
+	} else if r.Method == "GET" {
+		q, e := url.ParseQuery(r.URL.RawQuery)
+		if e != nil || !unique(q) || q.Get("state") == "" || q.Get("code") == "" {
+			oauthError(w, 400, "invalid_request")
+			return
+		}
+		req = feishulogin.CallbackRequestFromQuery(q)
+		key = req.State
+	} else {
+		w.Header().Set("Allow", "GET, POST")
+		oauthError(w, 405, "invalid_request")
 		return
 	}
-	q, e := url.ParseQuery(r.URL.RawQuery)
-	if e != nil || !unique(q) || q.Get("state") == "" || q.Get("code") == "" {
+	if len(key) > 128 {
 		oauthError(w, 400, "invalid_request")
 		return
 	}
-	attemptRaw, e := g.cfg.Store.Get(r.Context(), "login", hash(q.Get("state")), g.cfg.Now())
+	attemptRaw, e := g.cfg.Store.Get(r.Context(), kind, hash(key), g.cfg.Now())
 	if e != nil {
 		oauthError(w, 400, "invalid_request")
 		return
 	}
 	attempt := string(attemptRaw)
-	if _, e = g.readAttempt(r, attempt, false); e != nil {
-		oauthError(w, 400, "invalid_request")
-		return
-	}
-	if _, e = g.cfg.Store.Take(r.Context(), "login", hash(q.Get("state")), g.cfg.Now()); e != nil {
-		oauthError(w, 400, "invalid_request")
-		return
-	}
-	// C 从一次性 state 内取 AttemptID 和主体，拒绝 query 中的签发意图覆盖。
-	issued, e := g.cfg.Login.Callback(r.Context(), feishulogin.CallbackRequestFromQuery(q))
+	a, e := g.readAttempt(r, attempt, false)
 	if e != nil {
-		oauthError(w, 400, "access_denied")
+		oauthError(w, 400, "invalid_request")
 		return
 	}
+	if _, e = g.cfg.Store.Take(r.Context(), kind, hash(key), g.cfg.Now()); e != nil {
+		oauthError(w, 400, "invalid_request")
+		return
+	}
+	issued, e := g.cfg.Login.Callback(r.Context(), req)
+	if e != nil {
+		writeJSON(w, 400, map[string]string{"error": "access_denied", "error_description": "授权或协作目标已失效，请重新授权或联系管理员。"})
+		return
+	}
+	if issued.Selection != "" {
+		g.renderSelection(w, r, issued, attempt, a)
+		return
+	}
+
 	if issued.AttemptID != attempt {
 		oauthError(w, 400, "invalid_request")
 		return
 	}
-	a, e := g.readAttempt(r, attempt, true)
+	a, e = g.readAttempt(r, attempt, true)
 	if e != nil {
 		oauthError(w, 400, "invalid_request")
 		return

@@ -39,7 +39,7 @@ func TestNPSessionPG8To9AndR50BinaryCompatibility(t *testing.T) {
 	var oldEntries []migrate.Entry
 	for _, e := range entries {
 		// r50 现网账＝8 条：剔掉 r51 的 0104 与 r53 的 0105／0107（r53 集成起当前二进制会一并施加）。
-		if e.Name != "0104_np_session_created_at.sql" && e.Name != "0105_extseat.sql" && e.Name != "0106_tempgroup.sql" && e.Name != "0107_mcpgw_oauth.sql" {
+		if e.Name != "0104_np_session_created_at.sql" && e.Name != "0105_extseat.sql" && e.Name != "0106_tempgroup.sql" && e.Name != "0107_mcpgw_oauth.sql" && e.Name != "0108_extseat_short_name.sql" {
 			oldEntries = append(oldEntries, e)
 		}
 	}
@@ -93,8 +93,8 @@ func TestNPSessionPG8To9AndR50BinaryCompatibility(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := row.Scan(&count); err != nil || count != 12 {
-		t.Fatalf("PG11 ledger count=%d err=%v (want 0104+0105+0107 applied)", count, err)
+	if err := row.Scan(&count); err != nil || count != 13 {
+		t.Fatalf("PG13 ledger count=%d err=%v (want 0104+0105+0107 applied)", count, err)
 	}
 	var created, applied time.Time
 	row, err = pool.QueryRow(ctx, repo.SystemCtx(), `SELECT s.created_at,m.applied_at FROM np_session s CROSS JOIN schema_migrations m WHERE s.token_hash=$1 AND m.version='0104_np_session_created_at.sql'`, identity.HashSecret(token))
