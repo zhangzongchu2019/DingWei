@@ -1,0 +1,17 @@
+{
+  "command": [
+    "env",
+    "NODE_PATH=/tmp/coder-a3-playwright/node_modules",
+    "PLAYWRIGHT_BROWSERS_PATH=/home/dev/.cache/ms-playwright",
+    "python3",
+    "tests/subagent-p1-m3/mutations.py",
+    "--output",
+    "/tmp/m3-final-885-mutations"
+  ],
+  "start": "2026-11-09T01:29:52.284257+00:00",
+  "end": "2026-11-09T01:32:32.235982+00:00",
+  "rc": 1,
+  "uid": 1001,
+  "source_commit": "885052b70ef8bcf155fdba389d4a6f41f31510c3",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

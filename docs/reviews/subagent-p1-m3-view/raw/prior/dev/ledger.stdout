@@ -1,0 +1,19 @@
+=== RUN   TestMigrationLedger_LegacyAckBackfillsWithoutReplay
+store: 纯数据迁移 0025_owner_links_page.sql 由 DINGWEI_MIGRATION_LEGACY_ACK 人工确认放行（仅补账，不执行）
+store: legacy 迁移补账 62 件（已核验对象存在，未重放语句）
+--- PASS: TestMigrationLedger_LegacyAckBackfillsWithoutReplay (0.18s)
+=== RUN   TestSubAgentOfflineRollbackLegacyClaimer
+    sub_agent_rollback_test.go:87: AA010_OFFLINE_ROLLBACK returned=2 unknown=1 terminal=1 legacy_claimer_child_rows=0; ACK and tombstones retained
+--- PASS: TestSubAgentOfflineRollbackLegacyClaimer (0.14s)
+=== RUN   TestSubAgentSnapshotRecoveryAndTombstone
+--- PASS: TestSubAgentSnapshotRecoveryAndTombstone (0.13s)
+=== RUN   TestSubAgentDeliverySidecarAtomicAndRestart
+--- PASS: TestSubAgentDeliverySidecarAtomicAndRestart (0.14s)
+=== RUN   TestSubAgentMigrationPreservesOldData
+--- PASS: TestSubAgentMigrationPreservesOldData (0.14s)
+=== RUN   TestSubAgentFailureNoticeRetainsSourceNode
+--- PASS: TestSubAgentFailureNoticeRetainsSourceNode (0.14s)
+=== RUN   TestSubAgentPersistedSourceSurvivesReconnect
+--- PASS: TestSubAgentPersistedSourceSurvivesReconnect (0.13s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	1.011s

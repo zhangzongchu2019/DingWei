@@ -1,0 +1,28 @@
+=== RUN   TestSubAgentViewScopeAndEvents
+2026/11/09 01:06:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/09 01:06:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/09 01:06:27 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/09 01:06:27 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+2026/11/09 01:06:27 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestSubAgentViewScopeAndEvents (0.16s)
+=== RUN   TestSubAgentViewAuthorizationBudgetAndRevocation
+2026/11/09 01:06:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/09 01:06:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/09 01:06:27 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/09 01:06:27 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x28 pc=0xd80239]
+
+goroutine 403 [running]:
+github.com/zhangzongchu2019/dingwei/internal/m8.(*consoleMuxRegistry).stop(0xc00060e070, 0xc000002900, {0x1a4f040, 0xc000784000})
+	/data/ai-dev-data/subagent-p1-m3-view/internal/m8/console_mux.go:693 +0x259
+github.com/zhangzongchu2019/dingwei/internal/m8.(*Hub).closeConsoleMuxContext(0xc000016540?, {0x1a4f040, 0xc000784000})
+	/data/ai-dev-data/subagent-p1-m3-view/internal/m8/console_mux.go:844 +0x225
+github.com/zhangzongchu2019/dingwei/internal/m8.(*Hub).CloseContext.func1.1.2()
+	/data/ai-dev-data/subagent-p1-m3-view/internal/m8/lifecycle.go:195 +0x1f
+github.com/zhangzongchu2019/dingwei/internal/m8.(*Hub).CloseContext.func1.1.1.1()
+	/data/ai-dev-data/subagent-p1-m3-view/internal/m8/lifecycle.go:188 +0x4a
+created by github.com/zhangzongchu2019/dingwei/internal/m8.(*Hub).CloseContext.func1.1.1 in goroutine 402
+	/data/ai-dev-data/subagent-p1-m3-view/internal/m8/lifecycle.go:186 +0xbf
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.333s
+FAIL

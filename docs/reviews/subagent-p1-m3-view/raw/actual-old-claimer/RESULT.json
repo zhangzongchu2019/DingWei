@@ -1,0 +1,35 @@
+[
+  {
+    "label": "prepare",
+    "command": [
+      "go",
+      "test",
+      "./internal/store",
+      "-run",
+      "^TestSubAgentOfflineRollbackLegacyClaimer$",
+      "-count=1",
+      "-v"
+    ],
+    "source": "3723e263a5cf5641e59157516bea11f959532910",
+    "start": "2026-11-09T01:36:15.824900+00:00",
+    "end": "2026-11-09T01:36:17.244844+00:00",
+    "rc": 0
+  },
+  {
+    "label": "actual-old-claimer",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/store",
+      "-run",
+      "^TestM3ActualOldClaimer$",
+      "-count=1",
+      "-v"
+    ],
+    "source": "79a60a1e351c207ff0b46bdf9151e846ec83f5d4",
+    "start": "2026-11-09T01:36:17.246490+00:00",
+    "end": "2026-11-09T01:36:18.511878+00:00",
+    "rc": 0
+  }
+]

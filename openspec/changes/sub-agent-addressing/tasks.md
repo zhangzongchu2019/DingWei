@@ -28,7 +28,7 @@
 - [x] T-21 M3 View作用域、签名票据、独立投影与Console预算/整树撤权。
 - [x] T-22 M3 树JSON、兼容根文本、Console树状态和根提及边界。
 - [x] T-23 M3 混部五格、feature-off及旧二进制隔离回退实跑、席位说明。
-- [ ] T-24 M3 AA010正负/一刀变异、全量浏览器runner、m8/canonical/strict与Git证据交审。
+- [x] T-24 M3 AA010正负/一刀变异、全量浏览器runner、m8/canonical/strict与Git证据交审。
 
 ## 交接记录
 
@@ -68,3 +68,6 @@
 
 
 2026-11-09 coder56solzzc.zzc；产品18cae8bf5不变，canonical执行候选3723e263a。历史future探针的Console辅助断言原先要求纯decode拒绝三段名，现与M3结构化scope授权冲突；原红原文保留。本追加将辅助断言升级为「旧版decode可拒；新版decode不授予权限，未授权scope在resolveScopes以404拒绝」，原AMR/未协商父误投两条future保护不改，既有设计证据目录不改。此测试工具不在canonical/Go默认发现路径，正式future重跑。阻塞：无。下一步：汇总全门与SHA交审。
+
+
+2026-11-09 coder56solzzc.zzc；CODEX_THREAD_ID=01a1bd1c-c28e-7c60-9594-7894d0078533；产品冻结18cae8bf5，交审执行候选9ae19c5a1（之后仅补测试工具/证据，不改产品）。完成T24：canonical完整rc0，claude/codex各1165/1165、92文件、27Python/2shell；全量浏览器39/39、未选格；m8全包1533/0/37SKIP，store605/0/5SKIP、consolemux及cmd全部通过；M3变异28/28目标红，旧Hub两格父fallback各目标红；实际旧源claimer隔离实跑/future通过；strict29/0，交接更新后再验证。源37件及证据SHA清单、完整原文/初始失败/输入等价证明见docs/reviews/subagent-p1-m3-view/REPORT.md和raw/SUMMARY.json。r55九格继承在canonical双profile保持。阻塞：无开发交件阻塞。下一步：Git推送证据追加并核ls-remote，交组长独立复核；唯一写者01a1bd1c持M3锁，另一路只读。未部署，不碰现网/预发/在线席位，不启动真实推理；不自验收或启动新里程碑。

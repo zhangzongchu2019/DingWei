@@ -1,0 +1,16 @@
+{
+  "command": [
+    "env",
+    "NODE_PATH=/tmp/coder-a3-playwright/node_modules",
+    "python3",
+    "tests/subagent-p1-m3/mutations.py",
+    "--output",
+    "/tmp/m3-mutations-1"
+  ],
+  "start": "2026-11-09T01:19:10.515611+00:00",
+  "end": "2026-11-09T01:20:46.237117+00:00",
+  "rc": 1,
+  "uid": 1001,
+  "source_commit": "0b47a5857cc331ee5dc8012a002fd561ae2279f0",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

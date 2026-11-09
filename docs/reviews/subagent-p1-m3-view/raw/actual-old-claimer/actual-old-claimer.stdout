@@ -1,0 +1,5 @@
+=== RUN   TestM3ActualOldClaimer
+    failure_notice_test.go:8: actual pre-M1 source claimer: no child read; old root readable; unknown and ACK unchanged
+--- PASS: TestM3ActualOldClaimer (0.03s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.038s

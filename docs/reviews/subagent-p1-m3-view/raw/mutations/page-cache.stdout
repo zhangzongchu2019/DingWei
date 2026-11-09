@@ -1,0 +1,24 @@
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/sm1-jufj3pre/m3mut-4h3n3ewd/view-state.json", "request_path": ""}
+F
+======================================================================
+FAIL: test_aa010_real_signature_tamper_and_page_cache_generation (test_mux_projection.SubAgentScopeProjectionTest.test_aa010_real_signature_tamper_and_page_cache_generation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/sm1-jufj3pre/m3mut-4h3n3ewd/test_mux_projection.py", line 100, in test_aa010_real_signature_tamper_and_page_cache_generation
+    self.assertEqual(json.loads(result.stdout),['dw-view-page:scope-a','dw-view-page:scope-b','dw-view-page:same.agent.owner'],'AA010_PAGE_CACHE_SCOPE')
+AssertionError: Lists differ: ['dw-view-page:same.agent.owner', 'dw-view-page:same.agen[37 chars]ner'] != ['dw-view-page:scope-a', 'dw-view-page:scope-b', 'dw-view[19 chars]ner']
+
+First differing element 0:
+'dw-view-page:same.agent.owner'
+'dw-view-page:scope-a'
+
+- ['dw-view-page:same.agent.owner',
+-  'dw-view-page:same.agent.owner',
++ ['dw-view-page:scope-a',
++  'dw-view-page:scope-b',
+   'dw-view-page:same.agent.owner'] : AA010_PAGE_CACHE_SCOPE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.042s
+
+FAILED (failures=1)

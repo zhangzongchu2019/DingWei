@@ -1,0 +1,16 @@
+{
+  "send_py": {
+    "result": "r2.kimi.zzc#u_synthetic",
+    "validates_depth": false
+  },
+  "view_service_header": {
+    "result": "r2.kimi.zzc",
+    "validates_identity": false
+  },
+  "helper_legacy_route": {
+    "to": "#r2.kimi.zzc",
+    "validates_sub_path": false
+  },
+  "future_assertions": true,
+  "go_rc": 0
+}

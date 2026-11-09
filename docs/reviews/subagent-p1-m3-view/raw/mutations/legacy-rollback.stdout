@@ -1,0 +1,6 @@
+=== RUN   TestSubAgentOfflineRollbackLegacyClaimer
+    sub_agent_rollback_test.go:53: AA010_LEGACY_REPLAY_PARENT maybe-executed
+--- FAIL: TestSubAgentOfflineRollbackLegacyClaimer (0.17s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.173s
+FAIL

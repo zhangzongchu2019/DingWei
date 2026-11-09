@@ -1,0 +1,19 @@
+=== RUN   TestM3OldHubMixedMatrix
+=== RUN   TestM3OldHubMixedMatrix/old_helper
+2026/11/09 01:36:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/09 01:36:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/09 01:36:18 session handshake timing key_id=u_zzc session=opus50ts total=7ms register=1ms accept=0s conn_seq=0s onboard=6ms register_lock=0s
+    subagent_compat_guard_test.go:15: AA010_OLD_HUB_FULL_CHILD_REJECT
+=== RUN   TestM3OldHubMixedMatrix/new_helper
+2026/11/09 01:36:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/09 01:36:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/09 01:36:18 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+    subagent_compat_guard_test.go:15: AA010_OLD_HUB_FULL_CHILD_REJECT
+2026/11/09 01:36:18 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+2026/11/09 01:36:18 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- FAIL: TestM3OldHubMixedMatrix (0.53s)
+    --- FAIL: TestM3OldHubMixedMatrix/old_helper (0.30s)
+    --- FAIL: TestM3OldHubMixedMatrix/new_helper (0.23s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.546s
+FAIL

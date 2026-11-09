@@ -1,0 +1,17 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "^TestSubAgentViewSidecarObservation$",
+    "-count=1",
+    "-v"
+  ],
+  "start": "2026-11-09T01:24:49.737829+00:00",
+  "end": "2026-11-09T01:24:59.838913+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "0b47a5857cc331ee5dc8012a002fd561ae2279f0",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

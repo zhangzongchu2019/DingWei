@@ -1,0 +1,18 @@
+{
+  "command": [
+    "env",
+    "PYTHONPATH=view-service:tools/sessionhelper",
+    "python3",
+    "-m",
+    "unittest",
+    "-q",
+    "test_mux_projection",
+    "tools/sessionhelper/tests/test_sub_agent_helper.py"
+  ],
+  "start": "2026-11-09T01:22:20.279670+00:00",
+  "end": "2026-11-09T01:22:23.690151+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "0b47a5857cc331ee5dc8012a002fd561ae2279f0",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

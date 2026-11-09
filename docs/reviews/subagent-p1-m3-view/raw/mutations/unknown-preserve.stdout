@@ -1,0 +1,6 @@
+=== RUN   TestSubAgentOfflineRollbackLegacyClaimer
+    sub_agent_rollback_test.go:58: AA010_UNKNOWN_NOT_FAKE_ACK &{<nil> maybe-executed u_zzc parentsub-quarantine:root {"from":"sender#u_zzc","to":"aa.parent.zzc#u_zzc","body":"unchanged"} maybe-executed session_inbound/subagent/99046370c0c588b882e4f6739531b26c5cfce9c586aef81c7615e17d2431b0a9  processed 1 2026-11-09 01:36:55.0974223 +0000 UTC 0001-01-01 00:00:00 +0000 UTC  2026-11-09 01:36:55.0974223 +0000 UTC <nil> <nil> 2  0 <nil>  }
+--- FAIL: TestSubAgentOfflineRollbackLegacyClaimer (0.18s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.185s
+FAIL

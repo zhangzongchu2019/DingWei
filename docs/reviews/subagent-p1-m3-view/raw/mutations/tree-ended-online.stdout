@@ -1,0 +1,11 @@
+=== RUN   TestSubAgentViewTreeLegacyAndFeatureOff
+2026/11/09 01:36:39 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/09 01:36:39 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/09 01:36:39 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/09 01:36:39 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+    sub_agent_view_test.go:155: AA010_TREE_TOMBSTONE {ag_1f9d42df896da6d3e874d6f0084fec97 opus50ts.zzc true true [{node-a 1 aa.opus50ts.zzc active  true} {node-b 1 bb.opus50ts.zzc ended completed true}]} <nil>
+2026/11/09 01:36:39 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- FAIL: TestSubAgentViewTreeLegacyAndFeatureOff (0.21s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.220s
+FAIL

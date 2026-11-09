@@ -1,0 +1,11 @@
+=== RUN   TestSubAgentViewSignedSubject
+2026/11/09 01:36:36 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/09 01:36:36 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/09 01:36:36 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/09 01:36:36 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+    sub_agent_view_test.go:195: AA010_SIGNED_SCOPE_BINDING map[agent_id:sub-v1-733b08de0b6539e432e27c9253980563ccd456e9751ec57ac5584de2732d62c9 full_name:aa.opus50ts.zzc lane_generation:1 node_id:forged root_agent_id:ag_333039b2eefb77b2e9022855279dcc79 viewer_session_hash:bd02452d9f0e44b30a7eda3ca6ff0c87decc20740fd63183b29873d2ee05fef8]
+2026/11/09 01:36:36 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- FAIL: TestSubAgentViewSignedSubject (0.19s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.205s
+FAIL

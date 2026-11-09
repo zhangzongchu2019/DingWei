@@ -1,0 +1,17 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "./internal/store",
+    "./internal/consolemux",
+    "./cmd/workpulse",
+    "-count=1"
+  ],
+  "start": "2026-11-09T01:10:54.247820+00:00",
+  "end": "2026-11-09T01:15:03.183351+00:00",
+  "rc": 1,
+  "uid": 1001,
+  "source_commit": "0b47a5857cc331ee5dc8012a002fd561ae2279f0",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

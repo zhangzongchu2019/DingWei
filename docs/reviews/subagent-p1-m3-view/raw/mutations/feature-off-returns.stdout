@@ -1,0 +1,31 @@
+F
+======================================================================
+FAIL: test_aa010_feature_off_drains_without_native_or_capability (test_sub_agent_helper.StoreTests.test_aa010_feature_off_drains_without_native_or_capability)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m3-view/tools/sessionhelper/tests/test_sub_agent_helper.py", line 144, in test_aa010_feature_off_drains_without_native_or_capability
+    asyncio.run(run())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/subagent-p1-m3-view/tools/sessionhelper/tests/test_sub_agent_helper.py", line 137, in run
+    self.assertEqual(sorted(calls),['off-a','off-b'],'AA010_FEATURE_OFF_PER_MAIL_RETURN')
+AssertionError: Lists differ: [] != ['off-a', 'off-b']
+
+Second list contains 2 additional elements.
+First extra element 0:
+'off-a'
+
+- []
++ ['off-a', 'off-b'] : AA010_FEATURE_OFF_PER_MAIL_RETURN
+
+----------------------------------------------------------------------
+Ran 1 test in 1.116s
+
+FAILED (failures=1)

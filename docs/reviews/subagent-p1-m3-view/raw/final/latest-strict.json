@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "start": "2026-11-09T01:47:13.746829+00:00",
+  "end": "2026-11-09T01:47:14.041249+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "9ae19c5a1ee5751acdaeb084aed7443ca7c05673",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}
