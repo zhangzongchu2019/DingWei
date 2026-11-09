@@ -3,7 +3,7 @@
 - [x] T-01 复核最小基线与Hub影响清单：r51 f7f31fca；身份、名称、在线、授权、np_group/np_agent、投递及ACK；未核实处保留标记。
 - [x] T-02 同步业主㊹、补1～补6裁定：扫码＋tenant_key、归属名/稳定键、AG序号、组合名、既定传输参数、Hub改造、Console、14天/3天滑动周期；原等待业主六选项已替换；补5按无状态MCP、ACK重投和可选订阅/私有WSS分期同步。PM-GW-01仅轮询不续AG已由业主确认（㊹-补6），此项已完成。
 - [x] T-03 完成替代管理员预建的扫码身份、标准OAuth、自动双成员AG、持久命名/续期/吊销/解散设计；这是文档完成，不代表产品实现。
-- [ ] T-04 实现飞书网页扫码、本团队tenant校验、稳定主体、OAuth metadata/CIMD与2026-07-28无状态MCP：server/discover、每请求_meta/头/resultType及四工具，验证对话式/自主循环互操作，不依赖initialize/Mcp-Session-Id。 【乙；交接：尚缺真实飞书网页登录/真实第三方 MCP SDK 对话式与自主循环互操作；由集成负责人安排真实身份与标准客户端验收。】
+- [ ] T-04 实现飞书网页扫码、本团队tenant校验、稳定主体、OAuth metadata/CIMD与2026-07-28无状态MCP：server/discover、每请求_meta/头/resultType及四工具，验证对话式/自主循环互操作，不依赖initialize/Mcp-Session-Id。 【乙；交接：尚缺真实飞书网页登录/真实第三方 MCP SDK 对话式与自主循环互操作；由集成负责人安排真实身份与标准客户端验收。2026-11-09 r56.2（0de00bc45）现网补证：业主真实飞书网页登录与授权通过，Codex 桌面版（真实第三方 MCP 客户端）发出消息、目标 ts3opus55.zzc 收到（rulings ㊿-补36 19385acb）；仍缺：外部端收取回复的实证（prodops 只读取证 75a63db34bcf 待交）与自主循环互操作。业主另令走完整身份（乙，external-agent-full-identity，㊿-补38 cabde8a5）。】
 - [x] T-05 实现同权REST四操作，scope/audience、Origin和身份隔离；不增加执行/管理权限。 【甲；证据：docs/reviews/r53-mcpgw/EVIDENCE.md @ 0fe09b9e3df85ee8b32fe08cdeec60099d2b540c】
 - [x] T-06 实现持久AG sequence、external命名和全名适配、双成员事务、普通路由/AMR、session_delivery及HTTP ACK v2适配；断流新RPC请求重取未ACK、按稳定delivery去重与发送幂等，不用SSE续传；保留helper/driver回归。 【甲；证据：docs/reviews/r53-extseat/EVIDENCE.md; docs/reviews/r53-mcpgw/EVIDENCE.md @ 0fe09b9e3df85ee8b32fe08cdeec60099d2b540c】
 - [x] T-07 实现令牌14天持久滑动续期、90秒在线、AG3天生命周期、启动补扫与分批清理、两侧outbox通知/在途结算、消息24小时到期、限流/审计/吊销中断；实施前冻结节流/跨库方案。 【甲；证据：docs/reviews/r53-extseat/EVIDENCE.md; docs/reviews/r53-tempgroup/EVIDENCE.md @ 0fe09b9e3df85ee8b32fe08cdeec60099d2b540c】
