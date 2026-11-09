@@ -20,3 +20,14 @@
 ## 安全结果
 
 回调日志只写 `reason_code`、`attempt_prefix`、`target_category`、`utc`；目标名、授权 code、访问/本地 token、open_id 和正文均不写。HTML 与非 HTML 响应保留原 OAuth error 值，新增固定安全说明。来源守卫拒绝也使用同一日志与说明出口。
+
+## 2026-11-09 复核补强
+
+- `go test -p 1 -count=1 -v ./internal/mcpgw`（`DW_BROWSER_E2E=1`、Node `v22.23.1`、Playwright `NODE_PATH` 已配置）：PASS；真实浏览器用例均通过，CSP_ERRORS 0。
+- `go test -p 1 -count=1 -v ./internal/feishulogin`：PASS，包括 AttemptID 不匹配的新增负例。
+- `PATH=/tmp/mcp-auth-diag-gate-venv/bin:/opt/node22/bin:$PATH ./scripts/run-build-tests.sh`：PASS；helper 两 profile 各 1129/1129（1120+9），Python 27 项、shell 2 项，`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`。隔离 venv 依照 `tools/sessionhelper/requirements-runtime.lock` 建立。直接使用系统 Python 时因其未安装 `websockets`，helper discovery 失败；该次未作为验收读数。
+- `python3 docs/reviews/mcp-auth-diagnostics/mutations.py`：12/12 判红且命中预期标记；其中 11 项为产品行为变异（含 callback AttemptID mismatch 与 CSP 宽松策略），另 1 项为既有 `browser-csp-count` 测试计数变异。
+- 新增 `TestCallbackAttemptMismatchRejectsBeforeIssueAndConsumesState`：断言失败归类为 `FailureAuthorizationUsed`、`IssueToken` 调用次数为 0、同一 state 再次回调失败；变异诊断标记 `CALLBACK_ATTEMPT_MISMATCH_BEFORE_ISSUE`。
+- HTML 错误页面断言 `default-src 'none'`；删除该 CSP 策略会命中 `CALLBACK_FAILURE_CSP_POLICY` 并使测试判红。
+
+本轮原始日志：`/tmp/mcp-auth-diag-build-tests.log`、`/tmp/mcp-auth-diag-feishulogin.log`、`/tmp/mcp-auth-diag-mutations.log`；完整 mcpgw 日志由执行命令输出。

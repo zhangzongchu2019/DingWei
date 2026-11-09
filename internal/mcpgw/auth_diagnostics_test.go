@@ -126,6 +126,9 @@ func TestCallbackFailureReasonsPageAndStructuredLog(t *testing.T) {
 			if response.Code != http.StatusBadRequest || response.Header().Get("Content-Type") != "text/html; charset=utf-8" {
 				t.Fatalf("CALLBACK_FAILURE_HTML status=%d content-type=%q", response.Code, response.Header().Get("Content-Type"))
 			}
+			if csp := response.Header().Get("Content-Security-Policy"); !strings.Contains(csp, "default-src 'none'") {
+				t.Fatalf("CALLBACK_FAILURE_CSP_POLICY %q", csp)
+			}
 			body := response.Body.String()
 			if !strings.Contains(body, tc.description) || !strings.Contains(body, "id=\"oauth-error\">access_denied") {
 				t.Fatalf("CALLBACK_FAILURE_ERROR_MAPPING reason=%s body=%s", tc.reason, body)

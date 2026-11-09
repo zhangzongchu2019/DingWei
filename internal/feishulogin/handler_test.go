@@ -144,6 +144,27 @@ func TestCallbackRejectsWrongTenant(t *testing.T) {
 	}
 }
 
+func TestCallbackAttemptMismatchRejectsBeforeIssueAndConsumesState(t *testing.T) {
+	now := time.Date(2026, 11, 9, 10, 0, 0, 0, time.UTC)
+	oauth, issuer := &fakeOAuth{profile: validProfile()}, &fakeIssuer{}
+	store := NewMemoryStateStore()
+	h := newTestHandler(t, "app-1", store, oauth, issuer, &now)
+	_, state := startForTest(t, h)
+
+	_, err := h.Callback(context.Background(), CallbackRequest{State: state, Code: "code", AttemptID: "different-attempt"})
+	reason, _, _, ok := CallbackFailureDetails(err)
+	if !errors.Is(err, ErrInvalidState) || !ok || reason != FailureAuthorizationUsed {
+		t.Fatalf("CALLBACK_ATTEMPT_MISMATCH_BEFORE_ISSUE expected authorization-used failure, got %v", err)
+	}
+	if issuer.calls != 0 {
+		t.Fatalf("CALLBACK_ATTEMPT_MISMATCH_BEFORE_ISSUE IssueToken calls=%d", issuer.calls)
+	}
+	_, replayErr := h.Callback(context.Background(), CallbackRequest{State: state, Code: "code", AttemptID: "login-attempt-1"})
+	if !errors.Is(replayErr, ErrInvalidState) {
+		t.Fatalf("CALLBACK_ATTEMPT_MISMATCH_BEFORE_ISSUE state was reusable: %v", replayErr)
+	}
+}
+
 func TestCallbackRejectsInvalidIdentityWithoutIssuance(t *testing.T) {
 	tests := []struct {
 		name   string
