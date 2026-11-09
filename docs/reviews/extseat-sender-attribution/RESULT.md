@@ -55,4 +55,5 @@ PG outbox 事务锁定 source owner 显示名/短名和 target owner 短名并�
 - `env -i`、Go 1.22.2、`HUB_TEST_PG_STRICT=1 go test -p 1 -count=1 ./cmd/workpulse`：最终复跑 PASS，206.241s（初次修复后运行 203.396s）。此前完整集成复核的其余 Go 包读数由来席提供；本次其余包复跑结果随后补录。
 - 本次完整包门：`env -i` + Go 1.22.2 + `HUB_TEST_PG_STRICT=1 go test -p 1 -count=1 ./internal/mcpgw ./internal/feishulogin ./internal/extseat ./internal/extshared ./internal/tempgroup ./internal/identity/... ./internal/store/... ./internal/version ./internal/m8`：全部 PASS（m8 220.303s）。workpulse opt-in 独立 R50 二进制兼容用例因未提供 `R51_NP_CURRENT_BINARY` 与 `R51_NP_R50_BINARY` 路径而按设计跳过；固定 PG13 断言已同步，普通全包实跑通过。
 - `PATH=/tmp/mcp-auth-diag-gate-venv/bin:/opt/node22/bin:$PATH scripts/run-build-tests.sh`：PASS，`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`；OpenSpec strict：31/31；S-EXTSEAT-SENDER 八刀：8/8 语义判红。
-- 最终修正后 `env -i ... HUB_TEST_PG_STRICT=1 go test -p 1 -count=1 ./internal/store/migrate`：PASS，50.853s。OpenSpec strict：31 passed, 0 failed。修复提交与最终分支坐标将在追加提交后补录。
+- 最终修正后 `env -i ... HUB_TEST_PG_STRICT=1 go test -p 1 -count=1 ./internal/store/migrate`：PASS，50.853s。OpenSpec strict：31 passed, 0 failed。
+- workpulse 计数修复提交：`31333170ddbea7c8f90e57dab5d9da36ab2244f0`，tree `42234d5fb06e72a4fdaf02a3d2e32b81539c1411`，父提交 `1d0a07876febbc0d2f71b48c06653d8703dde881`。该提交已推送；远端核对坐标由交付回复给出。
