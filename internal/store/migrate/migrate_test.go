@@ -606,7 +606,7 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 		t.Fatalf("Ledger: %v", err)
 	}
 	if len(entries) != 14 {
-		t.Fatalf("账本 %d 条（%v），本格按 11 条写断言（变了就改本格，别改断言数字糊过去）",
+		t.Fatalf("账本 %d 条（%v），本格按 14 条写断言（变了就改本格，别改断言数字糊过去）",
 			len(entries), names(entries))
 	}
 
@@ -650,7 +650,7 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 	probe := pools[0]
 	rows := ledgerRows(t, probe)
 	if len(rows) != 14 {
-		t.Fatalf("账上 %d 条，要 11 条", len(rows))
+		t.Fatalf("账上 %d 条，要 14 条", len(rows))
 	}
 	for _, e := range entries {
 		if rows[e.Name].digest != Digest(e.Body) {
