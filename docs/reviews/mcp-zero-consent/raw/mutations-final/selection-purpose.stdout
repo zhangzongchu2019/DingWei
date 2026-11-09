@@ -1,0 +1,8 @@
+=== RUN   TestConsentSelectionRejectsChangedPolicy
+=== RUN   TestConsentSelectionRejectsChangedPolicy/wrong-purpose
+    defaults_test.go:246: ZC_SELECTION_wrong-purpose <nil>
+--- FAIL: TestConsentSelectionRejectsChangedPolicy (0.00s)
+    --- FAIL: TestConsentSelectionRejectsChangedPolicy/wrong-purpose (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

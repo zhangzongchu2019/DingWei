@@ -1,0 +1,6 @@
+=== RUN   TestConsentMigrationLedgerPG
+    consent_test.go:60: ZC_LEDGER_OVER20_ACCEPTED
+--- FAIL: TestConsentMigrationLedgerPG (3.61s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store/migrate	3.617s
+FAIL

@@ -1,0 +1,8 @@
+=== RUN   TestConsentAuthoritativeValidity
+=== RUN   TestConsentAuthoritativeValidity/owner-inactive
+    defaults_test.go:54: ZC_VALIDITY_owner-inactive
+--- FAIL: TestConsentAuthoritativeValidity (0.00s)
+    --- FAIL: TestConsentAuthoritativeValidity/owner-inactive (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/extwire	0.003s
+FAIL

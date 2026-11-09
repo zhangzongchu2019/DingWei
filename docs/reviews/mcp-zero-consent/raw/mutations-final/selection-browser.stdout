@@ -1,0 +1,8 @@
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards/no-cookie
+    consent_test.go:111: ZC_GW_SELECTION_no-cookie 400 [{Principal:{Provider:feishu TenantKey:team Issuer:app Subject:open-trusted UnionID:union DisplayName:Alice} ShortName:alice261106090000 TargetAgent:Other.zzc AttemptID: Automatic:false}]
+--- FAIL: TestConsentGatewaySingleAndMultiBrowserGuards (0.11s)
+    --- FAIL: TestConsentGatewaySingleAndMultiBrowserGuards/no-cookie (0.11s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.122s
+FAIL

@@ -1,0 +1,6 @@
+=== RUN   TestShortNameRules
+    extshared_test.go:13: want invalid: "abcdefghijklmnopqrstu"
+--- FAIL: TestShortNameRules (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/extshared	0.001s
+FAIL

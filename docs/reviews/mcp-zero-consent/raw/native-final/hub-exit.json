@@ -1,0 +1,17 @@
+{
+  "rc": 0,
+  "inherited_env_names": [
+    "CODEX_HOME",
+    "GOCACHE",
+    "GOMODCACHE",
+    "GOPROXY",
+    "HOME",
+    "HUB_TEST_PG_STRICT",
+    "INTEROP_FOREIGN_TENANT",
+    "INTEROP_ISS_UNSUPPORTED",
+    "INTEROP_RUN_DIR",
+    "PATH",
+    "TMPDIR"
+  ],
+  "real_credentials_used": false
+}

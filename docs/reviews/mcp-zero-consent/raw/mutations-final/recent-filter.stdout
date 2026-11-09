@@ -1,0 +1,8 @@
+=== RUN   TestConsentSelectionRejectsChangedPolicy
+=== RUN   TestConsentSelectionRejectsChangedPolicy/recent-outside
+    defaults_test.go:224: ZC_RECENT_OUTSIDE
+--- FAIL: TestConsentSelectionRejectsChangedPolicy (0.00s)
+    --- FAIL: TestConsentSelectionRejectsChangedPolicy/recent-outside (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

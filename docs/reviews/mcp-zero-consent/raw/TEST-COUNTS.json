@@ -1,0 +1,35 @@
+{
+  "mcpgw": {
+    "pass": 229
+  },
+  "extseat": {
+    "pass": 27
+  },
+  "extshared": {
+    "pass": 6
+  },
+  "extwire": {
+    "pass": 13
+  },
+  "feishulogin": {
+    "pass": 96
+  },
+  "store": {
+    "pass": 599,
+    "skip": 5
+  },
+  "migrate": {
+    "pass": 43
+  },
+  "identity": {
+    "pass": 215
+  },
+  "workpulse": {
+    "pass": 259,
+    "skip": 6
+  },
+  "m8": {
+    "pass": 1512,
+    "skip": 37
+  }
+}

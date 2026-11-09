@@ -1,0 +1,6 @@
+=== RUN   TestConsentOneStartPerOAuthAttempt
+    consent_test.go:167: ZC_OUTER_ATTEMPT_STARTED_TWICE 2 0
+--- FAIL: TestConsentOneStartPerOAuthAttempt (0.12s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.123s
+FAIL

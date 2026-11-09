@@ -1,0 +1,6 @@
+=== RUN   TestConsentLongNameMigrationAndConcurrencyPG
+    consent_pg_test.go:77: ZC_LONG_ISSUE extshared: capability not permitted for external seat
+--- FAIL: TestConsentLongNameMigrationAndConcurrencyPG (4.15s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/extseat	4.158s
+FAIL

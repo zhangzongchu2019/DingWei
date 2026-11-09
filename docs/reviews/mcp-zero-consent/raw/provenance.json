@@ -1,0 +1,13 @@
+{
+  "utc": "2026-11-09T06:28:44.841094+00:00",
+  "source_commit": "f37c6fe8802fbe8ac9cdf6b206576180a918f76b",
+  "inventory_test_commit": "9666b2f2e9d8e622f38a8ce22fb70a4645342e22",
+  "go": "go version go1.22.2 linux/amd64",
+  "pinyin_module": "github.com/mozillazg/go-pinyin@v0.21.0",
+  "pinyin_license_sha256": "dbee1336f5286b3b26fb6b4a71ab1e8d89f80b4073d9c8d2b2b33c06abc3bcbe",
+  "uid": "1001",
+  "real_credentials_used": false,
+  "final_product_commit": "123e0e6db92c7fdc30cd693d186affa2b4fb7bf2",
+  "frozen_product_note": "f37 implementation; 9666/fab test-only followups; 123e0e6 nil-default-policy guard and its test; affected packages, race, mutations and E2E rerun on 123e0e6",
+  "rulings": "5641584ae1eeb83e199f80608019e3b89e855758"
+}
