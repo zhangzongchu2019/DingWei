@@ -95,6 +95,16 @@
 - [x] T-20 增加并发 cursor 顺序、live cursor 对照、重复事件失败隔离测试；性能门断言与计时区域变异齐全，删 p99 断言和把持久写移出计时区两刀均红。
 - [x] T-21 隔离环境连续 5 轮性能门全部 ≤10ms；附机核数/load 与原始 paired p99；store、m8、cmd/workpulse 全包通过，`TestSessionHistory*` race 三包 `-count=3` 通过；完整构建门与 OpenSpec strict 通过。超范围全包 race `-count=3` 达到默认 600s 测试超时，单独记录，不计通过。
 
+## 7. 新平台历史键修复（2026-11-09 业主授权）
+
+- [x] T-22 统一新平台历史写入/读取键为 `AgentKeyID(owner_lc)`、Agent ID、`NameLC()`；旧平台键保持不变。核对现网未启用持久化且历史库不存在，记录无存量迁移需求。
+- [x] T-23 增加真实 Hub、登录 cookie、helper `session_event` 与全名 history GET 往返测试；验证跨属主、短名和错误全名均 404，并登记 `HISTORY_NEWPLAT_ROUNDTRIP`、`HISTORY_NEWPLAT_OWNER_ONLY` 判据。
+- [x] T-24 增加读取 owner、读取 session、写入 owner 三项存储键回退变异，逐刀红于对应标记。
+- [x] T-25 执行 m8 与 store 全包、R15 浏览器回归、`scripts/run-build-tests.sh`；记录命令、结果与环境。历史持久化开关仍由单独 GO 控制，本单不启用现网。
+- [x] T-26 新平台 Agent 吊销、用户停用的历史清理键统一为 `AgentKeyID(owner_lc)`；真实 Hub 测试确认只清理目标 Agent／属主历史，断言 `HISTORY_NEWPLAT_PURGE_ON_REVOKE`、`HISTORY_NEWPLAT_PURGE_ON_USER_DISABLE`。
+- [x] T-27 增加吊销与用户停用两项 owner 键回退变异，分别红于对应 purge 标记；全仓核对 SessionHistory 生产调用的 owner 键并记入 RESULT。
+- [x] T-28 执行 m8、store 全包和 `scripts/run-build-tests.sh`，在 RESULT 记录本追加修复的门禁结果。
+
 ## 交接记录
 
 - 2026-11-03T11:29Z · togpt60lunazzc.zzc · 实现源提交待提交
