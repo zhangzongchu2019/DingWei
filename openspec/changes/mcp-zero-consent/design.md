@@ -21,3 +21,13 @@
 ## Migration Plan
 
 先新PG迁移，再新代码；现网集合仍缺席，默认关闭。详见docs/reviews/mcp-zero-consent/RELEASE-NOTES.md。
+
+## 首轮复核返工（01a1bf0d）
+
+- ZC-003：保持已有 login kind，三类键统一先加用途前缀再哈希：state:、started:、selection:。GET 回调只查询和消费 state:；POST 选择只查询和消费 selection:。不新增 kind，不改旧迁移 CHECK。即使请求 state 等于另一类型的完整明文键，也无法查到另一域；400 不得消费其他类型记录。
+- ZC-003：保留有效期和浏览器绑定；伪造 started 回调后同 attempt 的第三次启动仍拒绝，真实 state 和选择票据仍能按原语义消费一次。撤掉 state 写入和读取前缀的同一刀必须让两格 GET 负例分别在启动守卫和选择记录未消费断言转红。
+- ZC-003：合并 r56.2 d70016f3，连接页与网关使用 Referrer-Policy: same-origin，保留同源表单 POST 的浏览器 Origin；跨源飞书跳转不携带 referrer。ZERO-CONSENT 不抬版本，沿用 0.2.3.33。新增 Chromium 真表单回归连接页→飞书替身→选择页→POST→授权码换票，单目标无编辑输入直接完成；真实本地 Hub/临时 PG，不模拟 Origin 请求头。
+
+### 真浏览器发现的 CSP 跳转链阻断
+
+Chromium 会对表单 POST 后的跳转链检查原表单页面的 form-action。原 self 策略阻止连接页303飞书，以及选择POST后302回客户端。保持 default-src none、base-uri none、frame-ancestors none；连接页仅加入服务端OAuth适配器生成的飞书授权origin，网关再加入已校验且持久化的attempt客户端回调origin；选择页仅加入该回调origin。CSP不读取请求Host或未校验redirect，剥掉path/query，拒userinfo、非http(s)、空host、通配符和CSP分隔符，避免策略注入；仍保留Origin/CSRF/浏览器绑定与全部OAuth校验。来源为可信配置／已有校验结果，不扩大OAuth登记允许集合。两条CSP撤除变异由真Chromium分别命中连接跳转与选择完成跳转阻断。

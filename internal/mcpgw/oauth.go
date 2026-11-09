@@ -198,6 +198,8 @@ func (g *Gateway) connect(w http.ResponseWriter, r *http.Request) {
 	// C 的重定向 state 与 B 事务关联，回调先验浏览器和期限再允许 C 签发。
 	captured := &loginResponse{header: make(http.Header)}
 	g.cfg.Login.ServeConnectPage(captured, r)
+	// a.Redirect was resolved and validated before persisting the attempt.
+	captured.header.Set("Content-Security-Policy", feishulogin.FormRedirectPolicy(captured.header.Get("Content-Security-Policy"), a.Redirect))
 	if captured.status == http.StatusSeeOther {
 		location, e := url.Parse(captured.header.Get("Location"))
 		if e != nil || location.Query().Get("state") == "" {
@@ -212,7 +214,7 @@ func (g *Gateway) connect(w http.ResponseWriter, r *http.Request) {
 			oauthError(w, 400, "invalid_request")
 			return
 		}
-		if e = g.cfg.Store.Put(r.Context(), "login", hash(location.Query().Get("state")), []byte(attempt), a.Expires, now); e != nil {
+		if e = g.cfg.Store.Put(r.Context(), "login", hash("state:"+location.Query().Get("state")), []byte(attempt), a.Expires, now); e != nil {
 			oauthError(w, 503, "temporarily_unavailable")
 			return
 		}
@@ -245,7 +247,7 @@ func (g *Gateway) callback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		req = feishulogin.CallbackRequestFromQuery(q)
-		key = req.State
+		key = "state:" + req.State
 	} else {
 		w.Header().Set("Allow", "GET, POST")
 		oauthError(w, 405, "invalid_request")

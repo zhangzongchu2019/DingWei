@@ -58,6 +58,10 @@ type connectPageData struct {
 // lists target Agents and never accepts an MCP client redirect_uri.
 func (h *Handler) ServeConnectPage(w http.ResponseWriter, r *http.Request) {
 	setConnectPageHeaders(w.Header())
+	// This configured endpoint is server-owned, not a browser-supplied redirect.
+	if authorizationURL, err := h.oauth.AuthorizationURL("csp-policy", h.redirectURI); err == nil {
+		w.Header().Set("Content-Security-Policy", FormRedirectPolicy(connectPageCSP, authorizationURL))
+	}
 	switch r.Method {
 	case http.MethodGet:
 		h.renderConnectPage(w, r, http.StatusOK, connectPageData{AttemptID: r.URL.Query().Get("attempt_id")})

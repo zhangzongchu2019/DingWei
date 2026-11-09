@@ -174,3 +174,85 @@ func TestConsentOneStartPerOAuthAttempt(t *testing.T) {
 		t.Fatalf("ZC_ORIGINAL_START_LOST %d %d", w.Code, len(seats.issued))
 	}
 }
+
+// Each login record type is isolated even when the browser knows another type's value.
+func TestConsentLoginNamespaceIsolation(t *testing.T) {
+	for _, mode := range []string{"started-as-state", "selection-as-state", "state-as-selection"} {
+		t.Run(mode, func(t *testing.T) {
+			g, seats, mux := oauthConsentFixture(t, nil, &consentTargets{names: []string{"target.zzc", "Other.zzc"}})
+			attempt, cookies := browserStart(t, mux)
+			request := func(method, path string, form url.Values) *httptest.ResponseRecorder {
+				t.Helper()
+				r := httptest.NewRequest(method, testOrigin+path, strings.NewReader(form.Encode()))
+				if method == "POST" {
+					r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+				}
+				addCookies(r, cookies)
+				return serve(mux, r)
+			}
+			newForm := func() url.Values {
+				t.Helper()
+				w := request("GET", "/feishu/connect?attempt_id="+url.QueryEscape(attempt), nil)
+				m := regexp.MustCompile(`name="csrf_token" value="([^"]+)"`).FindStringSubmatch(w.Body.String())
+				if w.Code != 200 || len(m) != 2 {
+					t.Fatalf("connect form %d", w.Code)
+				}
+				return url.Values{"attempt_id": {attempt}, "csrf_token": {m[1]}}
+			}
+			// Distinct CSRF forms make the outer-attempt guard the only rejection reason.
+			forms := []url.Values{newForm(), newForm(), newForm()}
+			start := request("POST", "/feishu/connect", forms[0])
+			if start.Code != 303 {
+				t.Fatalf("first start %d", start.Code)
+			}
+			u, _ := url.Parse(start.Header().Get("Location"))
+			state := u.Query().Get("state")
+			callback := func(value string) *httptest.ResponseRecorder {
+				return request("GET", "/mcp/oauth/feishu/callback?"+url.Values{"state": {value}, "code": {"feishu-code"}}.Encode(), nil)
+			}
+			if mode == "started-as-state" {
+				if w := request("POST", "/feishu/connect", forms[1]); w.Code != 400 {
+					t.Fatalf("second start %d", w.Code)
+				}
+				if w := callback("started:" + attempt); w.Code != 400 {
+					t.Fatalf("ZC_STARTED_AS_STATE_STATUS %d", w.Code)
+				}
+				if _, err := g.cfg.Store.Get(context.Background(), "login", hash("started:"+attempt), g.cfg.Now()); err != nil {
+					t.Error("ZC_STARTED_AS_STATE_CONSUMED")
+				}
+				if w := request("POST", "/feishu/connect", forms[2]); w.Code != 400 {
+					t.Errorf("ZC_STARTED_AS_STATE_RESTART %d", w.Code)
+				}
+			}
+			if mode == "state-as-selection" {
+				w := request("POST", "/mcp/oauth/feishu/callback", url.Values{"selection": {state}, "target_agent": {"Other.zzc"}})
+				if w.Code != 400 {
+					t.Fatalf("ZC_STATE_AS_SELECTION_STATUS %d", w.Code)
+				}
+			}
+			page := callback(state)
+			if page.Code != 200 || len(seats.issued) != 0 {
+				t.Fatalf("ZC_REAL_STATE_LOST %d", page.Code)
+			}
+			m := regexp.MustCompile(`name="selection" value="([^"]+)"`).FindStringSubmatch(page.Body.String())
+			if len(m) != 2 {
+				t.Fatal("missing selection")
+			}
+			if mode == "selection-as-state" {
+				if w := callback("selection:" + m[1]); w.Code != 400 {
+					t.Fatalf("ZC_SELECTION_AS_STATE_STATUS %d", w.Code)
+				}
+				if _, err := g.cfg.Store.Get(context.Background(), "login", hash("selection:"+m[1]), g.cfg.Now()); err != nil {
+					t.Error("ZC_SELECTION_AS_STATE_CONSUMED")
+				}
+			}
+			selected := request("POST", "/mcp/oauth/feishu/callback", url.Values{"selection": {m[1]}, "target_agent": {"Other.zzc"}})
+			if selected.Code != 302 || len(seats.issued) != 1 || seats.issued[0].TargetAgent != "Other.zzc" {
+				t.Fatalf("ZC_REAL_SELECTION_LOST %d %+v", selected.Code, seats.issued)
+			}
+			if w := request("POST", "/mcp/oauth/feishu/callback", url.Values{"selection": {m[1]}, "target_agent": {"Other.zzc"}}); w.Code != 400 {
+				t.Fatalf("selection replay %d", w.Code)
+			}
+		})
+	}
+}

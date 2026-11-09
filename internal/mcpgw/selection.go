@@ -18,7 +18,7 @@ func (g *Gateway) renderSelection(w http.ResponseWriter, r *http.Request, issued
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
+	w.Header().Set("Content-Security-Policy", feishulogin.FormRedirectPolicy("default-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'", a.Redirect))
 	w.Header().Set("X-Frame-Options", "DENY")
 	_ = selectionPage.Execute(w, issued)
 }

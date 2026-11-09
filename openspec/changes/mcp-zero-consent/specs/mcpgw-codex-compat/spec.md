@@ -43,3 +43,18 @@
 #### Scenario: ZC-004-B 安全前向状态
 - **WHEN** 关闭新默认配置并继续读已有长名
 - **THEN** 名称和投递确认不被截短或删除
+
+### Requirement: ZC-005 OAuth login 用途隔离与浏览器表单
+网关 MUST 在哈希前对 state、started、selection 各加不同用途前缀。GET state 不得消费启动标记或选择记录，POST selection 不得接受真实 state。连接与选择页 MUST 在真实浏览器保留同源 POST 的可信 Origin，单/多目标都能换票；保持来源守卫。
+
+#### Scenario: ZC-005-A 类型互认拒绝
+- **WHEN** 同浏览器以 started:attempt 或 selection:token 作 GET state，或用真实 state 作 POST selection
+- **THEN** 均400且对应其他用途记录不被消费；started伪造后第三次启动仍400，正常回调与选择仍一次成功
+
+#### Scenario: ZC-005-B 真实浏览器授权
+- **WHEN** Chromium 访问隔离真Hub与飞书替身，执行单目标或多目标表单授权
+- **THEN** 单目标无编辑输入，多目标能选择并提交，无 origin_rejected，均成功签发和换票
+
+#### Scenario: ZC-005-C 表单跳转链与策略注入
+- **WHEN** 表单303前往配置飞书或302回已校验客户端，或构造含CSP分隔符的来源
+- **THEN** 仅可信origin出现在form-action，跳转链成功；非法来源不进入策略，保留default-src与frame-ancestors限制

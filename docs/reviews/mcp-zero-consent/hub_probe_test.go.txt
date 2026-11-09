@@ -15,6 +15,7 @@ import (
  "io"
  "net/http"
  "net/http/httptest"
+ "net/url"
  "os"
  "path/filepath"
  "strings"
@@ -32,12 +33,14 @@ import (
 
 func TestCodexInteropLocalHub(t *testing.T){
  dir:=os.Getenv("INTEROP_RUN_DIR");if dir==""{t.Fatal("missing isolated run directory")}
- t.Setenv("DW_R53_EXTSEAT","1");t.Setenv("DW_MCP_CONSENT_TARGETS_JSON",`{"synthetic-team":["helper.ho"]}`);wiringKey(t)
+ if os.Getenv("INTEROP_BROWSER_MODE")=="multi" {t.Setenv("DW_MCP_CONSENT_TARGETS_JSON",`{"synthetic-team":["helper.ho","other.ho"]}`)}
+ t.Setenv("DW_R53_EXTSEAT","1");if os.Getenv("INTEROP_BROWSER_MODE")!="multi" {t.Setenv("DW_MCP_CONSENT_TARGETS_JSON",`{"synthetic-team":["helper.ho"]}`)};wiringKey(t)
  jobs:=&lifecycle.Group{};ctx,cancel:=context.WithCancel(context.WithValue(context.Background(),runTasksKey{},jobs))
  defer func(){cancel();wait,stop:=context.WithTimeout(context.Background(),5*time.Second);defer stop();if e:=jobs.Wait(wait);e!=nil{t.Error(e)}}()
  store,pool,closeStore,e:=openNewPlatformStore(ctx,pgSchemaDSN(t,false));if e!=nil{t.Fatal(e)};defer closeStore()
  hub:=newplatHub(t);hub.Identity=identity.NewService(store,nil,nil)
  _,e=pool.Exec(ctx,repo.SystemCtx(),`INSERT INTO np_user(user_id,user_id_lc,short_name,short_name_lc,type,state,created_at) VALUES('ho','ho','ho','ho','member','active',now()); INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,created_at) VALUES('helper','ho','helper','helper','selfhost','active',now());`);if e!=nil{t.Fatal(e)}
+ if os.Getenv("INTEROP_BROWSER_MODE")=="multi" {_,e=pool.Exec(ctx,repo.SystemCtx(),`INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,created_at) VALUES('other','ho','other','other','selfhost','active',now())`);if e!=nil{t.Fatal(e)}}
  mux:=http.NewServeMux();mux.HandleFunc("/healthz",func(w http.ResponseWriter,r *http.Request){w.WriteHeader(204)})
  trace,e:=os.Create(filepath.Join(dir,"http-trace.jsonl"));if e!=nil{t.Fatal(e)};defer trace.Close();var mu sync.Mutex
  handler:=http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
@@ -57,6 +60,10 @@ func TestCodexInteropLocalHub(t *testing.T){
  upstream:=httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter,r *http.Request){
   w.Header().Set("Content-Type","application/json")
   switch r.URL.Path{
+  case "/authorize":
+  if os.Getenv("INTEROP_BROWSER_MODE")=="" {w.WriteHeader(404);return}
+  q:=r.URL.Query();if q.Get("redirect_uri")!=origin+"/mcp/oauth/feishu/callback" || q.Get("state")=="" {t.Error("browser authorize binding");w.WriteHeader(400);return}
+  http.Redirect(w,r,q.Get("redirect_uri")+"?"+url.Values{"code":{"synthetic-feishu-code"},"state":{q.Get("state")}}.Encode(),http.StatusFound)
   case "/token":r.ParseForm();if r.PostForm.Get("code")!="synthetic-feishu-code"||r.PostForm.Get("redirect_uri")!=origin+"/mcp/oauth/feishu/callback"{t.Error("fake upstream binding");w.WriteHeader(400);return};json.NewEncoder(w).Encode(map[string]any{"access_token":"synthetic-upstream-only","token_type":"Bearer"})
   case "/user":if r.Header.Get("Authorization")!="Bearer synthetic-upstream-only"{t.Error("fake upstream auth")};json.NewEncoder(w).Encode(map[string]any{"code":0,"data":feishulogin.UserInfo{EnName:"Synthetic",OpenID:"synthetic-open",TenantKey:func() string { if os.Getenv("INTEROP_FOREIGN_TENANT")=="1" { return "foreign-team" }; return "synthetic-team" }()}})
   default:w.WriteHeader(404)
