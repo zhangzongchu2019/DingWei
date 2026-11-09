@@ -1,0 +1,3 @@
+POST Origin='null' Referer=None
+POST Origin='http://127.0.0.1:18931' Referer='http://127.0.0.1:18931/?pol=same-origin'
+POST Origin='http://127.0.0.1:18931' Referer='http://127.0.0.1:18931/?pol=strict-origin-when-cross-origin'

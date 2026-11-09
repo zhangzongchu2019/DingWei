@@ -66,7 +66,9 @@ func setConnectPageHeaders(header http.Header) {
 	header.Set("Content-Security-Policy", connectPageCSP)
 	header.Set("X-Frame-Options", "DENY")
 	header.Set("Cache-Control", "no-store")
-	header.Set("Referrer-Policy", "no-referrer")
+	// same-origin, not no-referrer: under no-referrer browsers serialize the
+	// form POST Origin as "null", which the gateway origin guard rejects.
+	header.Set("Referrer-Policy", "same-origin")
 	header.Set("X-Content-Type-Options", "nosniff")
 }
 

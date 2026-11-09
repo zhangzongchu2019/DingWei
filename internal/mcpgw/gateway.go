@@ -86,7 +86,9 @@ func (g *Gateway) guard(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("Referrer-Policy", "no-referrer")
+		// same-origin keeps referrers off cross-site hops (Feishu) while letting
+		// same-origin form POSTs carry a real Origin for the guard below.
+		w.Header().Set("Referrer-Policy", "same-origin")
 		origins := r.Header.Values("Origin")
 		if len(origins) > 1 || (len(origins) == 1 && (origins[0] == "" || !g.trusted(r.Context(), origins[0]))) {
 			writeJSON(w, 403, map[string]string{"error": "origin_rejected"})
