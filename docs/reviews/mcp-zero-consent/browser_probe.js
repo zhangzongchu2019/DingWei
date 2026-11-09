@@ -5,7 +5,7 @@ const fs = require('fs');
 const http = require('http');
 const assert = require('assert/strict');
 (async () => {
- const [readyPath, mode] = process.argv.slice(2);
+ const [readyPath, mode, chain] = process.argv.slice(2);
  const {origin, resource} = JSON.parse(fs.readFileSync(readyPath, 'utf8'));
  const callbackServer = http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':'text/html'});res.end('<h1>授权完成</h1>');});
  await new Promise(resolve=>callbackServer.listen(0,'127.0.0.1',resolve));
@@ -30,12 +30,13 @@ const assert = require('assert/strict');
   const connectPolicy = connect.headers()['referrer-policy'];
   assert.equal(connectPolicy,'same-origin','ZC_BROWSER_CONNECT_REFERRER');
   const connectCSP = connect.headers()['content-security-policy'];
-  assert.ok(!connectCSP.includes(new URL(redirect).origin),'ZC_BROWSER_CONNECT_CALLBACK_SOURCE');
   await page.locator('button[type=submit]').click();
-  await page.locator('#synthetic-feishu-authorize').waitFor();
-  const feishuOrigin = new URL(page.url()).origin;
-  assert.ok(connectCSP.includes("form-action 'self' "+feishuOrigin+';'),'ZC_BROWSER_CONNECT_AUTHORIZE_SOURCE');
-  await page.locator('#synthetic-feishu-authorize').click();
+  if(chain==='consent') {
+   await page.locator('#synthetic-feishu-authorize').waitFor();
+   const feishuOrigin = new URL(page.url()).origin;
+   assert.ok(connectCSP.split(";").find(x=>x.trim().startsWith("form-action ")).trim().split(/\s+/).includes(feishuOrigin),'ZC_BROWSER_CONNECT_AUTHORIZE_SOURCE');
+   await page.locator('#synthetic-feishu-authorize').click();
+  }
   if(mode==='multi') {
    await page.locator('input[type=radio][name=target_agent]').first().waitFor();
    assert.equal(await page.locator('input[type=radio][name=target_agent]').count(),2,'ZC_BROWSER_TARGET_OPTIONS');
@@ -44,6 +45,7 @@ const assert = require('assert/strict');
   }
   await page.waitForURL(redirect+'?**');
   const result = new URL(page.url());
+  assert.ok(connectCSP.includes(new URL(redirect).origin),'ZC_BROWSER_CONNECT_LOOPBACK_SOURCE');
   assert.equal(result.searchParams.get('state'),'synthetic-browser-state');
   assert.ok(result.searchParams.get('code'),'ZC_BROWSER_CODE_MISSING');
   assert.deepEqual(rejected,[],'ZC_BROWSER_ORIGIN_REJECTED');
@@ -55,7 +57,7 @@ const assert = require('assert/strict');
   assert.ok(token.access_token,'ZC_BROWSER_TOKEN_MISSING');
   assert.equal(token.token_type.toLowerCase(),'bearer');
   assert.equal(token.scope.split(' ').length,4);
-  console.log(JSON.stringify({mode,issued:true,connectEditableInputs:0,originRejected:rejected.length,posts,realHub:true,realTemporaryPG:true,fakeFeishu:true}));
+  console.log(JSON.stringify({mode,chain,issued:true,connectEditableInputs:0,originRejected:rejected.length,posts,realHub:true,realTemporaryPG:true,fakeFeishu:true}));
   await context.close();
  } finally {await browser.close();await new Promise(resolve=>callbackServer.close(resolve));}
 })().catch(e=>{console.error(e);process.exit(1);});

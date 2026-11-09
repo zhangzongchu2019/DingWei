@@ -64,6 +64,7 @@ func TestCodexInteropLocalHub(t *testing.T){
   case "/authorize":
   if os.Getenv("INTEROP_BROWSER_MODE")=="" {w.WriteHeader(404);return}
   q:=r.URL.Query();if q.Get("redirect_uri")!=origin+"/mcp/oauth/feishu/callback" || q.Get("state")=="" {t.Error("browser authorize binding");w.WriteHeader(400);return}
+  if os.Getenv("INTEROP_BROWSER_CHAIN")=="immediate" {http.Redirect(w,r,q.Get("redirect_uri")+"?"+url.Values{"code":{"synthetic-feishu-code"},"state":{q.Get("state")}}.Encode(),http.StatusFound);return}
   w.Header().Set("Content-Type","text/html; charset=utf-8")
   io.WriteString(w,`<!doctype html><title>模拟飞书授权</title><a id="synthetic-feishu-authorize" href="`+html.EscapeString(q.Get("redirect_uri")+"?"+url.Values{"code":{"synthetic-feishu-code"},"state":{q.Get("state")}}.Encode())+`">确认模拟飞书身份</a>`)
   case "/token":r.ParseForm();if r.PostForm.Get("code")!="synthetic-feishu-code"||r.PostForm.Get("redirect_uri")!=origin+"/mcp/oauth/feishu/callback"{t.Error("fake upstream binding");w.WriteHeader(400);return};json.NewEncoder(w).Encode(map[string]any{"access_token":"synthetic-upstream-only","token_type":"Bearer"})

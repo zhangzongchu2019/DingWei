@@ -2,14 +2,14 @@
 import argparse,json,os,subprocess
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
-ap=argparse.ArgumentParser();ap.add_argument('--run-dir',type=Path,default=Path('/tmp/coder-r56-compat-native'));ap.add_argument('--browser-cut',choices=['connect-csp','selection-csp']);ap.add_argument('--browser-mode',choices=['single','multi']);ap.add_argument('--mutation',choices=['codec','ports','default-client']);args=ap.parse_args()
+ap=argparse.ArgumentParser();ap.add_argument('--run-dir',type=Path,default=Path('/tmp/coder-r56-compat-native'));ap.add_argument('--browser-cut',choices=['connect-csp','selection-csp','loopback-csp']);ap.add_argument('--browser-chain',choices=['immediate','consent'],default='consent');ap.add_argument('--browser-mode',choices=['single','multi']);ap.add_argument('--mutation',choices=['codec','ports','default-client']);args=ap.parse_args()
 p=args.run_dir.resolve()
 p.mkdir(mode=0o700,parents=True,exist_ok=False)
 for n in ['home','tmp','codex']:(p/n).mkdir(mode=0o700)
 # Only the downloaded public PG cache is reused, never HOME configuration.
 cache=Path.home()/'.embedded-postgres-go'
 if cache.exists():(p/'home/.embedded-postgres-go').symlink_to(cache,target_is_directory=True)
-env={'INTEROP_BROWSER_MODE':args.browser_mode or '', 'GOPROXY':'off','HUB_TEST_PG_STRICT':'1','INTEROP_ISS_UNSUPPORTED':os.environ.get('INTEROP_ISS_UNSUPPORTED','0'),'INTEROP_FOREIGN_TENANT':os.environ.get('INTEROP_FOREIGN_TENANT','0'),'PATH':os.environ['PATH'],'HOME':str(p/'home'),'TMPDIR':str(p/'tmp'),'CODEX_HOME':str(p/'codex'),'INTEROP_RUN_DIR':str(p),'GOCACHE':subprocess.check_output(['go','env','GOCACHE'],text=True).strip(),'GOMODCACHE':subprocess.check_output(['go','env','GOMODCACHE'],text=True).strip()}
+env={'INTEROP_BROWSER_CHAIN':args.browser_chain, 'INTEROP_BROWSER_MODE':args.browser_mode or '', 'GOPROXY':'off','HUB_TEST_PG_STRICT':'1','INTEROP_ISS_UNSUPPORTED':os.environ.get('INTEROP_ISS_UNSUPPORTED','0'),'INTEROP_FOREIGN_TENANT':os.environ.get('INTEROP_FOREIGN_TENANT','0'),'PATH':os.environ['PATH'],'HOME':str(p/'home'),'TMPDIR':str(p/'tmp'),'CODEX_HOME':str(p/'codex'),'INTEROP_RUN_DIR':str(p),'GOCACHE':subprocess.check_output(['go','env','GOCACHE'],text=True).strip(),'GOMODCACHE':subprocess.check_output(['go','env','GOMODCACHE'],text=True).strip()}
 name='hub'
 target='cmd/workpulse/codex_interop_probe_test.go'
 fixture='hub_probe_test.go.txt'
@@ -27,10 +27,12 @@ if args.mutation:
   pos=source.rfind('\t\treturn true');assert pos>0;source=source[:pos]+source[pos:].replace('return true','return false',1)
  mutant=p/'mutant.go';mutant.write_text(source);replacements[str(ROOT/relative)]=str(mutant)
 if args.browser_cut:
- relative={'connect-csp':'internal/feishulogin/handler.go','selection-csp':'internal/mcpgw/selection.go'}[args.browser_cut]
+ relative={'connect-csp':'internal/feishulogin/handler.go','selection-csp':'internal/mcpgw/selection.go','loopback-csp':'internal/mcpgw/oauth.go'}[args.browser_cut]
  source=(ROOT/relative).read_text()
  if args.browser_cut=='connect-csp':
   old='connectPageCSPFor(authorizeOriginOf(cfg.OAuth, cfg.RedirectURI))';new='connectPageCSPFor("")'
+ elif args.browser_cut=='loopback-csp':
+  old='withLoopbackFormAction(csp, a.Redirect)';new='csp'
  else:
   old=', a.Redirect)';new=')'
  assert source.count(old)==1
