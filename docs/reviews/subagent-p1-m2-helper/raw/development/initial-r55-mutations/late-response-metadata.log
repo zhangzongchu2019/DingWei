@@ -1,0 +1,14 @@
+test_late_response_preserves_query_rate_and_pending_proof (test_codex_delivery_reconcile.ReconcileBoundaries.test_late_response_preserves_query_rate_and_pending_proof) ... FAIL
+
+======================================================================
+FAIL: test_late_response_preserves_query_rate_and_pending_proof (test_codex_delivery_reconcile.ReconcileBoundaries.test_late_response_preserves_query_rate_and_pending_proof)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 194, in test_late_response_preserves_query_rate_and_pending_proof
+    self.assertEqual(len(self.rpc.calls), 1, 'LATE_RESPONSE_RESET_RATE_OR_PROOF')
+AssertionError: 2 != 1 : LATE_RESPONSE_RESET_RATE_OR_PROOF
+
+----------------------------------------------------------------------
+Ran 1 test in 0.061s
+
+FAILED (failures=1)

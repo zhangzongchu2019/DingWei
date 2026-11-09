@@ -1,0 +1,11 @@
+test_native_seconds_replace_fractional_receipt_observation (unittest.loader._FailedTest.test_native_seconds_replace_fractional_receipt_observation) ... ERROR
+
+======================================================================
+ERROR: test_native_seconds_replace_fractional_receipt_observation (unittest.loader._FailedTest.test_native_seconds_replace_fractional_receipt_observation)
+----------------------------------------------------------------------
+AttributeError: type object 'ReconcileBoundaries' has no attribute 'test_native_seconds_replace_fractional_receipt_observation'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

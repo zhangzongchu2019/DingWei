@@ -1,0 +1,16 @@
+test_healthy_busy_wait_has_no_stall_deadline (test_codex_delivery_reconcile.ReconcileBoundaries.test_healthy_busy_wait_has_no_stall_deadline) ... FAIL
+
+======================================================================
+FAIL: test_healthy_busy_wait_has_no_stall_deadline (test_codex_delivery_reconcile.ReconcileBoundaries.test_healthy_busy_wait_has_no_stall_deadline)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 110, in test_healthy_busy_wait_has_no_stall_deadline
+    self.assertEqual(self.driver._wait_until_idle_for_delivery(), '', 'HEALTHY_BUSY_TURN_EXPIRED_LOCAL_QUEUE')
+AssertionError: 'session busy' != ''
+- session busy
+ : HEALTHY_BUSY_TURN_EXPIRED_LOCAL_QUEUE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.052s
+
+FAILED (failures=1)

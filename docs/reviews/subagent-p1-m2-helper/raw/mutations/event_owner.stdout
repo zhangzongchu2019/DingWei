@@ -1,0 +1,16 @@
+test_aa008_outer_thread_only_and_bounded_quarantine (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_aa008_outer_thread_only_and_bounded_quarantine) ... FAIL
+
+======================================================================
+FAIL: test_aa008_outer_thread_only_and_bounded_quarantine (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_aa008_outer_thread_only_and_bounded_quarantine)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 207, in test_aa008_outer_thread_only_and_bounded_quarantine
+    eventually(lambda: not self.b.notifications.empty())
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 34, in eventually
+    raise AssertionError('expected condition did not become true')
+AssertionError: expected condition did not become true
+
+----------------------------------------------------------------------
+Ran 1 test in 3.004s
+
+FAILED (failures=1)

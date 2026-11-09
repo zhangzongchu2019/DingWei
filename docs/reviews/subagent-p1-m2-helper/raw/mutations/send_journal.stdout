@@ -1,0 +1,14 @@
+test_native_send_journal_survives_restart (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_native_send_journal_survives_restart) ... FAIL
+
+======================================================================
+FAIL: test_native_send_journal_survives_restart (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_native_send_journal_survives_restart)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 445, in test_native_send_journal_survives_restart
+    with self.assertRaisesRegex(PermissionError, 'unknown'): restarted.begin_native_send(*binding)
+AssertionError: PermissionError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.051s
+
+FAILED (failures=1)

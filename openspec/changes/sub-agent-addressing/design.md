@@ -20,3 +20,7 @@
 ## M2 实施决定（2026-11-08）
 
 对AA004/006/007/008/009复用r55同一驱动与对账护栏；inbox内部session存储命名空间编码lane/generation，行和回调保留显式作用域。创建submitted先于native写入，未知结果不重建；封口先事务draining及逐条退信。连接ACK才开放收信。详细状态、迁移及回退依据docs/design/SUBAGENT-P1-M2-HELPER.md；原生0.159.2旧主thread无法补装dynamicTools是已核实协议限制，不自动更换主席thread。M3展示与回退演练另派。
+
+## M2 线协议收口（2026-11-09）
+
+对应AA004/AA007/AA009：原生创建响应等待不持管理锁，父结束可先封口，迟到绑定保持draining/ended；native工具发送按thread/turn/callId和节点代次持久占用，未知结果不重发。M1现有delivery_ack_confirm无lane回显，helper接受投递同事务写helper_sub_agent_delivery_scope，确认唯一定位侧表后进入scoped inbox，重复身份拒绝而不从回执单查猜归属。完整to仅补#key传输封装，保留子路径。最终候选826a7c0ec，产品冻结eed6ac547；后续仅测试隔离、显式turn不等于task完成断言和库存数92同步。详细证据见docs/reviews/subagent-p1-m2-helper/REPORT.md。

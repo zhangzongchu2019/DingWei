@@ -1,0 +1,24 @@
+{
+  "command": [
+    "env",
+    "PYTHONPATH=tools/sessionhelper",
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "-m",
+    "unittest",
+    "-q",
+    "tools/sessionhelper/tests/test_codex_delivery_reconcile.py",
+    "tools/sessionhelper/tests/test_codex_stale_thread.py",
+    "tools/sessionhelper/tests/test_daemon_identity.py",
+    "tools/sessionhelper/tests/test_dispatch_lifecycle.py",
+    "tools/sessionhelper/tests/test_sessionhelper.py",
+    "tools/sessionhelper/tests/test_connection_reconnect_backoff.py",
+    "tools/sessionhelper/tests/test_ack_outbox.py",
+    "tools/sessionhelper/tests/test_sub_agent_helper.py"
+  ],
+  "start": "2026-11-08T23:35:12.982242+00:00",
+  "end": "2026-11-08T23:35:33.109166+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "eae9eca1ac67bf580f4b0f8dccca5f92d7e62a88",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

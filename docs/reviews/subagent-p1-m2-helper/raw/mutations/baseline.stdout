@@ -1,0 +1,50 @@
+[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-5 status=inProgress)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[delivery][LATE_ACCEPTED] id=dw-same; accepted-only cannot reopen admission
+[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+----------------------------------------------------------------------
+Ran 29 tests in 3.055s
+
+OK

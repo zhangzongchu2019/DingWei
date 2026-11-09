@@ -1,0 +1,28 @@
+test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+
+  test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery) (forged={'threadId': 'eb97e48d-cac9-43d5-b16f-1fe741fbd6c1', 'turnId': 'actual-turn', 'tool': 'dingwei_send_message', 'arguments': {'to': 'target.owner', 'body': 'hello'}}) ... FAIL
+test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery) ... FAIL
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+
+======================================================================
+FAIL: test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery) (forged={'threadId': 'eb97e48d-cac9-43d5-b16f-1fe741fbd6c1', 'turnId': 'actual-turn', 'tool': 'dingwei_send_message', 'arguments': {'to': 'target.owner', 'body': 'hello'}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 312, in test_aa004_trusted_native_context_source_and_forgery
+    with self.subTest(forged=forged), self.assertRaises(PermissionError): self.runtime.native_tool(facade, forged)
+AssertionError: PermissionError not raised
+
+======================================================================
+FAIL: test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 315, in test_aa004_trusted_native_context_source_and_forgery
+    self.assertEqual(len(sources), 1)
+AssertionError: 2 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.100s
+
+FAILED (failures=2)

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "env",
+    "PYTHONPATH=tools/sessionhelper",
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "-m",
+    "unittest",
+    "-q",
+    "tools/sessionhelper/tests/test_sub_agent_helper.py"
+  ],
+  "start": "2026-11-08T23:52:32.604988+00:00",
+  "end": "2026-11-08T23:52:35.272641+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "f2e2c37a5bb5704d3b0e4adbd279f5669061b770",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

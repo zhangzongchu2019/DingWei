@@ -1,0 +1,24 @@
+test_aa007_policy_defaults_and_negative_bounds (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa007_policy_defaults_and_negative_bounds) ... FAIL
+
+======================================================================
+FAIL: test_aa007_policy_defaults_and_negative_bounds (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa007_policy_defaults_and_negative_bounds)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 117, in test_aa007_policy_defaults_and_negative_bounds
+    self.assertEqual(resolve_policy(), dict(exit_on_task_complete=True, idle_timeout=3600, max_lifetime=172800, platform_lifetime_cap=432000, exit_grace=600))
+AssertionError: {'exi[16 chars]te': False, 'idle_timeout': 3600, 'max_lifetim[58 chars] 600} != {'exi[16 chars]te': True, 'idle_timeout': 3600, 'max_lifetime[57 chars] 600}
+  {'exit_grace': 600,
+-  'exit_on_task_complete': False,
+?                           ^^^^
+
++  'exit_on_task_complete': True,
+?                           ^^^
+
+   'idle_timeout': 3600,
+   'max_lifetime': 172800,
+   'platform_lifetime_cap': 432000}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.039s
+
+FAILED (failures=1)

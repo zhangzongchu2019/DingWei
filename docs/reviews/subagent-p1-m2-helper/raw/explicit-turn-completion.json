@@ -1,0 +1,17 @@
+{
+  "command": [
+    "env",
+    "PYTHONPATH=tools/sessionhelper",
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "-m",
+    "unittest",
+    "-v",
+    "tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa007_idle_progress_and_pending_work_are_distinct"
+  ],
+  "start": "2026-11-09T00:14:36.834366+00:00",
+  "end": "2026-11-09T00:14:37.112659+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "6d18bc29b9eb73f15314e7b69a80355416abdc87",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

@@ -1,0 +1,17 @@
+test_conflicting_terminal_never_replaces_first_outcome (test_codex_delivery_reconcile.ReconcileBoundaries.test_conflicting_terminal_never_replaces_first_outcome) ... FAIL
+
+======================================================================
+FAIL: test_conflicting_terminal_never_replaces_first_outcome (test_codex_delivery_reconcile.ReconcileBoundaries.test_conflicting_terminal_never_replaces_first_outcome)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 271, in test_conflicting_terminal_never_replaces_first_outcome
+    self.assertEqual(self.inbox.lifecycle(self.did)['turn_outcome'], 'interrupted', 'CONFLICTING_OUTCOME_REPLACED')
+AssertionError: 'completed' != 'interrupted'
+- completed
++ interrupted
+ : CONFLICTING_OUTCOME_REPLACED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.063s
+
+FAILED (failures=1)

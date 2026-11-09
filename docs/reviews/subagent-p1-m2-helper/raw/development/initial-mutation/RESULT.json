@@ -1,0 +1,37 @@
+[
+  {
+    "criterion": "AA004",
+    "name": "outer_source",
+    "target_test": "RuntimeTests.test_aa004_trusted_native_context_source_and_forgery",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA004",
+    "name": "stale_turn",
+    "target_test": "RuntimeTests.test_aa004_trusted_native_context_source_and_forgery",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA004",
+    "name": "argument_source",
+    "target_test": "RuntimeTests.test_aa004_trusted_native_context_source_and_forgery",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA006",
+    "name": "timestamp_prefix",
+    "target_test": "StoreTests.test_aa006_random_tail_collision_alias_and_tombstone",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA006",
+    "name": "tail_collision",
+    "target_test": "StoreTests.test_aa006_random_tail_collision_alias_and_tombstone",
+    "rc": 1,
+    "target_red": false
+  }
+]

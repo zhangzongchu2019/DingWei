@@ -1,0 +1,17 @@
+test_old_generation_snapshot_cannot_advance_ack (test_codex_delivery_reconcile.ReconcileBoundaries.test_old_generation_snapshot_cannot_advance_ack) ... FAIL
+
+======================================================================
+FAIL: test_old_generation_snapshot_cannot_advance_ack (test_codex_delivery_reconcile.ReconcileBoundaries.test_old_generation_snapshot_cannot_advance_ack)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 252, in test_old_generation_snapshot_cannot_advance_ack
+    self.assertEqual(self.inbox.lifecycle(self.did)['state'], 'admission_unknown', 'OLD_GENERATION_ADVANCED_ACK')
+AssertionError: 'processed' != 'admission_unknown'
+- processed
++ admission_unknown
+ : OLD_GENERATION_ADVANCED_ACK
+
+----------------------------------------------------------------------
+Ran 1 test in 0.054s
+
+FAILED (failures=1)

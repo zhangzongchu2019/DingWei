@@ -1,0 +1,21 @@
+test_aa007_completion_idle_cap_restart_and_parent_cascade (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa007_completion_idle_cap_restart_and_parent_cascade) ... [sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+FAIL
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+
+======================================================================
+FAIL: test_aa007_completion_idle_cap_restart_and_parent_cascade (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa007_completion_idle_cap_restart_and_parent_cascade)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 394, in test_aa007_completion_idle_cap_restart_and_parent_cascade
+    self.assertEqual(self.runtime.store.node(b['node_id'])['reason'], 'platform_cap')
+AssertionError: '' != 'platform_cap'
++ platform_cap
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.120s
+
+FAILED (failures=1)

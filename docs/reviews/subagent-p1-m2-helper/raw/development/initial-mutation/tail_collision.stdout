@@ -1,0 +1,19 @@
+test_aa006_random_tail_collision_alias_and_tombstone (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa006_random_tail_collision_alias_and_tombstone) ... ERROR
+
+======================================================================
+ERROR: test_aa006_random_tail_collision_alias_and_tombstone (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa006_random_tail_collision_alias_and_tombstone)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 94, in test_aa006_random_tail_collision_alias_and_tombstone
+    b = self.node('b', native='019a6500-0000-7000-8000-5678abcdef12')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 88, in node
+    self.store.bind(node['node_id'], native or str(uuid.uuid4()))
+  File "/tmp/m2-mut-e522hriq/sessionhelper/sub_agent_store.py", line 151, in bind
+    db.execute('INSERT INTO helper_sub_agent_alias(root,alias,node_id) VALUES(?,?,?)', (self.root, name, node_id))
+sqlite3.IntegrityError: UNIQUE constraint failed: helper_sub_agent_alias.root, helper_sub_agent_alias.parent_node_id, helper_sub_agent_alias.alias
+
+----------------------------------------------------------------------
+Ran 1 test in 0.052s
+
+FAILED (errors=1)

@@ -12,3 +12,5 @@
 M1 2026-11-08：基线79a60a1e351c207ff0b46bdf9151e846ec83f5d4；唯一写者线程01a1bd1c，锁/tmp/coder56-subagent-m1.lock；工作树/data/ai-dev-data/subagent-p1-m1-hub。代码位置：internal/subagent纯结构与解析；internal/m8/sub_agent.go当前连接协商、控制帧及路由；internal/store/sub_agent.go持久注册和sidecar；migrations/0075_sub_agent_registry.sql加法迁移。实现无新增第三方依赖。验证用隔离HOME/TMPDIR、剥离SH_/DINGWEI_/DW_/DATAD_，沿用锁定Python环境；不读取真实席位数据库、不调用在线helper。新回退开关DW_SUB_AGENTS_V1=0；M2/M3仍另派。报告入口docs/reviews/subagent-p1-m1-hub/REPORT.md。
 
 M2（2026-11-08）：M1获〔51〕-补12，子Agent走r57；基线eae9eca1。helper实现位置tools/sessionhelper/sessionhelper/{app_server_broker,sub_agent_store,sub_agent_runtime,sub_agent_connection}.py；原有CodexDriver/Adapter/inbox加作用域，默认SH_SUB_AGENTS_V1关闭。协议与原生历史主thread限制见docs/design/SUBAGENT-P1-M2-HELPER.md。只用Git交件，本地隔离验证，不部署。
+
+M2收口（2026-11-09）：产品冻结eed6ac54762bb2cf756f78934fbfb2db46f73d64，候选826a7c0ecf3d3b5634f69eed479d6c5abdf3b119；只用cfg.inbox_db本地SQLite加法表/列。实际M1确认不回显lane，由不可变投递作用域侧表定位；源工具调用在发送前持久去重。helper库存92文件，新增29例与24刀；r55九格和21刀继承护栏。所有本地测试使用隔离HOME、短TMPDIR、剥离席位环境，不访问在线数据库；原生仅loopback合成SSE。报告docs/reviews/subagent-p1-m2-helper/REPORT.md。

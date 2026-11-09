@@ -1,0 +1,19 @@
+test_m1_confirmation_without_lane_echo_uses_immutable_scope (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_m1_confirmation_without_lane_echo_uses_immutable_scope) ... [sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+FAIL
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+
+======================================================================
+FAIL: test_m1_confirmation_without_lane_echo_uses_immutable_scope (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_m1_confirmation_without_lane_echo_uses_immutable_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 514, in test_m1_confirmation_without_lane_echo_uses_immutable_scope
+    self.assertIs(inbox, self.runtime.inboxes[a['node_id']])
+AssertionError: <sessionhelper.inbox.DeliveryInbox object at 0x7daeef077110> is not <sessionhelper.sub_agent_store.ScopedDeliveryInbox object at 0x7daeef077200>
+
+----------------------------------------------------------------------
+Ran 1 test in 0.140s
+
+FAILED (failures=1)

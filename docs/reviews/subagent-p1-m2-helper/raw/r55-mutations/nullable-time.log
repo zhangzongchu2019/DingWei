@@ -1,0 +1,75 @@
+[delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee turn=native-turn; missing original native times, no ACK advancement
+[delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee turn=native-turn; missing original native times, no ACK advancement
+[delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee turn=native-turn; missing original native times, no ACK advancement
+[delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee turn=native-turn; missing original native times, no ACK advancement
+[delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee turn=native-turn; missing original native times, no ACK advancement
+test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) ... 
+  test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) (value=None) ... FAIL
+  test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) (value=nan) ... FAIL
+  test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) (value=inf) ... FAIL
+  test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) (value=True) ... FAIL
+  test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) (value=-1) ... FAIL
+test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) ... FAIL
+
+======================================================================
+FAIL: test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) (value=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 235, in test_nullable_and_nonfinite_times_keep_pending
+    self.assert_pending('INVALID_TIME_ADVANCED_ACK')
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 84, in assert_pending
+    self.assertFalse(self.events(), marker)
+AssertionError: [SessionEvent(kind='state_change', text='', data={'change': 'turn_completed', 'raw_method': 'reconcile/native', 'status': 'interrupted', 'admitted_at': 1794182406, 'processed_at': None, 'native_evidence': {'thread_id': 'bound', 'turn_id': 'native-turn', 'client_id': 'dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'status': 'interrupted', 'started_at': 1794182406, 'completed_at': None, 'queried_at': 1794182406.3958418, 'context': {'ack_generation': 1, 'dispatch_intent_at': 1794182406.3738813, 'request_id': 'dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}, 'source': 'codex/thread/turns/list', 'scan_complete': True, 'response_sha256': 'b46a030221dde2a35f84aa13a7726f0c1a15a7d8b7c66c10da0e94c057934fca'}}, session_id='bound', cursor='reconcile:native-turn', delivery_id='dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', turn_id='native-turn')] is not false : INVALID_TIME_ADVANCED_ACK
+
+======================================================================
+FAIL: test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) (value=nan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 235, in test_nullable_and_nonfinite_times_keep_pending
+    self.assert_pending('INVALID_TIME_ADVANCED_ACK')
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 84, in assert_pending
+    self.assertFalse(self.events(), marker)
+AssertionError: [SessionEvent(kind='state_change', text='', data={'change': 'turn_completed', 'raw_method': 'reconcile/native', 'status': 'interrupted', 'admitted_at': 1794182406, 'processed_at': None, 'native_evidence': {'thread_id': 'bound', 'turn_id': 'native-turn', 'client_id': 'dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'status': 'interrupted', 'started_at': 1794182406, 'completed_at': None, 'queried_at': 1794182406.3958418, 'context': {'ack_generation': 1, 'dispatch_intent_at': 1794182406.3738813, 'request_id': 'dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}, 'source': 'codex/thread/turns/list', 'scan_complete': True, 'response_sha256': 'b46a030221dde2a35f84aa13a7726f0c1a15a7d8b7c66c10da0e94c057934fca'}}, session_id='bound', cursor='reconcile:native-turn', delivery_id='dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', turn_id='native-turn')] is not false : INVALID_TIME_ADVANCED_ACK
+
+======================================================================
+FAIL: test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) (value=inf)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 235, in test_nullable_and_nonfinite_times_keep_pending
+    self.assert_pending('INVALID_TIME_ADVANCED_ACK')
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 84, in assert_pending
+    self.assertFalse(self.events(), marker)
+AssertionError: [SessionEvent(kind='state_change', text='', data={'change': 'turn_completed', 'raw_method': 'reconcile/native', 'status': 'interrupted', 'admitted_at': 1794182406, 'processed_at': None, 'native_evidence': {'thread_id': 'bound', 'turn_id': 'native-turn', 'client_id': 'dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'status': 'interrupted', 'started_at': 1794182406, 'completed_at': None, 'queried_at': 1794182406.3958418, 'context': {'ack_generation': 1, 'dispatch_intent_at': 1794182406.3738813, 'request_id': 'dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}, 'source': 'codex/thread/turns/list', 'scan_complete': True, 'response_sha256': 'b46a030221dde2a35f84aa13a7726f0c1a15a7d8b7c66c10da0e94c057934fca'}}, session_id='bound', cursor='reconcile:native-turn', delivery_id='dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', turn_id='native-turn')] is not false : INVALID_TIME_ADVANCED_ACK
+
+======================================================================
+FAIL: test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) (value=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 235, in test_nullable_and_nonfinite_times_keep_pending
+    self.assert_pending('INVALID_TIME_ADVANCED_ACK')
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 84, in assert_pending
+    self.assertFalse(self.events(), marker)
+AssertionError: [SessionEvent(kind='state_change', text='', data={'change': 'turn_completed', 'raw_method': 'reconcile/native', 'status': 'interrupted', 'admitted_at': 1794182406, 'processed_at': None, 'native_evidence': {'thread_id': 'bound', 'turn_id': 'native-turn', 'client_id': 'dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'status': 'interrupted', 'started_at': 1794182406, 'completed_at': None, 'queried_at': 1794182406.3958418, 'context': {'ack_generation': 1, 'dispatch_intent_at': 1794182406.3738813, 'request_id': 'dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}, 'source': 'codex/thread/turns/list', 'scan_complete': True, 'response_sha256': 'b46a030221dde2a35f84aa13a7726f0c1a15a7d8b7c66c10da0e94c057934fca'}}, session_id='bound', cursor='reconcile:native-turn', delivery_id='dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', turn_id='native-turn')] is not false : INVALID_TIME_ADVANCED_ACK
+
+======================================================================
+FAIL: test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending) (value=-1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 235, in test_nullable_and_nonfinite_times_keep_pending
+    self.assert_pending('INVALID_TIME_ADVANCED_ACK')
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 84, in assert_pending
+    self.assertFalse(self.events(), marker)
+AssertionError: [SessionEvent(kind='state_change', text='', data={'change': 'turn_completed', 'raw_method': 'reconcile/native', 'status': 'interrupted', 'admitted_at': 1794182406, 'processed_at': None, 'native_evidence': {'thread_id': 'bound', 'turn_id': 'native-turn', 'client_id': 'dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', 'status': 'interrupted', 'started_at': 1794182406, 'completed_at': None, 'queried_at': 1794182406.3958418, 'context': {'ack_generation': 1, 'dispatch_intent_at': 1794182406.3738813, 'request_id': 'dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'}, 'source': 'codex/thread/turns/list', 'scan_complete': True, 'response_sha256': 'b46a030221dde2a35f84aa13a7726f0c1a15a7d8b7c66c10da0e94c057934fca'}}, session_id='bound', cursor='reconcile:native-turn', delivery_id='dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', turn_id='native-turn')] is not false : INVALID_TIME_ADVANCED_ACK
+
+======================================================================
+FAIL: test_nullable_and_nonfinite_times_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_nullable_and_nonfinite_times_keep_pending)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 236, in test_nullable_and_nonfinite_times_keep_pending
+    self.assertEqual(len(self.rpc.calls), 5)
+AssertionError: 1 != 5
+
+----------------------------------------------------------------------
+Ran 1 test in 0.080s
+
+FAILED (failures=6)

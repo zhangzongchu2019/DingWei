@@ -1,0 +1,16 @@
+test_native_request_id_collision_with_client_pending (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_native_request_id_collision_with_client_pending) ... FAIL
+
+======================================================================
+FAIL: test_native_request_id_collision_with_client_pending (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_native_request_id_collision_with_client_pending)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 293, in test_native_request_id_collision_with_client_pending
+    self.assertEqual(actual['response'], {'actual_response': True}, 'BIDIRECTIONAL_ID_COLLISION_CONSUMED_NATIVE_REQUEST')
+AssertionError: {} != {'actual_response': True}
+- {}
++ {'actual_response': True} : BIDIRECTIONAL_ID_COLLISION_CONSUMED_NATIVE_REQUEST
+
+----------------------------------------------------------------------
+Ran 1 test in 1.118s
+
+FAILED (failures=1)

@@ -1,0 +1,15 @@
+[driver-adapter][FAILED] id=dw-dlv_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee deliver raised: UNKNOWN_AUTOMATICALLY_RESUBMITTED
+test_unknown_without_driver_row_never_automatically_resubmits (test_codex_delivery_reconcile.ReconcileBoundaries.test_unknown_without_driver_row_never_automatically_resubmits) ... FAIL
+
+======================================================================
+FAIL: test_unknown_without_driver_row_never_automatically_resubmits (test_codex_delivery_reconcile.ReconcileBoundaries.test_unknown_without_driver_row_never_automatically_resubmits)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 154, in test_unknown_without_driver_row_never_automatically_resubmits
+    self.assertFalse(deliver.called, 'UNKNOWN_AUTOMATICALLY_RESUBMITTED')
+AssertionError: True is not false : UNKNOWN_AUTOMATICALLY_RESUBMITTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.071s
+
+FAILED (failures=1)

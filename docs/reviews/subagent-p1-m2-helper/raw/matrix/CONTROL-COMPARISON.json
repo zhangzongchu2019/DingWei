@@ -1,0 +1,14 @@
+{
+  "baseline": "24b4b644f6288a620058fe11023bb397153a7dfa",
+  "unchanged_controls": [
+    "r54/same_clock",
+    "r54/helper_minus_2s",
+    "r54/wall_clock_step_back",
+    "r54/stale_timestamp_argument",
+    "r55/native_seconds_floor",
+    "r55/native_too_old",
+    "r55/native_milliseconds_rejected",
+    "r55/live_stale_timestamp_argument"
+  ],
+  "count": 8
+}

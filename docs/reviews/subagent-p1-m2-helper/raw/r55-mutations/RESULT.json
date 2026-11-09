@@ -1,0 +1,149 @@
+[
+  {
+    "mutation": "duplicate",
+    "test": "test_duplicate_client_id_is_ambiguous",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "fb51b3e6dd9acacd7780de7466508005114a88b2b63cad4fefd8b2018ea4ed15"
+  },
+  {
+    "mutation": "historical-binding",
+    "test": "test_duplicate_client_id_on_historical_binding_is_ambiguous",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "56541d918590f08e2e5331ca4c7d4c3383f586c291756cd7fe0756a71a39b8c1"
+  },
+  {
+    "mutation": "budget",
+    "test": "test_page_limit_200_is_incomplete_even_if_match_seen",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "5b388cc74bf532ed1d4a719843718d9b94f4b36dca1c6569ddcfcb3a57f70eff"
+  },
+  {
+    "mutation": "pagination",
+    "test": "test_opaque_cursor_and_whole_scan_uniqueness",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "f8da467d7a6a51f975c1dbd6729704f639a46a3b70822445d0d2b216905511c0"
+  },
+  {
+    "mutation": "nullable-time",
+    "test": "test_nullable_and_nonfinite_times_keep_pending",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "2c179e4554659ecd4d0d9fd0bf263936f00ebe752ab02ba2117b815734f25891"
+  },
+  {
+    "mutation": "thread",
+    "test": "test_wrong_thread_and_wrong_turn_keep_pending",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "1eef110b1eb0132617960af525388bf2286fb15a218e7cf2476fadf8030e8e31"
+  },
+  {
+    "mutation": "generation",
+    "test": "test_old_generation_snapshot_cannot_advance_ack",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "91ce2a5cfa055694ce9baf0ec1cf68af14e979dd71d1762eae6ab610b17bdb95"
+  },
+  {
+    "mutation": "terminal-conflict",
+    "test": "test_conflicting_terminal_never_replaces_first_outcome",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "212943791b64e59ee02b5119aec9015c11ce31948d04b3d96ce58bd0df5cff39"
+  },
+  {
+    "mutation": "restart",
+    "test": "test_restart_process_replays_persisted_proof_without_rpc",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "36ac5d9a84a662a7d063b35f3931173447ecfff0af4c66de2e0551567db6eb3e"
+  },
+  {
+    "mutation": "reordered",
+    "test": "test_notification_before_response_and_duplicate_merge",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "2c44921ea643ce48f47aaea8569e6652e1bc33e7ea38e58af733c0ca4c9f1480"
+  },
+  {
+    "mutation": "second-tolerance",
+    "test": "test_native_second_precision_one_second_tolerance",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "965d44326456228fd117deb88a7722a93b1960293c7f1f46017822a79303a38a"
+  },
+  {
+    "mutation": "old-time",
+    "test": "test_before_intent_more_than_one_second_rejected",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "89a6cefa19828bf7cdedb7f7bfb49321e76beef572aeea48e383138a4fded5f8"
+  },
+  {
+    "mutation": "rate",
+    "test": "test_thread_rate_limit_survives_driver_replacement",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "bffe0a109709af39457b20b7d5c9d0fafa7e813f72547baf6eb0eccf428ba6b9"
+  },
+  {
+    "mutation": "seat-concurrency",
+    "test": "test_one_reconcile_request_per_seat_across_processes",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "7bf08948280dd408cec6124b2e334b686f589b558023916dadab744012dde2af"
+  },
+  {
+    "mutation": "busy-stall",
+    "test": "test_healthy_busy_wait_has_no_stall_deadline",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "107f34ef4d58018801735a1eab971d86653e7ff0694d293c04d5f9c7e91fe52a"
+  },
+  {
+    "mutation": "local-clock",
+    "test": "test_local_queue_does_not_use_dispatch_intent_clock",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "7f8f4f1fd304e8e263548c15da110222f24bc1143afce390cb7f415de5f9dfba"
+  },
+  {
+    "mutation": "transport-clock",
+    "test": "test_turn_start_clock_begins_after_transport_write_lock",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "cabdbfe0ad9d037279044085570c61daf6bee9d510039745cf0339872c747466"
+  },
+  {
+    "mutation": "unknown-no-ledger",
+    "test": "test_unknown_without_driver_row_never_automatically_resubmits",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "a6c869411daa998176efb30e0b11738197a3e665c7ba4ec473dfd3b90e84ab32"
+  },
+  {
+    "mutation": "healthy-response",
+    "test": "test_healthy_response_wait_does_not_replace_transport",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "2e504eda8420c23a335af86d0f851b93c7965997211fdb8e430afbb64caa1216"
+  },
+  {
+    "mutation": "fractional-observation",
+    "test": "test_native_seconds_preserve_fractional_acked_admission_boundary",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "27efc87bb75c7a62947a49fb9c030d9c7732d376bb6311b57d28c9c1a87d9ec2"
+  },
+  {
+    "mutation": "late-response-metadata",
+    "test": "test_late_response_preserves_query_rate_and_pending_proof",
+    "rc": 1,
+    "target_assertion_red": true,
+    "log_sha256": "c00dfa7a5f1a07689072ba2aae1d56b45f1781d31ec365806e4705ec9df73f2f"
+  }
+]

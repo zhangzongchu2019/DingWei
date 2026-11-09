@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "tests/subagent-p1-m2/mutations.py",
+    "--output",
+    "/tmp/m2-mutations-results2"
+  ],
+  "start": "2026-11-08T23:39:12.299576+00:00",
+  "end": "2026-11-08T23:39:21.366291+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "eae9eca1ac67bf580f4b0f8dccca5f92d7e62a88",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

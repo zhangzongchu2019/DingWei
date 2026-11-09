@@ -1,0 +1,12 @@
+{
+  "real_inference": false,
+  "binary_sha256": "1748767b230ebfc3d4ab7e4e254920d0c0ad9691fd8c11f190e7d44511a4a92e",
+  "native_control_create": true,
+  "native_dynamic_tools": true,
+  "outer_thread_binding": true,
+  "forged_arguments_rejected": true,
+  "stale_turn_rejected": true,
+  "distinct_native_threads": 2,
+  "outbound_calls": 1,
+  "local_provider_requests": 5
+}
