@@ -60,5 +60,7 @@ def main():
  with tempfile.TemporaryDirectory(prefix='m3browser-') as directory:
   tmp=Path(directory);e={**env,'HOME':str(tmp/'home'),'TMPDIR':str(tmp),'TZ':'UTC'};(tmp/'home').mkdir()
   run('browser-tree',['node','view-service/sub-agent-tree-browser-regression.js','--mutate-tree'],tmp,'AA010_BROWSER_TREE_ONLINE',e)
+  run('browser-stale-tree',['node','view-service/sub-agent-tree-browser-regression.js','--mutate-stale'],tmp,'AA010_BROWSER_STALE_TREE_REVOKE',e)
+  run('browser-root-mask',['node','view-service/sub-agent-tree-browser-regression.js','--mutate-root-mask'],tmp,'AA010_BROWSER_ROOT_MASKS_SUBTREE',e)
  (out/'RESULT.json').write_text(json.dumps(results,ensure_ascii=False,indent=2)+'\n');return 0 if all(x['target_red'] for x in results) else 1
 if __name__=='__main__':raise SystemExit(main())

@@ -617,7 +617,7 @@ function openTab(session){
 }
 function applyAgentSnapshot(agents){
   agentSnapshot = new Map(agents.map(function(a){return [a.full_name, !!a.online]}));
-  subAgentTrees.forEach(function(t){t.nodes.forEach(function(n){agentSnapshot.set(n.full_name,n.online===true)})});   // 页签与成员一律按 full_name(名称.业主简称)
+  subAgentTrees.forEach(function(t){var rootOnline=agents.some(function(a){return a.full_name.toLowerCase()===t.full_name.toLowerCase()&&a.online===true});t.nodes.forEach(function(n){agentSnapshot.set(n.full_name,n.online===true&&rootOnline)})});   // 页签与成员一律按 full_name(名称.业主简称)
   // 🔴 只更新既有 tab 的可用状态。tab/pane 对象与 iframe src 均不得在列表刷新时改变。
   tabs.forEach(function(e,session){
     if(String(session).startsWith('__')) return; // Specs/编组是平台 tab,不是 Agent session
@@ -632,18 +632,19 @@ function applyAgentSnapshot(agents){
   });
 }
 const SUB_AGENT_TREE_ENABLED = false;
-var subAgentTrees=[];
+var subAgentTrees=[],subAgentTreeRequest=0;
 async function refreshSubAgentTrees(){
  if(!SUB_AGENT_TREE_ENABLED)return;
- try{var r=await fetch('/api/console/agent-trees',{cache:'no-store'});if(!r.ok)throw new Error('tree unavailable');var d=await r.json();if(d.version!==1||!Array.isArray(d.trees))throw new Error('tree version');subAgentTrees=d.trees;}
- catch(e){subAgentTrees=[];var status=document.getElementById('agents-status');if(status)status.textContent='子 Agent 状态暂不可用，已停止子订阅，请刷新重试';}
+ var request=++subAgentTreeRequest;
+ try{var r=await fetch('/api/console/agent-trees',{cache:'no-store'});if(!r.ok)throw new Error('tree unavailable');var d=await r.json();if(d.version!==1||!Array.isArray(d.trees))throw new Error('tree version');if(request!==subAgentTreeRequest)return;subAgentTrees=d.trees;}
+ catch(e){if(request!==subAgentTreeRequest)return;subAgentTrees=[];var status=document.getElementById('agents-status');if(status)status.textContent='子 Agent 状态暂不可用，已停止子订阅，请刷新重试';}
  renderAgentNav();applyAgentSnapshot(agentListSnapshot);
 }
 function appendSubAgentTree(nav,root){
  var tree=subAgentTrees.find(function(t){return t.full_name===root.full_name;});
  if(!tree)return;
  tree.nodes.forEach(function(n){var b=document.createElement('button');b.className='sub-agent-node';b.dataset.nodeId=n.node_id;b.dataset.generation=String(n.generation);
- b.textContent=(root.name||root.full_name)+' → '+n.full_name.split('.')[0]+' · '+(n.state==='ended'?'ended':n.online?'在线':'离线')+(n.reason?' · '+n.reason:'');b.title=n.full_name;b.disabled=!n.online;b.onclick=function(){openTab(n.full_name)};nav.append(b);});
+ b.textContent=(root.name||root.full_name)+' → '+n.full_name.split('.')[0]+' · '+(n.state==='ended'?'ended':n.online?'在线':'离线')+(n.reason?' · '+n.reason:'');b.title=n.full_name;b.disabled=!n.online||!agentListSnapshot.some(function(a){return a.full_name.toLowerCase()===root.full_name.toLowerCase()&&a.online===true});b.onclick=function(){openTab(n.full_name)};nav.append(b);});
 }
 var agentListSnapshot=[],agentNavMode='tree',agentTreeAllowDuplicates=true;
 function renderAgentList(agents){
@@ -711,7 +712,7 @@ async function refreshAgents(){
     if(seq<agentsLastOkSeq)return;
     var authFailed=httpStatus===401||httpStatus===403;
     // 401／403 不是「列表过期」：照旧清空并给原错误；从未成功过 ⇒ 空列表＋失败提示；已有成功快照 ⇒ 列表与在线标不动，只加过期标
-    if(authFailed||!agentsLastSuccessAt){agentsStale=false;agentListSnapshot=[];renderAgentList([]);}
+    if(authFailed||!agentsLastSuccessAt){agentsStale=false;agentListSnapshot=[];subAgentTrees=[];subAgentTreeRequest++;renderAgentList([]);applyAgentSnapshot([]);}
     else{agentsStale=true;applyAgentStale();}
     status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);retry.hidden=false;
   }finally{clearTimeout(timer);if(tempGroupsEnabled())refreshTempGroups();}
