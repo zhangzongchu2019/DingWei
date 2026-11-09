@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""七项逐个运行的语义变异；编译失败不计作成功。"""
+"""八项逐个运行的语义变异；编译失败不计作成功。"""
 from pathlib import Path
 import os
 import subprocess
@@ -30,6 +30,10 @@ CASES = [
     ("reply-route-after-grouping", "internal/m8/hub.go",
      '\t\t\t\tif handled, routeErr := h.routeExternalSeat(ctx, full.keyID, full.sessionName, env); handled {\n\t\t\t\t\treturn routeErr\n\t\t\t\t}\n\t\t\t\tif err := h.enforceAgentGrouping(ctx, from, env, full.keyID, full.sessionName); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}',
      '\t\t\t\tif err := h.enforceAgentGrouping(ctx, from, env, full.keyID, full.sessionName); err != nil {\n\t\t\t\t\treturn err\n\t\t\t\t}\n\t\t\t\tif handled, routeErr := h.routeExternalSeat(ctx, full.keyID, full.sessionName, env); handled {\n\t\t\t\t\treturn routeErr\n\t\t\t\t}', "./internal/m8", "TestExternalSeatSenderReplyRoundTripPGAndHub", "EXTSEAT_REPLY_ONLY_FROM_TARGET"),
+    ("expect-reply-policy-write-removed", "internal/m8/extseat.go",
+     'env.Meta[metaKeyReplyPolicy] = replyPolicyExpectReply',
+     'env.Meta["mutated_reply_policy"] = replyPolicyExpectReply',
+     "./internal/m8", "TestExternalSeatSenderReplyRoundTripPGAndHub", "EXTSEAT_EXPECT_REPLY_POLICY"),
 ]
 
 BUILD_ERRORS = ("build failed", "syntax error", "undefined:", "expected '", "cannot use ")

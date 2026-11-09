@@ -34,7 +34,11 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(extseatDDL) + string(groupDDL)
+	policyDDL, err := os.ReadFile("../store/migrate/migrations/0108_extseat_expect_reply.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(extseatDDL) + string(policyDDL) + string(groupDDL)
 	if _, err = pool.Exec(ctx, access, ddl); err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +77,7 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	}
 
 	const originalBody = "请确认外部席位的收件身份。"
-	if _, err = seats.Send(ctx, seat, targetFullName, originalBody, "extseat-sender-e2e-001"); err != nil {
+	if _, err = seats.Send(ctx, seat, targetFullName, originalBody, "extseat-sender-e2e-001", true); err != nil {
 		t.Fatal(err)
 	}
 	if did, err := seats.ProjectOne(ctx, HubExtseatProjector{Hub: v.hub}); !did || err != nil {
@@ -81,23 +85,45 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	}
 	delivered := readEnvelope(t, ctx, receiver)
 	wantHeader := externalSeatSenderHeader(seat.FullName, principal.DisplayName, "", targetFullName)
-	if delivered.Body != wantHeader+"\n"+originalBody || metaString(delivered.Meta, "origin_kind") != "extseat" || metaString(delivered.Meta, "source_display_name") != seat.FullName || !metaBool(delivered.Meta, "source_external") {
-		t.Fatalf("EXTSEAT_SENDER_HEADER_FROM_LOCKED_IDENTITY projected body/meta mismatch: body=%q meta=%#v", delivered.Body, delivered.Meta)
+	if delivered.Body != wantHeader+"\n"+originalBody || metaString(delivered.Meta, "origin_kind") != "extseat" || metaString(delivered.Meta, "source_display_name") != seat.FullName || !metaBool(delivered.Meta, "source_external") || metaString(delivered.Meta, metaKeyReplyPolicy) != replyPolicyExpectReply {
+		t.Fatalf("EXTSEAT_EXPECT_REPLY_POLICY EXTSEAT_SENDER_HEADER_FROM_LOCKED_IDENTITY projected body/meta mismatch: body=%q meta=%#v", delivered.Body, delivered.Meta)
 	}
 
-	// MCP addressing carries the full name as the session component plus the authenticated owner's virtual key.
-	reply := model.Envelope{ID: "extseat-sender-reply-e2e-001", From: "kimi#u_zzc", To: seat.FullName + "#u_" + seat.OwnerLC, Body: "已确认，收到来自外部 Agent 的消息。"}
-	if err := v.hub.RouteEnvelope(ctx, reply); err != nil {
-		t.Fatalf("EXTSEAT_REPLY_ROUTE_E2E routeExternalSeat rejected reply: %v", err)
-	}
+	// Run the production completed-turn processor with the persisted source
+	// delivery and assistant output. Its non-candidate branch must invoke
+	// reply-origin, then Hub.RouteEnvelope and extseat.
+	p := testAMRProcessor()
+	p.hub = v.hub
+	const assistantReply = "已确认，收到来自外部 Agent 的消息。"
+	p.process(amrRouteJob{key: amrTurnKey{KeyID: "u_zzc", Session: "kimi", DeliveryID: delivered.ID, TurnID: "assistant-turn-001"}, body: assistantReply})
 	waitCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	replies, err := seats.Wait(waitCtx, seat, 2*time.Second)
 	if err != nil || len(replies) != 1 {
 		t.Fatalf("EXTSEAT_REPLY_ROUTE_E2E wait replies=%+v err=%v", replies, err)
 	}
-	if replies[0].From != targetFullName || replies[0].To != seat.FullName || replies[0].Body != reply.Body {
+	if replies[0].From != targetFullName || replies[0].To != seat.FullName || replies[0].Body != assistantReply {
 		t.Fatalf("EXTSEAT_REPLY_ROUTE_E2E reply identity/body=%+v want from=%s to=%s", replies[0], targetFullName, seat.FullName)
+	}
+
+	// Omitted expect_reply persists the false default and the same completed
+	// assistant turn produces no automatic return to the external inbox.
+	if _, err = seats.Send(ctx, seat, targetFullName, "默认不自动回程", "extseat-sender-e2e-default"); err != nil {
+		t.Fatal(err)
+	}
+	if did, err := seats.ProjectOne(ctx, HubExtseatProjector{Hub: v.hub}); !did || err != nil {
+		t.Fatalf("default projection did=%t err=%v", did, err)
+	}
+	defaultDelivery := readEnvelope(t, ctx, receiver)
+	if metaString(defaultDelivery.Meta, metaKeyReplyPolicy) != "" {
+		t.Fatalf("default send unexpectedly requests reply: %#v", defaultDelivery.Meta)
+	}
+	p.process(amrRouteJob{key: amrTurnKey{KeyID: "u_zzc", Session: "kimi", DeliveryID: defaultDelivery.ID, TurnID: "assistant-turn-default"}, body: "默认回信不应送达"})
+	noReplyCtx, noReplyCancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	noReplies, noReplyErr := seats.Wait(noReplyCtx, seat, 0)
+	noReplyCancel()
+	if noReplyErr != nil || len(noReplies) != 0 {
+		t.Fatalf("expect_reply default unexpectedly returned: %+v err=%v", noReplies, noReplyErr)
 	}
 
 	// Two non-target Agents share an explicit ordinary group with the target.

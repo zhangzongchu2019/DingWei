@@ -37,11 +37,15 @@ func newFixture(t *testing.T) *fixture {
 	if e != nil {
 		t.Fatal(e)
 	}
+	policy, e := os.ReadFile("../store/migrate/migrations/0108_extseat_expect_reply.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
 	d, e := os.ReadFile("../store/migrate/migrations/0106_tempgroup.sql")
 	if e != nil {
 		t.Fatal(e)
 	}
-	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(a) + string(d)
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(a) + string(policy) + string(d)
 	if _, e = p.Exec(ctx, access, ddl); e != nil {
 		t.Fatal(e)
 	}

@@ -65,6 +65,7 @@ type Delivery struct {
 	Group                            extshared.AGCode
 	CreatedAt, ExpiresAt, LeaseUntil time.Time
 	Phase                            extshared.ReceiptPhase
+	ExpectReply                      bool `json:"-"`
 }
 
 type SendReceipt struct {

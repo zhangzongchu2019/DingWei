@@ -20,7 +20,7 @@ A 消费签名由 Seats 接口钉住：Authenticate／ListOnline／Send／Wait�
 |---|---|---|
 | /mcp | POST | 2026-07-28 无状态 JSON-RPC：server/discover、tools/list、tools/call |
 | /api/external/list_online | POST | 本 AG 在线名单，参数 {} |
-| /api/external/send_message | POST | to、body、client_message_id；仅显式全名，由 A 现核 AG |
+| /api/external/send_message | POST | to、body、client_message_id、可选 expect_reply:boolean（默认 false）；仅显式全名，由 A 现核 AG |
 | /api/external/wait_for_messages | POST | wait_seconds 可省略，默认/硬上限 extshared.WaitMax（25秒） |
 | /api/external/ack | POST | delivery_id、generation、phase=received |
 | /.well-known/oauth-protected-resource/mcp | GET | resource、授权服务器、固定四scope |
@@ -34,7 +34,7 @@ A 消费签名由 Seats 接口钉住：Authenticate／ListOnline／Send／Wait�
 
 MCP 每次要求 application/json，请求 Accept 包含 application/json 与 text/event-stream；本期选择单 JSON 响应。每次 params._meta 必有 protocolVersion 与对象 clientCapabilities；MCP-Protocol-Version/Mcp-Method 与正文一致，tools/call 要 Mcp-Name（支持标准 Base64 sentinel）。缺头/不符为 HTTP400/-32020；不支持版本 HTTP400/-32022 并列 supported；未知方法 HTTP404/-32601。正常结果 resultType=complete；不做 initialize、GET流、协议会话、订阅、input_required 或 WSS。客户端旧 session/续传头不创建状态。
 
-四工具输入字段在 tools/list 发布 JSON Schema，未知字段拒绝。send_message 重试使用同一 client_message_id；Wait 不自动 ACK，取消由请求 context 传给 A，租约与重领继续由 A 管。ack 仅 received，不能冒充 processed/driver。
+四工具输入字段在 tools/list 发布 JSON Schema，未知字段拒绝。send_message 重试使用同一 client_message_id；expect_reply=true 请求 reply-origin 自动回程，值参与幂等 request_hash，同 ID 改值冲突；缺省 false 不请求自动回信。Wait 不自动 ACK，取消由请求 context 传给 A，租约与重领继续由 A 管。ack 仅 received，不能冒充 processed/driver。
 
 ## OAuth、CIMD 与 Origin
 

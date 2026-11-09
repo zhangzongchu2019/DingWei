@@ -27,7 +27,7 @@ const metaPrefix = "io.modelcontextprotocol/"
 type Seats interface {
 	Authenticate(context.Context, string) (extseat.Seat, error)
 	ListOnline(context.Context, extseat.Seat) ([]extseat.OnlineAgent, error)
-	Send(context.Context, extseat.Seat, string, string, string) (extseat.SendReceipt, error)
+	Send(context.Context, extseat.Seat, string, string, string, ...bool) (extseat.SendReceipt, error)
 	Wait(context.Context, extseat.Seat, time.Duration) ([]extseat.Delivery, error)
 	Ack(context.Context, extseat.Seat, string, int) error
 }

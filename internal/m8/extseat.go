@@ -151,6 +151,9 @@ func (p HubExtseatProjector) Project(ctx context.Context, d extseat.Delivery, ta
 	key := AgentKeyID(current.OwnerLC)
 	name := current.NameLC()
 	env := model.Envelope{ID: d.ID, From: sessionAddress(source.NameLC(), AgentKeyID(source.OwnerLC)), To: sessionAddress(name, key), Body: externalSeatSenderHeader(sourceFullName, d.SourceOwnerDisplayName, d.SourceOwnerShortName, targetFullName) + "\n" + d.Body, TS: d.CreatedAt.Unix(), Meta: map[string]any{"type": "delivery", "delivery_id": d.ID, "delivery_version": 1, "ack_required": true, "source_message_id": d.ID, "origin_kind": "extseat", "source_display_name": sourceFullName, "source_external": true}}
+	if d.ExpectReply {
+		env.Meta[metaKeyReplyPolicy] = replyPolicyExpectReply
+	}
 	raw, e := json.Marshal(env)
 	if e != nil {
 		return e

@@ -12,13 +12,14 @@ import (
 )
 
 // Send 原子受理＋续组＋outbox；SQLite结果不参与accepted的定义。
-func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string) (SendReceipt, error) {
+func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, expectReplyArg ...bool) (SendReceipt, error) {
 	var result SendReceipt
+	expectReply := len(expectReplyArg) > 0 && expectReplyArg[0]
 	if clientID == "" || len(clientID) > 256 || len(body) > 1024*1024 {
 		return result, extshared.ErrNotPermitted
 	}
 	now := s.now()
-	requestHash := digest([]string{to, body})
+	requestHash := digest([]any{to, body, expectReply})
 	id, e := s.random(16)
 	if e != nil {
 		return result, e
@@ -67,7 +68,7 @@ func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string) (
 		if _, e = tx.Exec(ctx, `INSERT INTO np_extseat_send_key(seat_id,client_message_id,request_hash,delivery_id,ag_code,ag_generation,created_at,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, fresh.AgentID, clientID, requestHash, id, string(g.Code), g.Generation, now, expiry); e != nil {
 			return e
 		}
-		if _, e = tx.Exec(ctx, `INSERT INTO np_extseat_outbox(delivery_id,seat_id,target_agent_id,source_name,target_name,body,ag_code,ag_generation,created_at,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, id, fresh.AgentID, g.Target.ID, fresh.FullName, to, body, string(g.Code), g.Generation, now, expiry); e != nil {
+		if _, e = tx.Exec(ctx, `INSERT INTO np_extseat_outbox(delivery_id,seat_id,target_agent_id,source_name,target_name,body,ag_code,ag_generation,created_at,expires_at,expect_reply) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, id, fresh.AgentID, g.Target.ID, fresh.FullName, to, body, string(g.Code), g.Generation, now, expiry, expectReply); e != nil {
 			return e
 		}
 		if e = s.TouchGroup(ctx, tx, g, id, extshared.UseAcceptedSend, now); e != nil {

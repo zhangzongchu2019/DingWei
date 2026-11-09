@@ -31,4 +31,11 @@ PG outbox 事务锁定 source owner 显示名/短名和 target owner 短名并�
 - 第七刀把精确全名分支的 `routeExternalSeat` 移至 `enforceAgentGrouping` 之后。实测授权目标本人回信仍绿；两项非目标负例在编组门提前拒绝，导致其期望 `ErrTargetNotInAG` 的身份断言红于 `EXTSEAT_REPLY_ONLY_FROM_TARGET`。因此，实验确认提前处理对保留 extseat 目标身份判定路径及其稳定拒绝语义有必要；它没有证明正向授权回信会失败。
 - 系统入口要求列出的 `/opt/agent-context/*.md` 在当前环境不存在；身份与任务恢复依据已核对 `/mnt/session-context/IDENTITY-CURRENT-20261015.md` 及本任务给定说明。
 
+## 预审更正与补项（2026-11-09）
+
+- 更正前文“`send_message` 的 `reply_policy` 已提供可选 `expect_reply`”这一句：该句与当时代码不符。提交 `41a1f7291` 只在测试和文档提及该策略；当时 MCP/REST 生产入口、PG outbox 和 Hub 投影都没有 `expect_reply`/`reply_policy` 实现。此前只验证了 reply-origin 的拒绝语义路径，未实现外部席位的正向自动回信。
+- 本补项新增 MCP `inputSchema` 与 REST 同能力字段 `expect_reply:boolean`，可省略且默认为 false。A 在 PG outbox 中持久化该值，request_hash 将其纳入，同一 `client_message_id` 改值返回幂等冲突；Hub 仅对 true 的投影信封写 `meta.reply_policy=expect_reply`。
+- 默认 false 时投影不写 reply policy，reply-origin 不自动回程；true 时真实 PG + Hub E2E 经过生产 completed-turn `process` 的 non-candidate 分支及 `replyToOrigin`，外部 `Wait` 收到回信并验证 `from` 为原目标全名。MCP/REST 字段透传与 schema 也有单测。
+- `mutations.py` 增加第八刀：移除 `reply_policy=expect_reply` 写入，真实 PG + Hub E2E 因 `EXTSEAT_EXPECT_REPLY_POLICY` 判红；八刀均为语义判红。
+
 分支、tip、tree 与远端 `ls-remote` 一致性待最终提交后补录。

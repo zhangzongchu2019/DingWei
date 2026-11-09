@@ -54,9 +54,10 @@ func (g *Gateway) call(ctx context.Context, seat extseat.Seat, name string, raw 
 		return map[string]any{"agents": out}, nil
 	case "send_message":
 		var a struct {
-			To       string `json:"to"`
-			Body     string `json:"body"`
-			ClientID string `json:"client_message_id"`
+			To          string `json:"to"`
+			Body        string `json:"body"`
+			ClientID    string `json:"client_message_id"`
+			ExpectReply bool   `json:"expect_reply"`
 		}
 		if e := parseArgs(raw, &a); e != nil {
 			return nil, e
@@ -64,7 +65,7 @@ func (g *Gateway) call(ctx context.Context, seat extseat.Seat, name string, raw 
 		if a.To == "" || a.Body == "" || len(a.Body) > 256*1024 || a.ClientID == "" || len(a.ClientID) > 128 {
 			return nil, errParams
 		}
-		s, e := g.cfg.Seats.Send(ctx, seat, a.To, a.Body, a.ClientID)
+		s, e := g.cfg.Seats.Send(ctx, seat, a.To, a.Body, a.ClientID, a.ExpectReply)
 		if e != nil {
 			return nil, e
 		}
@@ -125,7 +126,7 @@ func toolDefinitions() []any {
 	}
 	return []any{
 		tool("list_online", "查看本 AG 内在线席位。", schema(map[string]any{})),
-		tool("send_message", "按显式全名向本 AG 成员发送；重试沿用 client_message_id。受理不等于送达。", schema(map[string]any{"to": stringProp(), "body": stringProp(), "client_message_id": stringProp()}, "to", "body", "client_message_id")),
+		tool("send_message", "按显式全名向本 AG 成员发送；expect_reply=true 时请求自动回信，默认 false；重试沿用 client_message_id。受理不等于送达。", schema(map[string]any{"to": stringProp(), "body": stringProp(), "client_message_id": stringProp(), "expect_reply": map[string]any{"type": "boolean"}}, "to", "body", "client_message_id")),
 		tool("wait_for_messages", "领取本人未确认投递；按 delivery_id 与 generation 去重后显式确认。", schema(map[string]any{"wait_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": extshared.WaitMax.Seconds()}})),
 		tool("ack", "确认本人投递已收到，不表示已执行。", schema(map[string]any{"delivery_id": stringProp(), "generation": map[string]any{"type": "integer", "minimum": 1}, "phase": map[string]any{"type": "string", "enum": []string{string(extshared.PhaseReceived)}}}, "delivery_id", "generation", "phase")),
 	}

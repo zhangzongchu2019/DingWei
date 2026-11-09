@@ -22,7 +22,7 @@ func (s *Service) ProjectOne(ctx context.Context, p Projector) (bool, error) {
 		var d Delivery
 		var seatID, targetID string
 		var a Seat
-		e := tx.QueryRow(ctx, `SELECT delivery_id,seat_id,target_agent_id,source_name,target_name,body,ag_code,ag_generation,created_at,expires_at FROM np_extseat_outbox WHERE state='queued' ORDER BY created_at,delivery_id LIMIT 1 FOR UPDATE SKIP LOCKED`).Scan(&d.ID, &seatID, &targetID, &d.From, &d.To, &d.Body, &a.Group, &a.Generation, &d.CreatedAt, &d.ExpiresAt)
+		e := tx.QueryRow(ctx, `SELECT delivery_id,seat_id,target_agent_id,source_name,target_name,body,ag_code,ag_generation,created_at,expires_at,expect_reply FROM np_extseat_outbox WHERE state='queued' ORDER BY created_at,delivery_id LIMIT 1 FOR UPDATE SKIP LOCKED`).Scan(&d.ID, &seatID, &targetID, &d.From, &d.To, &d.Body, &a.Group, &a.Generation, &d.CreatedAt, &d.ExpiresAt, &d.ExpectReply)
 		if errors.Is(e, sql.ErrNoRows) {
 			return nil
 		}

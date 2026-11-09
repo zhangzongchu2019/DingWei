@@ -31,6 +31,7 @@ type seatsFake struct {
 	issueErr               error
 	calls, authCalls       int
 	wait                   time.Duration
+	expectReply            bool
 	issued                 []feishulogin.IssueRequest
 	now                    time.Time
 }
@@ -57,8 +58,13 @@ func (s *seatsFake) ListOnline(context.Context, extseat.Seat) ([]extseat.OnlineA
 	e := s.business()
 	return []extseat.OnlineAgent{{FullName: "target.zzc", LastSeenAt: s.now}}, e
 }
-func (s *seatsFake) Send(_ context.Context, _ extseat.Seat, to, body, id string) (extseat.SendReceipt, error) {
+func (s *seatsFake) Send(_ context.Context, _ extseat.Seat, to, body, id string, expect ...bool) (extseat.SendReceipt, error) {
 	e := s.business()
+	if len(expect) > 0 {
+		s.mu.Lock()
+		s.expectReply = expect[0]
+		s.mu.Unlock()
+	}
 	if to != "target.zzc" {
 		e = extshared.ErrTargetNotInAG
 	}
@@ -206,6 +212,37 @@ func TestFourToolsRESTParity(t *testing.T) {
 		})
 	}
 }
+
+func TestSendMessageExpectReplyMCPAndREST(t *testing.T) {
+	for _, rest := range []bool{false, true} {
+		_, s, mux := fixture(t)
+		r := rpcRequestFor("tools/call", "send_message", `{"to":"target.zzc","body":"x","client_message_id":"expect","expect_reply":true}`)
+		if rest {
+			r = restRequest("send_message", `{"to":"target.zzc","body":"x","client_message_id":"expect","expect_reply":true}`)
+		}
+		if w := serve(mux, r); w.Code != 200 {
+			t.Fatalf("rest=%t status=%d body=%s", rest, w.Code, w.Body)
+		}
+		if !s.expectReply {
+			t.Fatalf("rest=%t expect_reply not passed to service", rest)
+		}
+	}
+	defs := toolDefinitions()
+	for _, raw := range defs {
+		def := raw.(map[string]any)
+		if def["name"] != "send_message" {
+			continue
+		}
+		schema := def["inputSchema"].(map[string]any)
+		props := schema["properties"].(map[string]any)
+		if props["expect_reply"].(map[string]any)["type"] != "boolean" {
+			t.Fatalf("bad expect_reply schema: %#v", props)
+		}
+		return
+	}
+	t.Fatal("send_message schema missing")
+}
+
 func TestToolBoundaryMatrix(t *testing.T) {
 	tools := map[string]string{"list_online": `{}`, "send_message": `{"to":"target.zzc","body":"x","client_message_id":"stable"}`, "wait_for_messages": `{"wait_seconds":0}`, "ack": `{"delivery_id":"delivery","generation":2,"phase":"received"}`}
 	for name, args := range tools {

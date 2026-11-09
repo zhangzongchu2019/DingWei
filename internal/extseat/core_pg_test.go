@@ -128,7 +128,11 @@ func newFixture(t *testing.T, dsn string) *fixture {
 	if e != nil {
 		t.Fatal(e)
 	}
-	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(sqlText) + `CREATE SEQUENCE test_group_seq;CREATE TABLE test_groups(code text PRIMARY KEY,generation bigint,target text,external text,expires_at timestamptz,active boolean NOT NULL DEFAULT true);CREATE TABLE test_touches(event text PRIMARY KEY,kind text);`
+	policyDDL, e := os.ReadFile("../store/migrate/migrations/0108_extseat_expect_reply.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(sqlText) + string(policyDDL) + `CREATE SEQUENCE test_group_seq;CREATE TABLE test_groups(code text PRIMARY KEY,generation bigint,target text,external text,expires_at timestamptz,active boolean NOT NULL DEFAULT true);CREATE TABLE test_touches(event text PRIMARY KEY,kind text);`
 	if _, e = pool.Exec(ctx, ac, ddl); e != nil {
 		t.Fatal(e)
 	}
@@ -249,6 +253,9 @@ func TestCorePG(t *testing.T) {
 		}
 		if _, e = f.s.Send(f.ctx, a, "helper.ho", "different", "key"); !errors.Is(e, extshared.ErrIdempotencyKey) {
 			t.Fatalf("same key different request accepted: %v", e)
+		}
+		if _, e = f.s.Send(f.ctx, a, "helper.ho", "one", "key", true); !errors.Is(e, extshared.ErrIdempotencyKey) {
+			t.Fatalf("same key changed expect_reply accepted: %v", e)
 		}
 		if _, e = f.s.Send(f.ctx, a, "other.ho", "one", "new"); !errors.Is(e, extshared.ErrTargetNotInAG) {
 			t.Fatal(e)
