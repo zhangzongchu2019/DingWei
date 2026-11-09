@@ -145,7 +145,7 @@ func TestLedger_EmbeddedEntries(t *testing.T) {
 	}
 	// 🔴 这份名单写死而不引 embed 去比：本格钉的就是「内嵌进二进制的账本是这几条、这个序」。
 	// 加一条条目 ⇒ 改这里（红一次是应当的：账本主键集合变了，必须有人看过一眼）。
-	want := []string{"0001_core_baseline.sql", "0100_identity_baseline.sql", "0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0106_tempgroup.sql", "0107_mcpgw_oauth.sql", "0108_extseat_expect_reply.sql", "0200_hosted_r30_baseline.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql"}
+	want := []string{"0001_core_baseline.sql", "0100_identity_baseline.sql", "0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0106_tempgroup.sql", "0107_mcpgw_oauth.sql", "0110_extseat_expect_reply.sql", "0200_hosted_r30_baseline.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql"}
 	if len(entries) != len(want) {
 		t.Fatalf("账本条数 = %d（%v），要 %d", len(entries), names(entries), len(want))
 	}
@@ -239,7 +239,7 @@ func TestLedger_RegisteredEntriesSortWithEmbedded(t *testing.T) {
 	}
 	got := names(entries)
 	want := []string{"0001_core_baseline.sql", "0050_core_test.sql", "0100_identity_baseline.sql",
-		"0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0106_tempgroup.sql", "0107_mcpgw_oauth.sql", "0108_extseat_expect_reply.sql", "0200_hosted_r30_baseline.sql", "0200_hosted_test.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql", "0900_cross_test.sql"}
+		"0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0106_tempgroup.sql", "0107_mcpgw_oauth.sql", "0110_extseat_expect_reply.sql", "0200_hosted_r30_baseline.sql", "0200_hosted_test.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql", "0900_cross_test.sql"}
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("账本顺序 = %v，要 %v（字典序，与来源无关）", got, want)
 	}

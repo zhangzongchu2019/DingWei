@@ -37,7 +37,7 @@ func newFixture(t *testing.T) *fixture {
 	if e != nil {
 		t.Fatal(e)
 	}
-	policy, e := os.ReadFile("../store/migrate/migrations/0108_extseat_expect_reply.sql")
+	policy, e := os.ReadFile("../store/migrate/migrations/0110_extseat_expect_reply.sql")
 	if e != nil {
 		t.Fatal(e)
 	}

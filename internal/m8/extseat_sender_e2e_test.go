@@ -34,7 +34,7 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	policyDDL, err := os.ReadFile("../store/migrate/migrations/0108_extseat_expect_reply.sql")
+	policyDDL, err := os.ReadFile("../store/migrate/migrations/0110_extseat_expect_reply.sql")
 	if err != nil {
 		t.Fatal(err)
 	}

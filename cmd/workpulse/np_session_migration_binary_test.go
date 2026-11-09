@@ -39,7 +39,7 @@ func TestNPSessionPG8To9AndR50BinaryCompatibility(t *testing.T) {
 	var oldEntries []migrate.Entry
 	for _, e := range entries {
 		// r50 现网账＝8 条：剔掉 r51 的 0104 与 r53 的 0105／0107（r53 集成起当前二进制会一并施加）。
-		if e.Name != "0104_np_session_created_at.sql" && e.Name != "0105_extseat.sql" && e.Name != "0106_tempgroup.sql" && e.Name != "0107_mcpgw_oauth.sql" && e.Name != "0108_extseat_expect_reply.sql" {
+		if e.Name != "0104_np_session_created_at.sql" && e.Name != "0105_extseat.sql" && e.Name != "0106_tempgroup.sql" && e.Name != "0107_mcpgw_oauth.sql" && e.Name != "0110_extseat_expect_reply.sql" {
 			oldEntries = append(oldEntries, e)
 		}
 	}

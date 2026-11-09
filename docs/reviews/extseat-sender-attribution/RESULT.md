@@ -39,3 +39,11 @@ PG outbox 事务锁定 source owner 显示名/短名和 target owner 短名并�
 - `mutations.py` 增加第八刀：移除 `reply_policy=expect_reply` 写入，真实 PG + Hub E2E 因 `EXTSEAT_EXPECT_REPLY_POLICY` 判红；八刀均为语义判红。
 
 分支、tip、tree 与远端 `ls-remote` 一致性待最终提交后补录。
+
+## PG 迁移编号更正（2026-11-09）
+
+- 复核指出 `0108` 已分配给 ZERO-CONSENT，`0109` 已分配给乙 P1。本功能迁移现使用获分配的 PG `0110`：`internal/store/migrate/migrations/0110_extseat_expect_reply.sql`。迁移 SQL 内容未改变；domains、ledger、migrate 与 tempgroup service PG 测试中的文件名/账本期望已同步，相关 extseat、m8、workpulse 迁移断言也已同步。
+- 前文“`send_message` 的 `reply_policy` 已提供可选 `expect_reply`”属于实现前的错误描述；随后更正已说明 `expect_reply` 的 MCP/REST 参数、outbox 持久化、request_hash 与 true-only reply policy 投影均已真正实现。本次只修正迁移编号，不改变该实现。
+- 改号后门禁：`go test -p 1 -count=1 ./internal/store/...` PASS（store、migrate、pgtest）；extseat、mcpgw、tempgroup PASS；`go test -p 1 -run '^$' ./cmd/workpulse` PASS（编译）；`HUB_TEST_PG_STRICT=1 go test -p 1 -count=1 ./internal/m8` PASS（223.907s）；OpenSpec 1.16.0 strict 31/31；八刀变异 `MUTATION_SUMMARY 8/8 semantic reds`。原始变异与 OpenSpec 输出保存在 evidence 目录。
+- `PATH=/tmp/mcp-auth-diag-gate-venv/bin:/opt/node22/bin:$PATH scripts/run-build-tests.sh`：PASS，`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`。
+- 新 tip、tree 与远端 `ls-remote` 核对结果待追加提交后补录。

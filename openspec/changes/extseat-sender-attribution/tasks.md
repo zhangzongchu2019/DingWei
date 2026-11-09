@@ -9,7 +9,8 @@
 - [x] T-07 为 `send_message` 增加可选 `expect_reply`，同步 MCP schema、REST 分发和接口文档。
 - [x] T-08 将回信选择纳入 request_hash 并持久化 PG outbox，true 投影才写 reply policy。
 - [x] T-09 以生产 completed-turn 路径覆盖 true 回程、false 缺省与 Wait 来源，并增加删策略写入的第八刀。
-- [x] T-10 更新 0108 迁移账本断言及 S-EXTSEAT-SENDER 预审更正记录。
+- [x] T-10 更新原迁移账本断言及 S-EXTSEAT-SENDER 预审更正记录。
+- [x] T-11 将迁移重新编号为 PG 0110，同步账本断言、记录并重跑全部交付门和八刀变异。
 
 ## 交接记录
 
@@ -25,3 +26,7 @@
   - 完成：锁定 venv 标准构建门 `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`；OpenSpec strict 31/31；八刀语义判红；提交已推送，`git ls-remote` 核实远端为 `19c43b10857b8d0210e834c7f50b08f45f346d4b`（tree `3d9056896c226618f4c4ac99d653351ff81631c7`）。
   - 阻塞：无。
   - 下一步：由独立复核席复核。
+- 日期：2026-11-09；执行者：togpt60lunazzc；commit：待提交。
+  - 完成：PG 0110 改号并同步账本；store/...、extseat/mcpgw/tempgroup、严格 PG m8 全包、workpulse 编译、OpenSpec strict 31/31、八刀语义变异 8/8、`scripts/run-build-tests.sh` 均通过（`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`）。
+  - 阻塞：无。
+  - 下一步：提交并推送，核对远端坐标。
