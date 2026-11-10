@@ -61,16 +61,32 @@ func TestCompat2025LifecycleAndFourTools(t *testing.T) {
 	if json.Unmarshal(w.Body.Bytes(), &listed) != nil || len(listed.Result.Tools) != 9 {
 		t.Fatal("five primary tools plus aliases and ack", w.Body)
 	}
+	var listEnvelope map[string]any
+	if json.Unmarshal(w.Body.Bytes(), &listEnvelope) != nil || containsServerInfo(listEnvelope) {
+		t.Fatal("MCP_2025_SERVERINFO_ABSENT: legacy tools/list acquired 2026 result metadata")
+	}
 	for _, tc := range []struct{ name, args string }{{"list_online", `{}`}, {"send_message", `{"to":"target.zzc","body":"synthetic","client_message_id":"id"}`}, {"wait_for_messages", `{"wait_seconds":0.001}`}, {"ack", `{"delivery_id":"delivery","generation":2,"phase":"received"}`}} {
 		w = serve(mux, requestCompat("tools/call", `{"name":"`+tc.name+`","arguments":`+tc.args+`}`))
 		if w.Code != 200 || !strings.Contains(w.Body.String(), `"isError":false`) {
 			t.Fatal(tc.name, w.Code, w.Body)
+		}
+		var callEnvelope map[string]any
+		if json.Unmarshal(w.Body.Bytes(), &callEnvelope) != nil || containsServerInfo(callEnvelope) {
+			t.Fatal("MCP_2025_SERVERINFO_ABSENT: legacy tools/call acquired 2026 result metadata")
 		}
 	}
 	if seats.authCalls != 8 {
 		t.Fatalf("each request must authenticate: %d", seats.authCalls)
 	}
 }
+
+func containsServerInfo(envelope map[string]any) bool {
+	result, _ := envelope["result"].(map[string]any)
+	meta, _ := result["_meta"].(map[string]any)
+	_, exists := meta[metaPrefix+"serverInfo"]
+	return exists
+}
+
 func TestCompat2025EveryRequestKeepsAuthOriginAndArgumentGuards(t *testing.T) {
 	_, seats, mux := fixture(t)
 	for _, method := range []string{"initialize", "notifications/initialized", "ping", "tools/list", "tools/call"} {

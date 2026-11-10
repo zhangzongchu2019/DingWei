@@ -24,6 +24,23 @@ const ProtocolVersion = "2026-07-28"
 const metaPrefix = "io.modelcontextprotocol/"
 const toolsListTTLMS = 300000
 const toolsListCacheScope = "private"
+const serverInfoName = "dingwei-external"
+const serverInfoVersion = "r53"
+
+func serverInfoMeta() map[string]any {
+	return map[string]any{metaPrefix + "serverInfo": map[string]string{"name": serverInfoName, "version": serverInfoVersion}}
+}
+
+func toolCallResult(data any, isError bool) map[string]any {
+	b, _ := json.Marshal(data)
+	return map[string]any{
+		"resultType":        "complete",
+		"content":           []any{map[string]any{"type": "text", "text": string(b)}},
+		"structuredContent": data,
+		"isError":           isError,
+		"_meta":             serverInfoMeta(),
+	}
+}
 
 // Seats 不含签发、执行、文件或管理能力。每个通讯请求独立 Authenticate。
 type Seats interface {
@@ -313,15 +330,14 @@ func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {
 	var result any
 	switch q.Method {
 	case "server/discover":
-		result = map[string]any{"resultType": "complete", "supportedVersions": []string{ProtocolVersion}, "capabilities": map[string]any{"tools": map[string]any{}}, "_meta": map[string]any{metaPrefix + "serverInfo": map[string]string{"name": "dingwei-external", "version": "r53"}}}
+		result = map[string]any{"resultType": "complete", "supportedVersions": []string{ProtocolVersion}, "capabilities": map[string]any{"tools": map[string]any{}}, "_meta": serverInfoMeta()}
 	case "tools/list":
-		result = map[string]any{"resultType": "complete", "tools": toolDefinitions(g.cfg.SendReplyMax), "ttlMs": toolsListTTLMS, "cacheScope": toolsListCacheScope}
+		result = map[string]any{"resultType": "complete", "tools": toolDefinitions(g.cfg.SendReplyMax), "ttlMs": toolsListTTLMS, "cacheScope": toolsListCacheScope, "_meta": serverInfoMeta()}
 	case "tools/call":
 		var data any
 		data, e = g.call(r.Context(), seat, q.Params.Name, q.Params.Arguments)
 		if e == nil {
-			b, _ := json.Marshal(data)
-			result = map[string]any{"resultType": "complete", "content": []any{map[string]any{"type": "text", "text": string(b)}}, "structuredContent": data, "isError": false}
+			result = toolCallResult(data, false)
 		}
 	default:
 		e = errMethod

@@ -243,6 +243,58 @@ func TestSendMessageExpectReplyMCPAndREST(t *testing.T) {
 	t.Fatal("send_message schema missing")
 }
 
+func TestServerInfoPresentInEvery2026Result(t *testing.T) {
+	_, _, mux := fixture(t)
+	cases := []struct{ method, name, args, marker string }{
+		{"server/discover", "", `{}`, "MCP_SERVERINFO_DISCOVER"},
+		{"tools/list", "", `{}`, "MCP_SERVERINFO_TOOLS_LIST"},
+		{"tools/call", "list_online", `{}`, "MCP_SERVERINFO_TOOLS_CALL"},
+	}
+	var first map[string]any
+	got := map[string]map[string]any{}
+	for _, tc := range cases {
+		w := serve(mux, rpcRequestFor(tc.method, tc.name, tc.args))
+		if w.Code != http.StatusOK {
+			t.Fatalf("%s status=%d body=%s", tc.method, w.Code, w.Body)
+		}
+		var envelope struct {
+			Result map[string]any `json:"result"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &envelope); err != nil {
+			t.Fatal(err)
+		}
+		meta, _ := envelope.Result["_meta"].(map[string]any)
+		info, _ := meta[metaPrefix+"serverInfo"].(map[string]any)
+		if info == nil {
+			t.Fatalf("%s: %s missing serverInfo", tc.marker, tc.method)
+		}
+		if first == nil {
+			first = info
+		} else if info["name"] != first["name"] || info["version"] != first["version"] {
+			t.Fatalf("MCP_SERVERINFO_SHARED_VALUES: %s differs: %#v vs %#v", tc.method, info, first)
+		}
+		got[tc.method] = info
+	}
+	for _, tc := range cases {
+		info := got[tc.method]
+		if info["name"] != serverInfoName || info["version"] != serverInfoVersion {
+			t.Fatalf("%s: unexpected serverInfo %#v", tc.marker, info)
+		}
+	}
+}
+
+func TestToolCallErrorResultCarriesServerInfo(t *testing.T) {
+	result := toolCallResult(map[string]any{"reason": "expected tool error"}, true)
+	if result["isError"] != true {
+		t.Fatal("MCP_SERVERINFO_TOOL_CALL_ERROR: expected isError=true")
+	}
+	meta, _ := result["_meta"].(map[string]any)
+	info, _ := meta[metaPrefix+"serverInfo"].(map[string]string)
+	if info["name"] != serverInfoName || info["version"] != serverInfoVersion {
+		t.Fatalf("MCP_SERVERINFO_TOOL_CALL_ERROR: serverInfo missing or different: %#v", meta)
+	}
+}
+
 func TestToolBoundaryMatrix(t *testing.T) {
 	tools := map[string]string{"list_online": `{}`, "send_message": `{"to":"target.zzc","body":"x","client_message_id":"stable"}`, "wait_for_messages": `{"wait_seconds":0}`, "ack": `{"delivery_id":"delivery","generation":2,"phase":"received"}`}
 	for name, args := range tools {
