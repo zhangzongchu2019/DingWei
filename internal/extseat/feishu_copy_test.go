@@ -68,9 +68,15 @@ func TestFeishuCopyOutboxBothDirectionsAndReplySuppressionPG(t *testing.T) {
 			t.Fatalf("copy event=%s direction=%q body=%q err=%v", want.id, direction, body, err)
 		}
 	}
-	// Fixture timestamps are historical by design. Make the two rows due and live for the worker.
-	if _, err = f.pool.Exec(f.ctx, f.access, `UPDATE np_extseat_feishu_copy SET created_at=now(),expires_at=now()+interval '1 hour',next_attempt_at=now()`); err != nil {
-		t.Fatal(err)
+	// Fixture timestamps are historical by design. Give the rows distinct, fixed
+	// order so ProjectOne deterministically selects out before in.
+	for _, due := range []struct {
+		id    string
+		delta string
+	}{{out.DeliveryID, "2 seconds"}, {in.DeliveryID, "1 second"}} {
+		if _, err = f.pool.Exec(f.ctx, f.access, `UPDATE np_extseat_feishu_copy SET created_at=now()-$2::interval,expires_at=now()+interval '1 hour',next_attempt_at=now() WHERE event_id=$1`, due.id, due.delta); err != nil {
+			t.Fatal(err)
+		}
 	}
 	for _, eventID := range []string{out.DeliveryID, in.DeliveryID} {
 		did, projectErr := queue.ProjectOne(context.Background(), func(_ context.Context, event FeishuCopyEvent) (FeishuCopyReceipt, error) {
@@ -81,6 +87,14 @@ func TestFeishuCopyOutboxBothDirectionsAndReplySuppressionPG(t *testing.T) {
 		})
 		if projectErr != nil || !did {
 			t.Fatalf("project %s did=%v err=%v", eventID, did, projectErr)
+		}
+		row, err = f.pool.QueryRow(f.ctx, f.access, `SELECT state FROM np_extseat_feishu_copy WHERE event_id=$1`, eventID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var state string
+		if err = row.Scan(&state); err != nil || state != "sent" {
+			t.Fatalf("MCP_COPY_EVENT_SENT event=%s state=%q err=%v", eventID, state, err)
 		}
 		ok, lookupErr := queue.IsCopyReply(f.ctx, "bot-channel", "feishu-"+eventID)
 		if lookupErr != nil || !ok {

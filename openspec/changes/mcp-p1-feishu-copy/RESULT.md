@@ -14,6 +14,7 @@
 | `HUB_TEST_PG_STRICT=1 go test -p 2 -timeout 40m ./...` | PASS；全仓所有包无失败，含新增 worker 失败重试 PG 用例 |
 | `HUB_TEST_PG_STRICT=1 go test -p 1 -timeout 10m ./internal/store/migrate` | PASS |
 | `HUB_TEST_PG_STRICT=1 go test -p 1 -count=1 -timeout 10m ./internal/extseat` | PASS |
+| 2026-11-10（完成于 10:17Z），`HUB_TEST_PG_STRICT=1 go test -p 1 -count=30 -run '^TestFeishuCopyOutboxBothDirectionsAndReplySuppressionPG$' -timeout 10m ./internal/extseat` | PASS；30/30 次，rc=0。夹具分别将 out/in 的 created_at 设为 now()-2s/now()-1s；每次投影后均断言状态为 sent，意外事件仍由替身发送器报错。 |
 | FEISHU-COPY mutations | 7/7 语义判红；每刀匹配指定标记，编译失败未计红 |
 | `scripts/run-build-tests.sh` | PASS；`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2` |
 | OpenSpec 1.16.0 `validate --all --strict` | PASS；34/34 |
