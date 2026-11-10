@@ -121,7 +121,7 @@ func (g *Gateway) mcp2025(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if e == nil {
-			result = map[string]any{"protocolVersion": CompatProtocolVersion, "capabilities": map[string]any{"tools": map[string]bool{"listChanged": false}}, "serverInfo": map[string]string{"name": "dingwei-external", "version": "r53"}}
+			result = map[string]any{"protocolVersion": CompatProtocolVersion, "capabilities": map[string]any{"tools": map[string]bool{"listChanged": false}}, "serverInfo": map[string]string{"name": serverInfoName, "version": serverInfoVersion}}
 		}
 	case "notifications/initialized":
 		var p params2025

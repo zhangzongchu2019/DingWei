@@ -3,6 +3,7 @@ package mcpgw
 import (
 	"encoding/json"
 	"github.com/zhangzongchu2019/dingwei/internal/extshared"
+	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -35,6 +36,20 @@ func TestCompat2025LifecycleAndFourTools(t *testing.T) {
 	w := serve(mux, requestCompat("initialize", params))
 	if w.Code != 200 || !strings.Contains(w.Body.String(), `"protocolVersion":"2025-06-18"`) {
 		t.Fatalf("CODEX_2025_INITIALIZE: %d %s", w.Code, w.Body)
+	}
+	var initialized struct {
+		Result struct {
+			ServerInfo struct {
+				Name    string `json:"name"`
+				Version string `json:"version"`
+			} `json:"serverInfo"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &initialized); err != nil || initialized.Result.ServerInfo.Name != serverInfoName {
+		t.Fatalf("MCP_2025_INITIALIZE_SERVERINFO_NAME: %v %#v", err, initialized.Result.ServerInfo)
+	}
+	if initialized.Result.ServerInfo.Version != dwversion.Version {
+		t.Fatalf("MCP_2025_INITIALIZE_SERVERINFO_VERSION: got %q want internal/version.Version", initialized.Result.ServerInfo.Version)
 	}
 	if w.Header().Get("Mcp-Session-Id") != "" {
 		t.Fatal("codec must not cache a protocol session")
