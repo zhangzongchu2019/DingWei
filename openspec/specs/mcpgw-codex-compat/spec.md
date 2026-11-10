@@ -32,11 +32,11 @@
 - **THEN** 无越权签发/执行；放宽tenant时对应组织外登录负测红
 
 ### Requirement: MCC-003 IP回环任意端口登记匹配
-网关 MUST 对登记127.0.0.1或::1且相同scheme/IP/path/query的回调允许任意有效端口，localhost仍拒，非回环逐字匹配；token仍精确绑定本次实际redirect。
+通用外部 CIMD MUST 对登记的 `http://localhost`、`http://127.0.0.1` 或 `http://[::1]` 回调，仅忽略有效端口并精确匹配 scheme、主机、path、query；localhost 主机大小写不敏感但必须精确相等。HTTPS及非回环规则保持既有精确匹配。Codex身份localhost仍由ZC-003拒绝；token MUST 精确绑定本次实际redirect。
 
 #### Scenario: MCC-003-S01 随机端口登录与拒绝边界
-- **WHEN** 注册无端口IP回环文档，实际Codex随机端口回调，或请求localhost/错IP/错path/scheme/query
-- **THEN** 仅前者登录成功；退回逐字匹配使登录红，放行localhost使对应负测红
+- **WHEN** 通用CIMD登记无端口HTTP回环回调并使用动态端口，或请求错主机、错path、错scheme/query；Codex专用身份请求localhost
+- **THEN** 仅登记回环及精确组件匹配的通用客户端回调接受，Codex localhost与其它错误均拒绝
 
 ### Requirement: MCC-004 自有静态CIMD与外部取件
 网关 MUST 在本域/mcp/clients/codex.json公开生成只读CIMD，client_id绑定配置PublicOrigin，登记两IP回环无端口/callback。仅此精确自有ID本地解析；其他ID仍走原HTTPS/公有IP/无跳转resolver，不新增任意私网例外。
@@ -74,11 +74,11 @@
 - **THEN** 正常副本无需 resolver 即进入登录；坏件 fail closed，不访问外网
 
 ### Requirement: ZC-003 身份和回调精确边界
-网关 MUST 保留显式本域 codex.json 及其他外部 CIMD 的既有策略，仅默认身份完全相等时本地解析。回调 MUST 为登记的回环 IP 与 http，端口可变；两个精确本地 Codex 身份按㊿-补20接受 /callback 或 /callback/ 后跟 1～64 位 A-Za-z0-9_- 单段，query 保持登记值；localhost、错 IP、空尾斜杠、编码／多段路径、userinfo、fragment 与无效端口均拒绝。原 URI 保持授权／换票逐字绑定。
+网关 MUST 保留显式本域 codex.json 及其他外部 CIMD 的既有策略，仅默认身份完全相等时本地解析。两个精确本地 Codex 身份 MUST 使用已登记回环IP与http回调，端口可变；按㊿-补20接受 `/callback` 或 `/callback/` 后跟 1～64 位 A-Za-z0-9_- 单段，query保持登记值。Codex专用身份 MUST 拒绝localhost、错IP、空尾斜杠、编码／多段路径、userinfo、fragment与无效端口。其它通用外部CIMD的localhost规则按MCC-003执行。原URI保持授权／换票逐字绑定。
 
 #### Scenario: ZC-003-S01 正负边界
-- **WHEN** 两条有效本地身份采用合法随机端口，或提交近似身份及错误回调
-- **THEN** 仅有效身份和登记回调成功；其他身份仍经原 resolver，错误回调不重定向
+- **WHEN** 两条有效本地Codex身份采用合法随机IP回环端口，或提交localhost/近似身份及错误回调
+- **THEN** 仅有效身份和登记回调成功；Codex localhost拒绝，普通Claude CIMD可按MCC-003接受精确localhost动态端口
 
 ### Requirement: ZC-004 不放宽登录和请求鉴权
 网关 MUST 保持 PKCE S256、固定 scopes、tenant、audience、token 对 client_id/真实 redirect/resource/verifier 的绑定，以及逐工具请求现核身份；默认身份路径不得获得鉴权例外。
