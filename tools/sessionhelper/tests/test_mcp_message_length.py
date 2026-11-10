@@ -58,3 +58,45 @@ class LengthTest(unittest.IsolatedAsyncioTestCase):
         result, sent = await self.dispatch(dict(type='mcp_send', to='target.zzc', body=body))
         self.assertTrue(result['ok'])
         self.assertEqual(sent[0][1], body, 'MCP_LEN_EXACT_UTF8')
+
+    async def test_production_connector_receives_one_mib_body_plus_json(self):
+        from contextlib import asynccontextmanager
+        from unittest.mock import patch
+        import websockets
+        try:
+            import test_file_upload as fx
+        except ImportError:
+            from tests import test_file_upload as fx
+        class Done(Exception):
+            pass
+        original = websockets.connect
+        for unit in ('a', '中', '😀'):
+            n = L
+            width = len(unit.encode())
+            body = unit * (n // width) + 'x' * (n % width)
+            wire = json.dumps({'body': body, 'meta': {'type': 'delivery'}}, ensure_ascii=False)
+            async def serve(ws):
+                await ws.send(wire)
+                await ws.wait_closed()
+            with tempfile.TemporaryDirectory() as tmp:
+                layout = fx.Layout(Path(tmp))
+                helper = fx.make_helper(layout)
+                try:
+                    async with websockets.serve(serve, '127.0.0.1', 0, max_size=16 << 20) as server:
+                        port = server.sockets[0].getsockname()[1]
+                        @asynccontextmanager
+                        async def connector(_url, **options):
+                            # Preserve all production connect options, changing
+                            # only the URL to this private loopback fixture.
+                            try:
+                                async with original(f'ws://127.0.0.1:{port}', **options) as ws:
+                                    got = json.loads(await ws.recv())
+                                    self.assertEqual(got['body'], body, 'MCP_LEN_EXACT_UTF8')
+                            except websockets.ConnectionClosedError as exc:
+                                self.fail('MCP_LEN_EXACT_UTF8 production WS receive budget: ' + str(exc))
+                            raise Done()
+                            yield
+                        with patch.object(websockets, 'connect', connector), self.assertRaises(Done):
+                            await helper._run_once()
+                finally:
+                    layout.cleanup()

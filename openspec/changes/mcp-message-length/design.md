@@ -12,4 +12,4 @@
 
 ## Compatibility
 
-旧helper连新Hub仍保留旧本地上限，超过旧限会本地拒绝，不能声称支持1MiB；新helper连旧Hub可能在旧MCP入口256KiB或旧HTTP1MiB预算处拒绝，原extseat1MiB正文限制也不含新抬头预算。新helper不会替旧Hub截断或重发；完整1MiB能力需要相应两端升级。WS帧16MiB不变。
+旧helper连新Hub仍保留旧本地上限，超过旧限会本地拒绝，不能声称支持1MiB；新helper连旧Hub可能在旧MCP入口256KiB或旧HTTP1MiB预算处拒绝，原extseat1MiB正文限制也不含新抬头预算。新helper不会替旧Hub截断或重发；完整1MiB能力需要相应两端升级。Hub WS帧16MiB不变；helper连接显式使用同一16MiB接收预算，避免websockets库缺省1MiB连同JSON外壳拒绝合法正文。
