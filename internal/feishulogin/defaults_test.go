@@ -2,10 +2,12 @@ package feishulogin
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -211,6 +213,74 @@ func TestConsentMultipleSelectionBoundOnce(t *testing.T) {
 		t.Fatal("ZC_SELECTION_REPLAY")
 	}
 }
+func TestConsentSelectionAttemptBinding(t *testing.T) {
+	for _, mismatch := range []bool{true, false} {
+		name := "same-attempt"
+		if mismatch {
+			name = "different-attempt"
+		}
+		t.Run(name, func(t *testing.T) {
+			f := newConnectFixture(t)
+			setDefaults(f, "Helper.zzc", "Other.zzc")
+			ctx := context.Background()
+			selection := func(attemptID string) CallbackResult {
+				t.Helper()
+				started, err := f.handler.Start(ctx, StartRequest{Automatic: true, AttemptID: attemptID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				pending, err := f.handler.Callback(ctx, CallbackRequest{State: stateFromURL(started.AuthorizationURL), Code: "code"})
+				if err != nil || pending.Selection == "" || !reflect.DeepEqual(pending.Targets, []string{"Helper.zzc", "Other.zzc"}) || f.issuer.calls != 0 {
+					t.Fatalf("K1_SELECTION_FIXTURE pending=%+v err=%v calls=%d", pending, err, f.issuer.calls)
+				}
+				return pending
+			}
+			pending := selection("bound-attempt")
+			// 请求中的另一个 attempt 也有有效选择记录；不得误消费它。
+			selection("other-attempt")
+			if _, err := f.handler.Start(ctx, StartRequest{Automatic: true, AttemptID: "untouched-oauth"}); err != nil {
+				t.Fatal(err)
+			}
+			f.getForm(t, "untouched-form")
+			selectedKey := hashState(pending.Selection)
+			f.states.mu.Lock()
+			selected := f.states.attempts[selectedKey]
+			remaining := make(map[string]LoginAttempt)
+			for key, attempt := range f.states.attempts {
+				if key != selectedKey {
+					remaining[key] = attempt
+				}
+			}
+			f.states.mu.Unlock()
+			if selected.Purpose != StatePurposeSelection || selected.Request.AttemptID != "bound-attempt" || !f.handler.now().Before(selected.ExpiresAt) || len(remaining) != 3 {
+				t.Fatal("K1_SELECTION_FIXTURE_STATE")
+			}
+			attemptID := "bound-attempt"
+			if mismatch {
+				attemptID = "other-attempt"
+			}
+			result, err := f.handler.Callback(ctx, CallbackRequest{Selection: pending.Selection, Target: "Other.zzc", AttemptID: attemptID})
+			if mismatch {
+				reason, _, category, classified := CallbackFailureDetails(err)
+				if !errors.Is(err, ErrInvalidState) || !classified || reason != FailureAuthorizationUsed || category != TargetCategoryUnverified {
+					t.Fatalf("K1_SELECTION_ATTEMPT_BINDING expected authorization-used/invalid-state, got err=%v reason=%s classified=%v", err, reason, classified)
+				}
+				if f.issuer.calls != 0 || !reflect.DeepEqual(result, CallbackResult{}) {
+					t.Fatalf("K1_SELECTION_NO_ISSUANCE calls=%d result=%+v", f.issuer.calls, result)
+				}
+			} else if err != nil || result.Token != "local-test-token" || result.AttemptID != "bound-attempt" || f.issuer.calls != 1 || f.issuer.request.AttemptID != "bound-attempt" || f.issuer.request.TargetAgent != "Other.zzc" {
+				t.Fatalf("K1_SELECTION_SAME_ATTEMPT_SUCCESS result=%+v request=%+v calls=%d err=%v", result, f.issuer.request, f.issuer.calls, err)
+			}
+			f.states.mu.Lock()
+			unchanged := reflect.DeepEqual(f.states.attempts, remaining)
+			f.states.mu.Unlock()
+			if !unchanged {
+				t.Fatal("K1_SELECTION_OTHER_STATE_UNCHANGED")
+			}
+		})
+	}
+}
+
 func TestConsentSelectionRejectsChangedPolicy(t *testing.T) {
 	for _, mode := range []string{"outside", "removed", "revoked", "expired", "wrong-purpose", "recent-outside", "recent-error"} {
 		t.Run(mode, func(t *testing.T) {
