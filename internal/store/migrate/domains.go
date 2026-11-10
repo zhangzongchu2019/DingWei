@@ -62,8 +62,8 @@ var knownDomains = []Domain{DomainCore, DomainIdentity, DomainHosted, DomainView
 // 而按裁定那一侧只有 Hub；fanout 库恒只装 fanout 表。若将来出现一条 cross 条目是给 fanout 库的，
 // 🔴 不要把它塞进 FanoutDomains()，而是给它一个自己的号段（口径页 §五）——那是评审面的事。
 //
-// 🔵 hosted（0200）与 view（0300）现在还没有条目，列在这里是【前置】：G4／G5 冻结基线进账本那天，
-// Hub 侧不必再改装配代码。
+// 🔵 hosted 已有 0200_hosted_r30_baseline.sql、0201_hosted_node_access_r31.sql；
+// view 已有 0300_console_transport_slot.sql。三条均由 Hub 侧施加，fanout 库不施加。
 func HubDomains() []Domain {
 	return []Domain{DomainCore, DomainIdentity, DomainHosted, DomainView, DomainCross}
 }
