@@ -1,0 +1,131 @@
+{
+  "name": "packages",
+  "baseline": false,
+  "cmd": [
+    "go",
+    "test",
+    "-json",
+    "-count=1",
+    "-p",
+    "2",
+    "-timeout",
+    "40m",
+    "./internal/store",
+    "./internal/store/migrate",
+    "./internal/mcpgw",
+    "./cmd/workpulse"
+  ],
+  "cwd": "/data/ai-dev-data/r57-integration-01a1c419",
+  "start": "2026-11-10T20:47:07.552342+00:00",
+  "rc": 0,
+  "end": "2026-11-10T20:51:57.570970+00:00",
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "pass": 267,
+      "fail": 0,
+      "skip": 6
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "pass": 263,
+      "fail": 0,
+      "skip": 6
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store": {
+      "pass": 609,
+      "fail": 0,
+      "skip": 5
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store/migrate": {
+      "pass": 44,
+      "fail": 0,
+      "skip": 0
+    }
+  },
+  "skips": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "condition": "=== RUN   TestConsoleTaskLegacyDODMigrationPendingProductionCount\n    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision\n--- SKIP: TestConsoleTaskLegacyDODMigrationPendingProductionCount (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "condition": "=== RUN   TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling\n    console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed\n--- SKIP: TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+      "condition": "=== RUN   TestFeishuStickyOldHubMigrationRollbackCompatibility\n    feishu_sticky_compat_test.go:116: R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate\n--- SKIP: TestFeishuStickyOldHubMigrationRollbackCompatibility (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserAuthorizeChainReachesLoopback",
+      "condition": "=== RUN   TestBrowserAuthorizeChainReachesLoopback\n    browser_e2e_test.go:31: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserAuthorizeChainReachesLoopback (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserCallbackExplainsMissingTarget",
+      "condition": "=== RUN   TestBrowserCallbackExplainsMissingTarget\n    browser_e2e_test.go:35: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserCallbackExplainsMissingTarget (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserClaudeCodeLocalhostConsentChains/immediate-302",
+      "condition": "=== RUN   TestBrowserClaudeCodeLocalhostConsentChains/immediate-302\n    browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserClaudeCodeLocalhostConsentChains/immediate-302 (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserClaudeCodeLocalhostConsentChains/consent-page",
+      "condition": "=== RUN   TestBrowserClaudeCodeLocalhostConsentChains/consent-page\n    browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserClaudeCodeLocalhostConsentChains/consent-page (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserCodexIPLoopbackConsentChains/immediate-302",
+      "condition": "=== RUN   TestBrowserCodexIPLoopbackConsentChains/immediate-302\n    browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserCodexIPLoopbackConsentChains/immediate-302 (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserCodexIPLoopbackConsentChains/consent-page",
+      "condition": "=== RUN   TestBrowserCodexIPLoopbackConsentChains/consent-page\n    browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserCodexIPLoopbackConsentChains/consent-page (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+      "condition": "=== RUN   TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy\n    task_dispatch_compat_test.go:196: exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate\n--- SKIP: TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestR10RestartChildAuthority",
+      "condition": "=== RUN   TestR10RestartChildAuthority\n    task_dispatch_restart_test.go:22: subprocess-only probe, exercised by TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice\n--- SKIP: TestR10RestartChildAuthority (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestNPSessionPG8To9AndR50BinaryCompatibility",
+      "condition": "=== RUN   TestNPSessionPG8To9AndR50BinaryCompatibility\n    np_session_migration_binary_test.go:26: set independently built current and certified R50 binary paths\n--- SKIP: TestNPSessionPG8To9AndR50BinaryCompatibility (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestR31OldBinarySchemaReadCompatibility",
+      "condition": "=== RUN   TestR31OldBinarySchemaReadCompatibility\n    r31_rollback_compat_test.go:23: requires independently built R30 binary via R31_R30_BINARY\n--- SKIP: TestR31OldBinarySchemaReadCompatibility (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestHLCFaultProcessMatrix",
+      "condition": "=== RUN   TestHLCFaultProcessMatrix\n    shutdown_fault_process_test.go:94: isolated fault/watchdog runner tests/hlc/fault_matrix.py\n--- SKIP: TestHLCFaultProcessMatrix (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestHLCBindFailure",
+      "condition": "=== RUN   TestHLCBindFailure\n    shutdown_fault_process_test.go:329: isolated startup failure runner\n--- SKIP: TestHLCBindFailure (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestHLCLoadMatrix",
+      "condition": "=== RUN   TestHLCLoadMatrix\n    shutdown_load_test.go:563: isolated actual-process matrix: tests/hlc/process_matrix.py\n--- SKIP: TestHLCLoadMatrix (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestHLCS007Full",
+      "condition": "=== RUN   TestHLCS007Full\n    shutdown_mixed_fault_process_test.go:164: isolated full mixed fault: tests/hlc/s007_full.py\n--- SKIP: TestHLCS007Full (0.00s)\n"
+    }
+  ]
+}

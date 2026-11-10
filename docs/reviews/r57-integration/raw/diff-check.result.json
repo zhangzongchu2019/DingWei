@@ -1,0 +1,13 @@
+{
+  "name": "diff-check",
+  "baseline": false,
+  "cmd": [
+    "git",
+    "diff",
+    "--check"
+  ],
+  "cwd": "/data/ai-dev-data/r57-integration-01a1c419",
+  "start": "2026-11-10T21:47:01.543311+00:00",
+  "rc": 0,
+  "end": "2026-11-10T21:47:01.557697+00:00"
+}

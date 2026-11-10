@@ -1,0 +1,51 @@
+{
+  "checked_commit": "4749e901fad104e2a67659bc1f9144a7753c3889",
+  "checked_tree": "4362fa4e41126b9c8652265250dada99c2672615",
+  "profile_results": [
+    {
+      "actual": 1168,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1168,
+      "files": 93,
+      "groups": [
+        1159,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1168,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1168,
+      "files": 93,
+      "groups": [
+        1159,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "browser_suites": 40,
+  "browser_aggregate_rc": 0,
+  "strict": {
+    "passed": 35,
+    "failed": 0
+  },
+  "mcpgw_browser": {
+    "functions": 4,
+    "passes_with_subtests": 8,
+    "fail": 0,
+    "skip": 0
+  },
+  "known_defect": "renderer_c2 T-166 4 predeclared known defects remain; runner rc0",
+  "reused_go": {
+    "all_go": {
+      "pass": 5142,
+      "fail": 0,
+      "skip": 71
+    }
+  },
+  "no_deployment": true
+}

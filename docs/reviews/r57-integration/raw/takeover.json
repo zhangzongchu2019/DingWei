@@ -1,0 +1,16 @@
+{
+  "thread": "01a1c75a-48c7-7691-87d6-b814e78ea829",
+  "utc": "2026-11-10T21:28:23.430784+00:00",
+  "old_owner": "01a1c419-c53c-76b3-b125-bb1fc86f6891\nUTC=2026-11-10T20:37:02.827800+00:00\ntask=S-R57-INTEGRATION\nbranch=coder56solzzc/r57-integration\n",
+  "tip": "fabc996e73ab1514988b4d81a914c17dee41c27e",
+  "tree": "4f3e63880130dc7191eda43a120e576416347234",
+  "merges": [
+    "0e16a0c841099f8651ee511708926d2b040f2238",
+    "bb85442f1da46c6357ed725f11d76e82a802ea82",
+    "a9d922beb9b276b30199e230e13e8b64093c32f3",
+    "b577e59ea446f3dd43deac80f86401127c0fc9c8",
+    "fabc996e73ab1514988b4d81a914c17dee41c27e"
+  ],
+  "remote_branch_absent": true,
+  "status": "clean; explicit takeover completed preserving original records"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "canonical",
+  "baseline": false,
+  "cmd": [
+    "sh",
+    "scripts/run-build-tests.sh"
+  ],
+  "cwd": "/data/ai-dev-data/r57-integration-01a1c419",
+  "start": "2026-11-10T21:07:43.182566+00:00",
+  "rc": 1,
+  "end": "2026-11-10T21:15:41.504528+00:00"
+}

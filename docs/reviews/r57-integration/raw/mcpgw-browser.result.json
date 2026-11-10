@@ -1,0 +1,27 @@
+{
+  "name": "mcpgw-browser",
+  "baseline": false,
+  "cmd": [
+    "go",
+    "test",
+    "-json",
+    "-count=1",
+    "-timeout",
+    "15m",
+    "./internal/mcpgw",
+    "-run",
+    "^TestBrowser(AuthorizeChainReachesLoopback|CallbackExplainsMissingTarget|ClaudeCodeLocalhostConsentChains|CodexIPLoopbackConsentChains)$"
+  ],
+  "cwd": "/data/ai-dev-data/r57-integration-01a1c419",
+  "start": "2026-11-10T21:46:46.068909+00:00",
+  "rc": 0,
+  "end": "2026-11-10T21:47:01.000501+00:00",
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "pass": 8,
+      "fail": 0,
+      "skip": 0
+    }
+  },
+  "skips": []
+}

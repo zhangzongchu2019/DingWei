@@ -1,0 +1,15 @@
+{
+  "name": "strict",
+  "baseline": false,
+  "cmd": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict",
+    "--no-interactive"
+  ],
+  "cwd": "/data/ai-dev-data/r57-integration-01a1c419",
+  "start": "2026-11-10T21:47:01.001181+00:00",
+  "rc": 0,
+  "end": "2026-11-10T21:47:01.543025+00:00"
+}

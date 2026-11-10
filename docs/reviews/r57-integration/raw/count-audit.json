@@ -1,0 +1,28 @@
+{
+  "inventory": {
+    "rows": 93,
+    "unique": 93,
+    "under_tests": 92,
+    "top_level": 1
+  },
+  "scanned_assert_counts": {
+    "base": 174,
+    "main": 174,
+    "M3": 176
+  },
+  "both_changed": [
+    {
+      "file": "deploy/test_build_entrypoints.py",
+      "test": "test_helper_inventory_rejects_each_missing_file_and_manifest_entry",
+      "base": [
+        91
+      ],
+      "main": [
+        92
+      ],
+      "M3": [
+        92
+      ]
+    }
+  ]
+}
