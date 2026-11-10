@@ -23,6 +23,12 @@ import uuid
 
 SOCK = os.environ.get("SH_MCP_IPC_SOCK", "/run/sessionhelper/dingwei-mcp.sock")
 TIMEOUT = 10.0
+try:
+    from .ipc_limits import MESSAGE_BODY_MAX_BYTES, IPC_REQUEST_MAX_BYTES
+except ImportError:
+    # app installs this CLI as standalone ~/.dingwei/send.py, without a package.
+    MESSAGE_BODY_MAX_BYTES = 1 << 20
+    IPC_REQUEST_MAX_BYTES = 6 * MESSAGE_BODY_MAX_BYTES + (64 << 10)
 
 
 def complete_addr(to: str) -> str:
@@ -46,12 +52,17 @@ def unsupported_sub_agent_target(to: str) -> bool:
 
 
 def ipc_send(to: str, body: str) -> dict:
+    actual = len(body.encode("utf-8"))
+    if actual > MESSAGE_BODY_MAX_BYTES:
+        return {"ok": False, "error": "body_too_large", "actual_bytes": actual, "limit_bytes": MESSAGE_BODY_MAX_BYTES}
     payload = {"type": "mcp_send", "to": to, "body": body,
                "request_id": uuid.uuid4().hex[:12],
                # T-089: only send.py opts into Hub-side body AMR parsing.
                # MCP and other IPC callers keep their existing literal-body semantics.
                "ipc_body_amr_v1": True}
     raw = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
+    if len(raw) - 1 > IPC_REQUEST_MAX_BYTES:
+        return {"ok": False, "error": "request_too_large", "actual_bytes": len(raw)-1, "limit_bytes": IPC_REQUEST_MAX_BYTES}
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.settimeout(TIMEOUT)
     try:

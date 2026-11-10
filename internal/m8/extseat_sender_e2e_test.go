@@ -316,7 +316,15 @@ func sendLengthCLI(t *testing.T, body, to string, route func(string, string) err
 		result <- e
 		_ = json.NewEncoder(c).Encode(map[string]any{"ok": e == nil, "error": fmt.Sprint(e)})
 	}()
-	cmd := exec.Command("python3", "../../tools/sessionhelper/sessionhelper/send_dingwei.py", to, "--file", file)
+	script, e := os.ReadFile("../../tools/sessionhelper/sessionhelper/send_dingwei.py")
+	if e != nil {
+		t.Fatal(e)
+	}
+	cli := filepath.Join(dir, "send.py")
+	if e = os.WriteFile(cli, script, 0700); e != nil {
+		t.Fatal(e)
+	}
+	cmd := exec.Command("python3", cli, to, "--file", file)
 	for _, v := range os.Environ() {
 		if !strings.HasPrefix(v, "SH_") && !strings.HasPrefix(v, "DINGWEI_") {
 			cmd.Env = append(cmd.Env, v)

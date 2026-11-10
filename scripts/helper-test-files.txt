@@ -49,6 +49,7 @@ tools/sessionhelper/tests/test_legacy_mcp_entry.py
 tools/sessionhelper/tests/test_macos_build.py
 tools/sessionhelper/tests/test_main_guard_last.py
 tools/sessionhelper/tests/test_mcp_forwarder.py
+tools/sessionhelper/tests/test_mcp_message_length.py
 tools/sessionhelper/tests/test_mcp_send_doc.py
 tools/sessionhelper/tests/test_mcp_send_wiring.py
 tools/sessionhelper/tests/test_mcp_shim_transport_errors.py
