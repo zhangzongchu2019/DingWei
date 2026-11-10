@@ -45,3 +45,20 @@
 | M02 | `tools/run-browser-regressions.py`（原行26） | 合并mcp_zero_consent与sub_agent_tree两行，完整runner同时执行两套新增回归，不选格、不丢既有套件。 |
 
 SQLite0075/0076接现main0074，冻结SQL原字节保留。M3包含M1 eae9eca1与M2 e509b44a的祖先关系已核。
+
+## 无文本冲突的语义冲突
+
+按组长 2026-11-10T21:17:40Z 首红裁定 ededa638501f，以下为合并语义冲突，追加普通提交修正，不改写五个 merge。
+
+| 来源 | helper 清单行数／测试钉值 | 新增项 |
+| --- | --- | --- |
+| 公共祖先 79a60a1e | 91／91 | 两侧新增前的清单 |
+| main 3b615785 | 92／92 | `tools/sessionhelper/tests/test_mcp_message_length.py` |
+| M3 c334fb10 | 92／92 | `tools/sessionhelper/tests/test_sub_agent_helper.py` |
+| 合并树 fabc996e | 93／92（修前） | 两份新增文件的并集 |
+
+两侧将同一钉值行改成相同文本 92，Git 自动合并时没有报告文本冲突；实际清单为并集 93，canonical 因 93≠92 转红。main 对照 rc=0 印证此差异。修正仅将测试钉值设为 93、注释设为 92 under tests/ plus the top-level regression。
+
+接手后通过 inventory() 实核：清单恰 93 行、93 个唯一项，其中 tests/ 下 92 项、顶层回归 1 项；两份新增测试均在清单中，清单与磁盘一致。
+
+同类风险核查覆盖 deploy、scripts、view-service 的 Python assertEqual 整数钉值，以文件／测试函数／被比较表达式对齐公共祖先、main 与 M3；分别扫描 174、174、176 项，两侧均修改的钉值只有上述 helper 91→92 一项。另查两侧 diff 的 len/count 断言，M3 的浏览器节点数、子 Agent 成本／游标夹具是新增局部断言，没有另一侧各加一的同类清单计数；未发现其他需调整项。原始核查读数随本次集成证据归档。
