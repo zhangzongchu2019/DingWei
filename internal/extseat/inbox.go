@@ -81,6 +81,7 @@ func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, e
 		if _, e = tx.Exec(ctx, `INSERT INTO np_extseat_outbox(delivery_id,seat_id,target_agent_id,source_name,target_name,body,ag_code,ag_generation,created_at,expires_at,expect_reply) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, id, fresh.AgentID, g.Target.ID, fresh.FullName, to, body, string(g.Code), g.Generation, now, expiry, expectReply); e != nil {
 			return e
 		}
+		s.enqueueFeishuCopy(ctx, tx, FeishuCopyEvent{ID: id, SeatID: fresh.AgentID, Issuer: fresh.Principal.Issuer, Subject: fresh.Principal.Subject, ExternalName: fresh.FullName, TargetName: to, OwnerDisplayName: fresh.Principal.DisplayName, OwnerShortName: fresh.ownerShort, Direction: FeishuCopyExternalToInternal, Body: body, CreatedAt: now, ExpiresAt: expiry})
 		if e = s.TouchGroup(ctx, tx, g, id, extshared.UseAcceptedSend, now); e != nil {
 			return e
 		}
@@ -107,7 +108,7 @@ func (s *Service) EnqueueFromHelper(ctx context.Context, sourceAgentID, targetAg
 	e := s.tx(ctx, func(tx repo.Tx) error {
 		var a Seat
 		var revoked sql.NullTime
-		e := tx.QueryRow(ctx, `SELECT s.agent_id,s.ag_code,s.ag_generation,s.revoked_at,a.owner_lc,a.name,u.short_name FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE s.agent_id=$1 AND a.state='active' AND u.state='active' FOR UPDATE OF s,a,u`, targetAgentID).Scan(&a.AgentID, &a.Group, &a.Generation, &revoked, &a.OwnerLC, &a.Name, &a.ownerShort)
+		e := tx.QueryRow(ctx, `SELECT s.agent_id,s.ag_code,s.ag_generation,s.revoked_at,a.owner_lc,a.name,u.short_name,p.issuer,p.subject,p.display_name FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc JOIN np_external_principal p ON p.id=s.principal_id WHERE s.agent_id=$1 AND a.state='active' AND u.state='active' FOR UPDATE OF s,a,u`, targetAgentID).Scan(&a.AgentID, &a.Group, &a.Generation, &revoked, &a.OwnerLC, &a.Name, &a.ownerShort, &a.Principal.Issuer, &a.Principal.Subject, &a.Principal.DisplayName)
 		if errors.Is(e, sql.ErrNoRows) || revoked.Valid {
 			return extshared.ErrTargetNotInAG
 		}
@@ -156,6 +157,7 @@ func (s *Service) EnqueueFromHelper(ctx context.Context, sourceAgentID, targetAg
 		if _, e = tx.Exec(ctx, `INSERT INTO np_extseat_inbox(id,seat_id,ag_code,ag_generation,source_agent_id,source_message_id,source_name,target_name,body,created_at,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, id, a.AgentID, string(g.Code), g.Generation, sourceAgentID, messageID, from, a.FullName, body, now, expiry); e != nil {
 			return e
 		}
+		s.enqueueFeishuCopy(ctx, tx, FeishuCopyEvent{ID: id, SeatID: a.AgentID, Issuer: a.Principal.Issuer, Subject: a.Principal.Subject, ExternalName: a.FullName, TargetName: from, OwnerDisplayName: a.Principal.DisplayName, OwnerShortName: a.ownerShort, Direction: FeishuCopyInternalToExternal, Body: body, CreatedAt: now, ExpiresAt: expiry})
 		if e = s.TouchGroup(ctx, tx, g, id, extshared.UseAcceptedSend, now); e != nil {
 			return e
 		}
@@ -166,6 +168,40 @@ func (s *Service) EnqueueFromHelper(ctx context.Context, sourceAgentID, targetAg
 		return SendReceipt{}, e
 	}
 	return result, nil
+}
+
+func (s *Service) enqueueFeishuCopy(ctx context.Context, tx repo.Tx, event FeishuCopyEvent) {
+	if s.FeishuCopies == nil {
+		return
+	}
+	if _, err := tx.Exec(ctx, `SAVEPOINT extseat_feishu_copy_enqueue`); err != nil {
+		if s.OnFeishuCopyEnqueueError != nil {
+			s.OnFeishuCopyEnqueueError(err)
+		}
+		return
+	}
+	err := s.FeishuCopies.Enqueue(ctx, tx, event)
+	if err != nil {
+		if _, rollbackErr := tx.Exec(ctx, `ROLLBACK TO SAVEPOINT extseat_feishu_copy_enqueue`); rollbackErr != nil {
+			if s.OnFeishuCopyEnqueueError != nil {
+				s.OnFeishuCopyEnqueueError(rollbackErr)
+			}
+			return
+		}
+		if _, releaseErr := tx.Exec(ctx, `RELEASE SAVEPOINT extseat_feishu_copy_enqueue`); releaseErr != nil {
+			if s.OnFeishuCopyEnqueueError != nil {
+				s.OnFeishuCopyEnqueueError(releaseErr)
+			}
+			return
+		}
+		if s.OnFeishuCopyEnqueueError != nil {
+			s.OnFeishuCopyEnqueueError(err)
+		}
+		return
+	}
+	if _, err = tx.Exec(ctx, `RELEASE SAVEPOINT extseat_feishu_copy_enqueue`); err != nil && s.OnFeishuCopyEnqueueError != nil {
+		s.OnFeishuCopyEnqueueError(err)
+	}
 }
 
 func (s *Service) claim(ctx context.Context, a Seat) ([]Delivery, error) {

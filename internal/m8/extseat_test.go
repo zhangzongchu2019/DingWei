@@ -15,6 +15,26 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
+type externalCopyReplyLookupFixture struct {
+	matched bool
+	calls   int
+}
+
+func (f *externalCopyReplyLookupFixture) IsCopyReply(context.Context, string, string) (bool, error) {
+	f.calls++
+	return f.matched, nil
+}
+
+func TestExternalFeishuCopyReplyDoesNotRouteBackIntoMCP(t *testing.T) {
+	lookup := &externalCopyReplyLookupFixture{matched: true}
+	h := &Hub{ExternalCopyReplies: lookup}
+	msg := model.Message{BotChannelID: "bot", FeishuReply: &model.FeishuReplyMetadata{Authenticated: true, ParentID: "om_copy"}}
+	result, err := h.Dispatch(context.Background(), msg, "飞书回复正文")
+	if err != nil || !result.Matched || lookup.calls != 1 {
+		t.Fatalf("MCP_COPY_REPLY_LOOP_SUPPRESSED result=%+v calls=%d err=%v", result, lookup.calls, err)
+	}
+}
+
 type externalIdentityFixture struct {
 	identity.Store
 	external          identity.Agent
@@ -164,7 +184,7 @@ func TestExternalProjectionIdempotentPreservesHelperQueue(t *testing.T) {
 }
 
 func TestExternalSeatSenderHeaderOwnerDisplayFallsBackToShortName(t *testing.T) {
-	got := externalSeatSenderHeader("asist_AG3.zzc", "  ", "zzc", "ts3opus55.zzz")
+	got := extshared.ExternalSenderHeader("asist_AG3.zzc", "  ", "zzc", "ts3opus55.zzz")
 	want := "【来自外部 Agent asist_AG3.zzc（MCP，授权人 zzc）→ ts3opus55.zzz；回复请发给 asist_AG3.zzc】"
 	if got != want {
 		t.Fatalf("EXTSEAT_SENDER_HEADER_FROM_LOCKED_IDENTITY fallback=%q want=%q", got, want)

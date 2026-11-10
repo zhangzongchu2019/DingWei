@@ -20,6 +20,12 @@ import (
 // D路消费者的事务假实现；事务真实落PG，未依赖D的生产实现。
 type testGroups struct{}
 
+type failingFeishuCopyQueue struct{}
+
+func (failingFeishuCopyQueue) Enqueue(context.Context, repo.Tx, FeishuCopyEvent) error {
+	return errors.New("synthetic copy storage failure")
+}
+
 func (testGroups) CreateTempGroup(ctx context.Context, tx repo.Tx, r CreateGroupRequest) (Group, error) {
 	var n int64
 	if e := tx.QueryRow(ctx, `SELECT nextval('test_group_seq')`).Scan(&n); e != nil {
@@ -152,7 +158,11 @@ func newFixture(t *testing.T, dsn string) *fixture {
 	if e != nil {
 		t.Fatal(e)
 	}
-	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(sqlText) + string(policyDDL) + `CREATE SEQUENCE test_group_seq;CREATE TABLE test_groups(code text PRIMARY KEY,generation bigint,target text,external text,expires_at timestamptz,active boolean NOT NULL DEFAULT true);CREATE TABLE test_touches(event text PRIMARY KEY,kind text);`
+	copyDDL, e := os.ReadFile("../store/migrate/migrations/0111_extseat_feishu_copy.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(sqlText) + string(policyDDL) + string(copyDDL) + `CREATE SEQUENCE test_group_seq;CREATE TABLE test_groups(code text PRIMARY KEY,generation bigint,target text,external text,expires_at timestamptz,active boolean NOT NULL DEFAULT true);CREATE TABLE test_touches(event text PRIMARY KEY,kind text);`
 	if _, e = pool.Exec(ctx, ac, ddl); e != nil {
 		t.Fatal(e)
 	}
@@ -292,6 +302,36 @@ func TestCorePG(t *testing.T) {
 		row.Scan(&n)
 		if n != 0 {
 			t.Fatal("send transaction did not roll back")
+		}
+	})
+	t.Run("FeishuCopyEnqueueFailureIsolatedFromPrimarySend", func(t *testing.T) {
+		f := newFixture(t, dsn)
+		_, a := f.issue(t)
+		f.s.FeishuCopies = failingFeishuCopyQueue{}
+		copyFailures := 0
+		f.s.OnFeishuCopyEnqueueError = func(error) { copyFailures++ }
+		receipt, err := f.s.Send(f.ctx, a, "helper.ho", "完整主消息正文", "copy-failure-isolated")
+		if err != nil || receipt.Stage != extshared.StageAccepted || copyFailures != 1 {
+			t.Fatalf("MCP_COPY_FAILURE_ISOLATION receipt=%+v failures=%d err=%v", receipt, copyFailures, err)
+		}
+		row, err := f.pool.QueryRow(f.ctx, f.access, `SELECT count(*) FROM np_extseat_outbox WHERE delivery_id=$1`, receipt.DeliveryID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var n int
+		if err := row.Scan(&n); err != nil || n != 1 {
+			t.Fatalf("MCP_COPY_FAILURE_ISOLATION primary outbox count=%d err=%v", n, err)
+		}
+		receipt, err = f.s.EnqueueFromHelper(f.ctx, "helper", a.AgentID, "reply-copy-failure-isolated", "完整目标回复")
+		if err != nil || receipt.Stage != extshared.StageAccepted || copyFailures != 2 {
+			t.Fatalf("MCP_COPY_FAILURE_ISOLATION internal reply receipt=%+v failures=%d err=%v", receipt, copyFailures, err)
+		}
+		row, err = f.pool.QueryRow(f.ctx, f.access, `SELECT count(*) FROM np_extseat_inbox WHERE id=$1`, receipt.DeliveryID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := row.Scan(&n); err != nil || n != 1 {
+			t.Fatalf("MCP_COPY_FAILURE_ISOLATION primary inbox count=%d err=%v", n, err)
 		}
 	})
 	t.Run("PollingNeverTouchesGroup", func(t *testing.T) {

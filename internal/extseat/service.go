@@ -21,18 +21,20 @@ import (
 // Service 不拥有数据库生命周期；调用方装配已迁移的身份 PG 与 D 路消费者。
 type Service struct {
 	// OnBackgroundError 由装配提供；不得记录Bearer或正文。
-	OnBackgroundError func(error)
+	OnBackgroundError        func(error)
+	OnFeishuCopyEnqueueError func(error)
 	// Resource 是本地令牌唯一受保护资源标识，与协议层的metadata保持一致。
-	Resource   string
-	Pool       *repo.Pool
-	Access     repo.AccessCtx
-	Identity   *identity.Service
-	Groups     Groups
-	Helpers    Helpers
-	Now        func() time.Time
-	TenantKey  string
-	Rand       io.Reader
-	QueueLimit int
+	Resource     string
+	Pool         *repo.Pool
+	Access       repo.AccessCtx
+	Identity     *identity.Service
+	Groups       Groups
+	Helpers      Helpers
+	FeishuCopies FeishuCopyQueue
+	Now          func() time.Time
+	TenantKey    string
+	Rand         io.Reader
+	QueueLimit   int
 }
 
 func (s *Service) now() time.Time {

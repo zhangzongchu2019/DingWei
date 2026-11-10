@@ -44,7 +44,11 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(extseatDDL) + string(policyDDL) + string(groupDDL)
+	copyDDL, err := os.ReadFile("../store/migrate/migrations/0111_extseat_feishu_copy.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(extseatDDL) + string(policyDDL) + string(copyDDL) + string(groupDDL)
 	if _, err = pool.Exec(ctx, access, ddl); err != nil {
 		t.Fatal(err)
 	}

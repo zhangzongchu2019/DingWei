@@ -18,6 +18,10 @@ type ExternalSeats interface {
 	Online(context.Context) ([]extseat.OnlineAgent, error)
 }
 
+type ExternalCopyReplyLookup interface {
+	IsCopyReply(context.Context, string, string) (bool, error)
+}
+
 func (h *Hub) routeExternalSeat(ctx context.Context, keyID, name string, env model.Envelope) (bool, error) {
 	if h.Identity == nil {
 		return false, nil
