@@ -62,3 +62,5 @@ SQLite0075/0076接现main0074，冻结SQL原字节保留。M3包含M1 eae9eca1�
 接手后通过 inventory() 实核：清单恰 93 行、93 个唯一项，其中 tests/ 下 92 项、顶层回归 1 项；两份新增测试均在清单中，清单与磁盘一致。
 
 同类风险核查覆盖 deploy、scripts、view-service 的 Python assertEqual 整数钉值，以文件／测试函数／被比较表达式对齐公共祖先、main 与 M3；分别扫描 174、174、176 项，两侧均修改的钉值只有上述 helper 91→92 一项。另查两侧 diff 的 len/count 断言，M3 的浏览器节点数、子 Agent 成本／游标夹具是新增局部断言，没有另一侧各加一的同类清单计数；未发现其他需调整项。原始核查读数随本次集成证据归档。
+
+- 第6项（2026-11-10）：在 K1 测试提交 `32101595b73efa4a7a29459d467e44ced4542d9f` 上以 `--no-ff` 合并冻结候选 `7b421cf4012560c10b0da0487134154da1da50b2`（父 `ba7670db87be53d11d636ef68848b0c8feaf33fb`），merge 为 `d367f57062ba3c25c1e805a03071f1c725f5745c`，无冲突、无需语义补齐；2026 serverInfo 与 2025 initialize 统一使用发行版本常量，VERSION 未改。

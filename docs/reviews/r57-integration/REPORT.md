@@ -37,3 +37,5 @@
 本次修正未改 Go，依组长明确指令沿用已绿 Go 门；其余门在4749e901f上完整重跑。后续仅追加证据与交接记录，产品／测试输入字节不变。不自验收，等待组长独立复核；不构建发布件、不部署、不重启、不改在线环境或真实数据库。
 
 额外扩大范围的诊断：`git diff --check 3b615785 HEAD` 在冻结候选自带的原始证据日志中报告空白问题；同命令截止 fabc996e 与本次证据提交的输出逐字一致。本次修正和证据增量 `git diff --check fabc996e HEAD` 为 rc0，裁定要求的最终 `git diff --check` 为 rc0。未改写既有原始日志以消除历史空白。该额外诊断及退出码见 raw/final-diff-audit.json。
+
+- 第6项（2026-11-10T22:11:11Z—22:13:44Z）：K1 已先以测试提交 `32101595b73efa4a7a29459d467e44ced4542d9f` 推送（负例删三行命中 `K1_SELECTION_ATTEMPT_BINDING`，正例仍绿，恢复两例绿）；随后无冲突 merge `d367f57062ba3c25c1e805a03071f1c725f5745c`，第二父精确为冻结 `7b421cf4012560c10b0da0487134154da1da50b2`；合并树 `go build ./...` rc0，`DW_BROWSER_E2E=1` mcpgw 全包269 PASS／0 FAIL／0 SKIP，浏览器四函数另跑8 PASS／0 FAIL／0 SKIP（HOME=/home/dev，Playwright 缓存=/home/dev/.cache/ms-playwright），两套 serverinfo-version／serverinfo 变异各2/2命中原标记，OpenSpec strict 与 `git diff --check` rc0；本机原始命令、UTC、日志见 `/tmp/r57-c777-six/`，其余门沿用前述已绿读数，等待独立复核。
