@@ -28,7 +28,7 @@ var codexCallbackPath = regexp.MustCompile(`^/callback(?:/[A-Za-z0-9_-]{1,64})?$
 
 func registeredCodexRedirect(c Client, raw string) bool {
 	u, err := url.Parse(raw)
-	if err != nil || !validRedirect(raw) || !codexCallbackPath.MatchString(u.EscapedPath()) {
+	if err != nil || !validRedirect(raw) || !codexIPLoopback(u.Hostname()) || !codexCallbackPath.MatchString(u.EscapedPath()) {
 		return false
 	}
 	// Reuse the registered IP/scheme/port/query/fragment/userinfo guards. Only
@@ -38,6 +38,11 @@ func registeredCodexRedirect(c Client, raw string) bool {
 	// url.Parse lowercases schemes; retain the original scheme spelling so the
 	// existing exact-scheme guard cannot be bypassed through normalization.
 	return registered(c, strings.SplitN(raw, ":", 2)[0]+":"+strings.SplitN(u.String(), ":", 2)[1])
+}
+
+func codexIPLoopback(host string) bool {
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback() && (host == "127.0.0.1" || host == "::1")
 }
 
 func defaultCodexClient() (Client, error) {

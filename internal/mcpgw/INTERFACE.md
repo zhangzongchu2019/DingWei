@@ -56,7 +56,7 @@ scope 按集合精确核固定四项，允许顺序不同，不接受子集/额�
 
 并存2025-06-18与2026-07-28：前者initialize、notifications/initialized、ping、tools/list、tools/call用独立严格codec；后者原封套/字段/标准头/resultType不变。所有有效请求包括初始化/通知均独立Authenticate，Origin守卫共用；无Mcp-Session-Id或握手授权缓存。
 
-回调登记仅同一IP字面127.0.0.1/::1忽略端口，其余scheme/path/query/组件精确，localhost不认可；token兑换仍精确绑定授权时的实际redirect。非loopback逐字匹配。
+回调登记对同一IP字面127.0.0.1/::1及精确主机名localhost（不区分大小写）的HTTP回环回调忽略有效端口，scheme/path/query/其余组件精确；依据RFC 8252 §7.3，原生应用可在动态回环端口接收授权响应。localhost仅此精确拼写且仅HTTP接受；HTTPS规则不变。Codex专用身份仍限127.0.0.1/::1。token兑换仍精确绑定授权时的实际redirect。非回环逐字匹配。
 
 新增GET /mcp/clients/codex.json，只在开态登记，由配置PublicOrigin生成client_id与两种无端口/callback回环URI。精确自有client_id直接解析同份常量配置，其他CIMD仍走外部resolver原有防护。最低Codex0.167.0，不为0.145 issuer做兼容，接入不要显式oauth_resource。PM与nginx清单见docs/guides/CODEX-DINGWEI-MCP.md、docs/runbooks/MCPGW-CODEX-PATHS.md。
 

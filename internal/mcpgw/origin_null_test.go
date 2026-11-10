@@ -95,6 +95,31 @@ func TestConnectPageCSPAllowsValidatedLoopbackHop(t *testing.T) {
 	}
 }
 
+func TestConnectPageCSPAllowsValidatedClaudeLocalhostOrigin(t *testing.T) {
+	g, _, mux := oauthFixture(t)
+	redirect := "http://localhost:3118/callback"
+	g.cfg.Clients = clientsFake{client: Client{ID: clientID, Name: "Claude Code", Redirects: []string{"http://localhost/callback"}, AuthMethod: "none", Grants: []string{"authorization_code", "refresh_token"}, Responses: []string{"code"}}}
+	q := authorizationQuery()
+	q.Set("redirect_uri", redirect)
+	w := serve(mux, httptest.NewRequest("GET", testOrigin+"/oauth/authorize?"+q.Encode(), nil))
+	if w.Code != http.StatusFound {
+		t.Fatalf("CLAUDE_CSP_LOCALHOST_ORIGIN authorize=%d %s", w.Code, w.Body)
+	}
+	u, err := url.Parse(w.Header().Get("Location"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := httptest.NewRequest("GET", testOrigin+u.RequestURI(), nil)
+	for _, cookie := range w.Result().Cookies() {
+		r.AddCookie(cookie)
+	}
+	page := serve(mux, r)
+	csp := page.Header().Get("Content-Security-Policy")
+	if page.Code != http.StatusOK || !strings.Contains(csp, "http://localhost:3118") || strings.Contains(csp, "localhost:*") || strings.Contains(csp, "http://localhost ") {
+		t.Fatalf("CLAUDE_CSP_LOCALHOST_ORIGIN status=%d csp=%q", page.Code, csp)
+	}
+}
+
 func TestWithLoopbackFormActionOnlyExactLoopback(t *testing.T) {
 	base := "default-src 'none'; form-action 'self' https://accounts.feishu.cn; frame-ancestors 'none'"
 	if got := withLoopbackFormAction(base, "http://127.0.0.1:43123/callback/Ab12"); got != "default-src 'none'; form-action 'self' http://127.0.0.1:43123 https://accounts.feishu.cn; frame-ancestors 'none'" {
@@ -103,8 +128,11 @@ func TestWithLoopbackFormActionOnlyExactLoopback(t *testing.T) {
 	if got := withLoopbackFormAction(base, "http://[::1]:5000/callback"); !strings.Contains(got, "form-action 'self' http://[::1]:5000 https://accounts.feishu.cn;") {
 		t.Fatalf("LOOPBACK_V6 %q", got)
 	}
+	if got := withLoopbackFormAction(base, "http://localhost:3118/callback"); !strings.Contains(got, "form-action 'self' http://localhost:3118 https://accounts.feishu.cn;") {
+		t.Fatalf("CLAUDE_CSP_LOCALHOST_ORIGIN %q", got)
+	}
 	for _, redirect := range []string{
-		"http://localhost:43123/callback", "https://127.0.0.1:43123/callback",
+		"https://localhost:43123/callback", "http://localhost.evil.example:43123/callback", "http://localhost:65536/callback", "http://localhost/callback", "https://127.0.0.1:43123/callback",
 		"http://127.0.0.1/callback", "http://evil.example:80/callback",
 		"http://user@127.0.0.1:43123/callback", "http://127.0.0.1:43123;script-src/x", "::bad",
 	} {

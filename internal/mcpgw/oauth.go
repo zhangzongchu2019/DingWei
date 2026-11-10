@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -391,7 +392,7 @@ func (w *loginResponse) Write(b []byte) (int, error) {
 	return w.body.Write(b)
 }
 
-var loopbackFormSource = regexp.MustCompile(`^http://(127\.0\.0\.1|\[::1\]):[0-9]{1,5}$`)
+var loopbackFormSource = regexp.MustCompile(`(?i)^http://(127\.0\.0\.1|\[::1\]|localhost):([0-9]{1,5})$`)
 
 // withLoopbackFormAction appends exactly the validated loopback origin of the
 // attempt's redirect_uri to form-action; anything else leaves the policy as is.
@@ -401,8 +402,18 @@ func withLoopbackFormAction(csp, redirect string) string {
 		return csp
 	}
 	source := u.Scheme + "://" + u.Host
-	if !loopbackFormSource.MatchString(source) || !strings.Contains(csp, "form-action 'self'") {
+	match := loopbackFormSource.FindStringSubmatch(source)
+	if match == nil || !strings.Contains(csp, "form-action 'self'") {
 		return csp
 	}
+	port, err := strconv.Atoi(match[2])
+	if err != nil || port < 1 || port > 65535 {
+		return csp
+	}
+	host := strings.ToLower(match[1])
+	if host == "[::1]" {
+		host = "[::1]"
+	}
+	source = "http://" + host + ":" + strconv.Itoa(port)
 	return strings.Replace(csp, "form-action 'self'", "form-action 'self' "+source, 1)
 }

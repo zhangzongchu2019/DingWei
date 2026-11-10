@@ -111,11 +111,13 @@ func validRedirect(raw string) bool {
 	if e != nil || u.Host == "" || u.User != nil || u.Fragment != "" || u.Opaque != "" {
 		return false
 	}
-	// The localhost hostname is never a native callback identity, including
-	// HTTPS spelling variants. Other HTTPS redirects retain exact matching.
-	ip := net.ParseIP(u.Hostname())
-	httpLoopback := ip != nil && ip.IsLoopback()
-	return !strings.EqualFold(u.Hostname(), "localhost") && (u.Scheme == "https" || u.Scheme == "http" && httpLoopback)
+	// RFC 8252 §7.3 permits native apps to receive authorization responses on
+	// a loopback listener, including the reserved localhost hostname. HTTPS
+	// matching remains unchanged; localhost is accepted only for HTTP callbacks.
+	host := u.Hostname()
+	ip := net.ParseIP(host)
+	httpLoopback := ip != nil && ip.IsLoopback() || strings.EqualFold(host, "localhost")
+	return u.Scheme == "https" && !strings.EqualFold(host, "localhost") || u.Scheme == "http" && httpLoopback
 }
 func validateClient(c Client, id string) error {
 	if c.ID != id || !metadataURL(id) || strings.TrimSpace(c.Name) == "" || len(c.Redirects) == 0 || (c.AuthMethod != "" && c.AuthMethod != "none") {
@@ -126,10 +128,20 @@ func validateClient(c Client, id string) error {
 			return errParams
 		}
 	}
+	hasAuthorizationCode := false
 	for _, v := range c.Grants {
-		if v != "authorization_code" {
+		switch v {
+		case "authorization_code":
+			hasAuthorizationCode = true
+		case "refresh_token":
+			// CIMD may advertise refresh support; this gateway still only issues
+			// authorization-code grants at the token endpoint.
+		default:
 			return errParams
 		}
+	}
+	if !hasAuthorizationCode {
+		return errParams
 	}
 	for _, v := range c.Responses {
 		if v != "code" {
@@ -152,10 +164,18 @@ func registered(c Client, redirect string) bool {
 			continue
 		}
 		host := allowed.Hostname()
-		if (host != "127.0.0.1" && host != "::1") || requested.Hostname() != host {
+		requestedHost := requested.Hostname()
+		isIPLoopback := host == "127.0.0.1" || host == "::1"
+		isLocalhost := strings.EqualFold(host, "localhost")
+		hostMatches := requestedHost == host
+		if isLocalhost {
+			hostMatches = strings.EqualFold(requestedHost, host)
+		}
+		if (!isIPLoopback && !isLocalhost) || !hostMatches {
 			continue
 		}
-		// RFC 8252 7.3: ignore only the port of the same loopback IP literal.
+		// RFC 8252 7.3: ignore the registered port for the same loopback IP or
+		// exact localhost hostname; scheme, escaped path and query stay exact.
 		// Preserve query/escaped path and all other URI components exactly.
 		if allowed.Scheme != requested.Scheme || strings.SplitN(raw, ":", 2)[0] != strings.SplitN(redirect, ":", 2)[0] || allowed.EscapedPath() != requested.EscapedPath() || allowed.RawQuery != requested.RawQuery || allowed.ForceQuery != requested.ForceQuery {
 			continue
