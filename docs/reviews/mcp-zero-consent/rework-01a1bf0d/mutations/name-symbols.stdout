@@ -1,0 +1,8 @@
+=== RUN   TestConsentNameGeneration
+=== RUN   TestConsentNameGeneration/symbols
+    defaults_test.go:57: ZC_NAME_symbols got= @123! 261109080203 want=pm261109080203
+--- FAIL: TestConsentNameGeneration (0.00s)
+    --- FAIL: TestConsentNameGeneration/symbols (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

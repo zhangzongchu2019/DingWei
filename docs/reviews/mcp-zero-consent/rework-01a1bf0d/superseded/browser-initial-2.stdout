@@ -1,0 +1,5 @@
+page.evaluate: TypeError: Failed to fetch
+    at eval (eval at evaluate (:290:30), <anonymous>:1:7)
+    at UtilityScript.evaluate (<anonymous>:292:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+    at /data/ai-dev-data/mcp-zero-consent-01a1bf0d/docs/reviews/mcp-zero-consent/browser_probe.js:27:36

@@ -1,0 +1,6 @@
+=== RUN   TestConsentMultipleSelectionBoundOnce
+    defaults_test.go:183: ZC_MULTI_FILTER {Selection:BpROVfr7PHcelGNGFzL70Sfx6FFJany-Sv1iH4yzwjw Targets:[Helper.zzc Other.zzc Dead.zzc] Preferred:Other.zzc AttemptID:outer-attempt-1 Token: SeatID: ExternalAgentFullName: Group: ExpiresAt:0001-01-01 00:00:00 +0000 UTC Audience: Scopes:[]} <nil>
+--- FAIL: TestConsentMultipleSelectionBoundOnce (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

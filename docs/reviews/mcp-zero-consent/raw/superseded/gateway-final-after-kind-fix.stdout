@@ -1,0 +1,22 @@
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards/single
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards/multi
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards/no-cookie
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards/wrong-cookie
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards/outside
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards/revoked
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards/expired
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards/replay
+=== RUN   TestConsentGatewaySingleAndMultiBrowserGuards/duplicate
+--- PASS: TestConsentGatewaySingleAndMultiBrowserGuards (0.74s)
+    --- PASS: TestConsentGatewaySingleAndMultiBrowserGuards/single (0.06s)
+    --- PASS: TestConsentGatewaySingleAndMultiBrowserGuards/multi (0.09s)
+    --- PASS: TestConsentGatewaySingleAndMultiBrowserGuards/no-cookie (0.07s)
+    --- PASS: TestConsentGatewaySingleAndMultiBrowserGuards/wrong-cookie (0.07s)
+    --- PASS: TestConsentGatewaySingleAndMultiBrowserGuards/outside (0.07s)
+    --- PASS: TestConsentGatewaySingleAndMultiBrowserGuards/revoked (0.08s)
+    --- PASS: TestConsentGatewaySingleAndMultiBrowserGuards/expired (0.07s)
+    --- PASS: TestConsentGatewaySingleAndMultiBrowserGuards/replay (0.14s)
+    --- PASS: TestConsentGatewaySingleAndMultiBrowserGuards/duplicate (0.10s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	0.751s

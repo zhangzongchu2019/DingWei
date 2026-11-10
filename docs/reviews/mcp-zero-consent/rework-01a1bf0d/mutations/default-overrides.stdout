@@ -1,0 +1,8 @@
+=== RUN   TestConsentOverridesAndRevocation
+=== RUN   TestConsentOverridesAndRevocation/short-override
+    defaults_test.go:136: ZC_OVERRIDE_short-override status=303
+--- FAIL: TestConsentOverridesAndRevocation (0.00s)
+    --- FAIL: TestConsentOverridesAndRevocation/short-override (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.007s
+FAIL

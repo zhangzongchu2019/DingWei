@@ -1,0 +1,27 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-p",
+    "1",
+    "-count=1",
+    "-json",
+    "-timeout=25m",
+    "./internal/m8"
+  ],
+  "start": "2026-11-09T07:52:10Z",
+  "end": "2026-11-09T07:56:15Z",
+  "rc": 0,
+  "environment_names": [
+    "CODEX_HOME",
+    "GOCACHE",
+    "GOMODCACHE",
+    "GOPROXY",
+    "HOME",
+    "HUB_TEST_PG_STRICT",
+    "OPENSPEC_TELEMETRY",
+    "PATH",
+    "TMPDIR"
+  ],
+  "uid": 1001
+}

@@ -1,0 +1,30 @@
+{
+  "thread": "01a1bf6a-20da-7533-8984-532fd2ec65a3",
+  "source_commit": "2c403d430dd60e882cfb5ebcaaa82181324cbfd0",
+  "source_tree": "340dc4ab507a3eec24bc9c0a94ec7de9df794ec1",
+  "parents": [
+    "d311864c289e0f6633afe9bd3d1dfe007fdbfc50",
+    "d5a6fbbca6cda0c0627342e8905372f052638b2a"
+  ],
+  "old_worktree": "/data/ai-dev-data/mcp-zero-consent-01a1bf0d",
+  "new_worktree": "/data/ai-dev-data/mcp-zero-consent-01a1bf6a",
+  "old_lock": "/tmp/coder56-mcp-zeroconsent.lock.stale-20261109T083303Z",
+  "takeover_checks": {
+    "remote_at": "2026-11-09T08:32:29Z",
+    "remote_tip": "d311864c289e0f6633afe9bd3d1dfe007fdbfc50",
+    "old_status_porcelain": "",
+    "old_HEAD": "d311864c289e0f6633afe9bd3d1dfe007fdbfc50",
+    "process_commands": [
+      "ps -eo pid,ppid,user,lstart,comm,args --width 240",
+      "/proc PID comm/cwd/cmdline sweep for go/git/editors or worktree cwd"
+    ],
+    "related_processes_found": false
+  },
+  "rulings": "dcfd24ef530f7502c593dd88a4e5606bf52a56a8",
+  "tasks": "7afbfebcd2708e4d87108d5d778903fe326cf279",
+  "main": "fce2ede85150747cfa7ccdf728f060d1e498304a",
+  "uid": 1001,
+  "go": "go1.22.2 GOTOOLCHAIN=local",
+  "production_actions": false,
+  "real_credentials_used": false
+}

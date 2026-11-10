@@ -1,0 +1,37 @@
+=== RUN   TestConsentSingleAndDisabled
+=== RUN   TestConsentSingleAndDisabled/single
+    defaults_test.go:89: ZC_FORM_MODE_single <!doctype html>
+        <html lang="zh-CN">
+        <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>接入外部 Agent</title>
+        <style>
+        body{font-family:system-ui,sans-serif;max-width:36rem;margin:3rem auto;padding:0 1rem;color:#17202a}
+        label{display:block;margin-top:1rem;font-weight:600}input{box-sizing:border-box;width:100%;padding:.65rem;margin-top:.35rem}
+        button{margin-top:1.5rem;padding:.65rem 1.2rem}.hint{color:#52606d}.error{color:#a40000}
+        </style>
+        </head>
+        <body>
+        <h1>接入外部 Agent</h1>
+        <p class="hint">外部 Agent 名将为 短名_AG序号</p>
+        
+        <form method="post" action="" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="jMq8L5ap1SFppwwu_PRcp6wN2G5b6uhclBBVAWBbi44">
+        <input type="hidden" name="attempt_id" value="outer-attempt-1">
+        
+        <label for="short_name">短名</label>
+        <input id="short_name" name="short_name" type="text" required minlength="1" maxlength="8" pattern="[a-z0-9]{1,8}" value="" aria-describedby="short_hint">
+        <small id="short_hint" class="hint">1～8 位小写英文字母或数字</small>
+        <label for="target_agent">目标 Agent 全名</label>
+        <input id="target_agent" name="target_agent" type="text" required maxlength="50" placeholder="名称.属主简称" value="Helper.zzc">
+        <button type="submit">前往飞书扫码</button>
+        
+        </form>
+        </body>
+        </html>
+--- FAIL: TestConsentSingleAndDisabled (0.00s)
+    --- FAIL: TestConsentSingleAndDisabled/single (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.007s
+FAIL

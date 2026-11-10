@@ -1,0 +1,58 @@
+{
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "pass": 236
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extseat": {
+      "pass": 27
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extshared": {
+      "pass": 6
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extwire": {
+      "pass": 13
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/feishulogin": {
+      "pass": 97
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store": {
+      "pass": 599,
+      "skip": 5
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store/migrate": {
+      "pass": 43
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/identity": {
+      "pass": 215
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "pass": 259,
+      "skip": 6
+    }
+  },
+  "affected": {
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "pass": 236
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/feishulogin": {
+      "pass": 97
+    }
+  },
+  "race": {
+    "github.com/zhangzongchu2019/dingwei/internal/feishulogin": {
+      "pass": 291
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "pass": 708
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extwire": {
+      "pass": 39
+    }
+  },
+  "m8": {
+    "github.com/zhangzongchu2019/dingwei/internal/m8": {
+      "pass": 1512,
+      "skip": 37
+    }
+  }
+}

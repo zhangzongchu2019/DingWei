@@ -1,0 +1,6 @@
+=== RUN   TestConsentMigrationLedgerPG
+    consent_test.go:45: migrate 0108_extseat_short_name.sql: ERROR: check constraint "np_extseat_short_name_check" of relation "np_extseat" is violated by some row (SQLSTATE 23514)
+--- FAIL: TestConsentMigrationLedgerPG (3.69s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store/migrate	3.696s
+FAIL

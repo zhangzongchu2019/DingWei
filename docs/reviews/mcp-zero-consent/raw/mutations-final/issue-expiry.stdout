@@ -1,0 +1,6 @@
+=== RUN   TestConsentIssueExpiry
+    defaults_test.go:287: ZC_ISSUE_EXPIRED <nil>
+--- FAIL: TestConsentIssueExpiry (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

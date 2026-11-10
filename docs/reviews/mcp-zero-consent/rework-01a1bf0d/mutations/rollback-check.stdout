@@ -1,0 +1,6 @@
+=== RUN   TestConsentRollbackRunbook
+    rollback_notes_test.go:18: ZC_ROLLBACK_RUNBOOK_MISSING 存在长名行时不得恢复旧CHECK，只能前向修复
+--- FAIL: TestConsentRollbackRunbook (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

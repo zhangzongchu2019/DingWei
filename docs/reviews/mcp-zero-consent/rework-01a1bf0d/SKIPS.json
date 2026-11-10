@@ -1,0 +1,242 @@
+[
+  {
+    "run": "packages",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+    "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount"
+  },
+  {
+    "run": "packages",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+    "test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling"
+  },
+  {
+    "run": "packages",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+    "test": "TestFeishuStickyOldHubMigrationRollbackCompatibility"
+  },
+  {
+    "run": "packages",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+    "test": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy"
+  },
+  {
+    "run": "packages",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+    "test": "TestR10RestartChildAuthority"
+  },
+  {
+    "run": "packages",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestNPSessionPG8To9AndR50BinaryCompatibility"
+  },
+  {
+    "run": "packages",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestR31OldBinarySchemaReadCompatibility"
+  },
+  {
+    "run": "packages",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCFaultProcessMatrix"
+  },
+  {
+    "run": "packages",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCBindFailure"
+  },
+  {
+    "run": "packages",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCLoadMatrix"
+  },
+  {
+    "run": "packages",
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCS007Full"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeviceClaimAcrossActualClientAndHub"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeviceClaimAcrossActualClientAndPostgres"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestChangeEvidenceConsoleBrowser"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestMuxProductHTTP1EightSeats"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestConsolePlatformPayloadDump"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLICancelAtomicBoundary/claude"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLICancelAtomicBoundary/codex"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLILateWireTerminal"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDesktopMCPRoundTripAcrossRealHub"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestFailureNoticeDriverTurnEndToEnd"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestGroupReplyMCP"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelper0232MixedVersionEndToEnd"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHostedBodySendAcrossRealHub"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestEnvelopeReadTimeoutEnvironmentChild"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestPilotQuestionAcrossRealHTTPHelperIPCMCP"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestPilotTemplateAcrossRealHTTPHelperIPCMCP"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestProjectContextAcrossRealHTTPHelperIPCMCP"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestSessionHistoryTwentyAgentPublishP99"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestSpecMCPEndToEnd"
+  },
+  {
+    "run": "m8",
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestBlockerAcrossRealHTTPHelperIPCMCP"
+  }
+]

@@ -19,6 +19,7 @@ type StatePurpose string
 const (
 	StatePurposeOAuth       StatePurpose = "feishu_oauth"
 	StatePurposeConnectForm StatePurpose = "connect_form_csrf"
+	StatePurposeSelection   StatePurpose = "verified_target_selection"
 )
 
 var (
@@ -113,14 +114,15 @@ type OAuthClient interface {
 }
 
 // IssueRequest is the complete issuance intent. ShortName, TargetAgent, and
-// AttemptID are bound to state when the flow starts. Principal remains empty in
-// storage and is populated only from the server-verified Feishu identity during
-// Callback, immediately before token issuance.
+// AttemptID are bound to state when the flow starts. Automatic names are added
+// only after the trusted profile. A pending multi-target selection stores that
+// verified principal and the generated name in the encrypted, one-time state.
 type IssueRequest struct {
 	Principal   extshared.Principal // server-verified identity; never accepted from the browser
 	ShortName   string              // external Agent short name, validated by extshared rules
 	TargetAgent string              // target helper's canonical full name
 	AttemptID   string              // optional caller-stable login attempt / idempotency identifier
+	Automatic   bool                // server-bound intent; never accepted from callback query
 }
 
 // IssuedToken is the A-lane result transported by the integration adapter.
@@ -171,6 +173,7 @@ type Config struct {
 	StateTTL      time.Duration
 	Now           func() time.Time
 	Random        io.Reader
+	Defaults      DefaultTargets
 }
 
 // StartRequest is supplied by B after validating its enclosing MCP OAuth flow.
@@ -178,6 +181,7 @@ type StartRequest struct {
 	ShortName   string
 	TargetAgent string
 	AttemptID   string // optional opaque login attempt / idempotency identifier
+	Automatic   bool
 }
 
 // StartResult tells B where to redirect the browser. Raw state occurs only in
@@ -195,11 +199,17 @@ type CallbackRequest struct {
 	// AttemptID is supplied by the gateway from its own encrypted state record.
 	// It is never read from the Feishu callback query.
 	AttemptID string
+	Selection string
+	Target    string
 }
 
 // CallbackResult is the single local-token disclosure point in this package.
 // The non-secret issuance metadata is forwarded unchanged for B's OAuth response.
 type CallbackResult struct {
+	Selection string
+	Targets   []string
+	Preferred string
+
 	AttemptID             string
 	Token                 string
 	SeatID                string

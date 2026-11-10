@@ -214,7 +214,14 @@ func (g *Gateway) connect(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		now := g.cfg.Now()
-		if e = g.cfg.Store.Put(r.Context(), "login", hash(location.Query().Get("state")), []byte(attempt), a.Expires, now); e != nil {
+		// Claim the enclosing OAuth attempt once, not merely each Feishu state.
+		// Multiple tabs/forms may have distinct CSRF tokens for the same attempt.
+		// Losing starts remain unbound and cannot reach profile/name generation.
+		if e = g.cfg.Store.Put(r.Context(), "login", hash("started:"+attempt), []byte(attempt), a.Expires, now); e != nil {
+			oauthError(w, 400, "invalid_request")
+			return
+		}
+		if e = g.cfg.Store.Put(r.Context(), "login", hash("state:"+location.Query().Get("state")), []byte(attempt), a.Expires, now); e != nil {
 			oauthError(w, 503, "temporarily_unavailable")
 			return
 		}
@@ -230,17 +237,34 @@ func (g *Gateway) connect(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(captured.body.Bytes())
 }
 func (g *Gateway) callback(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		w.Header().Set("Allow", http.MethodGet)
+	var req feishulogin.CallbackRequest
+	kind, key := "login", ""
+	if r.Method == "POST" {
+		r.Body = http.MaxBytesReader(w, r.Body, 4096)
+		if r.ParseForm() != nil || !unique(r.PostForm) || r.URL.RawQuery != "" || r.PostForm.Get("selection") == "" || r.PostForm.Get("target_agent") == "" {
+			g.failCallback(w, r, http.StatusBadRequest, "invalid_request", feishulogin.FailureOther, "", feishulogin.TargetCategoryUnverified)
+			return
+		}
+		req = feishulogin.CallbackRequest{Selection: r.PostForm.Get("selection"), Target: r.PostForm.Get("target_agent")}
+		kind, key = "login", "selection:"+req.Selection
+	} else if r.Method == "GET" {
+		q, e := url.ParseQuery(r.URL.RawQuery)
+		if e != nil || !unique(q) || q.Get("state") == "" || q.Get("code") == "" {
+			g.failCallback(w, r, http.StatusBadRequest, "invalid_request", feishulogin.FailureOther, "", feishulogin.TargetCategoryUnverified)
+			return
+		}
+		req = feishulogin.CallbackRequestFromQuery(q)
+		key = "state:" + req.State
+	} else {
+		w.Header().Set("Allow", "GET, POST")
 		g.failCallback(w, r, http.StatusMethodNotAllowed, "method_not_allowed", feishulogin.FailureOther, "", feishulogin.TargetCategoryUnverified)
 		return
 	}
-	q, e := url.ParseQuery(r.URL.RawQuery)
-	if e != nil || !unique(q) || q.Get("state") == "" || q.Get("code") == "" {
+	if len(key) > 128 {
 		g.failCallback(w, r, http.StatusBadRequest, "invalid_request", feishulogin.FailureOther, "", feishulogin.TargetCategoryUnverified)
 		return
 	}
-	attemptRaw, e := g.cfg.Store.Get(r.Context(), "login", hash(q.Get("state")), g.cfg.Now())
+	attemptRaw, e := g.cfg.Store.Get(r.Context(), kind, hash(key), g.cfg.Now())
 	if e != nil {
 		reason := feishulogin.FailureOther
 		if errors.Is(e, errRecord) {
@@ -250,11 +274,12 @@ func (g *Gateway) callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	attempt := string(attemptRaw)
-	if _, e = g.readAttempt(r, attempt, false); e != nil {
+	a, e := g.readAttempt(r, attempt, false)
+	if e != nil {
 		g.failCallback(w, r, http.StatusBadRequest, "invalid_request", feishulogin.FailureAuthorizationUsed, attempt, feishulogin.TargetCategoryUnverified)
 		return
 	}
-	if _, e = g.cfg.Store.Take(r.Context(), "login", hash(q.Get("state")), g.cfg.Now()); e != nil {
+	if _, e = g.cfg.Store.Take(r.Context(), kind, hash(key), g.cfg.Now()); e != nil {
 		reason := feishulogin.FailureOther
 		if errors.Is(e, errRecord) {
 			reason = feishulogin.FailureAuthorizationUsed
@@ -262,10 +287,10 @@ func (g *Gateway) callback(w http.ResponseWriter, r *http.Request) {
 		g.failCallback(w, r, http.StatusBadRequest, "invalid_request", reason, attempt, feishulogin.TargetCategoryUnverified)
 		return
 	}
-	// C 从一次性 state 内取 AttemptID 和主体，拒绝 query 中的签发意图覆盖。
-	callbackRequest := feishulogin.CallbackRequestFromQuery(q)
-	callbackRequest.AttemptID = attempt
-	issued, e := g.cfg.Login.Callback(r.Context(), callbackRequest)
+	// The gateway binds both OAuth and selection callbacks to its encrypted record.
+	// No attempt or principal is accepted from callback query/form fields.
+	req.AttemptID = attempt
+	issued, e := g.cfg.Login.Callback(r.Context(), req)
 	if e != nil {
 		reason, attemptPrefix, targetCategory, ok := feishulogin.CallbackFailureDetails(e)
 		if !ok {
@@ -274,11 +299,16 @@ func (g *Gateway) callback(w http.ResponseWriter, r *http.Request) {
 		g.failCallback(w, r, http.StatusBadRequest, "access_denied", reason, attemptPrefix, targetCategory)
 		return
 	}
+	if issued.Selection != "" {
+		g.renderSelection(w, r, issued, attempt, a)
+		return
+	}
+
 	if issued.AttemptID != attempt {
 		g.failCallback(w, r, http.StatusBadRequest, "invalid_request", feishulogin.FailureOther, attempt, feishulogin.TargetCategoryUnverified)
 		return
 	}
-	a, e := g.readAttempt(r, attempt, true)
+	a, e = g.readAttempt(r, attempt, true)
 	if e != nil {
 		g.failCallback(w, r, http.StatusBadRequest, "invalid_request", feishulogin.FailureAuthorizationUsed, attempt, feishulogin.TargetCategoryUnverified)
 		return

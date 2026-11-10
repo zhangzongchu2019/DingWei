@@ -1,0 +1,6 @@
+# github.com/zhangzongchu2019/dingwei/internal/m8 [github.com/zhangzongchu2019/dingwei/internal/m8.test]
+internal/m8/extseat_test.go:184:6: externalRouteIdentityProbe redeclared in this block
+	internal/m8/consent_test.go:101:6: other declaration of externalRouteIdentityProbe
+{"Time":"2026-11-09T06:22:43.13764587Z","Action":"start","Package":"github.com/zhangzongchu2019/dingwei/internal/m8"}
+{"Time":"2026-11-09T06:22:43.137708204Z","Action":"output","Package":"github.com/zhangzongchu2019/dingwei/internal/m8","Output":"FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/m8 [build failed]\n"}
+{"Time":"2026-11-09T06:22:43.137715573Z","Action":"fail","Package":"github.com/zhangzongchu2019/dingwei/internal/m8","Elapsed":0}

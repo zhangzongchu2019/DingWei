@@ -1,0 +1,10 @@
+browser request failed: /feishu/connect net::ERR_ABORTED
+browser console: Refused to send form data to 'https://127.0.0.1:35583/feishu/connect?attempt_id=qsZxo3m4wbQy7weIENW4LE1YJMOQryyf2AygvIHBtCo' because it violates the following Content Security Policy directive: "form-action 'self' http://127.0.0.1:37859".
+
+page.waitForURL: Timeout 30000ms exceeded.
+=========================== logs ===========================
+waiting for navigation to "http://127.0.0.1:37859/callback?**" until "load"
+============================================================
+    at /data/ai-dev-data/mcp-zero-consent-01a1bf0d/docs/reviews/mcp-zero-consent/browser_probe.js:39:14 {
+  name: 'TimeoutError'
+}

@@ -30,6 +30,9 @@ func oauthFixture(t *testing.T) (*Gateway, *seatsFake, *http.ServeMux) {
 	return oauthFixtureWithStore(t, nil)
 }
 func oauthFixtureWithStore(t *testing.T, store Store) (*Gateway, *seatsFake, *http.ServeMux) {
+	return oauthConsentFixture(t, store, nil)
+}
+func oauthConsentFixture(t *testing.T, store Store, defaults feishulogin.DefaultTargets) (*Gateway, *seatsFake, *http.ServeMux) {
 	t.Helper()
 	g, seats, _ := fixture(t)
 	if store != nil {
@@ -58,7 +61,7 @@ func oauthFixtureWithStore(t *testing.T, store Store) (*Gateway, *seatsFake, *ht
 	if e != nil {
 		t.Fatal(e)
 	}
-	login, e := feishulogin.NewHandler(feishulogin.Config{AppID: "app", TeamTenantKey: "team", RedirectURI: testOrigin + "/mcp/oauth/feishu/callback", OAuth: oauth, States: LoginStates{Store: g.cfg.Store}, Tokens: extwire.Issuer{Seats: seats, Resource: testOrigin + "/mcp"}, Now: g.cfg.Now})
+	login, e := feishulogin.NewHandler(feishulogin.Config{AppID: "app", TeamTenantKey: "team", RedirectURI: testOrigin + "/mcp/oauth/feishu/callback", Defaults: defaults, OAuth: oauth, States: LoginStates{Store: g.cfg.Store}, Tokens: extwire.Issuer{Seats: seats, Resource: testOrigin + "/mcp"}, Now: g.cfg.Now})
 	if e != nil {
 		t.Fatal(e)
 	}

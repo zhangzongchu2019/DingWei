@@ -1,0 +1,6 @@
+=== RUN   TestConsentMultipleSelectionBoundOnce
+    defaults_test.go:189: ZC_SELECTION_NAME_ONCE {Principal:{Provider:feishu TenantKey:tenant-1 Issuer:app-1 Subject:open-1 UnionID:union-1 DisplayName:Alice} ShortName:changed261106053100 TargetAgent:Other.zzc AttemptID:outer-attempt-1 Automatic:true} <nil>
+--- FAIL: TestConsentMultipleSelectionBoundOnce (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

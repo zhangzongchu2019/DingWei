@@ -1,0 +1,8 @@
+=== RUN   TestConsentNameGeneration
+=== RUN   TestConsentNameGeneration/long
+    defaults_test.go:57: ZC_NAME_long got=abcdefghi261109080203 want=abcdefgh261109080203
+--- FAIL: TestConsentNameGeneration (0.00s)
+    --- FAIL: TestConsentNameGeneration/long (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

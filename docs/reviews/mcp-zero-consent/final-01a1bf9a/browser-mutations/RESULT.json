@@ -1,0 +1,56 @@
+[
+  {
+    "name": "loopback",
+    "command": [
+      "python3",
+      "docs/reviews/mcp-zero-consent/browser_regression.py",
+      "--output",
+      "/tmp/zc-final-01a1bf9a-browser-mut/loopback",
+      "--mode",
+      "single",
+      "--chain",
+      "immediate",
+      "--cut",
+      "loopback-csp"
+    ],
+    "rc": 1,
+    "target": "Chromium form-action navigation rejected",
+    "target_red": true
+  },
+  {
+    "name": "authorize",
+    "command": [
+      "python3",
+      "docs/reviews/mcp-zero-consent/browser_regression.py",
+      "--output",
+      "/tmp/zc-final-01a1bf9a-browser-mut/authorize",
+      "--mode",
+      "single",
+      "--chain",
+      "consent",
+      "--cut",
+      "connect-csp"
+    ],
+    "rc": 1,
+    "target": "Chromium form-action navigation rejected",
+    "target_red": true
+  },
+  {
+    "name": "selection",
+    "command": [
+      "python3",
+      "docs/reviews/mcp-zero-consent/browser_regression.py",
+      "--output",
+      "/tmp/zc-final-01a1bf9a-browser-mut/selection",
+      "--mode",
+      "multi",
+      "--chain",
+      "consent",
+      "--cut",
+      "selection-csp"
+    ],
+    "rc": 1,
+    "target": "Chromium form-action navigation rejected",
+    "target_red": true
+  }
+]

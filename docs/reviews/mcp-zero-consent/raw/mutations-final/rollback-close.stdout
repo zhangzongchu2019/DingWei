@@ -1,0 +1,6 @@
+=== RUN   TestConsentRollbackRunbook
+    rollback_notes_test.go:18: ZC_ROLLBACK_RUNBOOK_MISSING 封口全部长名外部席位
+--- FAIL: TestConsentRollbackRunbook (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.008s
+FAIL

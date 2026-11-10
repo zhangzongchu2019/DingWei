@@ -1,0 +1,6 @@
+=== RUN   TestConsentRecentTrustedPrincipalPG
+    defaults_pg_test.go:46: ZC_RECENT_LATEST Helper.zzc <nil>
+--- FAIL: TestConsentRecentTrustedPrincipalPG (3.46s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/extwire	3.466s
+FAIL

@@ -1,0 +1,8 @@
+=== RUN   TestConsentSingleAndDisabled
+=== RUN   TestConsentSingleAndDisabled/empty
+    defaults_test.go:85: CSRF input not found in response 403: 没有可用协作目标，请联系管理员。
+--- FAIL: TestConsentSingleAndDisabled (0.00s)
+    --- FAIL: TestConsentSingleAndDisabled/empty (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.006s
+FAIL

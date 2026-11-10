@@ -1,0 +1,70 @@
+=== RUN   TestConsentNameGeneration
+=== RUN   TestConsentNameGeneration/english
+=== RUN   TestConsentNameGeneration/polyphonic
+=== RUN   TestConsentNameGeneration/empty
+=== RUN   TestConsentNameGeneration/symbols
+=== RUN   TestConsentNameGeneration/long
+=== RUN   TestConsentNameGeneration/chinese
+--- PASS: TestConsentNameGeneration (0.00s)
+    --- PASS: TestConsentNameGeneration/english (0.00s)
+    --- PASS: TestConsentNameGeneration/polyphonic (0.00s)
+    --- PASS: TestConsentNameGeneration/empty (0.00s)
+    --- PASS: TestConsentNameGeneration/symbols (0.00s)
+    --- PASS: TestConsentNameGeneration/long (0.00s)
+    --- PASS: TestConsentNameGeneration/chinese (0.00s)
+=== RUN   TestConsentSingleAndDisabled
+=== RUN   TestConsentSingleAndDisabled/absent
+=== RUN   TestConsentSingleAndDisabled/empty
+=== RUN   TestConsentSingleAndDisabled/other-tenant
+=== RUN   TestConsentSingleAndDisabled/single
+=== RUN   TestConsentSingleAndDisabled/invalid
+--- PASS: TestConsentSingleAndDisabled (0.00s)
+    --- PASS: TestConsentSingleAndDisabled/absent (0.00s)
+    --- PASS: TestConsentSingleAndDisabled/empty (0.00s)
+    --- PASS: TestConsentSingleAndDisabled/other-tenant (0.00s)
+    --- PASS: TestConsentSingleAndDisabled/single (0.00s)
+    --- PASS: TestConsentSingleAndDisabled/invalid (0.00s)
+=== RUN   TestConsentSingleTrustedIdentityAndReplay
+--- PASS: TestConsentSingleTrustedIdentityAndReplay (0.00s)
+=== RUN   TestConsentOverridesAndRevocation
+=== RUN   TestConsentOverridesAndRevocation/short-override
+=== RUN   TestConsentOverridesAndRevocation/target-override
+=== RUN   TestConsentOverridesAndRevocation/revoked
+=== RUN   TestConsentOverridesAndRevocation/removed
+=== RUN   TestConsentOverridesAndRevocation/config-absent
+=== RUN   TestConsentOverridesAndRevocation/empty-profile
+=== RUN   TestConsentOverridesAndRevocation/wrong-tenant
+--- PASS: TestConsentOverridesAndRevocation (0.00s)
+    --- PASS: TestConsentOverridesAndRevocation/short-override (0.00s)
+    --- PASS: TestConsentOverridesAndRevocation/target-override (0.00s)
+    --- PASS: TestConsentOverridesAndRevocation/revoked (0.00s)
+    --- PASS: TestConsentOverridesAndRevocation/removed (0.00s)
+    --- PASS: TestConsentOverridesAndRevocation/config-absent (0.00s)
+    --- PASS: TestConsentOverridesAndRevocation/empty-profile (0.00s)
+    --- PASS: TestConsentOverridesAndRevocation/wrong-tenant (0.00s)
+=== RUN   TestConsentMultipleSelectionBoundOnce
+--- PASS: TestConsentMultipleSelectionBoundOnce (0.00s)
+=== RUN   TestConsentSelectionRejectsChangedPolicy
+=== RUN   TestConsentSelectionRejectsChangedPolicy/outside
+=== RUN   TestConsentSelectionRejectsChangedPolicy/removed
+=== RUN   TestConsentSelectionRejectsChangedPolicy/revoked
+=== RUN   TestConsentSelectionRejectsChangedPolicy/expired
+=== RUN   TestConsentSelectionRejectsChangedPolicy/wrong-purpose
+=== RUN   TestConsentSelectionRejectsChangedPolicy/recent-outside
+=== RUN   TestConsentSelectionRejectsChangedPolicy/recent-error
+--- PASS: TestConsentSelectionRejectsChangedPolicy (0.00s)
+    --- PASS: TestConsentSelectionRejectsChangedPolicy/outside (0.00s)
+    --- PASS: TestConsentSelectionRejectsChangedPolicy/removed (0.00s)
+    --- PASS: TestConsentSelectionRejectsChangedPolicy/revoked (0.00s)
+    --- PASS: TestConsentSelectionRejectsChangedPolicy/expired (0.00s)
+    --- PASS: TestConsentSelectionRejectsChangedPolicy/wrong-purpose (0.00s)
+    --- PASS: TestConsentSelectionRejectsChangedPolicy/recent-outside (0.00s)
+    --- PASS: TestConsentSelectionRejectsChangedPolicy/recent-error (0.00s)
+=== RUN   TestConsentConcurrentCallback
+--- PASS: TestConsentConcurrentCallback (0.00s)
+=== RUN   TestConsentIssueExpiry
+--- PASS: TestConsentIssueExpiry (0.00s)
+=== RUN   TestConsentRollbackRunbook
+--- PASS: TestConsentRollbackRunbook (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.007s
