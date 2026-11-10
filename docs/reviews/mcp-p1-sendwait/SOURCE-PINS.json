@@ -1,0 +1,78 @@
+{
+  "internal/extseat/core_pg_test.go": {
+    "sha256": "987c23a640b58c798824aec60131446c5a844b2c63484780a1b1d59696e30951",
+    "blob": "cf6e7a7ca858a76a92818c42aa4264c70153f7e9"
+  },
+  "internal/extseat/inbox.go": {
+    "sha256": "45085983ce64875c9136e9918c6eb6e142d04543e5b68981718c4d1c734046d1",
+    "blob": "9bedc4b8cf35344affaba3f72f9b5bc617306889"
+  },
+  "internal/extseat/inbox_controls.go": {
+    "sha256": "89eefd03dc360cd82d46dfe014b077e0c1125c181f4235beabd1a20ba4a4b75e",
+    "blob": "7dc501d3fe937672fb1732fa6df0ea5251723088"
+  },
+  "internal/extseat/inbox_controls_pg_test.go": {
+    "sha256": "aa5ffff1ffb7257147cb9305d4fc78d47cb5477f7e49270af22c33032c082797",
+    "blob": "a76bb7bda542cd40cb8655ae7268bf4c71c3d3b9"
+  },
+  "internal/extseat/service.go": {
+    "sha256": "beac33080611d682cc4bcf421c6b8c5dfc36b65a8e4ebe07afb853cbb3f86737",
+    "blob": "3183eec18b9c7b8e6e5d117b9711deabe63cc830"
+  },
+  "internal/extshared/external_reply.go": {
+    "sha256": "6c675289cd3c83c065d3fd01c211270a3ccdbf22d8c9dde6f77e17ee2e5824be",
+    "blob": "dc9ea3a7c60db1a35d443d136427ba89214fdd71"
+  },
+  "internal/extshared/external_reply_test.go": {
+    "sha256": "c6824b02b83fcb330b7c761b3027e472c5e28bd53fbd32a41cc6740fca14973f",
+    "blob": "ce6f821e0f07427850a6724073a054526372544f"
+  },
+  "internal/extshared/sendwait.go": {
+    "sha256": "707903217624b0f117ccd333bfdba8e8896da0c267125c5198f2ed841f69222b",
+    "blob": "bdd02b2bd7865d53f4405d0744c5c44f1676c681"
+  },
+  "internal/m8/extseat.go": {
+    "sha256": "2446c80a42fc0b50be21d3d5f61ad6ef7e471c21e3d5cebf5bdfdd54ff2abff7",
+    "blob": "cf01daf938bdf8387b359889eef5cfbd03508e46"
+  },
+  "internal/m8/extseat_sender_e2e_test.go": {
+    "sha256": "297ab1fb2dfbf33187320604ffd045278f4e89db2834f785e93d62a3f7078d6b",
+    "blob": "3fcd73e1fb8c310b460820998b41f6efbfd9e1cb"
+  },
+  "internal/m8/reply_to_origin.go": {
+    "sha256": "148fe4603a89d1a86af017713bad7aaaa3427e0e531f88613e3da64886537607",
+    "blob": "3626772c289cb04e32ad138d7abbe2eb7750f262"
+  },
+  "internal/mcpgw/codec2025.go": {
+    "sha256": "8761a55237c9216a956236de977724b74bd7a778589de74ab80b890abb1e5c43",
+    "blob": "c5a8bd2e056fdb6ae2296bfb9f1a4c8318d04b8b"
+  },
+  "internal/mcpgw/codec2025_test.go": {
+    "sha256": "70748f2d408e45823878f8c8ec5c5a705b3cb141ac3695b0dc5aa53f309ed378",
+    "blob": "fd5bc824b658933d0694c762cfdb008af3066d09"
+  },
+  "internal/mcpgw/gateway.go": {
+    "sha256": "673a41e75e2714c0bde3dce3998be4ea14057fae9ac4c4e9a20619560b2461d3",
+    "blob": "721cb71a62bccfe3fa45a7a13a83a49b11b50d4d"
+  },
+  "internal/mcpgw/gateway_test.go": {
+    "sha256": "af21ae9bbb727a33a01a0085feb57e03a637c190b21473552d0b3a31293cd8a9",
+    "blob": "a7370ed68304be6956764e1deab43d14a4b812b7"
+  },
+  "internal/mcpgw/sendwait_budget_test.go": {
+    "sha256": "83563e6005ab532706d4c5160e693c704d6c3dc18b9c30956e07231aa623fe46",
+    "blob": "44ceb6c12aad2f442fb4138ce5ed6ebf75cdf8d3"
+  },
+  "internal/mcpgw/sendwait_test.go": {
+    "sha256": "588a1d65f709b78e771deed5bf3a8d92a253429df16ee66d1a0e65cdcbfaae32",
+    "blob": "bfd106e26f260db667e7829b4340642f3400fc9a"
+  },
+  "internal/mcpgw/tools.go": {
+    "sha256": "ede8329f1ed61f0f5926c7d6e8959463649794d17138bb460e9abb372f41c032",
+    "blob": "80bff994374aca723a7f330a2cf7a6f7cc08c60e"
+  },
+  "internal/tempgroup/service.go": {
+    "sha256": "6e9097bd01d9e53f6cba7e49d2f6ca847e9e7ee9744cdc549e6db5979455d8c6",
+    "blob": "d99540c96504ebd32e2c418285966645a670cb32"
+  }
+}

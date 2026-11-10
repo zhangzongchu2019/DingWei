@@ -14,3 +14,7 @@ SENDWAIT基于LEN最终tip，承接AG模式，不恢复暂停的S1。旧WaitMax=
 ## Timeout evidence
 
 cmd/workpulse/main.go public/internal Server只设ReadHeaderTimeout=5s，ReadTimeout/WriteTimeout均未设置；deploy/nginx-dingwei.conf三处proxy_read_timeout3600s。官方[Codex MCP文档](https://learn.chatgpt.com/docs/extend/mcp?surface=app)及[配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)确认mcp_servers.<id>.tool_timeout_sec默认60秒、可按服务器覆盖。故留出受理和响应预算，补59正式定服务端硬上限55秒，不提供放大到60的入口。预算依据是官方默认超时及受理/响应开销；本地50/60秒HTTP客户端下的55秒窗口探针结果见RESULT，不冒称桌面实测。补59给出prodops现网只读回执f5785ab69a6e：443 location / 的client_max_body_size64m、proxy_read_timeout3600s，cmjrt-wildcard.conf SHA前缀bbcf55c4；50443外层不可核。
+
+## 完整身份解析失败
+
+identity.Service.FullName在属主查询失败时会返回裸Agent名，不能据此判为不在精确关闭名单。ExternalAutoReplyAllowed现在对缺失名称或属主的输入先拒绝，生成端与出口共用该判断；原失败与修复后用例见RESULT。

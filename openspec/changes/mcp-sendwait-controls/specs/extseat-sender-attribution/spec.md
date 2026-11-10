@@ -50,7 +50,7 @@ clear MUST 要求confirm:true，否则拒绝；确认后 MUST 将本席queued及
 - THEN 持久投影分别含对应提示，客户端不能选择提示状态
 
 ### Requirement: SW-008 外部回程拒绝
-服务端 MUST 通过配置键提供默认关闭名单，缺省包含opus50tc2k.zzc、prodops.zzc；回程生成与外部路由出口 MUST 都按接收席位检查。拒绝时 MUST NOT 自动发出本轮内容，但仍允许接收方显式全名回信。PG/Console持久化 MUST 在方案确认后另行实现。
+服务端 MUST 通过配置键提供默认关闭名单，缺省包含opus50tc2k.zzc、prodops.zzc；回程生成与外部路由出口 MUST 都按接收席位检查。无法取得完整接收席位身份时 MUST 拒绝自动回程；拒绝时 MUST NOT 自动发出本轮内容，但仍允许接收方显式全名回信。PG/Console持久化 MUST 在方案确认后另行实现。
 
 #### Scenario: 出口防绕过
 - WHEN 已拒绝外部自动回程的席位产生自动回复信封并直接进入路由出口
