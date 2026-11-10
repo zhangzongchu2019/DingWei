@@ -146,7 +146,7 @@ func fixture(t *testing.T) (*Gateway, *seatsFake, *http.ServeMux) {
 	_, store := testDB(t)
 	now := time.Date(2026, 11, 6, 9, 0, 0, 0, time.UTC)
 	seats := &seatsFake{now: now}
-	g, e := New(Config{PublicOrigin: testOrigin, Resource: testOrigin + "/mcp", Seats: seats, Login: loginFake{}, Clients: clientsFake{client: Client{ID: clientID, Name: "test client", Redirects: []string{clientRedirect}, AuthMethod: "none"}}, Store: store, Now: func() time.Time { return now }})
+	g, e := New(Config{PublicOrigin: testOrigin, Resource: testOrigin + "/mcp", Seats: seats, Login: loginFake{}, Clients: clientsFake{client: Client{ID: clientID, Name: "test client", Redirects: []string{clientRedirect}, AuthMethod: "none", Grants: []string{"authorization_code"}, Responses: []string{"code"}}}, Store: store, Now: func() time.Time { return now }})
 	if e != nil {
 		t.Fatal(e)
 	}
