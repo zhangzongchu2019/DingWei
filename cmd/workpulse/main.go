@@ -370,7 +370,7 @@ func run(logger *slog.Logger) error {
 			return fmt.Errorf("r53 config: %w", err)
 		} else if r53On {
 			r53Cfg.publicOrigin = newplatCfg.publicOrigin
-			if err := wireR53(ctx, r53Cfg, pgTableChecker{pool: npPool}, &tempgroup.Service{Pool: npPool, Notifier: prefixHub}, r53Dependencies{mux: mux, hub: prefixHub, pool: npPool, appID: bs.FeishuAppID, appSecret: bs.FeishuAppSecret, trustedOrigins: newplatCfg.trustedOrigins}); err != nil {
+			if err := wireR53(ctx, r53Cfg, pgTableChecker{pool: npPool}, &tempgroup.Service{Pool: npPool, Notifier: prefixHub}, r53Dependencies{mux: mux, hub: prefixHub, pool: npPool, appID: bs.FeishuAppID, appSecret: bs.FeishuAppSecret, feishuGateway: feishuGateway, trustedOrigins: newplatCfg.trustedOrigins}); err != nil {
 				return fmt.Errorf("r53 wiring refused to start: %w", err)
 			}
 		}

@@ -41,11 +41,15 @@ func newFixture(t *testing.T) *fixture {
 	if e != nil {
 		t.Fatal(e)
 	}
+	copyDDL, e := os.ReadFile("../store/migrate/migrations/0111_extseat_feishu_copy.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
 	d, e := os.ReadFile("../store/migrate/migrations/0106_tempgroup.sql")
 	if e != nil {
 		t.Fatal(e)
 	}
-	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(a) + string(policy) + string(d)
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(a) + string(policy) + string(copyDDL) + string(d)
 	if _, e = p.Exec(ctx, access, ddl); e != nil {
 		t.Fatal(e)
 	}

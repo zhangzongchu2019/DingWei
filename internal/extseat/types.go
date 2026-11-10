@@ -68,6 +68,25 @@ type Delivery struct {
 	ExpectReply                      bool `json:"-"`
 }
 
+type FeishuCopyEvent struct {
+	ID, SeatID, Issuer, Subject string
+	ExternalName, TargetName    string
+	OwnerDisplayName            string
+	OwnerShortName              string
+	Direction, Body             string
+	CreatedAt, ExpiresAt        time.Time
+}
+
+const (
+	FeishuCopyExternalToInternal = "external_to_internal"
+	FeishuCopyInternalToExternal = "internal_to_external"
+)
+
+// FeishuCopyQueue 将抄送副本与主消息在同一 PG 事务中原子入队。
+type FeishuCopyQueue interface {
+	Enqueue(context.Context, repo.Tx, FeishuCopyEvent) error
+}
+
 type SendReceipt struct {
 	DeliveryID           string
 	Generation           int64

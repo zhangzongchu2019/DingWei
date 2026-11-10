@@ -70,8 +70,9 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
-	ExternalSeats ExternalSeats
-	TempGroups    *tempgroup.Service
+	ExternalSeats       ExternalSeats
+	ExternalCopyReplies ExternalCopyReplyLookup
+	TempGroups          *tempgroup.Service
 
 	stickyLanes         stickyLanes
 	stickyCleanupMu     sync.Mutex
@@ -1618,6 +1619,15 @@ func sessionNameRequestWarning(requested, keyID, ownerKey string) string {
 }
 
 func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (model.PrefixDispatchResult, error) {
+	if h.ExternalCopyReplies != nil && msg.FeishuReply != nil && msg.FeishuReply.Authenticated && msg.FeishuReply.ParentID != "" {
+		isCopy, err := h.ExternalCopyReplies.IsCopyReply(ctx, msg.BotChannelID, msg.FeishuReply.ParentID)
+		if err != nil {
+			return model.PrefixDispatchResult{}, err
+		}
+		if isCopy {
+			return model.PrefixDispatchResult{Matched: true}, nil
+		}
+	}
 	if result, handled, err := h.dispatchR9PMReply(ctx, msg, text); handled {
 		return result, err
 	}

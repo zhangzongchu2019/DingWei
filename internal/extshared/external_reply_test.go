@@ -30,3 +30,11 @@ func TestExternalReplyDefaultAndExactConfig(t *testing.T) {
 		t.Fatal("MCP_EXTERNAL_REPLY_CONFIG_FAIL_CLOSED")
 	}
 }
+
+func TestExternalSenderHeader(t *testing.T) {
+	got := ExternalSenderHeader("asist_AG3.zzc", "授权人张", "zzc", "target.zzc")
+	want := "【来自外部 Agent asist_AG3.zzc（MCP，授权人 授权人张）→ target.zzc；回复请发给 asist_AG3.zzc】"
+	if got != want {
+		t.Fatalf("MCP_COPY_HEADER_SHARED ExternalSenderHeader=%q want=%q", got, want)
+	}
+}

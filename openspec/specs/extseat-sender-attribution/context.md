@@ -21,3 +21,7 @@ Go 1.22 项目；E2E 使用 `pgtest.Pool` 建立隔离 PG schema、真实 extsea
 ## r56.4 后续实现位置
 
 同步等待和短名分发：internal/mcpgw/tools.go；只读收件、等待与确认清空：internal/extseat/inbox_controls.go；组只读复核：internal/tempgroup/service.go ReadGroup。自动回程配置与抬头：internal/extshared/external_reply.go；生成/出口保护：internal/m8/reply_to_origin.go 与 extseat.go。变更mcp-sendwait-controls，新增schema迁移为零。
+
+## r56.5 FEISHU-COPY
+
+㊿-补43、㊿-补44、㊿-补65：外部→内部和内部→外部消息在主 PG 事务内向独立 `np_extseat_feishu_copy` outbox 写入；worker 私聊抄送授权主体，复用 r56.4 `extshared.ExternalSenderHeader`，只截断副本，飞书 reply-parent 命中已投递抄送时不回流。迁移为 `internal/store/migrate/migrations/0111_extseat_feishu_copy.sql`，开关 `DW_MCP_FEISHU_COPY_ENABLED` 默认开启。

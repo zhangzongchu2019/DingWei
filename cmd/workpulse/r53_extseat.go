@@ -9,6 +9,7 @@ import (
 	"net/url"
 
 	"github.com/zhangzongchu2019/dingwei/internal/extseat"
+	"github.com/zhangzongchu2019/dingwei/internal/feishu"
 	"github.com/zhangzongchu2019/dingwei/internal/feishulogin"
 	"github.com/zhangzongchu2019/dingwei/internal/lifecycle"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
@@ -29,12 +30,14 @@ type r53Config struct {
 	tenantKey    string // DW_FEISHU_TEAM_TENANT_KEY：本团队飞书 tenant
 	publicOrigin string // 与新平台使用同一 DW_PUBLIC_ORIGIN 配置
 	resource     string // DW_MCP_RESOURCE：MCP 受保护资源标识（暂定 https://dw123.cmjrt.com/mcp）
+	copyDisabled bool   // DW_MCP_FEISHU_COPY_ENABLED=0 时关闭；缺省开启
 }
 
 var (
 	errR53NeedsNewplat  = errors.New("DW_R53_EXTSEAT=1 需要 DW_NEWPLAT=1（外部席位依赖新平台 PG）")
 	errR53TenantKey     = errors.New("DW_R53_EXTSEAT=1 需要 DW_FEISHU_TEAM_TENANT_KEY")
 	errR53Resource      = errors.New("DW_R53_EXTSEAT=1 需要 DW_MCP_RESOURCE（https 绝对地址，无查询串与片段）")
+	errR53CopySwitch    = errors.New("DW_MCP_FEISHU_COPY_ENABLED 仅接受 1（默认开启）或 0（关闭）")
 	errR53GroupsMissing = errors.New("r53: 临时编组消费者（D 路）尚未并入集成，拒绝启动外部席位")
 )
 
@@ -42,9 +45,14 @@ func r53ConfigFromEnv(newplatOn bool) (r53Config, bool, error) {
 	if strings.TrimSpace(os.Getenv("DW_R53_EXTSEAT")) != "1" {
 		return r53Config{}, false, nil
 	}
+	copyEnabled := strings.TrimSpace(os.Getenv("DW_MCP_FEISHU_COPY_ENABLED"))
+	if copyEnabled != "" && copyEnabled != "1" && copyEnabled != "0" {
+		return r53Config{}, true, errR53CopySwitch
+	}
 	cfg := r53Config{
-		tenantKey: strings.TrimSpace(os.Getenv("DW_FEISHU_TEAM_TENANT_KEY")),
-		resource:  strings.TrimSpace(os.Getenv("DW_MCP_RESOURCE")),
+		tenantKey:    strings.TrimSpace(os.Getenv("DW_FEISHU_TEAM_TENANT_KEY")),
+		resource:     strings.TrimSpace(os.Getenv("DW_MCP_RESOURCE")),
+		copyDisabled: copyEnabled == "0",
 	}
 	if !newplatOn {
 		return cfg, true, errR53NeedsNewplat
@@ -73,6 +81,7 @@ type r53Dependencies struct {
 	hub              *m8.Hub
 	pool             *repo.Pool
 	appID, appSecret string
+	feishuGateway    feishu.Gateway
 	oauth            feishulogin.OAuthClient
 	clients          mcpgw.ClientResolver
 	trustedOrigins   []trustedorigin.Origin // r52 DW_TRUSTED_ORIGINS，与 Hub 其余写入口同一份
@@ -108,7 +117,14 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 	}
 	seats := &extseat.Service{Pool: d.pool, Access: repo.SystemCtx(), Identity: d.hub.Identity,
 		Helpers: m8.HubHelperPresence{Hub: d.hub}, Groups: groups, TenantKey: cfg.tenantKey, Resource: cfg.resource,
-		OnBackgroundError: func(error) { log.Print("r53: external seat background operation failed") }}
+		OnBackgroundError:        func(error) { log.Print("r53: external seat background operation failed") },
+		OnFeishuCopyEnqueueError: func(error) { log.Print("r53: Feishu copy enqueue failed") }}
+	var copyQueue *extseat.PGFeishuCopyQueue
+	if !cfg.copyDisabled && d.feishuGateway != nil && d.hub.Repo != nil {
+		copyQueue = &extseat.PGFeishuCopyQueue{Pool: d.pool, Access: repo.SystemCtx()}
+		seats.FeishuCopies = copyQueue
+		d.hub.ExternalCopyReplies = copyQueue
+	}
 	enabled := registerOptionalMCPGateway(ctx, d.mux, d.pool, repo.SystemCtx(), cfg.resource, func(store mcpgw.Store) (mcpgw.Config, error) {
 		oauth := d.oauth
 		redirect := cfg.publicOrigin + "/mcp/oauth/feishu/callback"
@@ -133,6 +149,9 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 	})
 	if enabled {
 		d.hub.ExternalSeats = seats
+		if copyQueue != nil && !startR53FeishuCopyWorker(ctx, d, copyQueue) {
+			return errors.New("r53: Hub is shutting down")
+		}
 		if tg, ok := groups.(*tempgroup.Service); ok {
 			tg.Access = seats.Access
 			d.hub.TempGroups = tg
@@ -159,6 +178,43 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 		}()
 	}
 	return nil
+}
+
+func startR53FeishuCopyWorker(ctx context.Context, d r53Dependencies, queue *extseat.PGFeishuCopyQueue) bool {
+	done := func() {}
+	if jobs, ok := ctx.Value(runTasksKey{}).(*lifecycle.Group); ok {
+		var admitted bool
+		done, admitted = jobs.Enter("r53_feishu_copy_worker")
+		if !admitted {
+			return false
+		}
+	}
+	go func() {
+		defer done()
+		sender := func(sendCtx context.Context, event extseat.FeishuCopyEvent) (extseat.FeishuCopyReceipt, error) {
+			channels, err := d.hub.Repo.ListBotChannels(sendCtx)
+			if err != nil {
+				return extseat.FeishuCopyReceipt{}, err
+			}
+			botID := ""
+			for _, ch := range channels {
+				if ch.Active && ch.CanSend && ch.AppID == event.Issuer {
+					if botID != "" {
+						return extseat.FeishuCopyReceipt{}, errors.New("ambiguous feishu bot for authorized issuer")
+					}
+					botID = ch.ID
+				}
+			}
+			if botID == "" {
+				return extseat.FeishuCopyReceipt{}, errors.New("no active feishu bot matches authorized issuer")
+			}
+			requestID := feishu.DeriveRequestID("reply", event.ID, "mcp-feishu-copy")
+			messageID, err := feishu.SendPilotQuestion(sendCtx, d.feishuGateway, feishu.OutMessage{BotChannelID: botID, ToID: event.Subject, ToType: "personal", Text: extseat.FeishuCopyText(event), RequestID: requestID})
+			return extseat.FeishuCopyReceipt{BotChannelID: botID, MessageID: messageID}, err
+		}
+		_ = queue.Run(ctx, sender, func(error) { log.Print("r53: Feishu copy delivery failed") })
+	}()
+	return true
 }
 
 func validR53Origin(raw string) bool {

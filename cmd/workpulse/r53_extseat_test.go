@@ -19,6 +19,7 @@ func TestR53ConfigFromEnv(t *testing.T) {
 		resource string
 		newplat  bool
 		wantOn   bool
+		copyOff  string
 		wantErr  error
 	}{
 		{name: "off_by_default", on: "", tenant: "tk", resource: res, newplat: true},
@@ -31,20 +32,37 @@ func TestR53ConfigFromEnv(t *testing.T) {
 		{name: "resource_query_rejected", on: "1", tenant: "tk", resource: res + "?a=1", newplat: true, wantOn: true, wantErr: errR53Resource},
 		{name: "resource_fragment_rejected", on: "1", tenant: "tk", resource: res + "\x23x", newplat: true, wantOn: true, wantErr: errR53Resource},
 		{name: "ok", on: "1", tenant: "tk-2d31", resource: res, newplat: true, wantOn: true},
+		{name: "copy_disabled", on: "1", tenant: "tk-2d31", resource: res, newplat: true, wantOn: true, copyOff: "0"},
+		{name: "copy_switch_invalid", on: "1", tenant: "tk", resource: res, newplat: true, wantOn: true, copyOff: "false", wantErr: errR53CopySwitch},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			t.Setenv("DW_R53_EXTSEAT", c.on)
 			t.Setenv("DW_FEISHU_TEAM_TENANT_KEY", c.tenant)
 			t.Setenv("DW_MCP_RESOURCE", c.resource)
+			t.Setenv("DW_MCP_FEISHU_COPY_ENABLED", c.copyOff)
 			cfg, on, err := r53ConfigFromEnv(c.newplat)
 			if on != c.wantOn || !errors.Is(err, c.wantErr) {
 				t.Fatalf("on=%v err=%v want on=%v err=%v", on, err, c.wantOn, c.wantErr)
 			}
-			if c.name == "ok" && (cfg.tenantKey != "tk-2d31" || cfg.resource != res) {
+			if c.name == "ok" && (cfg.tenantKey != "tk-2d31" || cfg.resource != res || cfg.copyDisabled) {
 				t.Fatalf("cfg=%+v", cfg)
 			}
+			if c.name == "copy_disabled" && !cfg.copyDisabled {
+				t.Fatalf("copy switch not disabled: %+v", cfg)
+			}
 		})
+	}
+}
+
+func TestR53FeishuCopyEnabledByDefault(t *testing.T) {
+	t.Setenv("DW_R53_EXTSEAT", "1")
+	t.Setenv("DW_FEISHU_TEAM_TENANT_KEY", "team")
+	t.Setenv("DW_MCP_RESOURCE", "https://dw123.cmjrt.com/mcp")
+	t.Setenv("DW_MCP_FEISHU_COPY_ENABLED", "")
+	cfg, _, err := r53ConfigFromEnv(true)
+	if err != nil || cfg.copyDisabled {
+		t.Fatalf("MCP_COPY_DEFAULT_ENABLED cfg=%+v err=%v", cfg, err)
 	}
 }
 
