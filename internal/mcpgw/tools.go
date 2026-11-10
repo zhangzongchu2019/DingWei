@@ -62,8 +62,11 @@ func (g *Gateway) call(ctx context.Context, seat extseat.Seat, name string, raw 
 		if e := parseArgs(raw, &a); e != nil {
 			return nil, e
 		}
-		if a.To == "" || a.Body == "" || len(a.Body) > 256*1024 || a.ClientID == "" || len(a.ClientID) > 128 {
+		if a.To == "" || a.Body == "" || a.ClientID == "" || len(a.ClientID) > 128 {
 			return nil, errParams
+		}
+		if e := extshared.CheckMessageBody(a.Body); e != nil {
+			return nil, e
 		}
 		s, e := g.cfg.Seats.Send(ctx, seat, a.To, a.Body, a.ClientID, a.ExpectReply)
 		if e != nil {

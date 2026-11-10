@@ -14,8 +14,11 @@ import (
 // Send 原子受理＋续组＋outbox；SQLite结果不参与accepted的定义。
 func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, expectReplyArg ...bool) (SendReceipt, error) {
 	var result SendReceipt
+	if err := extshared.CheckMessageBody(body); err != nil {
+		return result, err
+	}
 	expectReply := len(expectReplyArg) > 0 && expectReplyArg[0]
-	if clientID == "" || len(clientID) > 256 || len(body) > 1024*1024 {
+	if clientID == "" || len(clientID) > 256 {
 		return result, extshared.ErrNotPermitted
 	}
 	now := s.now()
@@ -41,6 +44,13 @@ func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, e
 		}
 		if to != targetName {
 			return extshared.ErrTargetNotInAG
+		}
+		var ownerDisplay, ownerShort string
+		if e = tx.QueryRow(ctx, `SELECT display_name,short_name FROM np_user WHERE user_id_lc=$1`, fresh.OwnerLC).Scan(&ownerDisplay, &ownerShort); e != nil {
+			return e
+		}
+		if e = extshared.CheckMessageBody(extshared.ExternalSenderHeader(fresh.FullName, ownerDisplay, ownerShort, targetName) + "\n" + body); e != nil {
+			return e
 		}
 		var previous string
 		var receipt SendReceipt
@@ -86,7 +96,10 @@ func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, e
 // EnqueueFromHelper 由Hub认证后的helper身份调用；不从消息正文接受sender/AG。
 func (s *Service) EnqueueFromHelper(ctx context.Context, sourceAgentID, targetAgentID, messageID, body string) (SendReceipt, error) {
 	var result SendReceipt
-	if sourceAgentID == "" || messageID == "" || len(messageID) > 256 || len(body) > 1024*1024 {
+	if err := extshared.CheckMessageBody(body); err != nil {
+		return result, err
+	}
+	if sourceAgentID == "" || messageID == "" || len(messageID) > 256 {
 		return result, extshared.ErrNotPermitted
 	}
 	now := s.now()

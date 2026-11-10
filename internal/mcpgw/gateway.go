@@ -127,7 +127,7 @@ func method(w http.ResponseWriter, r *http.Request, want string) bool {
 	return false
 }
 func decode(w http.ResponseWriter, r *http.Request, v any) error {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	r.Body = http.MaxBytesReader(w, r.Body, extshared.MessageJSONMaxBytes)
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
 	if e := d.Decode(v); e != nil {
@@ -182,6 +182,10 @@ var errorRules = []struct {
 }
 
 func mapped(e error) (int, wireError) {
+	var large *extshared.BodyTooLargeError
+	if errors.As(e, &large) {
+		return 413, wireError{Code: 1013, Message: "body_too_large", Data: large}
+	}
 	for _, r := range errorRules {
 		if errors.Is(e, r.err) {
 			return r.status, wireError{Code: r.code, Message: r.name}
@@ -354,7 +358,7 @@ func (g *Gateway) rest(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, st, map[string]any{"error": we})
 		return
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	r.Body = http.MaxBytesReader(w, r.Body, extshared.MessageJSONMaxBytes)
 	raw, e := io.ReadAll(r.Body)
 	if e == nil {
 		var out any

@@ -3,6 +3,7 @@ package mcpgw
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"io"
 	"net/http"
 )
@@ -13,7 +14,7 @@ const CompatProtocolVersion = "2025-06-18"
 // route2025 only selects a codec. Each codec still decodes and authenticates its
 // own request; inspecting a version never grants a capability or a session.
 func (g *Gateway) route2025(w http.ResponseWriter, r *http.Request) bool {
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 1<<20))
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, extshared.MessageJSONMaxBytes))
 	if err != nil {
 		rpcError(w, 400, nil, wireError{Code: -32700, Message: "invalid JSON request"})
 		return true
