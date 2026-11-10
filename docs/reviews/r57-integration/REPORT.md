@@ -24,7 +24,7 @@
 | python3 tools/run-browser-regressions.py（无筛选） | 40/40，aggregate_rc=0 | raw/browsers.*、browser-receipt.txt |
 | DW_BROWSER_E2E=1 mcpgw 四个浏览器测试函数 | rc0，8 PASS / 0 FAIL / 0 SKIP（含4个子测试） | raw/mcpgw-browser.* |
 | OpenSpec 1.16.0 validate --all --strict --no-interactive | 35 passed / 0 failed | raw/strict.* |
-| git diff --check | rc0；证据追加后再查完整基线到最终 HEAD | raw/diff-check.* |
+| git diff --check | rc0；证据追加后 git diff --check 及 fabc996e..HEAD 均rc0 | raw/diff-check.* |
 
 各命令、cwd、起止 UTC、退出码和 Go 跳过用例名／条件保存在对应 result.json；环境白名单见 raw/gate-env.json。原始日志以 gzip 无损压缩，SHA256SUMS 记录压缩字节校验。canonical 完成于 2026-11-10T21:38:23Z，最后四门完成于 21:47:01Z。
 
@@ -35,3 +35,5 @@
 修前 canonical 在 helper 清单断言报 93≠92；main 对照 rc0。组长 ededa638501f 裁定为两侧各91→92、同文本自动合并导致的语义冲突。修正钉值93并核93唯一行、92 under tests/、两新增项齐全；同类计数三方审计无其他共同变更项。首红和 main 对照原文保留在 raw/superseded，不算本次通过读数。
 
 本次修正未改 Go，依组长明确指令沿用已绿 Go 门；其余门在4749e901f上完整重跑。后续仅追加证据与交接记录，产品／测试输入字节不变。不自验收，等待组长独立复核；不构建发布件、不部署、不重启、不改在线环境或真实数据库。
+
+额外扩大范围的诊断：`git diff --check 3b615785 HEAD` 在冻结候选自带的原始证据日志中报告空白问题；同命令截止 fabc996e 与本次证据提交的输出逐字一致。本次修正和证据增量 `git diff --check fabc996e HEAD` 为 rc0，裁定要求的最终 `git diff --check` 为 rc0。未改写既有原始日志以消除历史空白。该额外诊断及退出码见 raw/final-diff-audit.json。

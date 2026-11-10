@@ -1,0 +1,45 @@
+{
+  "required-final": {
+    "cmd": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "rc": 0,
+    "diagnostic_lines": 0
+  },
+  "since-fabc996e": {
+    "cmd": [
+      "git",
+      "diff",
+      "--check",
+      "fabc996e",
+      "HEAD"
+    ],
+    "rc": 0,
+    "diagnostic_lines": 0
+  },
+  "baseline-to-fabc996e": {
+    "cmd": [
+      "git",
+      "diff",
+      "--check",
+      "3b615785",
+      "fabc996e"
+    ],
+    "rc": 2,
+    "diagnostic_lines": 187
+  },
+  "baseline-to-evidence": {
+    "cmd": [
+      "git",
+      "diff",
+      "--check",
+      "3b615785",
+      "HEAD"
+    ],
+    "rc": 2,
+    "diagnostic_lines": 187
+  },
+  "baseline_diagnostics_unchanged": true
+}
