@@ -14,8 +14,11 @@ import (
 // Send 原子受理＋续组＋outbox；SQLite结果不参与accepted的定义。
 func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, expectReplyArg ...bool) (SendReceipt, error) {
 	var result SendReceipt
+	if err := extshared.CheckMessageBody(body); err != nil {
+		return result, err
+	}
 	expectReply := len(expectReplyArg) > 0 && expectReplyArg[0]
-	if clientID == "" || len(clientID) > 256 || len(body) > 1024*1024 {
+	if clientID == "" || len(clientID) > 256 {
 		return result, extshared.ErrNotPermitted
 	}
 	now := s.now()
@@ -41,6 +44,13 @@ func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, e
 		}
 		if to != targetName {
 			return extshared.ErrTargetNotInAG
+		}
+		var ownerDisplay, ownerShort string
+		if e = tx.QueryRow(ctx, `SELECT display_name,short_name FROM np_user WHERE user_id_lc=$1`, fresh.OwnerLC).Scan(&ownerDisplay, &ownerShort); e != nil {
+			return e
+		}
+		if e = extshared.CheckMessageBody(extshared.ExternalMessagePrefix(fresh.FullName, ownerDisplay, ownerShort, targetName, expectReply) + body); e != nil {
+			return e
 		}
 		var previous string
 		var receipt SendReceipt
@@ -86,7 +96,10 @@ func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, e
 // EnqueueFromHelper 由Hub认证后的helper身份调用；不从消息正文接受sender/AG。
 func (s *Service) EnqueueFromHelper(ctx context.Context, sourceAgentID, targetAgentID, messageID, body string) (SendReceipt, error) {
 	var result SendReceipt
-	if sourceAgentID == "" || messageID == "" || len(messageID) > 256 || len(body) > 1024*1024 {
+	if err := extshared.CheckMessageBody(body); err != nil {
+		return result, err
+	}
+	if sourceAgentID == "" || messageID == "" || len(messageID) > 256 {
 		return result, extshared.ErrNotPermitted
 	}
 	now := s.now()
@@ -156,6 +169,9 @@ func (s *Service) EnqueueFromHelper(ctx context.Context, sourceAgentID, targetAg
 }
 
 func (s *Service) claim(ctx context.Context, a Seat) ([]Delivery, error) {
+	return s.claimSince(ctx, a, nil)
+}
+func (s *Service) claimSince(ctx context.Context, a Seat, since *time.Time) ([]Delivery, error) {
 	var result []Delivery
 	now := s.now()
 	e := s.tx(ctx, func(tx repo.Tx) error {
@@ -168,7 +184,7 @@ func (s *Service) claim(ctx context.Context, a Seat) ([]Delivery, error) {
 			return e
 		}
 		var d Delivery
-		e = tx.QueryRow(ctx, `SELECT id,generation,source_name,target_name,body,created_at,expires_at FROM np_extseat_inbox WHERE seat_id=$1 AND ag_code=$2 AND ag_generation=$3 AND expires_at>$4 AND (state='queued' OR (state='leased' AND lease_until<=$4)) ORDER BY created_at,id LIMIT 1 FOR UPDATE`, fresh.AgentID, string(g.Code), g.Generation, now).Scan(&d.ID, &d.Generation, &d.From, &d.To, &d.Body, &d.CreatedAt, &d.ExpiresAt)
+		e = tx.QueryRow(ctx, `SELECT id,generation,source_name,target_name,body,created_at,expires_at FROM np_extseat_inbox WHERE seat_id=$1 AND ag_code=$2 AND ag_generation=$3 AND expires_at>$4 AND (state='queued' OR (state='leased' AND lease_until<=$4)) AND ($5::timestamptz IS NULL OR (created_at>=$5 AND source_agent_id=$6)) ORDER BY created_at,id LIMIT 1 FOR UPDATE`, fresh.AgentID, string(g.Code), g.Generation, now, since, g.Target.ID).Scan(&d.ID, &d.Generation, &d.From, &d.To, &d.Body, &d.CreatedAt, &d.ExpiresAt)
 		if errors.Is(e, sql.ErrNoRows) {
 			return nil
 		}

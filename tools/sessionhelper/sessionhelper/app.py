@@ -797,6 +797,7 @@ class SessionHelper:
             additional_headers=headers,
             ping_interval=20,
             ping_timeout=20,
+            max_size=16 << 20,  # Match Hub's unchanged frame cap; body plus JSON can exceed 1MiB.
             open_timeout=self.cfg.open_timeout,
             proxy=_proxy,
         ) as ws, _ForgetConnectionIdentity(self):

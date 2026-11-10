@@ -1,0 +1,20 @@
+package tempgroup
+
+import (
+ "testing"
+ "time"
+)
+func TestSendwaitProductionGroupsReadOnlyProbe(t *testing.T){
+ f:=newFixture(t);a:=f.issue("ha.alice")
+ if got,e:=f.seats.Check(f.ctx,a);e!=nil||len(got)!=0{t.Fatalf("PRODUCTION_GROUP_READONLY_WIRING empty check=%v err=%v",got,e)}
+ if got,e:=f.seats.WaitReply(f.ctx,a,f.now,110*time.Millisecond);e!=nil||len(got)!=0{t.Fatalf("PRODUCTION_GROUP_READONLY_WIRING empty wait=%v err=%v",got,e)}
+ if _,e:=f.seats.EnqueueFromHelper(f.ctx,"ha",a.AgentID,"production-readonly","中😀");e!=nil{t.Fatal(e)}
+ got,e:=f.seats.Check(f.ctx,a);if e!=nil||len(got)!=1||got[0].BodyBytes!=7{t.Fatalf("PRODUCTION_GROUP_READONLY_WIRING check=%v err=%v",got,e)}
+ messages,e:=f.seats.WaitReply(f.ctx,a,f.now,time.Second);if e!=nil||len(messages)!=1||messages[0].Body!="中😀"{t.Fatalf("PRODUCTION_GROUP_READONLY_WIRING wait=%v err=%v",messages,e)}
+ if e=f.seats.Ack(f.ctx,a,messages[0].ID,int(messages[0].Generation));e!=nil{t.Fatal(e)}
+ if _,e=f.seats.EnqueueFromHelper(f.ctx,"ha",a.AgentID,"production-clear","queued");e!=nil{t.Fatal(e)}
+ if _,e=f.seats.Clear(f.ctx,a,false);e==nil{t.Fatal("PRODUCTION_GROUP_READONLY_WIRING clear confirm")}
+ if ids,e:=f.seats.Clear(f.ctx,a,true);e!=nil||len(ids)!=1{t.Fatalf("PRODUCTION_GROUP_READONLY_WIRING clear=%v err=%v",ids,e)}
+ if ids,e:=f.seats.Clear(f.ctx,a,true);e!=nil||len(ids)!=0{t.Fatalf("PRODUCTION_GROUP_READONLY_WIRING clear retry=%v err=%v",ids,e)}
+ t.Log("PRODUCTION_GROUP_READONLY_WIRING_OK real tempgroup+extseat+PG")
+}

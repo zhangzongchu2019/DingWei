@@ -50,11 +50,19 @@ type Config struct {
 	Login        Login
 	Clients      ClientResolver
 	Store        Store
+	SendReplyMax time.Duration
 	Now          func() time.Time
 }
 type Gateway struct{ cfg Config }
 
 func New(cfg Config) (*Gateway, error) {
+	if cfg.SendReplyMax == 0 {
+		cfg.SendReplyMax = extshared.SendReplyMax
+	}
+	if cfg.SendReplyMax <= 0 || cfg.SendReplyMax > extshared.SendReplyMax {
+		return nil, errors.New("invalid send reply maximum")
+	}
+
 	u, e := url.Parse(cfg.PublicOrigin)
 	if e != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Path != "" || u.Opaque != "" {
 		return nil, errors.New("mcpgw: invalid public origin")
@@ -127,7 +135,7 @@ func method(w http.ResponseWriter, r *http.Request, want string) bool {
 	return false
 }
 func decode(w http.ResponseWriter, r *http.Request, v any) error {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	r.Body = http.MaxBytesReader(w, r.Body, extshared.MessageJSONMaxBytes)
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
 	if e := d.Decode(v); e != nil {
@@ -182,6 +190,10 @@ var errorRules = []struct {
 }
 
 func mapped(e error) (int, wireError) {
+	var large *extshared.BodyTooLargeError
+	if errors.As(e, &large) {
+		return 413, wireError{Code: 1013, Message: "body_too_large", Data: large}
+	}
 	for _, r := range errorRules {
 		if errors.Is(e, r.err) {
 			return r.status, wireError{Code: r.code, Message: r.name}
@@ -301,7 +313,7 @@ func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {
 	case "server/discover":
 		result = map[string]any{"resultType": "complete", "supportedVersions": []string{ProtocolVersion}, "capabilities": map[string]any{"tools": map[string]any{}}, "_meta": map[string]any{metaPrefix + "serverInfo": map[string]string{"name": "dingwei-external", "version": "r53"}}}
 	case "tools/list":
-		result = map[string]any{"resultType": "complete", "tools": toolDefinitions()}
+		result = map[string]any{"resultType": "complete", "tools": toolDefinitions(g.cfg.SendReplyMax)}
 	case "tools/call":
 		var data any
 		data, e = g.call(r.Context(), seat, q.Params.Name, q.Params.Arguments)
@@ -354,7 +366,7 @@ func (g *Gateway) rest(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, st, map[string]any{"error": we})
 		return
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	r.Body = http.MaxBytesReader(w, r.Body, extshared.MessageJSONMaxBytes)
 	raw, e := io.ReadAll(r.Body)
 	if e == nil {
 		var out any

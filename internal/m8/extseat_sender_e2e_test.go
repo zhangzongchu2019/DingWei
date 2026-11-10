@@ -1,9 +1,15 @@
 package m8
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -70,6 +76,7 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 		t.Fatalf("receiver websocket status=%d body=%s", status, body)
 	}
 	defer receiver.Close(websocket.StatusNormalClosure, "done")
+	receiver.SetReadLimit(16 << 20)
 	_ = readEnvelopeIncludingSystem(t, ctx, receiver)
 	waitSessionOnline(t, v.hub, "u_zzc", "kimi")
 	if err := writeEnvelope(ctx, receiver, model.Envelope{ID: "caps-extseat-e2e", To: "workpulse#u_zzc", Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}}); err != nil {
@@ -84,9 +91,27 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 		t.Fatalf("PG outbox projection did=%t err=%v", did, err)
 	}
 	delivered := readEnvelope(t, ctx, receiver)
-	wantHeader := externalSeatSenderHeader(seat.FullName, principal.DisplayName, "", targetFullName)
+	ackInbound := func(got model.Envelope) {
+		if e := writeEnvelope(ctx, receiver, model.Envelope{To: "workpulse#u_zzc", Meta: map[string]any{"type": "delivery_ack", "delivery_id": metaString(got.Meta, "delivery_id"), "state": "processed"}}); e != nil {
+			t.Fatal(e)
+		}
+	}
+	ackInbound(delivered)
+	readExpected := func(id string) model.Envelope {
+		for {
+			got := readEnvelope(t, ctx, receiver)
+			ackInbound(got)
+			if got.ID == id {
+				return got
+			}
+		}
+	}
+	if !strings.Contains(delivered.Body, "对方请求自动回程：本轮回复将原样发给该外部 Agent") {
+		t.Fatal("MCP_EXTERNAL_REPLY_WARNING_ENABLED")
+	}
+	wantHeader := strings.TrimSuffix(extshared.ExternalMessagePrefix(seat.FullName, principal.DisplayName, "", targetFullName, true), "\n")
 	if delivered.Body != wantHeader+"\n"+originalBody || metaString(delivered.Meta, "origin_kind") != "extseat" || metaString(delivered.Meta, "source_display_name") != seat.FullName || !metaBool(delivered.Meta, "source_external") || metaString(delivered.Meta, metaKeyReplyPolicy) != replyPolicyExpectReply {
-		t.Fatalf("EXTSEAT_EXPECT_REPLY_POLICY EXTSEAT_SENDER_HEADER_FROM_LOCKED_IDENTITY projected body/meta mismatch: body=%q meta=%#v", delivered.Body, delivered.Meta)
+		t.Fatalf("MCP_EXTERNAL_REPLY_WARNING_ENABLED EXTSEAT_EXPECT_REPLY_POLICY EXTSEAT_SENDER_HEADER_FROM_LOCKED_IDENTITY projected body/meta mismatch: body=%q meta=%#v", delivered.Body, delivered.Meta)
 	}
 
 	// Run the production completed-turn processor with the persisted source
@@ -104,6 +129,75 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	}
 	if replies[0].From != targetFullName || replies[0].To != seat.FullName || replies[0].Body != assistantReply {
 		t.Fatalf("EXTSEAT_REPLY_ROUTE_E2E reply identity/body=%+v want from=%s to=%s", replies[0], targetFullName, seat.FullName)
+	}
+
+	// Boundary matrix uses the production PG service, projector, AMR processor,
+	// explicit route, and the real send.py --file CLI through a local authenticated
+	// helper IPC bridge. Listener validation is exercised separately in Python.
+	for _, unit := range []string{"a", "中", "😀"} {
+		for _, delta := range []int{-1, 0, 1} {
+			makeBody := func(n int) string { return strings.Repeat(unit, n/len(unit)) + strings.Repeat("x", n%len(unit)) }
+			id := fmt.Sprintf("len-%x-%d", unit, delta)
+			inBody := makeBody(extshared.MessageBodyMaxBytes + delta - len(wantHeader) - 1)
+			receipt, err := seats.Send(ctx, seat, targetFullName, inBody, id, true)
+			if delta > 0 {
+				var large *extshared.BodyTooLargeError
+				if !errors.As(err, &large) {
+					t.Fatalf("MCP_LEN_OVERSIZE_ZERO_DELIVERY inbound err=%v", err)
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("MCP_LEN_EXACT_UTF8 send %v", err)
+				}
+				if did, e := seats.ProjectOne(ctx, HubExtseatProjector{Hub: v.hub}); !did || e != nil {
+					t.Fatalf("MCP_LEN_EXACT_UTF8 project %v", e)
+				}
+				got := readExpected(receipt.DeliveryID)
+				if got.Body != wantHeader+"\n"+inBody || len(got.Body) != extshared.MessageBodyMaxBytes+delta || got.ID != receipt.DeliveryID {
+					t.Fatal("MCP_LEN_EXACT_UTF8 projection altered")
+				}
+			}
+			for _, route := range []string{"send.py", "automatic"} {
+				body := makeBody(extshared.MessageBodyMaxBytes + delta)
+				if route == "send.py" {
+					err = sendLengthCLI(t, body, seat.FullName+"#u_"+seat.OwnerLC, func(to, body string) error {
+						return v.hub.RouteEnvelope(ctx, model.Envelope{ID: id + route, From: sessionAddress("kimi", "u_zzc"), To: to, Body: body})
+					})
+				} else {
+					// A real persisted inbound source requesting reply-origin.
+					autoReceipt, e := seats.Send(ctx, seat, targetFullName, "reply source", id+route, true)
+					if e != nil {
+						t.Fatal(e)
+					}
+					if did, e := seats.ProjectOne(ctx, HubExtseatProjector{Hub: v.hub}); !did || e != nil {
+						t.Fatal(e)
+					}
+					source := readExpected(autoReceipt.DeliveryID)
+					p.process(amrRouteJob{key: amrTurnKey{KeyID: "u_zzc", Session: "kimi", DeliveryID: source.ID, TurnID: id + route}, body: body})
+				}
+				if route == "send.py" && delta > 0 {
+					var large *extshared.BodyTooLargeError
+					if !errors.As(err, &large) {
+						t.Fatalf("MCP_LEN_OVERSIZE_ZERO_DELIVERY cli err=%v", err)
+					}
+				} else if route == "send.py" && err != nil {
+					t.Fatalf("MCP_LEN_EXACT_UTF8 cli %v", err)
+				}
+				got, e := seats.Wait(ctx, seat, 0)
+				if delta > 0 {
+					if e != nil || len(got) != 0 {
+						t.Fatalf("MCP_LEN_OVERSIZE_ZERO_DELIVERY %s count=%d err=%v", route, len(got), e)
+					}
+				} else {
+					if e != nil || len(got) != 1 || got[0].Body != body {
+						t.Fatalf("MCP_LEN_EXACT_UTF8 %s count=%d err=%v", route, len(got), e)
+					}
+					if e = seats.Ack(ctx, seat, got[0].ID, int(got[0].Generation)); e != nil {
+						t.Fatal(e)
+					}
+				}
+			}
+		}
 	}
 
 	// Omitted expect_reply persists the false default and the same completed
@@ -125,6 +219,49 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	if noReplyErr != nil || len(noReplies) != 0 {
 		t.Fatalf("expect_reply default unexpectedly returned: %+v err=%v", noReplies, noReplyErr)
 	}
+
+	// Seat refusal disables generated return even if reply policy asks for it.
+	t.Setenv(extshared.ExternalAutoReplyDisabledEnv, targetFullName)
+	blockedReceipt, e := seats.Send(ctx, seat, targetFullName, "sensitive source", "blocked-external-return", true)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if did, e := seats.ProjectOne(ctx, HubExtseatProjector{Hub: v.hub}); !did || e != nil {
+		t.Fatal(e)
+	}
+	blockedSource := readExpected(blockedReceipt.DeliveryID)
+	if !strings.Contains(blockedSource.Body, extshared.ExternalReplyDisabledWarning) || strings.Contains(blockedSource.Body, extshared.ExternalReplyWarning) {
+		t.Fatal("MCP_EXTERNAL_REPLY_WARNING_DISABLED")
+	}
+	capture := 0
+	p.routeEnvelope = func(context.Context, model.Envelope) error { capture++; return nil }
+	p.process(amrRouteJob{key: amrTurnKey{KeyID: "u_zzc", Session: "kimi", DeliveryID: blockedSource.ID, TurnID: "blocked-capture"}, body: "private analysis"})
+	if capture != 0 {
+		t.Fatal("MCP_EXTERNAL_REPLY_SWITCH")
+	}
+	p.routeEnvelope = nil
+	// A forged or alternate automatic-return path must pass the exit gate too.
+	forged := model.Envelope{ID: "blocked-bypass", From: sessionAddress("kimi", "u_zzc"), To: seat.FullName + "#u_" + seat.OwnerLC, Body: "private analysis", Meta: map[string]any{metaKeyReplyOriginReturn: true}}
+	if e = v.hub.RouteEnvelope(ctx, forged); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatalf("MCP_EXTERNAL_REPLY_BYPASS e=%v", e)
+	}
+	if ds, e := seats.Wait(ctx, seat, 0); e != nil || len(ds) != 0 {
+		t.Fatalf("MCP_EXTERNAL_REPLY_SWITCH count=%d e=%v", len(ds), e)
+	}
+	forged.ID = "explicit-manual"
+	forged.Meta = nil
+	forged.Body = "explicit reply"
+	if e = v.hub.RouteEnvelope(ctx, forged); e != nil {
+		t.Fatal(e)
+	}
+	manual, e := seats.Wait(ctx, seat, 0)
+	if e != nil || len(manual) != 1 || manual[0].Body != "explicit reply" {
+		t.Fatalf("MCP_EXTERNAL_MANUAL_REPLY_ALLOWED e=%v", e)
+	}
+	if e = seats.Ack(ctx, seat, manual[0].ID, int(manual[0].Generation)); e != nil {
+		t.Fatal(e)
+	}
+	t.Setenv(extshared.ExternalAutoReplyDisabledEnv, "")
 
 	// Two non-target Agents share an explicit ordinary group with the target.
 	// The first has the same owner; the second crosses owners. Both address the
@@ -183,4 +320,75 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	if err = row.Scan(&inboxRows); err != nil || inboxRows != inboxBefore {
 		t.Fatalf("EXTSEAT_REPLY_ONLY_FROM_TARGET inbox rows before=%d after=%d err=%v", inboxBefore, inboxRows, err)
 	}
+}
+
+// The bridge owns only test IPC state; never connects to an online helper.
+func sendLengthCLI(t *testing.T, body, to string, route func(string, string) error) error {
+	t.Helper()
+	dir, err := os.MkdirTemp("/tmp", "len-cli-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+	socket := filepath.Join(dir, "ipc.sock")
+	ln, err := net.Listen("unix", socket)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ln.Close()
+	file := filepath.Join(dir, "body.txt")
+	if err = os.WriteFile(file, []byte(body), 0600); err != nil {
+		t.Fatal(err)
+	}
+	result := make(chan error, 1)
+	go func() {
+		c, e := ln.Accept()
+		if e != nil {
+			result <- e
+			return
+		}
+		defer c.Close()
+		line, e := bufio.NewReader(c).ReadBytes('\n')
+		if e != nil {
+			result <- e
+			return
+		}
+		var msg struct{ To, Body string }
+		if e = json.Unmarshal(line, &msg); e != nil {
+			result <- e
+			return
+		}
+		e = route(msg.To, msg.Body)
+		result <- e
+		_ = json.NewEncoder(c).Encode(map[string]any{"ok": e == nil, "error": fmt.Sprint(e)})
+	}()
+	script, e := os.ReadFile("../../tools/sessionhelper/sessionhelper/send_dingwei.py")
+	if e != nil {
+		t.Fatal(e)
+	}
+	cli := filepath.Join(dir, "send.py")
+	if e = os.WriteFile(cli, script, 0700); e != nil {
+		t.Fatal(e)
+	}
+	cmd := exec.Command("python3", cli, to, "--file", file)
+	for _, v := range os.Environ() {
+		if !strings.HasPrefix(v, "SH_") && !strings.HasPrefix(v, "DINGWEI_") {
+			cmd.Env = append(cmd.Env, v)
+		}
+	}
+	cmd.Env = append(cmd.Env, "SH_MCP_IPC_SOCK="+socket)
+	output, runErr := cmd.CombinedOutput()
+	if len(body) > extshared.MessageBodyMaxBytes {
+		ln.Close()
+		<-result
+		if runErr == nil || !strings.Contains(string(output), "body_too_large") {
+			t.Fatalf("MCP_LEN_OVERSIZE_ZERO_DELIVERY CLI local rejection %v %s", runErr, output)
+		}
+		return &extshared.BodyTooLargeError{ActualBytes: len(body), LimitBytes: extshared.MessageBodyMaxBytes}
+	}
+	e = <-result
+	if e == nil && runErr != nil {
+		t.Fatalf("MCP_LEN_EXACT_UTF8 send.py failed %v %s", runErr, output)
+	}
+	return e
 }

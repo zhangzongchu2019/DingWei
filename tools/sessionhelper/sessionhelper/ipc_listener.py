@@ -23,7 +23,7 @@ import sys
 from typing import Any, Callable, Awaitable
 
 from .file_upload import UploadRejected
-from .ipc_limits import (IPC_REQUEST_MAX_BYTES, IPC_BODY_ONLY_MAX_BYTES,
+from .ipc_limits import (IPC_CONTROL_MAX_BYTES, MESSAGE_BODY_MAX_BYTES, IPC_REQUEST_MAX_BYTES, IPC_BODY_ONLY_MAX_BYTES,
                          SPEC_WRITE_IPC_MAX_BYTES, size_rejection, spec_body_rejection, ipc_size_rejection)
 
 
@@ -103,6 +103,8 @@ async def _read_one(reader: asyncio.StreamReader, timeout: float = 5.0, *,
         raise _IPCError(f"bad json: {exc}") from exc
     limit = (SPEC_WRITE_IPC_MAX_BYTES if allow_spec_write and isinstance(msg, dict)
              and msg.get("type") == "spec_write_v1" else request_limit)
+    if isinstance(msg, dict) and msg.get("type") not in (IPC_SEND, "spec_write_v1"):
+        limit = min(limit, IPC_CONTROL_MAX_BYTES)
     actual = len(line) - int(line.endswith(b"\n"))
     if actual > limit:
         raise _IPCSizeError(actual, limit)
@@ -238,7 +240,7 @@ async def _handle_connection(
         return
 
     to = (msg.get("to") or "").strip()
-    body = (msg.get("body") or "").strip()
+    body = (msg.get("body") or "")
     file_path = (msg.get("file") or "").strip()
     request_id = msg.get("request_id", "")
     meta = extract_reply_origin_meta(msg)
@@ -264,10 +266,13 @@ async def _handle_connection(
         except OSError as exc:
             await _write_one(writer, {"ok": False, "error": f"cannot read file: {exc}"})
             return
-        if len(body) > 64 * 1024:
-            await _write_one(writer, {"ok": False, "error": "file exceeds 64 KiB"})
-            return
 
+    try:
+        actual = len(body.encode("utf-8"))
+    except (AttributeError, UnicodeEncodeError):
+        return await _write_one(writer, {"ok": False, "error": "invalid_request"})
+    if actual > MESSAGE_BODY_MAX_BYTES:
+        return await _write_one(writer, {"ok": False, "error": "body_too_large", "actual_bytes": actual, "limit_bytes": MESSAGE_BODY_MAX_BYTES})
     try:
         outcome = await send_handler(to, body, meta)
     except Exception as exc:
@@ -293,7 +298,7 @@ async def _handle_body_send(writer, msg, send_handler, passed_fds):
         await _write_one(writer, {"ok": False, "error": "invalid_request"})
         return
     if (not isinstance(to, str) or not to.strip() or len(to) > 512 or
-            not isinstance(body, str) or not body.strip() or body_bytes > 65536 or
+            not isinstance(body, str) or not body.strip() or body_bytes > MESSAGE_BODY_MAX_BYTES or
             not isinstance(request_id, str) or len(request_id) > 128 or
             any(not isinstance(msg[k], str) or len(msg[k]) > 512 for k in REPLY_ORIGIN_KEYS if k in msg)):
         await _write_one(writer, {"ok": False, "error": "invalid_request"})

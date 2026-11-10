@@ -1,0 +1,317 @@
+{
+  "source_commit": "afe7ba13bd52ee7642599769074aed5659fc0acc",
+  "source_tree": "39a10097ef9eb32d086ec13fa204534bed15d775",
+  "base": "04cfb018b3578e68f25244aef52582509a41db5a",
+  "captured_at": "2026-11-10T06:47:48.706621+00:00",
+  "counts": {
+    "packages": {
+      "github.com/zhangzongchu2019/dingwei/internal/extshared": {
+        "pass": 6
+      },
+      "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+        "pass": 235,
+        "skip": 2
+      },
+      "github.com/zhangzongchu2019/dingwei/internal/extseat": {
+        "pass": 46
+      }
+    },
+    "m8": {
+      "github.com/zhangzongchu2019/dingwei/internal/m8": {
+        "pass": 1517,
+        "skip": 37
+      }
+    }
+  },
+  "skips": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserAuthorizeChainReachesLoopback"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserCallbackExplainsMissingTarget"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeviceClaimAcrossActualClientAndHub"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeviceClaimAcrossActualClientAndPostgres"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestChangeEvidenceConsoleBrowser"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestMuxProductHTTP1EightSeats"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsolePlatformPayloadDump"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLICancelAtomicBoundary/claude"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLICancelAtomicBoundary/codex"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLILateWireTerminal"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDesktopMCPRoundTripAcrossRealHub"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestFailureNoticeDriverTurnEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestGroupReplyMCP"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelper0232MixedVersionEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHostedBodySendAcrossRealHub"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestEnvelopeReadTimeoutEnvironmentChild"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestPilotQuestionAcrossRealHTTPHelperIPCMCP"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestPilotTemplateAcrossRealHTTPHelperIPCMCP"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestProjectContextAcrossRealHTTPHelperIPCMCP"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSessionHistoryTwentyAgentPublishP99"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSpecMCPEndToEnd"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestBlockerAcrossRealHTTPHelperIPCMCP"
+    }
+  ],
+  "mutations": [
+    {
+      "name": "characters",
+      "rc": 1,
+      "marker": "MCP_LEN_OVERSIZE_ZERO_DELIVERY",
+      "targeted_red": true
+    },
+    {
+      "name": "truncate-enqueue",
+      "rc": 1,
+      "marker": "MCP_LEN_OVERSIZE_ZERO_DELIVERY",
+      "targeted_red": true
+    },
+    {
+      "name": "helper65536",
+      "rc": 1,
+      "marker": "MCP_LEN_EXACT_UTF8",
+      "targeted_red": true
+    },
+    {
+      "name": "helper-frame-default",
+      "rc": 1,
+      "marker": "MCP_LEN_EXACT_UTF8",
+      "targeted_red": true
+    }
+  ],
+  "helper_package": {
+    "bytes": 259451,
+    "commit": "afe7ba13bd52ee7642599769074aed5659fc0acc",
+    "lock_sha256": "5ef8d5815239c3e165ae6ede14559fb545cce4f59cc144f49e20d8162453d2a0",
+    "sha256": "64800ab73b0a9dd792064b3401935660ec4d8532433dc8e801e3b102a0e3c902",
+    "tree": "39a10097ef9eb32d086ec13fa204534bed15d775",
+    "version": "0.2.3.34"
+  },
+  "raw_pins": {
+    "raw/packages.log.gz": {
+      "raw_bytes": 263677,
+      "raw_sha256": "f4ef9fad4d399873d991ec61e17392a50d955b22ec2381c6a726c061595ba4eb",
+      "gzip_sha256": "09648c4f4080367ba46329458387c8ee135d12737768c866097fb847707b7c5c"
+    },
+    "raw/m8.log.gz": {
+      "raw_bytes": 2758314,
+      "raw_sha256": "6a6d9ddf435c84c45c6a27c6b7d9c404820024ba605b012b099943e19edc3ddc",
+      "gzip_sha256": "f1c0595ae300da038db8c494947c015defdedf01fc70024b03c5ccdc8b70edfc"
+    },
+    "raw/canonical.log.gz": {
+      "raw_bytes": 1086833,
+      "raw_sha256": "9f3a2f97bcd661ebc41b86dc125a452972f81c61150fef62064eb49754b7f2ec",
+      "gzip_sha256": "b30ecebf3a27f9cdd65564b5daddd3004292d882a51515c31025a937b70affbb"
+    },
+    "raw/strict.log.gz": {
+      "raw_bytes": 1075,
+      "raw_sha256": "d319287568ee0b8f259f8b188dc7194ee45c004cb78e700fad374896c4818190",
+      "gzip_sha256": "b8fc16bafbc5558233ca03291079f3dd98a28ee6d36c9cf69b5c20580b8b6c79"
+    },
+    "raw/ws-before.log.gz": {
+      "raw_bytes": 2941,
+      "raw_sha256": "3cb562b82f50143a9babc1c1a1f8774fa15cbb0096b632705e4f8a3025639be7",
+      "gzip_sha256": "80503205956ba62de4baac3cc8f706551c241a01244abb494da4bbb7b41747d8"
+    },
+    "raw/ws-after.log.gz": {
+      "raw_bytes": 729,
+      "raw_sha256": "bded04ba0b7957847ea45ef16f07cc3ea9e007c1c67f22106ea127e3092e8d0a",
+      "gzip_sha256": "887b098a0436ba64c26ffbcae68c6e2b2de171bfc95441ce74de93bfd4406d33"
+    },
+    "raw/initial-REST-fail.log.gz": {
+      "raw_bytes": 908,
+      "raw_sha256": "40cd82397f78b352657ce4ce51f3f6aa513d86290d146b43decdd56e9bd9d5d1",
+      "gzip_sha256": "ac44e60ec2ef31c381af34a6c924e4733f5c05f7260720e8e63a350ea8c694e8"
+    },
+    "raw/initial-hub-fixture-readlimit.log.gz": {
+      "raw_bytes": 1296,
+      "raw_sha256": "c80a5954200ad7fe3b640cab36fdb7eacdb4af112d2e84e7bbf5de8740801c8a",
+      "gzip_sha256": "c946851c134e03726127e19fc2e4bc71259db34259c99171ba10b8d9158a5ec3"
+    },
+    "raw/initial-hub-fixture-address.log.gz": {
+      "raw_bytes": 1275,
+      "raw_sha256": "d9224ff59bd13a88c3528c389cbd5a39c291ba305cac55feac2e86490384df41",
+      "gzip_sha256": "de3acca24f47d3ccd7e3bfd922a8ff5044de17e9dece0966ba89167545baefb2"
+    },
+    "raw/initial-hub-fixture-ack.log.gz": {
+      "raw_bytes": 1774,
+      "raw_sha256": "2a711896a709acd680e4f72d53cd1d0b86ee9dc1c2ed14070a2a087952d09e00",
+      "gzip_sha256": "8ef2970b5e37673d22749348fb8588d719bb1d4416dfec3c64cbeb4b46c57978"
+    },
+    "raw/initial-m8-compile.log.gz": {
+      "raw_bytes": 1654,
+      "raw_sha256": "a274c2483e9d811d787ab7bec67c587ea76187f6e1047ee367f0d1dbf9ce1dbc",
+      "gzip_sha256": "ff9af1f23b29ac4c58aaff0434e5d7c689b17a728682a85f5e1432964e445144"
+    },
+    "raw/initial-helper-canonical.log.gz": {
+      "raw_bytes": 1161223,
+      "raw_sha256": "a92f54d08264fcf26702f6dcec88e33171bc58c9fb8ba9e80aae891d1f05827e",
+      "gzip_sha256": "34cf50c21e8742baba936dd494844499baad20c6e3de06a0101d8e57fd331f0b"
+    },
+    "raw/inventory-count-canonical.log.gz": {
+      "raw_bytes": 919093,
+      "raw_sha256": "4e76a08b6c625b217487e5421eec80bdabe9074b2a36d9c01d700b5e1e4b0f89",
+      "gzip_sha256": "0850daec7756646432266166a84d1e61c4a6769917a3e270ec6ec6f99fd97f55"
+    }
+  },
+  "canonical_results": [
+    {
+      "actual": 1132,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1132,
+      "files": 92,
+      "groups": [
+        1123,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1132,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1132,
+      "files": 92,
+      "groups": [
+        1123,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "helper_package_verification": {
+    "members": 62,
+    "verified": true,
+    "credential_exclusion_tests": "test_source_kit in both canonical profiles",
+    "distribution": "local source candidate only; no version allocation/upload/install/deploy"
+  }
+}

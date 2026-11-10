@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/zhangzongchu2019/dingwei/internal/extseat"
@@ -49,10 +48,16 @@ func (h *Hub) routeExternalSeat(ctx context.Context, keyID, name string, env mod
 	if !ok || source.Origin == identity.OriginExternal {
 		return true, extshared.ErrNotPermitted
 	}
+	if metaBool(env.Meta, metaKeyReplyOriginReturn) && !extshared.ExternalAutoReplyAllowed(h.Identity.FullName(ctx, source)) {
+		return true, extshared.ErrNotPermitted
+	}
 	// 此入口只允许普通通讯数据；特殊系统/任务/控制信封不开放给外部席位。
 	typ := metaString(env.Meta, "type")
 	if typ != "" && typ != "content" && typ != "agent_route" {
 		return true, extshared.ErrNotPermitted
+	}
+	if err := extshared.CheckMessageBody(env.Body); err != nil {
+		return true, err
 	}
 	r, e := h.ExternalSeats.EnqueueFromHelper(ctx, source.ID, target.ID, env.ID, env.Body)
 	if e != nil {
@@ -114,11 +119,7 @@ type HubExtseatProjector struct{ Hub *Hub }
 const externalSeatSenderHeaderFormat = "【来自外部 Agent %s（MCP，授权人 %s）→ %s；回复请发给 %s】"
 
 func externalSeatSenderHeader(sourceFullName, ownerDisplayName, ownerShortName, targetFullName string) string {
-	owner := strings.TrimSpace(ownerDisplayName)
-	if owner == "" {
-		owner = strings.TrimSpace(ownerShortName)
-	}
-	return fmt.Sprintf(externalSeatSenderHeaderFormat, sourceFullName, owner, targetFullName, sourceFullName)
+	return extshared.ExternalSenderHeader(sourceFullName, ownerDisplayName, ownerShortName, targetFullName)
 }
 
 func stripForgedExtseatAttribution(env *model.Envelope) {
@@ -150,7 +151,10 @@ func (p HubExtseatProjector) Project(ctx context.Context, d extseat.Delivery, ta
 	targetFullName := current.Name + "." + d.TargetOwnerShortName
 	key := AgentKeyID(current.OwnerLC)
 	name := current.NameLC()
-	env := model.Envelope{ID: d.ID, From: sessionAddress(source.NameLC(), AgentKeyID(source.OwnerLC)), To: sessionAddress(name, key), Body: externalSeatSenderHeader(sourceFullName, d.SourceOwnerDisplayName, d.SourceOwnerShortName, targetFullName) + "\n" + d.Body, TS: d.CreatedAt.Unix(), Meta: map[string]any{"type": "delivery", "delivery_id": d.ID, "delivery_version": 1, "ack_required": true, "source_message_id": d.ID, "origin_kind": "extseat", "source_display_name": sourceFullName, "source_external": true}}
+	env := model.Envelope{ID: d.ID, From: sessionAddress(source.NameLC(), AgentKeyID(source.OwnerLC)), To: sessionAddress(name, key), Body: extshared.ExternalMessagePrefix(sourceFullName, d.SourceOwnerDisplayName, d.SourceOwnerShortName, targetFullName, d.ExpectReply) + d.Body, TS: d.CreatedAt.Unix(), Meta: map[string]any{"type": "delivery", "delivery_id": d.ID, "delivery_version": 1, "ack_required": true, "source_message_id": d.ID, "origin_kind": "extseat", "source_display_name": sourceFullName, "source_external": true}}
+	if err := extshared.CheckMessageBody(env.Body); err != nil {
+		return err
+	}
 	if d.ExpectReply {
 		env.Meta[metaKeyReplyPolicy] = replyPolicyExpectReply
 	}

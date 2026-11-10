@@ -23,6 +23,7 @@ except ImportError:
 from sessionhelper import mcp_shim
 from sessionhelper.config import load_config
 from sessionhelper.ipc_listener import _handle_connection
+from sessionhelper.ipc_limits import MESSAGE_BODY_MAX_BYTES as L
 
 
 def setUpModule():
@@ -85,7 +86,7 @@ class HostedSendTest(unittest.TestCase):
 
     def test_invalid_shapes_and_unknown_metadata(self):
         for patch in ({'to': []}, {'body': {}}, {'body': ' '}, {'request_id': []}, {'kind': {}},
-                      {'extra': str(self.layout.auth)}, {'file': ''}, {'body': 'x' * 65537}, {'body': '\ud800'}):
+                      {'extra': str(self.layout.auth)}, {'file': ''}, {'body': 'x' * (L+1)}, {'body': '\ud800'}):
             payload = dict(type='mcp_send', to='peer', body='hi'); payload.update(patch)
             result = fx.raw_ipc(self.layout.sock, payload)
             self.assertFalse(result['ok'])
@@ -106,10 +107,10 @@ class HostedSendTest(unittest.TestCase):
         self.assertEqual(len(self.sent), 1, 'same listener recovers with one explicit valid call')
 
     def test_restricted_body_byte_boundary_including_json_overhead(self):
-        for body in ('x' * 65536, '中' * 21845):
+        for body in ('x' * L, '中' * (L//3)):
             self.assertTrue(fx.raw_ipc(self.layout.sock, dict(type='mcp_send', to='peer', body=body))['ok'])
         self.assertEqual(len(self.sent), 2)
-        self.assertFalse(fx.raw_ipc(self.layout.sock, dict(type='mcp_send', to='peer', body='中' * 21846))['ok'])
+        self.assertFalse(fx.raw_ipc(self.layout.sock, dict(type='mcp_send', to='peer', body='中' * (L//3+1)))['ok'])
         self.assertEqual(len(self.sent), 2)
 
     def test_upload_stays_available_and_secret_upload_stays_denied(self):

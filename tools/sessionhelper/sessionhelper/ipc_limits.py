@@ -1,10 +1,12 @@
 """Byte limits shared by the MCP shim and the local IPC receiver."""
 import json
 
-IPC_REQUEST_MAX_BYTES = 65536  # JSON line, excluding its terminating newline.
-IPC_BODY_ONLY_MAX_BYTES = 1024 * 1024 - 1  # Preserve the old 1 MiB receive cap including newline.
+IPC_CONTROL_MAX_BYTES = 65536  # Non-message operations retain their existing frame budget.
+MESSAGE_BODY_MAX_BYTES = 1 << 20  # UTF-8 business body, no truncation.
+IPC_REQUEST_MAX_BYTES = 6 * MESSAGE_BODY_MAX_BYTES + (64 << 10)  # Worst JSON escaping + metadata, excluding newline.
+IPC_BODY_ONLY_MAX_BYTES = IPC_REQUEST_MAX_BYTES
 SPEC_BODY_MAX_BYTES = 2 * 1024 * 1024  # Match Hub's HTTP request-body limit.
-SPEC_WRITE_IPC_MAX_BYTES = SPEC_BODY_MAX_BYTES + IPC_REQUEST_MAX_BYTES
+SPEC_WRITE_IPC_MAX_BYTES = max(SPEC_BODY_MAX_BYTES + (64 << 10), IPC_REQUEST_MAX_BYTES)
 
 
 def encode_spec_body(body):

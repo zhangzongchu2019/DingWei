@@ -60,6 +60,26 @@ func (testGroups) RecheckGroup(ctx context.Context, tx repo.Tx, a Seat, now time
 	}
 	return g, nil
 }
+func (testGroups) ReadGroup(ctx context.Context, tx repo.Tx, a Seat, now time.Time) (Group, error) {
+	g := Group{Code: a.Group, Generation: a.Generation}
+	var target string
+	var active bool
+	e := tx.QueryRow(ctx, `SELECT target,expires_at,active FROM test_groups WHERE code=$1 AND generation=$2 AND external=$3`, string(a.Group), a.Generation, a.AgentID).Scan(&target, &g.ExpiresAt, &active)
+	if errors.Is(e, sql.ErrNoRows) || !active || !now.Before(g.ExpiresAt) {
+		return g, extshared.ErrGroupDissolved
+	}
+	if e != nil {
+		return g, e
+	}
+	e = tx.QueryRow(ctx, `SELECT id,owner_lc,name,origin,state FROM np_agent WHERE id=$1`, target).Scan(&g.Target.ID, &g.Target.OwnerLC, &g.Target.Name, &g.Target.Origin, &g.Target.State)
+	if e != nil {
+		return g, e
+	}
+	if g.Target.State != identity.AgentActive {
+		return g, extshared.ErrTargetNotInAG
+	}
+	return g, nil
+}
 func (testGroups) TouchGroup(ctx context.Context, tx repo.Tx, g Group, key string, kind extshared.GroupUseKind, at time.Time) error {
 	if kind != extshared.UseAcceptedSend && kind != extshared.UseFirstReceivedAck {
 		return extshared.ErrNotPermitted
