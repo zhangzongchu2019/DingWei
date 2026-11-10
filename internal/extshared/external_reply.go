@@ -12,6 +12,10 @@ const ExternalReplyDisabledWarning = "对方请求自动回程，本席位未开
 // The list is server configuration, never client-controlled envelope metadata.
 // Sensitive leader seat is disabled by default; the others retain opt-in reply.
 func ExternalAutoReplyAllowed(targetFullName string) bool {
+	name, owner, ok := strings.Cut(targetFullName, ".")
+	if !ok || strings.TrimSpace(name) == "" || strings.TrimSpace(owner) == "" {
+		return false
+	}
 	value, configured := os.LookupEnv(ExternalAutoReplyDisabledEnv)
 	if !configured {
 		value = "opus50tc2k.zzc,prodops.zzc"

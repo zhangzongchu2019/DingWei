@@ -15,6 +15,9 @@ func TestExternalReplyDefaultAndExactConfig(t *testing.T) {
 			os.Unsetenv(ExternalAutoReplyDisabledEnv)
 		}
 	}()
+	if ExternalAutoReplyAllowed("opus50tc2k") || ExternalAutoReplyAllowed("") || ExternalAutoReplyAllowed("opus50tc2k.") {
+		t.Fatal("MCP_EXTERNAL_REPLY_IDENTITY_FAIL_CLOSED")
+	}
 	if ExternalAutoReplyAllowed("opus50tc2k.zzc") || ExternalAutoReplyAllowed("prodops.zzc") || !ExternalAutoReplyAllowed("worker.zzc") {
 		t.Fatal("MCP_EXTERNAL_REPLY_DEFAULT")
 	}
