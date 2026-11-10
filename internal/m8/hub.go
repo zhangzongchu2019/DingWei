@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"github.com/zhangzongchu2019/dingwei/internal/tempgroup"
 	"html"
 	"log"
@@ -3734,6 +3735,12 @@ func (h *Hub) writeDeliveryFailure(ctx context.Context, c *sessionClient, origin
 	h.deliveryNotices[dedupKey] = now
 	h.mu.Unlock()
 	env := deliveryFailureEnvelopeWithOriginal(c, original.ID, target, routeErr.Error(), original.Body, now)
+	var large *extshared.BodyTooLargeError
+	if errors.As(routeErr, &large) {
+		env.Meta["error_code"] = "body_too_large"
+		env.Meta["actual_bytes"] = large.ActualBytes
+		env.Meta["limit_bytes"] = large.LimitBytes
+	}
 	if errors.Is(routeErr, errGroupAgentNotFound) {
 		logFeishuDispatchRejected(h.deliveryFailureLogReason(routeErr, target), "", target, "")
 		env.Body = strings.Replace(env.Body, routeErr.Error(), deliveryFailureNoticeReason(routeErr), 1)
