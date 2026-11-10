@@ -340,7 +340,7 @@ func sendLengthCLI(t *testing.T, body, to string, route func(string, string) err
 		}
 		return &extshared.BodyTooLargeError{ActualBytes: len(body), LimitBytes: extshared.MessageBodyMaxBytes}
 	}
-	e := <-result
+	e = <-result
 	if e == nil && runErr != nil {
 		t.Fatalf("MCP_LEN_EXACT_UTF8 send.py failed %v %s", runErr, output)
 	}
