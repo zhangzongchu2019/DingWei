@@ -14,6 +14,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/lifecycle"
 	"github.com/zhangzongchu2019/dingwei/internal/m8"
 	"github.com/zhangzongchu2019/dingwei/internal/mcpgw"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 	"os"
 	"strings"
@@ -191,30 +192,34 @@ func startR53FeishuCopyWorker(ctx context.Context, d r53Dependencies, queue *ext
 	}
 	go func() {
 		defer done()
-		sender := func(sendCtx context.Context, event extseat.FeishuCopyEvent) (extseat.FeishuCopyReceipt, error) {
-			channels, err := d.hub.Repo.ListBotChannels(sendCtx)
-			if err != nil {
-				return extseat.FeishuCopyReceipt{}, err
-			}
-			botID := ""
-			for _, ch := range channels {
-				if ch.Active && ch.CanSend && ch.AppID == event.Issuer {
-					if botID != "" {
-						return extseat.FeishuCopyReceipt{}, errors.New("ambiguous feishu bot for authorized issuer")
-					}
-					botID = ch.ID
-				}
-			}
-			if botID == "" {
-				return extseat.FeishuCopyReceipt{}, errors.New("no active feishu bot matches authorized issuer")
-			}
-			requestID := feishu.DeriveRequestID("reply", event.ID, "mcp-feishu-copy")
-			messageID, err := feishu.SendPilotQuestion(sendCtx, d.feishuGateway, feishu.OutMessage{BotChannelID: botID, ToID: event.Subject, ToType: "personal", Text: extseat.FeishuCopyText(event), RequestID: requestID})
-			return extseat.FeishuCopyReceipt{BotChannelID: botID, MessageID: messageID}, err
-		}
+		sender := newR53FeishuCopySender(d.hub.Repo.ListBotChannels, d.feishuGateway)
 		_ = queue.Run(ctx, sender, func(error) { log.Print("r53: Feishu copy delivery failed") })
 	}()
 	return true
+}
+
+func newR53FeishuCopySender(listBotChannels func(context.Context) ([]model.BotChannel, error), gateway feishu.Gateway) extseat.FeishuCopySender {
+	return func(sendCtx context.Context, event extseat.FeishuCopyEvent) (extseat.FeishuCopyReceipt, error) {
+		channels, err := listBotChannels(sendCtx)
+		if err != nil {
+			return extseat.FeishuCopyReceipt{}, err
+		}
+		botID := ""
+		for _, ch := range channels {
+			if ch.Active && ch.CanSend && ch.AppID == event.Issuer {
+				if botID != "" {
+					return extseat.FeishuCopyReceipt{}, errors.New("ambiguous feishu bot for authorized issuer")
+				}
+				botID = ch.ID
+			}
+		}
+		if botID == "" {
+			return extseat.FeishuCopyReceipt{}, errors.New("no active feishu bot matches authorized issuer")
+		}
+		requestID := feishu.DeriveRequestID("reply", event.ID, "mcp-feishu-copy")
+		messageID, err := feishu.SendPilotQuestion(sendCtx, gateway, feishu.OutMessage{BotChannelID: botID, ToID: event.Subject, ToType: "personal", Text: extseat.FeishuCopyText(event), RequestID: requestID})
+		return extseat.FeishuCopyReceipt{BotChannelID: botID, MessageID: messageID}, err
+	}
 }
 
 func validR53Origin(raw string) bool {

@@ -30,6 +30,16 @@ CASES = [
     ("enqueue-failure-blocks-main", "internal/extseat/inbox.go",
      "ROLLBACK TO SAVEPOINT extseat_feishu_copy_enqueue", "ROLLBACK",
      "./internal/extseat", "TestCorePG/FeishuCopyEnqueueFailureIsolatedFromPrimarySend", "MCP_COPY_FAILURE_ISOLATION"),
+    ("copy-request-id-removed", "cmd/workpulse/r53_extseat.go",
+     'requestID := feishu.DeriveRequestID("reply", event.ID, "mcp-feishu-copy")',
+     'requestID := ""',
+     "./cmd/workpulse", "TestR53FeishuCopySenderIdempotencyRecipient", "MCP_COPY_REQUEST_ID"),
+    ("copy-sent-to-target-name", "cmd/workpulse/r53_extseat.go",
+     "ToID: event.Subject", "ToID: event.TargetName",
+     "./cmd/workpulse", "TestR53FeishuCopySenderIdempotencyRecipient", "MCP_COPY_RECIPIENT"),
+    ("copy-can-send-bypass", "cmd/workpulse/r53_extseat.go",
+     "ch.Active && ch.CanSend && ch.AppID == event.Issuer", "ch.Active && ch.AppID == event.Issuer",
+     "./cmd/workpulse", "TestR53FeishuCopySenderRejectsUnusableChannels", "MCP_COPY_CHANNEL_CAN_SEND"),
 ]
 BUILD_ERRORS = ("build failed", "syntax error", "undefined:", "expected '", "cannot use ")
 

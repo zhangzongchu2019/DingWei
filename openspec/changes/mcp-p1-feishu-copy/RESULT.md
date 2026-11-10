@@ -15,14 +15,16 @@
 | `HUB_TEST_PG_STRICT=1 go test -p 1 -timeout 10m ./internal/store/migrate` | PASS |
 | `HUB_TEST_PG_STRICT=1 go test -p 1 -count=1 -timeout 10m ./internal/extseat` | PASS |
 | 2026-11-10（完成于 10:17Z），`HUB_TEST_PG_STRICT=1 go test -p 1 -count=30 -run '^TestFeishuCopyOutboxBothDirectionsAndReplySuppressionPG$' -timeout 10m ./internal/extseat` | PASS；30/30 次，rc=0。夹具分别将 out/in 的 created_at 设为 now()-2s/now()-1s；每次投影后均断言状态为 sent，意外事件仍由替身发送器报错。 |
-| FEISHU-COPY mutations | 7/7 语义判红；每刀匹配指定标记，编译失败未计红 |
+| `go test -p 1 -count=1 ./cmd/workpulse -run '^TestR53FeishuCopySender'` | PASS；sender 通道选择、个人收件、稳定重试 ID、不同事件 ID及无匹配/歧义/不可发送通道拒绝用例均通过，rc=0 |
+| `python3 tests/mcp-p1-feishu-copy/mutations.py` | 10/10 语义判红；新增 RequestID、错误收件人与绕过 CanSend 三刀分别命中 `MCP_COPY_REQUEST_ID`、`MCP_COPY_RECIPIENT`、`MCP_COPY_CHANNEL_CAN_SEND`；编译失败未计红 |
+| `PATH=/tmp/lockvenv/bin:$PATH scripts/run-build-tests.sh` | PASS；runtime-lock venv Python 3.12.3，`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`。首次系统 Python 调用因 helper inventory discovery 失败；锁定 venv 重跑通过。 |
 | `scripts/run-build-tests.sh` | PASS；`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2` |
 | OpenSpec 1.16.0 `validate --all --strict` | PASS；34/34 |
 | `git diff --check` | PASS（提交前复核） |
 
 ## 变异刀
 
-共享来源抬头、20,000 字节上限、只读与原文完整提示、反向方向标签、reply-parent 回流抑制、默认开启开关、副本入队失败不影响主事务：7/7 语义判红。
+共享来源抬头、20,000 字节上限、只读与原文完整提示、反向方向标签、reply-parent 回流抑制、默认开启开关、副本入队失败不影响主事务、Feishu RequestID稳定且与事件关联、收件人为认证 Subject 而非内部目标、通道必须 CanSend：10/10 语义判红。
 
 ## 交付坐标
 
