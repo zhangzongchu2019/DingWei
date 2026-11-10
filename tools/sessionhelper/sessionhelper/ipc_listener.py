@@ -23,7 +23,7 @@ import sys
 from typing import Any, Callable, Awaitable
 
 from .file_upload import UploadRejected
-from .ipc_limits import (MESSAGE_BODY_MAX_BYTES, IPC_REQUEST_MAX_BYTES, IPC_BODY_ONLY_MAX_BYTES,
+from .ipc_limits import (IPC_CONTROL_MAX_BYTES, MESSAGE_BODY_MAX_BYTES, IPC_REQUEST_MAX_BYTES, IPC_BODY_ONLY_MAX_BYTES,
                          SPEC_WRITE_IPC_MAX_BYTES, size_rejection, spec_body_rejection, ipc_size_rejection)
 
 
@@ -103,6 +103,8 @@ async def _read_one(reader: asyncio.StreamReader, timeout: float = 5.0, *,
         raise _IPCError(f"bad json: {exc}") from exc
     limit = (SPEC_WRITE_IPC_MAX_BYTES if allow_spec_write and isinstance(msg, dict)
              and msg.get("type") == "spec_write_v1" else request_limit)
+    if isinstance(msg, dict) and msg.get("type") not in (IPC_SEND, "spec_write_v1"):
+        limit = min(limit, IPC_CONTROL_MAX_BYTES)
     actual = len(line) - int(line.endswith(b"\n"))
     if actual > limit:
         raise _IPCSizeError(actual, limit)

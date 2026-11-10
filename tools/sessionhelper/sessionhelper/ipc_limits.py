@@ -1,6 +1,7 @@
 """Byte limits shared by the MCP shim and the local IPC receiver."""
 import json
 
+IPC_CONTROL_MAX_BYTES = 65536  # Non-message operations retain their existing frame budget.
 MESSAGE_BODY_MAX_BYTES = 1 << 20  # UTF-8 business body, no truncation.
 IPC_REQUEST_MAX_BYTES = 6 * MESSAGE_BODY_MAX_BYTES + (64 << 10)  # Worst JSON escaping + metadata, excluding newline.
 IPC_BODY_ONLY_MAX_BYTES = IPC_REQUEST_MAX_BYTES

@@ -15,7 +15,7 @@ from unittest.mock import patch
 
 from sessionhelper import dingwei_file, ipc_listener, mcp_shim
 from sessionhelper.app import SessionHelper
-from sessionhelper.ipc_limits import (IPC_REQUEST_MAX_BYTES, SPEC_BODY_MAX_BYTES,
+from sessionhelper.ipc_limits import (MESSAGE_BODY_MAX_BYTES, IPC_REQUEST_MAX_BYTES, SPEC_BODY_MAX_BYTES,
                                       encode_spec_body)
 
 
@@ -155,17 +155,15 @@ class SpecWriteIPCLimit(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(local["result"], remote["result"])
         self.assertEqual(self.http_bodies, [])
 
-    async def test_non_spec_keeps_exact_64k_boundary(self):
+    async def test_message_body_limit_is_independent_of_json_frame(self):
         async with self.ipc() as path:
-            for size in (IPC_REQUEST_MAX_BYTES, IPC_REQUEST_MAX_BYTES + 1):
-                payload = {"type": "mcp_send", "to": "fixture", "body": ""}
-                payload["body"] = "x" * (size - len(json.dumps(payload).encode()))
-                result = await self.raw_request(path, payload)
-                if size == IPC_REQUEST_MAX_BYTES:
-                    self.assertTrue(result["ok"])
-                    self.assertTrue(result["outcome"]["sent"])
+            for size in (MESSAGE_BODY_MAX_BYTES, MESSAGE_BODY_MAX_BYTES + 1):
+                result = await self.raw_request(path, {"type": "mcp_send", "to": "fixture", "body": "x" * size})
+                if size == MESSAGE_BODY_MAX_BYTES:
+                    self.assertTrue(result["ok"], "MCP_LEN_EXACT_UTF8")
                 else:
-                    self.assert_rejected(result, size, IPC_REQUEST_MAX_BYTES)
+                    self.assertFalse(result["ok"], "MCP_LEN_OVERSIZE_ZERO_DELIVERY")
+                    self.assertEqual(result["error"], "body_too_large")
         self.assertEqual(len(self.sends), 1)
         self.assertEqual(self.http_bodies, [])
 
@@ -176,9 +174,12 @@ class SpecWriteIPCLimit(unittest.IsolatedAsyncioTestCase):
                    if not key.startswith(("SH_", "DINGWEI_", "DW_", "DATAD_"))
                    and key != "PYTHONPATH"}
             env["SH_MCP_IPC_SOCK"] = path
-            proc = await asyncio.to_thread(subprocess.run,
-                [sys.executable, str(Path(ipc_listener.__file__).with_name("send_dingwei.py")),
-                 "someone.zzc", "中" * 23000], env=env, capture_output=True, text=True, timeout=5)
+            with tempfile.TemporaryDirectory() as tmp:
+                body_file = Path(tmp) / 'body.txt'
+                body_file.write_bytes(b'x' * (MESSAGE_BODY_MAX_BYTES + 1))
+                proc = await asyncio.to_thread(subprocess.run,
+                    [sys.executable, str(Path(ipc_listener.__file__).with_name("send_dingwei.py")),
+                     "someone.zzc", "--file", str(body_file)], env=env, capture_output=True, text=True, timeout=5)
         self.assertEqual(self.sends, [])
         self.assertNotEqual(proc.returncode, 0, "OVERSIZE_SEND_FALSE_SUCCESS")
         self.assertIn("发送失败", proc.stderr)
