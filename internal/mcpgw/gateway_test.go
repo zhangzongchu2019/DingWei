@@ -285,15 +285,104 @@ func TestDiscoveryWithoutInitializeAndNoExtraCapabilities(t *testing.T) {
 			t.Fatalf("%d %s", w.Code, w.Body)
 		}
 		if method == "tools/list" {
+			var envelope map[string]any
+			if err := json.Unmarshal(w.Body.Bytes(), &envelope); err != nil {
+				t.Fatalf("MCP_LIST_SCHEMA: invalid JSON: %v", err)
+			}
+			result, ok := envelope["result"].(map[string]any)
+			if !ok {
+				t.Fatal("MCP_LIST_SCHEMA: result must be object")
+			}
+			// This file is the canonical 2026-07-28 schema.json $defs.ListToolsResult.
+			var schema struct {
+				Required   []string `json:"required"`
+				Properties map[string]struct {
+					Type    string   `json:"type"`
+					Minimum *float64 `json:"minimum"`
+					Enum    []string `json:"enum"`
+				} `json:"properties"`
+			}
+			schemaBytes, err := os.ReadFile("../../tests/mcp-cacheable-result/ListToolsResult.schema.json")
+			if err != nil || json.Unmarshal(schemaBytes, &schema) != nil {
+				t.Fatalf("MCP_LIST_SCHEMA: load canonical schema: %v", err)
+			}
+			for _, key := range schema.Required {
+				if _, exists := result[key]; !exists {
+					marker := "MCP_LIST_SCHEMA"
+					if key == "ttlMs" {
+						marker = "MCP_LIST_TTL_MS"
+					}
+					if key == "cacheScope" {
+						marker = "MCP_LIST_CACHE_SCOPE"
+					}
+					t.Fatalf("%s: missing required property %s", marker, key)
+				}
+			}
+			for key, property := range schema.Properties {
+				value, exists := result[key]
+				if !exists {
+					continue
+				}
+				switch property.Type {
+				case "string":
+					v, ok := value.(string)
+					if !ok {
+						t.Fatalf("MCP_LIST_SCHEMA: %s must be string", key)
+					}
+					if len(property.Enum) > 0 {
+						valid := false
+						for _, allowed := range property.Enum {
+							valid = valid || v == allowed
+						}
+						if !valid {
+							t.Fatalf("MCP_LIST_CACHE_SCOPE: %s outside enum", key)
+						}
+					}
+				case "integer":
+					v, ok := value.(float64)
+					if !ok || v != float64(int64(v)) || (property.Minimum != nil && v < *property.Minimum) {
+						marker := "MCP_LIST_SCHEMA"
+						if key == "ttlMs" {
+							marker = "MCP_LIST_TTL_MS"
+						}
+						t.Fatalf("%s: %s violates integer/minimum", marker, key)
+					}
+				case "array":
+					if _, ok := value.([]any); !ok {
+						t.Fatalf("MCP_LIST_SCHEMA: %s must be array", key)
+					}
+				}
+			}
 			var data struct {
-				Result struct{ Tools []struct{ Name string } }
+				Result struct {
+					ResultType string `json:"resultType"`
+					TTLMS      any    `json:"ttlMs"`
+					CacheScope string `json:"cacheScope"`
+					Tools      []struct {
+						Name string `json:"name"`
+					} `json:"tools"`
+				}
 			}
 			if json.Unmarshal(w.Body.Bytes(), &data) != nil || len(data.Result.Tools) != 9 {
 				t.Fatal("not exactly five primary tools plus three aliases and ack")
 			}
-			for _, d := range data.Result.Tools {
+			if data.Result.ResultType != "complete" {
+				t.Fatal("MCP_LIST_RESULT_TYPE: expected complete")
+			}
+			ttl, ok := data.Result.TTLMS.(float64)
+			if !ok || ttl <= 0 {
+				t.Fatal("MCP_LIST_TTL_MS: expected positive JSON number")
+			}
+			if data.Result.CacheScope != "public" && data.Result.CacheScope != "private" {
+				t.Fatal("MCP_LIST_CACHE_SCOPE: expected public or private")
+			}
+			wantOrder := []string{"send", "recv", "list", "check", "clear", "list_online", "send_message", "wait_for_messages", "ack"}
+			for i, d := range data.Result.Tools {
 				if !knownTool(d.Name) {
 					t.Fatalf("unexpected tool %s", d.Name)
+				}
+				if d.Name != wantOrder[i] {
+					t.Fatalf("MCP_LIST_TOOLS_ORDER: index %d got %q want %q", i, d.Name, wantOrder[i])
 				}
 			}
 		}

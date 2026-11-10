@@ -22,6 +22,8 @@ import (
 
 const ProtocolVersion = "2026-07-28"
 const metaPrefix = "io.modelcontextprotocol/"
+const toolsListTTLMS = 300000
+const toolsListCacheScope = "private"
 
 // Seats 不含签发、执行、文件或管理能力。每个通讯请求独立 Authenticate。
 type Seats interface {
@@ -313,7 +315,7 @@ func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {
 	case "server/discover":
 		result = map[string]any{"resultType": "complete", "supportedVersions": []string{ProtocolVersion}, "capabilities": map[string]any{"tools": map[string]any{}}, "_meta": map[string]any{metaPrefix + "serverInfo": map[string]string{"name": "dingwei-external", "version": "r53"}}}
 	case "tools/list":
-		result = map[string]any{"resultType": "complete", "tools": toolDefinitions(g.cfg.SendReplyMax)}
+		result = map[string]any{"resultType": "complete", "tools": toolDefinitions(g.cfg.SendReplyMax), "ttlMs": toolsListTTLMS, "cacheScope": toolsListCacheScope}
 	case "tools/call":
 		var data any
 		data, e = g.call(r.Context(), seat, q.Params.Name, q.Params.Arguments)
