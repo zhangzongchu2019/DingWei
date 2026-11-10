@@ -25,4 +25,8 @@
 
 ## 交付坐标
 
-分支：`togpt60lunazzc/mcp-p1-feishu-copy`。提交和 tree 坐标、远端核对结果在提交后追加。
+分支：`togpt60lunazzc/mcp-p1-feishu-copy`。
+
+- 功能提交：`a1505c32974a4d0671567066c774357eef26b583`
+- 功能提交 tree：`e10184ff078d2e31cd5caecb6d4f168e8fe66eef`
+- 该功能提交已推送；推送时 `ls-remote` 与本地 SHA 一致。

@@ -9,9 +9,9 @@
 
 ## 交接记录
 
-2026-11-10：`togpt60lunazzc.zzc` 按 rulings ㊿-补65 切换至 r56.4 集成 `af752f641`，PG migration 分配为 0111；复用既有 `extshared.ExternalSenderHeader`，实现双向事务内抄送入队、PG worker、Feishu 私聊发送、20,000 UTF-8 字节副本截断、默认开启开关和 reply-parent 回流抑制。7/7 semantic mutations 红；全仓、canonical 和 OpenSpec strict 均通过；提交前。
+2026-11-10：`togpt60lunazzc.zzc` 按 rulings ㊿-补65 切换至 r56.4 集成 `af752f641`，PG migration 分配为 0111；复用既有 `extshared.ExternalSenderHeader`，实现双向事务内抄送入队、PG worker、Feishu 私聊发送、20,000 UTF-8 字节副本截断、默认开启开关和 reply-parent 回流抑制。7/7 semantic mutations 红；全仓、canonical 和 OpenSpec strict 均通过。功能提交 `a1505c32974a4d0671567066c774357eef26b583`，tree `e10184ff078d2e31cd5caecb6d4f168e8fe66eef`。
 
 - 完成：主消息失败隔离已有真实 PG 测试；复制内容与回流抑制定向测试通过。
 - 完成：0111 迁移、真实 PG 双方向投影与失败重试测试已补；全仓 Go、canonical build、OpenSpec strict、7/7 semantic mutations 均通过。
 - 阻塞：无。
-- 下一步：复核最终差异，单提交推送并核对 `ls-remote`。
+- 下一步：推送交件记录更新并核对最终 `ls-remote` ref。
