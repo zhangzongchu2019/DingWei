@@ -53,7 +53,7 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	// 🔴 这份名单写死是有意的（与上面「缺表名单」同理）：它钉的是【Hub 域里到底有哪几条】，
 	// 引 LedgerInDomains() 去比就变成自己比自己。加一条 Hub 域条目 ⇒ 改这里，红一次是应当的。
 	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
-		t.Errorf("Applied = %v，要 Hub 域四条按字典序（0400 属 fanout 域，不得进 Hub 库）", rep.Applied)
+		t.Errorf("Applied = %v，要 Hub 域十四条按字典序（0400 属 fanout 域，不得进 Hub 库）", rep.Applied)
 	}
 	if err := identity.NewPGStore(pool).CheckSchema(ctx); err != nil {
 		t.Fatalf("跑完账本 CheckSchema 仍失败: %v", err)
@@ -65,7 +65,7 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 			t.Errorf("Hub 库里出现了 fanout 域的表 %s —— HubDomains() 不含 fanout（裁定 R-G2-LEDGER-DOMAIN）", tbl)
 		}
 	}
-	// 账本自己也记了账（Hub 域四条，digest 与内嵌正文一致）。
+	// 账本自己也记了账（Hub 域十四条，digest 与内嵌正文一致）。
 	rows := ledgerRows(t, pool)
 	entries, err := LedgerInDomains(HubDomains())
 	if err != nil {
@@ -189,7 +189,7 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 		t.Fatalf("轨 A 建表失败（fanout）: %v", err)
 	}
 	if _, err := trackA.Exec(ctx, testCtx(t), consolemux.PGSchemaSQL); err != nil {
-		t.Fatalf("track A mux schema: %v", err)
+		t.Fatalf("轨 A 建表失败（view 域 console transport slot）: %v", err)
 	}
 	if _, err := trackA.Exec(ctx, testCtx(t), hostedSourceDDL(t)); err != nil {
 		t.Fatalf("track A hosted schema: %v", err)
@@ -206,16 +206,16 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 		}
 	}
 	aTables := baseTables(t, trackA, schemaOf(t, trackA))
-	// 13 ＝ 身份域 8 ＋ fanout 域 5（outbound／inbound_msg／inbound_sink／waive_audit／selfcheck，
-	// R-G2-FANOUT-HARDEN ① 把五表收口进 internal/fanout/pgschema.sql 后才有这一项）。
+	// 40 ＝ 身份域 9 ＋ 外部席位 7 ＋ 临时编组 3 ＋ MCP OAuth 1 ＋ hosted 14
+	// ＋ view 域 console transport slot 1（0300）＋ fanout 5（0400）。
 	if len(aTables) != 40 {
 		t.Fatalf("轨 A 建出 %d 张表（%v），要 40 张＝临时编组 3＋MCP OAuth 1＋外部席位 7＋hosted 14＋身份域 9（G3 终版 800f24d8：原 6 张＋编组两张＋设备认领一张）"+
-			"＋ mux 域 1（0300）＋ fanout 域 5（0400）", len(aTables), aTables)
+			"＋ view 域 console transport slot 1（0300）＋ fanout 域 5（0400）", len(aTables), aTables)
 	}
 
 	// 轨 B：账本。🔴 本格用【全账本】（Ledger()＋MigrateEntries），不是某个装配点的域子集：
 	// 它比的是「各域源 DDL ↔ 各自的冻结副本」两轨的形状，本来就跨域；按域取子集会让
-	// fanout 那半边形不出来（轨 A 建了 13 张，轨 B 只建 10 张 ⇒ 表集合那一句红，却是本格自己造的红）。
+	// fanout 那半边形不出来（轨 A 含 fanout 五表，轨 B 若只取 Hub 域就会漏掉这五表）。
 	// 🔵 生产装配点没有「全账本」这个口径（Migrate 必须点名域）——本格是账本自身的性质，不是装配。
 	all, err := Ledger()
 	if err != nil {
