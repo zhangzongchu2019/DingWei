@@ -1,0 +1,16 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "./internal/model",
+    "./internal/extshared",
+    "-count=1"
+  ],
+  "start": "2026-11-08T22:51:16.705443+00:00",
+  "end": "2026-11-08T22:51:16.879688+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "59c02c90e614af9fb2f14f832caf8807a3b8b6fd",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

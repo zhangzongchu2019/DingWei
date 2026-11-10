@@ -1,0 +1,13 @@
+F
+======================================================================
+FAIL: test_aa010_offline_rollback_blocks_until_individual_returns_settle (test_sub_agent_helper.StoreTests.test_aa010_offline_rollback_blocks_until_individual_returns_settle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m3-view/tools/sessionhelper/tests/test_sub_agent_helper.py", line 101, in test_aa010_offline_rollback_blocks_until_individual_returns_settle
+    self.assertFalse(result['downgrade_ready'], 'AA010_ROLLBACK_PENDING_RETURN_BARRIER')
+AssertionError: True is not false : AA010_ROLLBACK_PENDING_RETURN_BARRIER
+
+----------------------------------------------------------------------
+Ran 1 test in 0.109s
+
+FAILED (failures=1)

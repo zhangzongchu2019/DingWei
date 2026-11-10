@@ -21,6 +21,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/consolemux"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/identity/httpapi"
+	"github.com/zhangzongchu2019/dingwei/internal/subagent"
 )
 
 // A local feed registry never pretends to be the global transport authority.
@@ -156,7 +157,7 @@ func (m *consoleMuxRegistry) authorize(ctx context.Context, hash string, names [
 	var out consolemux.Authorization
 	err := m.budget.Do(ctx, func(ctx context.Context) error {
 		var err error
-		out, err = m.authorizer.AuthorizeConsoleMux(ctx, hash, names)
+		out, err = m.authorizeViewScopes(ctx, hash, names)
 		return err
 	})
 	if err == nil && !time.Now().Before(start.Add(time.Second)) {
@@ -241,8 +242,10 @@ func muxDecode(w http.ResponseWriter, r *http.Request) (consoleMuxControl, []str
 	for i := range req.Subscriptions {
 		d := &req.Subscriptions[i]
 		d.FullName = strings.ToLower(strings.TrimSpace(d.FullName))
-		dot := strings.LastIndex(d.FullName, ".")
-		if dot < 1 || !identity.ValidAgentName(d.FullName[:dot]) || !identity.ValidShortName(d.FullName[dot+1:]) || !muxValidID(d.Instance) || seen[d.FullName] {
+		rootName := viewRoot(d.FullName)
+		dot := strings.LastIndex(rootName, ".")
+		_, routeErr := subagent.Parse(d.FullName, "")
+		if routeErr != nil || dot < 1 || !identity.ValidAgentName(rootName[:dot]) || !identity.ValidShortName(rootName[dot+1:]) || !muxValidID(d.Instance) || seen[d.FullName] {
 			return req, nil, [32]byte{}, errors.New("invalid subscription")
 		}
 		if d.After != "" {
@@ -325,9 +328,14 @@ func (m *consoleMuxRegistry) resolveScopes(auth consolemux.Authorization, req co
 	for _, d := range req.Subscriptions {
 		a, ok := auth.Agents[d.FullName]
 		if !ok {
+			if root, granted := auth.Agents[viewRoot(d.FullName)]; granted && d.FullName != root.FullName {
+				if _, e := m.h.subViewAgent(context.Background(), root, d.FullName); e != nil {
+					return nil, 409, &muxScopeControlError{d.FullName, e}
+				}
+			}
 			return nil, 404, &muxScopeControlError{d.FullName, errors.New("not_found")}
 		}
-		name, target := loadViewRouting().resolve(a.FullName, a.Owner)
+		name, target := loadViewRouting().resolve(viewRoot(a.FullName), a.Owner)
 		if target.Builtin || !target.ViewUnlockV2 || target.URL == "" || target.HubToVSSecretFile == "" || target.VSToHubSecretFile == "" {
 			return nil, 503, errors.New("aggregate_target_unavailable")
 		}
@@ -773,11 +781,11 @@ func (h *Hub) revokeConsoleMuxAgent(agentID string) {
 	for _, f := range fs {
 		f.mu.Lock()
 		for name, s := range f.Scopes {
-			if s.Agent.ID == agentID {
+			if s.Agent.ID == agentID || s.Agent.RootID == agentID {
 				delete(f.Scopes, name)
 				f.Revision++
 				if f.Gate != nil {
-					f.Gate.Revoke(agentID)
+					f.Gate.Revoke(s.Agent.ID)
 				}
 				if f.Stream != nil {
 					f.Stream.removeAgent(s)

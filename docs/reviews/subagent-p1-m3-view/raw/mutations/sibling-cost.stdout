@@ -1,0 +1,25 @@
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/sm1-jufj3pre/m3mut-1pz67d9l/view-state.json", "request_path": ""}
+F
+======================================================================
+FAIL: test_aa010_sibling_cost_cursor_and_legacy_survive_restart (test_mux_projection.SubAgentScopeProjectionTest.test_aa010_sibling_cost_cursor_and_legacy_survive_restart)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m3-view/view-service/test_mux_projection.py", line 70, in test_aa010_sibling_cost_cursor_and_legacy_survive_restart
+    self.assertEqual(rows,[('a',1,'9'),('a',2,'1'),('b',1,'1')],'AA010_SIBLING_CURSOR')
+AssertionError: Lists differ: [('same', 1, '9')] != [('a', 1, '9'), ('a', 2, '1'), ('b', 1, '1')]
+
+First differing element 0:
+('same', 1, '9')
+('a', 1, '9')
+
+Second list contains 2 additional elements.
+First extra element 1:
+('a', 2, '1')
+
+- [('same', 1, '9')]
++ [('a', 1, '9'), ('a', 2, '1'), ('b', 1, '1')] : AA010_SIBLING_CURSOR
+
+----------------------------------------------------------------------
+Ran 1 test in 0.078s
+
+FAILED (failures=1)

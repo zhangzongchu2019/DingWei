@@ -1,0 +1,2 @@
+usage: run_legacy_probe.py [-h] --output OUTPUT [--future]
+run_legacy_probe.py: error: unrecognized arguments: --mode future

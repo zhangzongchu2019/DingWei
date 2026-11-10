@@ -52,6 +52,13 @@ func (h *Hub) viewSessionNameAllowed(ctx context.Context, name string) bool {
 func (h *Hub) viewInternalSession(ctx context.Context, name string) (string, string, bool) {
 	name = strings.TrimSpace(name)
 	if h.Identity != nil {
+		if name != viewRoot(name) {
+			a, err := h.projectionViewAgent(ctx, name)
+			if err != nil {
+				return "", "", false
+			}
+			return AgentKeyID(a.Owner), a.Session, true
+		}
 		ag, _, err := h.Identity.ResolveFullName(ctx, name)
 		if err != nil {
 			return "", "", false
@@ -70,6 +77,9 @@ func (h *Hub) viewInternalSession(ctx context.Context, name string) (string, str
 // grantNewPlatformViewServiceInput gives the current View Service virtual viewer the same
 // single-writer grant used by #unlock. It never selects a disconnected browser viewer.
 func (h *Hub) grantNewPlatformViewServiceInput(ctx context.Context, fullName string) bool {
+	if fullName != viewRoot(fullName) {
+		return false
+	}
 	keyID, sessionName, ok := h.viewInternalSession(ctx, fullName)
 	if !ok {
 		return false
@@ -121,10 +131,21 @@ func (h *Hub) newPlatformViewAuth(w http.ResponseWriter, r *http.Request) bool {
 		newPlatformDeny(w, r, errors.Is(err, identity.ErrMustChange))
 		return false
 	}
-	ag, _, err := h.Identity.ResolveFullName(r.Context(), strings.TrimSpace(r.PathValue("sessionName")))
+	fullName := strings.TrimSpace(r.PathValue("sessionName"))
+	ag, _, err := h.Identity.ResolveFullName(r.Context(), viewRoot(fullName))
 	if err != nil || ag.OwnerLC != user.UserIDLC() {
 		writeAgentWSError(w, http.StatusNotFound, "not_found")
 		return false
+	}
+	if fullName != viewRoot(fullName) {
+		if r.Method != "GET" || strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
+			writeAgentWSError(w, 409, "sub_agent_unsupported")
+			return false
+		}
+		if _, err := h.projectionViewAgent(r.Context(), fullName); err != nil {
+			writeAgentWSError(w, 404, "sub_agent_view_unavailable")
+			return false
+		}
 	}
 	// 写操作与 WebSocket 升级都校验 Origin（后者防跨站 WebSocket 劫持）。
 	if (r.Method != http.MethodGet || strings.EqualFold(r.Header.Get("Upgrade"), "websocket")) &&

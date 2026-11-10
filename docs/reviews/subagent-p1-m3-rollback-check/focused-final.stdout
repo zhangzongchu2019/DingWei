@@ -1,0 +1,16 @@
+=== RUN   TestSubAgentRollbackCheckAllRoots
+--- PASS: TestSubAgentRollbackCheckAllRoots (0.16s)
+=== RUN   TestSubAgentRollbackCheckSourceOnlyAndInvalidRoute
+--- PASS: TestSubAgentRollbackCheckSourceOnlyAndInvalidRoute (0.15s)
+=== RUN   TestSubAgentRollbackReadOnlyOpen
+--- PASS: TestSubAgentRollbackReadOnlyOpen (0.15s)
+=== RUN   TestSubAgentRollbackReadOnlyIncludesCommittedWAL
+--- PASS: TestSubAgentRollbackReadOnlyIncludesCommittedWAL (0.15s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.614s
+=== RUN   TestCheckAllCommandBlocksUnpreparedRoot
+--- PASS: TestCheckAllCommandBlocksUnpreparedRoot (0.19s)
+=== RUN   TestCheckAllCommandRejectsUnsafeInputs
+--- PASS: TestCheckAllCommandRejectsUnsafeInputs (0.01s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/subagent-rollback	0.209s

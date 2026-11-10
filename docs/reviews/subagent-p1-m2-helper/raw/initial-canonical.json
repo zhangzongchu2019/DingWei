@@ -1,0 +1,12 @@
+{
+  "command": [
+    "sh",
+    "scripts/run-build-tests.sh"
+  ],
+  "start": "2026-11-08T23:38:48.480334+00:00",
+  "end": "2026-11-08T23:46:31.163588+00:00",
+  "rc": 1,
+  "uid": 1001,
+  "source_commit": "eae9eca1ac67bf580f4b0f8dccca5f92d7e62a88",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

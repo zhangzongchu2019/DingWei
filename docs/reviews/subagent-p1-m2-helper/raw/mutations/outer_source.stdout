@@ -1,0 +1,30 @@
+test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery) ... [sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+
+  test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery) (forged={'threadId': 'cbf83eb3-1262-4eb4-ba90-3c9b2772cd0c', 'turnId': 'actual-turn', 'callId': 'forged-source', 'tool': 'dingwei_send_message', 'arguments': {'to': 'target.owner', 'body': 'hello'}}) ... FAIL
+test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery) ... FAIL
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+
+======================================================================
+FAIL: test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery) (forged={'threadId': 'cbf83eb3-1262-4eb4-ba90-3c9b2772cd0c', 'turnId': 'actual-turn', 'callId': 'forged-source', 'tool': 'dingwei_send_message', 'arguments': {'to': 'target.owner', 'body': 'hello'}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 337, in test_aa004_trusted_native_context_source_and_forgery
+    with self.subTest(forged=forged), self.assertRaises(PermissionError): self.runtime.native_tool(facade, forged)
+AssertionError: PermissionError not raised
+
+======================================================================
+FAIL: test_aa004_trusted_native_context_source_and_forgery (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 339, in test_aa004_trusted_native_context_source_and_forgery
+    self.assertEqual(len(sources), 1)  # same native call is durably idempotent
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.136s
+
+FAILED (failures=2)

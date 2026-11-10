@@ -1,0 +1,6 @@
+=== RUN   TestSubAgentRollbackReadOnlyOpen
+    sub_agent_rollback_check_test.go:134: AA009_READONLY_WRITE_ACCEPTED
+--- FAIL: TestSubAgentRollbackReadOnlyOpen (0.18s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.185s
+FAIL

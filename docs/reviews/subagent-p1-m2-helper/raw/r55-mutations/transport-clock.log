@@ -1,0 +1,14 @@
+test_turn_start_clock_begins_after_transport_write_lock (test_codex_delivery_reconcile.ReconcileBoundaries.test_turn_start_clock_begins_after_transport_write_lock) ... FAIL
+
+======================================================================
+FAIL: test_turn_start_clock_begins_after_transport_write_lock (test_codex_delivery_reconcile.ReconcileBoundaries.test_turn_start_clock_begins_after_transport_write_lock)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 143, in test_turn_start_clock_begins_after_transport_write_lock
+    self.assertIsNotNone(started, 'TURN_START_CLOCK_NOT_RECORDED')
+AssertionError: unexpectedly None : TURN_START_CLOCK_NOT_RECORDED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.107s
+
+FAILED (failures=1)

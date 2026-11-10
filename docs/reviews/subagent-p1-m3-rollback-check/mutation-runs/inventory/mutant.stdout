@@ -1,0 +1,6 @@
+=== RUN   TestSubAgentRollbackCheckAllRoots
+    sub_agent_rollback_check_test.go:60: AA009_GLOBAL_ROLLBACK_PENDING got={Pending:0 Roots:[]} want={Pending:3 Roots:[{RootAgentID:root-a Count:2 DeliveryIDs:[root-a-1 root-a-2]} {RootAgentID:root-b Count:1 DeliveryIDs:[root-b-1]}]} err=<nil>
+--- FAIL: TestSubAgentRollbackCheckAllRoots (0.19s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.201s
+FAIL

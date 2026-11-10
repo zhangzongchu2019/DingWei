@@ -1,0 +1,21 @@
+{
+  "command": [
+    "env",
+    "PYTHONPATH=tools/sessionhelper",
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/sessionhelper/tests",
+    "-p",
+    "test_connection_receive_quiescence.py",
+    "-q"
+  ],
+  "start": "2026-11-09T01:35:46.018636+00:00",
+  "end": "2026-11-09T01:35:46.221682+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "18cae8bf5cd5ab737cef7044b326293ba3e87b15",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

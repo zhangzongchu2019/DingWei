@@ -90,3 +90,4 @@ tools/sessionhelper/tests/test_terminal_start_observation.py
 tools/sessionhelper/tests/test_unified_queue.py
 tools/sessionhelper/tests/test_update_core_review_regressions.py
 tools/sessionhelper/tests/test_update_release_core.py
+tools/sessionhelper/tests/test_sub_agent_helper.py

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/subagent"
 )
 
 const inboxReceiptRequestKey = "inbox_receipt_v1"
@@ -72,6 +73,9 @@ func (h *Hub) writeQueuedReceiptToSource(ctx context.Context, env model.Envelope
 	h.mu.Lock()
 	c := h.sessionClients[source.KeyID][source.SessionName]
 	h.mu.Unlock()
+	if route, _ := ctx.Value(subAgentDeliveryKey{}).(*subagent.DeliveryRoute); route != nil && route.From != nil {
+		c, _ = ctx.Value(subAgentClientKey{}).(*sessionClient)
+	}
 	h.writeOutboundReceipt(ctx, c, env.ID, nonce, "queued", deliveryID)
 }
 

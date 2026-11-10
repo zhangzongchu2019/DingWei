@@ -1,0 +1,17 @@
+test_slow_creation_does_not_block_parent_lifecycle_seal (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_slow_creation_does_not_block_parent_lifecycle_seal) ... [sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+FAIL
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+
+======================================================================
+FAIL: test_slow_creation_does_not_block_parent_lifecycle_seal (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_slow_creation_does_not_block_parent_lifecycle_seal)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 497, in test_slow_creation_does_not_block_parent_lifecycle_seal
+    self.assertFalse(closer.is_alive(), 'NATIVE_CREATE_BLOCKED_LIFECYCLE_SEAL')
+AssertionError: True is not false : NATIVE_CREATE_BLOCKED_LIFECYCLE_SEAL
+
+----------------------------------------------------------------------
+Ran 1 test in 0.274s
+
+FAILED (failures=1)

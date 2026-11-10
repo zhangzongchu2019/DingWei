@@ -1,0 +1,17 @@
+{
+  "command": [
+    "env",
+    "NODE_PATH=/tmp/coder-a3-playwright/node_modules",
+    "PLAYWRIGHT_BROWSERS_PATH=/home/dev/.cache/ms-playwright",
+    "python3",
+    "tools/run-browser-regressions.py",
+    "--receipt",
+    "/tmp/m3-final-18/browser-receipt.json"
+  ],
+  "start": "2026-11-09T01:34:11.955518+00:00",
+  "end": "2026-11-09T01:42:16.722611+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "18cae8bf5cd5ab737cef7044b326293ba3e87b15",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

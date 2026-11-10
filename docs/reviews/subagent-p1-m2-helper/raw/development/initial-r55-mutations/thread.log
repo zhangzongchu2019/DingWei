@@ -1,0 +1,19 @@
+test_wrong_thread_and_wrong_turn_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_wrong_thread_and_wrong_turn_keep_pending) ... FAIL
+
+======================================================================
+FAIL: test_wrong_thread_and_wrong_turn_keep_pending (test_codex_delivery_reconcile.ReconcileBoundaries.test_wrong_thread_and_wrong_turn_keep_pending)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 241, in test_wrong_thread_and_wrong_turn_keep_pending
+    self.assert_pending('WRONG_THREAD_ADVANCED_ACK')
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 83, in assert_pending
+    self.assertEqual(self.inbox.lifecycle(self.did)['state'], 'admission_unknown', marker)
+AssertionError: 'processed' != 'admission_unknown'
+- processed
++ admission_unknown
+ : WRONG_THREAD_ADVANCED_ACK
+
+----------------------------------------------------------------------
+Ran 1 test in 0.056s
+
+FAILED (failures=1)

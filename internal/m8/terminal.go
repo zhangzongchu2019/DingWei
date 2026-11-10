@@ -212,7 +212,11 @@ func (h *Hub) HandleTerminalViewPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// C4:按三级路由策略选目标。命中 View 服务 ⇒ 反代;否则(含任何异常)走老 xterm。
-	name, tgt := loadViewRouting().resolve(sessionName, h.muxRouteOwner(r, sessionName))
+	name, tgt := loadViewRouting().resolve(viewRoot(sessionName), h.muxRouteOwner(r, sessionName))
+	if sessionName != viewRoot(sessionName) && (tgt.Builtin || !tgt.ViewUnlockV2) {
+		writeAgentWSError(w, 409, "sub_agent_unsupported")
+		return
+	}
 	if !tgt.Builtin && tgt.URL != "" {
 		if h.proxyToViewService(w, r, sessionName, tgt.URL) {
 			return
@@ -233,7 +237,11 @@ func (h *Hub) HandleViewSubPath(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid session name", http.StatusBadRequest)
 		return
 	}
-	name, tgt := loadViewRouting().resolve(sessionName, h.muxRouteOwner(r, sessionName))
+	name, tgt := loadViewRouting().resolve(viewRoot(sessionName), h.muxRouteOwner(r, sessionName))
+	if sessionName != viewRoot(sessionName) && (tgt.Builtin || !tgt.ViewUnlockV2) {
+		writeAgentWSError(w, 409, "sub_agent_unsupported")
+		return
+	}
 	if !tgt.Builtin && tgt.URL != "" {
 		if h.proxyToViewService(w, r, sessionName, tgt.URL) {
 			return
@@ -297,12 +305,22 @@ func (h *Hub) HandleSessionHistory(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
-		ag, _, err := h.Identity.ResolveFullName(r.Context(), session)
+		ag, _, err := h.Identity.ResolveFullName(r.Context(), viewRoot(session))
 		if err != nil || ag.OwnerLC != user.UserIDLC() || ag.State != identity.AgentActive {
 			http.NotFound(w, r)
 			return
 		}
-		owner, agent, session = AgentKeyID(ag.OwnerLC), ag.ID, ag.NameLC()
+		owner, agent = AgentKeyID(ag.OwnerLC), ag.ID
+		if session != viewRoot(session) {
+			scope, e := h.projectionViewAgent(r.Context(), session)
+			if e != nil {
+				http.NotFound(w, r)
+				return
+			}
+			agent, session = scope.ID, scope.Session
+		} else {
+			session = ag.NameLC()
+		}
 	} else {
 		ag, ok := r.Context().Value(consoleAgentContextKey{}).(model.ConsoleAgent)
 		principal, principalOK := r.Context().Value(consolePrincipalContextKey{}).(string)
@@ -549,9 +567,12 @@ func (h *Hub) handleSessionEventEnvelope(c *sessionClient, env model.Envelope) b
 	return h.handleSessionEventEnvelopeContext(context.Background(), c, env)
 }
 
-func (h *Hub) handleSessionEventEnvelopeContext(_ context.Context, c *sessionClient, env model.Envelope) bool {
+func (h *Hub) handleSessionEventEnvelopeContext(ctx context.Context, c *sessionClient, env model.Envelope) bool {
 	if metaString(env.Meta, "type") != terminalSessionEventType {
 		return false
+	}
+	if h.subViewEvent(ctx, c, env) {
+		return true
 	}
 	// session_event is supplied by a helper. It may carry arbitrary event JSON,
 	// but only the Hub may mint the canonical provenance block.
@@ -800,6 +821,10 @@ func (h *Hub) publishFailureDockEvent(keyID, sessionName, noticeID, sourceID, ta
 }
 
 func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envelope, deliveryID, stage, role string, cancellable bool) {
+	keyID, sessionName = h.subViewObservation(keyID, sessionName, deliveryID, role == "copy")
+	if strings.Contains(sessionName, "/sub-v1-") {
+		cancellable = false
+	}
 	if keyID == "" || sessionName == "" || env.ID == "" || deliveryID == "" {
 		return
 	}
@@ -1146,6 +1171,11 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "view_identity_unresolved", http.StatusNotFound)
 		return
 	}
+	lease, leaseErr := h.subViewLease(r, sessionName)
+	if leaseErr != nil {
+		http.Error(w, "view_scope_denied", 403)
+		return
+	}
 	subID := randomHex(8)
 	snap, ok := h.subscribeExistingSessionEventsSeqSnapshot(keyID, internalSession, subID)
 	epoch, ch, unsub := snap.Epoch, snap.Live, snap.Unsub
@@ -1175,6 +1205,9 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 	flusher.Flush()
 
 	writeSSE := func(ev sessionSeqEvent) bool {
+		if !lease() {
+			return false
+		}
 		var err error
 		if ev.Seq > 0 {
 			_, err = fmt.Fprintf(w, "id: %s-%d\ndata: %s\n\n", epoch, ev.Seq, ev.Data)
@@ -1198,6 +1231,8 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	leaseTick := time.NewTicker(time.Second)
+	defer leaseTick.Stop()
 	ping := time.NewTicker(30 * time.Second)
 	defer ping.Stop()
 	for {
@@ -1209,6 +1244,10 @@ func (h *Hub) HandleInternalViewEvents(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if !writeSSE(ev) {
+				return
+			}
+		case <-leaseTick.C:
+			if !lease() {
 				return
 			}
 		case <-ping.C:
@@ -1344,6 +1383,8 @@ func (h *Hub) proxyToViewService(w http.ResponseWriter, r *http.Request, session
 		// 新平台：view-service 的会话键用规范 full_name（见 newPlatformCanonicalName）。
 		if canon, _, ok := h.newPlatformCanonicalName(r.Context(), sessionName); ok {
 			header = canon
+		} else if scope, e := h.projectionViewAgent(r.Context(), sessionName); e == nil {
+			header = scope.FullName
 		}
 	}
 	// Signing preparation must finish before proxy I/O; a Director cannot

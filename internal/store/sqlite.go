@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -56,7 +57,25 @@ const messageProcessingLease = 5 * time.Minute
 
 // OpenSQLite 打开（或创建）SQLite 主库，启用 WAL + busy_timeout（§13.2）。
 func OpenSQLite(path string) (*SQLite, error) {
+	return openSQLite(path, false)
+}
+
+// OpenSQLiteReadOnly opens an existing database without creating it, changing
+// its journal mode, or running migrations. SQLite also rejects write queries.
+func OpenSQLiteReadOnly(path string) (*SQLite, error) {
+	return openSQLite(path, true)
+}
+
+func openSQLite(path string, readOnly bool) (*SQLite, error) {
 	dsn := fmt.Sprintf("file:%s?_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)", path)
+	if readOnly {
+		absolute, err := filepath.Abs(path)
+		if err != nil {
+			return nil, err
+		}
+		// Treat the operator's path as a literal filename, never as URI options.
+		dsn = (&url.URL{Scheme: "file", Path: absolute}).String() + "?mode=ro&_pragma=query_only(ON)&_pragma=busy_timeout(5000)"
+	}
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
@@ -64,6 +83,7 @@ func OpenSQLite(path string) (*SQLite, error) {
 	// 单写者纪律：写连接数限 1（§13.1），读用 WAL 并发。
 	db.SetMaxOpenConns(1)
 	if err := db.Ping(); err != nil {
+		db.Close()
 		return nil, err
 	}
 	lockPath := ""
@@ -261,7 +281,7 @@ func (s *SQLite) runMigrations(ctx context.Context) error {
 			continue
 		}
 
-		if name == "0069_changeflow_evidence.sql" || name == "0070_openspec_read_binding.sql" || name == "0071_coordinate_review.sql" || name == "0072_feishu_agent_sticky.sql" || name == "0073_task_dispatch_lock.sql" || name == "0074_pm_decision_request.sql" {
+		if name == "0069_changeflow_evidence.sql" || name == "0070_openspec_read_binding.sql" || name == "0071_coordinate_review.sql" || name == "0072_feishu_agent_sticky.sql" || name == "0073_task_dispatch_lock.sql" || name == "0074_pm_decision_request.sql" || name == "0075_sub_agent_registry.sql" || name == "0076_sub_agent_rollback.sql" {
 			// Reuse the exact-DDL preflight: a retained aggregate table after
 			// ledger loss must be verified, never replayed or silently accepted.
 			if err := s.migrateOpenSpecConfirmation(ctx, name, string(body), digest); err != nil {
@@ -2080,6 +2100,9 @@ func (s *SQLite) EnqueueSessionDelivery(ctx context.Context, d model.SessionDeli
 	if d.SourceType == "" {
 		d.SourceType = "feishu_inbound"
 	}
+	if d.SubRoute != nil {
+		d.SourceType = d.SubRoute.SourceType(d.SourceType)
+	}
 	if d.State == "" {
 		d.State = "queued"
 	}
@@ -2089,10 +2112,40 @@ func (s *SQLite) EnqueueSessionDelivery(ctx context.Context, d model.SessionDeli
 	if d.NextAttemptAt.IsZero() {
 		d.NextAttemptAt = d.CreatedAt
 	}
-	_, err := s.db.ExecContext(ctx, `INSERT OR IGNORE INTO session_delivery
+	var executor interface {
+		ExecContext(context.Context, string, ...any) (sql.Result, error)
+	} = s.db
+	var tx *sql.Tx
+	if d.SubRoute != nil {
+		var err error
+		tx, err = s.db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		defer tx.Rollback()
+		if err = checkSubAgentScope(ctx, tx, d.SubRoute.From); err != nil {
+			return err
+		}
+		if err = checkSubAgentScope(ctx, tx, d.SubRoute.To); err != nil {
+			return err
+		}
+		executor = tx
+	}
+	_, err := executor.ExecContext(ctx, `INSERT OR IGNORE INTO session_delivery
 		(id,key_id,session_name,envelope_json,source_message_id,source_type,provenance,state,attempts,next_attempt_at,last_error,created_at,updated_at)
 		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`, d.ID, d.KeyID, d.SessionName, d.Envelope, nullString(d.SourceMessageID), d.SourceType, nullString(d.Provenance), d.State, d.Attempts, d.NextAttemptAt.UTC().Format(time.RFC3339Nano), d.LastError, d.CreatedAt.UTC().Format(time.RFC3339Nano), d.CreatedAt.UTC().Format(time.RFC3339Nano))
-	return err
+	if err != nil || tx == nil {
+		return err
+	}
+	raw, err := json.Marshal(d.SubRoute)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `INSERT OR IGNORE INTO session_delivery_sub_route(delivery_id,route_json) VALUES(?,?)`, d.ID, string(raw))
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func scanSessionDelivery(row rowScanner) (*model.SessionDelivery, error) {

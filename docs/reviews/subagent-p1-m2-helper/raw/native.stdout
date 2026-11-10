@@ -1,0 +1,21 @@
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-probe-0 -> processing (turn=01a1bd9a-dfa1-7c73-adf8-6c37d5d3778e status=inProgress)
+[driver-adapter] deliver id=dw-probe-1 -> processing (awaiting turn/start response)
+{
+  "real_inference": false,
+  "binary_sha256": "1748767b230ebfc3d4ab7e4e254920d0c0ad9691fd8c11f190e7d44511a4a92e",
+  "native_control_create": true,
+  "native_dynamic_tools": true,
+  "outer_thread_binding": true,
+  "forged_arguments_rejected": true,
+  "stale_turn_rejected": true,
+  "distinct_native_threads": 2,
+  "outbound_calls": 1,
+  "local_provider_requests": 5
+}
+[delivery][INVALID_NATIVE_EVIDENCE] id=dw-probe-0; pending retained
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[delivery][INVALID_NATIVE_EVIDENCE] id=dw-probe-1; pending retained
+[delivery] failed id=dw-probe-1 source=protocol (turn failed: {'message': 'stream disconnected before complet)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect

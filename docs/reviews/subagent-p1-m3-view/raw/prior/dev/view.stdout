@@ -1,0 +1,11 @@
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/data/ai-dev-data/subagent-p1-m3-view/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "HTTPServerError", "target_path": "", "request_path": "/status", "status": 503}
+ENTRYPOINT_BOUNDARY {"entry": "unsafe", "actual_rc": 1, "costdir_unchanged": false, "module_cache_in_costdir": true}
+ENTRYPOINT_BOUNDARY {"entry": "flag", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+ENTRYPOINT_BOUNDARY {"entry": "environment", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+ENTRYPOINT_BOUNDARY {"entry": "outside", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+{"event": "view_error", "exception": "HTTPServerError", "target_path": "", "request_path": "/", "status": 503}
+----------------------------------------------------------------------
+Ran 18 tests in 9.160s
+
+OK

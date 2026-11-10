@@ -1,0 +1,21 @@
+{
+  "source_commit": "e509b44a59b48ffad5fd52e167fe5e23eff8a848",
+  "source_tree": "8fc3a383ae3dc5892664e97307f367fad00fab7e",
+  "canonical_rc": 0,
+  "profiles": {
+    "claude": 1162,
+    "codex": 1162
+  },
+  "inventory_files": 92,
+  "python_suites": 27,
+  "shell_suites": 2,
+  "unit_cases": 33,
+  "new_criteria": 4,
+  "new_mutation_target_red": 4,
+  "total_mutation_target_red": 28,
+  "r55_mutation_target_red": 21,
+  "strict_pass": 29,
+  "real_inference": false,
+  "previous_evidence_unchanged": true,
+  "go_unchanged": true
+}

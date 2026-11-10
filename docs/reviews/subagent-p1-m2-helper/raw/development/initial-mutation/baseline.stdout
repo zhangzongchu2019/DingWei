@@ -1,0 +1,36 @@
+/usr/lib/python3.12/unittest/case.py:597: ResourceWarning: unclosed file <_io.TextIOWrapper name=4 encoding='UTF-8'>
+  function(*args, **kwargs)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.12/unittest/case.py:597: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='UTF-8'>
+  function(*args, **kwargs)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/lib/python3.12/unittest/case.py:597: ResourceWarning: unclosed file <_io.TextIOWrapper name=7 encoding='UTF-8'>
+  function(*args, **kwargs)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-5 status=inProgress)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+----------------------------------------------------------------------
+Ran 23 tests in 1.314s
+
+OK

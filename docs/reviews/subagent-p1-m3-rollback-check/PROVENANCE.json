@@ -1,0 +1,26 @@
+{
+  "thread": "01a1bf6a-20da-7533-8984-532fd2ec65a3",
+  "source_commit": "3e30e81e70c665029912ed306e3b70c17c18ffb3",
+  "source_tree": "afa8abc74009ca6b1d5e42520bb0519fe3db0b15",
+  "base": "9662deb04ecec8ca40690c345446eb22d2e33bc1",
+  "rulings": "dcfd24ef530f7502c593dd88a4e5606bf52a56a8",
+  "takeover": {
+    "remote_at": "2026-11-09T08:57:40Z",
+    "remote_tip": "9662deb04ecec8ca40690c345446eb22d2e33bc1",
+    "old_status_porcelain": "",
+    "old_HEAD": "9662deb04ecec8ca40690c345446eb22d2e33bc1",
+    "process_commands": [
+      "ps -eo pid,ppid,user,lstart,comm,args",
+      "/proc PID comm/cwd/cmdline sweep after own remote git read exited"
+    ],
+    "related_processes_found": false,
+    "preserved_lock": "/tmp/coder56-subagent-m3.lock.stale-20261109T085804Z"
+  },
+  "uid": 1001,
+  "go": "go1.22.2 GOTOOLCHAIN=local",
+  "canonical_TMPDIR": "/tmp",
+  "canonical_python": "/tmp/coder-0232-locked-venv/bin/python3",
+  "production_actions": false,
+  "real_credentials_used": false,
+  "rulings_final_check": "a96cbc341f89eea0349ca558af754ba4a5007994"
+}

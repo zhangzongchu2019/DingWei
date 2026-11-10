@@ -86,6 +86,7 @@ class Config:
     # R-V2-AGENT-FILE-UPLOAD：上传策略要知道哪些文件受保护（凭据件、入网令牌、状态目录、CODEX_HOME）与限额。
     state_dir: str = ""
     codex_home: str = ""
+    sub_agents_v1: bool = False
     codex_endpoint_mode: str = "legacy"
     cred_file: str = ""
     enroll_token_file: str = ""
@@ -251,6 +252,7 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         datad_token=env.get("SH_DATAD_TOKEN", env.get("DATAD_TOKEN", "")).strip(),
         state_dir=expand_path(env.get("SH_STATE_DIR", "~/.dingwei")),
         codex_home=expand_path(env.get("CODEX_HOME", "~/.codex")),
+        sub_agents_v1=env.get("SH_SUB_AGENTS_V1", "0").lower() in ("1", "true", "yes"),
         codex_endpoint_mode=env.get("SH_CODEX_ENDPOINT_MODE", "legacy"),
         cred_file=expand_path(env.get("SH_CRED_FILE", "")),
         enroll_token_file=expand_path(env.get("SH_ENROLL_TOKEN_FILE", "")

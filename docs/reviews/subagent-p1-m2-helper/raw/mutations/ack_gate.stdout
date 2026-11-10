@@ -1,0 +1,14 @@
+test_tree_ack_current_connection_required_and_ended_not_revived (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_tree_ack_current_connection_required_and_ended_not_revived) ... FAIL
+
+======================================================================
+FAIL: test_tree_ack_current_connection_required_and_ended_not_revived (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_tree_ack_current_connection_required_and_ended_not_revived)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 125, in test_tree_ack_current_connection_required_and_ended_not_revived
+    with self.assertRaisesRegex(ValueError, 'registry_unavailable'): inbox.accept('same', delivery(a))
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.059s
+
+FAILED (failures=1)

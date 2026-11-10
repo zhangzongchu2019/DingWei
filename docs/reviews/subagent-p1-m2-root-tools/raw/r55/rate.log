@@ -1,0 +1,14 @@
+test_thread_rate_limit_survives_driver_replacement (test_codex_delivery_reconcile.ReconcileBoundaries.test_thread_rate_limit_survives_driver_replacement) ... FAIL
+
+======================================================================
+FAIL: test_thread_rate_limit_survives_driver_replacement (test_codex_delivery_reconcile.ReconcileBoundaries.test_thread_rate_limit_survives_driver_replacement)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 307, in test_thread_rate_limit_survives_driver_replacement
+    self.assertEqual(len(self.rpc.calls), 1, 'REPLACEMENT_RESET_THREAD_RATE_LIMIT')
+AssertionError: 2 != 1 : REPLACEMENT_RESET_THREAD_RATE_LIMIT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.090s
+
+FAILED (failures=1)

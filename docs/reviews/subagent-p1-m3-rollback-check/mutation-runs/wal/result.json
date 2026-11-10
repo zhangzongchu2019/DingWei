@@ -1,0 +1,49 @@
+{
+  "name": "wal",
+  "target": "AA009_COMMITTED_WAL_IGNORED",
+  "target_red": true,
+  "runs": [
+    {
+      "phase": "baseline",
+      "command": [
+        "go",
+        "test",
+        "./internal/store",
+        "-run",
+        "^TestSubAgentRollbackReadOnlyIncludesCommittedWAL$",
+        "-count=1",
+        "-v"
+      ],
+      "rc": 0,
+      "start": "2026-11-09T09:05:50.617385+00:00",
+      "end": "2026-11-09T09:05:51.386228+00:00"
+    },
+    {
+      "phase": "mutant",
+      "command": [
+        "go",
+        "test",
+        "-vet=off",
+        "-overlay=/tmp/m3-check-djr6ylek/overlay.json",
+        "./internal/store",
+        "-run",
+        "^TestSubAgentRollbackReadOnlyIncludesCommittedWAL$",
+        "-count=1",
+        "-v"
+      ],
+      "rc": 1,
+      "start": "2026-11-09T09:05:51.386245+00:00",
+      "end": "2026-11-09T09:05:54.378648+00:00"
+    }
+  ],
+  "uid": 1001,
+  "environment_names": [
+    "GOCACHE",
+    "GOMODCACHE",
+    "GOPROXY",
+    "GOTOOLCHAIN",
+    "HOME",
+    "PATH",
+    "TMPDIR"
+  ]
+}

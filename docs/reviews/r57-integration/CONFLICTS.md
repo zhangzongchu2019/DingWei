@@ -37,4 +37,11 @@
 
 ## M3 冲突
 
-待合并第五项后补记。
+第五项c334fb10f9ce1a6a40d78b34c4c5208276639d82实测2文件2处，比参考试合多出browser runner一处；保留全部冻结tip，未用ours/theirs整体覆盖。
+
+| 编号 | 文件／原始冲突行 | 语义取舍与理由 |
+| --- | --- | --- |
+| M01 | `internal/m8/terminal.go`（原行310） | owner取main的AgentKeyID；子节点按M3 projectionViewAgent校验并用scope.ID/Session读取独立历史；根节点按main规范化为ag.NameLC。根授权、子树能力/代际及隔离均保留。 |
+| M02 | `tools/run-browser-regressions.py`（原行26） | 合并mcp_zero_consent与sub_agent_tree两行，完整runner同时执行两套新增回归，不选格、不丢既有套件。 |
+
+SQLite0075/0076接现main0074，冻结SQL原字节保留。M3包含M1 eae9eca1与M2 e509b44a的祖先关系已核。

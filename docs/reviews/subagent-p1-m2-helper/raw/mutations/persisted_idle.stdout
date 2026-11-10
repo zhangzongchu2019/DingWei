@@ -1,0 +1,20 @@
+test_aa007_restart_unknown_work_does_not_become_idle (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa007_restart_unknown_work_does_not_become_idle) ... [sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+FAIL
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+
+======================================================================
+FAIL: test_aa007_restart_unknown_work_does_not_become_idle (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa007_restart_unknown_work_does_not_become_idle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 424, in test_aa007_restart_unknown_work_does_not_become_idle
+    self.assertEqual(self.runtime.store.node(node['node_id'])['state'], 'active')
+AssertionError: 'draining' != 'active'
+- draining
++ active
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.105s
+
+FAILED (failures=1)

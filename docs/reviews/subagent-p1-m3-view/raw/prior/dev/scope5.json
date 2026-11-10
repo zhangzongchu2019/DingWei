@@ -1,0 +1,19 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "./internal/store",
+    "./cmd/subagent-rollback",
+    "-run",
+    "TestSubAgentView|TestSubAgentOfflineRollback|TestMigrationLedger_LegacyAckBackfillsWithoutReplay",
+    "-count=1",
+    "-v"
+  ],
+  "start": "2026-11-09T01:22:50.249995+00:00",
+  "end": "2026-11-09T01:23:02.292711+00:00",
+  "rc": 1,
+  "uid": 1001,
+  "source_commit": "0b47a5857cc331ee5dc8012a002fd561ae2279f0",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

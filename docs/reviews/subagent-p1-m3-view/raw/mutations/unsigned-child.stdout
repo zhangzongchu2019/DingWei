@@ -1,0 +1,14 @@
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/sm1-jufj3pre/m3mut-j2ghpsyn/view-state.json", "request_path": ""}
+F
+======================================================================
+FAIL: test_aa010_scope_ticket_required_and_bound (test_mux_projection.SubAgentScopeProjectionTest.test_aa010_scope_ticket_required_and_bound)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m3-view/view-service/test_mux_projection.py", line 84, in test_aa010_scope_ticket_required_and_bound
+    with self.assertRaisesRegex(ValueError,'ticket',msg='AA010_UNSIGNED_CHILD_REJECT'):
+AssertionError: ValueError not raised : AA010_UNSIGNED_CHILD_REJECT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.041s
+
+FAILED (failures=1)

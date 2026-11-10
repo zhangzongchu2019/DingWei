@@ -165,6 +165,8 @@ class DeliveryLifecycle(DeliveryACKOutbox):
             if row is None or row['dispatch_intent_at'] is None or row['state'] in ('cancelled','failed'):raise ValueError('native terminal lacks dispatch intent')
             if admitted_at + NATIVE_TIME_TOLERANCE_SECONDS < row['dispatch_intent_at']:
                 raise ValueError('native terminal predates dispatch intent')
+            if expected_context is not None and 'lane_id' in expected_context and (row['lane_id'],row['lane_generation'])!=(expected_context['lane_id'],expected_context.get('lane_generation')):
+                raise ValueError('native evidence belongs to another lane generation')
             if expected_context is not None and any(row[key] != expected_context.get(key)
                     for key in ('ack_generation', 'dispatch_intent_at', 'request_id')):
                 raise ValueError('native terminal belongs to old dispatch generation')
@@ -204,6 +206,8 @@ class DeliveryLifecycle(DeliveryACKOutbox):
                              (self.session_name, delivery_id)).fetchone()
             if row is None or row['dispatch_intent_at'] is None or row['state'] in ('cancelled','failed'):
                 raise ValueError('admission lacks dispatch intent')
+            if expected_context is not None and 'lane_id' in expected_context and (row['lane_id'],row['lane_generation'])!=(expected_context['lane_id'],expected_context.get('lane_generation')):
+                raise ValueError('native evidence belongs to another lane generation')
             if expected_context is not None:
                 import math
                 from .codexDriver import NATIVE_TIME_TOLERANCE_SECONDS

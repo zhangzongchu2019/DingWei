@@ -1,0 +1,21 @@
+{
+  "command": [
+    "env",
+    "PYTHONPATH=tools/sessionhelper",
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/sessionhelper/tests",
+    "-p",
+    "test_sub_agent_helper.py",
+    "-q"
+  ],
+  "start": "2026-11-09T01:09:42.253969+00:00",
+  "end": "2026-11-09T01:09:45.926581+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "0b47a5857cc331ee5dc8012a002fd561ae2279f0",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

@@ -1,0 +1,12 @@
+browserType.launch: Executable doesn't exist at /tmp/sm1-6z7eac8y/m3browser-n7b8aaiz/home/.cache/ms-playwright/chromium_headless_shell-1194/chrome-linux/headless_shell
+╔═════════════════════════════════════════════════════════════════════════╗
+║ Looks like Playwright Test or Playwright was just installed or updated. ║
+║ Please run the following command to download new browsers:              ║
+║                                                                         ║
+║     npx playwright install                                              ║
+║                                                                         ║
+║ <3 Playwright Team                                                      ║
+╚═════════════════════════════════════════════════════════════════════════╝
+    at /data/ai-dev-data/subagent-p1-m3-view/view-service/sub-agent-tree-browser-regression.js:31:26 {
+  name: 'Error'
+}

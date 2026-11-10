@@ -1,0 +1,4 @@
+=== RUN   TestSubAgentRollbackReadOnlyIncludesCommittedWAL
+--- PASS: TestSubAgentRollbackReadOnlyIncludesCommittedWAL (0.18s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.189s

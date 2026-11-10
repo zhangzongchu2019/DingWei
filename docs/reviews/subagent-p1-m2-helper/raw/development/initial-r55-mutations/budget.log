@@ -1,0 +1,18 @@
+test_page_limit_200_is_incomplete_even_if_match_seen (test_codex_delivery_reconcile.ReconcileBoundaries.test_page_limit_200_is_incomplete_even_if_match_seen) ... FAIL
+
+======================================================================
+FAIL: test_page_limit_200_is_incomplete_even_if_match_seen (test_codex_delivery_reconcile.ReconcileBoundaries.test_page_limit_200_is_incomplete_even_if_match_seen)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 216, in test_page_limit_200_is_incomplete_even_if_match_seen
+    self.assertEqual(self.scan(), 'incomplete', 'TURN_BUDGET_NOT_INCOMPLETE')
+AssertionError: 'complete' != 'incomplete'
+- complete
++ incomplete
+? ++
+ : TURN_BUDGET_NOT_INCOMPLETE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.057s
+
+FAILED (failures=1)

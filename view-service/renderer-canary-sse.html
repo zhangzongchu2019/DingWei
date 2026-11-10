@@ -1213,6 +1213,7 @@
     const headerSessionName = document.getElementById('headerSessionName');
     const lockBadge = document.getElementById('lockBadge');
     const copyUnlockBtn = document.getElementById('copyUnlockBtn');
+    const VS_SCOPE_KEY = /* VS_SCOPE_KEY */ '';
     const costAccountingMode = /* VS_COST_ACCOUNTING_MODE */ 'active';
     const VS_CANONICAL_ORIGIN = /* VS_PUBLIC_ORIGIN */ '';
     const composerInner = document.getElementById('composerInner');
@@ -5317,7 +5318,7 @@
     }
 
     function pageStorageKey() {
-      return `dw-view-page:${stats.sessionName}`;
+      return `dw-view-page:${VS_SCOPE_KEY || stats.sessionName}`;
     }
     function savePageIdentity(identity) {
       pageIdentity = identity;
@@ -5474,7 +5475,7 @@
         }
         return;
       }
-      pageIdentityChannel = new BroadcastChannel(`dw-view-page:${stats.sessionName}`);
+      pageIdentityChannel = new BroadcastChannel(`dw-view-page:${VS_SCOPE_KEY || stats.sessionName}`);
       pageIdentityChannel.onmessage = event => {
         const claim = event.data || {};
         if (claim.type !== 'claim' || claim.page_id !== pageIdentity?.page_id || claim.nonce === pageInstanceNonce) return;

@@ -1,0 +1,17 @@
+test_aa009_inbox_ledger_query_callback_generation_scope (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa009_inbox_ledger_query_callback_generation_scope) ... FAIL
+
+======================================================================
+FAIL: test_aa009_inbox_ledger_query_callback_generation_scope (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa009_inbox_ledger_query_callback_generation_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 172, in test_aa009_inbox_ledger_query_callback_generation_scope
+    self.assertEqual(sa.get_by_envelope('same').turn_id, 'ta')
+AssertionError: 'tb' != 'ta'
+- tb
++ ta
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.116s
+
+FAILED (failures=1)

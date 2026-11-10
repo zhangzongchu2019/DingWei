@@ -1,0 +1,170 @@
+[
+  {
+    "criterion": "AA007",
+    "name": "turn_is_not_task_completion",
+    "target_test": "RuntimeTests.test_aa007_idle_progress_and_pending_work_are_distinct",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA009",
+    "name": "confirmation_scope",
+    "target_test": "RuntimeTests.test_m1_confirmation_without_lane_echo_uses_immutable_scope",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA004",
+    "name": "wire_destination",
+    "target_test": "ConnectionTests.test_native_send_full_route_transport_and_durable_receipt",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA007",
+    "name": "creation_lock",
+    "target_test": "RuntimeTests.test_slow_creation_does_not_block_parent_lifecycle_seal",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA004",
+    "name": "send_journal",
+    "target_test": "RuntimeTests.test_native_send_journal_survives_restart",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA004",
+    "name": "outer_source",
+    "target_test": "RuntimeTests.test_aa004_trusted_native_context_source_and_forgery",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA004",
+    "name": "stale_turn",
+    "target_test": "RuntimeTests.test_aa004_trusted_native_context_source_and_forgery",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA004",
+    "name": "argument_source",
+    "target_test": "RuntimeTests.test_aa004_trusted_native_context_source_and_forgery",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA006",
+    "name": "timestamp_prefix",
+    "target_test": "StoreTests.test_aa006_random_tail_collision_alias_and_tombstone",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA006",
+    "name": "tail_collision",
+    "target_test": "StoreTests.test_aa006_random_tail_collision_alias_and_tombstone",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA006",
+    "name": "self_context",
+    "target_test": "RuntimeTests.test_aa004_trusted_native_context_source_and_forgery",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA007",
+    "name": "default_completion",
+    "target_test": "StoreTests.test_aa007_policy_defaults_and_negative_bounds",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA007",
+    "name": "unexecuted_filter",
+    "target_test": "StoreTests.test_aa007_atomic_seal_returns_only_definitely_unexecuted",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA007",
+    "name": "platform_cap",
+    "target_test": "RuntimeTests.test_aa007_completion_idle_cap_restart_and_parent_cascade",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA007",
+    "name": "parent_cascade",
+    "target_test": "RuntimeTests.test_aa007_completion_idle_cap_restart_and_parent_cascade",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA007",
+    "name": "completion_override",
+    "target_test": "RuntimeTests.test_aa007_completion_idle_cap_restart_and_parent_cascade",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA007",
+    "name": "persisted_idle",
+    "target_test": "RuntimeTests.test_aa007_restart_unknown_work_does_not_become_idle",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA008",
+    "name": "event_owner",
+    "target_test": "BrokerTests.test_aa008_outer_thread_only_and_bounded_quarantine",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA008",
+    "name": "request_shape",
+    "target_test": "BrokerTests.test_native_request_id_collision_with_client_pending",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA008",
+    "name": "child_stops_process",
+    "target_test": "BrokerTests.test_aa008_parallel_response_wait_and_single_physical_writer",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA008",
+    "name": "ack_gate",
+    "target_test": "StoreTests.test_tree_ack_current_connection_required_and_ended_not_revived",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA009",
+    "name": "envelope_unscoped",
+    "target_test": "StoreTests.test_aa009_inbox_ledger_query_callback_generation_scope",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA009",
+    "name": "shared_inbox",
+    "target_test": "StoreTests.test_aa009_inbox_ledger_query_callback_generation_scope",
+    "rc": 1,
+    "target_red": true
+  },
+  {
+    "criterion": "AA009",
+    "name": "callback_lane",
+    "target_test": "StoreTests.test_aa009_inbox_ledger_query_callback_generation_scope",
+    "rc": 1,
+    "target_red": true
+  }
+]

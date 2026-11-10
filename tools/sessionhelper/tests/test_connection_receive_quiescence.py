@@ -65,6 +65,8 @@ def helper():
                  "is_agent_network_skill"):
         setattr(h, name, lambda env: False)
     h.write_online_list = h.rosters.append
+    h.tree_snapshots = []
+    h.write_online_tree = h.tree_snapshots.append
     h.remember_broadcast_mirror_decision = lambda env: None
 
     async def buffer(ws, env):
@@ -120,6 +122,7 @@ class ReceiveQuiescence(unittest.IsolatedAsyncioTestCase):
         text = "【DingWei 在线清单】**********synthetic-directory"
         await RECV(h, BufferedWS([frame(text)]))
         self.assertEqual(h.rosters, [text])
+        self.assertEqual(h.tree_snapshots, [{}], "legacy directory resets the separate tree snapshot, never injects it")
         self.assertEqual(h.processed, [])
 
     async def test_normal_business_has_no_guide_warning(self):

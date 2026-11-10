@@ -1,0 +1,4 @@
+=== RUN   TestCheckAllCommandBlocksUnpreparedRoot
+--- PASS: TestCheckAllCommandBlocksUnpreparedRoot (0.35s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/cmd/subagent-rollback	0.356s

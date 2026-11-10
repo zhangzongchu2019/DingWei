@@ -1,0 +1,14 @@
+test_local_queue_does_not_use_dispatch_intent_clock (test_codex_delivery_reconcile.ReconcileBoundaries.test_local_queue_does_not_use_dispatch_intent_clock) ... FAIL
+
+======================================================================
+FAIL: test_local_queue_does_not_use_dispatch_intent_clock (test_codex_delivery_reconcile.ReconcileBoundaries.test_local_queue_does_not_use_dispatch_intent_clock)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 114, in test_local_queue_does_not_use_dispatch_intent_clock
+    self.assertEqual(self.adapter._admission_elapsed(command), 0, 'LOCAL_QUEUE_USED_DISPATCH_CLOCK')
+AssertionError: 120.00000588898547 != 0 : LOCAL_QUEUE_USED_DISPATCH_CLOCK
+
+----------------------------------------------------------------------
+Ran 1 test in 0.040s
+
+FAILED (failures=1)

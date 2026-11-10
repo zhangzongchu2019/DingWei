@@ -24,6 +24,7 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 SUITES = (
     ("mcp_zero_consent", "python3", ROOT / "docs/reviews/mcp-zero-consent/browser_regression.py"),
+    ("sub_agent_tree", "node", ROOT / "view-service/sub-agent-tree-browser-regression.js"),
     ("openspec_binding_admin", "node", ROOT / "view-service/openspec-binding-admin-regression.js"),
     ("r14_sticky_browser", "node", ROOT / "view-service/r14-sticky-browser-regression.js"),
     ("coordinate_review_browser", "node", ROOT / "view-service/coordinate-review-browser-regression.js"),

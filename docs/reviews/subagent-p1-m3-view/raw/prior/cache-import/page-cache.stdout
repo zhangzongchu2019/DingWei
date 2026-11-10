@@ -1,0 +1,20 @@
+E
+======================================================================
+ERROR: test_mux_projection (unittest.loader._FailedTest.test_mux_projection)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_mux_projection
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/sm1-ai8jcwax/m3mut-9pf6sn1p/test_mux_projection.py", line 7, in <module>
+    from view_service import CostProjection
+  File "/tmp/sm1-ai8jcwax/m3mut-9pf6sn1p/view_service.py", line 188, in <module>
+    from view_page_store import ViewPageStore
+ModuleNotFoundError: No module named 'view_page_store'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

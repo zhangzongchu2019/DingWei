@@ -1,0 +1,31 @@
+=== RUN   TestAckClockActualHelperWireAndHubStore
+=== RUN   TestAckClockActualHelperWireAndHubStore/r54/same_clock
+    ack_clock_probe_test.go:117: OBSERVATION case=r54/same_clock state=processed injected_before_created=false delivered_uses_hub_clock=true replay_preserved=true terminal_rejected=false
+=== RUN   TestAckClockActualHelperWireAndHubStore/r54/helper_minus_2s
+    ack_clock_probe_test.go:117: OBSERVATION case=r54/helper_minus_2s state=processed injected_before_created=true delivered_uses_hub_clock=true replay_preserved=true terminal_rejected=false
+=== RUN   TestAckClockActualHelperWireAndHubStore/r54/wall_clock_step_back
+    ack_clock_probe_test.go:117: OBSERVATION case=r54/wall_clock_step_back state=processed injected_before_created=true delivered_uses_hub_clock=true replay_preserved=true terminal_rejected=false
+=== RUN   TestAckClockActualHelperWireAndHubStore/r54/stale_timestamp_argument
+    ack_clock_probe_test.go:117: OBSERVATION case=r54/stale_timestamp_argument state=processed injected_before_created=true delivered_uses_hub_clock=true replay_preserved=true terminal_rejected=false
+=== RUN   TestAckClockActualHelperWireAndHubStore/r55/native_seconds_floor
+    ack_clock_probe_test.go:117: OBSERVATION case=r55/native_seconds_floor state=processed injected_before_created=true delivered_uses_hub_clock=true replay_preserved=true terminal_rejected=false
+=== RUN   TestAckClockActualHelperWireAndHubStore/r55/native_too_old
+    ack_clock_probe_test.go:117: OBSERVATION case=r55/native_too_old state=admission_unknown injected_before_created=false delivered_uses_hub_clock=true replay_preserved=true terminal_rejected=false
+=== RUN   TestAckClockActualHelperWireAndHubStore/r55/native_milliseconds_rejected
+    ack_clock_probe_test.go:117: OBSERVATION case=r55/native_milliseconds_rejected state=admission_unknown injected_before_created=false delivered_uses_hub_clock=true replay_preserved=true terminal_rejected=false
+=== RUN   TestAckClockActualHelperWireAndHubStore/r55/live_stale_timestamp_argument
+    ack_clock_probe_test.go:117: OBSERVATION case=r55/live_stale_timestamp_argument state=processed injected_before_created=true delivered_uses_hub_clock=true replay_preserved=true terminal_rejected=false
+=== RUN   TestAckClockActualHelperWireAndHubStore/r55/mixed_live_precise_native_floor
+    ack_clock_probe_test.go:117: OBSERVATION case=r55/mixed_live_precise_native_floor state=injected injected_before_created=false delivered_uses_hub_clock=true replay_preserved=true terminal_rejected=false
+--- PASS: TestAckClockActualHelperWireAndHubStore (1.44s)
+    --- PASS: TestAckClockActualHelperWireAndHubStore/r54/same_clock (0.16s)
+    --- PASS: TestAckClockActualHelperWireAndHubStore/r54/helper_minus_2s (0.16s)
+    --- PASS: TestAckClockActualHelperWireAndHubStore/r54/wall_clock_step_back (0.15s)
+    --- PASS: TestAckClockActualHelperWireAndHubStore/r54/stale_timestamp_argument (0.15s)
+    --- PASS: TestAckClockActualHelperWireAndHubStore/r55/native_seconds_floor (0.16s)
+    --- PASS: TestAckClockActualHelperWireAndHubStore/r55/native_too_old (0.16s)
+    --- PASS: TestAckClockActualHelperWireAndHubStore/r55/native_milliseconds_rejected (0.17s)
+    --- PASS: TestAckClockActualHelperWireAndHubStore/r55/live_stale_timestamp_argument (0.16s)
+    --- PASS: TestAckClockActualHelperWireAndHubStore/r55/mixed_live_precise_native_floor (0.17s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	1.446s

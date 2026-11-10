@@ -80,6 +80,8 @@ class _ForgetConnectionIdentity:
     async def __aexit__(self, *exc):
         self.owner._connection_agent_id = ""
         self.owner._connection_delivery_ack_source = ""
+        runtime = getattr(self.owner, "sub_agents", None)
+        if runtime is not None: runtime.disconnect()
         return False
 
 
@@ -223,7 +225,10 @@ async def claim_delivery_for_connection(inbox):
         raise
 
 
-class SessionHelper:
+from .sub_agent_connection import SubAgentConnection
+
+
+class SessionHelper(SubAgentConnection):
     def __init__(self, cfg: Config):
         self.cfg = cfg
         self.enroll_credential: "enroll.Credential | None" = None  # set by main() under SH_ENROLL=1
@@ -267,6 +272,15 @@ class SessionHelper:
         if not env_get("SH_UPDATE_LAUNCHER", ""):
             self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
+        self.sub_agents = None
+        self.sub_agent_drainer = None
+        if getattr(cfg, 'sub_agents_v1', False):
+            from .sub_agent_runtime import SubAgentRuntime
+            self.sub_agents = SubAgentRuntime(cfg, self.adapter, cfg.session_full_name)
+        else:
+            from .sub_agent_store import SubAgentStore
+            self.sub_agent_drainer = SubAgentStore.existing_tree(cfg.inbox_db, cfg.session_name)
+
         if self.cfg.mode == "driver":
             self.adapter.delivery_progress = self.delivery_inbox.progress
             self.adapter.delivery_lifecycle = self.delivery_inbox
@@ -307,38 +321,44 @@ class SessionHelper:
         return EchoAdapter(self.cfg, self.book)
 
     async def run_forever(self) -> None:
-        import websockets
+        try:
+            import websockets
 
-        delay = self.cfg.reconnect_min
-        while True:
-            self._connection_started_at = None
-            try:
+            delay = self.cfg.reconnect_min
+            while True:
+                self._connection_started_at = None
                 try:
-                    await self._run_once()
-                finally:
-                    # Short-lived clean closes also back off; only a connected
-                    # generation lasting 60s resets the delay. Error-specific
-                    # floors below (notably replaced) still take precedence.
-                    connected_at = self._connection_started_at
-                    if connected_at is not None and time.monotonic() - connected_at >= 60.0:
-                        delay = self.cfg.reconnect_min
-                if self.cfg.producer:
-                    return
-            except websockets.InvalidStatus as exc:
-                if self.enroll_credential is not None:
-                    # raises for revoked / invalid / already_connected: those must end the loop, not retry
-                    enroll.on_handshake_failure(self.enroll_state_dir, exc.response.status_code, exc.response.body, self._enroll_say)
-                print(f"[sessionHelper] error: {exc}; reconnect in {delay:.1f}s", flush=True)
-            except websockets.ConnectionClosedError as exc:
-                if self.enroll_credential is not None and exc.rcvd is not None:
-                    enroll.on_ws_closed(self.enroll_state_dir, exc.rcvd.code, exc.rcvd.reason, self._enroll_say)
-                if "replaced" in str(exc).lower():
-                    delay = max(delay, 10.0)
-                print(f"[sessionHelper] ws closed: {exc}; reconnect in {delay:.1f}s", flush=True)
-            except Exception as exc:
-                print(f"[sessionHelper] error: {exc}; reconnect in {delay:.1f}s", flush=True)
-            await asyncio.sleep(delay)
-            delay = min(self.cfg.reconnect_max, max(self.cfg.reconnect_min, delay * 2))
+                    try:
+                        await self._run_once()
+                    finally:
+                        # Short-lived clean closes also back off; only a connected
+                        # generation lasting 60s resets the delay. Error-specific
+                        # floors below (notably replaced) still take precedence.
+                        connected_at = self._connection_started_at
+                        if connected_at is not None and time.monotonic() - connected_at >= 60.0:
+                            delay = self.cfg.reconnect_min
+                    if self.cfg.producer:
+                        return
+                except websockets.InvalidStatus as exc:
+                    if self.enroll_credential is not None:
+                        # raises for revoked / invalid / already_connected: those must end the loop, not retry
+                        enroll.on_handshake_failure(self.enroll_state_dir, exc.response.status_code, exc.response.body, self._enroll_say)
+                    print(f"[sessionHelper] error: {exc}; reconnect in {delay:.1f}s", flush=True)
+                except websockets.ConnectionClosedError as exc:
+                    if self.enroll_credential is not None and exc.rcvd is not None:
+                        enroll.on_ws_closed(self.enroll_state_dir, exc.rcvd.code, exc.rcvd.reason, self._enroll_say)
+                    if "replaced" in str(exc).lower():
+                        delay = max(delay, 10.0)
+                    print(f"[sessionHelper] ws closed: {exc}; reconnect in {delay:.1f}s", flush=True)
+                except Exception as exc:
+                    print(f"[sessionHelper] error: {exc}; reconnect in {delay:.1f}s", flush=True)
+                await asyncio.sleep(delay)
+                delay = min(self.cfg.reconnect_max, max(self.cfg.reconnect_min, delay * 2))
+
+        finally:
+            runtime = getattr(self, 'sub_agents', None)
+            if runtime is not None:
+                await asyncio.to_thread(runtime.shutdown)
 
     @staticmethod
     def _enroll_say(message: str) -> None:
@@ -764,6 +784,7 @@ class SessionHelper:
              "helper_update_v1": bool(env_get("SH_UPDATE_LAUNCHER", "")) and sys.platform.startswith("linux") and bool(getattr(self, "enroll_credential", None)),
              # 只作 Hub 统计（组长裁定 C）；附注是否附加由 upload_addendum_due 在合并时自判。
              "file_upload_v1": self.upload_configured(),
+             **(self.sub_agent_capabilities() if getattr(self, 'sub_agents', None) is not None else {}),
              **(outbound_capabilities or {})},
         )
 
@@ -828,7 +849,7 @@ class SessionHelper:
             # M2 protocol admission. This raises the bar above one-shot clients
             # such as send.py, but is not cryptographic helper identity: a
             # holder of the shared API secret can imitate this JSON message.
-            outbound_caps = self.outbound_receipts.prepare(ws) if (self.cfg.mode == "desktop" or response_headers.get("X-DW-Inbox-Progress") == "inbox-progress/v1") else None
+            outbound_caps = self.outbound_receipts.prepare(ws) if (self.cfg.mode == "desktop" or bool(getattr(self, 'sub_agents', None)) or bool(getattr(self, 'sub_agent_drainer', None)) or response_headers.get("X-DW-Inbox-Progress") == "inbox-progress/v1") else None
             await ws.send(json.dumps(self.session_capabilities_envelope(outbound_caps), ensure_ascii=False))
             if self.cfg.producer:
                 recv_task = asyncio.create_task(self.recv_control_loop(ws))
@@ -856,6 +877,7 @@ class SessionHelper:
                     await supervise_connection_loops([
                         self.recv_loop(ws),
                         self.delivery_worker_loop(ws),
+                        self.sub_agent_loop(ws) if (getattr(self, 'sub_agents', None) is not None or getattr(self, 'sub_agent_drainer', None) is not None) else asyncio.Event().wait(),
                         self.delivery_ack_outbox_loop(ws),
                         self.pending_drain_loop(ws),
                         self.file_inbound_worker_loop(ws),
@@ -902,9 +924,15 @@ class SessionHelper:
                 env = json.loads(raw)
             except Exception:
                 continue
+            if (env.get('meta') or {}).get('type') in ('sub_agent_capabilities', 'sub_agent_tree_ack'):
+                if getattr(self, 'sub_agents', None) is not None:
+                    self.sub_agent_control_frame(ws, env)
+                continue
             if (env.get('meta') or {}).get('type') == 'delivery_ack_confirm':
                 if env.get('from') == getattr(self, '_connection_delivery_ack_source', session_addr('workpulse', self.book.key_id)):
-                    await asyncio.to_thread(self.delivery_inbox.confirm_delivery_ack, env['meta'])
+                    ack_inbox = self.sub_agent_ack_inbox(env['meta'])
+                    if ack_inbox is not None:
+                        await asyncio.to_thread(ack_inbox.confirm_delivery_ack, env['meta'])
                 continue
             if self.outbound_receipts.receive(ws, env):
                 continue
@@ -951,6 +979,7 @@ class SessionHelper:
             body = str(env.get("body") or "")
             if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
                 self.write_online_list(body)
+                self.write_online_tree((env.get("meta") or {}))
                 continue
             if is_client_onboarding_text(body):
                 if not client_guide_logged:
@@ -979,7 +1008,8 @@ class SessionHelper:
                 continue
             body = str(env.get("body") or "")
             if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
-                self.write_online_list(body)  # 始终写最新到会话专属共享文件，供CLI按需读取（不注入对话、不刷屏）
+                self.write_online_list(body)
+                self.write_online_tree((env.get("meta") or {}))  # 始终写最新到会话专属共享文件，供CLI按需读取（不注入对话、不刷屏）
                 continue
             if is_no_mirror_envelope(env):
                 continue
@@ -1262,15 +1292,17 @@ class SessionHelper:
         delivery_id = str(meta.get("delivery_id") or "").strip()
         if not delivery_id:
             return  # 无 delivery_id 无法定位 → 错地址,不回退、不回 ACK
+        inbox = self.sub_agent_ack_inbox(meta)
+        if inbox is None: return
         try:
-            outcome = await asyncio.to_thread(self.delivery_inbox.cancel, message_id, delivery_id)
+            outcome = await asyncio.to_thread(inbox.cancel, message_id, delivery_id)
         except Exception as exc:
             print(f"[delivery_cancel] inbox unavailable: {exc}", flush=True)
             return  # 迟到/异常不回退、不回 ACK(避免误导 hub CAS)
-        row = await asyncio.to_thread(self.delivery_inbox.lifecycle, delivery_id)
-        identity = {}
+        row = await asyncio.to_thread(inbox.lifecycle, delivery_id)
+        identity = {k: meta[k] for k in ('target_node_id', 'lane_generation') if k in meta}
         if row is not None and row['ack_protocol'] == 2:
-            identity = {'ack_protocol': 2, 'processing_mode': row['processing_mode'], 'ack_generation': row['ack_generation']}
+            identity.update(ack_protocol=2, processing_mode=row['processing_mode'], ack_generation=row['ack_generation'])
         ack = self.delivery_cancel_ack(message_id, delivery_id, outcome["result"], state=outcome["state"], **identity)
         await ws.send(json.dumps(ack, ensure_ascii=False))
         print(f"[delivery_cancel] delivery_id={delivery_id} result={outcome['result']}", flush=True)
@@ -1284,6 +1316,8 @@ class SessionHelper:
         return True
 
     async def accept_delivery(self, ws, env: dict) -> None:
+        if any(key in (env.get('meta') or {}) for key in ('target_node_id', 'sub_path', 'target_full_name', 'lane_generation')):
+            if await self.accept_sub_agent_delivery(ws, env): return
         delivery_id = str((env.get("meta") or {}).get("delivery_id") or "").strip()
         if not delivery_id:
             return
@@ -1318,6 +1352,7 @@ class SessionHelper:
         body = str(env.get("body") or "")
         if (env.get("meta") or {}).get("type") == "online_directory" or is_online_directory_text(body):
             await asyncio.to_thread(self.write_online_list, body)
+            await asyncio.to_thread(self.write_online_tree, env.get("meta") or {})
             if await self._skip_v2_model_delivery(env):
                 return
             await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="desktop_inbox_saved" if self.cfg.mode == "desktop" else ""), ensure_ascii=False))
@@ -1841,6 +1876,16 @@ class SessionHelper:
             return override
         base = os.path.expanduser(os.path.join("~", ".dingwei"))
         return os.path.join(base, f"{self.cfg.session_name}.DingWeiOnlineSessions.list")
+
+    def write_online_tree(self, meta):
+        # Full replacement, including an empty legacy snapshot, clears stale children.
+        value = dict(version=1, trees=meta.get('trees', []) if meta.get('tree_version') == 1 else [])
+        path = self.online_list_path() + '.tree.json'
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with self._online_list_lock:
+            tmp = path + '.tmp'
+            with open(tmp, 'w', encoding='utf-8') as fh: json.dump(value, fh, ensure_ascii=False)
+            os.replace(tmp, path)
 
     def write_online_list(self, body: str | None) -> None:
         """把最新在线清单原子写入共享文件，供 CLI（经 skill）按需读取。始终最新、不进对话。

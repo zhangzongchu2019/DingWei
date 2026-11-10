@@ -1,0 +1,17 @@
+test_one_reconcile_request_per_seat_across_processes (test_codex_delivery_reconcile.ReconcileBoundaries.test_one_reconcile_request_per_seat_across_processes) ... FAIL
+
+======================================================================
+FAIL: test_one_reconcile_request_per_seat_across_processes (test_codex_delivery_reconcile.ReconcileBoundaries.test_one_reconcile_request_per_seat_across_processes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_codex_delivery_reconcile.py", line 318, in test_one_reconcile_request_per_seat_across_processes
+    self.assertEqual(self.driver.reconcile_pending(self.did), 'pending', 'SEAT_RECONCILE_OVERLAPPED')
+AssertionError: 'complete' != 'pending'
+- complete
++ pending
+ : SEAT_RECONCILE_OVERLAPPED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.101s
+
+FAILED (failures=1)

@@ -1,7 +1,10 @@
 // Package model 定义 WorkPulse 的核心领域类型（语言无关的数据结构）。
 package model
 
-import "time"
+import (
+	"github.com/zhangzongchu2019/dingwei/internal/subagent"
+	"time"
+)
 
 // ChatType 会话主体类型：个人账号 或 群。
 type ChatType string
@@ -121,6 +124,7 @@ type FeishuReplyMetadata struct {
 
 // SessionDelivery is a durable Hub-to-session delivery record.
 type SessionDelivery struct {
+	SubRoute        *subagent.DeliveryRoute // Hub-only, persisted atomically with the delivery.
 	ID              string
 	KeyID           string
 	SessionName     string

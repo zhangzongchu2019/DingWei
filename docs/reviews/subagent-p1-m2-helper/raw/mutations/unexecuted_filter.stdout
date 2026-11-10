@@ -1,0 +1,15 @@
+test_aa007_atomic_seal_returns_only_definitely_unexecuted (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa007_atomic_seal_returns_only_definitely_unexecuted) ... FAIL
+
+======================================================================
+FAIL: test_aa007_atomic_seal_returns_only_definitely_unexecuted (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa007_atomic_seal_returns_only_definitely_unexecuted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 142, in test_aa007_atomic_seal_returns_only_definitely_unexecuted
+    self.assertEqual({r['delivery_id'] for r in self.store.returns()}, {'queued', 'local-dispatch'})
+AssertionError: Items in the first set but not the second:
+'possibly-written'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.095s
+
+FAILED (failures=1)

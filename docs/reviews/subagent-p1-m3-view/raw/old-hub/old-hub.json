@@ -1,0 +1,18 @@
+{
+  "start": "2026-11-09T01:36:15.824534+00:00",
+  "end": "2026-11-09T01:36:18.956890+00:00",
+  "commit": "79a60a1e351c207ff0b46bdf9151e846ec83f5d4",
+  "rc": 0,
+  "target_red": false,
+  "uid": 1001,
+  "command": [
+    "go",
+    "test",
+    "-overlay=<isolated>",
+    "./internal/m8",
+    "-run",
+    "^TestM3OldHubMixedMatrix$",
+    "-v",
+    "-count=1"
+  ]
+}

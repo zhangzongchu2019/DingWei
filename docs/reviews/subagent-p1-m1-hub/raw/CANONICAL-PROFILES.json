@@ -1,0 +1,26 @@
+[
+  {
+    "actual": 1129,
+    "actual_SH_DRIVER": "claude",
+    "expected": 1129,
+    "files": 91,
+    "groups": [
+      1120,
+      9
+    ],
+    "profile": "claude",
+    "rc": 0
+  },
+  {
+    "actual": 1129,
+    "actual_SH_DRIVER": "codex",
+    "expected": 1129,
+    "files": 91,
+    "groups": [
+      1120,
+      9
+    ],
+    "profile": "codex",
+    "rc": 0
+  }
+]

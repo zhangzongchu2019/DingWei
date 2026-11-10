@@ -1,0 +1,4 @@
+=== RUN   TestSubAgentRollbackCheckAllRoots
+--- PASS: TestSubAgentRollbackCheckAllRoots (0.16s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	0.164s

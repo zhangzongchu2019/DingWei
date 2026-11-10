@@ -16,7 +16,7 @@ func (h *Hub) HandleViewMentionCandidates(w http.ResponseWriter, r *http.Request
 		http.NotFound(w, r)
 		return
 	}
-	self, _, err := h.Identity.ResolveFullName(r.Context(), strings.TrimSpace(r.PathValue("sessionName")))
+	self, _, err := h.Identity.ResolveFullName(r.Context(), viewRoot(strings.TrimSpace(r.PathValue("sessionName"))))
 	if err != nil {
 		writeAgentWSError(w, http.StatusNotFound, "not_found")
 		return

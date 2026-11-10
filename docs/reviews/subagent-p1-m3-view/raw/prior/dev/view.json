@@ -1,0 +1,19 @@
+{
+  "command": [
+    "env",
+    "PYTHONPATH=view-service",
+    "python3",
+    "-m",
+    "unittest",
+    "-q",
+    "test_mux_projection",
+    "test_mux_projection_failure",
+    "test_cost_paused"
+  ],
+  "start": "2026-11-09T01:14:52.329053+00:00",
+  "end": "2026-11-09T01:15:01.613390+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "0b47a5857cc331ee5dc8012a002fd561ae2279f0",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

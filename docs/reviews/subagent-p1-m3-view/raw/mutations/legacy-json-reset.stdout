@@ -1,0 +1,23 @@
+F
+======================================================================
+FAIL: test_aa010_online_tree_json_never_enters_legacy_text (test_sub_agent_helper.StoreTests.test_aa010_online_tree_json_never_enters_legacy_text)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m3-view/tools/sessionhelper/tests/test_sub_agent_helper.py", line 156, in test_aa010_online_tree_json_never_enters_legacy_text
+    self.assertEqual(json.loads(Path(str(path)+'.tree.json').read_text())['trees'],[],'AA010_OLD_HUB_CLEARS_STALE_CHILDREN')
+AssertionError: Lists differ: [{'full_name': 'root.owner', 'nodes': [{'f[69 chars]'}]}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'full_name': 'root.owner', 'nodes': [{'full_name': 'child.root.owner', 'state': 'ended', 'reason': 'completed'}]}
+
++ []
+- [{'full_name': 'root.owner',
+-   'nodes': [{'full_name': 'child.root.owner',
+-              'reason': 'completed',
+-              'state': 'ended'}]}] : AA010_OLD_HUB_CLEARS_STALE_CHILDREN
+
+----------------------------------------------------------------------
+Ran 1 test in 0.127s
+
+FAILED (failures=1)

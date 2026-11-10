@@ -58,11 +58,13 @@ class UnifiedCommandQueue:
         self._rejected_emitted: set[str] = set()
         self._current: QueuedCommand | None = None
         self._next_seq = 1
+        self._sealed = False
 
     def enqueue(self, env: dict, *, source: CommandSource | None = None) -> EnqueueResult:
         text = str(env.get("body") or "")
         delivery_id = self._delivery_id(env, source)
         with self._lock:
+            if self._sealed:raise ValueError('sub_agent_ended')
             existing = self._by_delivery.get(delivery_id)
             if existing is not None:
                 return EnqueueResult("duplicate", existing, None)
@@ -95,6 +97,13 @@ class UnifiedCommandQueue:
             self._by_delivery[delivery_id] = command
             event = self._lifecycle_event(command, "queued")
             return EnqueueResult("queued", command, event)
+
+    def seal(self):
+        with self._lock:
+            self._sealed=True
+            pending=tuple(self._pending)
+            self._pending.clear()
+            return pending
 
     def start_next(self) -> QueuedCommand | None:
         with self._lock:

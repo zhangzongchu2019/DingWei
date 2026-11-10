@@ -1,0 +1,6 @@
+=== RUN   TestCheckAllCommandBlocksUnpreparedRoot
+    main_test.go:72: AA009_CHECK_CLI_EXIT 0 {2 [{root-a 1 [root-a-mail]} {root-b 1 [root-b-mail]}]} <nil> 
+--- FAIL: TestCheckAllCommandBlocksUnpreparedRoot (0.22s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/cmd/subagent-rollback	0.232s
+FAIL

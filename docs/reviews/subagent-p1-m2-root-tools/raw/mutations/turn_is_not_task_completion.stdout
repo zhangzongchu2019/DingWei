@@ -1,0 +1,19 @@
+test_aa007_idle_progress_and_pending_work_are_distinct (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa007_idle_progress_and_pending_work_are_distinct) ... [driver-adapter] started, driver=codex
+FAIL
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+
+======================================================================
+FAIL: test_aa007_idle_progress_and_pending_work_are_distinct (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa007_idle_progress_and_pending_work_are_distinct)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 405, in test_aa007_idle_progress_and_pending_work_are_distinct
+    self.assertEqual(self.runtime.store.node(a['node_id'])['state'], 'active', 'NATIVE_TURN_COMPLETION_ENDED_LONG_TASK')
+AssertionError: 'draining' != 'active'
+- draining
++ active
+ : NATIVE_TURN_COMPLETION_ENDED_LONG_TASK
+
+----------------------------------------------------------------------
+Ran 1 test in 0.116s
+
+FAILED (failures=1)

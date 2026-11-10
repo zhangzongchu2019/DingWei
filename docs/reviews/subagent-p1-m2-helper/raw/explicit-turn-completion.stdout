@@ -1,0 +1,11 @@
+test_aa007_idle_progress_and_pending_work_are_distinct (tools.sessionhelper.tests.test_sub_agent_helper.RuntimeTests.test_aa007_idle_progress_and_pending_work_are_distinct) ... [sub-agent] existing root thread has no installed dynamicTools; root control tools unavailable
+[driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.158s
+
+OK

@@ -1,0 +1,6 @@
+=== RUN   TestSubAgentOfflineRollbackLegacyClaimer
+    sub_agent_rollback_test.go:44: AA010_ROLLBACK_CLASSIFICATION {0 1 1} <nil>
+--- FAIL: TestSubAgentOfflineRollbackLegacyClaimer (0.19s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.198s
+FAIL

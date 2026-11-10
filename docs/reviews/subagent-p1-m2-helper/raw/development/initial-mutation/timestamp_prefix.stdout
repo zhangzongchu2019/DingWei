@@ -1,0 +1,17 @@
+test_aa006_random_tail_collision_alias_and_tombstone (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa006_random_tail_collision_alias_and_tombstone) ... FAIL
+
+======================================================================
+FAIL: test_aa006_random_tail_collision_alias_and_tombstone (tools.sessionhelper.tests.test_sub_agent_helper.StoreTests.test_aa006_random_tail_collision_alias_and_tombstone)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 95, in test_aa006_random_tail_collision_alias_and_tombstone
+    self.assertEqual(a['canonical_name'], 'abcdef12')
+AssertionError: '019a6500' != 'abcdef12'
+- 019a6500
++ abcdef12
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.059s
+
+FAILED (failures=1)

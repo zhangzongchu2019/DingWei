@@ -15,20 +15,23 @@ import (
 const muxFrameMax = 1 << 20
 
 type consoleMuxWire struct {
-	Type       string `json:"type"`
-	AgentID    string `json:"agent_id,omitempty"`
-	FullName   string `json:"full_name,omitempty"`
-	Instance   string `json:"iframe_instance,omitempty"`
-	Generation string `json:"generation,omitempty"`
-	Round      string `json:"replay_round,omitempty"`
-	Epoch      string `json:"epoch,omitempty"`
-	Seq        string `json:"seq,omitempty"`
-	Floor      string `json:"floor,omitempty"`
-	H          string `json:"H,omitempty"`
-	Empty      bool   `json:"empty,omitempty"`
-	Mode       string `json:"mode,omitempty"`
-	Reason     string `json:"reason,omitempty"`
-	Cause      string `json:"cause,omitempty"`
+	RootID         string `json:"root_agent_id,omitempty"`
+	NodeID         string `json:"node_id,omitempty"`
+	LaneGeneration int64  `json:"lane_generation,omitempty"`
+	Type           string `json:"type"`
+	AgentID        string `json:"agent_id,omitempty"`
+	FullName       string `json:"full_name,omitempty"`
+	Instance       string `json:"iframe_instance,omitempty"`
+	Generation     string `json:"generation,omitempty"`
+	Round          string `json:"replay_round,omitempty"`
+	Epoch          string `json:"epoch,omitempty"`
+	Seq            string `json:"seq,omitempty"`
+	Floor          string `json:"floor,omitempty"`
+	H              string `json:"H,omitempty"`
+	Empty          bool   `json:"empty,omitempty"`
+	Mode           string `json:"mode,omitempty"`
+	Reason         string `json:"reason,omitempty"`
+	Cause          string `json:"cause,omitempty"`
 }
 type consoleMuxPacket struct {
 	Meta consoleMuxWire
@@ -72,7 +75,7 @@ func muxPacket(meta consoleMuxWire, payload []byte) (*consoleMuxPacket, error) {
 	return &consoleMuxPacket{Meta: meta, Wire: out}, nil
 }
 func muxMeta(s *consoleMuxScope, kind string) consoleMuxWire {
-	return consoleMuxWire{Type: kind, AgentID: s.Agent.ID, FullName: s.Agent.FullName, Instance: s.Desired.Instance, Generation: s.Generation, Round: muxSeq(s.Round)}
+	return consoleMuxWire{RootID: s.Agent.RootID, NodeID: s.Agent.NodeID, LaneGeneration: s.Agent.LaneGeneration, Type: kind, AgentID: s.Agent.ID, FullName: s.Agent.FullName, Instance: s.Desired.Instance, Generation: s.Generation, Round: muxSeq(s.Round)}
 }
 
 // Reader bytes are checked at publisher fanout, not after an unbounded channel.

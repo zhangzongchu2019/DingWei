@@ -1,0 +1,12 @@
+AssertionError [ERR_ASSERTION]: AA010_BROWSER_ROOT_MASKS_SUBTREE
+    at /data/ai-dev-data/subagent-p1-m3-view/view-service/sub-agent-tree-browser-regression.js:43:3
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processImmediate (node:internal/timers:452:9)
+    at process.callbackTrampoline (node:internal/async_hooks:130:17) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

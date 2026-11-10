@@ -1,0 +1,18 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-json",
+    "./internal/m8",
+    "./internal/store",
+    "./internal/consolemux",
+    "./cmd/...",
+    "-count=1"
+  ],
+  "start": "2026-11-09T01:29:52.274927+00:00",
+  "end": "2026-11-09T01:34:30.361305+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "885052b70ef8bcf155fdba389d4a6f41f31510c3",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

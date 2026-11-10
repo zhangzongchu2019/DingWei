@@ -1,0 +1,21 @@
+package m8
+import (
+ "context"
+ "testing"
+ "strings"
+ "time"
+ "github.com/coder/websocket/wsjson"
+ "github.com/zhangzongchu2019/dingwei/internal/model"
+)
+func TestM3OldHubMixedMatrix(t *testing.T) {
+ for _,newHelper:=range []bool{false,true} { label:="old_helper";if newHelper {label="new_helper"};t.Run(label,func(t *testing.T){
+ e:=newAgentEnv(t);c,status,body:=e.dial(e.cred,"tool=codex&version=0.2.3.14");if c==nil{t.Fatal(status,body)};defer c.CloseNow();waitSessionOnline(t,e.hub,"u_zzc","opus50ts")
+ if newHelper {ctx,cancel:=context.WithTimeout(e.ctx,time.Second);defer cancel();if err:=wsjson.Write(ctx,c,model.Envelope{Meta:map[string]any{"type":"session_capabilities","sub_agents_v1":true,"max_supported_depth":1,"delivery_ack_v1":true}});err!=nil{t.Fatal(err)}}
+ env:=model.Envelope{ID:"child",From:"opus50ts#u_zzc",To:"aa.opus50ts.zzc#u_zzc",Body:"must not reach root"}
+ if err:=e.hub.RouteEnvelope(e.ctx,env);err==nil{t.Fatal("AA010_OLD_HUB_FULL_CHILD_REJECT")}
+ if err:=e.hub.RouteEnvelope(e.ctx,model.Envelope{ID:"root",From:env.From,To:"opus50ts.zzc#u_zzc",Body:"root survives"});err!=nil{t.Fatal("AA010_OLD_HUB_ROOT_DOWNGRADE",err)}
+ ctx,cancel:=context.WithTimeout(e.ctx,2*time.Second);defer cancel()
+ for {var got model.Envelope;if err:=wsjson.Read(ctx,c,&got);err!=nil{t.Fatal(err)};if got.ID=="child"||strings.Contains(got.Body,"must not reach root"){t.Fatal("AA010_OLD_HUB_PARENT_MISROUTE")};if got.ID=="root"{break}}
+ t.Logf("old Hub/newHelper=%t: full child rejected, root delivered; no sub capability ACK => new helper creation remains unavailable",newHelper)
+ }) }
+}

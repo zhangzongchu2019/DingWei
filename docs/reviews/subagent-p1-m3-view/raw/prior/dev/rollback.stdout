@@ -1,0 +1,6 @@
+=== RUN   TestSubAgentOfflineRollbackLegacyClaimer
+    sub_agent_rollback_test.go:59: SQL logic error: no such table: delivery_failure_notice (1)
+--- FAIL: TestSubAgentOfflineRollbackLegacyClaimer (0.15s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.153s
+FAIL

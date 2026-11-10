@@ -1,0 +1,18 @@
+test_old_root_preserves_private_endpoint_binding (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_old_root_preserves_private_endpoint_binding) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+FAIL
+
+======================================================================
+FAIL: test_old_root_preserves_private_endpoint_binding (tools.sessionhelper.tests.test_sub_agent_helper.ExistingRootToolsTests.test_old_root_preserves_private_endpoint_binding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/subagent-p1-m2-helper/tools/sessionhelper/tests/test_sub_agent_helper.py", line 588, in test_old_root_preserves_private_endpoint_binding
+    self.assertEqual(self.endpoint.bound_thread(), 'existing-root', 'OLD_ROOT_PRIVATE_BINDING_REPLACED')
+AssertionError: 'replacement' != 'existing-root'
+- replacement
++ existing-root
+ : OLD_ROOT_PRIVATE_BINDING_REPLACED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.047s
+
+FAILED (failures=1)

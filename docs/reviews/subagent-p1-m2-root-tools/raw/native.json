@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/tmp/coder-0232-locked-venv/bin/python3",
+    "tests/subagent-p1-m2/native_tools.py",
+    "--binary",
+    "/tmp/coder-stale-protocol-01592/codex",
+    "--output",
+    "/tmp/m2-root-fix-final-native"
+  ],
+  "start": "2026-11-09T00:42:45.062519+00:00",
+  "end": "2026-11-09T00:42:46.921931+00:00",
+  "rc": 0,
+  "uid": 1001,
+  "source_commit": "e509b44a59b48ffad5fd52e167fe5e23eff8a848",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}

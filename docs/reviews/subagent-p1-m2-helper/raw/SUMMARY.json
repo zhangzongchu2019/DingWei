@@ -1,0 +1,29 @@
+{
+  "final_candidate": "826a7c0ecf3d3b5634f69eed479d6c5abdf3b119",
+  "product_commit": "eed6ac54762bb2cf756f78934fbfb2db46f73d64",
+  "canonical": {
+    "rc": 0,
+    "profiles": {
+      "claude": 1158,
+      "codex": 1158
+    },
+    "files": 92,
+    "python_suites": 27,
+    "shell_suites": 2
+  },
+  "m2_mutation_target_red": 24,
+  "r55_mutation_target_red": 21,
+  "r55_matrix_cases": 9,
+  "m8": {
+    "pass": 1524,
+    "fail": 0,
+    "skip": 37
+  },
+  "strict": {
+    "pass": 29,
+    "fail": 0
+  },
+  "native_real_inference": false,
+  "future_rc": 0,
+  "independent_acceptance": "pending leader review"
+}

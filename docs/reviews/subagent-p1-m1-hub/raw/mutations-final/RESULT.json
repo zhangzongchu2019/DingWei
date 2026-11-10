@@ -1,0 +1,496 @@
+[
+  {
+    "name": "depth",
+    "file": "internal/subagent/route.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/subagent",
+      "-run",
+      "^TestRouteParser$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA002_DEPTH_EXCEEDED",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:43:09.729175+00:00",
+    "end": "2026-11-08T22:43:09.989167+00:00"
+  },
+  {
+    "name": "segments",
+    "file": "internal/subagent/route.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/subagent",
+      "-run",
+      "^TestRouteParser$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA001_MALFORMED",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:43:09.990559+00:00",
+    "end": "2026-11-08T22:43:10.522296+00:00"
+  },
+  {
+    "name": "parent-fallback",
+    "file": "internal/store/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubNegotiationRoutesAndSiblingIdentity$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA003_NOT_FOUND",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:43:10.523154+00:00",
+    "end": "2026-11-08T22:43:30.118024+00:00"
+  },
+  {
+    "name": "ended",
+    "file": "internal/store/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/store",
+      "-run",
+      "^TestSubAgentSnapshotRecoveryAndTombstone$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA003_ENDED_DISTINCT",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:43:30.119433+00:00",
+    "end": "2026-11-08T22:43:33.945857+00:00"
+  },
+  {
+    "name": "reconnect-ready",
+    "file": "internal/m8/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubReconnectRequiresNegotiationAndSnapshot$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA003_RECONNECT_TREE_NOT_INHERITED",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:43:33.946591+00:00",
+    "end": "2026-11-08T22:43:47.367165+00:00"
+  },
+  {
+    "name": "codex-capability",
+    "file": "internal/m8/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubCapabilityAndEpochNegatives/old-helper$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA003_CAPABILITY_BOUNDARY",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:43:47.368014+00:00",
+    "end": "2026-11-08T22:44:01.501613+00:00"
+  },
+  {
+    "name": "snapshot-epoch",
+    "file": "internal/store/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/store",
+      "-run",
+      "^TestSubAgentSnapshotRecoveryAndTombstone$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_STALE_CONNECTION",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:44:01.502469+00:00",
+    "end": "2026-11-08T22:44:05.357584+00:00"
+  },
+  {
+    "name": "snapshot-version",
+    "file": "internal/store/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/store",
+      "-run",
+      "^TestSubAgentSnapshotRecoveryAndTombstone$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_SAME_REV_DIFFERENT_DIGEST",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:44:05.358384+00:00",
+    "end": "2026-11-08T22:44:09.263383+00:00"
+  },
+  {
+    "name": "revive",
+    "file": "internal/store/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/store",
+      "-run",
+      "^TestSubAgentSnapshotRecoveryAndTombstone$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_ENDED_CANNOT_REVIVE",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:44:09.265983+00:00",
+    "end": "2026-11-08T22:44:12.843920+00:00"
+  },
+  {
+    "name": "alias-rebind",
+    "file": "internal/store/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/store",
+      "-run",
+      "^TestSubAgentSnapshotRecoveryAndTombstone$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA003_ALIAS_REBIND",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:44:12.844759+00:00",
+    "end": "2026-11-08T22:44:16.570249+00:00"
+  },
+  {
+    "name": "source-identity",
+    "file": "internal/m8/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubTrustedSourceReplyAndSpoof$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA004_CHILD_ORIGIN",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:44:16.571953+00:00",
+    "end": "2026-11-08T22:44:29.841996+00:00"
+  },
+  {
+    "name": "authorization",
+    "file": "internal/m8/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubAuthBeforeAddressAndTree$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA004_AUTH_BEFORE_ADDRESS",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:44:29.842895+00:00",
+    "end": "2026-11-08T22:44:42.152955+00:00"
+  },
+  {
+    "name": "payload",
+    "file": "internal/m8/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubNegotiationRoutesAndSiblingIdentity$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA003_BODY_AND_TARGET",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:44:42.154479+00:00",
+    "end": "2026-11-08T22:44:54.233812+00:00"
+  },
+  {
+    "name": "dedup-scope",
+    "file": "internal/store/sqlite.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubNegotiationRoutesAndSiblingIdentity$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_SIBLINGS_ROUTE_DELIVERIES",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:44:54.236227+00:00",
+    "end": "2026-11-08T22:45:07.430799+00:00"
+  },
+  {
+    "name": "claim-scope",
+    "file": "internal/m8/hub.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubNegotiationRoutesAndSiblingIdentity$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_SIBLINGS_ROUTE_DELIVERIES",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:45:07.435769+00:00",
+    "end": "2026-11-08T22:45:18.697302+00:00"
+  },
+  {
+    "name": "node-id",
+    "file": "internal/subagent/route.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentIdentityIncludesNodeAndGeneration$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_ID_INCLUDES_NODE",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:45:18.698068+00:00",
+    "end": "2026-11-08T22:45:33.137221+00:00"
+  },
+  {
+    "name": "generation-id",
+    "file": "internal/subagent/route.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentIdentityIncludesNodeAndGeneration$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_ID_INCLUDES_GENERATION",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:45:33.138013+00:00",
+    "end": "2026-11-08T22:45:49.376676+00:00"
+  },
+  {
+    "name": "generation-check",
+    "file": "internal/store/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/store",
+      "-run",
+      "^TestSubAgentDeliverySidecarAtomicAndRestart$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_GENERATION_CHECK",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:45:49.378035+00:00",
+    "end": "2026-11-08T22:45:52.619924+00:00"
+  },
+  {
+    "name": "sidecar-atomic",
+    "file": "internal/store/sqlite.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/store",
+      "-run",
+      "^TestSubAgentDeliverySidecarAtomicAndRestart$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_SIDECAR_ATOMIC",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:45:52.621393+00:00",
+    "end": "2026-11-08T22:45:55.763936+00:00"
+  },
+  {
+    "name": "replay-capability",
+    "file": "internal/m8/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubDrainAndACKFailClosed$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_UNNEGOTIATED_REPLAY",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:45:55.765424+00:00",
+    "end": "2026-11-08T22:46:06.650017+00:00"
+  },
+  {
+    "name": "ack-scope",
+    "file": "internal/m8/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubDrainAndACKFailClosed$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_CROSS_LANE_ACK",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:46:06.651792+00:00",
+    "end": "2026-11-08T22:46:17.479386+00:00"
+  },
+  {
+    "name": "failure-return",
+    "file": "internal/store/failure_notice.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/store",
+      "-run",
+      "^TestSubAgentFailureNoticeRetainsSourceNode$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA004_FAILURE_RETURN_TO_NODE",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:46:17.479981+00:00",
+    "end": "2026-11-08T22:46:20.494250+00:00"
+  },
+  {
+    "name": "reply-policy",
+    "file": "internal/m8/reply_to_origin.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubAutomaticReplyUsesPersistedSource$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA004_CHILD_DEFAULT_REPLY_POLICY",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:46:20.494964+00:00",
+    "end": "2026-11-08T22:46:31.633410+00:00"
+  },
+  {
+    "name": "reply-generation",
+    "file": "internal/m8/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubAutomaticReplyUsesPersistedSource$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_REPLY_GENERATION_PIN",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:46:31.634377+00:00",
+    "end": "2026-11-08T22:46:44.723968+00:00"
+  },
+  {
+    "name": "feature-off",
+    "file": "internal/m8/sub_agent.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/m8",
+      "-run",
+      "^TestSubAgentHubFeatureOffPreservesRoot$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_FEATURE_OFF",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:46:44.725342+00:00",
+    "end": "2026-11-08T22:46:55.678684+00:00"
+  },
+  {
+    "name": "migration-old-data",
+    "file": "internal/store/sqlite.go",
+    "command": [
+      "go",
+      "test",
+      "-overlay=<isolated>",
+      "./internal/store",
+      "-run",
+      "^TestSubAgentMigrationPreservesOldData$",
+      "-count=1",
+      "-v"
+    ],
+    "expected_marker": "AA009_MIGRATION_OLD_DATA",
+    "rc": 1,
+    "target_red": true,
+    "start": "2026-11-08T22:46:55.680644+00:00",
+    "end": "2026-11-08T22:46:58.716409+00:00"
+  }
+]

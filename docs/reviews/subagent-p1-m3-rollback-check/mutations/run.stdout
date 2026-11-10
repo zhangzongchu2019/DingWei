@@ -1,0 +1,4 @@
+inventory target_red=True
+cli-exit target_red=True
+read-only target_red=True
+wal target_red=True

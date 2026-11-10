@@ -1,0 +1,967 @@
+
+=== browser suite: sub_agent_tree ===
+{"passed":6,"failed":0,"source":"actual Console document; mock HTTP only"}
+
+=== browser suite: openspec_binding_admin ===
+BIND_BROWSER_OK assertions=131 floor=125 mutation=none channel=headless-shell
+
+=== browser suite: r14_sticky_browser ===
+R14_BROWSER_OK S018=local-mock S023=both-entry-preflight authorization=separate-PG-test
+
+=== browser suite: coordinate_review_browser ===
+PASS R6_008 separate people
+PASS R6_005 failed notice visible
+PASS R6_008 untrusted evidence text
+PASS R6_001 zero source external requests
+PASS R6_005 prefetch is no open
+PASS R6_007 unknown not green
+PASS R6_007 original SHA retained
+PASS R6_001 exact dispatch SHA
+PASS R6_001 no source dispatch
+PASS R6_008 revocation clears history
+PASS R6_008 late authorized response cannot restore revoked history
+R6_BROWSER_OK checks=11 mutation=none
+
+=== browser suite: openspec_read_browser ===
+PASS original requirement and task IDs remain read-only
+PASS no document write controls
+PASS untrusted HTML does not execute
+PASS no executable or remote resource nodes
+PASS render and scroll make zero remote requests
+PASS dangerous schemes credentials and encoded links rejected
+PASS repository escape rejected
+PASS normalized parent link inside openspec allowed
+PASS context source link is external and same commit
+PASS external link isolates opener and referrer
+PASS navigation stays at full SHA
+PASS oversize feedback has immutable source and no truncated body
+PASS denial clears previous content and summaries
+PASS complete byte length 70000 and final marker
+PASS complete byte length 71680 and final marker
+PASS complete byte length 2097152 and final marker
+PASS coordinate edit discards late old response
+PASS browser makes no writes
+PASS source links are never fetched automatically
+R5_BROWSER_OK checks=19 mutation=none
+
+=== browser suite: renderer_0206_file_render ===
+  · 生成 /data/ai-dev-data/subagent-p1-m3-view/view-service/fixtures-0206/sample-large.txt（820000 字节）
+  · 生成 /data/ai-dev-data/subagent-p1-m3-view/view-service/fixtures-0206/oversize-52428801.bin（52428801 字节）
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ① 上传入口在界面上可见（文件选择按钮），不是只有隐藏的 paste 监听器
+  ✅ ② 文件选择一次传 6 个不同类型（图片/视频/pdf/文本/office/未知二进制）
+  ✅ ③ 正文区渲染：图片 <img>、视频 <video>、pdf <iframe>、文本 <pre> 内联
+  ✅ ④ 兜底：office 与未知二进制渲染成下载链接（<a download>），不报错也不留裸 URL
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ④a 接收方只拿到 URL（页面刷新后 hints 清空）⇒ 靠 HEAD 读服务端声明分派
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+  ✅ ④c HEAD 被拒（405）时按 URL 扩展名降级分派，且标出「已降级」
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ④d HEAD 404 说明文件不存在或链接无效，不把过期当结论
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ④e 扩展名与 Content-Type 不一致时，以服务端声明的头为准（分辨 (b)/(b′)）
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ④f 服务端声明 text/* 即内联；text/html 以源码文本显示，不得被当 HTML 执行
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ④g 服务端声明 image/svg+xml 时不内联，走下载链接（附录 E）
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+  ✅ ④h 降级路径:.svg 仍走下载链接,且 FILE_EXT_KIND 里不得出现永不内联的扩展名
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+  ✅ ④i 判据 9:只测第二道闸——FILE_EXT_KIND 里混入 svg 时,deny-set 必须仍拦住
+  ✅ ④b mp4：能解码则必须内联 <video>，不能解码则降级为下载链接（两种都不得留裸 URL）
+  ✅ ⑨ 上传进行中界面可见:文件名 + 已传/总字节 + 进度在动,多文件逐个一行
+  ✅ ⑩ 草稿附件块:图片出缩略图、非图片出图标;🔴 正文仍保留原样直链
+  ✅ ⑪ R4-V1/V2:本页上传的 docx,下载属性带原名(含空格与括号);V3:服务端不带 filename 时回退不编名
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ⑪b R4-V3:接收侧服务端不带 Content-Disposition filename ⇒ 不报错、不编名(回退空 download)
+    [console.error] Failed to load resource: the server responded with a status of 503 (Service Unavailable)
+  ✅ ⑫ 上传失败:该行标为失败并带服务端可读原因,且不清掉用户已输入的文字(R3)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+  ✅ ⑬ 外-A(docx/xlsx/pptx/doc/xls/ppt/zip)在 HEAD 与降级两条路径上都只给下载链接
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ⑬b 服务端说 image/png 但带 Content-Disposition: attachment ⇒ 必须下载,不内联
+  ✅ ⑭ P0:中文/emoji/空格括号/含%% 的文件名都能成功上传,且草稿块显示原名
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ⑮ R5-V1/V2/V3/V4:名(链接)→内容 交替;正文中已渲染的 URL 隐藏但仍在 DOM;过期链接保持可见
+R6_AUTH_PRECONDITION {"readonly":false}
+R6_SINGLE_UPLOAD {"before":27,"after":28,"delta":1,"authorized":true}
+    [console.error] Failed to load resource: the server responded with a status of 503 (Service Unavailable)
+  ✅ ⑯ R6-V1/V2/V3/V4:批次行计数递增、全成功后消失、有失败时留住并说清数目、单文件不出批次行
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+    [console.error] Failed to load resource: the server responded with a status of 405 (Method Not Allowed)
+  ✅ ⑰ B-11:音频两条路径都判成 audio 且必有下载出路;文本降级路径与 HEAD 路径一致;html/svg 仍 download
+  ✅ ⑱ 三个入口(粘贴/选择文件/拖放)各一条,走同一下游 —— 本次回归的根因是只测了一个
+  ✅ ⑲ 🔴 P0 根因:焦点在正文附件链接上时,粘贴必须仍然生效(修复前必红)
+  ✅ ⑳ 扩大作用域的代价必须钉住:全页各处粘贴【纯文本】都不得被接管
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ㉑ 只读会话粘贴文件:必须给出可读提示,不得静默
+  ✅ ㉒ 🔴 阴格(业主确认):窄窗口 <880px 下 📎/📷 仍然可见
+  ✅ ㉓ 🔴 断线必须看得见:🕐 那一栏进入断线态、显示第 N 次、点击可立即重试
+    [console.error] Failed to load resource: the server responded with a status of 404 (Not Found)
+  ✅ ㉔ 状态栏精简:移除项不再出现、保留项仍在、无未捕获异常;「归属 归属」不再重复
+  ✅ ㉕ 页内截屏:抓帧→框选→裁剪→**走既有上传管道**(选源那一步只能人工,见注释)
+  ✅ ㉖ 🔴 未调用测试缝时,走的必须是【真的 getDisplayMedia】(组长 ts-No.6 第①条)
+  ✅ ㉗ 🔴 U7:真实 pointer 拖选后,上传字节的 PNG IHDR 宽高必须 == 选区宽高(传整张即红)
+    · ㉘ 实测: [{"vp":"1280x900","ovTop":0,"ovH":900,"cvBottom":650,"hit":true,"hitTop":"shotCanvas"},{"vp":"1280x1600","ovTop":0,"ovH":1600,"cvBottom":650,"hit":true,"hitTop":"shotWrap"},{"vp":"420x900","ovTop":0,"ovH":900,"cvBottom":371.28,"hit":true,"hitTop":"shotWrap"}]
+  ✅ ㉘ 🔴 截屏遮罩必须铺满【视口】而不是页脚 —— 三档视口各验一次(修复前必红)
+  ✅ ㉙ 🔴 选区 <4px 必须回退整张(不是碎片);刚过阈值必须真按选区裁 —— 两条腿都要有
+  ✅ ㉚ 🔴 截屏必须传 selfBrowserSurface:'include' —— 否则【当前这个 tab】被浏览器故意排除(业主实操撞到的)
+  ✅ ⑤ 拖放一次拖入 2 个文件，两个都上传
+  ✅ ⑥ 粘贴一个 pdf（非图片）也上传 —— 原实现只接 image/*
+  ✅ ⑦ 大文本内联截断并给下载链接（不是整篇灌进正文）
+  ✅ ⑧ 超过 50 MiB（52428801 字节）在发请求前拒绝，不发上传请求
+
+通过 41 / 失败 0   截图目录 /tmp/sm1-q3rpvs6e/dw-browser-gate-scxlc67p/shots
+
+=== browser suite: trusted_origins_file_flow ===
+PASS trusted-origin file flow port=443 upload=https://dw123.cmjrt.com/files/upload draft=https://dw123.cmjrt.com/f/owner/session/image.png stored=https://dw123.cmjrt.com/f/owner/session/image.png (image.png, 68 bytes) rendered=https://dw123.cmjrt.com/f/owner/session/image.png
+PASS trusted-origin file flow port=50443 upload=https://dw123.cmjrt.com:50443/files/upload draft=https://dw123.cmjrt.com:50443/f/owner/session/image.png stored=https://dw123.cmjrt.com/f/owner/session/image.png (image.png, 68 bytes) rendered=https://dw123.cmjrt.com:50443/f/owner/session/image.png
+
+=== browser suite: console_browser ===
+  PASS loads the real console document
+  PASS keeps platform workspaces interactive after a full Agent refresh interval
+  PASS resets the created name while preserving the selected short-name Agent
+  PASS offers owned active offline Agents as group membership candidates
+  PASS distinguishes platform and Agent load failures from true empty states
+  PASS renders online and offline agents from the console API
+  PASS renders no platform entry without an observable action
+  PASS keeps dead action buttons absent after the server role changes
+  PASS lets a human start from zero groups without a hidden-control deadlock
+  PASS runs the zero-group human workflow without hidden actions or long tasks
+  PASS opens Agent groups inside console with the owner-only online Agent selector
+  PASS shows a visible successful retry result
+  PASS ignores an older group snapshot that arrives after the latest response
+  PASS keeps rejected and accepted create results visible beside the name control
+  PASS shows group load and network action failures beside their controls
+  PASS group name: malformed names are explained locally in the shared sentence; invisible characters are stripped; a JSON error shows its message
+  PASS opens a real console tab and agent iframe
+  PASS explains why an open Agent tab becomes non-interactive when offline
+  PASS opens Specs inside console without destroying live Agent panes
+  PASS shows the server-rendered build version and never swallows a click
+console browser harness: passed=20 failed=0
+
+=== browser suite: console_temp_groups_offstate ===
+PASS offstate: zero temp-group requests, zero console errors, no visible temporary-group UI
+
+=== browser suite: console_temp_groups ===
+TEMP_GROUP_UI_BROWSER_OK empty_dom=byte_equal sidebar=true detail_members=2 cancel_requests=0 conflict_readable=true success_refresh=1 page_errors=0
+
+=== browser suite: renderer_in_console_iframe ===
+  · console 页取自生产源码 internal/m8/console_auth.go(134827 字节)
+  · renderer  /data/ai-dev-data/subagent-p1-m3-view/view-service/renderer-canary-sse.html
+    sha256=8426af56da051451… 359338 字节
+  ✅ iframe-① 真 console 开 Agent tab,iframe 内跑的是【仓内那一份】renderer(不是占位页)
+    · iframe-② 实测: [
+ {
+  "win": "1280x900",
+  "iframeViewport": [
+   1040,
+   859
+  ],
+  "ovTop": 0,
+  "ovH": 859,
+  "cvBottom": 650,
+  "hit": true,
+  "chain": "body",
+  "consoleNavTopElement": "DIV"
+ },
+ {
+  "win": "1280x1600",
+  "iframeViewport": [
+   1040,
+   1559
+  ],
+  "ovTop": 0,
+  "ovH": 1559,
+  "cvBottom": 650,
+  "hit": true,
+  "chain": "body",
+  "consoleNavTopElement": "DIV"
+ },
+ {
+  "win": "420x900",
+  "iframeViewport": [
+   180,
+   859
+  ],
+  "ovTop": 0,
+  "ovH": 859,
+  "cvBottom": 251.7,
+  "hit": true,
+  "chain": "body",
+  "consoleNavTopElement": "DIV"
+ }
+]
+    · 🔴 如实报(不断言):遮罩开着时 console 自己的 nav 仍是最上层命中元素 —— iframe 盖不到自己外面,这是架构固有边界,不是本次修复能解决的。 不断言它,因为断言等于把缺陷钉成契约、将来真要修就会红。
+  ✅ iframe-② 🔴 遮罩必须铺满【iframe 自己的视口】—— 三档浏览器窗口各验一次
+    · iframe-③ 实测(浅色 / 暗色 同文档对照): [
+ {
+  "窗口": "1280x900",
+  "iframe视口": [
+   1040,
+   859
+  ],
+  "父链": "body",
+  "浅色": {
+   "bodyBg": "rgb(246, 247, 249)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    111,
+    111,
+    112
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 5.02,
+   "遮罩vs页面": 4.68
+  },
+  "暗色": {
+   "bodyBg": "rgb(17, 19, 22)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    7,
+    8,
+    9
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 20.04,
+   "遮罩vs页面": 1.08,
+   "按钮对比度": "#shotConfirm=14.72 #shotCancel=14.72"
+  },
+  "遮罩rect": {
+   "left": 0,
+   "top": 0,
+   "right": 1040,
+   "bottom": 859,
+   "width": 1040,
+   "height": 859
+  },
+  "画布rect": {
+   "left": 120,
+   "top": 50,
+   "right": 920,
+   "bottom": 650,
+   "width": 800,
+   "height": 600
+  },
+  "中心命中": "shotCanvas"
+ },
+ {
+  "窗口": "1280x1600",
+  "iframe视口": [
+   1040,
+   1559
+  ],
+  "父链": "body",
+  "浅色": {
+   "bodyBg": "rgb(246, 247, 249)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    111,
+    111,
+    112
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 5.02,
+   "遮罩vs页面": 4.68
+  },
+  "暗色": {
+   "bodyBg": "rgb(17, 19, 22)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    7,
+    8,
+    9
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 20.04,
+   "遮罩vs页面": 1.08,
+   "按钮对比度": "#shotConfirm=14.72 #shotCancel=14.72"
+  },
+  "遮罩rect": {
+   "left": 0,
+   "top": 0,
+   "right": 1040,
+   "bottom": 1559,
+   "width": 1040,
+   "height": 1559
+  },
+  "画布rect": {
+   "left": 120,
+   "top": 50,
+   "right": 920,
+   "bottom": 650,
+   "width": 800,
+   "height": 600
+  },
+  "中心命中": "shotWrap"
+ },
+ {
+  "窗口": "420x900",
+  "iframe视口": [
+   180,
+   859
+  ],
+  "父链": "body",
+  "浅色": {
+   "bodyBg": "rgb(246, 247, 249)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    110,
+    110,
+    111
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 5.09,
+   "遮罩vs页面": 4.75
+  },
+  "暗色": {
+   "bodyBg": "rgb(17, 19, 22)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    6,
+    7,
+    8
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 20.16,
+   "遮罩vs页面": 1.08,
+   "按钮对比度": "#shotConfirm=14.72 #shotCancel=14.72"
+  },
+  "遮罩rect": {
+   "left": 0,
+   "top": 0,
+   "right": 180,
+   "bottom": 859,
+   "width": 180,
+   "height": 859
+  },
+  "画布rect": {
+   "left": 0,
+   "top": 116.7,
+   "right": 180,
+   "bottom": 251.7,
+   "width": 180,
+   "height": 135
+  },
+  "中心命中": "shotWrap"
+ }
+]
+    · 🔵 只打印不断言的两项:「遮罩vs页面」是**变暗提示的强度**(暗色下必然低, 因为遮罩是 rgba(0,0,0,.55) 压在 #111316 上;产品没有给这个值定过规格 ⇒ 断言它就是替产品立契约); 「遮罩computed」恒为 rgba(0,0,0,0.55) ⇒ 它是硬编码的,**不随主题变** —— 这条也是实测出来的,不是读码。
+  ✅ iframe-③ 暗色交叉:console 顶层 ◐ 切暗后,真 iframe 内遮罩仍铺满 iframe 视口,且遮罩文字/按钮仍可读
+
+通过 3 / 失败 0   (真 console iframe 路径)
+
+=== browser suite: renderer_sse_reconnect ===
+重连幂等(真 EventSource + 真断链 + hub 整批重放 ring)
+  · renderer /data/ai-dev-data/subagent-p1-m3-view/view-service/renderer-canary-sse.html
+    sha256=8426af56da051451…
+  ✅ L1 长正文(折叠) · 守卫:真断链重连确实发生了(≥3 次)
+  ✅ L1 长正文(折叠) · 🔴 重连重放后正文全文长度恒为单份(7680 字),既不翻倍也不归零
+  ✅ L1 长正文(折叠) · 🔴 assistant 事件数恒为单份(48 条)
+  ✅ L1 长正文(折叠) · 🔴 时间线卡片数恒为 ring+1(21),重连不得增删卡片
+  ✅ L1 长正文(折叠) · 🔴 折叠条自报字数恒为单份(业主从这一面看到翻倍)
+  ✅ L1 长正文(折叠) · 🔴 幂等机制确实被 arm(mark ≥1 · reset ≥1 · consume 返回 true ≥1)
+  ✅ L1 长正文(折叠) · 🔴 窗内**不得**触发重放超时告警(误报会把真告警淹掉)
+  ✅ L2 短正文(肉眼) · 守卫:真断链重连确实发生了(≥3 次)
+  ✅ L2 短正文(肉眼) · 🔴 重连重放后正文全文长度恒为单份(550 字),既不翻倍也不归零
+  ✅ L2 短正文(肉眼) · 🔴 assistant 事件数恒为单份(4 条)
+  ✅ L2 短正文(肉眼) · 🔴 时间线卡片数恒为 ring+1(3),重连不得增删卡片
+  ✅ L2 短正文(肉眼) · 🔴 DOM 可见字数恒为单份(550 字,业主肉眼那一面)
+  ✅ L2 短正文(肉眼) · 🔴 幂等机制确实被 arm(mark ≥1 · reset ≥1 · consume 返回 true ≥1)
+  ✅ L2 短正文(肉眼) · 🔴 窗内**不得**触发重放超时告警(误报会把真告警淹掉)
+  ✅ L3 慢重放·窗内(首条 0.6s 后到) · 守卫:真断链重连确实发生了(≥3 次)
+  ✅ L3 慢重放·窗内(首条 0.6s 后到) · 守卫:首条重放距 open 的实测间隔确实落在窗口 1000ms 之内
+  ✅ L3 慢重放·窗内(首条 0.6s 后到) · 🔴 重连重放后正文全文长度恒为单份(550 字),既不翻倍也不归零
+  ✅ L3 慢重放·窗内(首条 0.6s 后到) · 🔴 assistant 事件数恒为单份(4 条)
+  ✅ L3 慢重放·窗内(首条 0.6s 后到) · 🔴 时间线卡片数恒为 ring+1(3),重连不得增删卡片
+  ✅ L3 慢重放·窗内(首条 0.6s 后到) · 🔴 DOM 可见字数恒为单份(550 字,业主肉眼那一面)
+  ✅ L3 慢重放·窗内(首条 0.6s 后到) · 🔴 幂等机制确实被 arm(mark ≥1 · reset ≥1 · consume 返回 true ≥1)
+  ✅ L3 慢重放·窗内(首条 0.6s 后到) · 🔴 窗内**不得**触发重放超时告警(误报会把真告警淹掉)
+  ✅ L4 慢重放·出窗(首条 1.3s 后到) · 守卫:真断链重连确实发生了(≥3 次)
+  ✅ L4 慢重放·出窗(首条 1.3s 后到) · 守卫:首条重放距 open 的实测间隔确实越过了窗口 1000ms 之外
+  ✅ L4 慢重放·出窗(首条 1.3s 后到) · 前置事实:出窗时延迟清空一次都没被消费(consumeTrue == 0)
+      ↳ 告警命中 5 次;首次 arm→告警 delta=1001ms(判据区间 850~1900ms) · 实参="replay" · 盒子 1248x56 · 消息 42 字(≠conn 基线) · 按钮变体已换=true · 整块 textLen 47 · 可见采样 11/14
+      ↳ 🔵 断线告警(7500ms 宽限期)落不进这个区间 ⇒ 它冒充不了本条;区间是算出来的,不是拍的。
+  ✅ L4 慢重放·出窗(首条 1.3s 后到) · 🔴 窗口过期 ⇒ 必须出现**可见**告警(时间判据:arm 后 850~1900ms 内)
+      ↳ 测量(不断言):单份 550 字 → 实测最大 3300 字(≈6.0 份)· consume 108 次其中 true 0 次 · open→首条 gaps=[1301,1301,1300,1301,1300,1300]ms · 页面窗口 1000ms
+      ↳ 🔴 重复**仍在**((c) 不治重复,只治静默);治重复要等 ⑰(hub 侧 per-event 序号)。
+
+  合计 26 条:✅ 26 · 🔴 0
+  🔵 读法提醒:L4 钉的是「出窗 ⇒ 必须出现可见告警」,**不是**「出窗不重复」。
+     重复本身仍在(见 L4 那两行测量输出),治它要 ⑰(hub 侧 per-event 序号)⇒ 别把 rc=0 读成"慢重放修好了"。
+
+=== browser suite: r15_session_history_pagination ===
+PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=0.34 post_live_anchor_delta_px=0.34 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true
+
+=== browser suite: renderer_timeline_order ===
+PASS rounds=1 realtime=1 claude_active=2 codex_active=2 reload_replay=2 history_older_page=1 late_after_end=1 idle_order=1 benchmark_2000_plus_100_ms=5.50 benchmark_children=2101 unsequenced_notice=stable renderer_sha=8426af56da05145108a4db9b3dd0025d13bdf7a06c01fb02c2a4c456f38d672c
+
+=== browser suite: renderer_epoch_order ===
+EPOCH_CHECK_PASS
+HISTORY_GENERATION_CHECK_PASS
+
+=== browser suite: r15_session_history_mutations ===
+PASS mutant=drop_history_node_move rc=2 red_at="timeline order invalid:"
+PASS mutant=drop_scroll_anchor_correction rc=2 red_at="scroll anchor shifted"
+PASS mutant=restore_live_eviction_during_paged_history rc=2 red_at="post-live history prefix was evicted:"
+
+=== browser suite: renderer_failcard ===
+  PASS 基线:成功消息产正文卡且错误看板隐藏
+  PASS ① 失败不得在正文区产卡
+  PASS ② 失败不得进错误看板
+  PASS ③ 失败后的成功消息不粘连
+  PASS ④ 失败状态落在已有卡脚注
+failure-card regression: ALL PASS (5/5)
+
+=== browser suite: renderer_t054_errorboard ===
+  PASS ③ 无错误时入口整体隐藏
+  PASS ① control/unknown 不产生卡片
+  PASS ② error 仍产生卡片
+  PASS ④ 错误入口、未读与展开行为
+  PASS ⑤ 入口贴右边缘
+  PASS ⑥ reset 后隐藏并清空
+T-054 errorboard regression: ALL PASS (6/6)
+
+=== browser suite: renderer_t074_delivery_id ===
+  PASS ① 两种写法收敛同一合卡键
+  PASS ② 出站寻址使用 dw- 形式且与合卡键不同
+  PASS ③ 对称 message_id 只产一张卡
+  PASS ④ 两边均无 message_id 只产一张卡
+  PASS ⑤ 非对称 message_id 线上形态只产一张卡
+T-074 delivery-id regression: ALL PASS
+
+=== browser suite: renderer_card_status ===
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"assistant_text","linked":true,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=false assistant_text linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"assistant_text","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=false assistant_text linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"state_change","linked":true,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=false state_change linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"state_change","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=false state_change linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"user_input","linked":true,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=false user_input linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":false,"kind":"user_input","linked":false,"before":{"waiting":1,"body":"delivery dw-dlv-primaryhelper 已排队，未注入","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=false user_input linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"ordered","flag":false,"after":{"status":"回合已结束（完成）","content":"primary request","pending":0,"waiting":0}}
+  PASS flag=false: ordered canonical input and ACK stay unchanged
+CARD_STATUS_CASE {"scenario":"legacy","flag":false,"after":{"waiting":0,"pending":0,"requestVisible":true,"answerVisible":true}}
+  PASS flag=false: legacy pending and output still render
+  PASS flag=false: no browser errors
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"assistant_text","linked":true,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=true assistant_text linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"assistant_text","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=true assistant_text linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"state_change","linked":true,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=true state_change linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"state_change","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=true state_change linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"user_input","linked":true,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=true user_input linked=true: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"raw","flag":true,"kind":"user_input","linked":false,"before":{"waiting":1,"body":"⏳ 投递中helper 已排队，未注入primary request","pending":1,"pendingEvents":1},"after":{"card":true,"sameNode":true,"content":"primary request","status":"回合已结束（完成）","pending":0,"pendingEvents":0,"waiting":0}}
+  PASS flag=true user_input linked=false: pending survives raw event; canonical status reaches same card
+CARD_STATUS_CASE {"scenario":"ordered","flag":true,"after":{"status":"回合已结束（完成）","content":"primary request","pending":0,"waiting":0}}
+  PASS flag=true: ordered canonical input and ACK stay unchanged
+CARD_STATUS_CASE {"scenario":"legacy","flag":true,"after":{"waiting":0,"pending":0,"requestVisible":true,"answerVisible":true}}
+  PASS flag=true: legacy pending and output still render
+  PASS flag=true: no browser errors
+CARD_STATUS_OK cases=18 failures=0
+
+=== browser suite: renderer_provenance_icon ===
+  PASS ① 飞书来源渲染飞书头像
+  PASS ② Agent 投递渲染 Agent 头像
+  PASS ③ 每条来源仅一个图标
+  PASS ④ flag 开时不叠加人物类型标
+  PASS ⑤ flag 关时来源图标消失
+renderer-provenance-icon-regression: 5/5 通过(含 flag 关的阳性对照)
+
+=== browser suite: renderer_storage_denied ===
+  PASS S1 storage denied does not abort renderer startup
+  PASS S2 status bar still renders
+  PASS S3 SSE body still renders
+renderer storage-denied regression: ALL PASS (3/3)
+
+=== browser suite: terminal_storage_denied ===
+  PASS T1 denied localStorage does not abort terminal script
+  PASS T2 xterm instance opens into terminal host
+terminal storage-denied regression: ALL PASS (2/2)
+
+=== browser suite: renderer_t086_empty_ring_e2e ===
+  PASS E1 empty ring reconnect preserves existing body
+  PASS E2 non-empty ring still rebuilds one copy
+T-086 empty-ring E2E regression: ALL PASS (2/2)
+
+=== browser suite: renderer_replay_seq ===
+  PASS S1 慢重连（首条重放 1.5 s）连续 6 次后正文不变、不叠加
+  PASS S2 重连请求带 after＝<纪元>-<已见末序号>
+  PASS S3 有序号时不再走 1 秒清空窗口（不弹「重放超时」）
+  PASS S4 发布错位：中间层丢 after、Hub 整份重放 ⇒ 页面按 id 跳过已见、不叠加
+  PASS S5 换纪元保留原内容、新事件只一份，保持A4中性重启提示
+  PASS S6 溢出：先提示「显示可能不全」，ring 内新事件照收、不重复
+  PASS S7 实时跳号 ⇒ 合并等待后带 after 补缺，缺口补上且已显示的不重复
+  PASS S8 跳号风暴：补缺重连 5 分钟内至多 3 次，之后停止并提示
+  PASS S9 回合组到软上限合并（不同 cursor）后正文逐字相同、条数下降
+  PASS S10 同 cursor 相同文本的多片合并后不丢一片
+  PASS S11 不同 delivery 的相邻文本不合并、各留归属，正文仍逐字相同
+  PASS S12 turn_id 为空的相邻 assistant_text 不合并（超软上限也各自保留）
+  PASS S13 乱序到达：未到软上限渲染按 cursor 序；越过软上限合并后内容不丢不重
+R-V2-0105 replay-seq regression: ALL PASS (13/13)
+
+=== browser suite: renderer_upload_ticket_timeout ===
+  PASS U1 凭证请求挂起 ⇒ 默认 20 s 内行内失败、文案「申请上传凭证超时（20 秒）」、可重试且重试走通
+  PASS U2 响应头已回、正文不结束 ⇒ 计时照样罩住读正文，超时失败、可重试
+  PASS U3 HTTP 错误文案与超时区分，同样可重试
+  PASS U4 正常票不受影响（超过限时后也不冒出失败）
+R-V2-0105 upload-ticket timeout regression: ALL PASS (4/4)
+
+=== browser suite: renderer_flood_stress ===
+STRESS_FRAME_METADATA {"scenario":"flood","frames":[{"src":"http://127.0.0.1:41569/view/calm-b-2642?view_refresh_instance=ce0dc2f661096eeaca08d5dbfe5f6409","instance":"ce0dc2f661096eeaca08d5dbfe5f6409"},{"src":"http://127.0.0.1:41569/view/flood-a-2642?view_refresh_instance=8ace1ac2d181d20e48887253055bc64a","instance":"8ace1ac2d181d20e48887253055bc64a"}]}
+flood: pushed 29959 in 5.0 s
+flood: pushed 59965 in 10.0 s
+flood: pushed 89977 in 15.0 s
+STRESS READINGS flood {"scenario":"flood","late_cursor":null,"late_after":null,"renderer_sha256":"8426af56da05145108a4db9b3dd0025d13bdf7a06c01fb02c2a4c456f38d672c","total":100000,"pushed":100000,"aborted_at_deadline":false,"target_rate":6000,"margin":100,"bound":20100,"push_seconds":16.68,"push_rate":5995,"page_unresponsive":false,"last_sample_age_ms":41,"beacon_samples":66,"receive_seconds":16.69,"receive_rate":5993,"last_seq":100002,"peak_events":20001,"final_events":10020,"peak_nodes":55,"final_nodes":55,"big_sorts":0,"text_same":true,"first_diff":688890,"text_len":688890,"expected_len":688890,"text_sha256":"186e15aeda937dff81ec2112f849f6d84767e758c019591556f128ee794b7f20","calm_sent":197,"calm_complete":true,"agents_poll_ms":1000,"agents_requests_in_window":19,"agents_gap_max_ms":1081,"agents_gaps_ms":[1000,1001,1002,1003,1003,1001,996,1003,999,995,997,1009,995,1081,917,999,998,1000,881],"longtask_supported":true,"longtask_count":6,"longtask_max_ms":79,"longtask_total_ms":429}
+STRESS_FRAME_METADATA {"scenario":"late-order","frames":[{"src":"http://127.0.0.1:45519/view/calm-b-2642?view_refresh_instance=5f3146f44f206cc5cafdca5e3e48a25f","instance":"5f3146f44f206cc5cafdca5e3e48a25f"},{"src":"http://127.0.0.1:45519/view/flood-a-2642?view_refresh_instance=174bb06e73fa3b9eac84f72b7fb00bd6","instance":"174bb06e73fa3b9eac84f72b7fb00bd6"}]}
+late-order: pushed 29953 in 5.0 s
+STRESS READINGS late-order {"scenario":"late-order","late_cursor":12000,"late_after":21000,"renderer_sha256":"8426af56da05145108a4db9b3dd0025d13bdf7a06c01fb02c2a4c456f38d672c","total":30000,"pushed":30000,"aborted_at_deadline":false,"target_rate":6000,"margin":100,"bound":20100,"push_seconds":5.02,"push_rate":5981,"page_unresponsive":false,"last_sample_age_ms":383,"beacon_samples":42,"receive_seconds":5.05,"receive_rate":5944,"last_seq":30002,"peak_events":20001,"final_events":10006,"peak_nodes":55,"final_nodes":55,"big_sorts":1,"text_same":true,"first_diff":198890,"text_len":198890,"expected_len":198890,"text_sha256":"178afc31c5ec6be5a1b61e4884744eb1fc92115167392b0763991a3d11402024","calm_sent":81,"calm_complete":true,"agents_poll_ms":1000,"agents_requests_in_window":8,"agents_gap_max_ms":1004,"agents_gaps_ms":[1000,1000,1004,996,1000,1000,1000,222],"longtask_supported":true,"longtask_count":6,"longtask_max_ms":108,"longtask_total_ms":546}
+  PASS [flood] X0 灌入真走完：页面收齐最后一帧、推入速率不低于每秒 5000 条
+  PASS [flood] S0 判据零：事件数峰值／终值 ≤ 20000+100
+  PASS [flood] S0b 判据零：正文 DOM 节点数峰值／终值 ≤ 20000+100
+  PASS [flood] S3 判据三：全文与逐条拼接逐字相同
+  PASS [flood] S4 另一会话正常流完整
+  PASS [flood] F1 灌入期间长度大于 5000 的数组 sort 次数＝0
+  READING agents 最大间隔 1081 ms（2 倍正常间隔 2000 ms）；窗口内请求 19 次
+  READING longtask 最大 79 ms、6 次、合计 429 ms
+  PASS [late-order] X0 灌入真走完：页面收齐最后一帧、推入速率不低于每秒 5000 条
+  PASS [late-order] S0 判据零：事件数峰值／终值 ≤ 20000+100
+  PASS [late-order] S0b 判据零：正文 DOM 节点数峰值／终值 ≤ 20000+100
+  PASS [late-order] S3 判据三：全文与逐条拼接逐字相同
+  PASS [late-order] S4 另一会话正常流完整
+  PASS [late-order] F2a 前提：越过软上限并已合并，迟到那条在合并之后到达、迟到量小于较新一半
+  PASS [late-order] F2 迟到片位置正确（夹在前后两片之间）
+  READING agents 最大间隔 1004 ms（2 倍正常间隔 2000 ms）；窗口内请求 8 次
+  READING longtask 最大 108 ms、6 次、合计 546 ms
+R-V2-0105 flood stress: ALL PASS
+
+=== browser suite: renderer_c2 ===
+[PASS] C2.1a cancellable 条目带删除按钮;非 cancellable 不带
+[PASS] C2.G-ADDR canonical 原样出站;存量 bare 单独归一为 canonical
+[PASS] C2.1b /control 不可达(404)→明说"取消未发出"+按钮恢复+条目不消失(不本地静默删)
+[PASS] C2.1d[legacy] 真接线:默认 transport 真打 VS /control、字段逐字 {kind,message_id,delivery_id}→"取消已请求"
+[PASS] C2.1d-v2[V2] 同一动作在 V2 下字段逐字 {kind,message_id,delivery_id,page_id,page_token,request_id}
+[PASS] C2.1e VS 受理但 ok=false(已注入/终态)→"取消未生效"+按钮恢复(不谎报已请求)
+[PASS] C2.1c mock transport 在场→"取消已请求,待确认"+条目仍在;cancelled 事件才移除(单一事实源)
+[PASS] C2.1f 无 status 的 delivery_update(如 helper_received 阶段推进)不摘条目(防误摘)
+[PASS] C2.1g canonical failed 终态→摘条目(failed/cancelled 正反之正)
+[PASS] C2.1h input_posted role=copy(源会话出站副本)→显示但不进 waiting(grammar 冻结)
+[PASS] C2.4a primary hub_received→进 waiting
+[PASS] C2.4b copy route_observation→显示但绝不 waiting
+[PASS] C2.4c delivery_update cli_injected(无 status)→摘 waiting+建时间线卡
+[PASS] C2.4d 三来源徽标不丢(feishu/view/agent)
+[PASS] T-087 出站 copy 显示全部目标，入站 primary 保持简洁
+[PASS] C2.4e helper_received 无 status→只推进不摘
+[PASS] C2.4f v2 缺 message_id→schema_conflict fail-closed
+[PASS] C2.4g 同形去 schema_version→legacy 无 v2 conflict
+[PASS] C2.3 F1 /dingwei 前缀+尾斜杠:真点击删除→POST /dingwei/view/sess-1/control+六端点同算法
+[PASS] C2.3 F2 /dingwei 前缀无尾斜杠:真点击删除→POST /dingwei/view/sess-1/control+六端点同算法
+[PASS] C2.3 F3 /dingwei 前缀带页名:真点击删除→POST /dingwei/view/sess-1/control+六端点同算法
+[PASS] C2.3 F4 裸 /view:真点击删除→POST /view/sess-1/control+六端点同算法
+[PASS] C2.3 F5 根直出回退:base=根相对,control 404→诚实"取消未发出"(G-HONEST 不破)
+[KNOWN-DEFECT T-166 仍在] C2.2a[legacy] 点中断→立即"已请求中断";无 transport 时回退 legacy /interrupt(POST 200≠已发出) — page.waitForFunction: Timeout 5000ms exceeded.
+[PASS] C2.2f[V2] 本地拦下(无运行中 turn)→只报未发出,不得再报"未确认",且不锁死后续点击
+[KNOWN-DEFECT T-166 仍在] C2.2b 流上 control 事件→升级"中断已发出"+pending 清空 — page.waitForFunction: Timeout 5000ms exceeded.
+[KNOWN-DEFECT T-166 仍在] C2.2c[legacy] 超时无回执→"中断未确认(无回执)"(永不谎报已发出) — page.waitForFunction: Timeout 5000ms exceeded.
+[KNOWN-DEFECT T-166 仍在] C2.2d 重复点击不重复发起(防重) — 只有一条已请求
+
+0 !== 1
+
+[PASS] C2.2e mock transport 在场→中断走 transport(kind=interrupt)不回退 legacy
+============================================================
+C2 删除+中断确认回归: HARD PASS 25; KNOWN-DEFECT T-166 仍在 4 · 形态变了 0
+
+=== browser suite: renderer_delivery_status ===
+  PASS CANCELLABLE_PHASE_HAS_DELETE
+  PASS TAKEN_PHASE_HAS_NO_DELETE
+  PASS REFUSED_CANCEL_EXPLAINS_WHY
+  PASS UNKNOWN_HAS_CLEAR_COPY
+  PASS UNKNOWN_WITHOUT_TURN_END_STAYS_BUSY
+  PASS TURN_END_STOPS_SPINNER_AND_OFFERS_RETRY
+  PASS LATE_ADMITTED_RESTORES_NORMAL_PROCESSED
+  PASS LATE_PROCESSED_RESTORES_NORMAL_PROCESSED
+  PASS RETRY_ONLY_ONCE
+  PASS UNKNOWN_LIST_ENTRY_AVAILABLE
+  PASS NO_PAGE_ERRORS
+DELIVERY_STATUS_BROWSER_PASS checks=11
+
+=== browser suite: console_specs_browser ===
+S-6④ 独立用例: 拆解=true 工作流=true 预拆在详情内=true
+editor usable 1KB(阳性对照:也必须红): 焦点=TEXTAREA 命中=PRE 渲染行=71/71 直接键入=560→562
+editor usable 业主真实正文 15423B: 焦点=TEXTAREA 命中=PRE 渲染行=199/199 直接键入=15421→15423
+editor usable 30KB: 焦点=TEXTAREA 命中=PRE 渲染行=2941/2941 直接键入=23520→23522
+S-5: 失败有文案=true 重试可见=true 重试后错误行消失=true 分页状态="1 / 2" 行数=20
+一 保存按钮: save.left=952 anchor.right=944 垂直重叠=28px 文案=验收判据/规范锚定
+S-6乙: 可编辑(只读=false 存=true 同屏=true) 只读(编辑器隐藏=true 详情可见=true 源码泄漏=false 可输入正文控件=0 选中=81)
+S-7: 列表复制=http://127.0.0.1:37591/console/specs/spec-readonly 反馈="link address copied" 详情反馈="link address copied"
+editor wrap metrics overflow=0 lineOverhang=0
+console specs browser: assertions=220 floor=220 failed=0
+
+=== browser suite: console_spec_workflow ===
+console spec workflow browser: passed=12 failed=0
+
+=== browser suite: console_task_flow_r32 ===
+{"suite":"r32-task-flow","passed":11,"failed":0}
+
+=== browser suite: pm_spec_flow ===
+{"suite":"pm-spec-flow-browser","passed":15,"failed":0,"scope":"production PM HTML and fixture HTTP; backend authorization/CAS separately covered by Go"}
+
+=== browser suite: md_render_core_sync ===
+test_broken_marker_hard_fails_not_silently_skips (__main__.DriftGateHasTeethTest.test_broken_marker_hard_fails_not_silently_skips) ... ok
+test_clean_pair_is_in_sync (__main__.DriftGateHasTeethTest.test_clean_pair_is_in_sync) ... ok
+test_drift_in_core_is_detected_and_named (__main__.DriftGateHasTeethTest.test_drift_in_core_is_detected_and_named) ... ok
+test_drift_in_renderer_copy_is_detected_and_named (__main__.DriftGateHasTeethTest.test_drift_in_renderer_copy_is_detected_and_named) ... ok
+test_write_mode_repairs_the_copy (__main__.DriftGateHasTeethTest.test_write_mode_repairs_the_copy) ... ok
+test_core_has_exactly_one_iife_and_it_is_the_export_hook (__main__.ExportSurfaceTest.test_core_has_exactly_one_iife_and_it_is_the_export_hook) ... ok
+test_export_hook_lists_exactly_the_declared_symbols (__main__.ExportSurfaceTest.test_export_hook_lists_exactly_the_declared_symbols) ... ok
+test_unique_image_tokens_appear_once_per_file (__main__.ExportSurfaceTest.test_unique_image_tokens_appear_once_per_file) ... ok
+test_no_unregistered_section_names_anywhere (__main__.MarkerStructureTest.test_no_unregistered_section_names_anywhere) ... ok
+test_sections_are_non_empty_and_match_between_files (__main__.MarkerStructureTest.test_sections_are_non_empty_and_match_between_files) ... ok
+test_six_sections_exactly_once_in_contract_order (__main__.MarkerStructureTest.test_six_sections_exactly_once_in_contract_order) ... ok
+test_core_loads_standalone_in_node (__main__.NodeLoadableTest.test_core_loads_standalone_in_node) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.343s
+
+OK
+
+=== browser suite: md_render_core_parity ===
+md-render-core-parity(共享件 vs 产品页 · 输出逐字节对账 · 不比源字节)
+  产品件  renderer-canary-sse.html  sha256=8426af56da051451…
+  共享件  md-render-core.js  sha256=0f03c242f05e359d…
+  规范来源: browser=https://dw123.cmjrt.com core=https://dw123.cmjrt.com
+  location 对齐 ✅ https://dw123.cmjrt.com:50443|https://dw123.cmjrt.com:50443/view/parity-session
+  对账 103 项:逐字节相同 103 · 不同 0
+  🔵 本件没验到:①只比纯函数输出,不比 DOM/CSS/事件与"取不到图时的下载出路";
+               ②样本是我选的,不穷尽;③两侧 location 由本件垫成同一 origin,
+                 真实 spec 页的 origin 未必相同 ⇒ 那一侧要按它自己的 origin 重验;
+               ④headless Chromium · Linux,业主的 macOS + 系统 Chrome 上没跑过。
+
+md-render-core-parity PASS: 103/103 项输出逐字节相同(含 17 注入形状 · 8 类图片扩展名 · 表格/代码/列表)
+
+=== browser suite: renderer_markdown_image ===
+renderer-markdown-image(ts-No.79 · 板件锚 96d82d6e · 图片按类型自动显示)
+  renderer  /data/ai-dev-data/subagent-p1-m3-view/view-service/renderer-canary-sse.html
+  sha256    8426af56da051451…
+  nginx     /data/ai-dev-data/subagent-p1-m3-view/deploy/nginx-dingwei.conf
+  白名单    image/* 8 种:jpg png gif webp avif heic bmp tiff(🔴 单一来源 = nginx conf,夹具的 Content-Type 也从这里解析)
+  注入形状  复用 ts-No.76 共享清单 12 条 ＋ 图片语法专属 9 条 · canary=window.__dwPwned
+  🔴 结论口径:本件只证明「这些形状/这些扩展名如此」,**不得**读成「无 XSS」或「所有图片格式都能显示」
+· G0 🔴 静态对账:图片扩展名判据只有一份,且 == nginx `types{image/*}`(派工单①「不许另写一份清单」) … 
+     nginx 内联图片白名单(8):jpg png gif webp avif heic bmp tiff
+     renderer FILE_EXT_KIND 的 image 行(9):png jpg jpeg gif webp avif heic bmp tiff
+     renderer FILE_EXT_NEVER_INLINE(6):svg svgz html htm xhtml xml
+     🔵 判据链:markdown → isInlineImageUrl → isOwnFileUrl(本站边界) ＋ kindFromExt(FILE_EXT_NEVER_INLINE → FILE_EXT_KIND)
+     🔵 单一事实源:deploy/nginx-dingwei.conf 的 types{image/*};renderer 只有一份 FILE_EXT_KIND,由本条对账
+     ✅ 静态对账过
+✅
+· G0b 🔵 夹具自证:图片字节真能解码 · 本站边界前提成立 · nginx 不放行的扩展名夹具也 404 … 
+     🔵 自证:PNG 2x2 可解码 · HEAD/GET 200 · .svg 404(与 nginx 同形)
+     🔵 自证:isOwnFileUrl 本站=true 外站=false · kindFromExt(png)=image kindFromExt(svg)=download
+     🔵 这三行是**量装置**:它们证明后面几格的前提成立,不是产品结论
+✅
+· G1 🔴 阳格:8 种图片扩展名 × 两条语法(「![alt](url)」与「[text](url)」)⇒ 全部就地渲染成 <img>,且感叹号消失 … 
+     🔵 [流式渲染中(turn_completed 之前)] 就地 <img> 16/16 · 全部真解码 · 感叹号 0 · 重复附件卡 0 · on*/危险协议/活元素 0
+
+     🔵 [回合重建后(turn_completed 之后)] 就地 <img> 16/16 · 全部真解码 · 感叹号 0 · 重复附件卡 0 · on*/危险协议/活元素 0
+✅
+· G2 🔴 阴格①:非图片扩展名(svg/exe/html/php/pdf/mp4/txt/docx/bin/无扩展)⇒ **仍是链接**,一张图都不许出;svg 也绝不进 <svg> … 
+     🔵 [流式渲染中(turn_completed 之前)] 就地 <img> 0 · <svg> 0 · 20 条 URL 全部仍是链接 · 附件卡 20 张(其中出图的 0 张)
+
+     🔵 [回合重建后(turn_completed 之后)] 就地 <img> 0 · <svg> 0 · 20 条 URL 全部仍是链接 · 附件卡 20 张(其中出图的 0 张)
+✅
+· G3 🔴 阴格③:注入腿 —— ts-No.76 的 12 条相关形状 ＋ 图片语法专属 9 条 ⇒ 一律不得变活 … 
+     🔵 [流式渲染中(turn_completed 之前)] 注入 21 形状:on* 0 · 危险协议 0 · 活元素 0 · canary 未置 · 就地出图仅 Q07 那一张(alt 是死文本)
+
+     🔵 [回合重建后(turn_completed 之后)] 注入 21 形状:on* 0 · 危险协议 0 · 活元素 0 · canary 未置 · 就地出图仅 Q07 那一张(alt 是死文本)
+✅
+· G4 🔴 边界腿:外站图片 URL 仍是链接,且**外部请求数 = 0**(钉产品件自己那句「不对任意外站 URL 做任何请求」) … 
+     🔵 请求账目:总 4 条 · 外部 0 条 · 就地 <img> 0 张 · 附件卡 0 张
+     🔵 外部请求逐条(应为空):[]
+✅
+· G5 🔴 一图不显示两处:markdown 写法 ⇒ 就地出图且**附件卡让位**;裸 URL ⇒ 老路(卡里出图)原样不动 … 
+     🔵 [流式渲染中(turn_completed 之前)] 就地 2 张(u1/u3)· 附件卡 1 张(u2,里面有图)· 重复 0 · <img> 总数 3
+
+     🔵 [回合重建后(turn_completed 之后)] 就地 2 张(u1/u3)· 附件卡 1 张(u2,里面有图)· 重复 0 · <img> 总数 3
+✅
+· G6 🔴 图取不到时:就地那张撤掉,**附件卡接手**(解不了码 ⇒ 下载链接;404 ⇒ 「已过 7 天保留期」那句仍在) … 
+     🔵 就地 <img> 0(两张都撤了)· 附件卡 2 张接手:坏图给「⬇ 下载图片」,过期给「文件不存在或链接无效（服务端 404）。若是 7 天前的链接…」
+✅
+· G8 🔵 反证(防"渲染成空也算通过"):正常 markdown 全在,且与就地图片共存 … 
+     🔵 正常渲染全在:{"strong":1,"em":1,"a":1,"code":8,"pre":1,"table":1,"heading":1,"quote":1,"br":2,"checkbox":1} · 就地图片 1 张与之共存
+✅
+· G9 🔴 一个文件两条路不得两种结果:HEAD 不可用(405)⇒ 按扩展名降级,8 种图片扩展名都得判成 image … 
+     🔵 8 种扩展名在**降级路径**上全部 data-kind=image · dispatch=ext(与 HEAD 路径同结论)
+✅
+· PC M-G1 阳性对照:图片判据掏空(isInlineImageUrl 恒 false) ⇒ **必须观测到观测量移动**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=d6f0aa9123456c64… 由产品字节 8426af56da051451… 在本进程内合成)
+     ✅ 变异生效,观测量有牙:就地 <img> 16→0 · 感叹号 false→false(信息项,见下)
+        变异前 {"mdImgs":16,"bang":false} → 变异后 {"mdImgs":0,"bang":false}
+✅
+· PC M-G2 阳性对照:拆掉写死的 deny-set ＋ 往表里塞 svg:image(④ 那层守卫) ⇒ **必须观测到观测量移动**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=7d61b6f4044db32d… 由产品字节 8426af56da051451… 在本进程内合成)
+     ✅ 变异生效,观测量有牙:.svg 就地 <img> 0→2 · .md 里 <svg> 0→0
+        变异前 {"svgImgs":0,"mdSvg":0} → 变异后 {"svgImgs":2,"mdSvg":0}
+✅
+· PC M-G3 阳性对照:escapeHtml 去掉 " → &quot;(ts-No.76 认定的承重墙) ⇒ **必须观测到观测量移动**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=5eb70790898ddf84… 由产品字节 8426af56da051451… 在本进程内合成)
+     ✅ 变异生效,观测量有牙:on* 属性 0→3 · 活元素 0→0 · canary null→null
+        变异前 {"onAttrs":0,"live":0,"canary":null} → 变异后 {"onAttrs":3,"live":0,"canary":null}
+✅
+· PC M-G4 阳性对照:去掉"附件卡让位"(一图两处) ⇒ **必须观测到观测量移动**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=b00de54c3fd6455a… 由产品字节 8426af56da051451… 在本进程内合成)
+     ✅ 变异生效,观测量有牙:同一 URL 的附件卡 0→1(就地 <img> 恒为 1)
+        变异前 {"cards":0,"imgs":1} → 变异后 {"cards":1,"imgs":1}
+✅
+· PC M-G5 阳性对照:去掉本站 /f/ 边界(外站图也就地渲染) ⇒ **必须观测到观测量移动**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=50c5683f1f6b09f4… 由产品字节 8426af56da051451… 在本进程内合成)
+     ✅ 变异生效,观测量有牙:外站就地 <img> 0→0 · 外部请求 0→4
+        变异前 {"extImgs":0,"external":0} → 变异后 {"extImgs":0,"external":4}
+✅
+通过 15 / 失败 0   (renderer sha256=8426af56da051451…)
+  🔵 这条绿【看不见什么】(边界随绿一起打印,不用谁去翻交付件):
+     ① 只证明「nginx 那 8 种扩展名在本站 /f/ 直链上会就地出图」—— 🔴 **不得**读成「所有图片都能预览」。
+     ② 🔴 **外站图片 URL 一律不出图**(G4 钉的就是这条):业主要外站图也预览的话,得先解除产品件里
+        「不对任意外站 URL 做任何请求」那条不变量 —— 那是产品可见决定,归业主,本格没替他改。
+     ③ 🔴 **格式解码能力没验**:8 种扩展名喂的都是同一份合法 PNG 字节(本格验的是"按扩展名分派",不是"能不能解那个格式")。
+        🔵 唯一例外:G2/M-G2 的 .svg 喂的是**真 SVG 字节**(本件自己写的 2x2 无脚本 svg)——
+        因为声明成 image/svg+xml 却喂 PNG 字节会解码失败 ⇒ 就地那张被 error 分支撤掉 ⇒ **观测量看不见变异**(第一跑实测撞到)。
+        Chrome 能不能真解 avif/heic/tiff **不在本格**;若解不了,产品行为是"就地那张撤掉、附件卡给下载出路"(G6 钉了)。
+     ④ 注入腿只覆盖清单里那些形状(复用 ts-No.76 ＋ 9 条图片专属)—— 🔴 **不得**读成「无 XSS」。
+     ⑤ 单档 1280×900 · headless · 默认(浅色)主题;**暗色与窄档未跑**。
+     ⑥ 只验 timeline 里 assistant 正文的 markdown 路径;**console 外壳 / Specs 独立页 / 草稿输入框**未跑。
+     ⑦ 🔴 本席是 Linux + Playwright 自带 chromium,**业主那台 macOS + 系统 Chrome 上没跑过**(同型缺口已登记)。
+
+=== browser suite: renderer_markdown_injection ===
+renderer-markdown-injection(ts-No.76 · 组长裁定④)
+  renderer  /data/ai-dev-data/subagent-p1-m3-view/view-service/renderer-canary-sse.html
+  sha256    8426af56da051451…
+  payload   17 种形状 · canary=window.__dwPwned
+  🔴 结论口径:本件只证明「这些形状不成立」,**不得**读成「无 XSS」
+· I1 assistant_text 正文:17 种注入形状一律不得变活(流式路径 + 回合重建路径各扫一次) … 
+     🔵 [流式渲染中(turn_completed 之前)] 干净:on* 0 · 危险协议 0 · 活元素 0 · canary 未置 · payload 以文本可见
+
+     🔵 [回合重建后(turn_completed 之后)] 干净:on* 0 · 危险协议 0 · 活元素 0 · canary 未置 · payload 以文本可见
+✅
+· I2 代码围栏内的 payload(highlightCode 路径)必须是死文本 … 
+     🔵 [代码围栏(highlightCode)] 干净:on* 0 · 危险协议 0 · 活元素 0 · canary 未置 · payload 以文本可见
+✅
+· I3 结构路径:标题 / 引用 / 任务列表 / 表格单元格(全部经 renderInline)必须是死文本 … 
+     🔵 [标题/引用/任务列表/表格] 干净:on* 0 · 危险协议 0 · 活元素 0 · canary 未置 · payload 以文本可见
+✅
+· I4 超长摘要:payload 跨 1200 字**硬截断点**仍必须 inert(且证明确实走了摘要路径) … 
+     🔵 [超长摘要(截断点)] 干净:on* 0 · 危险协议 0 · 活元素 0 · canary 未置 · payload 以文本可见
+✅
+· I5 user_input 路径(escapeHtml,不走 markdown)必须是死文本 … 
+     🔵 [user_input 卡(escapeHtml)] 干净:on* 0 · 危险协议 0 · 活元素 0 · canary 未置 · payload 以文本可见
+✅
+· I6 🔵 反证(防"渲染成空也算通过"):正常 markdown 必须仍渲染出来 … 
+     🔵 正常渲染全在:{"strong":1,"em":1,"a":1,"code":8,"pre":1,"table":1,"th":2,"checkbox":1,"heading":1,"quote":1,"br":1,"tokKw":2,"copyBtn":1}
+✅
+· I7 🔵 形状腿(ts-No.79 后改写):外站图片语法 ⇒ 仍是链接、感叹号消失、不就地出图 … 
+     🔵 新形状(ts-No.79 起):`![alt](外站 url)` ⇒ **没有感叹号的链接**,不出图;
+     🔵 本站 /f/ 图片直链**会**就地出图 —— 那份契约由 renderer-markdown-image-regression.js(G1/G5)独家钉,本件不重复。
+✅
+· PC M-I1 阳性对照:escapeHtml 掏空(恒等返回) ⇒ **必须观测到破坏**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=b74307e40ae36aaa… 由产品字节 8426af56da051451… 在本进程内合成)
+     ✅ 变异生效,探针有牙:观测到 2 处破坏
+        · [流式渲染中(turn_completed 之前)] 🔴 canary 被置(window.__dwPwned=1)⇒ **有脚本真执行了** | 🔴 on* 事件属性 6 处:img@onerror="window.__dwPwned=1" | svg@onload="window.__dwPwned=1" | details@ontoggle="window.__dwPwned=1" | a@onmouseover="windo
+        · [回合重建后(turn_completed 之后)] 🔴 canary 被置(window.__dwPwned=1)⇒ **有脚本真执行了** | 🔴 on* 事件属性 6 处:img@onerror="window.__dwPwned=1" | svg@onload="window.__dwPwned=1" | details@ontoggle="window.__dwPwned=1" | a@onmouseover="windo
+✅
+· PC M-I2 阳性对照:链接正则放开协议(去掉 https?:// 限制) ⇒ **必须观测到破坏**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=50cb3d4821a6226c… 由产品字节 8426af56da051451… 在本进程内合成)
+     ✅ 变异生效,探针有牙:观测到 2 处破坏
+        · [流式渲染中(turn_completed 之前)] 🔴 危险协议 3 处:a@href="javascript:window.__dwPwned=1" | a@href="JaVaScRiPt:window.__dwPwned=1" | a@href="data:text/html;base64,PHNjcmlwdD53aW5kb3cuX19kd1B3bmVkPTE8L3NjcmlwdD4="
+        · [回合重建后(turn_completed 之后)] 🔴 危险协议 3 处:a@href="javascript:window.__dwPwned=1" | a@href="JaVaScRiPt:window.__dwPwned=1" | a@href="data:text/html;base64,PHNjcmlwdD53aW5kb3cuX19kd1B3bmVkPTE8L3NjcmlwdD4="
+✅
+· PC M-I3 阳性对照:highlightCode 掏空(代码围栏内不转义) ⇒ **必须观测到破坏**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=aa1aa843d6595928… 由产品字节 8426af56da051451… 在本进程内合成)
+     ✅ 变异生效,探针有牙:观测到 1 处破坏
+        · [代码围栏(highlightCode)] 🔴 canary 被置(window.__dwPwned=1)⇒ **有脚本真执行了** | 🔴 on* 事件属性 1 处:img@onerror="window.__dwPwned=1" | 🔴 消息容器内出现活元素:img@src=x | script
+✅
+· PC M-I4 阳性对照:data-code 属性不再 encodeURIComponent(Copy 按钮那个属性) ⇒ **必须观测到破坏**(不红说明探针没有分辨力) … 
+     (变异副本 sha256=381b6d38a5ec636c… 由产品字节 8426af56da051451… 在本进程内合成)
+     ✅ 变异生效,探针有牙:观测到 1 处破坏
+        · [代码围栏(highlightCode)] 🔴 消息容器内出现活元素:script
+✅
+通过 11 / 失败 0   (renderer sha256=8426af56da051451…)
+  🔵 这条绿【看不见什么】(边界随绿一起打印,不用谁去翻交付件):
+     ① 结论**只到**「这 17 种形状不成立」—— 🔴 **不得**读成「无 XSS」。形状清单是我列的,不是穷尽的。
+     ② 只覆盖 **markdown 渲染路径**(流式 innerHTML / 回合重建 / 代码围栏 / 标题·表格·任务列表·引用 /
+        超长摘要截断点 / user_input 的 escapeHtml)。**未覆盖**:附件与文件那条(另有 0206 件)、
+        来源标签与 c2Note、事件类型/状态标签、diag 键值、草稿输入框与粘贴路径、console 外壳自身。
+     ③ **穷尽审计没做**:我是从注入形状往里打,不是把每一处 innerHTML 往外数。
+     ④ 单档 1280×900 · headless · 默认主题;**暗色与窄档未跑**(推论上与转义无因果,但那是推论)。
+     ⑤ I7 已被 **ts-No.79 改写**:它原先钉"现在没有图片支持",现在钉"外站图片不就地出图 ＋ 感叹号消失"。
+        🔵 本站 /f/ 图片**就地出图**那份契约在 renderer-markdown-image-regression.js(G1/G5/G6),本件不重复钉。
+
+=== browser suite: renderer_failure_dock_embedded ===
+被检字节 renderer-canary-sse.html sha256=8426af56da05145108a4db9b3dd0025d13bdf7a06c01fb02c2a4c456f38d672c 359338 字节
+  🔴 换文件跑变体时以这一行为准核对;它与末行 sha 必须相同(不同即装置中途被换过)
+    · 腿一读数:panes 1040x859 · 卡片 2 张 · 角标 2→0
+    · 🔴 以上全部是"存在性"判据:既有那件闸断言的就是这一层,而它对本缺陷【完全无感】
+  PASS 腿一 装置自证:嵌入态下事件到了、卡进了 DOM、角标=2(这一格【不】判可见性)
+    · 腿二实测: [
+ {
+  "tag": "窗口1280(右栏 1040px / iframe 视口 1040px)",
+  "toggle": 45.7,
+  "body": 320,
+  "bodyClientWidth": 318,
+  "cards": [
+   "298x90",
+   "298x90"
+  ]
+ },
+ {
+  "tag": "窗口900(右栏 660px / iframe 视口 660px)",
+  "toggle": 45.7,
+  "body": 320,
+  "bodyClientWidth": 318,
+  "cards": [
+   "298x90",
+   "298x90"
+  ]
+ },
+ {
+  "tag": "窗口600(右栏 360px / iframe 视口 360px)",
+  "toggle": 45.7,
+  "body": 296,
+  "bodyClientWidth": 294,
+  "cards": [
+   "274x90",
+   "274x90"
+  ]
+ },
+ {
+  "tag": "窗口480(右栏 240px / iframe 视口 240px)",
+  "toggle": 45.7,
+  "body": 176,
+  "bodyClientWidth": 174,
+  "cards": [
+   "154x155",
+   "154x155"
+  ]
+ }
+]
+  PASS 腿二 🔴 嵌入态:点开之后【真的看得见】—— 四档窗口宽度各验一次
+    · 腿三实测:独立态 把手 45.7px · 面板 320px(clientWidth=318) · 卡 298x90,298x90
+  PASS 腿三 独立态同一把几何判据(补 renderer-failure-dock-regression.js 的盲区)
+     (变异副本 sha256=02cfb5c5e12de2cdbc6590b62a20a2a16e6fc2a6d29f57352c87f5c7a2803c7a 359357 字节,由被检字节 8426af56da051451… 在本进程内合成、不落盘)
+    · 腿四实测:变异体 把手 365.7px · 面板 2px(clientWidth=0) · 首卡命中自己=false
+    · 阳性对照成立:同一份字节只塞回一条 width:100% 就被判红 ⇒ 判据咬得住本缺陷
+  PASS 腿四 🔴 阳性对照:变异体(共用规则里塞回 width:100%)必须被腿二的判据判红
+failure-dock-embedded regression: ALL PASS (4/4)
+  · renderer sha256=8426af56da051451… 359338 字节(与首行同一份)
+
+=== browser suite: renderer_failure_dock ===
+  PASS 腿一 装置自证:初始无卡、看板隐藏
+  PASS 腿二 Hub 夹具事件落进错误看板、不进正文区
+  PASS 腿三 阳性对照:加了 delivery_id 就进不了看板(被早退进回合正文)
+failure-dock regression: ALL PASS (3/3)
+
+DW_BROWSER_RECEIPT_V1_BEGIN
+generated_at_utc=2026-11-09T01:33:58Z
+commit_sha=18cae8bf5cd5ab737cef7044b326293ba3e87b15
+overrides=NODE_PATH,PLAYWRIGHT_BROWSERS_PATH
+suite.sub_agent_tree.rc=0
+suite.openspec_binding_admin.rc=0
+suite.r14_sticky_browser.rc=0
+suite.coordinate_review_browser.rc=0
+suite.openspec_read_browser.rc=0
+suite.renderer_0206_file_render.rc=0
+suite.trusted_origins_file_flow.rc=0
+suite.console_browser.rc=0
+suite.console_temp_groups_offstate.rc=0
+suite.console_temp_groups.rc=0
+suite.renderer_in_console_iframe.rc=0
+suite.renderer_sse_reconnect.rc=0
+suite.r15_session_history_pagination.rc=0
+suite.renderer_timeline_order.rc=0
+suite.renderer_epoch_order.rc=0
+suite.r15_session_history_mutations.rc=0
+suite.renderer_failcard.rc=0
+suite.renderer_t054_errorboard.rc=0
+suite.renderer_t074_delivery_id.rc=0
+suite.renderer_card_status.rc=0
+suite.renderer_provenance_icon.rc=0
+suite.renderer_storage_denied.rc=0
+suite.terminal_storage_denied.rc=0
+suite.renderer_t086_empty_ring_e2e.rc=0
+suite.renderer_replay_seq.rc=0
+suite.renderer_upload_ticket_timeout.rc=0
+suite.renderer_flood_stress.rc=0
+suite.renderer_c2.rc=0
+suite.renderer_delivery_status.rc=0
+suite.console_specs_browser.rc=0
+suite.console_spec_workflow.rc=0
+suite.console_task_flow_r32.rc=0
+suite.pm_spec_flow.rc=0
+suite.md_render_core_sync.rc=0
+suite.md_render_core_parity.rc=0
+suite.renderer_markdown_image.rc=0
+suite.renderer_markdown_injection.rc=0
+suite.renderer_failure_dock_embedded.rc=0
+suite.renderer_failure_dock.rc=0
+aggregate_rc=0
+DW_BROWSER_RECEIPT_V1_END

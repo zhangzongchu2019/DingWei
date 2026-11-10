@@ -1,0 +1,6 @@
+test_native_request_id_collision_with_client_pending (tools.sessionhelper.tests.test_sub_agent_helper.BrokerTests.test_native_request_id_collision_with_client_pending) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.089s
+
+OK

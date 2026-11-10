@@ -1,0 +1,22 @@
+{
+  "packages": {
+    "store.pass": 609,
+    "subagent-rollback.pass": 2,
+    "store.skip": 5
+  },
+  "race": {
+    "store.pass": 15,
+    "subagent-rollback.pass": 6
+  },
+  "m8": {
+    "m8.pass": 1533,
+    "m8.skip": 37
+  },
+  "canonical": {
+    "claude": 1165,
+    "codex": 1165,
+    "python": 27,
+    "shell": 2,
+    "rc": 0
+  }
+}

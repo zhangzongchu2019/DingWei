@@ -1,0 +1,17 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "^TestSubAgentView",
+    "-count=1",
+    "-v"
+  ],
+  "start": "2026-11-09T01:06:17.468217+00:00",
+  "end": "2026-11-09T01:06:27.693621+00:00",
+  "rc": 1,
+  "uid": 1001,
+  "source_commit": "0b47a5857cc331ee5dc8012a002fd561ae2279f0",
+  "environment": "isolated HOME; short TMPDIR; SH_/DINGWEI_/DW_/DATAD_ stripped; UTC"
+}
