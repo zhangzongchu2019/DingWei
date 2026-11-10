@@ -80,10 +80,23 @@ func (s *Service) CreateTempGroup(ctx context.Context, tx repo.Tx, r extseat.Cre
 }
 
 func (s *Service) RecheckGroup(ctx context.Context, tx repo.Tx, a extseat.Seat, at time.Time) (extseat.Group, error) {
+	return s.recheckGroup(ctx, tx, a, at, true)
+}
+
+// ReadGroup uses the caller's read-only transaction and never locks or renews.
+func (s *Service) ReadGroup(ctx context.Context, tx repo.Tx, a extseat.Seat, at time.Time) (extseat.Group, error) {
+	return s.recheckGroup(ctx, tx, a, at, false)
+}
+func (s *Service) recheckGroup(ctx context.Context, tx repo.Tx, a extseat.Seat, at time.Time, locking bool) (extseat.Group, error) {
+	groupLock, targetLock := "", ""
+	if locking {
+		groupLock = " FOR UPDATE OF g"
+		targetLock = " FOR SHARE OF a,u"
+	}
 	var g extseat.Group
 	var target string
 	var dissolved sql.NullTime
-	err := tx.QueryRow(ctx, `SELECT g.code,g.generation,g.target_agent_id,g.expires_at,g.dissolved_at FROM np_temp_group g JOIN np_temp_group_member m ON m.code=g.code WHERE m.agent_id=$1 AND m.role='external' FOR UPDATE OF g`, a.AgentID).Scan(&g.Code, &g.Generation, &target, &g.ExpiresAt, &dissolved)
+	err := tx.QueryRow(ctx, `SELECT g.code,g.generation,g.target_agent_id,g.expires_at,g.dissolved_at FROM np_temp_group g JOIN np_temp_group_member m ON m.code=g.code WHERE m.agent_id=$1 AND m.role='external'`+groupLock, a.AgentID).Scan(&g.Code, &g.Generation, &target, &g.ExpiresAt, &dissolved)
 	if errors.Is(err, sql.ErrNoRows) {
 		return g, extshared.ErrGroupDissolved
 	}
@@ -93,7 +106,7 @@ func (s *Service) RecheckGroup(ctx context.Context, tx repo.Tx, a extseat.Seat, 
 	if dissolved.Valid || !at.Before(g.ExpiresAt) || (a.Group != "" && a.Group != g.Code) || (a.Generation != 0 && a.Generation != g.Generation) {
 		return g, extshared.ErrGroupDissolved
 	}
-	err = tx.QueryRow(ctx, `SELECT a.id,a.owner_lc,a.name,a.group_code,a.origin,a.state,a.created_at FROM np_agent a JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE a.id=$1 AND u.state='active' FOR SHARE OF a,u`, target).Scan(&g.Target.ID, &g.Target.OwnerLC, &g.Target.Name, &g.Target.GroupID, &g.Target.Origin, &g.Target.State, &g.Target.CreatedAt)
+	err = tx.QueryRow(ctx, `SELECT a.id,a.owner_lc,a.name,a.group_code,a.origin,a.state,a.created_at FROM np_agent a JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE a.id=$1 AND u.state='active'`+targetLock, target).Scan(&g.Target.ID, &g.Target.OwnerLC, &g.Target.Name, &g.Target.GroupID, &g.Target.Origin, &g.Target.State, &g.Target.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return g, extshared.ErrTargetNotInAG
 	}

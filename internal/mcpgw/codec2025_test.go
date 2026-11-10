@@ -58,8 +58,8 @@ func TestCompat2025LifecycleAndFourTools(t *testing.T) {
 			} `json:"tools"`
 		} `json:"result"`
 	}
-	if json.Unmarshal(w.Body.Bytes(), &listed) != nil || len(listed.Result.Tools) != 4 {
-		t.Fatal("four tools only", w.Body)
+	if json.Unmarshal(w.Body.Bytes(), &listed) != nil || len(listed.Result.Tools) != 9 {
+		t.Fatal("five primary tools plus aliases and ack", w.Body)
 	}
 	for _, tc := range []struct{ name, args string }{{"list_online", `{}`}, {"send_message", `{"to":"target.zzc","body":"synthetic","client_message_id":"id"}`}, {"wait_for_messages", `{"wait_seconds":0.001}`}, {"ack", `{"delivery_id":"delivery","generation":2,"phase":"received"}`}} {
 		w = serve(mux, requestCompat("tools/call", `{"name":"`+tc.name+`","arguments":`+tc.args+`}`))

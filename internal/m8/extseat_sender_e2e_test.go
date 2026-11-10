@@ -106,9 +106,12 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 			}
 		}
 	}
-	wantHeader := externalSeatSenderHeader(seat.FullName, principal.DisplayName, "", targetFullName)
+	if !strings.Contains(delivered.Body, "对方请求自动回程：本轮回复将原样发给该外部 Agent") {
+		t.Fatal("MCP_EXTERNAL_REPLY_WARNING_ENABLED")
+	}
+	wantHeader := strings.TrimSuffix(extshared.ExternalMessagePrefix(seat.FullName, principal.DisplayName, "", targetFullName, true), "\n")
 	if delivered.Body != wantHeader+"\n"+originalBody || metaString(delivered.Meta, "origin_kind") != "extseat" || metaString(delivered.Meta, "source_display_name") != seat.FullName || !metaBool(delivered.Meta, "source_external") || metaString(delivered.Meta, metaKeyReplyPolicy) != replyPolicyExpectReply {
-		t.Fatalf("EXTSEAT_EXPECT_REPLY_POLICY EXTSEAT_SENDER_HEADER_FROM_LOCKED_IDENTITY projected body/meta mismatch: body=%q meta=%#v", delivered.Body, delivered.Meta)
+		t.Fatalf("MCP_EXTERNAL_REPLY_WARNING_ENABLED EXTSEAT_EXPECT_REPLY_POLICY EXTSEAT_SENDER_HEADER_FROM_LOCKED_IDENTITY projected body/meta mismatch: body=%q meta=%#v", delivered.Body, delivered.Meta)
 	}
 
 	// Run the production completed-turn processor with the persisted source
@@ -216,6 +219,49 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	if noReplyErr != nil || len(noReplies) != 0 {
 		t.Fatalf("expect_reply default unexpectedly returned: %+v err=%v", noReplies, noReplyErr)
 	}
+
+	// Seat refusal disables generated return even if reply policy asks for it.
+	t.Setenv(extshared.ExternalAutoReplyDisabledEnv, targetFullName)
+	blockedReceipt, e := seats.Send(ctx, seat, targetFullName, "sensitive source", "blocked-external-return", true)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if did, e := seats.ProjectOne(ctx, HubExtseatProjector{Hub: v.hub}); !did || e != nil {
+		t.Fatal(e)
+	}
+	blockedSource := readExpected(blockedReceipt.DeliveryID)
+	if !strings.Contains(blockedSource.Body, extshared.ExternalReplyDisabledWarning) || strings.Contains(blockedSource.Body, extshared.ExternalReplyWarning) {
+		t.Fatal("MCP_EXTERNAL_REPLY_WARNING_DISABLED")
+	}
+	capture := 0
+	p.routeEnvelope = func(context.Context, model.Envelope) error { capture++; return nil }
+	p.process(amrRouteJob{key: amrTurnKey{KeyID: "u_zzc", Session: "kimi", DeliveryID: blockedSource.ID, TurnID: "blocked-capture"}, body: "private analysis"})
+	if capture != 0 {
+		t.Fatal("MCP_EXTERNAL_REPLY_SWITCH")
+	}
+	p.routeEnvelope = nil
+	// A forged or alternate automatic-return path must pass the exit gate too.
+	forged := model.Envelope{ID: "blocked-bypass", From: sessionAddress("kimi", "u_zzc"), To: seat.FullName + "#u_" + seat.OwnerLC, Body: "private analysis", Meta: map[string]any{metaKeyReplyOriginReturn: true}}
+	if e = v.hub.RouteEnvelope(ctx, forged); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatalf("MCP_EXTERNAL_REPLY_BYPASS e=%v", e)
+	}
+	if ds, e := seats.Wait(ctx, seat, 0); e != nil || len(ds) != 0 {
+		t.Fatalf("MCP_EXTERNAL_REPLY_SWITCH count=%d e=%v", len(ds), e)
+	}
+	forged.ID = "explicit-manual"
+	forged.Meta = nil
+	forged.Body = "explicit reply"
+	if e = v.hub.RouteEnvelope(ctx, forged); e != nil {
+		t.Fatal(e)
+	}
+	manual, e := seats.Wait(ctx, seat, 0)
+	if e != nil || len(manual) != 1 || manual[0].Body != "explicit reply" {
+		t.Fatalf("MCP_EXTERNAL_MANUAL_REPLY_ALLOWED e=%v", e)
+	}
+	if e = seats.Ack(ctx, seat, manual[0].ID, int(manual[0].Generation)); e != nil {
+		t.Fatal(e)
+	}
+	t.Setenv(extshared.ExternalAutoReplyDisabledEnv, "")
 
 	// Two non-target Agents share an explicit ordinary group with the target.
 	// The first has the same owner; the second crosses owners. Both address the

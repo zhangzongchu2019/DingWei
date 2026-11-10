@@ -50,11 +50,19 @@ type Config struct {
 	Login        Login
 	Clients      ClientResolver
 	Store        Store
+	SendReplyMax time.Duration
 	Now          func() time.Time
 }
 type Gateway struct{ cfg Config }
 
 func New(cfg Config) (*Gateway, error) {
+	if cfg.SendReplyMax == 0 {
+		cfg.SendReplyMax = extshared.SendReplyMax
+	}
+	if cfg.SendReplyMax <= 0 || cfg.SendReplyMax > extshared.SendReplyMax {
+		return nil, errors.New("invalid send reply maximum")
+	}
+
 	u, e := url.Parse(cfg.PublicOrigin)
 	if e != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Path != "" || u.Opaque != "" {
 		return nil, errors.New("mcpgw: invalid public origin")
@@ -305,7 +313,7 @@ func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {
 	case "server/discover":
 		result = map[string]any{"resultType": "complete", "supportedVersions": []string{ProtocolVersion}, "capabilities": map[string]any{"tools": map[string]any{}}, "_meta": map[string]any{metaPrefix + "serverInfo": map[string]string{"name": "dingwei-external", "version": "r53"}}}
 	case "tools/list":
-		result = map[string]any{"resultType": "complete", "tools": toolDefinitions()}
+		result = map[string]any{"resultType": "complete", "tools": toolDefinitions(g.cfg.SendReplyMax)}
 	case "tools/call":
 		var data any
 		data, e = g.call(r.Context(), seat, q.Params.Name, q.Params.Arguments)

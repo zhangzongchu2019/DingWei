@@ -49,7 +49,7 @@ func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, e
 		if e = tx.QueryRow(ctx, `SELECT display_name,short_name FROM np_user WHERE user_id_lc=$1`, fresh.OwnerLC).Scan(&ownerDisplay, &ownerShort); e != nil {
 			return e
 		}
-		if e = extshared.CheckMessageBody(extshared.ExternalSenderHeader(fresh.FullName, ownerDisplay, ownerShort, targetName) + "\n" + body); e != nil {
+		if e = extshared.CheckMessageBody(extshared.ExternalMessagePrefix(fresh.FullName, ownerDisplay, ownerShort, targetName, expectReply) + body); e != nil {
 			return e
 		}
 		var previous string
@@ -169,6 +169,9 @@ func (s *Service) EnqueueFromHelper(ctx context.Context, sourceAgentID, targetAg
 }
 
 func (s *Service) claim(ctx context.Context, a Seat) ([]Delivery, error) {
+	return s.claimSince(ctx, a, nil)
+}
+func (s *Service) claimSince(ctx context.Context, a Seat, since *time.Time) ([]Delivery, error) {
 	var result []Delivery
 	now := s.now()
 	e := s.tx(ctx, func(tx repo.Tx) error {
@@ -181,7 +184,7 @@ func (s *Service) claim(ctx context.Context, a Seat) ([]Delivery, error) {
 			return e
 		}
 		var d Delivery
-		e = tx.QueryRow(ctx, `SELECT id,generation,source_name,target_name,body,created_at,expires_at FROM np_extseat_inbox WHERE seat_id=$1 AND ag_code=$2 AND ag_generation=$3 AND expires_at>$4 AND (state='queued' OR (state='leased' AND lease_until<=$4)) ORDER BY created_at,id LIMIT 1 FOR UPDATE`, fresh.AgentID, string(g.Code), g.Generation, now).Scan(&d.ID, &d.Generation, &d.From, &d.To, &d.Body, &d.CreatedAt, &d.ExpiresAt)
+		e = tx.QueryRow(ctx, `SELECT id,generation,source_name,target_name,body,created_at,expires_at FROM np_extseat_inbox WHERE seat_id=$1 AND ag_code=$2 AND ag_generation=$3 AND expires_at>$4 AND (state='queued' OR (state='leased' AND lease_until<=$4)) AND ($5::timestamptz IS NULL OR (created_at>=$5 AND source_agent_id=$6)) ORDER BY created_at,id LIMIT 1 FOR UPDATE`, fresh.AgentID, string(g.Code), g.Generation, now, since, g.Target.ID).Scan(&d.ID, &d.Generation, &d.From, &d.To, &d.Body, &d.CreatedAt, &d.ExpiresAt)
 		if errors.Is(e, sql.ErrNoRows) {
 			return nil
 		}

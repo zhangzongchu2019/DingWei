@@ -288,8 +288,8 @@ func TestDiscoveryWithoutInitializeAndNoExtraCapabilities(t *testing.T) {
 			var data struct {
 				Result struct{ Tools []struct{ Name string } }
 			}
-			if json.Unmarshal(w.Body.Bytes(), &data) != nil || len(data.Result.Tools) != 4 {
-				t.Fatal("not exactly four tools")
+			if json.Unmarshal(w.Body.Bytes(), &data) != nil || len(data.Result.Tools) != 9 {
+				t.Fatal("not exactly five primary tools plus three aliases and ack")
 			}
 			for _, d := range data.Result.Tools {
 				if !knownTool(d.Name) {

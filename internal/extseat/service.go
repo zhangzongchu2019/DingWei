@@ -178,13 +178,17 @@ func (s *Service) IssueToken(ctx context.Context, p extshared.Principal, short, 
 }
 
 // load 锁定令牌、席位、Agent与属主；吊销检查在续期前，所有业务入口复用。
-func (s *Service) load(ctx context.Context, tx repo.Tx, tokenID, proof string, now time.Time) (Seat, error) {
+func (s *Service) load(ctx context.Context, tx repo.Tx, tokenID, proof string, now time.Time, locking ...bool) (Seat, error) {
+	lock := " FOR UPDATE OF t,s,a,u"
+	if len(locking) > 0 && !locking[0] {
+		lock = ""
+	}
 	var a Seat
 	var hash, astate, ustate, audience, scopes string
 	var tr, sr sql.NullTime
 	var last time.Time
 	var seen sql.NullTime
-	e := tx.QueryRow(ctx, `SELECT t.id,t.token_hash,t.expires_at,t.last_auth_at,s.last_seen_at,t.revoked_at,s.revoked_at,s.agent_id,s.auth_generation,t.auth_generation,s.ag_code,s.ag_generation,a.name,a.owner_lc,a.state,u.short_name,u.state,p.provider,p.tenant_key,p.issuer,p.subject,p.union_id,p.display_name,t.audience,t.scopes FROM np_extseat_token t JOIN np_extseat s ON s.agent_id=t.seat_id JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc JOIN np_external_principal p ON p.id=s.principal_id WHERE t.id=$1 FOR UPDATE OF t,s,a,u`, tokenID).Scan(&a.TokenID, &hash, &a.ExpiresAt, &last, &seen, &tr, &sr, &a.AgentID, &a.AuthGeneration, &a.tokenGeneration, &a.Group, &a.Generation, &a.Name, &a.OwnerLC, &astate, &a.ownerShort, &ustate, &a.Principal.Provider, &a.Principal.TenantKey, &a.Principal.Issuer, &a.Principal.Subject, &a.Principal.UnionID, &a.Principal.DisplayName, &audience, &scopes)
+	e := tx.QueryRow(ctx, `SELECT t.id,t.token_hash,t.expires_at,t.last_auth_at,s.last_seen_at,t.revoked_at,s.revoked_at,s.agent_id,s.auth_generation,t.auth_generation,s.ag_code,s.ag_generation,a.name,a.owner_lc,a.state,u.short_name,u.state,p.provider,p.tenant_key,p.issuer,p.subject,p.union_id,p.display_name,t.audience,t.scopes FROM np_extseat_token t JOIN np_extseat s ON s.agent_id=t.seat_id JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc JOIN np_external_principal p ON p.id=s.principal_id WHERE t.id=$1`+lock, tokenID).Scan(&a.TokenID, &hash, &a.ExpiresAt, &last, &seen, &tr, &sr, &a.AgentID, &a.AuthGeneration, &a.tokenGeneration, &a.Group, &a.Generation, &a.Name, &a.OwnerLC, &astate, &a.ownerShort, &ustate, &a.Principal.Provider, &a.Principal.TenantKey, &a.Principal.Issuer, &a.Principal.Subject, &a.Principal.UnionID, &a.Principal.DisplayName, &audience, &scopes)
 	if errors.Is(e, sql.ErrNoRows) {
 		return a, extshared.ErrUnauthenticated
 	}

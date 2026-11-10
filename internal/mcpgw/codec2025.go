@@ -144,7 +144,7 @@ func (g *Gateway) mcp2025(w http.ResponseWriter, r *http.Request) {
 			e = errParams
 			break
 		}
-		result = map[string]any{"tools": toolDefinitions()}
+		result = map[string]any{"tools": toolDefinitions(g.cfg.SendReplyMax)}
 	case "tools/call":
 		var p call2025
 		if decodeParams2025(q.Params, &p) != nil || p.Name == "" {

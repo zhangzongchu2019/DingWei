@@ -29,6 +29,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
@@ -76,6 +77,13 @@ func (p *amrProcessor) replyToOrigin(job amrRouteJob) {
 	if e := json.Unmarshal([]byte(delivery.Envelope), &inbound); e != nil {
 		p.replyToOriginUnavailable(job, "本轮的来源记录无法解析,内容未自动回程")
 		return
+	}
+	if delivery.SourceType == "extseat_inbound" {
+		target, ok := p.hub.newPlatformAgentAt(ctx, job.key.KeyID, job.key.Session)
+		if !ok || !extshared.ExternalAutoReplyAllowed(p.hub.Identity.FullName(ctx, target)) {
+			p.bumpReplyOrigin(&p.stats.replyOriginSkipped)
+			return
+		}
 	}
 	// Human View input is answered in this session's event stream, not by
 	// routing to the reserved workpulse sender as though it were an Agent.
