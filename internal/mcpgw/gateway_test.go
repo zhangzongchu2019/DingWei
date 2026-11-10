@@ -18,6 +18,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/extseat"
 	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"github.com/zhangzongchu2019/dingwei/internal/feishulogin"
+	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 	_ "modernc.org/sqlite"
 )
 
@@ -277,8 +278,11 @@ func TestServerInfoPresentInEvery2026Result(t *testing.T) {
 	}
 	for _, tc := range cases {
 		info := got[tc.method]
-		if info["name"] != serverInfoName || info["version"] != serverInfoVersion {
-			t.Fatalf("%s: unexpected serverInfo %#v", tc.marker, info)
+		if info["name"] != serverInfoName {
+			t.Fatalf("%s: unexpected serverInfo name %#v", tc.marker, info)
+		}
+		if info["version"] != dwversion.Version {
+			t.Fatalf("MCP_SERVERINFO_VERSION: %s got version %#v want internal/version.Version", tc.method, info["version"])
 		}
 	}
 }
@@ -290,7 +294,7 @@ func TestToolCallErrorResultCarriesServerInfo(t *testing.T) {
 	}
 	meta, _ := result["_meta"].(map[string]any)
 	info, _ := meta[metaPrefix+"serverInfo"].(map[string]string)
-	if info["name"] != serverInfoName || info["version"] != serverInfoVersion {
+	if info["name"] != serverInfoName || info["version"] != dwversion.Version {
 		t.Fatalf("MCP_SERVERINFO_TOOL_CALL_ERROR: serverInfo missing or different: %#v", meta)
 	}
 }

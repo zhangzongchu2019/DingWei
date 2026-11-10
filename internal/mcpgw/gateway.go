@@ -18,6 +18,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/extseat"
 	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"github.com/zhangzongchu2019/dingwei/internal/feishulogin"
+	dwversion "github.com/zhangzongchu2019/dingwei/internal/version"
 )
 
 const ProtocolVersion = "2026-07-28"
@@ -25,7 +26,7 @@ const metaPrefix = "io.modelcontextprotocol/"
 const toolsListTTLMS = 300000
 const toolsListCacheScope = "private"
 const serverInfoName = "dingwei-external"
-const serverInfoVersion = "r53"
+const serverInfoVersion = dwversion.Version
 
 func serverInfoMeta() map[string]any {
 	return map[string]any{metaPrefix + "serverInfo": map[string]string{"name": serverInfoName, "version": serverInfoVersion}}
