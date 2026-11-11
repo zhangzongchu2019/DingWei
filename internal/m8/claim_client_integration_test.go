@@ -157,7 +157,11 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	ipcSocket := shortIPCSocketPath(t)
 	cmd := exec.CommandContext(ctx, python, "-W", "error::RuntimeWarning", filepath.Join(root, "tools/sessionhelper/tests/claim_hub_integration_client.py"))
+	stderr := newBoundedStderr(childStderrLimit)
+	cmd.Stderr = stderr
+	logChildStderrOnFailure(t, "claim integration child", stderr)
 	cmd.Cancel = func() error { return cmd.Process.Signal(os.Interrupt) }
 	cmd.WaitDelay = 5 * time.Second
 	for _, entry := range os.Environ() {
@@ -189,7 +193,7 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
 		}
 	}()
 	encoder := json.NewEncoder(input)
-	config := map[string]any{"base": srv.URL, "state": home, "mode": mode, "requested": requested, "actual": actual, "actual_short": short}
+	config := map[string]any{"base": srv.URL, "state": home, "mode": mode, "requested": requested, "actual": actual, "actual_short": short, "mcp_ipc_sock": ipcSocket}
 	send := func(v any) {
 		t.Helper()
 		if err := encoder.Encode(v); err != nil {

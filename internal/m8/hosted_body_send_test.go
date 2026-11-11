@@ -43,9 +43,13 @@ func TestHostedBodySendAcrossRealHub(t *testing.T) {
 	discardInitialAgentNetworkSkill(t, e.ctx, peer)
 	root, _ := filepath.Abs("../..")
 	home := t.TempDir()
+	ipcSocket := shortIPCSocketPath(t)
 	ctx, cancel := context.WithTimeout(e.ctx, 25*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, python, "-B", filepath.Join(root, "tools/sessionhelper/tests/hosted_body_hub_client.py"))
+	stderr := newBoundedStderr(childStderrLimit)
+	cmd.Stderr = stderr
+	logChildStderrOnFailure(t, "hosted body helper child", stderr)
 	cmd.Env = []string{"PATH=" + os.Getenv("PATH"), "HOME=" + home, "PYTHONPATH=" + filepath.Join(root, "tools/sessionhelper")}
 	input, _ := cmd.StdinPipe()
 	output, _ := cmd.StdoutPipe()
@@ -59,7 +63,7 @@ func TestHostedBodySendAcrossRealHub(t *testing.T) {
 			cmd.Wait()
 		}
 	}()
-	if err := json.NewEncoder(input).Encode(map[string]string{"secret": secret, "home": home, "base": "ws" + strings.TrimPrefix(e.srv.URL, "http")}); err != nil {
+	if err := json.NewEncoder(input).Encode(map[string]string{"secret": secret, "home": home, "base": "ws" + strings.TrimPrefix(e.srv.URL, "http"), "mcp_ipc_sock": ipcSocket}); err != nil {
 		t.Fatal(err)
 	}
 	scan := bufio.NewScanner(output)

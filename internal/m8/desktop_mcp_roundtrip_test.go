@@ -99,11 +99,15 @@ func desktopMCPRoundTrip(t *testing.T, python, mode string) {
 		t.Fatal(err)
 	}
 	home := t.TempDir()
+	ipcSocket := shortIPCSocketPath(t)
 	script := "desktop_hub_roundtrip_client.py"
 	if mode == "enrolled_frozen_stop" {
 		script = "desktop_frozen_hub_client.py"
 	}
 	cmd := exec.CommandContext(ctx, python, "-W", "error::RuntimeWarning", filepath.Join(root, "tools/sessionhelper/tests", script))
+	stderr := newBoundedStderr(childStderrLimit)
+	cmd.Stderr = stderr
+	logChildStderrOnFailure(t, "desktop MCP integration child", stderr)
 	cmd.Cancel = func() error { return cmd.Process.Signal(os.Interrupt) }
 	cmd.WaitDelay = 5 * time.Second
 	for _, entry := range os.Environ() {
@@ -136,7 +140,7 @@ func desktopMCPRoundTrip(t *testing.T, python, mode string) {
 		}
 	}()
 	encoder := json.NewEncoder(input)
-	if err := encoder.Encode(map[string]string{"ws_base": "ws" + strings.TrimPrefix(srv.URL, "http"), "key_id": keyID, "secret": sourceSecret, "state": home, "mode": mode, "binary": os.Getenv("DW_DESKTOP_INTEGRATION_BINARY")}); err != nil {
+	if err := encoder.Encode(map[string]string{"ws_base": "ws" + strings.TrimPrefix(srv.URL, "http"), "key_id": keyID, "secret": sourceSecret, "state": home, "mode": mode, "binary": os.Getenv("DW_DESKTOP_INTEGRATION_BINARY"), "mcp_ipc_sock": ipcSocket}); err != nil {
 		t.Fatal(err)
 	}
 	scanner := bufio.NewScanner(output)
@@ -144,7 +148,7 @@ func desktopMCPRoundTrip(t *testing.T, python, mode string) {
 		for scanner.Scan() {
 			line := scanner.Text()
 			if strings.HasPrefix(line, "BRIDGE_ERROR ") {
-				t.Fatal("cross-runtime child failed; no raw child log emitted")
+				t.Fatalf("cross-runtime child failed (%s); raw bootstrap data is filtered; stderr tail:\n%s", line, stderr.report())
 			}
 			if strings.HasPrefix(line, prefix) {
 				return strings.TrimPrefix(line, prefix)
