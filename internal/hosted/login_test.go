@@ -116,6 +116,7 @@ func (r *ldRig) row(t *testing.T, id string) loginRow {
 
 // H1：发起 ⇒ 链接与码只给发起人；节点参数里是本会话上传端点、无邮箱；id 128 位十六进制；审计无邮箱、链接、码。
 func TestLoginStartHappy(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, err := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
@@ -158,6 +159,7 @@ func TestLoginStartHappy(t *testing.T) {
 
 // H2b：本人会话已到期但无人上传、清扫未轮到 ⇒ 本人再发起照常成功（不被部分唯一索引误判「进行中」），旧会话收尾为 expired。
 func TestLoginStartExpiresOwnStaleSession(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, err := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
@@ -179,6 +181,7 @@ func TestLoginStartExpiresOwnStaleSession(t *testing.T) {
 
 // H2／H3：每人 1 个进行中（库层唯一）；冷却 30 秒；取消后清链接与码并通知节点。
 func TestLoginOnePerUserAndCooldown(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, err := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
@@ -232,6 +235,7 @@ func waitTypes(t *testing.T, g *ldGw, want string) {
 
 // H4：每节点 2、全平台 4（两节点）——第 5 个 ⇒ ErrLoginBusy；分布在两节点各 2。
 func TestLoginConcurrencyCaps(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	for i, u := range []string{"u1", "u2", "u3", "u4"} {
@@ -250,6 +254,7 @@ func TestLoginConcurrencyCaps(t *testing.T) {
 
 // H5：邮箱只做格式与长度校验。
 func TestLoginEmailValidation(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	for _, e := range []string{"", "noat", "a@b", "a@@b.com", "a b@c.com", "a@b.com\x00", "a\tb@c.com", strings.Repeat("a", 250) + "@b.com", "@b.com"} {
 		if _, err := r.l.Start(context.Background(), "zzc", "gpt", e, ""); err != ErrEmailInvalid {
@@ -264,6 +269,7 @@ func TestLoginEmailValidation(t *testing.T) {
 // H6／H7：上传 ok ⇒ 新登记（名称＝邮箱、记 email、token_file）、会话 done、清链接与码；凭证不进会话表与审计；
 // id_token 邮箱不符 ⇒ 仍入池、reason=email_mismatch。
 func TestLoginCompleteRegisters(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
@@ -304,6 +310,7 @@ func TestLoginCompleteRegisters(t *testing.T) {
 // H8：一次性——同一会话再传 ⇒ ErrLoginNotActive、不重复入池；过期后到的上传 ⇒ 拒、不入池；
 // H9：失败上传 ⇒ failed，原因码按白名单格式（否则一律 login_failed）；坏 JSON 凭证 ⇒ failed。
 func TestLoginCompleteOneShotExpiryAndFailures(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
@@ -345,6 +352,7 @@ func TestLoginCompleteOneShotExpiryAndFailures(t *testing.T) {
 
 // H10：重新登录——只换本人账号凭据；失败不动旧凭据；他人账号 ⇒ ErrNotFound；api_key 账号 ⇒ 组合不符。
 func TestLoginRelogin(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	old := `{"tokens":{"refresh_token":"OLD"}}`
@@ -387,6 +395,7 @@ func TestLoginRelogin(t *testing.T) {
 
 // H11：节点回报——旧节点 ⇒ node_unsupported；不通 ⇒ node_offline；载荷不合（无码）⇒ login_start_failed 并通知节点撤。
 func TestLoginStartNodeOutcomes(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	for _, c := range []struct {
 		name, errText, payload string
@@ -420,6 +429,7 @@ func TestLoginStartNodeOutcomes(t *testing.T) {
 
 // H12：到期清扫与启动收尾——进行中到期 ⇒ expired、清链接与码、通知节点撤；Hub 重启 ⇒ 进行中一律 expired。
 func TestLoginSweepAndRecover(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
@@ -449,6 +459,7 @@ func TestLoginSweepAndRecover(t *testing.T) {
 
 // H13：上传鉴权绑会话节点——会话节点的密钥过；他节点的密钥、空密钥、错密钥一律拒；会话不存在 ⇒ ErrNotFound。
 func TestLoginUploadBoundToSessionNode(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
@@ -472,6 +483,7 @@ func TestLoginUploadBoundToSessionNode(t *testing.T) {
 
 // H14：账号数上限在发起时先挡（新登记）；重新登录不受此挡。
 func TestLoginAccountLimitPrecheck(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	for i := 0; i < MaxAccountsPerOwner; i++ {
@@ -486,6 +498,7 @@ func TestLoginAccountLimitPrecheck(t *testing.T) {
 
 // idTokenEmail：只解码取 email；形状不对一律空串。
 func TestIDTokenEmail(t *testing.T) {
+	parallelHostedTest(t)
 	if got := idTokenEmail(authJSON("x@y.com")); got != "x@y.com" {
 		t.Fatalf("%q", got)
 	}
@@ -498,6 +511,7 @@ func TestIDTokenEmail(t *testing.T) {
 
 // H4b：全平台上限单独咬——三个在线节点（每节点上限合计 6）时，第 5 个仍 ErrLoginBusy。
 func TestLoginTotalCapBindsWithThreeNodes(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	if _, err := r.s.registerR31LegacyNode(ctx, Node{ID: "nd_c", Name: "nd_c", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin"); err != nil {
@@ -518,6 +532,7 @@ func TestLoginTotalCapBindsWithThreeNodes(t *testing.T) {
 
 // H4c：每节点上限单独咬——只有一个在线节点时，第 3 个 ErrLoginBusy。
 func TestLoginPerNodeCapBindsWithOneNode(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	if _, err := r.s.exec(ctx, `UPDATE g4_node SET state='offline' WHERE id='nd_b'`); err != nil {
@@ -539,6 +554,7 @@ func TestLoginPerNodeCapBindsWithOneNode(t *testing.T) {
 // 复核必改 3：入池会被拒的条件在发起时即拒（用户不必先去浏览器登完）——邮箱超过账号名长度、本人已有同名账号；
 // 邮箱随同一条 INSERT 落库（入池即带 email，不存在「名字＝邮箱、email 为空」的中间态）。
 func TestLoginPrechecksAndEmailInSameInsert(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	long := strings.Repeat("a", AccountNameMaxLen-len("@example.com")+1) + "@example.com"
@@ -568,6 +584,7 @@ func TestLoginPrechecksAndEmailInSameInsert(t *testing.T) {
 
 // 复核建议 7：上传已收成 done 的会话，之后到期清扫与取消都不得改动它。
 func TestLoginDoneNotOverwrittenBySweepOrCancel(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
@@ -585,6 +602,7 @@ func TestLoginDoneNotOverwrittenBySweepOrCancel(t *testing.T) {
 // 组长 LOGIN-IMPL-R1 建议 7：上传先原子认领（waiting_user→completing）再入池——
 // completing 期间清扫、取消都不碰它；同会话再上传认领不到 ⇒ 拒、不重复入池；过期会话认领不到；Hub 重启把 completing 收为 failed/interrupted。
 func TestLoginClaimCompletingIsAtomic(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
@@ -630,6 +648,7 @@ func TestLoginClaimCompletingIsAtomic(t *testing.T) {
 
 // 组长 LOGIN-IMPL-R2 第 3 条（复核 M3）：会话一旦结束（done／failed／expired／cancelled），库里链接与码一律清空。
 func TestLoginTerminalStatesClearLinkAndCode(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	end := map[string]func(r *ldRig, id string){
 		"done": func(r *ldRig, id string) { r.l.Complete(ctx, id, uploadOK(authJSON("me@example.com"))) },
@@ -667,6 +686,7 @@ func TestLoginTerminalStatesClearLinkAndCode(t *testing.T) {
 // 复核第 4 批建议 1：认领后迟迟不收尾的 completing（收尾写库失败、入池途中挂住）——2 分钟内不动，超过即被清扫收为
 // failed/interrupted，释放「每人一个进行中」，用户可再发起。
 func TestLoginStaleCompletingIsSwept(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")
@@ -697,6 +717,7 @@ func TestLoginStaleCompletingIsSwept(t *testing.T) {
 
 // 复核第 4 批建议 2：某库若曾应用早期定义（CHECK 无 completing、唯一索引旧谓词），ApplySchema 幂等换新。
 func TestFrozenR30LoginSchemaUpgradesOldDefinition(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	for _, q := range []string{
@@ -730,6 +751,7 @@ func TestFrozenR30LoginSchemaUpgradesOldDefinition(t *testing.T) {
 
 // 复核读码提示 1：claimed_at 为空的 completing（只可能来自旧版本留下的行）按 created_at 兜底，同样会被收。
 func TestLoginStaleCompletingWithoutClaimedAt(t *testing.T) {
+	parallelHostedTest(t)
 	r := mkLogin(t)
 	ctx := context.Background()
 	v, _ := r.l.Start(ctx, "zzc", "gpt", "me@example.com", "")

@@ -8,6 +8,7 @@ import (
 )
 
 func TestSoftHoldReleasePendingEventConverges(t *testing.T) {
+	parallelHostedTest(t)
 	for _, mode := range []string{"success", "timeout"} {
 		for _, timing := range []string{"already_received", "first_after_release", "legacy_held_error"} {
 			t.Run(mode+"/"+timing, func(t *testing.T) {
@@ -78,6 +79,7 @@ func assertReleasedSeat(t *testing.T, s *Store) {
 }
 
 func TestSoftHoldReleaseReplayPreservesCurrentHazards(t *testing.T) {
+	parallelHostedTest(t)
 	for _, boundary := range []string{"new_hold", "new_hold_without_event", "ordinary_error", "ordinary_error_first_event", "destroyed", "disabled", "no_owner_intent", "wrong_generation"} {
 		t.Run(boundary, func(t *testing.T) {
 			ctx := context.Background()
@@ -162,6 +164,7 @@ func TestSoftHoldReleaseReplayPreservesCurrentHazards(t *testing.T) {
 }
 
 func TestSoftHoldLegacyEventStateAppliedOnce(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	s := NewStore(testpool(t))
 	if err := s.ApplySchema(ctx); err != nil {

@@ -185,6 +185,7 @@ func backupCount(t *testing.T, s *Store) int {
 }
 
 func TestBackupPipelineEndToEnd(t *testing.T) {
+	parallelHostedTest(t)
 	body := mkTarGz(t, map[string]string{"ag_bks/work.log": "卷内容"})
 	s, bk, dir := mkBackupRig(t, &gwBackupNode{body: body})
 	ctx := context.Background()
@@ -226,6 +227,7 @@ func TestBackupPipelineEndToEnd(t *testing.T) {
 }
 
 func TestBackupHandlerAuthAndStates(t *testing.T) {
+	parallelHostedTest(t)
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
 	secret, err := s.registerR31LegacyNode(ctx, Node{ID: "nd_b1", Name: "b1", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
@@ -291,6 +293,7 @@ func TestBackupHandlerAuthAndStates(t *testing.T) {
 }
 
 func TestSweepExpiredBackupsReclaimsOnlyStalePending(t *testing.T) {
+	parallelHostedTest(t)
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
 	dir := t.TempDir()
@@ -334,6 +337,7 @@ func TestSweepExpiredBackupsReclaimsOnlyStalePending(t *testing.T) {
 }
 
 func TestClientCancellationOrphanPendingIsEventuallySwept(t *testing.T) {
+	parallelHostedTest(t)
 	_, s := mkPoolSvc(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	now := time.Now().UTC()
@@ -361,6 +365,7 @@ func TestClientCancellationOrphanPendingIsEventuallySwept(t *testing.T) {
 // 丙案（R-G4-BACKUP-CHECKSUM-CTRL）：trailer 缺失不再拒收（反代会丢）——校验移到控制面补报，
 // 由 TestBackupChecksumControlPlane 钉。
 func TestBackupIntegrityRejected(t *testing.T) {
+	parallelHostedTest(t)
 	good := mkTarGz(t, map[string]string{"ag_i/work.log": strings.Repeat("卷内容", 2000)})
 	cases := []struct {
 		name string
@@ -413,6 +418,7 @@ func TestBackupIntegrityRejected(t *testing.T) {
 // 校验值经控制面补报（export_seat 结果载荷）、Hub 落盘自算、相等才转 complete；
 // 未补报或不等 ⇒ 不销毁、backup_failed。反向：去掉 BackupSeatVolume 的补报比对 ⇒ 本格红。
 func TestBackupChecksumControlPlane(t *testing.T) {
+	parallelHostedTest(t)
 	good := mkTarGz(t, map[string]string{"ag_c/work.log": "卷内容"})
 
 	// 丢 trailer 的反代形态：上传不带 trailer 也须走通全链（补报正确 ⇒ complete）
@@ -565,6 +571,7 @@ func mkBackupRigOn(t *testing.T, s *Store, gw *gwBackupNode) (*Store, *HubBackup
 
 // 失败分支一律清 pending（复验存活刀 B4 与第四节）：网关发不出去、节点回失败两路。
 func TestBackupFailureClearsPending(t *testing.T) {
+	parallelHostedTest(t)
 	for name, gw := range map[string]*gwBackupNode{
 		"gateway error":                    {sendErr: errors.New("injected: node unreachable")},
 		"node failure":                     {fail: true},
@@ -603,6 +610,7 @@ func (g *gwWithTimeout) SendWithTimeout(ctx context.Context, nodeID string, cmd 
 // BackupSeatVolume 对 export_seat 必须走 SendWithTimeout(15min)（长指令上限）；
 // 反向：探测分支被去掉（只用 Send）⇒ 本格红。
 func TestBackupUsesLongTimeout(t *testing.T) {
+	parallelHostedTest(t)
 	body := mkTarGz(t, map[string]string{"ag_lt/work.log": "卷内容"})
 	inner := &gwBackupNode{body: body}
 	_, bk, _ := mkBackupRig(t, inner) // rig 把节点凭据装到 inner 上
@@ -619,6 +627,7 @@ func TestBackupUsesLongTimeout(t *testing.T) {
 // 丙案新分支（复验二轮 G8 半格）：已 landed 但记录仍 pending 时，同一 id 再传 ⇒ 404 不覆写，
 // landed 登记与落盘件都不动。
 func TestBackupDuplicateUploadWhilePending(t *testing.T) {
+	parallelHostedTest(t)
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
 	secret, err := s.registerR31LegacyNode(ctx, Node{ID: "nd_dup", Name: "dup", Labels: json.RawMessage(`{}`), DockerVersion: "29", ProtocolVersion: 1}, "admin")
@@ -658,6 +667,7 @@ func TestBackupDuplicateUploadWhilePending(t *testing.T) {
 
 // G10（复验二轮）：节点掉线 ⇒ 销毁链断在备份步、backup_failed、不发 destroy_seat。
 func TestBackupNodeOfflineStopsDestroy(t *testing.T) {
+	parallelHostedTest(t)
 	lc, log, _, _, _, s, id := mkLifecycle(t)
 	gw := &gwBackupNode{sendErr: errors.New("node_offline")}
 	_, bk, _ := mkBackupRigOn(t, s, gw)

@@ -36,6 +36,7 @@ func registerCapacityReplyNode(t *testing.T, s *Store, id, rev string, managed m
 	}
 }
 func TestCapacityReplyStrictProtocolAndRegistration(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	_, _, _, s := mkOrch(t)
 	rev := strings.Repeat("f", 64)
@@ -86,6 +87,7 @@ func TestCapacityReplyStrictProtocolAndRegistration(t *testing.T) {
 	}
 }
 func TestCapacityFinalGateLifecycleJobs(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	life, log, susp, _, _, s, id := mkLifecycle(t)
 	original, err := s.GetSeat(ctx, id)
@@ -184,6 +186,7 @@ func TestCapacityFinalGateLifecycleJobs(t *testing.T) {
 	}
 }
 func TestCapacityFinalGateCreateJobsAndCleanup(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, idp, _, s := mkOrch(t)
 	rev := strings.Repeat("c", 64)

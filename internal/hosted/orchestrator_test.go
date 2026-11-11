@@ -134,6 +134,7 @@ func acctOf(t *testing.T, svc *PoolService) string {
 }
 
 func TestCreateHappyPathCodexFirst(t *testing.T) {
+	parallelHostedTest(t)
 	o, idp, gw, s := mkOrch(t)
 	var acctID string
 	{
@@ -233,6 +234,7 @@ func TestCreateHappyPathCodexFirst(t *testing.T) {
 // Claude is registered in the same plan/admission path, but is intentionally
 // not creatable until an isolated image/login validation turns its combo green.
 func TestClaudeMinimumPlanRemainsUnverified(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, _ := mkOrch(t)
 	ctx := context.Background()
 	a, err := o.pool.RegisterOwned(ctx, "zzc", "claude-fixture", "token_file", "claude", "claude", `{"opaque":"fixture"}`)
@@ -251,6 +253,7 @@ func TestClaudeMinimumPlanRemainsUnverified(t *testing.T) {
 }
 
 func TestCreateRejections(t *testing.T) {
+	parallelHostedTest(t)
 	o, idp, _, s := mkOrch(t)
 	acctID := acctOf(t, o.pool)
 	base := CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "w", GroupCode: "g1",
@@ -327,6 +330,7 @@ func TestCreateRejections(t *testing.T) {
 }
 
 func TestRunJobFailureCleanup(t *testing.T) {
+	parallelHostedTest(t)
 	o, idp, gw, _ := mkOrch(t)
 	gw.failOn = "pull_image"
 	out, err := o.Create(context.Background(), CreateRequest{
@@ -352,6 +356,7 @@ func TestRunJobFailureCleanup(t *testing.T) {
 }
 
 func TestSweepTimeouts(t *testing.T) {
+	parallelHostedTest(t)
 	o, idp, _, _ := mkOrch(t)
 	out, err := o.Create(context.Background(), CreateRequest{
 		OwnerLC: "zzc", By: "zzc", Name: "worker7", GroupCode: "g1",
@@ -374,6 +379,7 @@ func TestSweepTimeouts(t *testing.T) {
 var _ = errors.New
 
 func TestPoolScheduling(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	// 三个节点：pool-a 大余量、pool-b 小余量（标签落位不得被全池最闲抢走——D1 反向）
@@ -407,6 +413,7 @@ func TestPoolScheduling(t *testing.T) {
 
 // 业主令 8582acc4：编组可不选——不给编组的创建必成功且不建组（反向：强制编组必红）。
 func TestCreateWithoutGroupSucceeds(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, _ := mkOrch(t)
 	out, err := o.Create(context.Background(), CreateRequest{
 		OwnerLC: "zzc", By: "zzc", Name: "nogroup1", GroupCode: "", // 不选编组
@@ -425,6 +432,7 @@ func TestCreateWithoutGroupSucceeds(t *testing.T) {
 // ErrGroupNotFound/ErrGroupClosed 时 Create 原样透传哨兵（契约机器码），且不留任何副作用
 // （未签发成功 ⇒ 无席位、无绑定、无 Retire）。
 func TestCreateGroupErrorsPropagate(t *testing.T) {
+	parallelHostedTest(t)
 	for _, want := range []error{ErrGroupNotFound, ErrGroupClosed} {
 		o, idp, _, s := mkOrch(t)
 		acctID := acctOf(t, o.pool)
@@ -447,6 +455,7 @@ func TestCreateGroupErrorsPropagate(t *testing.T) {
 // (map[string]any, bool)；契约字段 node_name/state/upgradable/image_version/plan/account_last4，
 // token_file 类出 account_kind＋account_registered_at。状态映射逐格＋缺席语义＋账号两形态。
 func TestHostedOverlay(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	mkSeat := func(agentID, nodeID, state, imageRef string) {
@@ -535,6 +544,7 @@ func TestHostedOverlay(t *testing.T) {
 // T-G4-32 反向：Hub 重启丢了内存暂存令牌（直接对已有席位 RunJob、未经 Create 暂存）⇒
 // 启动阶段 credential_inject_failed 失败清理：Retire＋解绑＋状态 error，不硬撑不带凭据起容器。
 func TestRunJobMissingTokenFailsClosed(t *testing.T) {
+	parallelHostedTest(t)
 	o, idp, gw, s := mkOrch(t)
 	ctx := context.Background()
 	acctID := acctOf(t, o.pool)
@@ -569,6 +579,7 @@ func TestRunJobMissingTokenFailsClosed(t *testing.T) {
 
 // T-G4-35：options 读模型＋jobs 进度（契约第一节字段逐字）。
 func TestOptionsViewAndJobProgress(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	// 容量读数（模拟心跳上报）：nd_free 16C 总、15G 余、100G 盘余
@@ -660,6 +671,7 @@ func TestOptionsViewAndJobProgress(t *testing.T) {
 
 // 组长 18:56:12Z：HostedItem 收敛 false 必须留痕——计数＋1 且返回 false（日志同路径）。
 func TestHostedItemErrorCounted(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	if err := s.CreateSeat(ctx, Seat{AgentID: "ag_x", NodeID: "nd_free", CLI: "codex", LLM: "gpt",
@@ -681,6 +693,7 @@ func TestHostedItemErrorCounted(t *testing.T) {
 // T-G4-34 复验行为登记：online＝以专属凭据连入（连接层回调 MarkOnline——opus50tc2k 的
 // cd71197d 接线，复验已过），不是容器已创建。RunJob 走完只到 starting；未连入 ⇒ starting 不动。
 func TestOnlineOnlyViaMarkOnline(t *testing.T) {
+	parallelHostedTest(t)
 	o, idp, _, s := mkOrch(t)
 	ctx := context.Background()
 	out, err := o.Create(ctx, CreateRequest{
@@ -707,6 +720,7 @@ func TestOnlineOnlyViaMarkOnline(t *testing.T) {
 
 // 反向格：永不连入（容器起了但 CLI 崩溃/凭据件错）⇒ 5 分钟 start_timeout 清扫：failed＋Retire。
 func TestNeverConnectsSweepedStartTimeout(t *testing.T) {
+	parallelHostedTest(t)
 	o, idp, _, s := mkOrch(t)
 	ctx := context.Background()
 	out, err := o.Create(ctx, CreateRequest{
@@ -737,6 +751,7 @@ func TestNeverConnectsSweepedStartTimeout(t *testing.T) {
 // ③ 生效值落库（seat.Model），upgrade 用记录值
 // 反向：pickNode 去清单过滤 ⇒ ①红；去校验 ⇒ ②红。
 func TestCreateWithModelSelectsSupportingNode(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, gw, s := mkOrch(t)
 	ctx := context.Background()
 	// nd_free 上报清单含 gpt-6.1-sol；nd_full 不含。🔴 错位须钉在容量上：nd_full 余量
@@ -781,6 +796,7 @@ func TestCreateWithModelSelectsSupportingNode(t *testing.T) {
 }
 
 func TestCreateModelRejections(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
@@ -801,6 +817,7 @@ func TestCreateModelRejections(t *testing.T) {
 
 // 帧龄（修订 4）：容量帧超龄（>180s）即视同下线——选点不含它 ⇒ model_not_available。
 func TestPickNodeStaleFrameTreatedOffline(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol"]}`)); err != nil {
@@ -818,6 +835,7 @@ func TestPickNodeStaleFrameTreatedOffline(t *testing.T) {
 
 // 容量帧无 models 键（老 Hub 读新帧／新 Hub 读老帧两向兼容）：nodeHasModel 不炸、得 false。
 func TestNodeHasModelToleratesMissingKey(t *testing.T) {
+	parallelHostedTest(t)
 	var n Node
 	n.Capacity = json.RawMessage(`{"mem_free_mb":1024}`)
 	if nodeHasModel(n, "gpt-6.1-sol") {

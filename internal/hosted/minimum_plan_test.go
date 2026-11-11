@@ -14,6 +14,7 @@ import (
 )
 
 func TestMinimumPlanDefinitionAndNetCapacity(t *testing.T) {
+	parallelHostedTest(t)
 	p, ok := PlanByID("1c1.5g40")
 	if !ok || p != (Plan{ID: "1c1.5g40", VCPU: 1, MemMB: 1536, DiskMB: 40960}) {
 		t.Fatalf("minimum plan: %+v %v", p, ok)
@@ -47,6 +48,7 @@ func TestMinimumPlanDefinitionAndNetCapacity(t *testing.T) {
 }
 
 func TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	_, s := mkPoolSvc(t)
 	if err := s.upsertR31LegacyNode(ctx, Node{ID: "nd_min", Name: "min", Labels: []byte(`{}`)}); err != nil {
@@ -95,6 +97,7 @@ ALTER TABLE g4_hosted_seat ADD CONSTRAINT g4_hosted_seat_plan_check CHECK (plan 
 }
 
 func TestMinimumPlanQuotaDebitsAndEveryDimension(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	qs, s, idp := mkQuotaSvc(t)
 	plan, ok := PlanByID("1c1.5g40")
@@ -136,6 +139,7 @@ func TestMinimumPlanQuotaDebitsAndEveryDimension(t *testing.T) {
 }
 
 func TestMinimumPlanOptionsAndRealCreateResources(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, _, gw, s := mkOrch(t)
 	if err := s.setR31LegacyOnline(ctx, "nd_free", []byte(`{"resource_limits_version":1,"mem_free_mb":16384}`)); err != nil {

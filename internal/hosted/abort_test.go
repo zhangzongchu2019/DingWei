@@ -10,6 +10,7 @@ import (
 // 不用只吊销的 RetireHostedAgent；新组名走 IssueHostedAgentWithNewGroup。
 // 断言面＝Orchestrator 对 IdentityIssuer 的调用；实现承诺＝上述分流。落库失败那处由 cmd/workpulse 的真存储格覆盖。
 func TestCreateFailurePathsAbortTheIssue(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	contains := func(list []string, id string) bool {
 		for _, v := range list {

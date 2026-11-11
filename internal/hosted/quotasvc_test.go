@@ -15,6 +15,7 @@ func mkQuotaSvc(t *testing.T) (*QuotaService, *Store, *fakeIdentity) {
 }
 
 func TestQuotaCheckBoundaries(t *testing.T) {
+	parallelHostedTest(t)
 	qs, s, idp := mkQuotaSvc(t)
 	ctx := context.Background()
 	plan, _ := PlanByID("2c4g")
@@ -90,6 +91,7 @@ func TestQuotaCheckBoundaries(t *testing.T) {
 func err0(ctx context.Context, qs *QuotaService, p Plan) error { return qs.CheckCreate(ctx, "zzc", p) }
 
 func TestQuotaListWithUsage(t *testing.T) {
+	parallelHostedTest(t)
 	qs, s, idp := mkQuotaSvc(t)
 	ctx := context.Background()
 	if err := qs.Put(ctx, "admin", true, Quota{UserLC: "zzc", AgentsLimit: 4, VCPULimit: 8, MemMBLimit: 16384}); err != nil {
@@ -115,6 +117,7 @@ func TestQuotaListWithUsage(t *testing.T) {
 // 组长裁定 lead-g4-joint-run-1 第 6 条：Agent 数剩 0 ⇒ quota_exceeded；Agent 数还有、套餐超 vCPU／内存剩余 ⇒ plan_exceeds_quota。
 // 两种都带剩余；两者同时成立时答 quota_exceeded。
 func TestCheckCreateCodeSplit(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	big, _ := PlanByID("4c8g")
 	for _, c := range []struct {

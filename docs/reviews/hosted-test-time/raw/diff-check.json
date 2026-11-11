@@ -1,0 +1,15 @@
+{
+  "cmd": [
+    "git",
+    "diff",
+    "--check"
+  ],
+  "cwd": "/data/ai-dev-data/hosted-test-time-c782",
+  "start": "2026-11-11T03:35:57.387013+00:00",
+  "rc": 0,
+  "end": "2026-11-11T03:35:57.403440+00:00",
+  "packages": {},
+  "hosted_top": [],
+  "hosted_slow15": [],
+  "skips": []
+}

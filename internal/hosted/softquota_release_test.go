@@ -55,6 +55,7 @@ func setReleaseFrame(t *testing.T, s *Store, f map[string]any) {
 	}
 }
 func TestSoftHoldHubReleaseAuditAndUncertainNoResend(t *testing.T) {
+	parallelHostedTest(t)
 	s := NewStore(testpool(t))
 	ctx := context.Background()
 	if err := s.ApplySchema(ctx); err != nil {
@@ -113,6 +114,7 @@ func TestSoftHoldHubReleaseAuditAndUncertainNoResend(t *testing.T) {
 }
 
 func TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices(t *testing.T) {
+	parallelHostedTest(t)
 	s := NewStore(testpool(t))
 	ctx := context.Background()
 	if err := s.ApplySchema(ctx); err != nil {
@@ -183,6 +185,7 @@ func TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices(t *testing.T) {
 }
 
 func TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart(t *testing.T) {
+	parallelHostedTest(t)
 	s := NewStore(testpool(t))
 	ctx := context.Background()
 	if err := s.ApplySchema(ctx); err != nil {

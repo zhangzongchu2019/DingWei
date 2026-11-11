@@ -1,0 +1,94 @@
+{
+  "cmd": [
+    "go",
+    "test",
+    "-json",
+    "-count=1",
+    "-parallel=6",
+    "-timeout=3m",
+    "./internal/hosted",
+    "-run",
+    "^Test(SchemaApplyRollbackRepeatable|SchemaDropLeavesNoG4Tables|AppliedLedgerRejectsMissingHostedTableWithoutRepair|FrozenR30SchemaModelColumnMigration|NodeSeatPoolQuotaFlow|NodeCredentialLifecycle)$"
+  ],
+  "cwd": "/data/ai-dev-data/hosted-test-time-c782",
+  "start": "2026-11-11T03:26:54.030267+00:00",
+  "rc": 0,
+  "end": "2026-11-11T03:27:01.546811+00:00",
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/internal/hosted": {
+      "elapsed": [
+        7.029
+      ],
+      "counts": {
+        "pass": 6,
+        "fail": 0,
+        "skip": 0
+      }
+    }
+  },
+  "hosted_top": [
+    {
+      "Test": "TestNodeCredentialLifecycle",
+      "Action": "pass",
+      "Elapsed": 3.73
+    },
+    {
+      "Test": "TestFrozenR30SchemaModelColumnMigration",
+      "Action": "pass",
+      "Elapsed": 6.38
+    },
+    {
+      "Test": "TestSchemaApplyRollbackRepeatable",
+      "Action": "pass",
+      "Elapsed": 6.87
+    },
+    {
+      "Test": "TestAppliedLedgerRejectsMissingHostedTableWithoutRepair",
+      "Action": "pass",
+      "Elapsed": 6.96
+    },
+    {
+      "Test": "TestSchemaDropLeavesNoG4Tables",
+      "Action": "pass",
+      "Elapsed": 6.99
+    },
+    {
+      "Test": "TestNodeSeatPoolQuotaFlow",
+      "Action": "pass",
+      "Elapsed": 7.02
+    }
+  ],
+  "hosted_slow15": [
+    {
+      "Test": "TestNodeSeatPoolQuotaFlow",
+      "Action": "pass",
+      "Elapsed": 7.02
+    },
+    {
+      "Test": "TestSchemaDropLeavesNoG4Tables",
+      "Action": "pass",
+      "Elapsed": 6.99
+    },
+    {
+      "Test": "TestAppliedLedgerRejectsMissingHostedTableWithoutRepair",
+      "Action": "pass",
+      "Elapsed": 6.96
+    },
+    {
+      "Test": "TestSchemaApplyRollbackRepeatable",
+      "Action": "pass",
+      "Elapsed": 6.87
+    },
+    {
+      "Test": "TestFrozenR30SchemaModelColumnMigration",
+      "Action": "pass",
+      "Elapsed": 6.38
+    },
+    {
+      "Test": "TestNodeCredentialLifecycle",
+      "Action": "pass",
+      "Elapsed": 3.73
+    }
+  ],
+  "skips": []
+}

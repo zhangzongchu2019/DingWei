@@ -1,0 +1,29 @@
+{
+  "profiles": [
+    {
+      "actual": 1168,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1168,
+      "files": 93,
+      "groups": [
+        1159,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1168,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1168,
+      "files": 93,
+      "groups": [
+        1159,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "marker": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2"
+}

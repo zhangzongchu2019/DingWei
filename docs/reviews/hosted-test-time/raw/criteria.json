@@ -1,0 +1,18 @@
+{
+  "a": "通过",
+  "hosted_seconds": 215.617,
+  "b": "通过",
+  "round_seconds": [
+    204.55486,
+    197.777257,
+    196.375227
+  ],
+  "c": "通过",
+  "top_before_after": [
+    185,
+    185
+  ],
+  "hosted_skip": 0,
+  "d": "通过",
+  "serial_control_over_budget": true
+}

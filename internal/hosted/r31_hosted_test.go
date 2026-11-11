@@ -71,6 +71,7 @@ func r31Has(t *testing.T, s *Store, user, node string, want bool) {
 }
 
 func TestR31NodeRegistrationCredentialAndAtomicAudit(t *testing.T) {
+	parallelHostedTest(t)
 	s := r31Store(t)
 	ctx := context.Background()
 	secret := r31Register(t, s, "nd_admin", "admin_only")
@@ -112,6 +113,7 @@ func TestR31NodeRegistrationCredentialAndAtomicAudit(t *testing.T) {
 }
 
 func TestR31NodeGroupAccessAndRevocation(t *testing.T) {
+	parallelHostedTest(t)
 	s := r31Store(t)
 	ctx := context.Background()
 	if _, err := s.exec(ctx, `INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,created_at)VALUES('ag_member','member','MemberAgent','memberagent','selfhost','active',now()); INSERT INTO np_group(code,short_name,creator_lc,leader_agent_id,created_at,updated_at)VALUES('gggggggggggggggggggggggggggggggg','GroupOne','creator','ag_member',now(),now()); INSERT INTO np_group_member(code,agent_id,created_at)VALUES('gggggggggggggggggggggggggggggggg','ag_member',now())`); err != nil {
@@ -148,6 +150,7 @@ func TestR31NodeGroupAccessAndRevocation(t *testing.T) {
 }
 
 func TestR31HardCapacityAllDimensionsAndLegacyUnknown(t *testing.T) {
+	parallelHostedTest(t)
 	s := r31Store(t)
 	ctx := context.Background()
 	r31Register(t, s, "nd_good", "public")
@@ -197,6 +200,7 @@ func TestR31HardCapacityAllDimensionsAndLegacyUnknown(t *testing.T) {
 }
 
 func TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission(t *testing.T) {
+	parallelHostedTest(t)
 	s := r31Store(t)
 	ctx := context.Background()
 	r31Register(t, s, "nd_one", "public")
@@ -238,6 +242,7 @@ func TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission(t *testing.T) {
 }
 
 func TestR31NodeOptionsHideModelsAndQueuedRevocation(t *testing.T) {
+	parallelHostedTest(t)
 	s := r31Store(t)
 	ctx := context.Background()
 	r31Register(t, s, "nd_public", "public")
@@ -285,6 +290,7 @@ func TestR31NodeOptionsHideModelsAndQueuedRevocation(t *testing.T) {
 }
 
 func TestR31AdmissionAndNodeRevocationCommitOrder(t *testing.T) {
+	parallelHostedTest(t)
 	s := r31Store(t)
 	ctx := context.Background()
 	r31Register(t, s, "nd_race", "public")
@@ -337,6 +343,7 @@ func TestR31AdmissionAndNodeRevocationCommitOrder(t *testing.T) {
 }
 
 func TestR31HardConcurrentReservationsDoNotOversell(t *testing.T) {
+	parallelHostedTest(t)
 	s := r31Store(t)
 	ctx := context.Background()
 	r31Register(t, s, "nd_slots", "public")
@@ -365,6 +372,7 @@ func TestR31HardConcurrentReservationsDoNotOversell(t *testing.T) {
 }
 
 func TestR31AdmissionUsesOwnerNotAdministratorAuditActor(t *testing.T) {
+	parallelHostedTest(t)
 	s := r31Store(t)
 	ctx := context.Background()
 	r31Register(t, s, "nd_private", "admin_only")
@@ -376,6 +384,7 @@ func TestR31AdmissionUsesOwnerNotAdministratorAuditActor(t *testing.T) {
 }
 
 func TestR31HostedApplySchemaUsesUnifiedLedger(t *testing.T) {
+	parallelHostedTest(t)
 	s := NewStore(testpool(t))
 	ctx := context.Background()
 	if err := s.ApplySchema(ctx); err != nil {
@@ -392,6 +401,7 @@ func TestR31HostedApplySchemaUsesUnifiedLedger(t *testing.T) {
 }
 
 func TestR31StatePatchCannotRestoreConcurrentRevocation(t *testing.T) {
+	parallelHostedTest(t)
 	s := r31Store(t)
 	ctx := context.Background()
 	r31Register(t, s, "nd_patch", "public")

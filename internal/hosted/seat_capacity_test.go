@@ -59,6 +59,7 @@ func withTestSeatCapacity(t *testing.T, raw json.RawMessage) json.RawMessage {
 }
 
 func TestCapacityRealCreatePendingEightNinthAndExistingStart(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, idp, _, s := mkOrch(t)
 	rev := strings.Repeat("a", 64)
@@ -139,6 +140,7 @@ func TestCapacityRealCreatePendingEightNinthAndExistingStart(t *testing.T) {
 }
 
 func TestCapacityStoreSerializesConcurrentReservations(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	rev := strings.Repeat("b", 64)
@@ -180,6 +182,7 @@ func TestCapacityStoreSerializesConcurrentReservations(t *testing.T) {
 }
 
 func TestCapacityUnknownReservesForeignLoadAndLegacyHard(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	rev := strings.Repeat("c", 64)

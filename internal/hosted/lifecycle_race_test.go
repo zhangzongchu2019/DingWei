@@ -30,6 +30,7 @@ func (g *zzHookGw) Send(ctx context.Context, nodeID string, c NodeCommand) (Node
 }
 
 func TestZZ_AgentConnectingBeforeStartingIsNotLost(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	for _, op := range []string{"restart", "enable"} {
 		t.Run(op, func(t *testing.T) {
@@ -67,6 +68,7 @@ func TestZZ_AgentConnectingBeforeStartingIsNotLost(t *testing.T) {
 // ① 失败按原语义落：节点报起不来时，重启 ⇒ error/start_failed；启用 ⇒ 回 disabled、凭据重新暂停。
 // 节点不通 ⇒ 两者都回原态、凭据回原样（第 7 条不变）。
 func TestEnableRestartFailureAfterStarting(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	t.Run("restart node reports failure", func(t *testing.T) {
 		lc, _, _, gw, _, s, id := mkLifecycle(t)
@@ -118,6 +120,7 @@ func TestEnableRestartFailureAfterStarting(t *testing.T) {
 
 // ① 失败回写是条件迁移：命令途中 Agent 已连入（online）后节点才报失败／不通，不得把 online 盖回去、不得暂停它的凭据。
 func TestFailureAfterAgentConnectedKeepsOnline(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, _, susp, gw, _, s, id := mkLifecycle(t)
 	o := NewOrchestrator(s, lc.pool, lc.idp, lc.gw, fakeCombos{m: map[string]bool{}}, fakeCatalog{})
@@ -150,6 +153,7 @@ func (g *zzConnectThenGw) Send(ctx context.Context, nodeID string, c NodeCommand
 
 // ② 既有席位超时后晚连入 ⇒ online（重启、启用两条）。
 func TestLateConnectAfterExistingTimeoutGoesOnline(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	for _, op := range []string{"restart", "enable"} {
 		t.Run(op, func(t *testing.T) {
@@ -181,6 +185,7 @@ func TestLateConnectAfterExistingTimeoutGoesOnline(t *testing.T) {
 
 // ② 反面：只认「既有席位超时」——别的 error（重启起不来 start_failed、新建超时）MarkOnline 不动。
 func TestLateConnectOnlyForExistingTimeout(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	t.Run("start_failed stays error", func(t *testing.T) {
 		lc, _, _, gw, _, s, id := mkLifecycle(t)
@@ -216,6 +221,7 @@ func TestLateConnectOnlyForExistingTimeout(t *testing.T) {
 // 重启路径上「命令途中 Agent 已连入、之后节点才报失败／不通」——失败回写必须是条件迁移，
 // 不得把已 online 的席位盖回 error／原态，也不得暂停它的凭据。
 func TestRestartFailureAfterAgentConnectedKeepsOnline(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	t.Run("node_reports_failure_from_online", func(t *testing.T) {
 		lc, _, susp, gw, _, s, id := mkLifecycle(t)
@@ -255,6 +261,7 @@ func TestRestartFailureAfterAgentConnectedKeepsOnline(t *testing.T) {
 // 组长 R-G4-RACE-FOLD 第 2 条：置 starting 写库失败 ⇒ 席位不动、刚才的 Resume 撤回（凭据回暂停），不发节点命令。
 // 重启（从暂停凭据的 error 席位起）与启用两条。写库失败用库内触发器确定性制造（只拦本席位改成 starting 的那一次 UPDATE）。
 func TestStartingWriteFailureUndoesResume(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	for _, op := range []string{"restart", "enable"} {
 		t.Run(op, func(t *testing.T) {
@@ -322,6 +329,7 @@ WHEN (NEW.state = 'starting' AND NEW.agent_id = '` + agentID + `') EXECUTE FUNCT
 // 行为路抓不到（R3 \s* 教训，WORKGROUPS 第〇节）⇒ 以字面比对守住这半条件，防止日后有人以为它多余而删掉、
 // 或别处开始写 existing:true 时它不再冗余。
 func TestOnlineAfterExistingTimeoutKeepsDetailCondition(t *testing.T) {
+	parallelHostedTest(t)
 	src, err := os.ReadFile("store.go")
 	if err != nil {
 		t.Fatal(err)
@@ -346,6 +354,7 @@ func TestOnlineAfterExistingTimeoutKeepsDetailCondition(t *testing.T) {
 // 置 starting 写库失败时的撤回只对「这次 Resume 真的恢复了凭据」成立（alreadyActive=false）；
 // 凭据本来就是活的（alreadyActive=true）时，回滚不得把这个在用的凭据暂停掉。
 func TestStartingWriteFailureDoesNotSuspendALiveCredential(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	for _, op := range []string{"restart", "enable"} {
 		t.Run(op, func(t *testing.T) {

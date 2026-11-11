@@ -23,6 +23,7 @@ func claudeModelOrch(t *testing.T) (*Orchestrator, *fakeIdentity, *fakeGateway, 
 }
 
 func TestClaudeModelCreatePersistsAndDispatchesApprovedValue(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, gw, st, account := claudeModelOrch(t)
 	ctx := context.Background()
 	if err := st.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["claude-opus-5-5"]}`)); err != nil {
@@ -66,6 +67,7 @@ func TestClaudeModelCreatePersistsAndDispatchesApprovedValue(t *testing.T) {
 }
 
 func TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue(t *testing.T) {
+	parallelHostedTest(t)
 	o, idp, gw, st, account := claudeModelOrch(t)
 	ctx := context.Background()
 	if err := st.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["claude-opus-5-5","--help"]}`)); err != nil {
@@ -90,6 +92,7 @@ func TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue(t *testing.T)
 }
 
 func TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, st, account := claudeModelOrch(t)
 	ctx := context.Background()
 	o.combos = fakeCombos{m: map[string]bool{"claude|claude|token_file": false}}

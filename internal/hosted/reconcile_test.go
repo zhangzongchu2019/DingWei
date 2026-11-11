@@ -27,6 +27,7 @@ func zzPendingSeat(t *testing.T, s *Store, id, nodeID string) {
 
 // 命令必须是 destroy_seat；节点回失败不得标记完成；只清本节点的席位（复验 R3／R4／R5 三刀）。
 func TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	zzPendingSeat(t, s, "ag_ra", "nd_free")
@@ -83,6 +84,7 @@ func (g *stallGw) Send(ctx context.Context, nodeID string, c NodeCommand) (NodeR
 
 // 每个席位带超时：一个席位不回，不得卡死整批；不回的那个仍待对账，其余照常完成。
 func TestReconcileSeatTimeoutDoesNotStallBatch(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	zzPendingSeat(t, s, "ag_r1", "nd_free")
@@ -108,6 +110,7 @@ func TestReconcileSeatTimeoutDoesNotStallBatch(t *testing.T) {
 
 // created_by 为空串：归属不明，四操作与销毁一律 not_owner，管理用户也不豁免；什么都不发生。
 func TestEmptyCreatedByRefused(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, log, _, _, _, s, _ := mkLifecycle(t)
 	if err := s.CreateSeat(ctx, Seat{AgentID: "ag_orphan", NodeID: "nd_free", CLI: "codex", LLM: "gpt", CredKind: "token_file",
@@ -141,6 +144,7 @@ func TestEmptyCreatedByRefused(t *testing.T) {
 
 // Upgrade：席位套餐查不到 ⇒ params 错（handler 译 params_invalid），且在改状态、签令牌之前就停。
 func TestUpgradeUnknownPlanNotSwallowed(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, log, _, _, _, s, id := mkLifecycle(t)
 	saved := plans["2c4g"]

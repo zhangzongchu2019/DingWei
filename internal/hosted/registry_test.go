@@ -8,6 +8,7 @@ import (
 
 // 装配②：静态登记表 fail-closed——空表全不兼容/无镜像即拒；畸形文件启动期报错。
 func TestStaticRegistriesFailClosed(t *testing.T) {
+	parallelHostedTest(t)
 	dir := t.TempDir()
 	// 空路径 ⇒ 空表：一切组合不兼容、无登记镜像
 	c0, err := LoadCombos("")
