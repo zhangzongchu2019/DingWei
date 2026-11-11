@@ -9,13 +9,13 @@
     "./internal/hosted"
   ],
   "cwd": "/data/ai-dev-data/hosted-test-time-c782",
-  "start": "2026-11-11T03:16:53.120940+00:00",
+  "start": "2026-11-11T04:06:29.102873+00:00",
   "rc": 0,
-  "end": "2026-11-11T03:26:53.122896+00:00",
+  "end": "2026-11-11T04:16:40.686309+00:00",
   "packages": {
     "github.com/zhangzongchu2019/dingwei/internal/hosted": {
       "elapsed": [
-        598.713
+        611.108
       ],
       "counts": {
         "pass": 1038,
@@ -26,724 +26,699 @@
   },
   "hosted_top": [
     {
+      "Test": "TestReconcileSeatTimeoutDoesNotStallBatch",
+      "Action": "pass",
+      "Elapsed": 3.02
+    },
+    {
+      "Test": "TestUpgradeUnknownPlanNotSwallowed",
+      "Action": "pass",
+      "Elapsed": 2.79
+    },
+    {
       "Test": "TestLoadMasterKeyPermAndForms",
       "Action": "pass",
       "Elapsed": 0
     },
     {
-      "Test": "TestDestroyCleanupSurvivesClientCancellation",
+      "Test": "TestR31NodeRegistrationCredentialAndAtomicAudit",
       "Action": "pass",
-      "Elapsed": 6.22
-    },
-    {
-      "Test": "TestRestartAfterFailedStopResumesCredential",
-      "Action": "pass",
-      "Elapsed": 6.23
-    },
-    {
-      "Test": "TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed",
-      "Action": "pass",
-      "Elapsed": 6.25
+      "Elapsed": 4.5
     },
     {
       "Test": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
       "Action": "pass",
-      "Elapsed": 6.26
+      "Elapsed": 4.51
     },
     {
-      "Test": "TestCapacityFinalGateLifecycleJobs",
+      "Test": "TestDestroyReturnsAccountToPool",
       "Action": "pass",
-      "Elapsed": 6.5
-    },
-    {
-      "Test": "TestEnableRestartWaitForAgentConnect",
-      "Action": "pass",
-      "Elapsed": 7.14
-    },
-    {
-      "Test": "TestLoginRelogin",
-      "Action": "pass",
-      "Elapsed": 10.75
-    },
-    {
-      "Test": "TestSweepTimeouts",
-      "Action": "pass",
-      "Elapsed": 10.8
-    },
-    {
-      "Test": "TestCreateWithModelSelectsSupportingNode",
-      "Action": "pass",
-      "Elapsed": 10.81
-    },
-    {
-      "Test": "TestCreateWithoutGroupSucceeds",
-      "Action": "pass",
-      "Elapsed": 10.87
-    },
-    {
-      "Test": "TestLoginStaleCompletingIsSwept",
-      "Action": "pass",
-      "Elapsed": 15.41
-    },
-    {
-      "Test": "TestIDTokenEmail",
-      "Action": "pass",
-      "Elapsed": 9.18
-    },
-    {
-      "Test": "TestDestroyBackupFailedTyped",
-      "Action": "pass",
-      "Elapsed": 15.48
-    },
-    {
-      "Test": "TestPlanTable",
-      "Action": "pass",
-      "Elapsed": 9.23
-    },
-    {
-      "Test": "TestLoginOnePerUserAndCooldown",
-      "Action": "pass",
-      "Elapsed": 15.56
-    },
-    {
-      "Test": "TestR31NodeGroupAccessAndRevocation",
-      "Action": "pass",
-      "Elapsed": 15.63
-    },
-    {
-      "Test": "TestRestartFailureAfterAgentConnectedKeepsOnline",
-      "Action": "pass",
-      "Elapsed": 15.77
-    },
-    {
-      "Test": "TestFrozenR30SchemaModelColumnMigration",
-      "Action": "pass",
-      "Elapsed": 12.43
-    },
-    {
-      "Test": "TestQuotaListWithUsage",
-      "Action": "pass",
-      "Elapsed": 9.29
-    },
-    {
-      "Test": "TestRefreshStartingTimeoutIsExistingSeat",
-      "Action": "pass",
-      "Elapsed": 13.82
-    },
-    {
-      "Test": "TestLifecycleJobRecoveryLeavesNoActiveRows",
-      "Action": "pass",
-      "Elapsed": 20.07
-    },
-    {
-      "Test": "TestCreateHappyPathCodexFirst",
-      "Action": "pass",
-      "Elapsed": 13.74
-    },
-    {
-      "Test": "TestR31HardConcurrentReservationsDoNotOversell",
-      "Action": "pass",
-      "Elapsed": 12.94
-    },
-    {
-      "Test": "TestTokenWriteBackAndUnbindPrep",
-      "Action": "pass",
-      "Elapsed": 13.68
-    },
-    {
-      "Test": "TestTokenFileDisplayNoContentTail",
-      "Action": "pass",
-      "Elapsed": 9.15
-    },
-    {
-      "Test": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
-      "Action": "pass",
-      "Elapsed": 13.79
-    },
-    {
-      "Test": "TestSchemaDropLeavesNoG4Tables",
-      "Action": "pass",
-      "Elapsed": 12.56
-    },
-    {
-      "Test": "TestOptionsEmptyListsAreArrays",
-      "Action": "pass",
-      "Elapsed": 13.74
-    },
-    {
-      "Test": "TestOnlineAfterExistingTimeoutKeepsDetailCondition",
-      "Action": "pass",
-      "Elapsed": 9.65
-    },
-    {
-      "Test": "TestLoginPrechecksAndEmailInSameInsert",
-      "Action": "pass",
-      "Elapsed": 13.73
-    },
-    {
-      "Test": "TestLoginUploadBoundToSessionNode",
-      "Action": "pass",
-      "Elapsed": 16.57
-    },
-    {
-      "Test": "TestDefenseInDepthAccountBoundaries",
-      "Action": "pass",
-      "Elapsed": 13.83
-    },
-    {
-      "Test": "TestRefreshCredNodeOutcomes",
-      "Action": "pass",
-      "Elapsed": 27.78
-    },
-    {
-      "Test": "TestLoginQuotaAuditDoesNotMutateHostedSeat",
-      "Action": "pass",
-      "Elapsed": 14.94
-    },
-    {
-      "Test": "TestRefreshCredAsJob",
-      "Action": "pass",
-      "Elapsed": 18.56
-    },
-    {
-      "Test": "TestLifecycleJobPersistsProgressAndMachineReason",
-      "Action": "pass",
-      "Elapsed": 23.23
-    },
-    {
-      "Test": "TestJobProgressForOwnerBySeat",
-      "Action": "pass",
-      "Elapsed": 18.81
-    },
-    {
-      "Test": "TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess",
-      "Action": "pass",
-      "Elapsed": 18.8
-    },
-    {
-      "Test": "TestLoginStartNodeOutcomes",
-      "Action": "pass",
-      "Elapsed": 27.8
-    },
-    {
-      "Test": "TestFailureAfterAgentConnectedKeepsOnline",
-      "Action": "pass",
-      "Elapsed": 19.94
-    },
-    {
-      "Test": "TestCheckCreateDiskGate",
-      "Action": "pass",
-      "Elapsed": 18.81
-    },
-    {
-      "Test": "TestCheckCreateCodeSplit",
-      "Action": "pass",
-      "Elapsed": 29.89
-    },
-    {
-      "Test": "TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath",
-      "Action": "pass",
-      "Elapsed": 27.61
-    },
-    {
-      "Test": "TestLoginAccountLimitPrecheck",
-      "Action": "pass",
-      "Elapsed": 20.44
-    },
-    {
-      "Test": "TestUnwrapWrongMasterFails",
-      "Action": "pass",
-      "Elapsed": 14.09
-    },
-    {
-      "Test": "TestReconcileSeatTimeoutDoesNotStallBatch",
-      "Action": "pass",
-      "Elapsed": 21.03
-    },
-    {
-      "Test": "TestAppliedLedgerRejectsMissingHostedTableWithoutRepair",
-      "Action": "pass",
-      "Elapsed": 18.58
-    },
-    {
-      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
-      "Action": "pass",
-      "Elapsed": 42.03
-    },
-    {
-      "Test": "TestQuotaRegistrationAndCapacityCannotSelfDowngrade",
-      "Action": "pass",
-      "Elapsed": 14.03
-    },
-    {
-      "Test": "TestRunJobMissingTokenFailsClosed",
-      "Action": "pass",
-      "Elapsed": 20.71
-    },
-    {
-      "Test": "TestLateConnectOnlyForExistingTimeout",
-      "Action": "pass",
-      "Elapsed": 27.37
-    },
-    {
-      "Test": "TestBackupUsesLongTimeout",
-      "Action": "pass",
-      "Elapsed": 18.7
-    },
-    {
-      "Test": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
-      "Action": "pass",
-      "Elapsed": 14.25
-    },
-    {
-      "Test": "TestRefreshCredRecoverJobs",
-      "Action": "pass",
-      "Elapsed": 16.2
-    },
-    {
-      "Test": "TestReconcileOnNodeReconnect",
-      "Action": "pass",
-      "Elapsed": 17.95
-    },
-    {
-      "Test": "TestLoginTerminalStatesClearLinkAndCode",
-      "Action": "pass",
-      "Elapsed": 37.18
-    },
-    {
-      "Test": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
-      "Action": "pass",
-      "Elapsed": 14.68
-    },
-    {
-      "Test": "TestLoginDoneNotOverwrittenBySweepOrCancel",
-      "Action": "pass",
-      "Elapsed": 17.02
-    },
-    {
-      "Test": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
-      "Action": "pass",
-      "Elapsed": 16.17
-    },
-    {
-      "Test": "TestClaudeTokenFileABI",
-      "Action": "pass",
-      "Elapsed": 11.52
-    },
-    {
-      "Test": "TestUpgradeRollbackOnNodeFailure",
-      "Action": "pass",
-      "Elapsed": 16.27
-    },
-    {
-      "Test": "TestUpgradeUsesRecordedModel",
-      "Action": "pass",
-      "Elapsed": 14.54
-    },
-    {
-      "Test": "TestCapacityRequestReasonAndModelSelection",
-      "Action": "pass",
-      "Elapsed": 14.23
-    },
-    {
-      "Test": "TestReconcileGuards",
-      "Action": "pass",
-      "Elapsed": 22.69
-    },
-    {
-      "Test": "TestHostedItemErrorCounted",
-      "Action": "pass",
-      "Elapsed": 14.31
-    },
-    {
-      "Test": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
-      "Action": "pass",
-      "Elapsed": 19.03
+      "Elapsed": 4.51
     },
     {
       "Test": "TestLifecycleJobDuplicatePolicy",
       "Action": "pass",
-      "Elapsed": 14.61
-    },
-    {
-      "Test": "TestDestroyOfflineNodeLeavesReconcileRecord",
-      "Action": "pass",
-      "Elapsed": 16.44
-    },
-    {
-      "Test": "TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold",
-      "Action": "pass",
-      "Elapsed": 11.56
-    },
-    {
-      "Test": "TestQuotaEventValidation",
-      "Action": "pass",
-      "Elapsed": 9.59
-    },
-    {
-      "Test": "TestMinimumPlanQuotaDebitsAndEveryDimension",
-      "Action": "pass",
-      "Elapsed": 15.95
-    },
-    {
-      "Test": "TestLoginPerNodeCapBindsWithOneNode",
-      "Action": "pass",
-      "Elapsed": 14.49
-    },
-    {
-      "Test": "TestFrozenR30SchemaBackfillAndJobOp",
-      "Action": "pass",
-      "Elapsed": 14.58
-    },
-    {
-      "Test": "TestJobReasonOnlyContractCodes",
-      "Action": "pass",
-      "Elapsed": 14.38
-    },
-    {
-      "Test": "TestPickNodeStaleFrameTreatedOffline",
-      "Action": "pass",
-      "Elapsed": 13.62
-    },
-    {
-      "Test": "TestBackupPipelineEndToEnd",
-      "Action": "pass",
-      "Elapsed": 13.21
-    },
-    {
-      "Test": "TestPoolScheduling",
-      "Action": "pass",
-      "Elapsed": 12.27
-    },
-    {
-      "Test": "TestClaudeMinimumPlanRemainsUnverified",
-      "Action": "pass",
-      "Elapsed": 13.74
-    },
-    {
-      "Test": "TestCreateSeatPKConflictIsNotAccountError",
-      "Action": "pass",
-      "Elapsed": 13.98
-    },
-    {
-      "Test": "TestDestroyStopsBeforeBackup",
-      "Action": "pass",
-      "Elapsed": 24.47
-    },
-    {
-      "Test": "TestNodeDownLeavesStateAndCredential",
-      "Action": "pass",
-      "Elapsed": 61.92
-    },
-    {
-      "Test": "TestSchemaApplyRollbackRepeatable",
-      "Action": "pass",
-      "Elapsed": 15.52
-    },
-    {
-      "Test": "TestRefreshCredHappyPath",
-      "Action": "pass",
-      "Elapsed": 16.6
-    },
-    {
-      "Test": "TestLoginStaleCompletingWithoutClaimedAt",
-      "Action": "pass",
-      "Elapsed": 16.78
-    },
-    {
-      "Test": "TestReleaseAndDestroyedNotCounted",
-      "Action": "pass",
-      "Elapsed": 15.59
-    },
-    {
-      "Test": "TestR31NodeRegistrationCredentialAndAtomicAudit",
-      "Action": "pass",
-      "Elapsed": 18.24
-    },
-    {
-      "Test": "TestBackupFailureClearsPending",
-      "Action": "pass",
-      "Elapsed": 22.43
-    },
-    {
-      "Test": "TestLoginSweepAndRecover",
-      "Action": "pass",
-      "Elapsed": 18.41
-    },
-    {
-      "Test": "TestWrapUnwrapRoundtrip",
-      "Action": "pass",
-      "Elapsed": 10.37
-    },
-    {
-      "Test": "TestAccountSecretValidation",
-      "Action": "pass",
-      "Elapsed": 16.77
-    },
-    {
-      "Test": "TestLoginStartHappy",
-      "Action": "pass",
-      "Elapsed": 15.72
-    },
-    {
-      "Test": "TestNodeHasModelToleratesMissingKey",
-      "Action": "pass",
-      "Elapsed": 9.32
-    },
-    {
-      "Test": "TestR31AdmissionUsesOwnerNotAdministratorAuditActor",
-      "Action": "pass",
-      "Elapsed": 18.3
-    },
-    {
-      "Test": "TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart",
-      "Action": "pass",
-      "Elapsed": 17.56
-    },
-    {
-      "Test": "TestRefreshCredOwnerOnly",
-      "Action": "pass",
-      "Elapsed": 13.94
-    },
-    {
-      "Test": "TestEmptyCreatedByRefused",
-      "Action": "pass",
-      "Elapsed": 13.97
-    },
-    {
-      "Test": "TestPlanDiskTiersPinned",
-      "Action": "pass",
-      "Elapsed": 6.12
-    },
-    {
-      "Test": "TestFailedGateStopsTheChain",
-      "Action": "pass",
-      "Elapsed": 31.27
-    },
-    {
-      "Test": "TestAccountNameUniquePerOwner",
-      "Action": "pass",
-      "Elapsed": 12.9
-    },
-    {
-      "Test": "TestFrozenR30ApplySchemaUpgradesPreA1PreB2Shape",
-      "Action": "pass",
-      "Elapsed": 13.25
-    },
-    {
-      "Test": "TestLoginCompleteRegisters",
-      "Action": "pass",
-      "Elapsed": 10.64
-    },
-    {
-      "Test": "TestLoginConcurrencyCaps",
-      "Action": "pass",
-      "Elapsed": 11.56
-    },
-    {
-      "Test": "TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices",
-      "Action": "pass",
-      "Elapsed": 13.07
-    },
-    {
-      "Test": "TestCreateRejections",
-      "Action": "pass",
-      "Elapsed": 13.57
-    },
-    {
-      "Test": "TestR31StatePatchCannotRestoreConcurrentRevocation",
-      "Action": "pass",
-      "Elapsed": 15.47
-    },
-    {
-      "Test": "TestMinimumPlanOptionsAndRealCreateResources",
-      "Action": "pass",
-      "Elapsed": 13.96
-    },
-    {
-      "Test": "TestLoginEmailValidation",
-      "Action": "pass",
-      "Elapsed": 14.97
-    },
-    {
-      "Test": "TestLifecycleOrderOnOneLog",
-      "Action": "pass",
-      "Elapsed": 25.14
-    },
-    {
-      "Test": "TestLoginQuotaEventRequiresTypedLoginIdentity",
-      "Action": "pass",
-      "Elapsed": 12.46
-    },
-    {
-      "Test": "TestDestroyCanBeRetriedAfterHubDiesMidJob",
-      "Action": "pass",
-      "Elapsed": 16.01
-    },
-    {
-      "Test": "TestRestartTimeoutKeepsExistingSeat",
-      "Action": "pass",
-      "Elapsed": 17.19
-    },
-    {
-      "Test": "TestRefreshCredStateGate",
-      "Action": "pass",
-      "Elapsed": 18.36
-    },
-    {
-      "Test": "TestR31HostedApplySchemaUsesUnifiedLedger",
-      "Action": "pass",
-      "Elapsed": 15.5
-    },
-    {
-      "Test": "TestConfirmRequiredGates",
-      "Action": "pass",
-      "Elapsed": 16.16
-    },
-    {
-      "Test": "TestMarkOnlineOnlyFromStarting",
-      "Action": "pass",
-      "Elapsed": 17.02
-    },
-    {
-      "Test": "TestCapacityReasonSanitizationAndCompatibility",
-      "Action": "pass",
-      "Elapsed": 10.55
-    },
-    {
-      "Test": "TestOwnershipEnforced",
-      "Action": "pass",
-      "Elapsed": 27.15
-    },
-    {
-      "Test": "TestMinimumPlanDefinitionAndNetCapacity",
-      "Action": "pass",
-      "Elapsed": 8.64
-    },
-    {
-      "Test": "TestHostedOverlay",
-      "Action": "pass",
-      "Elapsed": 15.64
-    },
-    {
-      "Test": "TestBackupChecksumControlPlane",
-      "Action": "pass",
-      "Elapsed": 35.94
-    },
-    {
-      "Test": "TestOptionsViewAndJobProgress",
-      "Action": "pass",
-      "Elapsed": 15.15
-    },
-    {
-      "Test": "TestSweepExpiredBackupsReclaimsOnlyStalePending",
-      "Action": "pass",
-      "Elapsed": 15.11
-    },
-    {
-      "Test": "TestStartingWriteFailureUndoesResume",
-      "Action": "pass",
-      "Elapsed": 18.36
-    },
-    {
-      "Test": "TestStartingWriteFailureDoesNotSuspendALiveCredential",
-      "Action": "pass",
-      "Elapsed": 17.06
-    },
-    {
-      "Test": "TestCapacityFinalGateCreateJobsAndCleanup",
-      "Action": "pass",
-      "Elapsed": 17.07
-    },
-    {
-      "Test": "TestAccessCtxValid",
-      "Action": "pass",
-      "Elapsed": 16.11
-    },
-    {
-      "Test": "TestBackupDuplicateUploadWhilePending",
-      "Action": "pass",
-      "Elapsed": 17.05
-    },
-    {
-      "Test": "TestOptionsPlanFitsEachGate",
-      "Action": "pass",
-      "Elapsed": 29
-    },
-    {
-      "Test": "TestRunJobFailureCleanup",
-      "Action": "pass",
-      "Elapsed": 17.07
-    },
-    {
-      "Test": "TestSoftCreateFailureDoesNotAbortOrReleaseIdentity",
-      "Action": "pass",
-      "Elapsed": 17.8
+      "Elapsed": 4.64
     },
     {
       "Test": "TestHubParamsSatisfyNodeContract",
       "Action": "pass",
-      "Elapsed": 17.56
+      "Elapsed": 7.22
     },
     {
-      "Test": "TestNodeCredentialLifecycle",
+      "Test": "TestDefenseInDepthAccountBoundaries",
       "Action": "pass",
-      "Elapsed": 19.26
+      "Elapsed": 8.9
     },
     {
-      "Test": "TestOptionsModelsUnionOnlineOnly",
+      "Test": "TestOnlineAfterExistingTimeoutKeepsDetailCondition",
       "Action": "pass",
-      "Elapsed": 18.55
+      "Elapsed": 8.9
     },
     {
-      "Test": "TestHardNodeResourceExtensionNegotiated",
+      "Test": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
       "Action": "pass",
-      "Elapsed": 17.91
+      "Elapsed": 8.93
     },
     {
-      "Test": "TestSoftHoldHubReleaseAuditAndUncertainNoResend",
+      "Test": "TestCreateVsDisableSerialized",
       "Action": "pass",
-      "Elapsed": 15.08
+      "Elapsed": 9.4
     },
     {
-      "Test": "TestCreateFailurePathsAbortTheIssue",
+      "Test": "TestRefreshCredAsJob",
       "Action": "pass",
-      "Elapsed": 24.94
+      "Elapsed": 11.74
     },
     {
-      "Test": "TestSoftHoldLegacyEventStateAppliedOnce",
+      "Test": "TestDestroyCanBeRetriedAfterHubDiesMidJob",
       "Action": "pass",
-      "Elapsed": 15.38
+      "Elapsed": 13.38
     },
     {
-      "Test": "TestCapacityReplyStrictProtocolAndRegistration",
+      "Test": "TestRestartTimeoutKeepsExistingSeat",
       "Action": "pass",
-      "Elapsed": 17.25
+      "Elapsed": 13.41
     },
     {
-      "Test": "TestBackupHandlerAuthAndStates",
+      "Test": "TestLoginEmailValidation",
+      "Action": "pass",
+      "Elapsed": 13.76
+    },
+    {
+      "Test": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
+      "Action": "pass",
+      "Elapsed": 16.29
+    },
+    {
+      "Test": "TestUpgradeRollbackOnNodeFailure",
+      "Action": "pass",
+      "Elapsed": 13.39
+    },
+    {
+      "Test": "TestClaudeTokenFileABI",
+      "Action": "pass",
+      "Elapsed": 10.68
+    },
+    {
+      "Test": "TestUpgradeUsesRecordedModel",
+      "Action": "pass",
+      "Elapsed": 13.81
+    },
+    {
+      "Test": "TestLoginStartNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 22.23
+    },
+    {
+      "Test": "TestReconcileGuards",
+      "Action": "pass",
+      "Elapsed": 18.12
+    },
+    {
+      "Test": "TestCheckCreateCodeSplit",
+      "Action": "pass",
+      "Elapsed": 22.67
+    },
+    {
+      "Test": "TestHostedItemErrorCounted",
+      "Action": "pass",
+      "Elapsed": 13.78
+    },
+    {
+      "Test": "TestCapacityRequestReasonAndModelSelection",
+      "Action": "pass",
+      "Elapsed": 13.86
+    },
+    {
+      "Test": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
+      "Action": "pass",
+      "Elapsed": 20.66
+    },
+    {
+      "Test": "TestBackupPipelineEndToEnd",
+      "Action": "pass",
+      "Elapsed": 17.71
+    },
+    {
+      "Test": "TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold",
+      "Action": "pass",
+      "Elapsed": 10.36
+    },
+    {
+      "Test": "TestQuotaEventValidation",
+      "Action": "pass",
+      "Elapsed": 8.74
+    },
+    {
+      "Test": "TestDestroyOfflineNodeLeavesReconcileRecord",
+      "Action": "pass",
+      "Elapsed": 18.08
+    },
+    {
+      "Test": "TestMinimumPlanQuotaDebitsAndEveryDimension",
+      "Action": "pass",
+      "Elapsed": 15.8
+    },
+    {
+      "Test": "TestLoginPerNodeCapBindsWithOneNode",
+      "Action": "pass",
+      "Elapsed": 14.16
+    },
+    {
+      "Test": "TestFrozenR30SchemaBackfillAndJobOp",
+      "Action": "pass",
+      "Elapsed": 16.16
+    },
+    {
+      "Test": "TestUnwrapWrongMasterFails",
+      "Action": "pass",
+      "Elapsed": 7.26
+    },
+    {
+      "Test": "TestJobReasonOnlyContractCodes",
+      "Action": "pass",
+      "Elapsed": 13.2
+    },
+    {
+      "Test": "TestBackupUsesLongTimeout",
+      "Action": "pass",
+      "Elapsed": 10
+    },
+    {
+      "Test": "TestPickNodeStaleFrameTreatedOffline",
+      "Action": "pass",
+      "Elapsed": 14.09
+    },
+    {
+      "Test": "TestAppliedLedgerRejectsMissingHostedTableWithoutRepair",
+      "Action": "pass",
+      "Elapsed": 11.74
+    },
+    {
+      "Test": "TestRunJobMissingTokenFailsClosed",
+      "Action": "pass",
+      "Elapsed": 12.8
+    },
+    {
+      "Test": "TestCreateSeatPKConflictIsNotAccountError",
+      "Action": "pass",
+      "Elapsed": 11.73
+    },
+    {
+      "Test": "TestEnableRestartWaitForAgentConnect",
+      "Action": "pass",
+      "Elapsed": 14.54
+    },
+    {
+      "Test": "TestDestroyStopsBeforeBackup",
+      "Action": "pass",
+      "Elapsed": 23.84
+    },
+    {
+      "Test": "TestClaudeMinimumPlanRemainsUnverified",
+      "Action": "pass",
+      "Elapsed": 12.22
+    },
+    {
+      "Test": "TestPoolScheduling",
+      "Action": "pass",
+      "Elapsed": 13.33
+    },
+    {
+      "Test": "TestDestroyBackupFailedTyped",
+      "Action": "pass",
+      "Elapsed": 14.17
+    },
+    {
+      "Test": "TestSweepTimeouts",
+      "Action": "pass",
+      "Elapsed": 14.22
+    },
+    {
+      "Test": "TestLoginOnePerUserAndCooldown",
+      "Action": "pass",
+      "Elapsed": 13.27
+    },
+    {
+      "Test": "TestJobProgressForOwnerBySeat",
+      "Action": "pass",
+      "Elapsed": 14.48
+    },
+    {
+      "Test": "TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess",
+      "Action": "pass",
+      "Elapsed": 14.24
+    },
+    {
+      "Test": "TestFailureAfterAgentConnectedKeepsOnline",
+      "Action": "pass",
+      "Elapsed": 15.17
+    },
+    {
+      "Test": "TestCheckCreateDiskGate",
+      "Action": "pass",
+      "Elapsed": 14.35
+    },
+    {
+      "Test": "TestBackupFailureClearsPending",
+      "Action": "pass",
+      "Elapsed": 23.45
+    },
+    {
+      "Test": "TestLoginAccountLimitPrecheck",
+      "Action": "pass",
+      "Elapsed": 16.03
+    },
+    {
+      "Test": "TestFailedGateStopsTheChain",
+      "Action": "pass",
+      "Elapsed": 28.55
+    },
+    {
+      "Test": "TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath",
+      "Action": "pass",
+      "Elapsed": 24.3
+    },
+    {
+      "Test": "TestLoginQuotaAuditDoesNotMutateHostedSeat",
+      "Action": "pass",
+      "Elapsed": 18.39
+    },
+    {
+      "Test": "TestOptionsJSONMatchesContract",
+      "Action": "pass",
+      "Elapsed": 19.86
+    },
+    {
+      "Test": "TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission",
+      "Action": "pass",
+      "Elapsed": 18.66
+    },
+    {
+      "Test": "TestLoginClaimCompletingIsAtomic",
+      "Action": "pass",
+      "Elapsed": 18.72
+    },
+    {
+      "Test": "TestZZ_AgentConnectingBeforeStartingIsNotLost",
+      "Action": "pass",
+      "Elapsed": 23.43
+    },
+    {
+      "Test": "TestSealPerRecordNonceAndWrongKey",
+      "Action": "pass",
+      "Elapsed": 14.72
+    },
+    {
+      "Test": "TestQuotaCheckBoundaries",
+      "Action": "pass",
+      "Elapsed": 21.09
+    },
+    {
+      "Test": "TestLoginTerminalStatesClearLinkAndCode",
+      "Action": "pass",
+      "Elapsed": 29.35
+    },
+    {
+      "Test": "TestCreateTimeoutStillRetires",
+      "Action": "pass",
+      "Elapsed": 20.56
+    },
+    {
+      "Test": "TestFrozenR30LoginSchemaUpgradesOldDefinition",
+      "Action": "pass",
+      "Elapsed": 18.61
+    },
+    {
+      "Test": "TestIDTokenEmail",
+      "Action": "pass",
+      "Elapsed": 9.68
+    },
+    {
+      "Test": "TestOwnedAccountLifecycle",
+      "Action": "pass",
+      "Elapsed": 17.88
+    },
+    {
+      "Test": "TestPlanTable",
+      "Action": "pass",
+      "Elapsed": 8.98
+    },
+    {
+      "Test": "TestRefreshStartingTimeoutIsExistingSeat",
+      "Action": "pass",
+      "Elapsed": 14.15
+    },
+    {
+      "Test": "TestLoginStaleCompletingIsSwept",
+      "Action": "pass",
+      "Elapsed": 14.66
+    },
+    {
+      "Test": "TestR31NodeGroupAccessAndRevocation",
+      "Action": "pass",
+      "Elapsed": 16.73
+    },
+    {
+      "Test": "TestFrozenR30SchemaModelColumnMigration",
+      "Action": "pass",
+      "Elapsed": 11.73
+    },
+    {
+      "Test": "TestQuotaListWithUsage",
+      "Action": "pass",
+      "Elapsed": 12.08
+    },
+    {
+      "Test": "TestCreateHappyPathCodexFirst",
+      "Action": "pass",
+      "Elapsed": 14.07
+    },
+    {
+      "Test": "TestR31HardConcurrentReservationsDoNotOversell",
+      "Action": "pass",
+      "Elapsed": 14.15
+    },
+    {
+      "Test": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
+      "Action": "pass",
+      "Elapsed": 13.93
+    },
+    {
+      "Test": "TestTokenWriteBackAndUnbindPrep",
+      "Action": "pass",
+      "Elapsed": 14.02
+    },
+    {
+      "Test": "TestEnableRestartFailureAfterStarting",
+      "Action": "pass",
+      "Elapsed": 31.57
+    },
+    {
+      "Test": "TestTokenFileDisplayNoContentTail",
+      "Action": "pass",
+      "Elapsed": 17.62
+    },
+    {
+      "Test": "TestSchemaDropLeavesNoG4Tables",
+      "Action": "pass",
+      "Elapsed": 14.67
+    },
+    {
+      "Test": "TestOptionsEmptyListsAreArrays",
+      "Action": "pass",
+      "Elapsed": 15.95
+    },
+    {
+      "Test": "TestRefreshCredNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 26.45
+    },
+    {
+      "Test": "TestLoginPrechecksAndEmailInSameInsert",
+      "Action": "pass",
+      "Elapsed": 17.44
+    },
+    {
+      "Test": "TestNodeDownLeavesStateAndCredential",
+      "Action": "pass",
+      "Elapsed": 51.66
+    },
+    {
+      "Test": "TestLoginUploadBoundToSessionNode",
+      "Action": "pass",
+      "Elapsed": 19.34
+    },
+    {
+      "Test": "TestLoginQuotaEventRequiresTypedLoginIdentity",
+      "Action": "pass",
+      "Elapsed": 10.85
+    },
+    {
+      "Test": "TestRunJobFailureCleanup",
       "Action": "pass",
       "Elapsed": 17.36
     },
     {
-      "Test": "TestConcurrentDestroyRequestsShareOneJobAndOneBackup",
+      "Test": "TestLoginSweepAndRecover",
       "Action": "pass",
-      "Elapsed": 15.22
+      "Elapsed": 17.52
+    },
+    {
+      "Test": "TestR31HostedApplySchemaUsesUnifiedLedger",
+      "Action": "pass",
+      "Elapsed": 14.95
+    },
+    {
+      "Test": "TestConfirmRequiredGates",
+      "Action": "pass",
+      "Elapsed": 16.86
+    },
+    {
+      "Test": "TestMarkOnlineOnlyFromStarting",
+      "Action": "pass",
+      "Elapsed": 15.97
+    },
+    {
+      "Test": "TestLifecycleJobPersistsProgressAndMachineReason",
+      "Action": "pass",
+      "Elapsed": 27.21
+    },
+    {
+      "Test": "TestCapacityReasonSanitizationAndCompatibility",
+      "Action": "pass",
+      "Elapsed": 10.23
+    },
+    {
+      "Test": "TestLateConnectOnlyForExistingTimeout",
+      "Action": "pass",
+      "Elapsed": 23.16
+    },
+    {
+      "Test": "TestMinimumPlanDefinitionAndNetCapacity",
+      "Action": "pass",
+      "Elapsed": 9.04
+    },
+    {
+      "Test": "TestHostedOverlay",
+      "Action": "pass",
+      "Elapsed": 16.16
+    },
+    {
+      "Test": "TestOptionsViewAndJobProgress",
+      "Action": "pass",
+      "Elapsed": 16.15
+    },
+    {
+      "Test": "TestStartingWriteFailureUndoesResume",
+      "Action": "pass",
+      "Elapsed": 18.91
+    },
+    {
+      "Test": "TestStartingWriteFailureDoesNotSuspendALiveCredential",
+      "Action": "pass",
+      "Elapsed": 17.43
+    },
+    {
+      "Test": "TestSweepExpiredBackupsReclaimsOnlyStalePending",
+      "Action": "pass",
+      "Elapsed": 18.38
+    },
+    {
+      "Test": "TestCapacityFinalGateCreateJobsAndCleanup",
+      "Action": "pass",
+      "Elapsed": 18.66
+    },
+    {
+      "Test": "TestBackupDuplicateUploadWhilePending",
+      "Action": "pass",
+      "Elapsed": 17.26
+    },
+    {
+      "Test": "TestOptionsPlanFitsEachGate",
+      "Action": "pass",
+      "Elapsed": 29.99
+    },
+    {
+      "Test": "TestAccessCtxValid",
+      "Action": "pass",
+      "Elapsed": 17.86
+    },
+    {
+      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
+      "Action": "pass",
+      "Elapsed": 49.7
+    },
+    {
+      "Test": "TestQuotaRegistrationAndCapacityCannotSelfDowngrade",
+      "Action": "pass",
+      "Elapsed": 17.06
+    },
+    {
+      "Test": "TestRefreshCredHappyPath",
+      "Action": "pass",
+      "Elapsed": 18.45
+    },
+    {
+      "Test": "TestSchemaApplyRollbackRepeatable",
+      "Action": "pass",
+      "Elapsed": 21
+    },
+    {
+      "Test": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
+      "Action": "pass",
+      "Elapsed": 20.69
     },
     {
       "Test": "TestRefreshCredAccountGate",
       "Action": "pass",
-      "Elapsed": 14.91
+      "Elapsed": 18.7
+    },
+    {
+      "Test": "TestSoftCreateFailureDoesNotAbortOrReleaseIdentity",
+      "Action": "pass",
+      "Elapsed": 14.59
+    },
+    {
+      "Test": "TestRefreshCredStateGate",
+      "Action": "pass",
+      "Elapsed": 16.66
+    },
+    {
+      "Test": "TestOptionsModelsUnionOnlineOnly",
+      "Action": "pass",
+      "Elapsed": 16.38
+    },
+    {
+      "Test": "TestCreateFailurePathsAbortTheIssue",
+      "Action": "pass",
+      "Elapsed": 27.74
+    },
+    {
+      "Test": "TestHardNodeResourceExtensionNegotiated",
+      "Action": "pass",
+      "Elapsed": 14.5
+    },
+    {
+      "Test": "TestSoftHoldHubReleaseAuditAndUncertainNoResend",
+      "Action": "pass",
+      "Elapsed": 14.09
     },
     {
       "Test": "TestRefreshCredResumesSuspendedCredential",
       "Action": "pass",
-      "Elapsed": 44.01
+      "Elapsed": 42.17
     },
     {
-      "Test": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "Test": "TestSoftHoldLegacyEventStateAppliedOnce",
       "Action": "pass",
-      "Elapsed": 15.5
+      "Elapsed": 16.2
+    },
+    {
+      "Test": "TestCapacityReplyStrictProtocolAndRegistration",
+      "Action": "pass",
+      "Elapsed": 14.07
+    },
+    {
+      "Test": "TestBackupHandlerAuthAndStates",
+      "Action": "pass",
+      "Elapsed": 14.79
+    },
+    {
+      "Test": "TestConcurrentDestroyRequestsShareOneJobAndOneBackup",
+      "Action": "pass",
+      "Elapsed": 14.18
+    },
+    {
+      "Test": "TestWrapUnwrapRoundtrip",
+      "Action": "pass",
+      "Elapsed": 8.95
+    },
+    {
+      "Test": "TestRefreshCredRecoverJobs",
+      "Action": "pass",
+      "Elapsed": 14.24
+    },
+    {
+      "Test": "TestAccountSecretValidation",
+      "Action": "pass",
+      "Elapsed": 13.7
+    },
+    {
+      "Test": "TestNodeHasModelToleratesMissingKey",
+      "Action": "pass",
+      "Elapsed": 5.15
+    },
+    {
+      "Test": "TestLoginStartHappy",
+      "Action": "pass",
+      "Elapsed": 13.67
+    },
+    {
+      "Test": "TestR31AdmissionUsesOwnerNotAdministratorAuditActor",
+      "Action": "pass",
+      "Elapsed": 13.65
+    },
+    {
+      "Test": "TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart",
+      "Action": "pass",
+      "Elapsed": 13.45
+    },
+    {
+      "Test": "TestEmptyCreatedByRefused",
+      "Action": "pass",
+      "Elapsed": 10.61
+    },
+    {
+      "Test": "TestPlanDiskTiersPinned",
+      "Action": "pass",
+      "Elapsed": 6.15
+    },
+    {
+      "Test": "TestRefreshCredOwnerOnly",
+      "Action": "pass",
+      "Elapsed": 11.02
+    },
+    {
+      "Test": "TestAccountNameUniquePerOwner",
+      "Action": "pass",
+      "Elapsed": 11.93
+    },
+    {
+      "Test": "TestFrozenR30ApplySchemaUpgradesPreA1PreB2Shape",
+      "Action": "pass",
+      "Elapsed": 9.94
+    },
+    {
+      "Test": "TestLoginCompleteRegisters",
+      "Action": "pass",
+      "Elapsed": 9.99
+    },
+    {
+      "Test": "TestLoginConcurrencyCaps",
+      "Action": "pass",
+      "Elapsed": 9.67
+    },
+    {
+      "Test": "TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices",
+      "Action": "pass",
+      "Elapsed": 12.36
+    },
+    {
+      "Test": "TestCreateRejections",
+      "Action": "pass",
+      "Elapsed": 13.8
+    },
+    {
+      "Test": "TestR31StatePatchCannotRestoreConcurrentRevocation",
+      "Action": "pass",
+      "Elapsed": 13.96
+    },
+    {
+      "Test": "TestMinimumPlanOptionsAndRealCreateResources",
+      "Action": "pass",
+      "Elapsed": 14.17
     },
     {
       "Test": "TestLegacyBoundAccountSharable",
@@ -753,1137 +728,1162 @@
     {
       "Test": "TestCreateModelRejections",
       "Action": "pass",
-      "Elapsed": 14.69
-    },
-    {
-      "Test": "TestCapacityStartReasonAndUnknown",
-      "Action": "pass",
-      "Elapsed": 14.67
-    },
-    {
-      "Test": "TestReconcileDoesNotBackupTwice",
-      "Action": "pass",
-      "Elapsed": 14.59
-    },
-    {
-      "Test": "TestStaticRegistriesFailClosed",
-      "Action": "pass",
-      "Elapsed": 8.3
-    },
-    {
-      "Test": "TestBackupNodeOfflineStopsDestroy",
-      "Action": "pass",
-      "Elapsed": 13.52
-    },
-    {
-      "Test": "TestClientCancellationOrphanPendingIsEventuallySwept",
-      "Action": "pass",
-      "Elapsed": 13.14
-    },
-    {
-      "Test": "TestConcurrentCreateSameAccount",
-      "Action": "pass",
-      "Elapsed": 13.35
-    },
-    {
-      "Test": "TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint",
-      "Action": "pass",
-      "Elapsed": 13.45
-    },
-    {
-      "Test": "TestQuotaCheckBoundaries",
-      "Action": "pass",
-      "Elapsed": 10.95
-    },
-    {
-      "Test": "TestOptionsJSONMatchesContract",
-      "Action": "pass",
-      "Elapsed": 12.52
-    },
-    {
-      "Test": "TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission",
-      "Action": "pass",
-      "Elapsed": 12.6
-    },
-    {
-      "Test": "TestLoginClaimCompletingIsAtomic",
-      "Action": "pass",
-      "Elapsed": 12.76
-    },
-    {
-      "Test": "TestNodeSeatPoolQuotaFlow",
-      "Action": "pass",
-      "Elapsed": 12.9
-    },
-    {
-      "Test": "TestZZ_AgentConnectingBeforeStartingIsNotLost",
-      "Action": "pass",
-      "Elapsed": 15.68
-    },
-    {
-      "Test": "TestLoginTotalCapBindsWithThreeNodes",
-      "Action": "pass",
-      "Elapsed": 14
-    },
-    {
-      "Test": "TestR31NodeOptionsHideModelsAndQueuedRevocation",
-      "Action": "pass",
-      "Elapsed": 13.73
-    },
-    {
-      "Test": "TestSealPerRecordNonceAndWrongKey",
-      "Action": "pass",
-      "Elapsed": 9.92
-    },
-    {
-      "Test": "TestOnlineOnlyViaMarkOnline",
-      "Action": "pass",
-      "Elapsed": 13.75
-    },
-    {
-      "Test": "TestFrozenR30LoginSchemaUpgradesOldDefinition",
-      "Action": "pass",
-      "Elapsed": 14.46
-    },
-    {
-      "Test": "TestCreateTimeoutStillRetires",
-      "Action": "pass",
-      "Elapsed": 16.16
-    },
-    {
-      "Test": "TestUpgradeWhileDisabledRejected",
-      "Action": "pass",
-      "Elapsed": 13.84
-    },
-    {
-      "Test": "TestNeverConnectsSweepedStartTimeout",
-      "Action": "pass",
-      "Elapsed": 13.78
-    },
-    {
-      "Test": "TestLateConnectAfterExistingTimeoutGoesOnline",
-      "Action": "pass",
-      "Elapsed": 18.27
-    },
-    {
-      "Test": "TestStartingUntilAgentConnectsElseTimeout",
-      "Action": "pass",
-      "Elapsed": 14.5
-    },
-    {
-      "Test": "TestTeamKeyServiceFlow",
-      "Action": "pass",
-      "Elapsed": 13.9
-    },
-    {
-      "Test": "TestRollbackResetSQL",
-      "Action": "pass",
-      "Elapsed": 13.86
-    },
-    {
-      "Test": "TestLoginCompleteOneShotExpiryAndFailures",
-      "Action": "pass",
-      "Elapsed": 13.65
-    },
-    {
-      "Test": "TestAccountLimitPerOwner",
-      "Action": "pass",
-      "Elapsed": 13.81
-    },
-    {
-      "Test": "TestSoftHoldReleasePendingEventConverges",
-      "Action": "pass",
-      "Elapsed": 35.04
-    },
-    {
-      "Test": "TestUpgradeUnknownPlanNotSwallowed",
-      "Action": "pass",
-      "Elapsed": 13.92
-    },
-    {
-      "Test": "TestClaudeModelCreatePersistsAndDispatchesApprovedValue",
-      "Action": "pass",
-      "Elapsed": 13.89
-    },
-    {
-      "Test": "TestLoginStartExpiresOwnStaleSession",
-      "Action": "pass",
-      "Elapsed": 15.02
-    },
-    {
-      "Test": "TestCreateVsDisableSerialized",
-      "Action": "pass",
-      "Elapsed": 19.22
-    },
-    {
-      "Test": "TestCapacityStoreSerializesConcurrentReservations",
-      "Action": "pass",
-      "Elapsed": 15.2
-    },
-    {
-      "Test": "TestR31AdmissionAndNodeRevocationCommitOrder",
-      "Action": "pass",
-      "Elapsed": 14.29
-    },
-    {
-      "Test": "TestDestroyReturnsAccountToPool",
-      "Action": "pass",
-      "Elapsed": 14.05
-    },
-    {
-      "Test": "TestOwnedAccountLifecycle",
-      "Action": "pass",
-      "Elapsed": 13.95
-    },
-    {
-      "Test": "TestCreateGroupErrorsPropagate",
-      "Action": "pass",
-      "Elapsed": 18.2
-    },
-    {
-      "Test": "TestEnableRestartFailureAfterStarting",
-      "Action": "pass",
-      "Elapsed": 24.79
-    },
-    {
-      "Test": "TestBackupIntegrityRejected",
-      "Action": "pass",
-      "Elapsed": 27.93
-    },
-    {
-      "Test": "TestClaudeTokenFileABI",
-      "Action": "pass",
-      "Elapsed": 0
-    },
-    {
-      "Test": "TestLoadMasterKeyPermAndForms",
-      "Action": "pass",
-      "Elapsed": 0
-    },
-    {
-      "Test": "TestUpgradeUsesRecordedModel",
-      "Action": "pass",
-      "Elapsed": 4.27
-    },
-    {
-      "Test": "TestUpgradeRollbackOnNodeFailure",
-      "Action": "pass",
-      "Elapsed": 4.33
-    },
-    {
-      "Test": "TestCapacityRequestReasonAndModelSelection",
-      "Action": "pass",
-      "Elapsed": 4.39
-    },
-    {
-      "Test": "TestHostedItemErrorCounted",
-      "Action": "pass",
-      "Elapsed": 4.48
-    },
-    {
-      "Test": "TestReconcileGuards",
-      "Action": "pass",
-      "Elapsed": 8.66
-    },
-    {
-      "Test": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
-      "Action": "pass",
-      "Elapsed": 8.85
-    },
-    {
-      "Test": "TestDestroyCanBeRetriedAfterHubDiesMidJob",
-      "Action": "pass",
-      "Elapsed": 9.04
-    },
-    {
-      "Test": "TestLifecycleJobDuplicatePolicy",
-      "Action": "pass",
-      "Elapsed": 9.11
-    },
-    {
-      "Test": "TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold",
-      "Action": "pass",
-      "Elapsed": 9.11
-    },
-    {
-      "Test": "TestQuotaEventValidation",
-      "Action": "pass",
-      "Elapsed": 9.11
-    },
-    {
-      "Test": "TestDestroyOfflineNodeLeavesReconcileRecord",
-      "Action": "pass",
-      "Elapsed": 9.2
-    },
-    {
-      "Test": "TestMinimumPlanQuotaDebitsAndEveryDimension",
-      "Action": "pass",
-      "Elapsed": 9.24
-    },
-    {
-      "Test": "TestLoginPerNodeCapBindsWithOneNode",
-      "Action": "pass",
-      "Elapsed": 13.03
-    },
-    {
-      "Test": "TestPickNodeStaleFrameTreatedOffline",
-      "Action": "pass",
-      "Elapsed": 9.35
-    },
-    {
-      "Test": "TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed",
-      "Action": "pass",
-      "Elapsed": 9.45
-    },
-    {
-      "Test": "TestFrozenR30SchemaBackfillAndJobOp",
-      "Action": "pass",
-      "Elapsed": 13.77
-    },
-    {
-      "Test": "TestJobReasonOnlyContractCodes",
-      "Action": "pass",
-      "Elapsed": 13.88
-    },
-    {
-      "Test": "TestBackupPipelineEndToEnd",
-      "Action": "pass",
-      "Elapsed": 13.08
-    },
-    {
-      "Test": "TestPoolScheduling",
-      "Action": "pass",
-      "Elapsed": 9.6
-    },
-    {
-      "Test": "TestDestroyCleanupSurvivesClientCancellation",
-      "Action": "pass",
-      "Elapsed": 13.8
-    },
-    {
-      "Test": "TestRestartAfterFailedStopResumesCredential",
-      "Action": "pass",
-      "Elapsed": 9.45
-    },
-    {
-      "Test": "TestClaudeMinimumPlanRemainsUnverified",
-      "Action": "pass",
-      "Elapsed": 12.85
-    },
-    {
-      "Test": "TestDestroyStopsBeforeBackup",
-      "Action": "pass",
-      "Elapsed": 22.2
-    },
-    {
-      "Test": "TestCapacityFinalGateLifecycleJobs",
-      "Action": "pass",
-      "Elapsed": 14.02
-    },
-    {
-      "Test": "TestCreateSeatPKConflictIsNotAccountError",
-      "Action": "pass",
-      "Elapsed": 14.03
-    },
-    {
-      "Test": "TestCreateWithoutGroupSucceeds",
-      "Action": "pass",
-      "Elapsed": 17.18
-    },
-    {
-      "Test": "TestSchemaApplyRollbackRepeatable",
-      "Action": "pass",
-      "Elapsed": 13.63
-    },
-    {
-      "Test": "TestLoginRelogin",
-      "Action": "pass",
-      "Elapsed": 13.92
-    },
-    {
-      "Test": "TestRefreshCredHappyPath",
-      "Action": "pass",
-      "Elapsed": 13.99
-    },
-    {
-      "Test": "TestCreateWithModelSelectsSupportingNode",
-      "Action": "pass",
-      "Elapsed": 17.19
-    },
-    {
-      "Test": "TestLoginStaleCompletingWithoutClaimedAt",
-      "Action": "pass",
-      "Elapsed": 17.25
-    },
-    {
-      "Test": "TestBackupFailureClearsPending",
-      "Action": "pass",
-      "Elapsed": 22.59
-    },
-    {
-      "Test": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
-      "Action": "pass",
-      "Elapsed": 17.41
-    },
-    {
-      "Test": "TestDefenseInDepthAccountBoundaries",
-      "Action": "pass",
-      "Elapsed": 14.02
-    },
-    {
-      "Test": "TestRestartFailureAfterAgentConnectedKeepsOnline",
-      "Action": "pass",
-      "Elapsed": 18.47
-    },
-    {
-      "Test": "TestFailedGateStopsTheChain",
-      "Action": "pass",
-      "Elapsed": 28.11
-    },
-    {
-      "Test": "TestReleaseAndDestroyedNotCounted",
-      "Action": "pass",
-      "Elapsed": 18.08
-    },
-    {
-      "Test": "TestR31NodeRegistrationCredentialAndAtomicAudit",
-      "Action": "pass",
-      "Elapsed": 18.11
-    },
-    {
-      "Test": "TestOnlineAfterExistingTimeoutKeepsDetailCondition",
-      "Action": "pass",
-      "Elapsed": 13.74
-    },
-    {
-      "Test": "TestRefreshCredAsJob",
-      "Action": "pass",
-      "Elapsed": 15.06
-    },
-    {
-      "Test": "TestLoginQuotaEventRequiresTypedLoginIdentity",
-      "Action": "pass",
-      "Elapsed": 10.51
-    },
-    {
-      "Test": "TestLifecycleJobRecoveryLeavesNoActiveRows",
-      "Action": "pass",
-      "Elapsed": 24.02
-    },
-    {
-      "Test": "TestLoginSweepAndRecover",
-      "Action": "pass",
-      "Elapsed": 18.24
-    },
-    {
-      "Test": "TestIDTokenEmail",
-      "Action": "pass",
-      "Elapsed": 9.21
-    },
-    {
-      "Test": "TestLoginStaleCompletingIsSwept",
-      "Action": "pass",
-      "Elapsed": 14.55
-    },
-    {
-      "Test": "TestR31NodeGroupAccessAndRevocation",
-      "Action": "pass",
-      "Elapsed": 15.14
-    },
-    {
-      "Test": "TestLoginStartNodeOutcomes",
-      "Action": "pass",
-      "Elapsed": 30.73
-    },
-    {
-      "Test": "TestPlanTable",
-      "Action": "pass",
-      "Elapsed": 8.94
-    },
-    {
-      "Test": "TestRefreshStartingTimeoutIsExistingSeat",
-      "Action": "pass",
-      "Elapsed": 13.58
-    },
-    {
-      "Test": "TestRunJobMissingTokenFailsClosed",
-      "Action": "pass",
-      "Elapsed": 14.18
-    },
-    {
-      "Test": "TestRestartTimeoutKeepsExistingSeat",
-      "Action": "pass",
-      "Elapsed": 14.15
-    },
-    {
-      "Test": "TestLateConnectOnlyForExistingTimeout",
-      "Action": "pass",
-      "Elapsed": 23.42
-    },
-    {
-      "Test": "TestOwnedAccountLifecycle",
-      "Action": "pass",
-      "Elapsed": 12.53
-    },
-    {
-      "Test": "TestCheckCreateCodeSplit",
-      "Action": "pass",
-      "Elapsed": 30.85
-    },
-    {
-      "Test": "TestLoginEmailValidation",
-      "Action": "pass",
-      "Elapsed": 12.8
-    },
-    {
-      "Test": "TestR31HostedApplySchemaUsesUnifiedLedger",
-      "Action": "pass",
-      "Elapsed": 14.1
-    },
-    {
-      "Test": "TestHubParamsSatisfyNodeContract",
-      "Action": "pass",
-      "Elapsed": 14.13
-    },
-    {
-      "Test": "TestCreateHappyPathCodexFirst",
-      "Action": "pass",
-      "Elapsed": 13.41
-    },
-    {
-      "Test": "TestUnwrapWrongMasterFails",
-      "Action": "pass",
-      "Elapsed": 9.09
-    },
-    {
-      "Test": "TestConfirmRequiredGates",
-      "Action": "pass",
-      "Elapsed": 12.27
-    },
-    {
-      "Test": "TestFrozenR30SchemaModelColumnMigration",
-      "Action": "pass",
-      "Elapsed": 13.51
-    },
-    {
-      "Test": "TestMarkOnlineOnlyFromStarting",
-      "Action": "pass",
-      "Elapsed": 12.08
-    },
-    {
-      "Test": "TestQuotaListWithUsage",
-      "Action": "pass",
-      "Elapsed": 13.61
-    },
-    {
-      "Test": "TestCreateVsDisableSerialized",
-      "Action": "pass",
-      "Elapsed": 18.61
-    },
-    {
-      "Test": "TestR31HardConcurrentReservationsDoNotOversell",
-      "Action": "pass",
-      "Elapsed": 13.22
-    },
-    {
-      "Test": "TestEnableRestartWaitForAgentConnect",
-      "Action": "pass",
-      "Elapsed": 15.55
-    },
-    {
-      "Test": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
-      "Action": "pass",
-      "Elapsed": 16.49
-    },
-    {
-      "Test": "TestTokenWriteBackAndUnbindPrep",
-      "Action": "pass",
-      "Elapsed": 14.04
-    },
-    {
-      "Test": "TestTokenFileDisplayNoContentTail",
-      "Action": "pass",
-      "Elapsed": 13.58
-    },
-    {
-      "Test": "TestCapacityReasonSanitizationAndCompatibility",
-      "Action": "pass",
-      "Elapsed": 10.87
-    },
-    {
-      "Test": "TestRefreshCredNodeOutcomes",
-      "Action": "pass",
-      "Elapsed": 27.85
-    },
-    {
-      "Test": "TestHostedOverlay",
-      "Action": "pass",
-      "Elapsed": 16.6
-    },
-    {
-      "Test": "TestMinimumPlanDefinitionAndNetCapacity",
-      "Action": "pass",
-      "Elapsed": 9.22
-    },
-    {
-      "Test": "TestAppliedLedgerRejectsMissingHostedTableWithoutRepair",
-      "Action": "pass",
-      "Elapsed": 15.06
-    },
-    {
-      "Test": "TestR31StatePatchCannotRestoreConcurrentRevocation",
-      "Action": "pass",
-      "Elapsed": 13.46
-    },
-    {
-      "Test": "TestStartingWriteFailureUndoesResume",
-      "Action": "pass",
-      "Elapsed": 18.56
-    },
-    {
-      "Test": "TestOptionsViewAndJobProgress",
-      "Action": "pass",
-      "Elapsed": 17.21
-    },
-    {
-      "Test": "TestOptionsPlanFitsEachGate",
-      "Action": "pass",
-      "Elapsed": 28.08
-    },
-    {
-      "Test": "TestStartingWriteFailureDoesNotSuspendALiveCredential",
-      "Action": "pass",
-      "Elapsed": 19.16
-    },
-    {
-      "Test": "TestOptionsEmptyListsAreArrays",
-      "Action": "pass",
-      "Elapsed": 18.12
-    },
-    {
-      "Test": "TestSchemaDropLeavesNoG4Tables",
-      "Action": "pass",
-      "Elapsed": 18.49
-    },
-    {
-      "Test": "TestSweepExpiredBackupsReclaimsOnlyStalePending",
-      "Action": "pass",
-      "Elapsed": 18.63
-    },
-    {
-      "Test": "TestMinimumPlanOptionsAndRealCreateResources",
-      "Action": "pass",
-      "Elapsed": 18.05
-    },
-    {
-      "Test": "TestCapacityFinalGateCreateJobsAndCleanup",
-      "Action": "pass",
-      "Elapsed": 18.41
-    },
-    {
-      "Test": "TestLoginPrechecksAndEmailInSameInsert",
-      "Action": "pass",
-      "Elapsed": 21.32
-    },
-    {
-      "Test": "TestAccountSecretValidation",
-      "Action": "pass",
-      "Elapsed": 18.9
-    },
-    {
-      "Test": "TestBackupDuplicateUploadWhilePending",
-      "Action": "pass",
-      "Elapsed": 19.45
-    },
-    {
-      "Test": "TestCreateModelRejections",
-      "Action": "pass",
-      "Elapsed": 18.53
-    },
-    {
-      "Test": "TestRefreshCredResumesSuspendedCredential",
-      "Action": "pass",
-      "Elapsed": 41.39
-    },
-    {
-      "Test": "TestAccessCtxValid",
-      "Action": "pass",
-      "Elapsed": 16.99
-    },
-    {
-      "Test": "TestCapacityStartReasonAndUnknown",
-      "Action": "pass",
-      "Elapsed": 14.51
-    },
-    {
-      "Test": "TestReconcileDoesNotBackupTwice",
-      "Action": "pass",
-      "Elapsed": 17.45
-    },
-    {
-      "Test": "TestLoginUploadBoundToSessionNode",
-      "Action": "pass",
-      "Elapsed": 16.9
-    },
-    {
-      "Test": "TestRefreshCredRecoverJobs",
-      "Action": "pass",
-      "Elapsed": 14.34
-    },
-    {
-      "Test": "TestLifecycleJobPersistsProgressAndMachineReason",
-      "Action": "pass",
-      "Elapsed": 27.32
-    },
-    {
-      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
-      "Action": "pass",
-      "Elapsed": 45.81
-    },
-    {
-      "Test": "TestBackupNodeOfflineStopsDestroy",
-      "Action": "pass",
-      "Elapsed": 17.64
-    },
-    {
-      "Test": "TestRunJobFailureCleanup",
-      "Action": "pass",
-      "Elapsed": 17.23
-    },
-    {
-      "Test": "TestQuotaRegistrationAndCapacityCannotSelfDowngrade",
-      "Action": "pass",
-      "Elapsed": 9.29
-    },
-    {
-      "Test": "TestBackupUsesLongTimeout",
-      "Action": "pass",
-      "Elapsed": 14.72
-    },
-    {
-      "Test": "TestSoftCreateFailureDoesNotAbortOrReleaseIdentity",
-      "Action": "pass",
-      "Elapsed": 17.76
-    },
-    {
-      "Test": "TestCreateFailurePathsAbortTheIssue",
-      "Action": "pass",
-      "Elapsed": 26.4
-    },
-    {
-      "Test": "TestDestroyBackupFailedTyped",
-      "Action": "pass",
-      "Elapsed": 17.45
-    },
-    {
-      "Test": "TestRefreshCredStateGate",
-      "Action": "pass",
-      "Elapsed": 14.14
-    },
-    {
-      "Test": "TestLoginStartHappy",
-      "Action": "pass",
-      "Elapsed": 14.76
-    },
-    {
-      "Test": "TestOptionsModelsUnionOnlineOnly",
-      "Action": "pass",
-      "Elapsed": 17.57
-    },
-    {
-      "Test": "TestR31AdmissionUsesOwnerNotAdministratorAuditActor",
-      "Action": "pass",
-      "Elapsed": 14.02
-    },
-    {
-      "Test": "TestWrapUnwrapRoundtrip",
-      "Action": "pass",
-      "Elapsed": 9.39
-    },
-    {
-      "Test": "TestHardNodeResourceExtensionNegotiated",
-      "Action": "pass",
-      "Elapsed": 14.04
-    },
-    {
-      "Test": "TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart",
-      "Action": "pass",
-      "Elapsed": 13.57
-    },
-    {
-      "Test": "TestSoftHoldHubReleaseAuditAndUncertainNoResend",
-      "Action": "pass",
-      "Elapsed": 13.63
-    },
-    {
-      "Test": "TestSoftHoldLegacyEventStateAppliedOnce",
-      "Action": "pass",
-      "Elapsed": 13.65
-    },
-    {
-      "Test": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
-      "Action": "pass",
-      "Elapsed": 14.13
-    },
-    {
-      "Test": "TestJobProgressForOwnerBySeat",
-      "Action": "pass",
-      "Elapsed": 13.95
-    },
-    {
-      "Test": "TestClientCancellationOrphanPendingIsEventuallySwept",
-      "Action": "pass",
-      "Elapsed": 10.03
-    },
-    {
-      "Test": "TestCapacityReplyStrictProtocolAndRegistration",
-      "Action": "pass",
-      "Elapsed": 13.6
-    },
-    {
-      "Test": "TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess",
-      "Action": "pass",
-      "Elapsed": 13.76
-    },
-    {
-      "Test": "TestConcurrentCreateSameAccount",
-      "Action": "pass",
-      "Elapsed": 13.67
-    },
-    {
-      "Test": "TestFailureAfterAgentConnectedKeepsOnline",
-      "Action": "pass",
-      "Elapsed": 13.47
-    },
-    {
-      "Test": "TestStaticRegistriesFailClosed",
-      "Action": "pass",
-      "Elapsed": 9.73
-    },
-    {
-      "Test": "TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint",
-      "Action": "pass",
-      "Elapsed": 13.55
-    },
-    {
-      "Test": "TestBackupHandlerAuthAndStates",
-      "Action": "pass",
-      "Elapsed": 13.75
-    },
-    {
-      "Test": "TestCheckCreateDiskGate",
-      "Action": "pass",
-      "Elapsed": 13.98
-    },
-    {
-      "Test": "TestSoftHoldReleasePendingEventConverges",
-      "Action": "pass",
-      "Elapsed": 40.79
-    },
-    {
-      "Test": "TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath",
-      "Action": "pass",
-      "Elapsed": 23.16
-    },
-    {
-      "Test": "TestLegacyBoundAccountSharable",
-      "Action": "pass",
-      "Elapsed": 17.25
-    },
-    {
-      "Test": "TestNeverConnectsSweepedStartTimeout",
-      "Action": "pass",
-      "Elapsed": 14
-    },
-    {
-      "Test": "TestLoginAccountLimitPrecheck",
-      "Action": "pass",
-      "Elapsed": 14.68
-    },
-    {
-      "Test": "TestConcurrentDestroyRequestsShareOneJobAndOneBackup",
-      "Action": "pass",
-      "Elapsed": 14.59
-    },
-    {
-      "Test": "TestRefreshCredAccountGate",
-      "Action": "pass",
-      "Elapsed": 14.05
-    },
-    {
-      "Test": "TestReconcileSeatTimeoutDoesNotStallBatch",
-      "Action": "pass",
-      "Elapsed": 14.37
-    },
-    {
-      "Test": "TestStartingUntilAgentConnectsElseTimeout",
-      "Action": "pass",
-      "Elapsed": 14.84
-    },
-    {
-      "Test": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
-      "Action": "pass",
-      "Elapsed": 14.76
-    },
-    {
-      "Test": "TestLoginQuotaAuditDoesNotMutateHostedSeat",
-      "Action": "pass",
-      "Elapsed": 18.27
-    },
-    {
-      "Test": "TestTeamKeyServiceFlow",
-      "Action": "pass",
-      "Elapsed": 14.78
-    },
-    {
-      "Test": "TestLoginTerminalStatesClearLinkAndCode",
-      "Action": "pass",
-      "Elapsed": 29.28
-    },
-    {
-      "Test": "TestNodeCredentialLifecycle",
-      "Action": "pass",
-      "Elapsed": 16.12
-    },
-    {
-      "Test": "TestRollbackResetSQL",
-      "Action": "pass",
-      "Elapsed": 18.58
-    },
-    {
-      "Test": "TestLoginTotalCapBindsWithThreeNodes",
-      "Action": "pass",
-      "Elapsed": 18.56
-    },
-    {
-      "Test": "TestUpgradeWhileDisabledRejected",
-      "Action": "pass",
-      "Elapsed": 16.15
-    },
-    {
-      "Test": "TestZZ_AgentConnectingBeforeStartingIsNotLost",
-      "Action": "pass",
-      "Elapsed": 20.56
-    },
-    {
-      "Test": "TestR31NodeOptionsHideModelsAndQueuedRevocation",
-      "Action": "pass",
-      "Elapsed": 16.07
-    },
-    {
-      "Test": "TestLoginStartExpiresOwnStaleSession",
-      "Action": "pass",
-      "Elapsed": 18.43
-    },
-    {
-      "Test": "TestOptionsJSONMatchesContract",
-      "Action": "pass",
-      "Elapsed": 18.16
-    },
-    {
-      "Test": "TestOnlineOnlyViaMarkOnline",
-      "Action": "pass",
-      "Elapsed": 15.52
-    },
-    {
-      "Test": "TestCapacityStoreSerializesConcurrentReservations",
-      "Action": "pass",
-      "Elapsed": 15.55
-    },
-    {
-      "Test": "TestRefreshCredOwnerOnly",
-      "Action": "pass",
-      "Elapsed": 14.91
-    },
-    {
-      "Test": "TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission",
-      "Action": "pass",
-      "Elapsed": 17.97
-    },
-    {
-      "Test": "TestLoginClaimCompletingIsAtomic",
-      "Action": "pass",
-      "Elapsed": 13.88
-    },
-    {
-      "Test": "TestClaudeModelCreatePersistsAndDispatchesApprovedValue",
-      "Action": "pass",
-      "Elapsed": 15.89
-    },
-    {
-      "Test": "TestNodeHasModelToleratesMissingKey",
-      "Action": "pass",
-      "Elapsed": 9.91
-    },
-    {
-      "Test": "TestEmptyCreatedByRefused",
-      "Action": "pass",
-      "Elapsed": 14.56
-    },
-    {
-      "Test": "TestLateConnectAfterExistingTimeoutGoesOnline",
-      "Action": "pass",
-      "Elapsed": 19.06
-    },
-    {
-      "Test": "TestNodeSeatPoolQuotaFlow",
-      "Action": "pass",
-      "Elapsed": 14.92
-    },
-    {
-      "Test": "TestQuotaCheckBoundaries",
-      "Action": "pass",
-      "Elapsed": 14.5
-    },
-    {
-      "Test": "TestAccountLimitPerOwner",
-      "Action": "pass",
-      "Elapsed": 14.24
-    },
-    {
-      "Test": "TestUpgradeUnknownPlanNotSwallowed",
-      "Action": "pass",
-      "Elapsed": 14.8
-    },
-    {
-      "Test": "TestCreateTimeoutStillRetires",
-      "Action": "pass",
-      "Elapsed": 14.63
-    },
-    {
-      "Test": "TestNodeDownLeavesStateAndCredential",
-      "Action": "pass",
-      "Elapsed": 52.3
-    },
-    {
-      "Test": "TestFrozenR30LoginSchemaUpgradesOldDefinition",
-      "Action": "pass",
-      "Elapsed": 15.45
-    },
-    {
-      "Test": "TestCreateGroupErrorsPropagate",
-      "Action": "pass",
-      "Elapsed": 19.35
-    },
-    {
-      "Test": "TestAccountNameUniquePerOwner",
-      "Action": "pass",
-      "Elapsed": 17.29
-    },
-    {
-      "Test": "TestLoginCompleteOneShotExpiryAndFailures",
-      "Action": "pass",
-      "Elapsed": 18.48
-    },
-    {
-      "Test": "TestFrozenR30ApplySchemaUpgradesPreA1PreB2Shape",
-      "Action": "pass",
-      "Elapsed": 21.34
-    },
-    {
-      "Test": "TestSealPerRecordNonceAndWrongKey",
-      "Action": "pass",
-      "Elapsed": 17.18
+      "Elapsed": 14.87
     },
     {
       "Test": "TestLifecycleOrderOnOneLog",
       "Action": "pass",
-      "Elapsed": 28.04
+      "Elapsed": 23.73
     },
     {
-      "Test": "TestPlanDiskTiersPinned",
+      "Test": "TestCapacityStartReasonAndUnknown",
       "Action": "pass",
-      "Elapsed": 16.99
+      "Elapsed": 17.05
     },
     {
-      "Test": "TestBackupIntegrityRejected",
+      "Test": "TestReconcileDoesNotBackupTwice",
       "Action": "pass",
-      "Elapsed": 32.76
+      "Elapsed": 18.59
     },
     {
-      "Test": "TestSweepTimeouts",
+      "Test": "TestBackupNodeOfflineStopsDestroy",
       "Action": "pass",
-      "Elapsed": 19.99
+      "Elapsed": 18.88
     },
     {
-      "Test": "TestDestroyReturnsAccountToPool",
+      "Test": "TestClientCancellationOrphanPendingIsEventuallySwept",
       "Action": "pass",
-      "Elapsed": 21.23
+      "Elapsed": 18.15
     },
     {
-      "Test": "TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices",
+      "Test": "TestOwnershipEnforced",
       "Action": "pass",
-      "Elapsed": 17.11
+      "Elapsed": 26.55
     },
     {
-      "Test": "TestLoginOnePerUserAndCooldown",
+      "Test": "TestStaticRegistriesFailClosed",
       "Action": "pass",
-      "Elapsed": 17.9
+      "Elapsed": 12.57
+    },
+    {
+      "Test": "TestConcurrentCreateSameAccount",
+      "Action": "pass",
+      "Elapsed": 18.34
+    },
+    {
+      "Test": "TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint",
+      "Action": "pass",
+      "Elapsed": 18.72
+    },
+    {
+      "Test": "TestBackupChecksumControlPlane",
+      "Action": "pass",
+      "Elapsed": 34.8
     },
     {
       "Test": "TestLoginDoneNotOverwrittenBySweepOrCancel",
       "Action": "pass",
-      "Elapsed": 16.56
+      "Elapsed": 18.64
     },
     {
-      "Test": "TestR31AdmissionAndNodeRevocationCommitOrder",
+      "Test": "TestUpgradeWhileDisabledRejected",
       "Action": "pass",
-      "Elapsed": 16.73
+      "Elapsed": 17.18
     },
     {
-      "Test": "TestLoginCompleteRegisters",
+      "Test": "TestReconcileOnNodeReconnect",
       "Action": "pass",
-      "Elapsed": 13.96
+      "Elapsed": 15.66
     },
     {
-      "Test": "TestEnableRestartFailureAfterStarting",
-      "Action": "pass",
-      "Elapsed": 32.31
-    },
-    {
-      "Test": "TestLoginConcurrencyCaps",
-      "Action": "pass",
-      "Elapsed": 16.62
-    },
-    {
-      "Test": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
-      "Action": "pass",
-      "Elapsed": 14.18
-    },
-    {
-      "Test": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
+      "Test": "TestNeverConnectsSweepedStartTimeout",
       "Action": "pass",
       "Elapsed": 14.36
     },
     {
-      "Test": "TestBackupChecksumControlPlane",
+      "Test": "TestStartingUntilAgentConnectsElseTimeout",
       "Action": "pass",
-      "Elapsed": 41.04
+      "Elapsed": 16.17
     },
     {
-      "Test": "TestCreateRejections",
+      "Test": "TestTeamKeyServiceFlow",
       "Action": "pass",
-      "Elapsed": 15.08
+      "Elapsed": 16.69
     },
     {
-      "Test": "TestReconcileOnNodeReconnect",
+      "Test": "TestOnlineOnlyViaMarkOnline",
       "Action": "pass",
-      "Elapsed": 17.2
+      "Elapsed": 14.31
     },
     {
-      "Test": "TestOwnershipEnforced",
+      "Test": "TestRollbackResetSQL",
       "Action": "pass",
-      "Elapsed": 27.37
+      "Elapsed": 13.9
+    },
+    {
+      "Test": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "Action": "pass",
+      "Elapsed": 14.15
+    },
+    {
+      "Test": "TestAccountLimitPerOwner",
+      "Action": "pass",
+      "Elapsed": 13.44
+    },
+    {
+      "Test": "TestNodeCredentialLifecycle",
+      "Action": "pass",
+      "Elapsed": 14.16
+    },
+    {
+      "Test": "TestNodeSeatPoolQuotaFlow",
+      "Action": "pass",
+      "Elapsed": 14.08
+    },
+    {
+      "Test": "TestLoginTotalCapBindsWithThreeNodes",
+      "Action": "pass",
+      "Elapsed": 14.07
+    },
+    {
+      "Test": "TestClaudeModelCreatePersistsAndDispatchesApprovedValue",
+      "Action": "pass",
+      "Elapsed": 13.92
+    },
+    {
+      "Test": "TestLateConnectAfterExistingTimeoutGoesOnline",
+      "Action": "pass",
+      "Elapsed": 18.4
+    },
+    {
+      "Test": "TestLoginStartExpiresOwnStaleSession",
+      "Action": "pass",
+      "Elapsed": 14.32
+    },
+    {
+      "Test": "TestR31NodeOptionsHideModelsAndQueuedRevocation",
+      "Action": "pass",
+      "Elapsed": 15.18
+    },
+    {
+      "Test": "TestCapacityStoreSerializesConcurrentReservations",
+      "Action": "pass",
+      "Elapsed": 14.43
+    },
+    {
+      "Test": "TestSoftHoldReleasePendingEventConverges",
+      "Action": "pass",
+      "Elapsed": 39.44
+    },
+    {
+      "Test": "TestLoginStaleCompletingWithoutClaimedAt",
+      "Action": "pass",
+      "Elapsed": 15.8
+    },
+    {
+      "Test": "TestReleaseAndDestroyedNotCounted",
+      "Action": "pass",
+      "Elapsed": 14.22
+    },
+    {
+      "Test": "TestCreateWithoutGroupSucceeds",
+      "Action": "pass",
+      "Elapsed": 15.13
+    },
+    {
+      "Test": "TestDestroyCleanupSurvivesClientCancellation",
+      "Action": "pass",
+      "Elapsed": 14.47
+    },
+    {
+      "Test": "TestRestartAfterFailedStopResumesCredential",
+      "Action": "pass",
+      "Elapsed": 14.1
+    },
+    {
+      "Test": "TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed",
+      "Action": "pass",
+      "Elapsed": 13.65
+    },
+    {
+      "Test": "TestCapacityFinalGateLifecycleJobs",
+      "Action": "pass",
+      "Elapsed": 13.91
+    },
+    {
+      "Test": "TestCreateWithModelSelectsSupportingNode",
+      "Action": "pass",
+      "Elapsed": 13.78
+    },
+    {
+      "Test": "TestLoginCompleteOneShotExpiryAndFailures",
+      "Action": "pass",
+      "Elapsed": 12.08
+    },
+    {
+      "Test": "TestLoginRelogin",
+      "Action": "pass",
+      "Elapsed": 12.91
+    },
+    {
+      "Test": "TestR31AdmissionAndNodeRevocationCommitOrder",
+      "Action": "pass",
+      "Elapsed": 13.85
+    },
+    {
+      "Test": "TestCreateGroupErrorsPropagate",
+      "Action": "pass",
+      "Elapsed": 18.1
+    },
+    {
+      "Test": "TestRestartFailureAfterAgentConnectedKeepsOnline",
+      "Action": "pass",
+      "Elapsed": 17.61
+    },
+    {
+      "Test": "TestBackupIntegrityRejected",
+      "Action": "pass",
+      "Elapsed": 30.66
+    },
+    {
+      "Test": "TestLifecycleJobRecoveryLeavesNoActiveRows",
+      "Action": "pass",
+      "Elapsed": 20.32
+    },
+    {
+      "Test": "TestReconcileSeatTimeoutDoesNotStallBatch",
+      "Action": "pass",
+      "Elapsed": 2.98
+    },
+    {
+      "Test": "TestUpgradeUnknownPlanNotSwallowed",
+      "Action": "pass",
+      "Elapsed": 2.57
+    },
+    {
+      "Test": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
+      "Action": "pass",
+      "Elapsed": 4.24
+    },
+    {
+      "Test": "TestRefreshCredRecoverJobs",
+      "Action": "pass",
+      "Elapsed": 4.25
+    },
+    {
+      "Test": "TestLoginOnePerUserAndCooldown",
+      "Action": "pass",
+      "Elapsed": 4.39
+    },
+    {
+      "Test": "TestLoginTotalCapBindsWithThreeNodes",
+      "Action": "pass",
+      "Elapsed": 4.41
+    },
+    {
+      "Test": "TestOnlineOnlyViaMarkOnline",
+      "Action": "pass",
+      "Elapsed": 4.41
+    },
+    {
+      "Test": "TestR31NodeOptionsHideModelsAndQueuedRevocation",
+      "Action": "pass",
+      "Elapsed": 8.73
+    },
+    {
+      "Test": "TestNodeCredentialLifecycle",
+      "Action": "pass",
+      "Elapsed": 8.73
+    },
+    {
+      "Test": "TestNodeSeatPoolQuotaFlow",
+      "Action": "pass",
+      "Elapsed": 8.91
+    },
+    {
+      "Test": "TestAccountLimitPerOwner",
+      "Action": "pass",
+      "Elapsed": 9.11
+    },
+    {
+      "Test": "TestLoginCompleteOneShotExpiryAndFailures",
+      "Action": "pass",
+      "Elapsed": 13.1
+    },
+    {
+      "Test": "TestLoadMasterKeyPermAndForms",
+      "Action": "pass",
+      "Elapsed": 13.1
+    },
+    {
+      "Test": "TestR31AdmissionAndNodeRevocationCommitOrder",
+      "Action": "pass",
+      "Elapsed": 13.16
+    },
+    {
+      "Test": "TestSweepTimeouts",
+      "Action": "pass",
+      "Elapsed": 13.62
+    },
+    {
+      "Test": "TestLateConnectAfterExistingTimeoutGoesOnline",
+      "Action": "pass",
+      "Elapsed": 13.69
+    },
+    {
+      "Test": "TestDestroyReturnsAccountToPool",
+      "Action": "pass",
+      "Elapsed": 13.79
+    },
+    {
+      "Test": "TestCheckCreateCodeSplit",
+      "Action": "pass",
+      "Elapsed": 17.34
+    },
+    {
+      "Test": "TestJobProgressForOwnerBySeat",
+      "Action": "pass",
+      "Elapsed": 13.42
+    },
+    {
+      "Test": "TestCheckCreateDiskGate",
+      "Action": "pass",
+      "Elapsed": 13.91
+    },
+    {
+      "Test": "TestFailureAfterAgentConnectedKeepsOnline",
+      "Action": "pass",
+      "Elapsed": 13.96
+    },
+    {
+      "Test": "TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess",
+      "Action": "pass",
+      "Elapsed": 14.11
+    },
+    {
+      "Test": "TestLoginAccountLimitPrecheck",
+      "Action": "pass",
+      "Elapsed": 14.03
+    },
+    {
+      "Test": "TestLoginQuotaAuditDoesNotMutateHostedSeat",
+      "Action": "pass",
+      "Elapsed": 13.85
+    },
+    {
+      "Test": "TestR31NodeRegistrationCredentialAndAtomicAudit",
+      "Action": "pass",
+      "Elapsed": 10.02
+    },
+    {
+      "Test": "TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath",
+      "Action": "pass",
+      "Elapsed": 22.5
     },
     {
       "Test": "TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold",
       "Action": "pass",
-      "Elapsed": 0
+      "Elapsed": 13.06
+    },
+    {
+      "Test": "TestFrozenR30SchemaBackfillAndJobOp",
+      "Action": "pass",
+      "Elapsed": 14.44
+    },
+    {
+      "Test": "TestQuotaEventValidation",
+      "Action": "pass",
+      "Elapsed": 10.26
+    },
+    {
+      "Test": "TestOptionsJSONMatchesContract",
+      "Action": "pass",
+      "Elapsed": 14.09
+    },
+    {
+      "Test": "TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission",
+      "Action": "pass",
+      "Elapsed": 17.61
+    },
+    {
+      "Test": "TestZZ_AgentConnectingBeforeStartingIsNotLost",
+      "Action": "pass",
+      "Elapsed": 19.03
+    },
+    {
+      "Test": "TestJobReasonOnlyContractCodes",
+      "Action": "pass",
+      "Elapsed": 13.99
+    },
+    {
+      "Test": "TestLoginClaimCompletingIsAtomic",
+      "Action": "pass",
+      "Elapsed": 14.67
+    },
+    {
+      "Test": "TestLoginTerminalStatesClearLinkAndCode",
+      "Action": "pass",
+      "Elapsed": 27.37
+    },
+    {
+      "Test": "TestQuotaCheckBoundaries",
+      "Action": "pass",
+      "Elapsed": 18.18
+    },
+    {
+      "Test": "TestReconcileOnNodeReconnect",
+      "Action": "pass",
+      "Elapsed": 14
+    },
+    {
+      "Test": "TestCreateTimeoutStillRetires",
+      "Action": "pass",
+      "Elapsed": 14.01
+    },
+    {
+      "Test": "TestLoginDoneNotOverwrittenBySweepOrCancel",
+      "Action": "pass",
+      "Elapsed": 17.63
+    },
+    {
+      "Test": "TestSealPerRecordNonceAndWrongKey",
+      "Action": "pass",
+      "Elapsed": 13.16
+    },
+    {
+      "Test": "TestFrozenR30LoginSchemaUpgradesOldDefinition",
+      "Action": "pass",
+      "Elapsed": 14.5
+    },
+    {
+      "Test": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "Action": "pass",
+      "Elapsed": 14.81
+    },
+    {
+      "Test": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
+      "Action": "pass",
+      "Elapsed": 14.02
+    },
+    {
+      "Test": "TestDestroyStopsBeforeBackup",
+      "Action": "pass",
+      "Elapsed": 26.76
+    },
+    {
+      "Test": "TestOwnedAccountLifecycle",
+      "Action": "pass",
+      "Elapsed": 13.97
+    },
+    {
+      "Test": "TestUpgradeRollbackOnNodeFailure",
+      "Action": "pass",
+      "Elapsed": 14.31
+    },
+    {
+      "Test": "TestUpgradeUsesRecordedModel",
+      "Action": "pass",
+      "Elapsed": 17.43
+    },
+    {
+      "Test": "TestReconcileGuards",
+      "Action": "pass",
+      "Elapsed": 22.17
+    },
+    {
+      "Test": "TestIDTokenEmail",
+      "Action": "pass",
+      "Elapsed": 12.9
+    },
+    {
+      "Test": "TestR31NodeGroupAccessAndRevocation",
+      "Action": "pass",
+      "Elapsed": 14.76
+    },
+    {
+      "Test": "TestLoginStaleCompletingIsSwept",
+      "Action": "pass",
+      "Elapsed": 17.34
+    },
+    {
+      "Test": "TestPlanTable",
+      "Action": "pass",
+      "Elapsed": 13.02
+    },
+    {
+      "Test": "TestPickNodeStaleFrameTreatedOffline",
+      "Action": "pass",
+      "Elapsed": 13.57
+    },
+    {
+      "Test": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
+      "Action": "pass",
+      "Elapsed": 18.76
+    },
+    {
+      "Test": "TestRefreshStartingTimeoutIsExistingSeat",
+      "Action": "pass",
+      "Elapsed": 14.85
+    },
+    {
+      "Test": "TestNodeDownLeavesStateAndCredential",
+      "Action": "pass",
+      "Elapsed": 49.62
+    },
+    {
+      "Test": "TestBackupPipelineEndToEnd",
+      "Action": "pass",
+      "Elapsed": 17.38
+    },
+    {
+      "Test": "TestEnableRestartFailureAfterStarting",
+      "Action": "pass",
+      "Elapsed": 27.81
+    },
+    {
+      "Test": "TestClaudeTokenFileABI",
+      "Action": "pass",
+      "Elapsed": 9.33
+    },
+    {
+      "Test": "TestCreateHappyPathCodexFirst",
+      "Action": "pass",
+      "Elapsed": 14.76
+    },
+    {
+      "Test": "TestPoolScheduling",
+      "Action": "pass",
+      "Elapsed": 13.79
+    },
+    {
+      "Test": "TestFrozenR30SchemaModelColumnMigration",
+      "Action": "pass",
+      "Elapsed": 16.04
+    },
+    {
+      "Test": "TestLifecycleJobDuplicatePolicy",
+      "Action": "pass",
+      "Elapsed": 13.76
+    },
+    {
+      "Test": "TestCapacityRequestReasonAndModelSelection",
+      "Action": "pass",
+      "Elapsed": 14.01
+    },
+    {
+      "Test": "TestHostedItemErrorCounted",
+      "Action": "pass",
+      "Elapsed": 10.46
+    },
+    {
+      "Test": "TestClaudeMinimumPlanRemainsUnverified",
+      "Action": "pass",
+      "Elapsed": 12.86
+    },
+    {
+      "Test": "TestQuotaListWithUsage",
+      "Action": "pass",
+      "Elapsed": 13.89
+    },
+    {
+      "Test": "TestMinimumPlanQuotaDebitsAndEveryDimension",
+      "Action": "pass",
+      "Elapsed": 13.01
+    },
+    {
+      "Test": "TestDestroyOfflineNodeLeavesReconcileRecord",
+      "Action": "pass",
+      "Elapsed": 13.63
+    },
+    {
+      "Test": "TestR31HardConcurrentReservationsDoNotOversell",
+      "Action": "pass",
+      "Elapsed": 13.28
+    },
+    {
+      "Test": "TestRefreshCredNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 30.81
+    },
+    {
+      "Test": "TestLoginPerNodeCapBindsWithOneNode",
+      "Action": "pass",
+      "Elapsed": 13.64
+    },
+    {
+      "Test": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
+      "Action": "pass",
+      "Elapsed": 13.71
+    },
+    {
+      "Test": "TestTokenWriteBackAndUnbindPrep",
+      "Action": "pass",
+      "Elapsed": 14.47
+    },
+    {
+      "Test": "TestCreateSeatPKConflictIsNotAccountError",
+      "Action": "pass",
+      "Elapsed": 16.33
+    },
+    {
+      "Test": "TestTokenFileDisplayNoContentTail",
+      "Action": "pass",
+      "Elapsed": 14.62
+    },
+    {
+      "Test": "TestLoginStaleCompletingWithoutClaimedAt",
+      "Action": "pass",
+      "Elapsed": 14.25
+    },
+    {
+      "Test": "TestRefreshCredHappyPath",
+      "Action": "pass",
+      "Elapsed": 15.88
+    },
+    {
+      "Test": "TestSchemaDropLeavesNoG4Tables",
+      "Action": "pass",
+      "Elapsed": 14.47
+    },
+    {
+      "Test": "TestFailedGateStopsTheChain",
+      "Action": "pass",
+      "Elapsed": 31.77
+    },
+    {
+      "Test": "TestReleaseAndDestroyedNotCounted",
+      "Action": "pass",
+      "Elapsed": 14.46
+    },
+    {
+      "Test": "TestLoginRelogin",
+      "Action": "pass",
+      "Elapsed": 16.68
+    },
+    {
+      "Test": "TestBackupFailureClearsPending",
+      "Action": "pass",
+      "Elapsed": 25.54
+    },
+    {
+      "Test": "TestOptionsEmptyListsAreArrays",
+      "Action": "pass",
+      "Elapsed": 16.73
+    },
+    {
+      "Test": "TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed",
+      "Action": "pass",
+      "Elapsed": 14.62
+    },
+    {
+      "Test": "TestSchemaApplyRollbackRepeatable",
+      "Action": "pass",
+      "Elapsed": 15.43
+    },
+    {
+      "Test": "TestR31StatePatchCannotRestoreConcurrentRevocation",
+      "Action": "pass",
+      "Elapsed": 16.96
+    },
+    {
+      "Test": "TestMinimumPlanOptionsAndRealCreateResources",
+      "Action": "pass",
+      "Elapsed": 17.1
+    },
+    {
+      "Test": "TestDestroyCleanupSurvivesClientCancellation",
+      "Action": "pass",
+      "Elapsed": 16.68
+    },
+    {
+      "Test": "TestAccountSecretValidation",
+      "Action": "pass",
+      "Elapsed": 14.36
+    },
+    {
+      "Test": "TestCapacityFinalGateLifecycleJobs",
+      "Action": "pass",
+      "Elapsed": 15.53
+    },
+    {
+      "Test": "TestRestartAfterFailedStopResumesCredential",
+      "Action": "pass",
+      "Elapsed": 16.01
+    },
+    {
+      "Test": "TestCreateModelRejections",
+      "Action": "pass",
+      "Elapsed": 13.91
+    },
+    {
+      "Test": "TestNodeHasModelToleratesMissingKey",
+      "Action": "pass",
+      "Elapsed": 8.91
+    },
+    {
+      "Test": "TestCapacityStartReasonAndUnknown",
+      "Action": "pass",
+      "Elapsed": 13.4
+    },
+    {
+      "Test": "TestLoginPrechecksAndEmailInSameInsert",
+      "Action": "pass",
+      "Elapsed": 13.44
+    },
+    {
+      "Test": "TestCreateWithoutGroupSucceeds",
+      "Action": "pass",
+      "Elapsed": 13.63
+    },
+    {
+      "Test": "TestReconcileDoesNotBackupTwice",
+      "Action": "pass",
+      "Elapsed": 13.71
+    },
+    {
+      "Test": "TestBackupNodeOfflineStopsDestroy",
+      "Action": "pass",
+      "Elapsed": 12.65
+    },
+    {
+      "Test": "TestLoginConcurrencyCaps",
+      "Action": "pass",
+      "Elapsed": 11.48
+    },
+    {
+      "Test": "TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices",
+      "Action": "pass",
+      "Elapsed": 14.06
+    },
+    {
+      "Test": "TestClientCancellationOrphanPendingIsEventuallySwept",
+      "Action": "pass",
+      "Elapsed": 14.22
+    },
+    {
+      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
+      "Action": "pass",
+      "Elapsed": 45.39
+    },
+    {
+      "Test": "TestConcurrentCreateSameAccount",
+      "Action": "pass",
+      "Elapsed": 17.36
+    },
+    {
+      "Test": "TestLifecycleJobPersistsProgressAndMachineReason",
+      "Action": "pass",
+      "Elapsed": 22.95
+    },
+    {
+      "Test": "TestLoginUploadBoundToSessionNode",
+      "Action": "pass",
+      "Elapsed": 16.1
+    },
+    {
+      "Test": "TestStaticRegistriesFailClosed",
+      "Action": "pass",
+      "Elapsed": 14.18
+    },
+    {
+      "Test": "TestLifecycleOrderOnOneLog",
+      "Action": "pass",
+      "Elapsed": 27.09
+    },
+    {
+      "Test": "TestLoginCompleteRegisters",
+      "Action": "pass",
+      "Elapsed": 19.37
+    },
+    {
+      "Test": "TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint",
+      "Action": "pass",
+      "Elapsed": 19.64
+    },
+    {
+      "Test": "TestDestroyBackupFailedTyped",
+      "Action": "pass",
+      "Elapsed": 18.83
+    },
+    {
+      "Test": "TestRestartFailureAfterAgentConnectedKeepsOnline",
+      "Action": "pass",
+      "Elapsed": 23.82
+    },
+    {
+      "Test": "TestLegacyBoundAccountSharable",
+      "Action": "pass",
+      "Elapsed": 18.8
+    },
+    {
+      "Test": "TestAccountNameUniquePerOwner",
+      "Action": "pass",
+      "Elapsed": 18.13
+    },
+    {
+      "Test": "TestLoginStartHappy",
+      "Action": "pass",
+      "Elapsed": 17.8
+    },
+    {
+      "Test": "TestFrozenR30ApplySchemaUpgradesPreA1PreB2Shape",
+      "Action": "pass",
+      "Elapsed": 13.76
+    },
+    {
+      "Test": "TestPlanDiskTiersPinned",
+      "Action": "pass",
+      "Elapsed": 12.43
+    },
+    {
+      "Test": "TestCreateWithModelSelectsSupportingNode",
+      "Action": "pass",
+      "Elapsed": 17.18
+    },
+    {
+      "Test": "TestR31AdmissionUsesOwnerNotAdministratorAuditActor",
+      "Action": "pass",
+      "Elapsed": 14.54
+    },
+    {
+      "Test": "TestWrapUnwrapRoundtrip",
+      "Action": "pass",
+      "Elapsed": 9.75
+    },
+    {
+      "Test": "TestSoftHoldReleasePendingEventConverges",
+      "Action": "pass",
+      "Elapsed": 35.88
+    },
+    {
+      "Test": "TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart",
+      "Action": "pass",
+      "Elapsed": 17.15
+    },
+    {
+      "Test": "TestDefenseInDepthAccountBoundaries",
+      "Action": "pass",
+      "Elapsed": 13.53
+    },
+    {
+      "Test": "TestRefreshCredOwnerOnly",
+      "Action": "pass",
+      "Elapsed": 12.97
+    },
+    {
+      "Test": "TestNeverConnectsSweepedStartTimeout",
+      "Action": "pass",
+      "Elapsed": 13.86
+    },
+    {
+      "Test": "TestCreateRejections",
+      "Action": "pass",
+      "Elapsed": 14.38
+    },
+    {
+      "Test": "TestEmptyCreatedByRefused",
+      "Action": "pass",
+      "Elapsed": 16.1
+    },
+    {
+      "Test": "TestLifecycleJobRecoveryLeavesNoActiveRows",
+      "Action": "pass",
+      "Elapsed": 26.19
+    },
+    {
+      "Test": "TestLoginStartExpiresOwnStaleSession",
+      "Action": "pass",
+      "Elapsed": 14.86
+    },
+    {
+      "Test": "TestRollbackResetSQL",
+      "Action": "pass",
+      "Elapsed": 14.69
+    },
+    {
+      "Test": "TestBackupChecksumControlPlane",
+      "Action": "pass",
+      "Elapsed": 41.67
+    },
+    {
+      "Test": "TestStartingUntilAgentConnectsElseTimeout",
+      "Action": "pass",
+      "Elapsed": 17.32
+    },
+    {
+      "Test": "TestTeamKeyServiceFlow",
+      "Action": "pass",
+      "Elapsed": 18.13
+    },
+    {
+      "Test": "TestOwnershipEnforced",
+      "Action": "pass",
+      "Elapsed": 28.65
+    },
+    {
+      "Test": "TestClaudeModelCreatePersistsAndDispatchesApprovedValue",
+      "Action": "pass",
+      "Elapsed": 18.48
+    },
+    {
+      "Test": "TestUpgradeWhileDisabledRejected",
+      "Action": "pass",
+      "Elapsed": 16.85
+    },
+    {
+      "Test": "TestCapacityStoreSerializesConcurrentReservations",
+      "Action": "pass",
+      "Elapsed": 17.55
+    },
+    {
+      "Test": "TestCapacityFinalGateCreateJobsAndCleanup",
+      "Action": "pass",
+      "Elapsed": 14.72
+    },
+    {
+      "Test": "TestCreateGroupErrorsPropagate",
+      "Action": "pass",
+      "Elapsed": 22.2
+    },
+    {
+      "Test": "TestMinimumPlanDefinitionAndNetCapacity",
+      "Action": "pass",
+      "Elapsed": 12.52
+    },
+    {
+      "Test": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
+      "Action": "pass",
+      "Elapsed": 15.58
+    },
+    {
+      "Test": "TestRefreshCredAsJob",
+      "Action": "pass",
+      "Elapsed": 17.18
+    },
+    {
+      "Test": "TestCreateVsDisableSerialized",
+      "Action": "pass",
+      "Elapsed": 20.69
+    },
+    {
+      "Test": "TestOnlineAfterExistingTimeoutKeepsDetailCondition",
+      "Action": "pass",
+      "Elapsed": 14.93
+    },
+    {
+      "Test": "TestRestartTimeoutKeepsExistingSeat",
+      "Action": "pass",
+      "Elapsed": 18.67
+    },
+    {
+      "Test": "TestHostedOverlay",
+      "Action": "pass",
+      "Elapsed": 19.55
+    },
+    {
+      "Test": "TestCapacityReasonSanitizationAndCompatibility",
+      "Action": "pass",
+      "Elapsed": 16.79
+    },
+    {
+      "Test": "TestLoginEmailValidation",
+      "Action": "pass",
+      "Elapsed": 19.12
+    },
+    {
+      "Test": "TestBackupIntegrityRejected",
+      "Action": "pass",
+      "Elapsed": 37.65
+    },
+    {
+      "Test": "TestLoginSweepAndRecover",
+      "Action": "pass",
+      "Elapsed": 19.59
+    },
+    {
+      "Test": "TestOptionsPlanFitsEachGate",
+      "Action": "pass",
+      "Elapsed": 31.25
+    },
+    {
+      "Test": "TestLoginQuotaEventRequiresTypedLoginIdentity",
+      "Action": "pass",
+      "Elapsed": 10.11
+    },
+    {
+      "Test": "TestLoginStartNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 29.06
+    },
+    {
+      "Test": "TestHubParamsSatisfyNodeContract",
+      "Action": "pass",
+      "Elapsed": 18.8
+    },
+    {
+      "Test": "TestOptionsViewAndJobProgress",
+      "Action": "pass",
+      "Elapsed": 10.99
+    },
+    {
+      "Test": "TestDestroyCanBeRetriedAfterHubDiesMidJob",
+      "Action": "pass",
+      "Elapsed": 12.53
+    },
+    {
+      "Test": "TestLateConnectOnlyForExistingTimeout",
+      "Action": "pass",
+      "Elapsed": 23.56
+    },
+    {
+      "Test": "TestStartingWriteFailureUndoesResume",
+      "Action": "pass",
+      "Elapsed": 21.51
+    },
+    {
+      "Test": "TestStartingWriteFailureDoesNotSuspendALiveCredential",
+      "Action": "pass",
+      "Elapsed": 21.85
+    },
+    {
+      "Test": "TestR31HostedApplySchemaUsesUnifiedLedger",
+      "Action": "pass",
+      "Elapsed": 12.28
+    },
+    {
+      "Test": "TestMarkOnlineOnlyFromStarting",
+      "Action": "pass",
+      "Elapsed": 15.36
+    },
+    {
+      "Test": "TestSweepExpiredBackupsReclaimsOnlyStalePending",
+      "Action": "pass",
+      "Elapsed": 15.87
+    },
+    {
+      "Test": "TestConfirmRequiredGates",
+      "Action": "pass",
+      "Elapsed": 15.16
+    },
+    {
+      "Test": "TestBackupUsesLongTimeout",
+      "Action": "pass",
+      "Elapsed": 15.05
+    },
+    {
+      "Test": "TestRunJobMissingTokenFailsClosed",
+      "Action": "pass",
+      "Elapsed": 15.15
+    },
+    {
+      "Test": "TestRunJobFailureCleanup",
+      "Action": "pass",
+      "Elapsed": 18.26
+    },
+    {
+      "Test": "TestSoftHoldLegacyEventStateAppliedOnce",
+      "Action": "pass",
+      "Elapsed": 18.81
+    },
+    {
+      "Test": "TestEnableRestartWaitForAgentConnect",
+      "Action": "pass",
+      "Elapsed": 20.02
+    },
+    {
+      "Test": "TestBackupHandlerAuthAndStates",
+      "Action": "pass",
+      "Elapsed": 17.03
+    },
+    {
+      "Test": "TestBackupDuplicateUploadWhilePending",
+      "Action": "pass",
+      "Elapsed": 14.89
+    },
+    {
+      "Test": "TestAppliedLedgerRejectsMissingHostedTableWithoutRepair",
+      "Action": "pass",
+      "Elapsed": 18.05
     },
     {
       "Test": "TestQuotaRegistrationAndCapacityCannotSelfDowngrade",
       "Action": "pass",
-      "Elapsed": 0
+      "Elapsed": 13.12
+    },
+    {
+      "Test": "TestSoftHoldHubReleaseAuditAndUncertainNoResend",
+      "Action": "pass",
+      "Elapsed": 15.4
+    },
+    {
+      "Test": "TestCapacityReplyStrictProtocolAndRegistration",
+      "Action": "pass",
+      "Elapsed": 15.28
+    },
+    {
+      "Test": "TestAccessCtxValid",
+      "Action": "pass",
+      "Elapsed": 14.75
+    },
+    {
+      "Test": "TestHardNodeResourceExtensionNegotiated",
+      "Action": "pass",
+      "Elapsed": 15.19
+    },
+    {
+      "Test": "TestRefreshCredAccountGate",
+      "Action": "pass",
+      "Elapsed": 14.81
+    },
+    {
+      "Test": "TestUnwrapWrongMasterFails",
+      "Action": "pass",
+      "Elapsed": 10.04
+    },
+    {
+      "Test": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "Action": "pass",
+      "Elapsed": 14.64
+    },
+    {
+      "Test": "TestOptionsModelsUnionOnlineOnly",
+      "Action": "pass",
+      "Elapsed": 11.42
+    },
+    {
+      "Test": "TestConcurrentDestroyRequestsShareOneJobAndOneBackup",
+      "Action": "pass",
+      "Elapsed": 14.74
+    },
+    {
+      "Test": "TestRefreshCredStateGate",
+      "Action": "pass",
+      "Elapsed": 13.93
+    },
+    {
+      "Test": "TestSoftCreateFailureDoesNotAbortOrReleaseIdentity",
+      "Action": "pass",
+      "Elapsed": 14.32
+    },
+    {
+      "Test": "TestRefreshCredResumesSuspendedCredential",
+      "Action": "pass",
+      "Elapsed": 41.86
+    },
+    {
+      "Test": "TestCreateFailurePathsAbortTheIssue",
+      "Action": "pass",
+      "Elapsed": 23.07
+    },
+    {
+      "Test": "TestReconcileSeatTimeoutDoesNotStallBatch",
+      "Action": "pass",
+      "Elapsed": 3.22
+    },
+    {
+      "Test": "TestUpgradeUnknownPlanNotSwallowed",
+      "Action": "pass",
+      "Elapsed": 2.86
     },
     {
       "Test": "TestLoadMasterKeyPermAndForms",
@@ -1891,991 +1891,991 @@
       "Elapsed": 0
     },
     {
-      "Test": "TestNodeCredentialLifecycle",
-      "Action": "pass",
-      "Elapsed": 4.2
-    },
-    {
       "Test": "TestR31NodeOptionsHideModelsAndQueuedRevocation",
       "Action": "pass",
-      "Elapsed": 4.2
-    },
-    {
-      "Test": "TestLoginTotalCapBindsWithThreeNodes",
-      "Action": "pass",
-      "Elapsed": 4.2
-    },
-    {
-      "Test": "TestHostedOverlay",
-      "Action": "pass",
-      "Elapsed": 4.23
-    },
-    {
-      "Test": "TestAppliedLedgerRejectsMissingHostedTableWithoutRepair",
-      "Action": "pass",
-      "Elapsed": 4.43
-    },
-    {
-      "Test": "TestNodeSeatPoolQuotaFlow",
-      "Action": "pass",
-      "Elapsed": 8.58
-    },
-    {
-      "Test": "TestZZ_AgentConnectingBeforeStartingIsNotLost",
-      "Action": "pass",
-      "Elapsed": 8.61
-    },
-    {
-      "Test": "TestAccountLimitPerOwner",
-      "Action": "pass",
-      "Elapsed": 8.75
+      "Elapsed": 4.44
     },
     {
       "Test": "TestOnlineOnlyViaMarkOnline",
       "Action": "pass",
-      "Elapsed": 8.76
+      "Elapsed": 4.45
     },
     {
-      "Test": "TestBackupUsesLongTimeout",
+      "Test": "TestAppliedLedgerRejectsMissingHostedTableWithoutRepair",
       "Action": "pass",
-      "Elapsed": 12.92
+      "Elapsed": 4.62
+    },
+    {
+      "Test": "TestAccountLimitPerOwner",
+      "Action": "pass",
+      "Elapsed": 4.62
     },
     {
       "Test": "TestRunJobMissingTokenFailsClosed",
       "Action": "pass",
-      "Elapsed": 13.02
+      "Elapsed": 4.63
     },
     {
       "Test": "TestLateConnectAfterExistingTimeoutGoesOnline",
       "Action": "pass",
-      "Elapsed": 13.13
+      "Elapsed": 8.9
     },
     {
-      "Test": "TestUpgradeUnknownPlanNotSwallowed",
+      "Test": "TestNodeSeatPoolQuotaFlow",
       "Action": "pass",
-      "Elapsed": 13.13
+      "Elapsed": 8.95
     },
     {
-      "Test": "TestLoginCompleteOneShotExpiryAndFailures",
+      "Test": "TestNodeCredentialLifecycle",
       "Action": "pass",
-      "Elapsed": 17.19
-    },
-    {
-      "Test": "TestR31AdmissionAndNodeRevocationCommitOrder",
-      "Action": "pass",
-      "Elapsed": 13.27
-    },
-    {
-      "Test": "TestSweepTimeouts",
-      "Action": "pass",
-      "Elapsed": 13.29
-    },
-    {
-      "Test": "TestDestroyReturnsAccountToPool",
-      "Action": "pass",
-      "Elapsed": 13.51
-    },
-    {
-      "Test": "TestLoginOnePerUserAndCooldown",
-      "Action": "pass",
-      "Elapsed": 17.22
-    },
-    {
-      "Test": "TestLoginStartNodeOutcomes",
-      "Action": "pass",
-      "Elapsed": 21.47
-    },
-    {
-      "Test": "TestJobProgressForOwnerBySeat",
-      "Action": "pass",
-      "Elapsed": 17.6
-    },
-    {
-      "Test": "TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess",
-      "Action": "pass",
-      "Elapsed": 13.45
-    },
-    {
-      "Test": "TestCheckCreateDiskGate",
-      "Action": "pass",
-      "Elapsed": 17.19
-    },
-    {
-      "Test": "TestFailureAfterAgentConnectedKeepsOnline",
-      "Action": "pass",
-      "Elapsed": 17.22
-    },
-    {
-      "Test": "TestLoginAccountLimitPrecheck",
-      "Action": "pass",
-      "Elapsed": 17.45
-    },
-    {
-      "Test": "TestReconcileSeatTimeoutDoesNotStallBatch",
-      "Action": "pass",
-      "Elapsed": 17.71
-    },
-    {
-      "Test": "TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath",
-      "Action": "pass",
-      "Elapsed": 22.49
-    },
-    {
-      "Test": "TestQuotaEventValidation",
-      "Action": "pass",
-      "Elapsed": 13.58
-    },
-    {
-      "Test": "TestLoginQuotaAuditDoesNotMutateHostedSeat",
-      "Action": "pass",
-      "Elapsed": 18.02
-    },
-    {
-      "Test": "TestRefreshCredHappyPath",
-      "Action": "pass",
-      "Elapsed": 18.14
-    },
-    {
-      "Test": "TestJobReasonOnlyContractCodes",
-      "Action": "pass",
-      "Elapsed": 18.04
-    },
-    {
-      "Test": "TestPickNodeStaleFrameTreatedOffline",
-      "Action": "pass",
-      "Elapsed": 18.03
-    },
-    {
-      "Test": "TestPoolScheduling",
-      "Action": "pass",
-      "Elapsed": 18.38
-    },
-    {
-      "Test": "TestLoginTerminalStatesClearLinkAndCode",
-      "Action": "pass",
-      "Elapsed": 27.62
-    },
-    {
-      "Test": "TestBackupPipelineEndToEnd",
-      "Action": "pass",
-      "Elapsed": 19.09
-    },
-    {
-      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
-      "Action": "pass",
-      "Elapsed": 44.79
-    },
-    {
-      "Test": "TestClaudeMinimumPlanRemainsUnverified",
-      "Action": "pass",
-      "Elapsed": 18.84
-    },
-    {
-      "Test": "TestCreateSeatPKConflictIsNotAccountError",
-      "Action": "pass",
-      "Elapsed": 14.55
-    },
-    {
-      "Test": "TestSchemaApplyRollbackRepeatable",
-      "Action": "pass",
-      "Elapsed": 18.47
-    },
-    {
-      "Test": "TestCreateRejections",
-      "Action": "pass",
-      "Elapsed": 18.42
-    },
-    {
-      "Test": "TestRefreshCredOwnerOnly",
-      "Action": "pass",
-      "Elapsed": 18.52
-    },
-    {
-      "Test": "TestNodeHasModelToleratesMissingKey",
-      "Action": "pass",
-      "Elapsed": 13.84
-    },
-    {
-      "Test": "TestBackupFailureClearsPending",
-      "Action": "pass",
-      "Elapsed": 27.93
-    },
-    {
-      "Test": "TestEmptyCreatedByRefused",
-      "Action": "pass",
-      "Elapsed": 18.85
-    },
-    {
-      "Test": "TestSchemaDropLeavesNoG4Tables",
-      "Action": "pass",
-      "Elapsed": 18.68
-    },
-    {
-      "Test": "TestOptionsEmptyListsAreArrays",
-      "Action": "pass",
-      "Elapsed": 14.9
-    },
-    {
-      "Test": "TestLoginPrechecksAndEmailInSameInsert",
-      "Action": "pass",
-      "Elapsed": 17.92
-    },
-    {
-      "Test": "TestLoginUploadBoundToSessionNode",
-      "Action": "pass",
-      "Elapsed": 14.07
-    },
-    {
-      "Test": "TestFailedGateStopsTheChain",
-      "Action": "pass",
-      "Elapsed": 39.07
+      "Elapsed": 9.04
     },
     {
       "Test": "TestDestroyBackupFailedTyped",
       "Action": "pass",
-      "Elapsed": 17.97
+      "Elapsed": 9.23
     },
     {
-      "Test": "TestNodeDownLeavesStateAndCredential",
+      "Test": "TestR31AdmissionAndNodeRevocationCommitOrder",
       "Action": "pass",
-      "Elapsed": 50.7
+      "Elapsed": 9.26
     },
     {
-      "Test": "TestLoginStartHappy",
+      "Test": "TestLoginCompleteOneShotExpiryAndFailures",
       "Action": "pass",
-      "Elapsed": 16.22
-    },
-    {
-      "Test": "TestAccountNameUniquePerOwner",
-      "Action": "pass",
-      "Elapsed": 17.71
-    },
-    {
-      "Test": "TestLifecycleJobPersistsProgressAndMachineReason",
-      "Action": "pass",
-      "Elapsed": 27.11
+      "Elapsed": 9.41
     },
     {
       "Test": "TestWrapUnwrapRoundtrip",
       "Action": "pass",
-      "Elapsed": 13.6
+      "Elapsed": 4.97
     },
     {
-      "Test": "TestPlanDiskTiersPinned",
+      "Test": "TestLoginStartHappy",
       "Action": "pass",
-      "Elapsed": 13.37
-    },
-    {
-      "Test": "TestLoginQuotaEventRequiresTypedLoginIdentity",
-      "Action": "pass",
-      "Elapsed": 13.27
+      "Elapsed": 13.46
     },
     {
       "Test": "TestR31AdmissionUsesOwnerNotAdministratorAuditActor",
       "Action": "pass",
-      "Elapsed": 18.62
+      "Elapsed": 13.5
     },
     {
       "Test": "TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart",
       "Action": "pass",
-      "Elapsed": 20.4
+      "Elapsed": 13.65
     },
     {
-      "Test": "TestFrozenR30ApplySchemaUpgradesPreA1PreB2Shape",
+      "Test": "TestLoginTotalCapBindsWithThreeNodes",
       "Action": "pass",
-      "Elapsed": 17.39
+      "Elapsed": 13.86
     },
     {
-      "Test": "TestLoginStaleCompletingWithoutClaimedAt",
+      "Test": "TestLoginUploadBoundToSessionNode",
       "Action": "pass",
-      "Elapsed": 13.83
+      "Elapsed": 13.91
     },
     {
-      "Test": "TestLifecycleOrderOnOneLog",
+      "Test": "TestRefreshCredOwnerOnly",
       "Action": "pass",
-      "Elapsed": 31.99
+      "Elapsed": 9.6
     },
     {
-      "Test": "TestLoginCompleteRegisters",
-      "Action": "pass",
-      "Elapsed": 13.92
-    },
-    {
-      "Test": "TestReleaseAndDestroyedNotCounted",
-      "Action": "pass",
-      "Elapsed": 13.51
-    },
-    {
-      "Test": "TestR31NodeRegistrationCredentialAndAtomicAudit",
-      "Action": "pass",
-      "Elapsed": 12.96
-    },
-    {
-      "Test": "TestIDTokenEmail",
-      "Action": "pass",
-      "Elapsed": 8.07
-    },
-    {
-      "Test": "TestLoginConcurrencyCaps",
-      "Action": "pass",
-      "Elapsed": 12.89
-    },
-    {
-      "Test": "TestLoginSweepAndRecover",
-      "Action": "pass",
-      "Elapsed": 11.49
-    },
-    {
-      "Test": "TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices",
-      "Action": "pass",
-      "Elapsed": 11.46
-    },
-    {
-      "Test": "TestOptionsJSONMatchesContract",
-      "Action": "pass",
-      "Elapsed": 13.35
-    },
-    {
-      "Test": "TestMarkOnlineOnlyFromStarting",
-      "Action": "pass",
-      "Elapsed": 13.27
-    },
-    {
-      "Test": "TestLateConnectOnlyForExistingTimeout",
-      "Action": "pass",
-      "Elapsed": 14.61
-    },
-    {
-      "Test": "TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission",
-      "Action": "pass",
-      "Elapsed": 13.57
-    },
-    {
-      "Test": "TestR31HostedApplySchemaUsesUnifiedLedger",
-      "Action": "pass",
-      "Elapsed": 14.25
-    },
-    {
-      "Test": "TestLoginClaimCompletingIsAtomic",
-      "Action": "pass",
-      "Elapsed": 13.99
-    },
-    {
-      "Test": "TestBackupChecksumControlPlane",
-      "Action": "pass",
-      "Elapsed": 41.08
-    },
-    {
-      "Test": "TestQuotaCheckBoundaries",
-      "Action": "pass",
-      "Elapsed": 13.95
-    },
-    {
-      "Test": "TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed",
-      "Action": "pass",
-      "Elapsed": 15.44
-    },
-    {
-      "Test": "TestCreateTimeoutStillRetires",
-      "Action": "pass",
-      "Elapsed": 15.38
-    },
-    {
-      "Test": "TestFrozenR30LoginSchemaUpgradesOldDefinition",
-      "Action": "pass",
-      "Elapsed": 15.04
-    },
-    {
-      "Test": "TestConfirmRequiredGates",
-      "Action": "pass",
-      "Elapsed": 15.24
-    },
-    {
-      "Test": "TestSealPerRecordNonceAndWrongKey",
-      "Action": "pass",
-      "Elapsed": 9.48
-    },
-    {
-      "Test": "TestCapacityReasonSanitizationAndCompatibility",
-      "Action": "pass",
-      "Elapsed": 9.15
-    },
-    {
-      "Test": "TestRunJobFailureCleanup",
-      "Action": "pass",
-      "Elapsed": 14.58
-    },
-    {
-      "Test": "TestDestroyCleanupSurvivesClientCancellation",
-      "Action": "pass",
-      "Elapsed": 15.71
-    },
-    {
-      "Test": "TestOwnershipEnforced",
-      "Action": "pass",
-      "Elapsed": 26.34
-    },
-    {
-      "Test": "TestCreateWithModelSelectsSupportingNode",
-      "Action": "pass",
-      "Elapsed": 15.46
-    },
-    {
-      "Test": "TestOwnedAccountLifecycle",
-      "Action": "pass",
-      "Elapsed": 11.15
-    },
-    {
-      "Test": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
-      "Action": "pass",
-      "Elapsed": 12.38
-    },
-    {
-      "Test": "TestR31NodeGroupAccessAndRevocation",
-      "Action": "pass",
-      "Elapsed": 12.55
-    },
-    {
-      "Test": "TestMinimumPlanDefinitionAndNetCapacity",
-      "Action": "pass",
-      "Elapsed": 8.28
-    },
-    {
-      "Test": "TestRestartFailureAfterAgentConnectedKeepsOnline",
-      "Action": "pass",
-      "Elapsed": 14.72
-    },
-    {
-      "Test": "TestSweepExpiredBackupsReclaimsOnlyStalePending",
-      "Action": "pass",
-      "Elapsed": 13.48
-    },
-    {
-      "Test": "TestLoginStaleCompletingIsSwept",
-      "Action": "pass",
-      "Elapsed": 13.18
-    },
-    {
-      "Test": "TestLifecycleJobRecoveryLeavesNoActiveRows",
-      "Action": "pass",
-      "Elapsed": 23.34
-    },
-    {
-      "Test": "TestLoginRelogin",
-      "Action": "pass",
-      "Elapsed": 13.85
-    },
-    {
-      "Test": "TestStartingWriteFailureDoesNotSuspendALiveCredential",
-      "Action": "pass",
-      "Elapsed": 17.03
-    },
-    {
-      "Test": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
-      "Action": "pass",
-      "Elapsed": 16.21
-    },
-    {
-      "Test": "TestEnableRestartFailureAfterStarting",
-      "Action": "pass",
-      "Elapsed": 25.4
-    },
-    {
-      "Test": "TestRestartAfterFailedStopResumesCredential",
-      "Action": "pass",
-      "Elapsed": 15.29
-    },
-    {
-      "Test": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
-      "Action": "pass",
-      "Elapsed": 19.72
-    },
-    {
-      "Test": "TestStartingWriteFailureUndoesResume",
-      "Action": "pass",
-      "Elapsed": 20.94
-    },
-    {
-      "Test": "TestRefreshCredRecoverJobs",
-      "Action": "pass",
-      "Elapsed": 17.99
-    },
-    {
-      "Test": "TestReconcileOnNodeReconnect",
-      "Action": "pass",
-      "Elapsed": 16.23
-    },
-    {
-      "Test": "TestCapacityFinalGateLifecycleJobs",
-      "Action": "pass",
-      "Elapsed": 15.16
-    },
-    {
-      "Test": "TestLoginDoneNotOverwrittenBySweepOrCancel",
-      "Action": "pass",
-      "Elapsed": 14.75
-    },
-    {
-      "Test": "TestCreateWithoutGroupSucceeds",
-      "Action": "pass",
-      "Elapsed": 16.13
-    },
-    {
-      "Test": "TestOptionsViewAndJobProgress",
-      "Action": "pass",
-      "Elapsed": 16.5
-    },
-    {
-      "Test": "TestSoftHoldLegacyEventStateAppliedOnce",
-      "Action": "pass",
-      "Elapsed": 15.31
-    },
-    {
-      "Test": "TestConcurrentDestroyRequestsShareOneJobAndOneBackup",
-      "Action": "pass",
-      "Elapsed": 15.09
-    },
-    {
-      "Test": "TestSoftCreateFailureDoesNotAbortOrReleaseIdentity",
-      "Action": "pass",
-      "Elapsed": 13.95
-    },
-    {
-      "Test": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
-      "Action": "pass",
-      "Elapsed": 13.66
-    },
-    {
-      "Test": "TestCapacityReplyStrictProtocolAndRegistration",
-      "Action": "pass",
-      "Elapsed": 11.68
-    },
-    {
-      "Test": "TestRefreshCredStateGate",
-      "Action": "pass",
-      "Elapsed": 12.31
-    },
-    {
-      "Test": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
-      "Action": "pass",
-      "Elapsed": 12.53
-    },
-    {
-      "Test": "TestBackupHandlerAuthAndStates",
-      "Action": "pass",
-      "Elapsed": 13.56
-    },
-    {
-      "Test": "TestOptionsModelsUnionOnlineOnly",
-      "Action": "pass",
-      "Elapsed": 12.18
-    },
-    {
-      "Test": "TestHardNodeResourceExtensionNegotiated",
-      "Action": "pass",
-      "Elapsed": 12.26
-    },
-    {
-      "Test": "TestUpgradeRollbackOnNodeFailure",
-      "Action": "pass",
-      "Elapsed": 12.46
-    },
-    {
-      "Test": "TestUpgradeUsesRecordedModel",
-      "Action": "pass",
-      "Elapsed": 12.28
-    },
-    {
-      "Test": "TestSoftHoldHubReleaseAuditAndUncertainNoResend",
-      "Action": "pass",
-      "Elapsed": 13.66
-    },
-    {
-      "Test": "TestReconcileGuards",
-      "Action": "pass",
-      "Elapsed": 15.33
-    },
-    {
-      "Test": "TestCapacityFinalGateCreateJobsAndCleanup",
-      "Action": "pass",
-      "Elapsed": 13.61
-    },
-    {
-      "Test": "TestAccessCtxValid",
-      "Action": "pass",
-      "Elapsed": 13.09
-    },
-    {
-      "Test": "TestBackupDuplicateUploadWhilePending",
-      "Action": "pass",
-      "Elapsed": 13.39
-    },
-    {
-      "Test": "TestQuotaListWithUsage",
-      "Action": "pass",
-      "Elapsed": 13.57
-    },
-    {
-      "Test": "TestPlanTable",
-      "Action": "pass",
-      "Elapsed": 9.01
-    },
-    {
-      "Test": "TestReconcileDoesNotBackupTwice",
-      "Action": "pass",
-      "Elapsed": 15.46
-    },
-    {
-      "Test": "TestRefreshStartingTimeoutIsExistingSeat",
-      "Action": "pass",
-      "Elapsed": 14.52
-    },
-    {
-      "Test": "TestAccountSecretValidation",
-      "Action": "pass",
-      "Elapsed": 13.47
-    },
-    {
-      "Test": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
-      "Action": "pass",
-      "Elapsed": 14.91
-    },
-    {
-      "Test": "TestR31StatePatchCannotRestoreConcurrentRevocation",
-      "Action": "pass",
-      "Elapsed": 13.67
-    },
-    {
-      "Test": "TestCreateFailurePathsAbortTheIssue",
-      "Action": "pass",
-      "Elapsed": 22.49
-    },
-    {
-      "Test": "TestMinimumPlanOptionsAndRealCreateResources",
-      "Action": "pass",
-      "Elapsed": 14
-    },
-    {
-      "Test": "TestCreateHappyPathCodexFirst",
-      "Action": "pass",
-      "Elapsed": 13.39
-    },
-    {
-      "Test": "TestCreateModelRejections",
-      "Action": "pass",
-      "Elapsed": 13.56
-    },
-    {
-      "Test": "TestRefreshCredAccountGate",
-      "Action": "pass",
-      "Elapsed": 16.45
-    },
-    {
-      "Test": "TestStaticRegistriesFailClosed",
-      "Action": "pass",
-      "Elapsed": 12.06
-    },
-    {
-      "Test": "TestCapacityStartReasonAndUnknown",
-      "Action": "pass",
-      "Elapsed": 13.61
-    },
-    {
-      "Test": "TestClientCancellationOrphanPendingIsEventuallySwept",
-      "Action": "pass",
-      "Elapsed": 13.25
-    },
-    {
-      "Test": "TestBackupNodeOfflineStopsDestroy",
-      "Action": "pass",
-      "Elapsed": 13.63
-    },
-    {
-      "Test": "TestConcurrentCreateSameAccount",
-      "Action": "pass",
-      "Elapsed": 12.74
-    },
-    {
-      "Test": "TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint",
-      "Action": "pass",
-      "Elapsed": 12.74
-    },
-    {
-      "Test": "TestFrozenR30SchemaModelColumnMigration",
-      "Action": "pass",
-      "Elapsed": 13.21
-    },
-    {
-      "Test": "TestRefreshCredResumesSuspendedCredential",
-      "Action": "pass",
-      "Elapsed": 38.43
-    },
-    {
-      "Test": "TestUpgradeWhileDisabledRejected",
-      "Action": "pass",
-      "Elapsed": 13.61
-    },
-    {
-      "Test": "TestStartingUntilAgentConnectsElseTimeout",
-      "Action": "pass",
-      "Elapsed": 14
-    },
-    {
-      "Test": "TestRestartTimeoutKeepsExistingSeat",
-      "Action": "pass",
-      "Elapsed": 13.87
-    },
-    {
-      "Test": "TestTeamKeyServiceFlow",
-      "Action": "pass",
-      "Elapsed": 14.61
-    },
-    {
-      "Test": "TestLegacyBoundAccountSharable",
-      "Action": "pass",
-      "Elapsed": 16.49
-    },
-    {
-      "Test": "TestRollbackResetSQL",
-      "Action": "pass",
-      "Elapsed": 14.13
-    },
-    {
-      "Test": "TestRefreshCredNodeOutcomes",
-      "Action": "pass",
-      "Elapsed": 27.06
-    },
-    {
-      "Test": "TestNeverConnectsSweepedStartTimeout",
-      "Action": "pass",
-      "Elapsed": 15.93
-    },
-    {
-      "Test": "TestDefenseInDepthAccountBoundaries",
-      "Action": "pass",
-      "Elapsed": 17.32
-    },
-    {
-      "Test": "TestDestroyOfflineNodeLeavesReconcileRecord",
-      "Action": "pass",
-      "Elapsed": 17
-    },
-    {
-      "Test": "TestOnlineAfterExistingTimeoutKeepsDetailCondition",
-      "Action": "pass",
-      "Elapsed": 11.5
-    },
-    {
-      "Test": "TestRefreshCredAsJob",
-      "Action": "pass",
-      "Elapsed": 15.21
-    },
-    {
-      "Test": "TestLoginStartExpiresOwnStaleSession",
-      "Action": "pass",
-      "Elapsed": 17
-    },
-    {
-      "Test": "TestDestroyCanBeRetriedAfterHubDiesMidJob",
-      "Action": "pass",
-      "Elapsed": 13.88
-    },
-    {
-      "Test": "TestTokenWriteBackAndUnbindPrep",
-      "Action": "pass",
-      "Elapsed": 15.23
-    },
-    {
-      "Test": "TestSoftHoldReleasePendingEventConverges",
-      "Action": "pass",
-      "Elapsed": 35.83
-    },
-    {
-      "Test": "TestClaudeTokenFileABI",
-      "Action": "pass",
-      "Elapsed": 12.93
-    },
-    {
-      "Test": "TestHostedItemErrorCounted",
-      "Action": "pass",
-      "Elapsed": 17.04
-    },
-    {
-      "Test": "TestCapacityRequestReasonAndModelSelection",
-      "Action": "pass",
-      "Elapsed": 16.14
-    },
-    {
-      "Test": "TestOptionsPlanFitsEachGate",
-      "Action": "pass",
-      "Elapsed": 27.92
-    },
-    {
-      "Test": "TestLoginEmailValidation",
-      "Action": "pass",
-      "Elapsed": 16.78
-    },
-    {
-      "Test": "TestLoginPerNodeCapBindsWithOneNode",
-      "Action": "pass",
-      "Elapsed": 15.84
-    },
-    {
-      "Test": "TestHubParamsSatisfyNodeContract",
-      "Action": "pass",
-      "Elapsed": 13.94
-    },
-    {
-      "Test": "TestLifecycleJobDuplicatePolicy",
-      "Action": "pass",
-      "Elapsed": 14.66
-    },
-    {
-      "Test": "TestCheckCreateCodeSplit",
-      "Action": "pass",
-      "Elapsed": 28.61
-    },
-    {
-      "Test": "TestCreateVsDisableSerialized",
-      "Action": "pass",
-      "Elapsed": 20.98
-    },
-    {
-      "Test": "TestTokenFileDisplayNoContentTail",
-      "Action": "pass",
-      "Elapsed": 16
-    },
-    {
-      "Test": "TestMinimumPlanQuotaDebitsAndEveryDimension",
-      "Action": "pass",
-      "Elapsed": 17.84
-    },
-    {
-      "Test": "TestClaudeModelCreatePersistsAndDispatchesApprovedValue",
-      "Action": "pass",
-      "Elapsed": 14.42
-    },
-    {
-      "Test": "TestUnwrapWrongMasterFails",
-      "Action": "pass",
-      "Elapsed": 9.42
-    },
-    {
-      "Test": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
-      "Action": "pass",
-      "Elapsed": 14.41
-    },
-    {
-      "Test": "TestCapacityStoreSerializesConcurrentReservations",
-      "Action": "pass",
-      "Elapsed": 13.96
-    },
-    {
-      "Test": "TestFrozenR30SchemaBackfillAndJobOp",
-      "Action": "pass",
-      "Elapsed": 10.29
-    },
-    {
-      "Test": "TestCreateGroupErrorsPropagate",
-      "Action": "pass",
-      "Elapsed": 16.65
-    },
-    {
-      "Test": "TestR31HardConcurrentReservationsDoNotOversell",
+      "Test": "TestEmptyCreatedByRefused",
       "Action": "pass",
       "Elapsed": 13.49
     },
     {
-      "Test": "TestEnableRestartWaitForAgentConnect",
+      "Test": "TestNodeHasModelToleratesMissingKey",
       "Action": "pass",
-      "Elapsed": 18.19
+      "Elapsed": 8.89
     },
     {
-      "Test": "TestDestroyStopsBeforeBackup",
+      "Test": "TestSweepTimeouts",
       "Action": "pass",
-      "Elapsed": 21.23
+      "Elapsed": 13.6
+    },
+    {
+      "Test": "TestDestroyReturnsAccountToPool",
+      "Action": "pass",
+      "Elapsed": 13.67
+    },
+    {
+      "Test": "TestLoginOnePerUserAndCooldown",
+      "Action": "pass",
+      "Elapsed": 9.67
+    },
+    {
+      "Test": "TestJobProgressForOwnerBySeat",
+      "Action": "pass",
+      "Elapsed": 9.63
+    },
+    {
+      "Test": "TestFailureAfterAgentConnectedKeepsOnline",
+      "Action": "pass",
+      "Elapsed": 13.41
+    },
+    {
+      "Test": "TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess",
+      "Action": "pass",
+      "Elapsed": 13.58
+    },
+    {
+      "Test": "TestCheckCreateDiskGate",
+      "Action": "pass",
+      "Elapsed": 9.82
+    },
+    {
+      "Test": "TestClientCancellationOrphanPendingIsEventuallySwept",
+      "Action": "pass",
+      "Elapsed": 13.65
+    },
+    {
+      "Test": "TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath",
+      "Action": "pass",
+      "Elapsed": 18.76
+    },
+    {
+      "Test": "TestConcurrentCreateSameAccount",
+      "Action": "pass",
+      "Elapsed": 14
+    },
+    {
+      "Test": "TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint",
+      "Action": "pass",
+      "Elapsed": 14.27
+    },
+    {
+      "Test": "TestStaticRegistriesFailClosed",
+      "Action": "pass",
+      "Elapsed": 14.16
+    },
+    {
+      "Test": "TestLoginAccountLimitPrecheck",
+      "Action": "pass",
+      "Elapsed": 14.5
+    },
+    {
+      "Test": "TestLifecycleOrderOnOneLog",
+      "Action": "pass",
+      "Elapsed": 27.96
+    },
+    {
+      "Test": "TestLegacyBoundAccountSharable",
+      "Action": "pass",
+      "Elapsed": 22
+    },
+    {
+      "Test": "TestLoginTerminalStatesClearLinkAndCode",
+      "Action": "pass",
+      "Elapsed": 27.19
+    },
+    {
+      "Test": "TestAccountNameUniquePerOwner",
+      "Action": "pass",
+      "Elapsed": 23.56
+    },
+    {
+      "Test": "TestFrozenR30ApplySchemaUpgradesPreA1PreB2Shape",
+      "Action": "pass",
+      "Elapsed": 22.58
+    },
+    {
+      "Test": "TestNeverConnectsSweepedStartTimeout",
+      "Action": "pass",
+      "Elapsed": 22.6
+    },
+    {
+      "Test": "TestPlanDiskTiersPinned",
+      "Action": "pass",
+      "Elapsed": 17.62
+    },
+    {
+      "Test": "TestStartingUntilAgentConnectsElseTimeout",
+      "Action": "pass",
+      "Elapsed": 23.6
+    },
+    {
+      "Test": "TestBackupChecksumControlPlane",
+      "Action": "pass",
+      "Elapsed": 33.47
+    },
+    {
+      "Test": "TestTeamKeyServiceFlow",
+      "Action": "pass",
+      "Elapsed": 22.28
+    },
+    {
+      "Test": "TestLoginQuotaAuditDoesNotMutateHostedSeat",
+      "Action": "pass",
+      "Elapsed": 22.91
+    },
+    {
+      "Test": "TestLoginCompleteRegisters",
+      "Action": "pass",
+      "Elapsed": 19.29
+    },
+    {
+      "Test": "TestRollbackResetSQL",
+      "Action": "pass",
+      "Elapsed": 19.35
+    },
+    {
+      "Test": "TestUpgradeWhileDisabledRejected",
+      "Action": "pass",
+      "Elapsed": 17.58
+    },
+    {
+      "Test": "TestLoginConcurrencyCaps",
+      "Action": "pass",
+      "Elapsed": 15.81
+    },
+    {
+      "Test": "TestLoginStartExpiresOwnStaleSession",
+      "Action": "pass",
+      "Elapsed": 15.49
+    },
+    {
+      "Test": "TestZZ_AgentConnectingBeforeStartingIsNotLost",
+      "Action": "pass",
+      "Elapsed": 27.83
+    },
+    {
+      "Test": "TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices",
+      "Action": "pass",
+      "Elapsed": 18.3
+    },
+    {
+      "Test": "TestSoftHoldReleasePendingEventConverges",
+      "Action": "pass",
+      "Elapsed": 42.95
+    },
+    {
+      "Test": "TestCapacityStoreSerializesConcurrentReservations",
+      "Action": "pass",
+      "Elapsed": 16.4
+    },
+    {
+      "Test": "TestOptionsJSONMatchesContract",
+      "Action": "pass",
+      "Elapsed": 16.62
+    },
+    {
+      "Test": "TestClaudeModelCreatePersistsAndDispatchesApprovedValue",
+      "Action": "pass",
+      "Elapsed": 20.04
+    },
+    {
+      "Test": "TestCreateRejections",
+      "Action": "pass",
+      "Elapsed": 16.46
+    },
+    {
+      "Test": "TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission",
+      "Action": "pass",
+      "Elapsed": 18.62
+    },
+    {
+      "Test": "TestNodeDownLeavesStateAndCredential",
+      "Action": "pass",
+      "Elapsed": 56.25
+    },
+    {
+      "Test": "TestCreateGroupErrorsPropagate",
+      "Action": "pass",
+      "Elapsed": 21.3
+    },
+    {
+      "Test": "TestLoginClaimCompletingIsAtomic",
+      "Action": "pass",
+      "Elapsed": 18.58
+    },
+    {
+      "Test": "TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed",
+      "Action": "pass",
+      "Elapsed": 20.05
+    },
+    {
+      "Test": "TestR31StatePatchCannotRestoreConcurrentRevocation",
+      "Action": "pass",
+      "Elapsed": 19.66
+    },
+    {
+      "Test": "TestQuotaCheckBoundaries",
+      "Action": "pass",
+      "Elapsed": 19.19
+    },
+    {
+      "Test": "TestMinimumPlanOptionsAndRealCreateResources",
+      "Action": "pass",
+      "Elapsed": 19.28
+    },
+    {
+      "Test": "TestOwnershipEnforced",
+      "Action": "pass",
+      "Elapsed": 32.99
+    },
+    {
+      "Test": "TestCreateTimeoutStillRetires",
+      "Action": "pass",
+      "Elapsed": 19.6
+    },
+    {
+      "Test": "TestSealPerRecordNonceAndWrongKey",
+      "Action": "pass",
+      "Elapsed": 14.18
+    },
+    {
+      "Test": "TestFrozenR30LoginSchemaUpgradesOldDefinition",
+      "Action": "pass",
+      "Elapsed": 22.37
+    },
+    {
+      "Test": "TestAccountSecretValidation",
+      "Action": "pass",
+      "Elapsed": 22.75
     },
     {
       "Test": "TestBackupIntegrityRejected",
       "Action": "pass",
-      "Elapsed": 27.64
+      "Elapsed": 37.79
+    },
+    {
+      "Test": "TestCreateModelRejections",
+      "Action": "pass",
+      "Elapsed": 19.44
+    },
+    {
+      "Test": "TestLoginStartNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 33.63
+    },
+    {
+      "Test": "TestBackupNodeOfflineStopsDestroy",
+      "Action": "pass",
+      "Elapsed": 15.25
+    },
+    {
+      "Test": "TestLoginRelogin",
+      "Action": "pass",
+      "Elapsed": 17.93
+    },
+    {
+      "Test": "TestRestartAfterFailedStopResumesCredential",
+      "Action": "pass",
+      "Elapsed": 14.62
+    },
+    {
+      "Test": "TestCapacityFinalGateLifecycleJobs",
+      "Action": "pass",
+      "Elapsed": 14.81
+    },
+    {
+      "Test": "TestDestroyCleanupSurvivesClientCancellation",
+      "Action": "pass",
+      "Elapsed": 13.94
+    },
+    {
+      "Test": "TestOwnedAccountLifecycle",
+      "Action": "pass",
+      "Elapsed": 10.69
+    },
+    {
+      "Test": "TestCreateWithModelSelectsSupportingNode",
+      "Action": "pass",
+      "Elapsed": 14.48
+    },
+    {
+      "Test": "TestR31NodeGroupAccessAndRevocation",
+      "Action": "pass",
+      "Elapsed": 10.72
+    },
+    {
+      "Test": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
+      "Action": "pass",
+      "Elapsed": 14.4
+    },
+    {
+      "Test": "TestR31HardConcurrentReservationsDoNotOversell",
+      "Action": "pass",
+      "Elapsed": 14.33
+    },
+    {
+      "Test": "TestRestartFailureAfterAgentConnectedKeepsOnline",
+      "Action": "pass",
+      "Elapsed": 18.52
+    },
+    {
+      "Test": "TestReconcileDoesNotBackupTwice",
+      "Action": "pass",
+      "Elapsed": 15.24
+    },
+    {
+      "Test": "TestLoginStaleCompletingIsSwept",
+      "Action": "pass",
+      "Elapsed": 15.08
+    },
+    {
+      "Test": "TestIDTokenEmail",
+      "Action": "pass",
+      "Elapsed": 10.41
+    },
+    {
+      "Test": "TestEnableRestartFailureAfterStarting",
+      "Action": "pass",
+      "Elapsed": 33.17
+    },
+    {
+      "Test": "TestCapacityStartReasonAndUnknown",
+      "Action": "pass",
+      "Elapsed": 18.49
+    },
+    {
+      "Test": "TestLifecycleJobRecoveryLeavesNoActiveRows",
+      "Action": "pass",
+      "Elapsed": 24.07
+    },
+    {
+      "Test": "TestRestartTimeoutKeepsExistingSeat",
+      "Action": "pass",
+      "Elapsed": 18.65
+    },
+    {
+      "Test": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
+      "Action": "pass",
+      "Elapsed": 15.48
+    },
+    {
+      "Test": "TestDefenseInDepthAccountBoundaries",
+      "Action": "pass",
+      "Elapsed": 15.09
+    },
+    {
+      "Test": "TestOnlineAfterExistingTimeoutKeepsDetailCondition",
+      "Action": "pass",
+      "Elapsed": 6
+    },
+    {
+      "Test": "TestRefreshStartingTimeoutIsExistingSeat",
+      "Action": "pass",
+      "Elapsed": 18.06
+    },
+    {
+      "Test": "TestPlanTable",
+      "Action": "pass",
+      "Elapsed": 8.26
+    },
+    {
+      "Test": "TestTokenWriteBackAndUnbindPrep",
+      "Action": "pass",
+      "Elapsed": 14.51
+    },
+    {
+      "Test": "TestRefreshCredAsJob",
+      "Action": "pass",
+      "Elapsed": 13.82
+    },
+    {
+      "Test": "TestTokenFileDisplayNoContentTail",
+      "Action": "pass",
+      "Elapsed": 14.23
+    },
+    {
+      "Test": "TestDestroyCanBeRetriedAfterHubDiesMidJob",
+      "Action": "pass",
+      "Elapsed": 10.25
+    },
+    {
+      "Test": "TestOptionsEmptyListsAreArrays",
+      "Action": "pass",
+      "Elapsed": 10.02
+    },
+    {
+      "Test": "TestLoginPrechecksAndEmailInSameInsert",
+      "Action": "pass",
+      "Elapsed": 10.31
+    },
+    {
+      "Test": "TestCreateHappyPathCodexFirst",
+      "Action": "pass",
+      "Elapsed": 10.22
+    },
+    {
+      "Test": "TestSchemaDropLeavesNoG4Tables",
+      "Action": "pass",
+      "Elapsed": 13.95
+    },
+    {
+      "Test": "TestFrozenR30SchemaModelColumnMigration",
+      "Action": "pass",
+      "Elapsed": 13.65
+    },
+    {
+      "Test": "TestQuotaListWithUsage",
+      "Action": "pass",
+      "Elapsed": 17.93
+    },
+    {
+      "Test": "TestCheckCreateCodeSplit",
+      "Action": "pass",
+      "Elapsed": 32.67
+    },
+    {
+      "Test": "TestSweepExpiredBackupsReclaimsOnlyStalePending",
+      "Action": "pass",
+      "Elapsed": 15.1
+    },
+    {
+      "Test": "TestOptionsModelsUnionOnlineOnly",
+      "Action": "pass",
+      "Elapsed": 19.22
+    },
+    {
+      "Test": "TestReleaseAndDestroyedNotCounted",
+      "Action": "pass",
+      "Elapsed": 18.98
+    },
+    {
+      "Test": "TestRefreshCredNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 28
+    },
+    {
+      "Test": "TestCapacityFinalGateCreateJobsAndCleanup",
+      "Action": "pass",
+      "Elapsed": 19.27
+    },
+    {
+      "Test": "TestLifecycleJobPersistsProgressAndMachineReason",
+      "Action": "pass",
+      "Elapsed": 23.47
+    },
+    {
+      "Test": "TestR31NodeRegistrationCredentialAndAtomicAudit",
+      "Action": "pass",
+      "Elapsed": 22.56
+    },
+    {
+      "Test": "TestLoginStaleCompletingWithoutClaimedAt",
+      "Action": "pass",
+      "Elapsed": 22.65
+    },
+    {
+      "Test": "TestBackupDuplicateUploadWhilePending",
+      "Action": "pass",
+      "Elapsed": 19.11
+    },
+    {
+      "Test": "TestQuotaRegistrationAndCapacityCannotSelfDowngrade",
+      "Action": "pass",
+      "Elapsed": 9.78
+    },
+    {
+      "Test": "TestBackupUsesLongTimeout",
+      "Action": "pass",
+      "Elapsed": 18.65
+    },
+    {
+      "Test": "TestLoginSweepAndRecover",
+      "Action": "pass",
+      "Elapsed": 18.83
+    },
+    {
+      "Test": "TestAccessCtxValid",
+      "Action": "pass",
+      "Elapsed": 17.93
+    },
+    {
+      "Test": "TestCreateWithoutGroupSucceeds",
+      "Action": "pass",
+      "Elapsed": 18.19
+    },
+    {
+      "Test": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
+      "Action": "pass",
+      "Elapsed": 14.08
+    },
+    {
+      "Test": "TestRunJobFailureCleanup",
+      "Action": "pass",
+      "Elapsed": 10.18
+    },
+    {
+      "Test": "TestSoftCreateFailureDoesNotAbortOrReleaseIdentity",
+      "Action": "pass",
+      "Elapsed": 13.12
+    },
+    {
+      "Test": "TestRefreshCredRecoverJobs",
+      "Action": "pass",
+      "Elapsed": 13.16
+    },
+    {
+      "Test": "TestLoginQuotaEventRequiresTypedLoginIdentity",
+      "Action": "pass",
+      "Elapsed": 8.88
+    },
+    {
+      "Test": "TestRefreshCredStateGate",
+      "Action": "pass",
+      "Elapsed": 13.73
+    },
+    {
+      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
+      "Action": "pass",
+      "Elapsed": 45.12
+    },
+    {
+      "Test": "TestReconcileOnNodeReconnect",
+      "Action": "pass",
+      "Elapsed": 13.15
+    },
+    {
+      "Test": "TestLoginDoneNotOverwrittenBySweepOrCancel",
+      "Action": "pass",
+      "Elapsed": 12.92
+    },
+    {
+      "Test": "TestCreateFailurePathsAbortTheIssue",
+      "Action": "pass",
+      "Elapsed": 23
+    },
+    {
+      "Test": "TestR31HostedApplySchemaUsesUnifiedLedger",
+      "Action": "pass",
+      "Elapsed": 13.77
+    },
+    {
+      "Test": "TestConfirmRequiredGates",
+      "Action": "pass",
+      "Elapsed": 16.5
+    },
+    {
+      "Test": "TestMinimumPlanDefinitionAndNetCapacity",
+      "Action": "pass",
+      "Elapsed": 11.88
+    },
+    {
+      "Test": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "Action": "pass",
+      "Elapsed": 16.7
+    },
+    {
+      "Test": "TestMarkOnlineOnlyFromStarting",
+      "Action": "pass",
+      "Elapsed": 13.6
+    },
+    {
+      "Test": "TestLateConnectOnlyForExistingTimeout",
+      "Action": "pass",
+      "Elapsed": 18.17
+    },
+    {
+      "Test": "TestLoginEmailValidation",
+      "Action": "pass",
+      "Elapsed": 13.56
+    },
+    {
+      "Test": "TestOptionsPlanFitsEachGate",
+      "Action": "pass",
+      "Elapsed": 26.94
+    },
+    {
+      "Test": "TestCreateVsDisableSerialized",
+      "Action": "pass",
+      "Elapsed": 18.3
+    },
+    {
+      "Test": "TestCapacityReasonSanitizationAndCompatibility",
+      "Action": "pass",
+      "Elapsed": 10.17
+    },
+    {
+      "Test": "TestStartingWriteFailureDoesNotSuspendALiveCredential",
+      "Action": "pass",
+      "Elapsed": 17.28
+    },
+    {
+      "Test": "TestStartingWriteFailureUndoesResume",
+      "Action": "pass",
+      "Elapsed": 17.61
+    },
+    {
+      "Test": "TestHostedOverlay",
+      "Action": "pass",
+      "Elapsed": 16.72
+    },
+    {
+      "Test": "TestHubParamsSatisfyNodeContract",
+      "Action": "pass",
+      "Elapsed": 14.68
+    },
+    {
+      "Test": "TestCapacityReplyStrictProtocolAndRegistration",
+      "Action": "pass",
+      "Elapsed": 14.23
+    },
+    {
+      "Test": "TestFrozenR30SchemaBackfillAndJobOp",
+      "Action": "pass",
+      "Elapsed": 16.55
+    },
+    {
+      "Test": "TestSoftHoldHubReleaseAuditAndUncertainNoResend",
+      "Action": "pass",
+      "Elapsed": 13.43
+    },
+    {
+      "Test": "TestHardNodeResourceExtensionNegotiated",
+      "Action": "pass",
+      "Elapsed": 13.68
+    },
+    {
+      "Test": "TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold",
+      "Action": "pass",
+      "Elapsed": 7.88
+    },
+    {
+      "Test": "TestUnwrapWrongMasterFails",
+      "Action": "pass",
+      "Elapsed": 7.48
+    },
+    {
+      "Test": "TestOptionsViewAndJobProgress",
+      "Action": "pass",
+      "Elapsed": 14.78
+    },
+    {
+      "Test": "TestPoolScheduling",
+      "Action": "pass",
+      "Elapsed": 13.29
+    },
+    {
+      "Test": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
+      "Action": "pass",
+      "Elapsed": 11.97
+    },
+    {
+      "Test": "TestUpgradeRollbackOnNodeFailure",
+      "Action": "pass",
+      "Elapsed": 10.41
+    },
+    {
+      "Test": "TestQuotaEventValidation",
+      "Action": "pass",
+      "Elapsed": 8.96
+    },
+    {
+      "Test": "TestReconcileGuards",
+      "Action": "pass",
+      "Elapsed": 18.94
+    },
+    {
+      "Test": "TestEnableRestartWaitForAgentConnect",
+      "Action": "pass",
+      "Elapsed": 17.22
+    },
+    {
+      "Test": "TestHostedItemErrorCounted",
+      "Action": "pass",
+      "Elapsed": 13.54
+    },
+    {
+      "Test": "TestSoftHoldLegacyEventStateAppliedOnce",
+      "Action": "pass",
+      "Elapsed": 13.58
+    },
+    {
+      "Test": "TestUpgradeUsesRecordedModel",
+      "Action": "pass",
+      "Elapsed": 13.09
+    },
+    {
+      "Test": "TestJobReasonOnlyContractCodes",
+      "Action": "pass",
+      "Elapsed": 10.84
+    },
+    {
+      "Test": "TestBackupPipelineEndToEnd",
+      "Action": "pass",
+      "Elapsed": 13.45
+    },
+    {
+      "Test": "TestPickNodeStaleFrameTreatedOffline",
+      "Action": "pass",
+      "Elapsed": 14.7
+    },
+    {
+      "Test": "TestClaudeTokenFileABI",
+      "Action": "pass",
+      "Elapsed": 10.2
+    },
+    {
+      "Test": "TestLifecycleJobDuplicatePolicy",
+      "Action": "pass",
+      "Elapsed": 14.16
+    },
+    {
+      "Test": "TestClaudeMinimumPlanRemainsUnverified",
+      "Action": "pass",
+      "Elapsed": 13.7
+    },
+    {
+      "Test": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
+      "Action": "pass",
+      "Elapsed": 18.44
+    },
+    {
+      "Test": "TestDestroyOfflineNodeLeavesReconcileRecord",
+      "Action": "pass",
+      "Elapsed": 13.7
+    },
+    {
+      "Test": "TestSchemaApplyRollbackRepeatable",
+      "Action": "pass",
+      "Elapsed": 14.31
+    },
+    {
+      "Test": "TestMinimumPlanQuotaDebitsAndEveryDimension",
+      "Action": "pass",
+      "Elapsed": 16.81
+    },
+    {
+      "Test": "TestCreateSeatPKConflictIsNotAccountError",
+      "Action": "pass",
+      "Elapsed": 14.38
+    },
+    {
+      "Test": "TestRefreshCredResumesSuspendedCredential",
+      "Action": "pass",
+      "Elapsed": 41.45
+    },
+    {
+      "Test": "TestLoginPerNodeCapBindsWithOneNode",
+      "Action": "pass",
+      "Elapsed": 15.04
+    },
+    {
+      "Test": "TestConcurrentDestroyRequestsShareOneJobAndOneBackup",
+      "Action": "pass",
+      "Elapsed": 17.73
+    },
+    {
+      "Test": "TestRefreshCredHappyPath",
+      "Action": "pass",
+      "Elapsed": 14.58
+    },
+    {
+      "Test": "TestBackupHandlerAuthAndStates",
+      "Action": "pass",
+      "Elapsed": 13.73
+    },
+    {
+      "Test": "TestFailedGateStopsTheChain",
+      "Action": "pass",
+      "Elapsed": 32.37
+    },
+    {
+      "Test": "TestRefreshCredAccountGate",
+      "Action": "pass",
+      "Elapsed": 18.1
+    },
+    {
+      "Test": "TestCapacityRequestReasonAndModelSelection",
+      "Action": "pass",
+      "Elapsed": 17.54
+    },
+    {
+      "Test": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "Action": "pass",
+      "Elapsed": 15.03
+    },
+    {
+      "Test": "TestBackupFailureClearsPending",
+      "Action": "pass",
+      "Elapsed": 24.34
+    },
+    {
+      "Test": "TestDestroyStopsBeforeBackup",
+      "Action": "pass",
+      "Elapsed": 25.1
     }
   ],
   "hosted_slow15": [
     {
       "Test": "TestNodeDownLeavesStateAndCredential",
       "Action": "pass",
-      "Elapsed": 61.92
+      "Elapsed": 56.25
     },
     {
       "Test": "TestNodeDownLeavesStateAndCredential",
       "Action": "pass",
-      "Elapsed": 52.3
+      "Elapsed": 51.66
+    },
+    {
+      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
+      "Action": "pass",
+      "Elapsed": 49.7
     },
     {
       "Test": "TestNodeDownLeavesStateAndCredential",
       "Action": "pass",
-      "Elapsed": 50.7
+      "Elapsed": 49.62
     },
     {
       "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
       "Action": "pass",
-      "Elapsed": 45.81
+      "Elapsed": 45.39
     },
     {
       "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
       "Action": "pass",
-      "Elapsed": 44.79
-    },
-    {
-      "Test": "TestRefreshCredResumesSuspendedCredential",
-      "Action": "pass",
-      "Elapsed": 44.01
-    },
-    {
-      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
-      "Action": "pass",
-      "Elapsed": 42.03
-    },
-    {
-      "Test": "TestRefreshCredResumesSuspendedCredential",
-      "Action": "pass",
-      "Elapsed": 41.39
-    },
-    {
-      "Test": "TestBackupChecksumControlPlane",
-      "Action": "pass",
-      "Elapsed": 41.08
-    },
-    {
-      "Test": "TestBackupChecksumControlPlane",
-      "Action": "pass",
-      "Elapsed": 41.04
+      "Elapsed": 45.12
     },
     {
       "Test": "TestSoftHoldReleasePendingEventConverges",
       "Action": "pass",
-      "Elapsed": 40.79
-    },
-    {
-      "Test": "TestFailedGateStopsTheChain",
-      "Action": "pass",
-      "Elapsed": 39.07
+      "Elapsed": 42.95
     },
     {
       "Test": "TestRefreshCredResumesSuspendedCredential",
       "Action": "pass",
-      "Elapsed": 38.43
+      "Elapsed": 42.17
     },
     {
-      "Test": "TestLoginTerminalStatesClearLinkAndCode",
+      "Test": "TestRefreshCredResumesSuspendedCredential",
       "Action": "pass",
-      "Elapsed": 37.18
+      "Elapsed": 41.86
     },
     {
       "Test": "TestBackupChecksumControlPlane",
       "Action": "pass",
-      "Elapsed": 35.94
+      "Elapsed": 41.67
+    },
+    {
+      "Test": "TestRefreshCredResumesSuspendedCredential",
+      "Action": "pass",
+      "Elapsed": 41.45
+    },
+    {
+      "Test": "TestSoftHoldReleasePendingEventConverges",
+      "Action": "pass",
+      "Elapsed": 39.44
+    },
+    {
+      "Test": "TestBackupIntegrityRejected",
+      "Action": "pass",
+      "Elapsed": 37.79
+    },
+    {
+      "Test": "TestBackupIntegrityRejected",
+      "Action": "pass",
+      "Elapsed": 37.65
+    },
+    {
+      "Test": "TestSoftHoldReleasePendingEventConverges",
+      "Action": "pass",
+      "Elapsed": 35.88
     }
   ],
   "skips": []

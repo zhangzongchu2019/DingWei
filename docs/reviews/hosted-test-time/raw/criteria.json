@@ -1,11 +1,11 @@
 {
   "a": "通过",
-  "hosted_seconds": 215.617,
+  "hosted_seconds": 210.208,
   "b": "通过",
   "round_seconds": [
-    204.55486,
-    197.777257,
-    196.375227
+    202.131629,
+    204.018261,
+    204.952231
   ],
   "c": "通过",
   "top_before_after": [
@@ -14,5 +14,17 @@
   ],
   "hosted_skip": 0,
   "d": "通过",
+  "e": "通过",
+  "race_round_seconds": [
+    204.293389,
+    215.721986,
+    211.42965
+  ],
+  "f": "本轮 a～d 全量重跑通过",
+  "g": "串行控制绿；重新并行后读者红",
+  "serial_global_writers": [
+    "TestReconcileSeatTimeoutDoesNotStallBatch",
+    "TestUpgradeUnknownPlanNotSwallowed"
+  ],
   "serial_control_over_budget": true
 }

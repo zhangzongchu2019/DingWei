@@ -9,9 +9,9 @@
     "./..."
   ],
   "cwd": "/data/ai-dev-data/hosted-test-time-c782",
-  "start": "2026-11-11T03:05:06.826634+00:00",
+  "start": "2026-11-11T03:54:24.901098+00:00",
   "rc": 0,
-  "end": "2026-11-11T03:16:50.523475+00:00",
+  "end": "2026-11-11T04:06:28.317644+00:00",
   "packages": {
     "github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad": {
       "elapsed": [],
@@ -31,7 +31,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout": {
       "elapsed": [
-        23.099
+        25.802
       ],
       "counts": {
         "pass": 9,
@@ -41,7 +41,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/cmd/file-service": {
       "elapsed": [
-        0.057
+        0.062
       ],
       "counts": {
         "pass": 2,
@@ -77,7 +77,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/cmd/subagent-rollback": {
       "elapsed": [
-        0.215
+        0.224
       ],
       "counts": {
         "pass": 2,
@@ -87,7 +87,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
       "elapsed": [
-        248.274
+        261.183
       ],
       "counts": {
         "pass": 267,
@@ -97,7 +97,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/admin": {
       "elapsed": [
-        10.67
+        11.16
       ],
       "counts": {
         "pass": 274,
@@ -107,7 +107,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/agentmetrics": {
       "elapsed": [
-        0.004
+        0.003
       ],
       "counts": {
         "pass": 30,
@@ -117,7 +117,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/bridge": {
       "elapsed": [
-        0.002
+        0.001
       ],
       "counts": {
         "pass": 16,
@@ -127,7 +127,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/bus": {
       "elapsed": [
-        1.125
+        1.134
       ],
       "counts": {
         "pass": 14,
@@ -137,7 +137,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/changeflow": {
       "elapsed": [
-        0.041
+        0.039
       ],
       "counts": {
         "pass": 56,
@@ -167,7 +167,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/config": {
       "elapsed": [
-        0.002
+        0.003
       ],
       "counts": {
         "pass": 12,
@@ -177,7 +177,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/consolemux": {
       "elapsed": [
-        7.503
+        8.022
       ],
       "counts": {
         "pass": 12,
@@ -187,7 +187,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/coordinatereview": {
       "elapsed": [
-        3.539
+        3.5540000000000003
       ],
       "counts": {
         "pass": 24,
@@ -197,7 +197,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/coordination": {
       "elapsed": [
-        0.317
+        0.328
       ],
       "counts": {
         "pass": 2,
@@ -207,7 +207,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/datad": {
       "elapsed": [
-        0.742
+        0.733
       ],
       "counts": {
         "pass": 51,
@@ -217,7 +217,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/evidence": {
       "elapsed": [
-        0.876
+        0.902
       ],
       "counts": {
         "pass": 6,
@@ -227,7 +227,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/extseat": {
       "elapsed": [
-        51.262
+        56.787
       ],
       "counts": {
         "pass": 54,
@@ -237,7 +237,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/extshared": {
       "elapsed": [
-        0.002
+        0.001
       ],
       "counts": {
         "pass": 8,
@@ -247,7 +247,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/extwire": {
       "elapsed": [
-        3.101
+        3.491
       ],
       "counts": {
         "pass": 13,
@@ -257,7 +257,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/fanout": {
       "elapsed": [
-        70.712
+        72.943
       ],
       "counts": {
         "pass": 32,
@@ -267,7 +267,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/fcs": {
       "elapsed": [
-        1.028
+        1.032
       ],
       "counts": {
         "pass": 30,
@@ -277,7 +277,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/feishu": {
       "elapsed": [
-        0.225
+        0.227
       ],
       "counts": {
         "pass": 23,
@@ -287,7 +287,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/feishulogin": {
       "elapsed": [
-        0.016
+        0.015
       ],
       "counts": {
         "pass": 110,
@@ -297,7 +297,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/filepolicy": {
       "elapsed": [
-        0.003
+        0.004
       ],
       "counts": {
         "pass": 5,
@@ -307,7 +307,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/fileservice": {
       "elapsed": [
-        1.6989999999999998
+        1.46
       ],
       "counts": {
         "pass": 81,
@@ -317,7 +317,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/hosted": {
       "elapsed": [
-        215.617
+        210.208
       ],
       "counts": {
         "pass": 346,
@@ -327,7 +327,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/identity": {
       "elapsed": [
-        132.017
+        137.283
       ],
       "counts": {
         "pass": 215,
@@ -337,7 +337,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/identity/httpapi": {
       "elapsed": [
-        3.342
+        3.355
       ],
       "counts": {
         "pass": 65,
@@ -365,7 +365,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/lifecycle": {
       "elapsed": [
-        0.003
+        0.004
       ],
       "counts": {
         "pass": 2,
@@ -375,7 +375,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/llm": {
       "elapsed": [
-        0.003
+        0.004
       ],
       "counts": {
         "pass": 8,
@@ -385,7 +385,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/m5": {
       "elapsed": [
-        2.134
+        2.113
       ],
       "counts": {
         "pass": 22,
@@ -395,7 +395,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/m8": {
       "elapsed": [
-        236.407
+        236.872
       ],
       "counts": {
         "pass": 1543,
@@ -405,7 +405,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
       "elapsed": [
-        113.519
+        114.079
       ],
       "counts": {
         "pass": 263,
@@ -415,7 +415,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/mcs/board": {
       "elapsed": [
-        0.251
+        0.249
       ],
       "counts": {
         "pass": 56,
@@ -435,7 +435,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/mcs/demo": {
       "elapsed": [
-        0.116
+        0.129
       ],
       "counts": {
         "pass": 4,
@@ -445,7 +445,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch": {
       "elapsed": [
-        0.024
+        0.025
       ],
       "counts": {
         "pass": 7,
@@ -455,7 +455,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver": {
       "elapsed": [
-        0.026
+        0.028
       ],
       "counts": {
         "pass": 21,
@@ -465,7 +465,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd": {
       "elapsed": [
-        12.473
+        11.928
       ],
       "counts": {
         "pass": 27,
@@ -475,7 +475,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/mcs/pool": {
       "elapsed": [
-        0.152
+        0.153
       ],
       "counts": {
         "pass": 20,
@@ -513,7 +513,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/nodeagent": {
       "elapsed": [
-        6
+        6.217
       ],
       "counts": {
         "pass": 272,
@@ -523,7 +523,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/nodegate": {
       "elapsed": [
-        15.123
+        16.677
       ],
       "counts": {
         "pass": 5,
@@ -533,7 +533,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/obs": {
       "elapsed": [
-        0.554
+        0.551
       ],
       "counts": {
         "pass": 17,
@@ -543,7 +543,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/portal": {
       "elapsed": [
-        0.305
+        0.296
       ],
       "counts": {
         "pass": 2,
@@ -573,7 +573,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/reminder": {
       "elapsed": [
-        0.481
+        0.439
       ],
       "counts": {
         "pass": 3,
@@ -583,7 +583,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/repo": {
       "elapsed": [
-        3.661
+        3.985
       ],
       "counts": {
         "pass": 14,
@@ -603,7 +603,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/schedule": {
       "elapsed": [
-        1.054
+        1.047
       ],
       "counts": {
         "pass": 9,
@@ -613,7 +613,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/scheduler": {
       "elapsed": [
-        2.518
+        2.621
       ],
       "counts": {
         "pass": 22,
@@ -653,7 +653,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/specread": {
       "elapsed": [
-        0.087
+        0.083
       ],
       "counts": {
         "pass": 105,
@@ -663,7 +663,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/store": {
       "elapsed": [
-        78.473
+        79.072
       ],
       "counts": {
         "pass": 609,
@@ -673,7 +673,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/store/migrate": {
       "elapsed": [
-        54.971
+        59.173
       ],
       "counts": {
         "pass": 44,
@@ -683,7 +683,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/store/pgtest": {
       "elapsed": [
-        11.825
+        12.376
       ],
       "counts": {
         "pass": 68,
@@ -703,7 +703,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/taskdispatch": {
       "elapsed": [
-        35.275
+        36.379
       ],
       "counts": {
         "pass": 54,
@@ -713,7 +713,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/tempgroup": {
       "elapsed": [
-        18.616
+        19.682
       ],
       "counts": {
         "pass": 8,
@@ -733,7 +733,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/version": {
       "elapsed": [
-        1.6280000000000001
+        1.608
       ],
       "counts": {
         "pass": 5,
@@ -743,7 +743,7 @@
     },
     "github.com/zhangzongchu2019/dingwei/internal/worker": {
       "elapsed": [
-        2.835
+        2.866
       ],
       "counts": {
         "pass": 19,
@@ -820,1006 +820,1006 @@
   },
   "hosted_top": [
     {
-      "Test": "TestCapacityReasonSanitizationAndCompatibility",
-      "Action": "pass",
-      "Elapsed": 0
-    },
-    {
-      "Test": "TestLoginQuotaEventRequiresTypedLoginIdentity",
-      "Action": "pass",
-      "Elapsed": 0
-    },
-    {
-      "Test": "TestCapacityStartReasonAndUnknown",
-      "Action": "pass",
-      "Elapsed": 7.09
-    },
-    {
-      "Test": "TestStaticRegistriesFailClosed",
-      "Action": "pass",
-      "Elapsed": 7.09
-    },
-    {
-      "Test": "TestCapacityRequestReasonAndModelSelection",
-      "Action": "pass",
-      "Elapsed": 7.14
-    },
-    {
-      "Test": "TestEmptyCreatedByRefused",
-      "Action": "pass",
-      "Elapsed": 7.3
-    },
-    {
-      "Test": "TestR31HostedApplySchemaUsesUnifiedLedger",
-      "Action": "pass",
-      "Elapsed": 7.3
-    },
-    {
       "Test": "TestReconcileSeatTimeoutDoesNotStallBatch",
       "Action": "pass",
-      "Elapsed": 7.34
-    },
-    {
-      "Test": "TestRefreshCredAccountGate",
-      "Action": "pass",
-      "Elapsed": 12.08
-    },
-    {
-      "Test": "TestRefreshCredRecoverJobs",
-      "Action": "pass",
-      "Elapsed": 12.2
-    },
-    {
-      "Test": "TestRefreshCredAsJob",
-      "Action": "pass",
-      "Elapsed": 12.25
-    },
-    {
-      "Test": "TestCreateFailurePathsAbortTheIssue",
-      "Action": "pass",
-      "Elapsed": 12.46
-    },
-    {
-      "Test": "TestRefreshCredStateGate",
-      "Action": "pass",
-      "Elapsed": 16.75
-    },
-    {
-      "Test": "TestRefreshCredOwnerOnly",
-      "Action": "pass",
-      "Elapsed": 16.88
-    },
-    {
-      "Test": "TestRefreshCredHappyPath",
-      "Action": "pass",
-      "Elapsed": 16.89
+      "Elapsed": 3.38
     },
     {
       "Test": "TestUpgradeUnknownPlanNotSwallowed",
       "Action": "pass",
-      "Elapsed": 17.09
-    },
-    {
-      "Test": "TestR31AdmissionUsesOwnerNotAdministratorAuditActor",
-      "Action": "pass",
-      "Elapsed": 14.37
-    },
-    {
-      "Test": "TestR31HardConcurrentReservationsDoNotOversell",
-      "Action": "pass",
-      "Elapsed": 14.54
-    },
-    {
-      "Test": "TestR31AdmissionAndNodeRevocationCommitOrder",
-      "Action": "pass",
-      "Elapsed": 14.58
-    },
-    {
-      "Test": "TestR31NodeOptionsHideModelsAndQueuedRevocation",
-      "Action": "pass",
-      "Elapsed": 14.5
-    },
-    {
-      "Test": "TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission",
-      "Action": "pass",
-      "Elapsed": 18.8
-    },
-    {
-      "Test": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
-      "Action": "pass",
-      "Elapsed": 19.05
-    },
-    {
-      "Test": "TestR31NodeGroupAccessAndRevocation",
-      "Action": "pass",
-      "Elapsed": 14.32
-    },
-    {
-      "Test": "TestR31NodeRegistrationCredentialAndAtomicAudit",
-      "Action": "pass",
-      "Elapsed": 14.33
-    },
-    {
-      "Test": "TestRefreshCredNodeOutcomes",
-      "Action": "pass",
-      "Elapsed": 26.55
-    },
-    {
-      "Test": "TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess",
-      "Action": "pass",
-      "Elapsed": 18.59
-    },
-    {
-      "Test": "TestOptionsModelsUnionOnlineOnly",
-      "Action": "pass",
-      "Elapsed": 14.33
-    },
-    {
-      "Test": "TestJobProgressForOwnerBySeat",
-      "Action": "pass",
-      "Elapsed": 14.44
-    },
-    {
-      "Test": "TestJobReasonOnlyContractCodes",
-      "Action": "pass",
-      "Elapsed": 14.46
-    },
-    {
-      "Test": "TestQuotaListWithUsage",
-      "Action": "pass",
-      "Elapsed": 14.33
-    },
-    {
-      "Test": "TestTokenFileDisplayNoContentTail",
-      "Action": "pass",
-      "Elapsed": 14.22
-    },
-    {
-      "Test": "TestClaudeTokenFileABI",
-      "Action": "pass",
-      "Elapsed": 9.84
-    },
-    {
-      "Test": "TestQuotaCheckBoundaries",
-      "Action": "pass",
-      "Elapsed": 14.35
-    },
-    {
-      "Test": "TestRefreshCredResumesSuspendedCredential",
-      "Action": "pass",
-      "Elapsed": 39.12
-    },
-    {
-      "Test": "TestPlanDiskTiersPinned",
-      "Action": "pass",
-      "Elapsed": 12.59
-    },
-    {
-      "Test": "TestNodeHasModelToleratesMissingKey",
-      "Action": "pass",
-      "Elapsed": 12.57
-    },
-    {
-      "Test": "TestCheckCreateDiskGate",
-      "Action": "pass",
-      "Elapsed": 14.31
-    },
-    {
-      "Test": "TestOwnedAccountLifecycle",
-      "Action": "pass",
-      "Elapsed": 18.96
-    },
-    {
-      "Test": "TestOptionsEmptyListsAreArrays",
-      "Action": "pass",
-      "Elapsed": 14.39
-    },
-    {
-      "Test": "TestOptionsJSONMatchesContract",
-      "Action": "pass",
-      "Elapsed": 12.82
-    },
-    {
-      "Test": "TestCheckCreateCodeSplit",
-      "Action": "pass",
-      "Elapsed": 32.46
-    },
-    {
-      "Test": "TestCreateModelRejections",
-      "Action": "pass",
-      "Elapsed": 13.99
-    },
-    {
-      "Test": "TestPickNodeStaleFrameTreatedOffline",
-      "Action": "pass",
-      "Elapsed": 14.28
-    },
-    {
-      "Test": "TestR31StatePatchCannotRestoreConcurrentRevocation",
-      "Action": "pass",
-      "Elapsed": 14.09
-    },
-    {
-      "Test": "TestCreateWithModelSelectsSupportingNode",
-      "Action": "pass",
-      "Elapsed": 12.42
-    },
-    {
-      "Test": "TestNeverConnectsSweepedStartTimeout",
-      "Action": "pass",
-      "Elapsed": 13.12
-    },
-    {
-      "Test": "TestHostedItemErrorCounted",
-      "Action": "pass",
-      "Elapsed": 10.66
-    },
-    {
-      "Test": "TestOnlineOnlyViaMarkOnline",
-      "Action": "pass",
-      "Elapsed": 14.01
-    },
-    {
-      "Test": "TestOptionsPlanFitsEachGate",
-      "Action": "pass",
-      "Elapsed": 32.91
-    },
-    {
-      "Test": "TestLoginQuotaAuditDoesNotMutateHostedSeat",
-      "Action": "pass",
-      "Elapsed": 13.6
-    },
-    {
-      "Test": "TestOptionsViewAndJobProgress",
-      "Action": "pass",
-      "Elapsed": 14.3
-    },
-    {
-      "Test": "TestMinimumPlanOptionsAndRealCreateResources",
-      "Action": "pass",
-      "Elapsed": 13.63
-    },
-    {
-      "Test": "TestRunJobMissingTokenFailsClosed",
-      "Action": "pass",
-      "Elapsed": 13.65
-    },
-    {
-      "Test": "TestHostedOverlay",
-      "Action": "pass",
-      "Elapsed": 13.79
-    },
-    {
-      "Test": "TestMinimumPlanDefinitionAndNetCapacity",
-      "Action": "pass",
-      "Elapsed": 9.16
-    },
-    {
-      "Test": "TestMinimumPlanQuotaDebitsAndEveryDimension",
-      "Action": "pass",
-      "Elapsed": 13.31
-    },
-    {
-      "Test": "TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint",
-      "Action": "pass",
-      "Elapsed": 12.93
-    },
-    {
-      "Test": "TestPoolScheduling",
-      "Action": "pass",
-      "Elapsed": 10.7
-    },
-    {
-      "Test": "TestLifecycleJobRecoveryLeavesNoActiveRows",
-      "Action": "pass",
-      "Elapsed": 23.03
-    },
-    {
-      "Test": "TestCreateWithoutGroupSucceeds",
-      "Action": "pass",
-      "Elapsed": 13.73
-    },
-    {
-      "Test": "TestLoginStaleCompletingWithoutClaimedAt",
-      "Action": "pass",
-      "Elapsed": 12.67
-    },
-    {
-      "Test": "TestSweepTimeouts",
-      "Action": "pass",
-      "Elapsed": 12.26
-    },
-    {
-      "Test": "TestFrozenR30LoginSchemaUpgradesOldDefinition",
-      "Action": "pass",
-      "Elapsed": 13.27
-    },
-    {
-      "Test": "TestRunJobFailureCleanup",
-      "Action": "pass",
-      "Elapsed": 10.81
-    },
-    {
-      "Test": "TestLoginStaleCompletingIsSwept",
-      "Action": "pass",
-      "Elapsed": 13.66
-    },
-    {
-      "Test": "TestCreateGroupErrorsPropagate",
-      "Action": "pass",
-      "Elapsed": 18.35
-    },
-    {
-      "Test": "TestCreateRejections",
-      "Action": "pass",
-      "Elapsed": 12.06
-    },
-    {
-      "Test": "TestLoginClaimCompletingIsAtomic",
-      "Action": "pass",
-      "Elapsed": 13.39
-    },
-    {
-      "Test": "TestLoginDoneNotOverwrittenBySweepOrCancel",
-      "Action": "pass",
-      "Elapsed": 13.47
-    },
-    {
-      "Test": "TestLoginPrechecksAndEmailInSameInsert",
-      "Action": "pass",
-      "Elapsed": 13.62
-    },
-    {
-      "Test": "TestClaudeMinimumPlanRemainsUnverified",
-      "Action": "pass",
-      "Elapsed": 11.01
-    },
-    {
-      "Test": "TestCreateHappyPathCodexFirst",
-      "Action": "pass",
-      "Elapsed": 13.32
-    },
-    {
-      "Test": "TestIDTokenEmail",
-      "Action": "pass",
-      "Elapsed": 8.93
-    },
-    {
-      "Test": "TestMarkOnlineOnlyFromStarting",
-      "Action": "pass",
-      "Elapsed": 13.52
-    },
-    {
-      "Test": "TestStartingUntilAgentConnectsElseTimeout",
-      "Action": "pass",
-      "Elapsed": 13.74
-    },
-    {
-      "Test": "TestLoginPerNodeCapBindsWithOneNode",
-      "Action": "pass",
-      "Elapsed": 13.71
-    },
-    {
-      "Test": "TestLoginTotalCapBindsWithThreeNodes",
-      "Action": "pass",
-      "Elapsed": 11.24
-    },
-    {
-      "Test": "TestLoginAccountLimitPrecheck",
-      "Action": "pass",
-      "Elapsed": 12.53
-    },
-    {
-      "Test": "TestLoginUploadBoundToSessionNode",
-      "Action": "pass",
-      "Elapsed": 13.64
-    },
-    {
-      "Test": "TestLoginSweepAndRecover",
-      "Action": "pass",
-      "Elapsed": 14.07
-    },
-    {
-      "Test": "TestNodeCredentialLifecycle",
-      "Action": "pass",
-      "Elapsed": 14.11
-    },
-    {
-      "Test": "TestLoginTerminalStatesClearLinkAndCode",
-      "Action": "pass",
-      "Elapsed": 26.74
-    },
-    {
-      "Test": "TestLoginRelogin",
-      "Action": "pass",
-      "Elapsed": 13.66
-    },
-    {
-      "Test": "TestLoginCompleteOneShotExpiryAndFailures",
-      "Action": "pass",
-      "Elapsed": 14.24
-    },
-    {
-      "Test": "TestHardNodeResourceExtensionNegotiated",
-      "Action": "pass",
-      "Elapsed": 13.82
-    },
-    {
-      "Test": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
-      "Action": "pass",
-      "Elapsed": 17.22
-    },
-    {
-      "Test": "TestLoginCompleteRegisters",
-      "Action": "pass",
-      "Elapsed": 15.38
-    },
-    {
-      "Test": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
-      "Action": "pass",
-      "Elapsed": 14.97
-    },
-    {
-      "Test": "TestQuotaEventValidation",
-      "Action": "pass",
-      "Elapsed": 11.66
-    },
-    {
-      "Test": "TestLoginEmailValidation",
-      "Action": "pass",
-      "Elapsed": 16.64
-    },
-    {
-      "Test": "TestSoftCreateFailureDoesNotAbortOrReleaseIdentity",
-      "Action": "pass",
-      "Elapsed": 16.85
-    },
-    {
-      "Test": "TestLoginConcurrencyCaps",
-      "Action": "pass",
-      "Elapsed": 18
-    },
-    {
-      "Test": "TestQuotaRegistrationAndCapacityCannotSelfDowngrade",
-      "Action": "pass",
-      "Elapsed": 10.8
-    },
-    {
-      "Test": "TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath",
-      "Action": "pass",
-      "Elapsed": 23.64
-    },
-    {
-      "Test": "TestLoginStartNodeOutcomes",
-      "Action": "pass",
-      "Elapsed": 25.58
-    },
-    {
-      "Test": "TestLoginOnePerUserAndCooldown",
-      "Action": "pass",
-      "Elapsed": 14.96
-    },
-    {
-      "Test": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
-      "Action": "pass",
-      "Elapsed": 16.39
-    },
-    {
-      "Test": "TestLoginStartExpiresOwnStaleSession",
-      "Action": "pass",
-      "Elapsed": 16.59
-    },
-    {
-      "Test": "TestLoginStartHappy",
-      "Action": "pass",
-      "Elapsed": 13.95
-    },
-    {
-      "Test": "TestUpgradeUsesRecordedModel",
-      "Action": "pass",
-      "Elapsed": 14.24
-    },
-    {
-      "Test": "TestFrozenR30SchemaModelColumnMigration",
-      "Action": "pass",
-      "Elapsed": 12.14
-    },
-    {
-      "Test": "TestDestroyBackupFailedTyped",
-      "Action": "pass",
-      "Elapsed": 11.65
-    },
-    {
-      "Test": "TestTokenWriteBackAndUnbindPrep",
-      "Action": "pass",
-      "Elapsed": 12.85
-    },
-    {
-      "Test": "TestReconcileGuards",
-      "Action": "pass",
-      "Elapsed": 16.55
-    },
-    {
-      "Test": "TestReconcileDoesNotBackupTwice",
-      "Action": "pass",
-      "Elapsed": 13.5
-    },
-    {
-      "Test": "TestReconcileOnNodeReconnect",
-      "Action": "pass",
-      "Elapsed": 12.83
-    },
-    {
-      "Test": "TestUpgradeWhileDisabledRejected",
-      "Action": "pass",
-      "Elapsed": 14.12
+      "Elapsed": 3.21
     },
     {
       "Test": "TestFrozenR30ApplySchemaUpgradesPreA1PreB2Shape",
       "Action": "pass",
-      "Elapsed": 14.07
+      "Elapsed": 3.99
     },
     {
-      "Test": "TestDestroyStopsBeforeBackup",
+      "Test": "TestTokenWriteBackAndUnbindPrep",
       "Action": "pass",
-      "Elapsed": 21.28
+      "Elapsed": 4.36
     },
     {
-      "Test": "TestDestroyReturnsAccountToPool",
+      "Test": "TestLoginAccountLimitPrecheck",
       "Action": "pass",
-      "Elapsed": 15.93
+      "Elapsed": 4.64
     },
     {
       "Test": "TestAccessCtxValid",
       "Action": "pass",
-      "Elapsed": 15.92
+      "Elapsed": 8.61
     },
     {
-      "Test": "TestConfirmRequiredGates",
+      "Test": "TestUpgradeWhileDisabledRejected",
       "Action": "pass",
-      "Elapsed": 15.69
-    },
-    {
-      "Test": "TestNodeSeatPoolQuotaFlow",
-      "Action": "pass",
-      "Elapsed": 16.34
-    },
-    {
-      "Test": "TestUpgradeRollbackOnNodeFailure",
-      "Action": "pass",
-      "Elapsed": 15.25
-    },
-    {
-      "Test": "TestSchemaApplyRollbackRepeatable",
-      "Action": "pass",
-      "Elapsed": 15.94
-    },
-    {
-      "Test": "TestDestroyOfflineNodeLeavesReconcileRecord",
-      "Action": "pass",
-      "Elapsed": 14.21
-    },
-    {
-      "Test": "TestHubParamsSatisfyNodeContract",
-      "Action": "pass",
-      "Elapsed": 15.17
-    },
-    {
-      "Test": "TestRestartAfterFailedStopResumesCredential",
-      "Action": "pass",
-      "Elapsed": 14.04
-    },
-    {
-      "Test": "TestAppliedLedgerRejectsMissingHostedTableWithoutRepair",
-      "Action": "pass",
-      "Elapsed": 14.08
-    },
-    {
-      "Test": "TestSchemaDropLeavesNoG4Tables",
-      "Action": "pass",
-      "Elapsed": 13.63
-    },
-    {
-      "Test": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
-      "Action": "pass",
-      "Elapsed": 15.91
-    },
-    {
-      "Test": "TestConcurrentDestroyRequestsShareOneJobAndOneBackup",
-      "Action": "pass",
-      "Elapsed": 14.55
-    },
-    {
-      "Test": "TestDestroyCanBeRetriedAfterHubDiesMidJob",
-      "Action": "pass",
-      "Elapsed": 18.61
-    },
-    {
-      "Test": "TestLifecycleJobDuplicatePolicy",
-      "Action": "pass",
-      "Elapsed": 17.25
-    },
-    {
-      "Test": "TestOwnershipEnforced",
-      "Action": "pass",
-      "Elapsed": 29.34
-    },
-    {
-      "Test": "TestDefenseInDepthAccountBoundaries",
-      "Action": "pass",
-      "Elapsed": 20.64
-    },
-    {
-      "Test": "TestDestroyCleanupSurvivesClientCancellation",
-      "Action": "pass",
-      "Elapsed": 21.71
-    },
-    {
-      "Test": "TestLifecycleOrderOnOneLog",
-      "Action": "pass",
-      "Elapsed": 28.43
-    },
-    {
-      "Test": "TestClaudeModelCreatePersistsAndDispatchesApprovedValue",
-      "Action": "pass",
-      "Elapsed": 23.35
-    },
-    {
-      "Test": "TestFailedGateStopsTheChain",
-      "Action": "pass",
-      "Elapsed": 32.4
-    },
-    {
-      "Test": "TestOnlineAfterExistingTimeoutKeepsDetailCondition",
-      "Action": "pass",
-      "Elapsed": 20.06
-    },
-    {
-      "Test": "TestBackupNodeOfflineStopsDestroy",
-      "Action": "pass",
-      "Elapsed": 23.48
-    },
-    {
-      "Test": "TestNodeDownLeavesStateAndCredential",
-      "Action": "pass",
-      "Elapsed": 50
-    },
-    {
-      "Test": "TestBackupDuplicateUploadWhilePending",
-      "Action": "pass",
-      "Elapsed": 23.56
-    },
-    {
-      "Test": "TestLifecycleJobPersistsProgressAndMachineReason",
-      "Action": "pass",
-      "Elapsed": 30.24
-    },
-    {
-      "Test": "TestBackupUsesLongTimeout",
-      "Action": "pass",
-      "Elapsed": 20.38
-    },
-    {
-      "Test": "TestStartingWriteFailureDoesNotSuspendALiveCredential",
-      "Action": "pass",
-      "Elapsed": 29.85
-    },
-    {
-      "Test": "TestStartingWriteFailureUndoesResume",
-      "Action": "pass",
-      "Elapsed": 26.22
+      "Elapsed": 8.76
     },
     {
       "Test": "TestRestartFailureAfterAgentConnectedKeepsOnline",
       "Action": "pass",
-      "Elapsed": 22.22
+      "Elapsed": 9.38
     },
     {
-      "Test": "TestLateConnectOnlyForExistingTimeout",
+      "Test": "TestNodeSeatPoolQuotaFlow",
       "Action": "pass",
-      "Elapsed": 20.74
+      "Elapsed": 9.52
     },
     {
-      "Test": "TestFailureAfterAgentConnectedKeepsOnline",
+      "Test": "TestFrozenR30SchemaModelColumnMigration",
       "Action": "pass",
-      "Elapsed": 17.5
+      "Elapsed": 12.99
     },
     {
-      "Test": "TestLateConnectAfterExistingTimeoutGoesOnline",
+      "Test": "TestLoginUploadBoundToSessionNode",
       "Action": "pass",
-      "Elapsed": 19.4
+      "Elapsed": 13.55
     },
     {
-      "Test": "TestBackupFailureClearsPending",
-      "Action": "pass",
-      "Elapsed": 27.51
-    },
-    {
-      "Test": "TestCreateTimeoutStillRetires",
-      "Action": "pass",
-      "Elapsed": 19.26
-    },
-    {
-      "Test": "TestClientCancellationOrphanPendingIsEventuallySwept",
-      "Action": "pass",
-      "Elapsed": 19.69
-    },
-    {
-      "Test": "TestZZ_AgentConnectingBeforeStartingIsNotLost",
-      "Action": "pass",
-      "Elapsed": 25.34
-    },
-    {
-      "Test": "TestRestartTimeoutKeepsExistingSeat",
-      "Action": "pass",
-      "Elapsed": 22.22
-    },
-    {
-      "Test": "TestSweepExpiredBackupsReclaimsOnlyStalePending",
-      "Action": "pass",
-      "Elapsed": 22.46
-    },
-    {
-      "Test": "TestBackupHandlerAuthAndStates",
-      "Action": "pass",
-      "Elapsed": 25.42
-    },
-    {
-      "Test": "TestBackupPipelineEndToEnd",
-      "Action": "pass",
-      "Elapsed": 19.62
-    },
-    {
-      "Test": "TestLoadMasterKeyPermAndForms",
-      "Action": "pass",
-      "Elapsed": 17.97
-    },
-    {
-      "Test": "TestPlanTable",
-      "Action": "pass",
-      "Elapsed": 14.78
-    },
-    {
-      "Test": "TestSealPerRecordNonceAndWrongKey",
-      "Action": "pass",
-      "Elapsed": 14.6
-    },
-    {
-      "Test": "TestEnableRestartFailureAfterStarting",
-      "Action": "pass",
-      "Elapsed": 31.29
-    },
-    {
-      "Test": "TestUnwrapWrongMasterFails",
-      "Action": "pass",
-      "Elapsed": 10.44
-    },
-    {
-      "Test": "TestBackupChecksumControlPlane",
-      "Action": "pass",
-      "Elapsed": 39.06
-    },
-    {
-      "Test": "TestWrapUnwrapRoundtrip",
-      "Action": "pass",
-      "Elapsed": 7.58
-    },
-    {
-      "Test": "TestTeamKeyServiceFlow",
-      "Action": "pass",
-      "Elapsed": 23.63
-    },
-    {
-      "Test": "TestBackupIntegrityRejected",
-      "Action": "pass",
-      "Elapsed": 38.35
-    },
-    {
-      "Test": "TestEnableRestartWaitForAgentConnect",
-      "Action": "pass",
-      "Elapsed": 28.76
-    },
-    {
-      "Test": "TestSoftHoldLegacyEventStateAppliedOnce",
-      "Action": "pass",
-      "Elapsed": 18.52
-    },
-    {
-      "Test": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
-      "Action": "pass",
-      "Elapsed": 14.47
-    },
-    {
-      "Test": "TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed",
-      "Action": "pass",
-      "Elapsed": 13.6
-    },
-    {
-      "Test": "TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart",
-      "Action": "pass",
-      "Elapsed": 9.47
-    },
-    {
-      "Test": "TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices",
-      "Action": "pass",
-      "Elapsed": 9.06
-    },
-    {
-      "Test": "TestSoftHoldHubReleaseAuditAndUncertainNoResend",
-      "Action": "pass",
-      "Elapsed": 9.4
-    },
-    {
-      "Test": "TestRollbackResetSQL",
-      "Action": "pass",
-      "Elapsed": 13.17
-    },
-    {
-      "Test": "TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold",
-      "Action": "pass",
-      "Elapsed": 11.54
-    },
-    {
-      "Test": "TestRefreshStartingTimeoutIsExistingSeat",
-      "Action": "pass",
-      "Elapsed": 13.22
-    },
-    {
-      "Test": "TestLegacyBoundAccountSharable",
-      "Action": "pass",
-      "Elapsed": 13.85
-    },
-    {
-      "Test": "TestFrozenR30SchemaBackfillAndJobOp",
-      "Action": "pass",
-      "Elapsed": 12.05
-    },
-    {
-      "Test": "TestCreateVsDisableSerialized",
-      "Action": "pass",
-      "Elapsed": 15.07
-    },
-    {
-      "Test": "TestCreateSeatPKConflictIsNotAccountError",
-      "Action": "pass",
-      "Elapsed": 14.26
-    },
-    {
-      "Test": "TestCapacityStoreSerializesConcurrentReservations",
-      "Action": "pass",
-      "Elapsed": 14.13
-    },
-    {
-      "Test": "TestCapacityFinalGateCreateJobsAndCleanup",
-      "Action": "pass",
-      "Elapsed": 14.46
-    },
-    {
-      "Test": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
+      "Test": "TestAppliedLedgerRejectsMissingHostedTableWithoutRepair",
       "Action": "pass",
       "Elapsed": 14.2
     },
     {
-      "Test": "TestAccountSecretValidation",
+      "Test": "TestCreateFailurePathsAbortTheIssue",
       "Action": "pass",
-      "Elapsed": 14.56
+      "Elapsed": 14.35
+    },
+    {
+      "Test": "TestSchemaDropLeavesNoG4Tables",
+      "Action": "pass",
+      "Elapsed": 14.43
+    },
+    {
+      "Test": "TestLoginSweepAndRecover",
+      "Action": "pass",
+      "Elapsed": 17.65
+    },
+    {
+      "Test": "TestPlanTable",
+      "Action": "pass",
+      "Elapsed": 13.01
+    },
+    {
+      "Test": "TestSchemaApplyRollbackRepeatable",
+      "Action": "pass",
+      "Elapsed": 19.01
+    },
+    {
+      "Test": "TestLoginRelogin",
+      "Action": "pass",
+      "Elapsed": 15.13
+    },
+    {
+      "Test": "TestRefreshCredNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 19.15
+    },
+    {
+      "Test": "TestLoginCompleteOneShotExpiryAndFailures",
+      "Action": "pass",
+      "Elapsed": 14.96
+    },
+    {
+      "Test": "TestLoginCompleteRegisters",
+      "Action": "pass",
+      "Elapsed": 13.89
+    },
+    {
+      "Test": "TestLoginConcurrencyCaps",
+      "Action": "pass",
+      "Elapsed": 11.05
+    },
+    {
+      "Test": "TestSoftHoldLegacyEventStateAppliedOnce",
+      "Action": "pass",
+      "Elapsed": 15.3
+    },
+    {
+      "Test": "TestLoginEmailValidation",
+      "Action": "pass",
+      "Elapsed": 14.68
+    },
+    {
+      "Test": "TestOptionsViewAndJobProgress",
+      "Action": "pass",
+      "Elapsed": 13.54
+    },
+    {
+      "Test": "TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart",
+      "Action": "pass",
+      "Elapsed": 14.35
+    },
+    {
+      "Test": "TestRefreshCredAccountGate",
+      "Action": "pass",
+      "Elapsed": 14.68
+    },
+    {
+      "Test": "TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold",
+      "Action": "pass",
+      "Elapsed": 9.88
+    },
+    {
+      "Test": "TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices",
+      "Action": "pass",
+      "Elapsed": 14.06
+    },
+    {
+      "Test": "TestLoginStartNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 31.93
+    },
+    {
+      "Test": "TestLoginOnePerUserAndCooldown",
+      "Action": "pass",
+      "Elapsed": 14.32
+    },
+    {
+      "Test": "TestSoftHoldHubReleaseAuditAndUncertainNoResend",
+      "Action": "pass",
+      "Elapsed": 15.93
+    },
+    {
+      "Test": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "Action": "pass",
+      "Elapsed": 17.15
+    },
+    {
+      "Test": "TestCapacityStoreSerializesConcurrentReservations",
+      "Action": "pass",
+      "Elapsed": 17.13
+    },
+    {
+      "Test": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
+      "Action": "pass",
+      "Elapsed": 15.61
+    },
+    {
+      "Test": "TestCapacityFinalGateCreateJobsAndCleanup",
+      "Action": "pass",
+      "Elapsed": 14.3
+    },
+    {
+      "Test": "TestRefreshCredStateGate",
+      "Action": "pass",
+      "Elapsed": 16.78
+    },
+    {
+      "Test": "TestCapacityFinalGateLifecycleJobs",
+      "Action": "pass",
+      "Elapsed": 16.79
+    },
+    {
+      "Test": "TestLoginStartExpiresOwnStaleSession",
+      "Action": "pass",
+      "Elapsed": 15.49
+    },
+    {
+      "Test": "TestCapacityReplyStrictProtocolAndRegistration",
+      "Action": "pass",
+      "Elapsed": 14.1
+    },
+    {
+      "Test": "TestLoginStartHappy",
+      "Action": "pass",
+      "Elapsed": 16.68
+    },
+    {
+      "Test": "TestCapacityStartReasonAndUnknown",
+      "Action": "pass",
+      "Elapsed": 16.8
+    },
+    {
+      "Test": "TestUpgradeUsesRecordedModel",
+      "Action": "pass",
+      "Elapsed": 15.43
+    },
+    {
+      "Test": "TestRefreshCredOwnerOnly",
+      "Action": "pass",
+      "Elapsed": 15.35
+    },
+    {
+      "Test": "TestRefreshCredHappyPath",
+      "Action": "pass",
+      "Elapsed": 16.55
+    },
+    {
+      "Test": "TestEmptyCreatedByRefused",
+      "Action": "pass",
+      "Elapsed": 15.16
+    },
+    {
+      "Test": "TestCapacityReasonSanitizationAndCompatibility",
+      "Action": "pass",
+      "Elapsed": 13.27
+    },
+    {
+      "Test": "TestStaticRegistriesFailClosed",
+      "Action": "pass",
+      "Elapsed": 10.77
+    },
+    {
+      "Test": "TestSoftHoldReleasePendingEventConverges",
+      "Action": "pass",
+      "Elapsed": 37.4
+    },
+    {
+      "Test": "TestCapacityRequestReasonAndModelSelection",
+      "Action": "pass",
+      "Elapsed": 15.5
+    },
+    {
+      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
+      "Action": "pass",
+      "Elapsed": 45.7
+    },
+    {
+      "Test": "TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess",
+      "Action": "pass",
+      "Elapsed": 15.16
+    },
+    {
+      "Test": "TestDestroyBackupFailedTyped",
+      "Action": "pass",
+      "Elapsed": 13.93
+    },
+    {
+      "Test": "TestReconcileGuards",
+      "Action": "pass",
+      "Elapsed": 21
+    },
+    {
+      "Test": "TestDestroyStopsBeforeBackup",
+      "Action": "pass",
+      "Elapsed": 25.79
+    },
+    {
+      "Test": "TestOptionsModelsUnionOnlineOnly",
+      "Action": "pass",
+      "Elapsed": 13.9
+    },
+    {
+      "Test": "TestRefreshCredRecoverJobs",
+      "Action": "pass",
+      "Elapsed": 14.8
+    },
+    {
+      "Test": "TestRefreshCredAsJob",
+      "Action": "pass",
+      "Elapsed": 16.34
+    },
+    {
+      "Test": "TestJobProgressForOwnerBySeat",
+      "Action": "pass",
+      "Elapsed": 13.55
+    },
+    {
+      "Test": "TestReconcileDoesNotBackupTwice",
+      "Action": "pass",
+      "Elapsed": 12.45
+    },
+    {
+      "Test": "TestReconcileOnNodeReconnect",
+      "Action": "pass",
+      "Elapsed": 13.65
+    },
+    {
+      "Test": "TestQuotaEventValidation",
+      "Action": "pass",
+      "Elapsed": 10.17
+    },
+    {
+      "Test": "TestJobReasonOnlyContractCodes",
+      "Action": "pass",
+      "Elapsed": 16.7
+    },
+    {
+      "Test": "TestQuotaListWithUsage",
+      "Action": "pass",
+      "Elapsed": 16.83
+    },
+    {
+      "Test": "TestQuotaCheckBoundaries",
+      "Action": "pass",
+      "Elapsed": 13.86
+    },
+    {
+      "Test": "TestTokenFileDisplayNoContentTail",
+      "Action": "pass",
+      "Elapsed": 14.46
+    },
+    {
+      "Test": "TestOwnedAccountLifecycle",
+      "Action": "pass",
+      "Elapsed": 15.85
+    },
+    {
+      "Test": "TestOptionsEmptyListsAreArrays",
+      "Action": "pass",
+      "Elapsed": 18.93
+    },
+    {
+      "Test": "TestClaudeTokenFileABI",
+      "Action": "pass",
+      "Elapsed": 14.77
+    },
+    {
+      "Test": "TestRunJobMissingTokenFailsClosed",
+      "Action": "pass",
+      "Elapsed": 19.44
+    },
+    {
+      "Test": "TestCheckCreateCodeSplit",
+      "Action": "pass",
+      "Elapsed": 31.06
+    },
+    {
+      "Test": "TestOptionsJSONMatchesContract",
+      "Action": "pass",
+      "Elapsed": 19.4
+    },
+    {
+      "Test": "TestPlanDiskTiersPinned",
+      "Action": "pass",
+      "Elapsed": 17.82
+    },
+    {
+      "Test": "TestCheckCreateDiskGate",
+      "Action": "pass",
+      "Elapsed": 20.47
+    },
+    {
+      "Test": "TestNodeHasModelToleratesMissingKey",
+      "Action": "pass",
+      "Elapsed": 15.9
+    },
+    {
+      "Test": "TestRefreshCredResumesSuspendedCredential",
+      "Action": "pass",
+      "Elapsed": 41.91
+    },
+    {
+      "Test": "TestHostedOverlay",
+      "Action": "pass",
+      "Elapsed": 22.32
+    },
+    {
+      "Test": "TestOptionsPlanFitsEachGate",
+      "Action": "pass",
+      "Elapsed": 31.09
+    },
+    {
+      "Test": "TestR31StatePatchCannotRestoreConcurrentRevocation",
+      "Action": "pass",
+      "Elapsed": 19.36
+    },
+    {
+      "Test": "TestPickNodeStaleFrameTreatedOffline",
+      "Action": "pass",
+      "Elapsed": 16.24
+    },
+    {
+      "Test": "TestR31HostedApplySchemaUsesUnifiedLedger",
+      "Action": "pass",
+      "Elapsed": 14.04
+    },
+    {
+      "Test": "TestCreateWithoutGroupSucceeds",
+      "Action": "pass",
+      "Elapsed": 17.37
+    },
+    {
+      "Test": "TestCreateGroupErrorsPropagate",
+      "Action": "pass",
+      "Elapsed": 24.32
+    },
+    {
+      "Test": "TestCreateModelRejections",
+      "Action": "pass",
+      "Elapsed": 15.77
+    },
+    {
+      "Test": "TestR31AdmissionUsesOwnerNotAdministratorAuditActor",
+      "Action": "pass",
+      "Elapsed": 14.7
+    },
+    {
+      "Test": "TestPoolScheduling",
+      "Action": "pass",
+      "Elapsed": 14.3
+    },
+    {
+      "Test": "TestR31HardConcurrentReservationsDoNotOversell",
+      "Action": "pass",
+      "Elapsed": 14.08
+    },
+    {
+      "Test": "TestSweepTimeouts",
+      "Action": "pass",
+      "Elapsed": 14.31
+    },
+    {
+      "Test": "TestR31AdmissionAndNodeRevocationCommitOrder",
+      "Action": "pass",
+      "Elapsed": 14.32
+    },
+    {
+      "Test": "TestNodeDownLeavesStateAndCredential",
+      "Action": "pass",
+      "Elapsed": 51.95
+    },
+    {
+      "Test": "TestRunJobFailureCleanup",
+      "Action": "pass",
+      "Elapsed": 14.77
+    },
+    {
+      "Test": "TestCreateRejections",
+      "Action": "pass",
+      "Elapsed": 14.24
+    },
+    {
+      "Test": "TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission",
+      "Action": "pass",
+      "Elapsed": 14.39
+    },
+    {
+      "Test": "TestR31NodeOptionsHideModelsAndQueuedRevocation",
+      "Action": "pass",
+      "Elapsed": 17.19
+    },
+    {
+      "Test": "TestCreateWithModelSelectsSupportingNode",
+      "Action": "pass",
+      "Elapsed": 14.04
+    },
+    {
+      "Test": "TestClaudeMinimumPlanRemainsUnverified",
+      "Action": "pass",
+      "Elapsed": 13.79
+    },
+    {
+      "Test": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
+      "Action": "pass",
+      "Elapsed": 11.45
+    },
+    {
+      "Test": "TestCreateHappyPathCodexFirst",
+      "Action": "pass",
+      "Elapsed": 12.49
+    },
+    {
+      "Test": "TestR31NodeGroupAccessAndRevocation",
+      "Action": "pass",
+      "Elapsed": 14.01
+    },
+    {
+      "Test": "TestNeverConnectsSweepedStartTimeout",
+      "Action": "pass",
+      "Elapsed": 14.32
+    },
+    {
+      "Test": "TestOnlineOnlyViaMarkOnline",
+      "Action": "pass",
+      "Elapsed": 13.34
+    },
+    {
+      "Test": "TestMarkOnlineOnlyFromStarting",
+      "Action": "pass",
+      "Elapsed": 10.93
+    },
+    {
+      "Test": "TestHostedItemErrorCounted",
+      "Action": "pass",
+      "Elapsed": 11.09
+    },
+    {
+      "Test": "TestStartingUntilAgentConnectsElseTimeout",
+      "Action": "pass",
+      "Elapsed": 14.17
+    },
+    {
+      "Test": "TestHardNodeResourceExtensionNegotiated",
+      "Action": "pass",
+      "Elapsed": 12.73
+    },
+    {
+      "Test": "TestNodeCredentialLifecycle",
+      "Action": "pass",
+      "Elapsed": 10.83
+    },
+    {
+      "Test": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
+      "Action": "pass",
+      "Elapsed": 13.46
+    },
+    {
+      "Test": "TestSoftCreateFailureDoesNotAbortOrReleaseIdentity",
+      "Action": "pass",
+      "Elapsed": 10.84
+    },
+    {
+      "Test": "TestR31NodeRegistrationCredentialAndAtomicAudit",
+      "Action": "pass",
+      "Elapsed": 14.24
+    },
+    {
+      "Test": "TestLoginStaleCompletingWithoutClaimedAt",
+      "Action": "pass",
+      "Elapsed": 13.66
+    },
+    {
+      "Test": "TestTeamKeyServiceFlow",
+      "Action": "pass",
+      "Elapsed": 13.44
+    },
+    {
+      "Test": "TestRefreshStartingTimeoutIsExistingSeat",
+      "Action": "pass",
+      "Elapsed": 10.83
+    },
+    {
+      "Test": "TestQuotaRegistrationAndCapacityCannotSelfDowngrade",
+      "Action": "pass",
+      "Elapsed": 9.43
+    },
+    {
+      "Test": "TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath",
+      "Action": "pass",
+      "Elapsed": 21.69
+    },
+    {
+      "Test": "TestLoginQuotaEventRequiresTypedLoginIdentity",
+      "Action": "pass",
+      "Elapsed": 9.22
+    },
+    {
+      "Test": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
+      "Action": "pass",
+      "Elapsed": 17.62
+    },
+    {
+      "Test": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "Action": "pass",
+      "Elapsed": 14.41
+    },
+    {
+      "Test": "TestLoginQuotaAuditDoesNotMutateHostedSeat",
+      "Action": "pass",
+      "Elapsed": 13.05
+    },
+    {
+      "Test": "TestLateConnectOnlyForExistingTimeout",
+      "Action": "pass",
+      "Elapsed": 18.91
+    },
+    {
+      "Test": "TestFailureAfterAgentConnectedKeepsOnline",
+      "Action": "pass",
+      "Elapsed": 17.52
+    },
+    {
+      "Test": "TestLateConnectAfterExistingTimeoutGoesOnline",
+      "Action": "pass",
+      "Elapsed": 18.81
+    },
+    {
+      "Test": "TestBackupFailureClearsPending",
+      "Action": "pass",
+      "Elapsed": 24.87
+    },
+    {
+      "Test": "TestMinimumPlanOptionsAndRealCreateResources",
+      "Action": "pass",
+      "Elapsed": 15.47
+    },
+    {
+      "Test": "TestClientCancellationOrphanPendingIsEventuallySwept",
+      "Action": "pass",
+      "Elapsed": 18.4
+    },
+    {
+      "Test": "TestSweepExpiredBackupsReclaimsOnlyStalePending",
+      "Action": "pass",
+      "Elapsed": 19.78
+    },
+    {
+      "Test": "TestBackupHandlerAuthAndStates",
+      "Action": "pass",
+      "Elapsed": 20.12
+    },
+    {
+      "Test": "TestZZ_AgentConnectingBeforeStartingIsNotLost",
+      "Action": "pass",
+      "Elapsed": 24.58
+    },
+    {
+      "Test": "TestCreateTimeoutStillRetires",
+      "Action": "pass",
+      "Elapsed": 21.47
+    },
+    {
+      "Test": "TestMinimumPlanQuotaDebitsAndEveryDimension",
+      "Action": "pass",
+      "Elapsed": 25
+    },
+    {
+      "Test": "TestBackupIntegrityRejected",
+      "Action": "pass",
+      "Elapsed": 33.47
+    },
+    {
+      "Test": "TestBackupChecksumControlPlane",
+      "Action": "pass",
+      "Elapsed": 38.75
+    },
+    {
+      "Test": "TestBackupPipelineEndToEnd",
+      "Action": "pass",
+      "Elapsed": 26.16
+    },
+    {
+      "Test": "TestRestartTimeoutKeepsExistingSeat",
+      "Action": "pass",
+      "Elapsed": 21.66
+    },
+    {
+      "Test": "TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint",
+      "Action": "pass",
+      "Elapsed": 24.09
+    },
+    {
+      "Test": "TestDefenseInDepthAccountBoundaries",
+      "Action": "pass",
+      "Elapsed": 20.87
+    },
+    {
+      "Test": "TestEnableRestartFailureAfterStarting",
+      "Action": "pass",
+      "Elapsed": 34
+    },
+    {
+      "Test": "TestLegacyBoundAccountSharable",
+      "Action": "pass",
+      "Elapsed": 20.84
+    },
+    {
+      "Test": "TestMinimumPlanDefinitionAndNetCapacity",
+      "Action": "pass",
+      "Elapsed": 10.44
+    },
+    {
+      "Test": "TestLoginDoneNotOverwrittenBySweepOrCancel",
+      "Action": "pass",
+      "Elapsed": 20.28
+    },
+    {
+      "Test": "TestFrozenR30LoginSchemaUpgradesOldDefinition",
+      "Action": "pass",
+      "Elapsed": 15.39
+    },
+    {
+      "Test": "TestDestroyReturnsAccountToPool",
+      "Action": "pass",
+      "Elapsed": 19.1
+    },
+    {
+      "Test": "TestEnableRestartWaitForAgentConnect",
+      "Action": "pass",
+      "Elapsed": 26.73
+    },
+    {
+      "Test": "TestConfirmRequiredGates",
+      "Action": "pass",
+      "Elapsed": 15.31
+    },
+    {
+      "Test": "TestLoadMasterKeyPermAndForms",
+      "Action": "pass",
+      "Elapsed": 10.2
+    },
+    {
+      "Test": "TestLoginStaleCompletingIsSwept",
+      "Action": "pass",
+      "Elapsed": 14.84
+    },
+    {
+      "Test": "TestSealPerRecordNonceAndWrongKey",
+      "Action": "pass",
+      "Elapsed": 9.63
+    },
+    {
+      "Test": "TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed",
+      "Action": "pass",
+      "Elapsed": 14.12
+    },
+    {
+      "Test": "TestUnwrapWrongMasterFails",
+      "Action": "pass",
+      "Elapsed": 8.64
+    },
+    {
+      "Test": "TestUpgradeRollbackOnNodeFailure",
+      "Action": "pass",
+      "Elapsed": 15.03
+    },
+    {
+      "Test": "TestLoginClaimCompletingIsAtomic",
+      "Action": "pass",
+      "Elapsed": 11.68
+    },
+    {
+      "Test": "TestWrapUnwrapRoundtrip",
+      "Action": "pass",
+      "Elapsed": 6.33
+    },
+    {
+      "Test": "TestDestroyOfflineNodeLeavesReconcileRecord",
+      "Action": "pass",
+      "Elapsed": 14.76
+    },
+    {
+      "Test": "TestHubParamsSatisfyNodeContract",
+      "Action": "pass",
+      "Elapsed": 14.12
+    },
+    {
+      "Test": "TestLifecycleOrderOnOneLog",
+      "Action": "pass",
+      "Elapsed": 35.99
+    },
+    {
+      "Test": "TestDestroyCanBeRetriedAfterHubDiesMidJob",
+      "Action": "pass",
+      "Elapsed": 13.84
+    },
+    {
+      "Test": "TestRestartAfterFailedStopResumesCredential",
+      "Action": "pass",
+      "Elapsed": 13.83
+    },
+    {
+      "Test": "TestDestroyCleanupSurvivesClientCancellation",
+      "Action": "pass",
+      "Elapsed": 15.35
+    },
+    {
+      "Test": "TestLifecycleJobPersistsProgressAndMachineReason",
+      "Action": "pass",
+      "Elapsed": 20.48
+    },
+    {
+      "Test": "TestLoginTerminalStatesClearLinkAndCode",
+      "Action": "pass",
+      "Elapsed": 29.64
+    },
+    {
+      "Test": "TestStartingWriteFailureDoesNotSuspendALiveCredential",
+      "Action": "pass",
+      "Elapsed": 19.75
+    },
+    {
+      "Test": "TestOnlineAfterExistingTimeoutKeepsDetailCondition",
+      "Action": "pass",
+      "Elapsed": 14.68
+    },
+    {
+      "Test": "TestLoginTotalCapBindsWithThreeNodes",
+      "Action": "pass",
+      "Elapsed": 19.85
+    },
+    {
+      "Test": "TestConcurrentDestroyRequestsShareOneJobAndOneBackup",
+      "Action": "pass",
+      "Elapsed": 20.65
+    },
+    {
+      "Test": "TestOwnershipEnforced",
+      "Action": "pass",
+      "Elapsed": 25.78
+    },
+    {
+      "Test": "TestLoginPerNodeCapBindsWithOneNode",
+      "Action": "pass",
+      "Elapsed": 19.68
+    },
+    {
+      "Test": "TestLifecycleJobDuplicatePolicy",
+      "Action": "pass",
+      "Elapsed": 19.56
+    },
+    {
+      "Test": "TestIDTokenEmail",
+      "Action": "pass",
+      "Elapsed": 14.25
+    },
+    {
+      "Test": "TestLoginPrechecksAndEmailInSameInsert",
+      "Action": "pass",
+      "Elapsed": 19.07
+    },
+    {
+      "Test": "TestClaudeModelCreatePersistsAndDispatchesApprovedValue",
+      "Action": "pass",
+      "Elapsed": 16.13
+    },
+    {
+      "Test": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
+      "Action": "pass",
+      "Elapsed": 14.19
+    },
+    {
+      "Test": "TestLifecycleJobRecoveryLeavesNoActiveRows",
+      "Action": "pass",
+      "Elapsed": 29.43
+    },
+    {
+      "Test": "TestStartingWriteFailureUndoesResume",
+      "Action": "pass",
+      "Elapsed": 24.72
+    },
+    {
+      "Test": "TestBackupNodeOfflineStopsDestroy",
+      "Action": "pass",
+      "Elapsed": 15.1
+    },
+    {
+      "Test": "TestBackupDuplicateUploadWhilePending",
+      "Action": "pass",
+      "Elapsed": 15.21
+    },
+    {
+      "Test": "TestFailedGateStopsTheChain",
+      "Action": "pass",
+      "Elapsed": 34.01
     },
     {
       "Test": "TestReleaseAndDestroyedNotCounted",
       "Action": "pass",
-      "Elapsed": 14.34
+      "Elapsed": 17.9
+    },
+    {
+      "Test": "TestAccountSecretValidation",
+      "Action": "pass",
+      "Elapsed": 18.03
     },
     {
       "Test": "TestConcurrentCreateSameAccount",
-      "Action": "pass",
-      "Elapsed": 14.47
-    },
-    {
-      "Test": "TestCapacityReplyStrictProtocolAndRegistration",
       "Action": "pass",
       "Elapsed": 14.46
     },
     {
       "Test": "TestAccountLimitPerOwner",
       "Action": "pass",
-      "Elapsed": 14.28
+      "Elapsed": 15.56
     },
     {
       "Test": "TestAccountNameUniquePerOwner",
       "Action": "pass",
-      "Elapsed": 10.74
+      "Elapsed": 14.83
     },
     {
-      "Test": "TestCapacityFinalGateLifecycleJobs",
+      "Test": "TestRollbackResetSQL",
       "Action": "pass",
-      "Elapsed": 14.01
+      "Elapsed": 17.22
     },
     {
-      "Test": "TestSoftHoldReleasePendingEventConverges",
+      "Test": "TestCreateSeatPKConflictIsNotAccountError",
       "Action": "pass",
-      "Elapsed": 34.28
+      "Elapsed": 14.23
     },
     {
-      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
+      "Test": "TestFrozenR30SchemaBackfillAndJobOp",
       "Action": "pass",
-      "Elapsed": 33.6
+      "Elapsed": 14.07
+    },
+    {
+      "Test": "TestBackupUsesLongTimeout",
+      "Action": "pass",
+      "Elapsed": 13.87
+    },
+    {
+      "Test": "TestCreateVsDisableSerialized",
+      "Action": "pass",
+      "Elapsed": 17.97
     }
   ],
   "hosted_slow15": [
     {
       "Test": "TestNodeDownLeavesStateAndCredential",
       "Action": "pass",
-      "Elapsed": 50
-    },
-    {
-      "Test": "TestRefreshCredResumesSuspendedCredential",
-      "Action": "pass",
-      "Elapsed": 39.12
-    },
-    {
-      "Test": "TestBackupChecksumControlPlane",
-      "Action": "pass",
-      "Elapsed": 39.06
-    },
-    {
-      "Test": "TestBackupIntegrityRejected",
-      "Action": "pass",
-      "Elapsed": 38.35
-    },
-    {
-      "Test": "TestSoftHoldReleasePendingEventConverges",
-      "Action": "pass",
-      "Elapsed": 34.28
+      "Elapsed": 51.95
     },
     {
       "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
       "Action": "pass",
-      "Elapsed": 33.6
+      "Elapsed": 45.7
     },
     {
-      "Test": "TestOptionsPlanFitsEachGate",
+      "Test": "TestRefreshCredResumesSuspendedCredential",
       "Action": "pass",
-      "Elapsed": 32.91
+      "Elapsed": 41.91
     },
     {
-      "Test": "TestCheckCreateCodeSplit",
+      "Test": "TestBackupChecksumControlPlane",
       "Action": "pass",
-      "Elapsed": 32.46
+      "Elapsed": 38.75
     },
     {
-      "Test": "TestFailedGateStopsTheChain",
+      "Test": "TestSoftHoldReleasePendingEventConverges",
       "Action": "pass",
-      "Elapsed": 32.4
-    },
-    {
-      "Test": "TestEnableRestartFailureAfterStarting",
-      "Action": "pass",
-      "Elapsed": 31.29
-    },
-    {
-      "Test": "TestLifecycleJobPersistsProgressAndMachineReason",
-      "Action": "pass",
-      "Elapsed": 30.24
-    },
-    {
-      "Test": "TestStartingWriteFailureDoesNotSuspendALiveCredential",
-      "Action": "pass",
-      "Elapsed": 29.85
-    },
-    {
-      "Test": "TestOwnershipEnforced",
-      "Action": "pass",
-      "Elapsed": 29.34
-    },
-    {
-      "Test": "TestEnableRestartWaitForAgentConnect",
-      "Action": "pass",
-      "Elapsed": 28.76
+      "Elapsed": 37.4
     },
     {
       "Test": "TestLifecycleOrderOnOneLog",
       "Action": "pass",
-      "Elapsed": 28.43
+      "Elapsed": 35.99
+    },
+    {
+      "Test": "TestFailedGateStopsTheChain",
+      "Action": "pass",
+      "Elapsed": 34.01
+    },
+    {
+      "Test": "TestEnableRestartFailureAfterStarting",
+      "Action": "pass",
+      "Elapsed": 34
+    },
+    {
+      "Test": "TestBackupIntegrityRejected",
+      "Action": "pass",
+      "Elapsed": 33.47
+    },
+    {
+      "Test": "TestLoginStartNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 31.93
+    },
+    {
+      "Test": "TestOptionsPlanFitsEachGate",
+      "Action": "pass",
+      "Elapsed": 31.09
+    },
+    {
+      "Test": "TestCheckCreateCodeSplit",
+      "Action": "pass",
+      "Elapsed": 31.06
+    },
+    {
+      "Test": "TestLoginTerminalStatesClearLinkAndCode",
+      "Action": "pass",
+      "Elapsed": 29.64
+    },
+    {
+      "Test": "TestLifecycleJobRecoveryLeavesNoActiveRows",
+      "Action": "pass",
+      "Elapsed": 29.43
+    },
+    {
+      "Test": "TestEnableRestartWaitForAgentConnect",
+      "Action": "pass",
+      "Elapsed": 26.73
     }
   ],
   "skips": [
@@ -1986,82 +1986,82 @@
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
-      "condition": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude\n2026/11/11 03:12:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude\n2026/11/11 04:02:16 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
-      "condition": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex\n2026/11/11 03:12:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex\n2026/11/11 04:02:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
-      "condition": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit\n2026/11/11 03:12:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit\n2026/11/11 04:02:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
-      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected\n2026/11/11 03:12:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.15s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected\n2026/11/11 04:02:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
-      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm\n2026/11/11 03:12:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm\n2026/11/11 04:02:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
-      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected\n2026/11/11 03:12:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected\n2026/11/11 04:02:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
-      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm\n2026/11/11 03:12:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm\n2026/11/11 04:02:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
-      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread\n2026/11/11 03:12:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread\n2026/11/11 04:02:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
-      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist\n2026/11/11 03:12:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist\n2026/11/11 04:02:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
-      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread\n2026/11/11 03:12:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread\n2026/11/11 04:02:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
-      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist\n2026/11/11 03:12:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist\n2026/11/11 04:02:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
-      "condition": "=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/claude\n2026/11/11 03:12:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/claude\n2026/11/11 04:02:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
-      "condition": "=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/codex\n2026/11/11 03:12:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/codex (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/codex\n2026/11/11 04:02:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/codex (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
-      "condition": "=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude\n2026/11/11 03:12:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.22s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude\n2026/11/11 04:02:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.22s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
-      "condition": "=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex\n2026/11/11 03:12:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex (0.22s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex\n2026/11/11 04:02:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex (0.23s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
       "test": "TestDeliveryACKActualCLILateWireTerminal",
-      "condition": "=== RUN   TestDeliveryACKActualCLILateWireTerminal\n2026/11/11 03:12:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 03:12:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILateWireTerminal (0.14s)\n"
+      "condition": "=== RUN   TestDeliveryACKActualCLILateWireTerminal\n2026/11/11 04:02:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 04:02:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILateWireTerminal (0.14s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
@@ -2139,11 +2139,6 @@
       "condition": "=== RUN   TestProjectContextAcrossRealHTTPHelperIPCMCP\n    project_context_roundtrip_test.go:17: set DW_DESKTOP_INTEGRATION_PYTHON to the locked helper test venv; canonical shell gate runs the cross-runtime set\n--- SKIP: TestProjectContextAcrossRealHTTPHelperIPCMCP (0.00s)\n"
     },
     {
-      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
-      "test": "TestSessionHistoryTwentyAgentPublishP99",
-      "condition": "=== RUN   TestSessionHistoryTwentyAgentPublishP99\n    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate\n--- SKIP: TestSessionHistoryTwentyAgentPublishP99 (0.00s)\n"
-    },
-    {
       "package": "github.com/zhangzongchu2019/dingwei/internal/store",
       "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
       "condition": "=== RUN   TestConsoleTaskLegacyDODMigrationPendingProductionCount\n    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision\n--- SKIP: TestConsoleTaskLegacyDODMigrationPendingProductionCount (0.00s)\n"
@@ -2155,13 +2150,18 @@
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
-      "test": "TestSpecMCPEndToEnd",
-      "condition": "=== RUN   TestSpecMCPEndToEnd\n    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses\n--- SKIP: TestSpecMCPEndToEnd (0.00s)\n"
+      "test": "TestSessionHistoryTwentyAgentPublishP99",
+      "condition": "=== RUN   TestSessionHistoryTwentyAgentPublishP99\n    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate\n--- SKIP: TestSessionHistoryTwentyAgentPublishP99 (0.00s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/store",
       "test": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
       "condition": "=== RUN   TestFeishuStickyOldHubMigrationRollbackCompatibility\n    feishu_sticky_compat_test.go:116: R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate\n--- SKIP: TestFeishuStickyOldHubMigrationRollbackCompatibility (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSpecMCPEndToEnd",
+      "condition": "=== RUN   TestSpecMCPEndToEnd\n    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses\n--- SKIP: TestSpecMCPEndToEnd (0.00s)\n"
     },
     {
       "package": "github.com/zhangzongchu2019/dingwei/internal/m8",

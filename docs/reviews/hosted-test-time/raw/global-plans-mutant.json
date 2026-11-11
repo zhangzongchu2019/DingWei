@@ -1,0 +1,31 @@
+{
+  "cmd": [
+    "go",
+    "test",
+    "-json",
+    "-race",
+    "-count=1",
+    "-timeout=3m",
+    "./internal/hosted",
+    "-run",
+    "^(TestUpgradeUnknownPlanNotSwallowed|TestHostedPlansParallelWitness)$"
+  ],
+  "cwd": "/data/ai-dev-data/hosted-test-time-once-c782",
+  "start": "2026-11-11T03:52:42.175801+00:00",
+  "reconcile_sha256": "6d5e5575a0f05a181ea056d5b75033b27b84aa14bdbeeb255b5b14785bb94b98",
+  "reader_sha256": "e0d02c528035a1af76a416b0ae92a0ff30de6db8ca67f94d7e5794d62f90e5e5",
+  "rc": 1,
+  "end": "2026-11-11T03:52:47.624950+00:00",
+  "test_results": [
+    {
+      "Test": "TestHostedPlansParallelWitness",
+      "Action": "fail",
+      "Elapsed": 2.12
+    },
+    {
+      "Test": "TestUpgradeUnknownPlanNotSwallowed",
+      "Action": "pass",
+      "Elapsed": 2.85
+    }
+  ]
+}

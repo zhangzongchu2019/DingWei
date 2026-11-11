@@ -84,7 +84,6 @@ func (g *stallGw) Send(ctx context.Context, nodeID string, c NodeCommand) (NodeR
 
 // 每个席位带超时：一个席位不回，不得卡死整批；不回的那个仍待对账，其余照常完成。
 func TestReconcileSeatTimeoutDoesNotStallBatch(t *testing.T) {
-	parallelHostedTest(t)
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	zzPendingSeat(t, s, "ag_r1", "nd_free")
@@ -144,7 +143,6 @@ func TestEmptyCreatedByRefused(t *testing.T) {
 
 // Upgrade：席位套餐查不到 ⇒ params 错（handler 译 params_invalid），且在改状态、签令牌之前就停。
 func TestUpgradeUnknownPlanNotSwallowed(t *testing.T) {
-	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, log, _, _, _, s, id := mkLifecycle(t)
 	saved := plans["2c4g"]

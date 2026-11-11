@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""从门禁 JSON 核验 S-HOSTED-TEST-TIME 四条判据。"""
+"""从本轮门禁 JSON 核验 S-HOSTED-TEST-TIME 的 a～g。"""
 import json
+import gzip
 from pathlib import Path
 
 
@@ -37,12 +38,42 @@ def main():
     after_skips = sorted((x['package'], x['test']) for x in after['skips'])
     assert before_skips == after_skips
     assert read('build-tests')['rc'] == read('diff-check')['rc'] == 0
-    assert read('body-audit')['restored_bodies'] == 185
+    audit = read('body-audit')
+    assert audit['restored_bodies'] == 185
+    assert audit['scheduled_parallel'] == 183
+    assert audit['serial_global_writers'] == [
+        'TestReconcileSeatTimeoutDoesNotStallBatch',
+        'TestUpgradeUnknownPlanNotSwallowed']
+    race = read('race3')
+    assert race['rc'] == 0 and '-race' in race['cmd'] and '-count=3' in race['cmd']
+    assert len(race['hosted_top']) == 555
+    assert hosted(race)['counts']['fail'] == hosted(race)['counts']['skip'] == 0
+    race_rounds = read('race-rounds')['rounds']
+    assert len(race_rounds) == 3
+    assert all(r['top_pass'] == 185 and set(r['names']) == names for r in race_rounds)
+    control, mutant = read('global-plans-control'), read('global-plans-mutant')
+    assert control['rc'] == 0 and mutant['rc'] == 1
+    assert '-race' in control['cmd'] and '-race' in mutant['cmd']
+    assert control['cmd'] == mutant['cmd']
+    assert control['reader_sha256'] == mutant['reader_sha256']
+    mutant_log = gzip.decompress((raw / 'global-plans-mutant.log.gz').read_bytes()).decode()
+    assert 'GLOBAL_PLANS_SERIALIZATION_WITNESS' in mutant_log
+    assert '[build failed]' not in mutant_log
+    assert any(r['Test'] == 'TestHostedPlansParallelWitness' and r['Action'] == 'fail'
+               for r in mutant['test_results'])
+    assert any(r['Test'] == 'TestUpgradeUnknownPlanNotSwallowed' and r['Action'] == 'pass'
+               for r in mutant['test_results'])
+    assert read('global-state-audit')['type_checked'] is True
     assert hosted(before_all)['elapsed'][0] > 300  # 原串行调度使性能门转红。
     print(json.dumps({'a': '通过', 'hosted_seconds': hosted(after)['elapsed'][0],
                       'b': '通过', 'round_seconds': [r['seconds'] for r in rounds],
                       'c': '通过', 'top_before_after': [185, 185], 'hosted_skip': 0,
-                      'd': '通过', 'serial_control_over_budget': True},
+                      'd': '通过', 'e': '通过',
+                      'race_round_seconds': [r['seconds'] for r in race_rounds],
+                      'f': '本轮 a～d 全量重跑通过',
+                      'g': '串行控制绿；重新并行后读者红',
+                      'serial_global_writers': audit['serial_global_writers'],
+                      'serial_control_over_budget': True},
                      ensure_ascii=False, indent=2))
 
 

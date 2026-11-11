@@ -3,6 +3,11 @@
   "top_level_before": 185,
   "top_level_after": 185,
   "restored_bodies": 185,
+  "scheduled_parallel": 183,
+  "serial_global_writers": [
+    "TestReconcileSeatTimeoutDoesNotStallBatch",
+    "TestUpgradeUnknownPlanNotSwallowed"
+  ],
   "original_files_unchanged_after_restoration": true,
   "products_changed": false,
   "files": [
@@ -113,7 +118,7 @@
     },
     {
       "file": "internal/hosted/reconcile_test.go",
-      "scheduled": 4,
+      "scheduled": 2,
       "original_sha256": "e87afad839f7d6de1b3a29489122656e0c7d97e296d37d4936b5e416539b197c"
     },
     {
