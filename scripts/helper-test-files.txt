@@ -4,6 +4,7 @@ tools/sessionhelper/tests/test_agent_disk_metrics.py
 tools/sessionhelper/tests/test_boot_origin.py
 tools/sessionhelper/tests/test_claim_enroll.py
 tools/sessionhelper/tests/test_claude_launch_contract.py
+tools/sessionhelper/tests/test_claude_turn_attribution.py
 tools/sessionhelper/tests/test_cli_exit_visible.py
 tools/sessionhelper/tests/test_codex_daemon_disk_workdir.py
 tools/sessionhelper/tests/test_codex_delivery_reconcile.py
