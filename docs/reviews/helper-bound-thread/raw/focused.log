@@ -1,0 +1,125 @@
+test_adapter_bound_thread_failure_has_no_injected_ack_and_publishes_reason (test_codex_stale_thread.CodexStaleThread.test_adapter_bound_thread_failure_has_no_injected_ack_and_publishes_reason) ... [driver-adapter] deliver id=dw-one -> failed (bound_thread_unavailable: error_class=missing_thread; method)
+[delivery] failed id=dw-one source=protocol (bound_thread_unavailable: error_class=missing_thread; method)
+ok
+test_adapter_rejected_admission_has_no_injected_ack_and_publishes_failure (test_codex_stale_thread.CodexStaleThread.test_adapter_rejected_admission_has_no_injected_ack_and_publishes_failure) ... [driver-adapter] deliver id=dw-one -> failed (session_unavailable: error_class=missing_thread; method=thre)
+[delivery] failed id=dw-one source=protocol (session_unavailable: error_class=missing_thread; method=thre)
+ok
+test_adapter_uncertain_admission_is_visible_and_not_a_success (test_codex_stale_thread.CodexStaleThread.test_adapter_uncertain_admission_is_visible_and_not_a_success) ... [driver-adapter] deliver id=dw-one -> failed (model_admission_unknown: error_class=timeout; method=local; )
+[delivery] failed id=dw-one source=protocol (model_admission_unknown: error_class=timeout; method=local; )
+ok
+test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) ... ok
+test_historical_interrupt_confirm_reads_same_record_thread (test_codex_stale_thread.CodexStaleThread.test_historical_interrupt_confirm_reads_same_record_thread) ... ok
+test_historical_poll_and_state_update_use_record_thread (test_codex_stale_thread.CodexStaleThread.test_historical_poll_and_state_update_use_record_thread) ... ok
+test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) ... ok
+test_loaded_thread_validated_before_admission (test_codex_stale_thread.CodexStaleThread.test_loaded_thread_validated_before_admission) ... ok
+test_missing_thread_never_creates_or_replays_and_retains_ledger (test_codex_stale_thread.CodexStaleThread.test_missing_thread_never_creates_or_replays_and_retains_ledger) ... ok
+test_missing_turn_start_invalidates_binding_without_new_thread (test_codex_stale_thread.CodexStaleThread.test_missing_turn_start_invalidates_binding_without_new_thread) ... ok
+test_new_thread_is_created_only_for_initial_unbound_session (test_codex_stale_thread.CodexStaleThread.test_new_thread_is_created_only_for_initial_unbound_session) ... ok
+test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain (test_codex_stale_thread.CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain) ... ok
+test_read_not_loaded_error_is_resumable_not_missing (test_codex_stale_thread.CodexStaleThread.test_read_not_loaded_error_is_resumable_not_missing) ... ok
+test_reconnect_cannot_replace_rpc_between_validation_and_dispatch (test_codex_stale_thread.CodexStaleThread.test_reconnect_cannot_replace_rpc_between_validation_and_dispatch) ... ok
+test_reconnect_restores_exact_persisted_thread_before_turn (test_codex_stale_thread.CodexStaleThread.test_reconnect_restores_exact_persisted_thread_before_turn) ... ok
+test_rpc_replacement_invalidates_same_generation (test_codex_stale_thread.CodexStaleThread.test_rpc_replacement_invalidates_same_generation) ... ok
+test_same_rpc_new_connection_generation_requires_validation (test_codex_stale_thread.CodexStaleThread.test_same_rpc_new_connection_generation_requires_validation) ... ok
+test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart (test_codex_stale_thread.CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart) ... ok
+test_unclassified_turn_error_is_uncertain_and_never_replayed (test_codex_stale_thread.CodexStaleThread.test_unclassified_turn_error_is_uncertain_and_never_replayed) ... ok
+test_validation_errors_are_classified_without_guessing_or_private_text (test_codex_stale_thread.CodexStaleThread.test_validation_errors_are_classified_without_guessing_or_private_text) ... ok
+test_configured_root_read_before_exact_turn (test_codex_stale_thread.ConfiguredRootBinding.test_configured_root_read_before_exact_turn) ... ok
+test_configured_root_resumes_exact_thread (test_codex_stale_thread.ConfiguredRootBinding.test_configured_root_resumes_exact_thread) ... ok
+test_configured_transport_unavailable_is_failed (test_codex_stale_thread.ConfiguredRootBinding.test_configured_transport_unavailable_is_failed) ... ok
+test_invalid_binding_fails_without_new_thread (test_codex_stale_thread.ConfiguredRootBinding.test_invalid_binding_fails_without_new_thread) ... ok
+test_private_binding_conflict_stops_startup_and_reports_both_ids (test_codex_stale_thread.ConfiguredRootBinding.test_private_binding_conflict_stops_startup_and_reports_both_ids) ... ok
+test_private_matching_or_empty_binding_validates_before_saving (test_codex_stale_thread.ConfiguredRootBinding.test_private_matching_or_empty_binding_validates_before_saving) ... ok
+test_reconnect_revalidates_and_alias_cannot_replace_pin (test_codex_stale_thread.ConfiguredRootBinding.test_reconnect_revalidates_and_alias_cannot_replace_pin) ... ok
+test_unavailable_never_creates_and_failed_receipt_is_durable (test_codex_stale_thread.ConfiguredRootBinding.test_unavailable_never_creates_and_failed_receipt_is_durable) ... ok
+test_unset_factory_preserves_legacy_constructor_arguments (test_codex_stale_thread.ConfiguredRootBinding.test_unset_factory_preserves_legacy_constructor_arguments) ... ok
+test_both_transports_preserve_rpc_error_without_private_payload_in_string (test_codex_stale_thread.RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string) ... ok
+test_missing_thread_requires_exact_method_code_and_id (test_codex_stale_thread.RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id) ... ok
+test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned (test_codex_stale_thread.RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned) ... ok
+test_session_event_loop_forwards_failure_with_delivery_correlation (test_codex_stale_thread.StructuredAdmissionOutput.test_session_event_loop_forwards_failure_with_delivery_correlation) ... ok
+test_aa004_native_tool_source_and_stale_unknown_rejection (test_sub_agent_helper.BrokerTests.test_aa004_native_tool_source_and_stale_unknown_rejection) ... ok
+test_aa008_outer_thread_only_and_bounded_quarantine (test_sub_agent_helper.BrokerTests.test_aa008_outer_thread_only_and_bounded_quarantine) ... ok
+test_aa008_parallel_response_wait_and_single_physical_writer (test_sub_agent_helper.BrokerTests.test_aa008_parallel_response_wait_and_single_physical_writer) ... ok
+test_aa009_seat_read_budget_shared_200_not_per_lane (test_sub_agent_helper.BrokerTests.test_aa009_seat_read_budget_shared_200_not_per_lane) ... ok
+test_native_request_id_collision_with_client_pending (test_sub_agent_helper.BrokerTests.test_native_request_id_collision_with_client_pending) ... ok
+test_recovery_does_not_kill_healthy_sibling (test_sub_agent_helper.BrokerTests.test_recovery_does_not_kill_healthy_sibling) ... ok
+test_writer_rechecks_closed_node_and_starts_clock_at_write (test_sub_agent_helper.BrokerTests.test_writer_rechecks_closed_node_and_starts_clock_at_write) ... ok
+test_root_configuration_does_not_bind_children_or_relax_broker (test_sub_agent_helper.ConfiguredRootLaneTests.test_root_configuration_does_not_bind_children_or_relax_broker) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-child-message -> processing (turn=turn-5 status=inProgress)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_controls_only_trusted_connection_and_ack_scoped (test_sub_agent_helper.ConnectionTests.test_controls_only_trusted_connection_and_ack_scoped) ... ok
+test_native_send_full_route_transport_and_durable_receipt (test_sub_agent_helper.ConnectionTests.test_native_send_full_route_transport_and_durable_receipt) ... ok
+test_unavailable_child_never_enters_parent_inbox (test_sub_agent_helper.ConnectionTests.test_unavailable_child_never_enters_parent_inbox) ... ok
+test_old_root_create_reports_restart_without_nodes_or_tree (test_sub_agent_helper.ExistingRootToolsTests.test_old_root_create_reports_restart_without_nodes_or_tree) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+ok
+test_old_root_does_not_expose_control_tool (test_sub_agent_helper.ExistingRootToolsTests.test_old_root_does_not_expose_control_tool) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+ok
+test_old_root_preserves_private_endpoint_binding (test_sub_agent_helper.ExistingRootToolsTests.test_old_root_preserves_private_endpoint_binding) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+ok
+test_reopened_root_installs_tools_and_can_create (test_sub_agent_helper.ExistingRootToolsTests.test_reopened_root_installs_tools_and_can_create) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa004_trusted_native_context_source_and_forgery (test_sub_agent_helper.RuntimeTests.test_aa004_trusted_native_context_source_and_forgery) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa007_completion_idle_cap_restart_and_parent_cascade (test_sub_agent_helper.RuntimeTests.test_aa007_completion_idle_cap_restart_and_parent_cascade) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa007_idle_progress_and_pending_work_are_distinct (test_sub_agent_helper.RuntimeTests.test_aa007_idle_progress_and_pending_work_are_distinct) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa007_restart_unknown_work_does_not_become_idle (test_sub_agent_helper.RuntimeTests.test_aa007_restart_unknown_work_does_not_become_idle) ... [driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa008_ack_gate_reconnect_and_child_delivery_no_parent_fallback (test_sub_agent_helper.RuntimeTests.test_aa008_ack_gate_reconnect_and_child_delivery_no_parent_fallback) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-same -> processing (turn=turn-5 status=inProgress)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[delivery][LATE_ACCEPTED] id=dw-same; accepted-only cannot reopen admission
+ok
+test_aa009_return_outcomes_are_lane_and_generation_scoped (test_sub_agent_helper.RuntimeTests.test_aa009_return_outcomes_are_lane_and_generation_scoped) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_broker_recovery_keeps_lane_notification_pump (test_sub_agent_helper.RuntimeTests.test_broker_recovery_keeps_lane_notification_pump) ... [driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_create_repeated_unknown_native_response_never_second_thread (test_sub_agent_helper.RuntimeTests.test_create_repeated_unknown_native_response_never_second_thread) ... ok
+test_ended_lane_ack_restores_without_native_activation (test_sub_agent_helper.RuntimeTests.test_ended_lane_ack_restores_without_native_activation) ... [driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_m1_confirmation_without_lane_echo_uses_immutable_scope (test_sub_agent_helper.RuntimeTests.test_m1_confirmation_without_lane_echo_uses_immutable_scope) ... [driver-adapter] started, driver=codex
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_native_send_journal_survives_restart (test_sub_agent_helper.RuntimeTests.test_native_send_journal_survives_restart) ... ok
+test_slow_creation_does_not_block_parent_lifecycle_seal (test_sub_agent_helper.RuntimeTests.test_slow_creation_does_not_block_parent_lifecycle_seal) ... [driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_aa006_random_tail_collision_alias_and_tombstone (test_sub_agent_helper.StoreTests.test_aa006_random_tail_collision_alias_and_tombstone) ... ok
+test_aa007_atomic_seal_returns_only_definitely_unexecuted (test_sub_agent_helper.StoreTests.test_aa007_atomic_seal_returns_only_definitely_unexecuted) ... ok
+test_aa007_policy_defaults_and_negative_bounds (test_sub_agent_helper.StoreTests.test_aa007_policy_defaults_and_negative_bounds) ... ok
+test_aa009_inbox_ledger_query_callback_generation_scope (test_sub_agent_helper.StoreTests.test_aa009_inbox_ledger_query_callback_generation_scope) ... ok
+test_aa010_feature_off_drains_without_native_or_capability (test_sub_agent_helper.StoreTests.test_aa010_feature_off_drains_without_native_or_capability) ... ok
+test_aa010_offline_rollback_blocks_until_individual_returns_settle (test_sub_agent_helper.StoreTests.test_aa010_offline_rollback_blocks_until_individual_returns_settle) ... ok
+test_aa010_online_tree_json_never_enters_legacy_text (test_sub_agent_helper.StoreTests.test_aa010_online_tree_json_never_enters_legacy_text) ... ok
+test_additive_legacy_root_data_readable (test_sub_agent_helper.StoreTests.test_additive_legacy_root_data_readable) ... ok
+test_create_idempotent_before_after_crash_and_conflicts (test_sub_agent_helper.StoreTests.test_create_idempotent_before_after_crash_and_conflicts) ... ok
+test_tree_ack_current_connection_required_and_ended_not_revived (test_sub_agent_helper.StoreTests.test_tree_ack_current_connection_required_and_ended_not_revived) ... ok
+
+----------------------------------------------------------------------
+Ran 70 tests in 3.858s
+
+OK

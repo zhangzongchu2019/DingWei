@@ -104,7 +104,9 @@ class SubAgentRuntime:
             manage_daemon=False, daemon_verified=root._daemon_verified, replay_verified=root._replay_verified,
             store_path=root._store._path, model=root._model, model_provider=root._model_provider,
             sandbox=root._sandbox, approval_policy=root._approval_policy, view_item_backfill=root._view_item_backfill,
-            shared_facade=facade, bound_thread_id=thread_id, lane_id=node_id, lane_generation=generation)
+            shared_facade=facade, bound_thread_id=thread_id,
+            require_bound_thread=bool(not node_id and root._required_bound_thread_id),
+            lane_id=node_id, lane_generation=generation)
         driver.context_provider = lambda instructions=False: self.context_input(node_id, instructions)
         driver.dynamic_tools = dynamic_tools() if node_id or self.root_tools_available else []
         return driver

@@ -717,6 +717,7 @@ class CodexProtocolDriver(Driver):
         broker_enabled: bool = False,
         shared_facade=None,
         bound_thread_id: str = "",
+        require_bound_thread: bool = False,
         lane_id: str = "",
         lane_generation: int = 1,
     ):
@@ -763,6 +764,9 @@ class CodexProtocolDriver(Driver):
 
         self._rpc: StdioJsonRpc | None = None
         self._initialized = False
+        self._required_bound_thread_id = bound_thread_id if require_bound_thread else ""
+        if require_bound_thread and not bound_thread_id:
+            raise ValueError("configured bound thread id must not be empty")
         self._thread_id = bound_thread_id
         self._session_id = bound_thread_id  # compatibility with the conformance draft
         self._connection_generation = 0
@@ -918,6 +922,12 @@ class CodexProtocolDriver(Driver):
                         self._private_endpoint = PrivateEndpointClient(spec)
                     live = self._private_endpoint.ensure()
                     self._private_endpoint.take_writer()
+                    if self._required_bound_thread_id:
+                        saved_thread = self._private_endpoint.bound_thread()
+                        if saved_thread and saved_thread != self._required_bound_thread_id:
+                            raise ValueError(
+                                "bound_thread_conflict: SH_CODEX_BOUND_THREAD_ID="
+                                + self._required_bound_thread_id + "; binding.json=" + saved_thread)
                     child = live['child']
                     self._owned_daemon_identity = OwnedDaemonIdentity(child['pid'], child['starttime'])
                     socket_path = str(self._private_endpoint.spec.root / 'app.sock')
@@ -1060,7 +1070,7 @@ class CodexProtocolDriver(Driver):
             body_hash = hashlib.sha256(body.encode("utf-8")).hexdigest()
             existing = self._store.get(self._thread_id, envelope_id) or self._store.get_by_envelope(envelope_id)
             if existing is not None and (existing.state != "failed" or existing.turn_id
-                    or existing.detail.startswith("session_unavailable:")):
+                    or existing.detail.startswith(("session_unavailable:", "bound_thread_unavailable:"))):
                 # Historical receipt lookup must not rebind the active session.
                 self._remember_delivery(envelope_id, existing.turn_id, existing.state)
                 return DeliveryReceipt(
@@ -1072,14 +1082,18 @@ class CodexProtocolDriver(Driver):
             if not self.health():
                 try:
                     self.start()
-                except DaemonIdentityError as exc:
+                except Exception as exc:
+                    if not self._required_bound_thread_id and not isinstance(exc, DaemonIdentityError):
+                        raise
                     return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
             # Do not replace the connection between validation and turn/start.
             with self._start_lock:
-                if not self._thread_id:
+                if not self._thread_id or self._required_bound_thread_id:
                     try:
                         self._ensure_thread()
-                    except PrivateEndpointError as exc:
+                    except Exception as exc:
+                        if not self._required_bound_thread_id and not isinstance(exc, PrivateEndpointError):
+                            raise
                         return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
                 try:
                     self._validate_bound_thread()
@@ -1129,7 +1143,8 @@ class CodexProtocolDriver(Driver):
 
     def _admission_failure(self, envelope_id: str, body_hash: str, exc: Exception, *, uncertain: bool) -> DeliveryReceipt:
         self._verified_binding = None
-        prefix = "model_admission_unknown" if uncertain else "session_unavailable"
+        prefix = "model_admission_unknown" if uncertain else (
+            "bound_thread_unavailable" if self._required_bound_thread_id else "session_unavailable")
         detail = _failure_detail(prefix, exc, self._thread_id)
         self._store.upsert(self._thread_id, envelope_id, "", body_hash, "unknown" if uncertain else "failed", detail)
         self._envelope_states[envelope_id] = "failed"
@@ -1576,6 +1591,13 @@ class CodexProtocolDriver(Driver):
         self._verified_binding = None
 
     def _ensure_thread(self) -> None:
+        # Explicit root binding is fail-closed: never replace an unavailable thread.
+        if self._required_bound_thread_id:
+            self._thread_id = self._session_id = self._required_bound_thread_id
+            self._validate_bound_thread()
+            if self._private_endpoint is not None:
+                self._private_endpoint.save_thread(self._thread_id)
+            return
         params: dict = {"cwd": self._workdir, "ephemeral": self._ephemeral}
         if self._approval_policy is not None:
             params["approvalPolicy"] = self._approval_policy
@@ -2099,6 +2121,9 @@ class CodexProtocolDriver(Driver):
                 self._store.update_state(thread_id, envelope_id, state, detail)
 
     def _sync_thread_alias(self) -> None:
+        if self._required_bound_thread_id:
+            self._thread_id = self._session_id = self._required_bound_thread_id
+            return
         if self._session_id and self._session_id != self._thread_id:
             self._thread_id = self._session_id
         elif self._thread_id and not self._session_id:

@@ -115,7 +115,10 @@ class DriverAdapter:
                                           store_path=store)
         # 默认 codex —— sandbox/approval 给足权限(对齐 claude 的 --dangerously-skip-permissions 意图),可用 env 收紧
         from .codexDriver import CodexProtocolDriver
+        bound_thread = getattr(self.cfg, "codex_bound_thread_id", "")
+        root_binding = dict(bound_thread_id=bound_thread, require_bound_thread=True) if bound_thread else {}
         return CodexProtocolDriver(store_path=store, workdir=cwd, model=model or None,
+                                   **root_binding,
                                    broker_enabled=bool(getattr(self.cfg,'sub_agents_v1',False)),
                                    sandbox=env_get("SH_CODEX_SANDBOX", "danger-full-access"),
                                    approval_policy=env_get("SH_CODEX_APPROVAL", "never"),
@@ -644,7 +647,7 @@ class DriverAdapter:
                     # 通知 ⇒ 事件面补发终态（带原因），否则业主在 view 看不到（复验确认的缺口）。
                     # turn 已建立的失败由 driver 通知驱动事件面，不重复发。
                     reason = "turn_failed"
-                    for admission_reason in ("session_unavailable", "model_admission_unknown"):
+                    for admission_reason in ("session_unavailable", "bound_thread_unavailable", "model_admission_unknown"):
                         if str(receipt.detail).startswith(admission_reason + ":"):
                             reason = admission_reason
                             break
@@ -663,7 +666,7 @@ class DriverAdapter:
                                 and persisted['error'] != 'turn_terminal_unknown'
                                 and persisted['state'] != 'admission_unknown'):
                             ledger.record_completed(command.delivery_id, command.turn_id, terminal_outcome)
-                    elif not admitted and str(receipt.detail).startswith("session_unavailable:"):
+                    elif not admitted and str(receipt.detail).startswith(("session_unavailable:", "bound_thread_unavailable:")):
                         ledger.record_rejected(command.delivery_id)
                     elif not admitted:
                         ledger.record_admission_unknown(command.delivery_id)

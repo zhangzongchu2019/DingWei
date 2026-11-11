@@ -1,0 +1,18 @@
+test_adapter_bound_thread_failure_has_no_injected_ack_and_publishes_reason (test_codex_stale_thread.CodexStaleThread.test_adapter_bound_thread_failure_has_no_injected_ack_and_publishes_reason) ... [driver-adapter] deliver id=dw-one -> failed (bound_thread_unavailable: error_class=missing_thread; method)
+[delivery] failed id=dw-one source=protocol (bound_thread_unavailable: error_class=missing_thread; method)
+FAIL
+
+======================================================================
+FAIL: test_adapter_bound_thread_failure_has_no_injected_ack_and_publishes_reason (test_codex_stale_thread.CodexStaleThread.test_adapter_bound_thread_failure_has_no_injected_ack_and_publishes_reason)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/hbt782/hbt-mutation-431m48_j/tests/test_codex_stale_thread.py", line 329, in test_adapter_bound_thread_failure_has_no_injected_ack_and_publishes_reason
+    self._adapter_failure('bound_thread_unavailable')
+  File "/tmp/hbt782/hbt-mutation-431m48_j/tests/test_codex_stale_thread.py", line 316, in _adapter_failure
+    self.assertEqual(len(failed), 1, 'ADMISSION_FAILURE_EVENT_NOT_VISIBLE')
+AssertionError: 0 != 1 : ADMISSION_FAILURE_EVENT_NOT_VISIBLE
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)

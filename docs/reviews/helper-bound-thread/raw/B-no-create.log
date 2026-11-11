@@ -1,0 +1,17 @@
+test_unavailable_never_creates_and_failed_receipt_is_durable (test_codex_stale_thread.ConfiguredRootBinding.test_unavailable_never_creates_and_failed_receipt_is_durable) ... FAIL
+
+======================================================================
+FAIL: test_unavailable_never_creates_and_failed_receipt_is_durable (test_codex_stale_thread.ConfiguredRootBinding.test_unavailable_never_creates_and_failed_receipt_is_durable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/hbt782/hbt-mutation-431m48_j/tests/test_codex_stale_thread.py", line 453, in test_unavailable_never_creates_and_failed_receipt_is_durable
+    self.assertEqual(receipt.state, 'failed', 'BOUND_UNAVAILABLE_FELL_BACK_TO_NEW_THREAD')
+AssertionError: 'processing' != 'failed'
+- processing
++ failed
+ : BOUND_UNAVAILABLE_FELL_BACK_TO_NEW_THREAD
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)

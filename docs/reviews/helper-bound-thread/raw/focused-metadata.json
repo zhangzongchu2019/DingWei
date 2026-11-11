@@ -1,0 +1,21 @@
+{
+  "baseline": "329eb9f9c45d2d785a0429b01eaa0fa5264fe15d",
+  "thread_id": "01a1c782-7090-7071-8d99-6ea51512ac13",
+  "focused_tests": 70,
+  "focused_rc": 0,
+  "focused_seconds": 3.858,
+  "focused_log_mtime_utc": "2026-11-11T23:26:32.054300+00:00",
+  "strict_pass": 37,
+  "strict_fail": 0,
+  "strict_rc": 0,
+  "ack_to": "opus50tc2k.zzc#enrolled",
+  "ack_request_id": "33a596825846",
+  "source_sha256": {
+    "tools/sessionhelper/sessionhelper/config.py": "f9292b1e97a2f3f23067d6b36753bbaca86ee30a4f5229b56beccd69a3ef3ba9",
+    "tools/sessionhelper/sessionhelper/driver_adapter.py": "9596b9ecf06db9ffee85f07ccdfe86502f38109b88ecf6e020d91d008a3b9d9a",
+    "tools/sessionhelper/sessionhelper/codexDriver.py": "65cf027fb931c6068f3aac8fdcf0ceecdb704c52cd6b13ff4f98de5760a438d6",
+    "tools/sessionhelper/sessionhelper/sub_agent_runtime.py": "18fd511b57d2dc7d41ee6b81ff5028196ad79f9133b1543ba1bdff11376239c6",
+    "tools/sessionhelper/tests/test_codex_stale_thread.py": "74dfa9deea7c9a30783184a62d269addf9f4b42ce31a9f29352bd2fb39efde54",
+    "tools/sessionhelper/tests/test_sub_agent_helper.py": "5714be364fcb76eb933e1d723c89d901f0e311ba0a0b9d5fc3868d6335f9f820"
+  }
+}

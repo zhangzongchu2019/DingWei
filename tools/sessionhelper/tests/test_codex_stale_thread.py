@@ -4,6 +4,7 @@ All transports are local fakes; the separate real_protocol.py checks the exact
 0.159.2 server. No credentials, managed daemon, or external model are used here.
 """
 import json
+from contextlib import nullcontext
 import io
 import os
 from pathlib import Path
@@ -291,7 +292,9 @@ class CodexStaleThread(unittest.TestCase):
         self.assertTrue(replaced.is_set())
 
     def _adapter_failure(self, reason):
-        if reason == 'session_unavailable':
+        if reason in ('session_unavailable', 'bound_thread_unavailable'):
+            if reason == 'bound_thread_unavailable':
+                self.driver._required_bound_thread_id = 'bound-thread'
             self.rpc.loaded = False
             self.rpc.errors['thread/resume'] = JsonRpcError('thread/resume', {'code': -32600, 'message': 'no rollout found for thread id bound-thread'})
         else:
@@ -321,6 +324,9 @@ class CodexStaleThread(unittest.TestCase):
 
     def test_adapter_rejected_admission_has_no_injected_ack_and_publishes_failure(self):
         self._adapter_failure('session_unavailable')
+
+    def test_adapter_bound_thread_failure_has_no_injected_ack_and_publishes_reason(self):
+        self._adapter_failure('bound_thread_unavailable')
 
     def test_adapter_uncertain_admission_is_visible_and_not_a_success(self):
         self._adapter_failure('model_admission_unknown')
@@ -405,6 +411,147 @@ class RPCErrorShapes(unittest.TestCase):
                 self.assertEqual(caught.classify('bound-thread'), 'missing_thread', 'RPC_ERROR_SHAPE_DISCARDED')
                 self.assertNotIn('PRIVATE', str(caught))
                 self.assertNotIn('bound-thread', str(caught), 'RAW_RPC_ERROR_EXPOSED')
+
+
+
+class ConfiguredRootBinding(unittest.TestCase):
+    def setUp(self):
+        from sessionhelper.config import load_config
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.env = dict(SH_DRIVER='codex', SH_SESSION_NAME='fixture', SH_OWNER='owner',
+                        SH_KEY_ID='key', SH_SECRET='synthetic', SH_STATE_DIR=self.tmp.name,
+                        SH_CLI_CWD=self.tmp.name, SH_CODEX_BOUND_THREAD_ID='bound-thread')
+        with mock.patch.dict(os.environ, self.env):
+            self.adapter = DriverAdapter(load_config(self.env))
+        self.driver = self.adapter.driver
+        self.rpc = RPC(self.tmp.name)
+        self.driver._rpc, self.driver._initialized = self.rpc, True
+
+    def methods(self):
+        return [method for method, _ in self.rpc.calls]
+
+    def test_configured_root_read_before_exact_turn(self):
+        self.assertEqual(self.driver._thread_id, 'bound-thread')
+        receipt = self.driver.deliver('bound-one', 'input')
+        self.assertEqual(receipt.state, 'processing')
+        self.assertEqual(self.methods(), ['thread/read', 'thread/turns/list', 'turn/start'])
+        self.assertEqual(self.rpc.calls[-1][1]['threadId'], 'bound-thread', 'ROOT_BINDING_IGNORED')
+
+    def test_configured_root_resumes_exact_thread(self):
+        self.rpc.loaded = False
+        self.assertEqual(self.driver.deliver('resume-one', 'input').state, 'processing')
+        self.assertEqual(self.methods(), ['thread/read', 'thread/resume', 'thread/turns/list', 'turn/start'])
+        self.assertEqual(self.rpc.calls[1][1]['threadId'], 'bound-thread')
+        self.assertNotIn('thread/start', self.methods())
+
+    def test_unavailable_never_creates_and_failed_receipt_is_durable(self):
+        self.rpc.loaded = False
+        self.rpc.errors['thread/resume'] = JsonRpcError('thread/resume', {
+            'code': -32600, 'message': 'no rollout found for thread id bound-thread'})
+        receipt = self.driver.deliver('missing', 'input')
+        self.assertEqual(receipt.state, 'failed', 'BOUND_UNAVAILABLE_FELL_BACK_TO_NEW_THREAD')
+        self.assertTrue(receipt.detail.startswith('bound_thread_unavailable:'), receipt.detail)
+        self.assertNotIn('thread/start', self.methods(), 'BOUND_UNAVAILABLE_CREATED_THREAD')
+        self.assertNotIn('turn/start', self.methods())
+        self.assertEqual(self.driver._store.get('bound-thread', 'missing').state, 'failed')
+        before = list(self.rpc.calls)
+        self.rpc.errors.clear()
+        self.assertEqual(self.driver.deliver('missing', 'input'), receipt)
+        self.assertEqual(self.rpc.calls, before, 'FAILED_BOUND_DELIVERY_REPLAYED')
+
+    def test_invalid_binding_fails_without_new_thread(self):
+        for field, value in [('id', 'another-thread'), ('cwd', '/different-cwd'),
+                             ('status', {'type': 'archived'}), ('canAcceptDirectInput', False)]:
+            with self.subTest(field=field):
+                thread = dict(id='bound-thread', cwd=self.tmp.name,
+                              status={'type': 'idle'}, canAcceptDirectInput=True)
+                thread[field] = value
+                self.rpc.result_override = {'thread': thread}
+                self.driver._verified_binding = None
+                receipt = self.driver.deliver('invalid-' + field, 'input')
+                self.assertEqual(receipt.state, 'failed')
+                self.assertIn('bound_thread_unavailable:', receipt.detail)
+        self.assertNotIn('thread/start', self.methods())
+        self.assertNotIn('turn/start', self.methods())
+
+    def test_reconnect_revalidates_and_alias_cannot_replace_pin(self):
+        self.assertEqual(self.driver.deliver('first', 'input').state, 'processing')
+        self.driver._active_turn_id = ''
+        self.driver._connection_generation += 1
+        self.driver._thread_id = self.driver._session_id = 'historical-alias'
+        self.rpc.errors['thread/read'] = TimeoutError('private details')
+        receipt = self.driver.deliver('second', 'input')
+        self.assertEqual(receipt.state, 'failed')
+        self.assertIn('bound_thread_unavailable:', receipt.detail)
+        self.assertEqual(self.rpc.calls[-1][1]['threadId'], 'bound-thread')
+        self.assertNotIn('private details', receipt.detail)
+        self.assertEqual(self.methods().count('turn/start'), 1)
+
+    def test_unset_factory_preserves_legacy_constructor_arguments(self):
+        from sessionhelper.config import load_config
+        env = {k: v for k, v in self.env.items() if k != 'SH_CODEX_BOUND_THREAD_ID'}
+        with mock.patch.dict(os.environ, env, clear=True), \
+             mock.patch('sessionhelper.codexDriver.CodexProtocolDriver') as factory:
+            DriverAdapter(load_config(env))
+        self.assertNotIn('bound_thread_id', factory.call_args.kwargs)
+        self.assertNotIn('require_bound_thread', factory.call_args.kwargs)
+
+    def test_private_binding_conflict_stops_startup_and_reports_both_ids(self):
+        endpoint = mock.Mock()
+        endpoint.bound_thread.return_value = 'persisted-other-thread'
+        driver = CodexProtocolDriver(workdir=self.tmp.name,
+            store_path=str(Path(self.tmp.name) / 'private.db'),
+            bound_thread_id='configured-thread', require_bound_thread=True,
+            endpoint_mode='private', endpoint_state_dir=self.tmp.name,
+            endpoint_seat='fixture', endpoint_codex_home=self.tmp.name,
+            daemon_identity_check='enforce')
+        with mock.patch('sessionhelper.codexDriver.PrivateEndpointClient', return_value=endpoint), \
+             mock.patch('sessionhelper.codexDriver.UnixWebSocketJsonRpc',
+                        side_effect=AssertionError('CONFLICT_REACHED_APP_SERVER')) as transport:
+            with self.assertRaisesRegex(ValueError, 'configured-thread.*persisted-other-thread'):
+                driver.start()
+        transport.assert_not_called()
+        endpoint.save_thread.assert_not_called()
+        endpoint.release_writer.assert_called_once_with()
+        self.assertFalse(driver.health())
+
+    def test_private_matching_or_empty_binding_validates_before_saving(self):
+        for saved in ('', 'bound-thread'):
+            with self.subTest(saved=saved):
+                endpoint = mock.Mock()
+                endpoint.ensure.return_value = {'child': {'pid': os.getpid(), 'starttime': 1}}
+                endpoint.admission.side_effect = lambda _: nullcontext()
+                endpoint.spec.root = Path(self.tmp.name)
+                endpoint.bound_thread.return_value = saved
+                rpc = RPC(self.tmp.name)
+                rpc.start = lambda: None
+                rpc.stop = lambda: None
+                rpc.peer_identity = rpc.identity_warning = None
+                driver = CodexProtocolDriver(workdir=self.tmp.name,
+                    store_path=str(Path(self.tmp.name) / ('private-' + (saved or 'empty') + '.db')),
+                    bound_thread_id='bound-thread', require_bound_thread=True,
+                    endpoint_mode='private', endpoint_state_dir=self.tmp.name,
+                    endpoint_seat='fixture', endpoint_codex_home=self.tmp.name,
+                    daemon_identity_check='enforce')
+                with mock.patch('sessionhelper.codexDriver.PrivateEndpointClient', return_value=endpoint), \
+                     mock.patch('sessionhelper.codexDriver.UnixWebSocketJsonRpc', return_value=rpc), \
+                     mock.patch.object(driver, '_pump_notifications'):
+                    driver.start()
+                    endpoint.bound_thread.assert_called_once_with()
+                    endpoint.save_thread.assert_not_called()
+                    self.assertEqual(driver.deliver('private-' + saved, 'input').state, 'processing')
+                    endpoint.save_thread.assert_called_once_with('bound-thread')
+                    self.assertNotIn('thread/start', [method for method, _ in rpc.calls])
+                    driver.stop()
+
+    def test_configured_transport_unavailable_is_failed(self):
+        self.rpc.live = False
+        with mock.patch.object(self.driver, 'start', side_effect=ConnectionError('closed')):
+            receipt = self.driver.deliver('offline', 'input')
+        self.assertEqual(receipt.state, 'failed')
+        self.assertIn('bound_thread_unavailable:', receipt.detail)
+        self.assertEqual(self.rpc.calls, [])
 
 
 if __name__ == '__main__':

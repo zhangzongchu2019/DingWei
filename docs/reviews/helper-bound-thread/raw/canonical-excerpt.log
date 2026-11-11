@@ -1,0 +1,107 @@
+GATE repo-boundary-gate
+GATE dependency-ratchet
+GATE tenant-isolation-gate
+HELPER_INVENTORY_OK files=93
+HELPER_GATE_START profiles=claude,codex python=/tmp/coder-0232-locked-venv/bin/python3
+HELPER_GATE_PROFILE selected=claude actual_SH_DRIVER=claude
+HELPER_EXPECTED_CASES=1179
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=claude pattern=test_*.py
+HELPER_SUITE_PROFILE selected=claude actual_SH_DRIVER=claude
+Ran 1170 tests in 462.187s
+OK
+Ran 9 tests in 0.324s
+OK
+HELPER_GATE_RESULT {"actual": 1179, "actual_SH_DRIVER": "claude", "expected": 1179, "files": 93, "groups": [1170, 9], "profile": "claude", "rc": 0}
+HELPER_GATE_PROFILE selected=codex actual_SH_DRIVER=codex
+HELPER_EXPECTED_CASES=1179
+HELPER_SUITE python=/tmp/coder-0232-locked-venv/bin/python3 version=3.12.3 driver=codex pattern=test_*.py
+HELPER_SUITE_PROFILE selected=codex actual_SH_DRIVER=codex
+Ran 1170 tests in 462.331s
+OK
+Ran 9 tests in 0.321s
+OK
+HELPER_GATE_RESULT {"actual": 1179, "actual_SH_DRIVER": "codex", "expected": 1179, "files": 93, "groups": [1170, 9], "profile": "codex", "rc": 0}
+TEST python deploy/image/supervisord/test_verify_supervisor_template.py
+Ran 15 tests in 0.772s
+OK
+TEST python deploy/ops/hosted-image/test_start.py
+Ran 20 tests in 1.085s
+OK
+TEST python deploy/ops/hosted-image/test_build_definition.py
+Ran 18 tests in 0.293s
+OK
+TEST python deploy/ops/hosted-claude-image/test_claude_start.py
+Ran 34 tests in 7.616s
+OK
+TEST python deploy/test_build_entrypoints.py
+Ran 17 tests in 0.790s
+OK
+TEST python deploy/test_file_service_deploy.py
+Ran 10 tests in 0.002s
+OK
+TEST python deploy/test_generate_console_seed.py
+Ran 14 tests in 0.590s
+OK
+TEST python deploy/test_invariants_alert_route.py
+OK
+TEST python deploy/test_invariants_expected_hashes.py
+Ran 6 tests in 0.023s
+OK
+TEST python deploy/test_preview_console.py
+Ran 9 tests in 0.329s
+OK
+TEST python deploy/test_validate_console_seed.py
+Ran 11 tests in 0.292s
+OK
+TEST python view-service/test_check_public_view_deploy.py
+Ran 3 tests in 0.000s
+OK
+TEST python view-service/test_md_render_core.py
+Ran 12 tests in 0.321s
+OK
+TEST python view-service/test_provenance_flag_injection.py
+Ran 11 tests in 0.583s
+OK
+TEST python view-service/test_renderer_iter2.py
+Ran 7 tests in 0.012s
+OK
+TEST python view-service/test_view_page_store.py
+Ran 13 tests in 1.793s
+OK
+TEST python view-service/test_view_service.py
+Ran 44 tests in 0.031s
+OK
+TEST python view-service/test_view_error_logging.py
+Ran 2 tests in 0.503s
+OK
+TEST python view-service/test_health_auth.py
+Ran 16 tests in 8.045s
+OK
+TEST python view-service/test_agent_disk_resource.py
+Ran 9 tests in 0.249s
+OK
+TEST python view-service/test_inbox_lag_resource.py
+Ran 8 tests in 0.227s
+OK
+TEST python view-service/test_view_refresh.py
+Ran 5 tests in 0.162s
+OK
+TEST python view-service/test_mux_projection.py
+Ran 6 tests in 0.217s
+OK
+TEST python view-service/test_mux_projection_failure.py
+Ran 3 tests in 1.582s
+OK
+TEST python view-service/test_cost_paused.py
+Ran 9 tests in 7.392s
+OK
+TEST python view-service/test_mux_cost_seed.py
+Ran 9 tests in 0.277s
+OK
+TEST python view-service/test_view_unlock_v2_integration.py
+OK
+TEST shell deploy/test-view-service-release.sh
+TEST shell scripts/test-desktop-hub-roundtrip.sh
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	34.729s
+BUILD_TESTS_OK helper_profiles=2 python=27 shell=2

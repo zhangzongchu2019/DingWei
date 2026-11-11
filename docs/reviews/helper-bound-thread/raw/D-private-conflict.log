@@ -1,0 +1,19 @@
+test_private_binding_conflict_stops_startup_and_reports_both_ids (test_codex_stale_thread.ConfiguredRootBinding.test_private_binding_conflict_stops_startup_and_reports_both_ids) ... ERROR
+
+======================================================================
+ERROR: test_private_binding_conflict_stops_startup_and_reports_both_ids (test_codex_stale_thread.ConfiguredRootBinding.test_private_binding_conflict_stops_startup_and_reports_both_ids)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/hbt782/hbt-mutation-431m48_j/tests/test_codex_stale_thread.py", line 513, in test_private_binding_conflict_stops_startup_and_reports_both_ids
+    driver.start()
+  File "/tmp/hbt782/hbt-mutation-431m48_j/sessionhelper/codexDriver.py", line 890, in start
+    self._start_locked()
+  File "/tmp/hbt782/hbt-mutation-431m48_j/sessionhelper/codexDriver.py", line 931, in _start_locked
+    child = live['child']
+            ~~~~^^^^^^^^^
+TypeError: 'Mock' object is not subscriptable
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (errors=1)
