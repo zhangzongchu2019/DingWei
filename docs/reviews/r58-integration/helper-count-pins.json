@@ -1,0 +1,46 @@
+{
+  "baseline": "153bac4dfe6794a8f2d9438eb4ac4e76d6aa400d",
+  "r57": {
+    "files": 93,
+    "cases_per_profile": 1168
+  },
+  "bound_thread": {
+    "files": 93,
+    "cases_per_profile": 1179
+  },
+  "turn_attribution": {
+    "files": 94,
+    "cases_per_profile": 1170
+  },
+  "r58": {
+    "files": 94,
+    "discovery": 1172,
+    "supervise": 9,
+    "cases_per_profile": 1181
+  },
+  "measured": {
+    "utc": "2026-11-12T02:31:57.224027+00:00",
+    "profiles": [
+      {
+        "profile": "claude",
+        "discovery": 1172,
+        "supervise": 9,
+        "expected": 1181,
+        "files": 94
+      },
+      {
+        "profile": "codex",
+        "discovery": 1172,
+        "supervise": 9,
+        "expected": 1181,
+        "files": 94
+      }
+    ]
+  },
+  "targeted": {
+    "cases": 72,
+    "rc": 0,
+    "seconds": 3.878
+  },
+  "note": "runner expected 仍由独立 discovery 动态生成；第4项已把文件钉值改为94，本提交记录合并后的唯一计数基线，不把动态发现替换为硬编码。"
+}
