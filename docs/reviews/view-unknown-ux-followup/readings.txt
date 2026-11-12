@@ -1,0 +1,14 @@
+CODEX_THREAD_ID=01a1c778-375f-7441-8515-8b1eb6771cad
+Targeted Node: v22.23.1
+Targeted browser regression: 2026-11-12T06:32:39Z..2026-11-12T06:32:40Z rc=0 checks=14/14
+Full browser runner: 2026-11-12T06:33:09Z..2026-11-12T06:41:24Z aggregate_rc=0 suites=40/40
+Full runner commit_sha=1ce5195df9b36a2ed892f06bca8bc92fdd9301e6
+Full runner process Node: v22.23.1; mcp_zero_consent fixture child: /usr/bin/node v18.19.1 with Playwright 1.55.0 (the fixture fixes its PATH internally)
+OpenSpec strict first run: 2026-11-12T06:16:33Z rc=0 totals=36 passed, 0 failed
+Final run-build-tests against commit 1ce5195df9b36a2ed892f06bca8bc92fdd9301e6: 2026-11-12T06:41:34Z..2026-11-12T06:50:29Z rc=0; BUILD_TESTS_OK helper_profiles=2 python=27 shell=2. Invocation used env -i, locked venv, TMPDIR=/tmp, GOPROXY=off, HUB_TEST_PG_STRICT=1.
+Semantic mutation VUX-005: remove row-signature guard => rc=2; failure at UNKNOWN_LIST_STABLE_NODE_AND_FOCUS.
+Semantic mutation VUX-006: summary uses helper aggregate => rc=2; failure at UNKNOWN_SUMMARY_MATCHES_VISIBLE_ROWS (and untrack count).
+Added page-source lines contain no product-version literal; page's older embedded historical comments remain unchanged.
+Final OpenSpec: 2026-11-12T06:50:56Z rc=0; openspec validate --all --strict; totals=36 passed, 0 failed.
+Final git diff --check: rc=0.
+Added renderer-line semantic-version scan: [] (no version literal added).

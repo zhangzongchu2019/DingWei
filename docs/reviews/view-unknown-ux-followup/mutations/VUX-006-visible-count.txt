@@ -1,0 +1,44 @@
+  PASS CANCELLABLE_PHASE_HAS_DELETE
+  PASS TAKEN_PHASE_HAS_NO_DELETE
+  PASS REFUSED_CANCEL_EXPLAINS_WHY
+  PASS UNKNOWN_COPY_AND_NO_QUEUE_TIMER
+  FAIL UNKNOWN_SUMMARY_MATCHES_VISIBLE_ROWS: Expected values to be strictly equal:
++ actual - expected
+
++ '查看未知条目（5）'
+- '查看未知条目（2）'
+          ^
+
+  PASS UNKNOWN_LIST_STABLE_NODE_AND_FOCUS
+  FAIL UNTRACK_IS_LOCAL_ONLY: Expected values to be strictly equal:
++ actual - expected
+
++ '查看未知条目（5）'
+- '查看未知条目（1）'
+          ^
+
+  PASS RETRY_DIALOG_COPY_AND_DEFAULT_NO_RETRY
+  PASS RETRY_REQUIRES_EXPLICIT_CONFIRMATION
+  PASS REPLY_REMOVES_RETRY_BEFORE_CONFIRM
+  PASS LATE_ADMITTED_RESTORES_NORMAL_PROCESSED
+  PASS LATE_PROCESSED_RESTORES_NORMAL_PROCESSED
+  PASS EXPIRED_HIDDEN_FROM_WAITING_RETAINED_IN_UNKNOWN_LIST
+  PASS NO_PAGE_ERRORS
+Error: 2 regression check(s) failed
+UNKNOWN_SUMMARY_MATCHES_VISIBLE_ROWS: Expected values to be strictly equal:
++ actual - expected
+
++ '查看未知条目（5）'
+- '查看未知条目（2）'
+          ^
+
+UNTRACK_IS_LOCAL_ONLY: Expected values to be strictly equal:
++ actual - expected
+
++ '查看未知条目（5）'
+- '查看未知条目（1）'
+          ^
+
+    at Object.finish (/tmp/vux-mut.t9ztsd/view-service/renderer-regression-selfhost.js:20:34)
+    at /tmp/vux-mut.t9ztsd/view-service/renderer-delivery-status-regression.js:152:12
+mutation=summary-uses-helper-count rc=2
