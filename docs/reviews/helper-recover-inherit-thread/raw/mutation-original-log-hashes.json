@@ -1,0 +1,62 @@
+[
+  {
+    "file": "control.log",
+    "original_path": "/tmp/hri-ceef/raw/mutations-final/control.log",
+    "original_sha256": "f08fb66ac469d58ffaabf23e81b50b4082a61432ffc80b02b9ee4ffe1ab6b637",
+    "original_bytes": 1303
+  },
+  {
+    "file": "cross-lane-write.log",
+    "original_path": "/tmp/hri-ceef/raw/mutations-final/cross-lane-write.log",
+    "original_sha256": "b2a36c3a4f409e7647fa652e0bec999c8d1743067096b249d00e8230827eb520",
+    "original_bytes": 1173
+  },
+  {
+    "file": "dynamic-root.log",
+    "original_path": "/tmp/hri-ceef/raw/mutations-final/dynamic-root.log",
+    "original_sha256": "0e6f95babb4e80a290ae81b97643c300e30d82bf4d2d9d80e5e33127073c5214",
+    "original_bytes": 1284
+  },
+  {
+    "file": "event.log",
+    "original_path": "/tmp/hri-ceef/raw/mutations-final/event.log",
+    "original_sha256": "ea46df570840bd7ebeff857d5cce2e9a3e767a2aabdb9f68c48ef29ff925d0e8",
+    "original_bytes": 1975
+  },
+  {
+    "file": "explicit-bound.log",
+    "original_path": "/tmp/hri-ceef/raw/mutations-final/explicit-bound.log",
+    "original_sha256": "915f17c611e1bd4fdc708f25c7d280faa938cc4d3b5a736f389c1cc77c928442",
+    "original_bytes": 1314
+  },
+  {
+    "file": "fallback.log",
+    "original_path": "/tmp/hri-ceef/raw/mutations-final/fallback.log",
+    "original_sha256": "df2e1bf1630e1d83105bd867f301e3d565371f61984e743e8797181ca7c9004d",
+    "original_bytes": 2091
+  },
+  {
+    "file": "inherit.log",
+    "original_path": "/tmp/hri-ceef/raw/mutations-final/inherit.log",
+    "original_sha256": "3dca9786e278725cb4e652d17f012503a0547f15064b0895130ba755648c32c4",
+    "original_bytes": 1095
+  },
+  {
+    "file": "no-replay.log",
+    "original_path": "/tmp/hri-ceef/raw/mutations-final/no-replay.log",
+    "original_sha256": "7fd4d04f494cf2fbb3fd4cf559758cca5b761b2638791692a9e7e9fc571ce13d",
+    "original_bytes": 1071
+  },
+  {
+    "file": "private-hint.log",
+    "original_path": "/tmp/hri-ceef/raw/mutations-final/private-hint.log",
+    "original_sha256": "927f67449be62a9a01de587bb5f32a09e335e2c1fcbe4e6846986db731f12cfa",
+    "original_bytes": 1124
+  },
+  {
+    "file": "warning.log",
+    "original_path": "/tmp/hri-ceef/raw/mutations-final/warning.log",
+    "original_sha256": "b07eeac78d474bfc070aef9ebb941e266c1ce1363e18792ece0bd44d96fd786e",
+    "original_bytes": 2277
+  }
+]

@@ -68,4 +68,6 @@ adapter 恢复时仍先中止旧传输并等待旧投递worker退出。停止旧
 
 最终commit/tree/父与远端ls-remote同值坐标由交审回执提供，不自验收，由opus独立复核及安排r59集成。
 
-实现提交 f17fa09072fa6ca19011ece9fe9b33ff3eb68cb0，父3c9f2722fd5b2e05b52188a8ccb664427f5debdd。首次提交后核Git对象发现仓库通用 *.log 忽略规则滤掉了报告引用的日志，本次追加证据提交显式纳入这些日志；不改写已推实现提交，不改产品源码/测试，原27文件manifest在最终Git对象中逐项验证。最终tip/tree/父仍以交审回执为准。
+实现提交 f17fa09072fa6ca19011ece9fe9b33ff3eb68cb0，父3c9f2722fd5b2e05b52188a8ccb664427f5debdd。首次提交后核Git对象发现仓库通用 *.log 忽略规则滤掉了报告引用的日志，本次追加证据提交显式纳入这些日志；不改写已推实现提交，不改产品源码/测试，交付manifest在最终Git对象中逐项验证。最终tip/tree/父仍以交审回执为准。
+
+日志原文格式说明：三份变异日志（event/fallback/warning）的unittest标题首行有运行器产生的行尾空格；交付副本仅去掉这些行尾空格以满足git diff --check，读数/断言/正文不改。未规范化原始日志仍在 /tmp/hri-ceef/raw/mutations-final，各原件字节数/hash见raw/mutation-original-log-hashes.json。该修订只涉及证据文本，不改源码和受测语义。最终以基线至tip的完整diff检查rc0交件。
