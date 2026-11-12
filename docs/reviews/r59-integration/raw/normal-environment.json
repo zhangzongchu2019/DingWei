@@ -1,0 +1,34 @@
+{
+  "job": "normal",
+  "argv": [
+    "sh",
+    "scripts/run-build-tests.sh"
+  ],
+  "env": {
+    "HOME": "/tmp/r59-cf05/h-normal",
+    "TMPDIR": "/tmp/r59-cf05/t-normal",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+    "HUB_TEST_PG_STRICT": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "GOTOOLCHAIN": "local",
+    "GOCACHE": "/tmp/busy-cf05/h-normal/.cache/go-build",
+    "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+    "GOFLAGS": "-p=2"
+  },
+  "uid": 1001,
+  "versions": {
+    "go": "go version go1.22.2 linux/amd64",
+    "node": "v22.23.1",
+    "python": "Python 3.12.3"
+  },
+  "cli": {
+    "codex": "/usr/local/bin/codex",
+    "claude": "/usr/local/bin/claude"
+  },
+  "commit": "5a4c6beb1bd2311540b16569287532bddb7e10ad",
+  "start": "2026-11-12T10:40:59.292181+00:00",
+  "end": "2026-11-12T10:50:35.103126+00:00",
+  "rc": 0
+}

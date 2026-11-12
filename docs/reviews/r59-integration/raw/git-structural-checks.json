@@ -1,0 +1,21 @@
+{
+  "utc": "2026-11-12T11:04:02.654803+00:00",
+  "merge": "c56556baabbd0f0b4f886cb3886c8865e37b0058",
+  "parents": [
+    "c0fecb12ed86003ff2d29a1c0902cfb16bc3f8c7",
+    "e0de23713606d3e89f1bf578d268550e70d4786d"
+  ],
+  "main153bac4d_is_ancestor_of_3c9f2722": true,
+  "version_commit": "d26a342d08d28bcae7fb393d50dba12b8359ba8f",
+  "version_files": [
+    "VERSION",
+    "internal/version/helper_0233_test.go",
+    "internal/version/version.go",
+    "tools/sessionhelper/sessionhelper/__init__.py"
+  ],
+  "same_version_file_list_as_c5f0c101": true,
+  "current_version": "0.2.3.39",
+  "current_version_absent_from_page": true,
+  "key_source_sha256_verified": 10,
+  "uid": 1001
+}

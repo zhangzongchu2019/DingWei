@@ -1,0 +1,17 @@
+{
+  "utc": "2026-11-12T10:36:58.768196+00:00",
+  "conflicts": [
+    {
+      "conflict": 2,
+      "resolved_text_sha256": "be26aa67502bf1abe52a683befea5a5c806aa35602a9f8b8b5d5d540a8bc1a13",
+      "strategy": "helper busyWait lines followed by View-specific continuation"
+    },
+    {
+      "conflict": 1,
+      "resolved_text_sha256": "343eaac1d497aa64fdd10f7573db3978e542bff50f65151c6385f036c7613233",
+      "strategy": "helper busyWait lines followed by View-specific continuation"
+    }
+  ],
+  "renderer_blob": "259ae2593386d1371f8442f9bb8e4027e7b6ee88",
+  "renderer_sha256": "8d39be9b7f9cf635da5cf5c4757a2e8030224a5ded9c1aa4f5c1aaa018a57d71"
+}

@@ -1,0 +1,41 @@
+{
+  "utc": "2026-11-12T10:51:20.847951+00:00",
+  "initial_rc": 2,
+  "initial_only_failed_suite": "mcp_zero_consent",
+  "initial_error": "isolated Hub failed before ready; temporary per-Hub stdout removed with suite temporary directory",
+  "diagnostic_same_env": true,
+  "diagnostic_rc": 0,
+  "diagnostic_cases": [
+    {
+      "case": "consent-multi",
+      "hub_rc": 0,
+      "browser_rc": 0,
+      "real_credentials_used": false
+    },
+    {
+      "case": "consent-single",
+      "hub_rc": 0,
+      "browser_rc": 0,
+      "real_credentials_used": false
+    },
+    {
+      "case": "immediate-multi",
+      "hub_rc": 0,
+      "browser_rc": 0,
+      "real_credentials_used": false
+    },
+    {
+      "case": "immediate-single",
+      "hub_rc": 0,
+      "browser_rc": 0,
+      "real_credentials_used": false
+    }
+  ],
+  "source_changed": false,
+  "observed_cold_cache_downloads_in_parallel_go_gate": [
+    "github.com/robfig/cron/v3 v3.0.1",
+    "github.com/mozillazg/go-pinyin v0.21.0"
+  ],
+  "causal_status": "cold offline module cache at initial browser start is an inference from timestamps/download lines, not a recovered initial Hub error; original root cause not conclusively established",
+  "rerun_precondition": "Go package gate completed and same-env four-case isolated diagnostic all passed; rerun full browser runner without selection"
+}

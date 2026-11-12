@@ -1,0 +1,38 @@
+{
+  "job": "browser",
+  "argv": [
+    "python3",
+    "tools/run-browser-regressions.py",
+    "--receipt",
+    "/tmp/r59-cf05/raw/browser-receipt.txt"
+  ],
+  "env": {
+    "HOME": "/tmp/r59-cf05/h-browser",
+    "TMPDIR": "/tmp/r59-cf05/t-browser",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+    "HUB_TEST_PG_STRICT": "1",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "GOTOOLCHAIN": "local",
+    "GOCACHE": "/tmp/busy-cf05/h-normal/.cache/go-build",
+    "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+    "GOFLAGS": "-p=2",
+    "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+    "PLAYWRIGHT_BROWSERS_PATH": "/home/dev/.cache/ms-playwright"
+  },
+  "uid": 1001,
+  "versions": {
+    "go": "go version go1.22.2 linux/amd64",
+    "node": "v22.23.1",
+    "python": "Python 3.12.3"
+  },
+  "cli": {
+    "codex": "/usr/local/bin/codex",
+    "claude": "/usr/local/bin/claude"
+  },
+  "commit": "5a4c6beb1bd2311540b16569287532bddb7e10ad",
+  "start": "2026-11-12T10:40:47.129514+00:00",
+  "end": "2026-11-12T10:48:50.909711+00:00",
+  "rc": 2
+}

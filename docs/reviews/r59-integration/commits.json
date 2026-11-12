@@ -39,5 +39,13 @@
       "d26a342d08d28bcae7fb393d50dba12b8359ba8f"
     ],
     "subject": "test(browser): register optional model admission screenshot input"
+  },
+  {
+    "commit": "5a4c6beb1bd2311540b16569287532bddb7e10ad",
+    "tree": "1c4b9336afa9cba8ebc1887a6160b30098326211",
+    "parents": [
+      "a8fcb1ae921dcdb5685f781a7410a9b863f082e3"
+    ],
+    "subject": "docs(r59): freeze integration inputs and validation plan"
   }
 ]

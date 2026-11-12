@@ -1,0 +1,654 @@
+[
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeviceClaimAcrossActualClientAndHub",
+    "reason_lines": [
+      "    claim_client_integration_test.go:33: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeviceClaimAcrossActualClientAndHub",
+      "    claim_client_integration_test.go:33: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment",
+      "--- SKIP: TestDeviceClaimAcrossActualClientAndHub (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeviceClaimAcrossActualClientAndPostgres",
+    "reason_lines": [
+      "    claim_client_integration_test.go:45: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeviceClaimAcrossActualClientAndPostgres",
+      "    claim_client_integration_test.go:45: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment",
+      "--- SKIP: TestDeviceClaimAcrossActualClientAndPostgres (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestChangeEvidenceConsoleBrowser",
+    "reason_lines": [
+      "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+    ],
+    "verbose_output": [
+      "=== RUN   TestChangeEvidenceConsoleBrowser",
+      "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration",
+      "--- SKIP: TestChangeEvidenceConsoleBrowser (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestMuxProductHTTP1EightSeats",
+    "reason_lines": [
+      "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+    ],
+    "verbose_output": [
+      "=== RUN   TestMuxProductHTTP1EightSeats",
+      "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration",
+      "--- SKIP: TestMuxProductHTTP1EightSeats (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestConsolePlatformPayloadDump",
+    "reason_lines": [
+      "    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+    ],
+    "verbose_output": [
+      "=== RUN   TestConsolePlatformPayloadDump",
+      "    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)",
+      "--- SKIP: TestConsolePlatformPayloadDump (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+    "reason_lines": [
+      "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+    ],
+    "verbose_output": [
+      "=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically",
+      "--- SKIP: TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+    "reason_lines": [
+      "2026/11/12 10:42:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+      "2026/11/12 10:42:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.15s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+    "reason_lines": [
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.15s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+    "reason_lines": [
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit (0.14s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+    "reason_lines": [
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.15s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+    "reason_lines": [
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.16s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+    "reason_lines": [
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.15s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+    "reason_lines": [
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+      "2026/11/12 10:42:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm (0.16s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+    "reason_lines": [
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.16s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+    "reason_lines": [
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.15s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+    "reason_lines": [
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.15s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+    "reason_lines": [
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist (0.15s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+    "reason_lines": [
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.16s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+    "reason_lines": [
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/codex (0.15s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+    "reason_lines": [
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+      "2026/11/12 10:42:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.24s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+    "reason_lines": [
+      "2026/11/12 10:42:21 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+      "2026/11/12 10:42:21 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "    --- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex (0.24s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDeliveryACKActualCLILateWireTerminal",
+    "reason_lines": [
+      "2026/11/12 10:42:21 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDeliveryACKActualCLILateWireTerminal",
+      "2026/11/12 10:42:21 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/12 10:42:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- SKIP: TestDeliveryACKActualCLILateWireTerminal (0.16s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestDesktopMCPRoundTripAcrossRealHub",
+    "reason_lines": [
+      "    desktop_mcp_roundtrip_test.go:25: run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate"
+    ],
+    "verbose_output": [
+      "=== RUN   TestDesktopMCPRoundTripAcrossRealHub",
+      "    desktop_mcp_roundtrip_test.go:25: run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate",
+      "--- SKIP: TestDesktopMCPRoundTripAcrossRealHub (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestFailureNoticeDriverTurnEndToEnd",
+    "reason_lines": [
+      "    failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime"
+    ],
+    "verbose_output": [
+      "=== RUN   TestFailureNoticeDriverTurnEndToEnd",
+      "    failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime",
+      "--- SKIP: TestFailureNoticeDriverTurnEndToEnd (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestGroupReplyMCP",
+    "reason_lines": [
+      "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+    ],
+    "verbose_output": [
+      "=== RUN   TestGroupReplyMCP",
+      "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON",
+      "--- SKIP: TestGroupReplyMCP (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+    "reason_lines": [
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+    ],
+    "verbose_output": [
+      "=== RUN   TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+    "reason_lines": [
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+    ],
+    "verbose_output": [
+      "=== RUN   TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+    "reason_lines": [
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+    ],
+    "verbose_output": [
+      "=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHelper0232MixedVersionEndToEnd",
+    "reason_lines": [
+      "    helper_update_e2e_test.go:55: explicit immutable release pins required"
+    ],
+    "verbose_output": [
+      "=== RUN   TestHelper0232MixedVersionEndToEnd",
+      "    helper_update_e2e_test.go:55: explicit immutable release pins required",
+      "--- SKIP: TestHelper0232MixedVersionEndToEnd (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestHostedBodySendAcrossRealHub",
+    "reason_lines": [
+      "    hosted_body_send_test.go:23: set explicit isolated integration interpreter"
+    ],
+    "verbose_output": [
+      "=== RUN   TestHostedBodySendAcrossRealHub",
+      "    hosted_body_send_test.go:23: set explicit isolated integration interpreter",
+      "--- SKIP: TestHostedBodySendAcrossRealHub (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestEnvelopeReadTimeoutEnvironmentChild",
+    "reason_lines": [
+      "    hub_timeout_contract_test.go:50: subprocess probe only"
+    ],
+    "verbose_output": [
+      "=== RUN   TestEnvelopeReadTimeoutEnvironmentChild",
+      "    hub_timeout_contract_test.go:50: subprocess probe only",
+      "--- SKIP: TestEnvelopeReadTimeoutEnvironmentChild (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestNPSessionPG8To9AndR50BinaryCompatibility",
+    "reason_lines": [
+      "    np_session_migration_binary_test.go:26: set independently built current and certified R50 binary paths"
+    ],
+    "verbose_output": [
+      "=== RUN   TestNPSessionPG8To9AndR50BinaryCompatibility",
+      "    np_session_migration_binary_test.go:26: set independently built current and certified R50 binary paths",
+      "--- SKIP: TestNPSessionPG8To9AndR50BinaryCompatibility (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+    "reason_lines": [
+      "    pilot_question_roundtrip_test.go:17: set locked helper Python; canonical runs this local integration"
+    ],
+    "verbose_output": [
+      "=== RUN   TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+      "    pilot_question_roundtrip_test.go:17: set locked helper Python; canonical runs this local integration",
+      "--- SKIP: TestPilotQuestionAcrossRealHTTPHelperIPCMCP (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+    "reason_lines": [
+      "    pilot_template_roundtrip_test.go:17: set locked helper Python; canonical runs loopback integration"
+    ],
+    "verbose_output": [
+      "=== RUN   TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+      "    pilot_template_roundtrip_test.go:17: set locked helper Python; canonical runs loopback integration",
+      "--- SKIP: TestPilotTemplateAcrossRealHTTPHelperIPCMCP (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+    "reason_lines": [
+      "    project_context_roundtrip_test.go:17: set DW_DESKTOP_INTEGRATION_PYTHON to the locked helper test venv; canonical shell gate runs the cross-runtime set"
+    ],
+    "verbose_output": [
+      "=== RUN   TestProjectContextAcrossRealHTTPHelperIPCMCP",
+      "    project_context_roundtrip_test.go:17: set DW_DESKTOP_INTEGRATION_PYTHON to the locked helper test venv; canonical shell gate runs the cross-runtime set",
+      "--- SKIP: TestProjectContextAcrossRealHTTPHelperIPCMCP (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestR31OldBinarySchemaReadCompatibility",
+    "reason_lines": [
+      "    r31_rollback_compat_test.go:23: requires independently built R30 binary via R31_R30_BINARY"
+    ],
+    "verbose_output": [
+      "=== RUN   TestR31OldBinarySchemaReadCompatibility",
+      "    r31_rollback_compat_test.go:23: requires independently built R30 binary via R31_R30_BINARY",
+      "--- SKIP: TestR31OldBinarySchemaReadCompatibility (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCFaultProcessMatrix",
+    "reason_lines": [
+      "    shutdown_fault_process_test.go:94: isolated fault/watchdog runner tests/hlc/fault_matrix.py"
+    ],
+    "verbose_output": [
+      "=== RUN   TestHLCFaultProcessMatrix",
+      "    shutdown_fault_process_test.go:94: isolated fault/watchdog runner tests/hlc/fault_matrix.py",
+      "--- SKIP: TestHLCFaultProcessMatrix (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCBindFailure",
+    "reason_lines": [
+      "    shutdown_fault_process_test.go:329: isolated startup failure runner"
+    ],
+    "verbose_output": [
+      "=== RUN   TestHLCBindFailure",
+      "    shutdown_fault_process_test.go:329: isolated startup failure runner",
+      "--- SKIP: TestHLCBindFailure (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestSessionHistoryTwentyAgentPublishP99",
+    "reason_lines": [
+      "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+    ],
+    "verbose_output": [
+      "=== RUN   TestSessionHistoryTwentyAgentPublishP99",
+      "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate",
+      "--- SKIP: TestSessionHistoryTwentyAgentPublishP99 (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCLoadMatrix",
+    "reason_lines": [
+      "    shutdown_load_test.go:563: isolated actual-process matrix: tests/hlc/process_matrix.py"
+    ],
+    "verbose_output": [
+      "=== RUN   TestHLCLoadMatrix",
+      "    shutdown_load_test.go:563: isolated actual-process matrix: tests/hlc/process_matrix.py",
+      "--- SKIP: TestHLCLoadMatrix (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+    "test": "TestHLCS007Full",
+    "reason_lines": [
+      "    shutdown_mixed_fault_process_test.go:164: isolated full mixed fault: tests/hlc/s007_full.py"
+    ],
+    "verbose_output": [
+      "=== RUN   TestHLCS007Full",
+      "    shutdown_mixed_fault_process_test.go:164: isolated full mixed fault: tests/hlc/s007_full.py",
+      "--- SKIP: TestHLCS007Full (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestSpecMCPEndToEnd",
+    "reason_lines": [
+      "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+    ],
+    "verbose_output": [
+      "=== RUN   TestSpecMCPEndToEnd",
+      "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses",
+      "--- SKIP: TestSpecMCPEndToEnd (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+    "test": "TestBrowserAuthorizeChainReachesLoopback",
+    "reason_lines": [
+      "    browser_e2e_test.go:31: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+    ],
+    "verbose_output": [
+      "=== RUN   TestBrowserAuthorizeChainReachesLoopback",
+      "    browser_e2e_test.go:31: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+      "--- SKIP: TestBrowserAuthorizeChainReachesLoopback (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+    "test": "TestBrowserCallbackExplainsMissingTarget",
+    "reason_lines": [
+      "    browser_e2e_test.go:35: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+    ],
+    "verbose_output": [
+      "=== RUN   TestBrowserCallbackExplainsMissingTarget",
+      "    browser_e2e_test.go:35: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+      "--- SKIP: TestBrowserCallbackExplainsMissingTarget (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+    "test": "TestBrowserClaudeCodeLocalhostConsentChains/immediate-302",
+    "reason_lines": [
+      "    browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+    ],
+    "verbose_output": [
+      "=== RUN   TestBrowserClaudeCodeLocalhostConsentChains/immediate-302",
+      "    browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+      "    --- SKIP: TestBrowserClaudeCodeLocalhostConsentChains/immediate-302 (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+    "test": "TestBrowserClaudeCodeLocalhostConsentChains/consent-page",
+    "reason_lines": [
+      "    browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+    ],
+    "verbose_output": [
+      "=== RUN   TestBrowserClaudeCodeLocalhostConsentChains/consent-page",
+      "    browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+      "    --- SKIP: TestBrowserClaudeCodeLocalhostConsentChains/consent-page (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+    "test": "TestBrowserCodexIPLoopbackConsentChains/immediate-302",
+    "reason_lines": [
+      "    browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+    ],
+    "verbose_output": [
+      "=== RUN   TestBrowserCodexIPLoopbackConsentChains/immediate-302",
+      "    browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+      "    --- SKIP: TestBrowserCodexIPLoopbackConsentChains/immediate-302 (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+    "test": "TestBrowserCodexIPLoopbackConsentChains/consent-page",
+    "reason_lines": [
+      "    browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+    ],
+    "verbose_output": [
+      "=== RUN   TestBrowserCodexIPLoopbackConsentChains/consent-page",
+      "    browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+      "    --- SKIP: TestBrowserCodexIPLoopbackConsentChains/consent-page (0.00s)"
+    ]
+  },
+  {
+    "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+    "test": "TestBlockerAcrossRealHTTPHelperIPCMCP",
+    "reason_lines": [
+      "    task_blocker_roundtrip_test.go:21: set locked helper Python; canonical runs this local integration"
+    ],
+    "verbose_output": [
+      "=== RUN   TestBlockerAcrossRealHTTPHelperIPCMCP",
+      "    task_blocker_roundtrip_test.go:21: set locked helper Python; canonical runs this local integration",
+      "--- SKIP: TestBlockerAcrossRealHTTPHelperIPCMCP (0.00s)"
+    ]
+  }
+]

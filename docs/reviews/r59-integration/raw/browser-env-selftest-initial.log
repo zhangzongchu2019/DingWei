@@ -1,0 +1,1 @@
+environment registry selftest failed: baseline=['STALE_SCREENSHOT'] synthetic=['DW_UNREGISTERED_BROWSER_INPUT', 'STALE_SCREENSHOT']

@@ -1,0 +1,45 @@
+{
+  "test_event_counts_include_subtests": true,
+  "by_package": {
+    "github.com/zhangzongchu2019/dingwei/internal/m8": {
+      "pass": 1545,
+      "fail": 0,
+      "skip": 37
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "pass": 267,
+      "fail": 0,
+      "skip": 6
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/version": {
+      "pass": 5,
+      "fail": 0,
+      "skip": 0
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "pass": 263,
+      "fail": 0,
+      "skip": 6
+    }
+  },
+  "package_results": {
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "action": "pass",
+      "elapsed": 224.992
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/version": {
+      "action": "pass",
+      "elapsed": 1.63
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/m8": {
+      "action": "pass",
+      "elapsed": 249.15
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "action": "pass",
+      "elapsed": 114.589
+    }
+  },
+  "skipped_test_count": 49,
+  "rc": 0
+}

@@ -1,0 +1,28 @@
+{
+  "utc": "2026-11-12T10:54:00.796402+00:00",
+  "tested_commit": "5a4c6beb1bd2311540b16569287532bddb7e10ad",
+  "sources": {
+    "VERSION": "b01339f3bea6df76597dadc477661addcf64436a1a939f83c4a9315029afee2c",
+    "internal/version/version.go": "b6cff827439abdb84caae4c1d8c1bd2f359309d6e6bd3fd2b0fd0fb4a9cad19a",
+    "internal/version/helper_0233_test.go": "dc011565ac3ccb80fcd5118ea463d3cd11614888d0dd637c92f790d191042591",
+    "tools/sessionhelper/sessionhelper/__init__.py": "7da7d2aa41e501c3068d5a6a351dc6e6947645a2847aa07886ba59ca9bcebecb",
+    "tools/run-browser-regressions.py": "fa812dd36b9da50a9c2cf607c86e1e7eed6642bb0deb680097836ea763fef7ab",
+    "scripts/run-build-tests.sh": "e2483d5e43bed8affe08ec1d5edb6fcd126cc6104fe18ec42b1f3b83fd708388",
+    "scripts/run-helper-build-tests.py": "1c56f99c392189f4c5cbb3b84eaee7ae4a79ff8086f1cb71b75138038cfcf1c9",
+    "view-service/renderer-canary-sse.html": "8d39be9b7f9cf635da5cf5c4757a2e8030224a5ded9c1aa4f5c1aaa018a57d71",
+    "view-service/renderer-delivery-status-regression.js": "83879abaa3ffdc7ea3b08f89ca8229de784e782955dbac9b021456388de2ce3f",
+    "view-service/renderer-model-admission-regression.js": "3df4c60680d1b0d992e5763d5180f6a4f853814ddf6b1ebb0a1969965ed4cdaf"
+  },
+  "current_version": "0.2.3.39",
+  "page_current_release_literal_count": 0,
+  "existing_historical_comment_versions": [
+    "0.2.0.5",
+    "0.2.0.6",
+    "0.2.0.7",
+    "0.2.1.103",
+    "0.2.1.2",
+    "0.2.1.35",
+    "0.2.1.7"
+  ],
+  "note": "version bump adds no page version literal; frozen historical comments are preserved so renderer stays byte-identical to leader merge"
+}

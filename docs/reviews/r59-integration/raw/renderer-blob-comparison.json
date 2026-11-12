@@ -1,0 +1,14 @@
+{
+  "utc": "2026-11-12T10:41:44.888348+00:00",
+  "leader_source_message_id": "5c2dafd17e3842799ab133bdeef5be69",
+  "leader_try_merge_published": false,
+  "expected_blob": "259ae2593386d1371f8442f9bb8e4027e7b6ee88",
+  "independently_resolved_merge_blob": "259ae2593386d1371f8442f9bb8e4027e7b6ee88",
+  "current_blob": "259ae2593386d1371f8442f9bb8e4027e7b6ee88",
+  "sides": {
+    "c0fecb12ed86003ff2d29a1c0902cfb16bc3f8c7": "1ce7ee8f47f70f7c1a02e1f6bad0c8f658e5ef9e",
+    "e0de23713606d3e89f1bf578d268550e70d4786d": "1714f356bf7ae87b6c851a5de0d97a8abe9b0cda"
+  },
+  "result": "逐字一致",
+  "scope": "comparison with leader-supplied blob coordinate; no claim of fetching unpublished leader tree"
+}

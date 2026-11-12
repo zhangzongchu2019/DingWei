@@ -1,0 +1,6 @@
+{
+  "utc": "2026-11-12T10:37:39.705569+00:00",
+  "rc": 2,
+  "stdout": "",
+  "stderr": "environment registry selftest failed: baseline=['STALE_SCREENSHOT'] synthetic=['DW_UNREGISTERED_BROWSER_INPUT', 'STALE_SCREENSHOT']\n"
+}
