@@ -785,6 +785,8 @@ class CodexProtocolDriver(Driver):
         self._anonymous_tool_seq = 0
         self._done_seen_at: dict[str, float] = {}
         self._events_drained: set[str] = set()
+        from .busy_admission import BusyAdmission
+        self._busy_admission = BusyAdmission()
         self._submission_started = {}
         self.reconcile_context = None
         self._reconcile_emitted = set()
@@ -1136,9 +1138,12 @@ class CodexProtocolDriver(Driver):
                     self._validate_recovery_thread()
                 except Exception as exc:
                     return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
+                self._admission_envelope_id = envelope_id
                 idle_error = self._wait_until_idle_for_delivery()
                 if idle_error:
                     return DeliveryReceipt(id=envelope_id, state="queued", source="local_queue", detail=idle_error)
+                if not self._busy_admission.before_submit(envelope_id):
+                    return DeliveryReceipt(id=envelope_id, state="unknown", source="local_queue", detail="busy wait cancelled; no submission")
                 params = {
                     "threadId": self._thread_id,
                     "input": [{"type": "text", "text": body}],
@@ -2096,6 +2101,9 @@ class CodexProtocolDriver(Driver):
 
     def _wait_until_idle_for_delivery(self) -> str:
         while not self._stop_event.is_set():
+            envelope_id = getattr(self, "_admission_envelope_id", "")
+            if self._busy_admission.cancelled(envelope_id):
+                return 'local queue busy wait cancelled'
             if not self.health():
                 return 'local queue transport disconnected'
             try:
@@ -2121,6 +2129,8 @@ class CodexProtocolDriver(Driver):
             if state == "unknown":
                 self._active_turn_id = ""
                 return ""
+            if envelope_id:
+                self._busy_admission.waiting(envelope_id)
             # Healthy native work can run beyond both admission and stall
             # windows. This delivery has not been submitted yet.
             time.sleep(0.5)

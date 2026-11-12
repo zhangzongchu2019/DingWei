@@ -66,6 +66,7 @@ class DriverAdapter:
             pass
         self._interrupt_confirmed: set[tuple[str, str]] = set()
         self._admission_timeout = max(0.1, float(getattr(cfg, "admission_timeout_seconds", 60)))
+        self._busy_admission_max = max(0.1, float(getattr(cfg, "busy_admission_max_seconds", 1800)))
         self._transport_recovery = None
         self._terminal_timeout = max(0.1, float(cfg.turn_terminal_timeout_seconds))
         self._input_buf = ""          # view 输入的行缓冲
@@ -458,16 +459,54 @@ class DriverAdapter:
         timeout = getattr(self, '_admission_timeout', 60.0)
         ledger = getattr(self, 'delivery_lifecycle', None)
         row = ledger.lifecycle(command.delivery_id) if ledger is not None else None
-        if getattr(self, '_which', None) == 'codex' and callable(getattr(self.driver, 'submission_started', None)) and row:
+        if getattr(self, '_which', None) in ('codex', 'claude') and callable(getattr(self.driver, 'submission_started', None)) and row:
             return max(0.0, time.time() - row['dispatch_intent_at'] + timeout - self._admission_elapsed(command))
         return timeout
 
     def _admission_elapsed(self, command):
         submitted = getattr(self.driver, 'submission_started', None)
-        if getattr(self, '_which', None) == 'codex' and callable(submitted):
+        if getattr(self, '_which', None) in ('codex', 'claude') and callable(submitted):
             started = submitted(command.delivery_id)
-            return 0.0 if started is None else time.monotonic() - started
+            if started is not None:
+                return time.monotonic() - started
+            if self._which == 'codex':
+                return 0.0
         return time.monotonic() - self._dispatch_clock(command)
+
+    def _busy_admission_status(self, command, driver):
+        gate = getattr(driver, '_busy_admission', None)
+        if gate is None or not gate.is_waiting(command.delivery_id):
+            return None
+        submitted = getattr(driver, 'submission_started', None)
+        required = getattr(driver, 'transport_recovery_required', None)
+        if (not callable(submitted) or submitted(command.delivery_id) is not None
+                or not driver.health() or (callable(required) and required(self._admission_timeout))):
+            return None  # Busy evidence never masks a bad transport/stuck writer.
+        now = time.monotonic()
+        if not hasattr(command, '_busy_wait_started'):
+            command._busy_wait_started = now
+        elapsed = now - command._busy_wait_started
+        limit = self._busy_admission_max
+        if elapsed >= limit:
+            # Atomically revoke only a local waiter. If it crossed into submission
+            # concurrently, the ordinary admission clock/unknown rules own it.
+            if gate.cancel_waiting(command.delivery_id):
+                print(f'[delivery][ALERT][BUSY_ADMISSION_TIMEOUT] id={command.delivery_id} driver={self._which} limit_seconds={limit:g}; no automatic replay', flush=True)
+                return 'expired'
+            return None
+        if now - getattr(command, '_busy_wait_event_at', float('-inf')) >= 30:
+            command._busy_wait_event_at = now
+            self._publish_queue_event({
+                'kind': 'state_change', 'text': command.text, 'session_id': '',
+                'cursor': f'queue:{command.queue_seq:020d}:busy_wait:{int(elapsed // 30)}',
+                'delivery_id': command.delivery_id, 'turn_id': '',
+                'data': {'change': 'delivery_waiting_agent_idle', 'lifecycle': 'waiting',
+                         'state': 'waiting', 'reason': 'agent_busy',
+                         'status_text': '排队等待 Agent 空闲', 'wait_seconds': elapsed,
+                         'limit_seconds': limit},
+            })
+            observe(getattr(self, 'delivery_progress', None), command.delivery_id, 'adapter_queued')
+        return 'waiting'
 
     def _bounded_deliver(self, command):
         """Never let a synchronous stdin/RPC call own the FIFO beyond admission.
@@ -501,6 +540,13 @@ class DriverAdapter:
                 self._commands.defer_current(command.delivery_id)
                 self._recover_transport(command)
                 return None
+            busy = self._busy_admission_status(command, old_driver)
+            if busy == 'expired':
+                command._delivery_worker = done
+                self._transport_unknown(command, 'busy_admission_timeout')
+                return None
+            if busy == 'waiting':
+                continue
             # poll_receipt is a local ledger lookup in the supported drivers.
             # Its evidence can precede return from deliver (e.g. Claude isReplay).
             try:

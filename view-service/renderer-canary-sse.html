@@ -2630,7 +2630,22 @@
     }
 
     function renderWaitingDelivery(ev) {
-      const waitKey = ev._norm?.deliveryId || ev.delivery_id;  // 归一键:observed_delivery_id 优先(B0)
+      const busyWait = ev.kind === 'state_change' && ev.data?.change === 'delivery_waiting_agent_idle';
+      let waitKey = ev._norm?.deliveryId || ev.delivery_id;  // 归一键:observed_delivery_id 优先(B0)
+      if (busyWait) {
+        const existingKey = [...waitingDeliveries.keys()].find(key => deliveryMergeKey(key) === deliveryMergeKey(waitKey));
+        if (existingKey) waitKey = existingKey;
+      } else if (ev.kind === 'input_posted') {
+        const placeholderKey = [...waitingDeliveries.keys()].find(key =>
+          deliveryMergeKey(key) === deliveryMergeKey(waitKey)
+          && waitingDeliveries.get(key)?.event.data?.change === 'delivery_waiting_agent_idle');
+        if (placeholderKey && placeholderKey !== waitKey) {
+          const placeholder = waitingDeliveries.get(placeholderKey);
+          waitingDeliveries.delete(placeholderKey);
+          waitingDeliveries.set(waitKey, placeholder);
+          placeholder.node.dataset.deliveryId = waitKey;
+        }
+      }
       let entry = waitingDeliveries.get(waitKey);
       if (!entry) {
         const node = document.createElement('article');
@@ -2639,19 +2654,20 @@
         waitingList.appendChild(node);
         entry = { node, event: ev };
         waitingDeliveries.set(waitKey, entry);
-      } else if (ev.text) {
+      } else if (ev.text && !busyWait) {
         entry.event = ev;
       }
       entry.touched = Date.now();  // 看门狗心跳:创建/阶段推进都刷新
       entry.staleNoted = false;    // 推进重渲染清超时标记(innerHTML 已重排)
       entry.failNotedAt = null;    // 推进重渲染清失败便签标记
-      const norm = ev._norm || {};
+      // 忙心跳只更新等待提示，保留canonical原输入、权限和后续入场关联。
+      const norm = (busyWait ? entry.event._norm : ev._norm) || {};
       // 寻址保真 tripwire(dev56 取证:hub 必发 message_id,缺=renderer 管道丢)——可取消条目缺 message_id 必须可观测
       if (norm.cancellable && !norm.messageId) console.warn('[c2] 可取消条目缺 message_id(寻址保真破):', { deliveryId: waitKey, kind: ev.kind, stage: norm.stage, hasMsgId: 'message_id' in ev });
       const provIc = provenanceIconHtml(norm);  // display v1:provenance 图标在场时压 legacy 文字徽标(不双标)
       const badge = provIc ? '' : sourceBadgeHtml(norm);
       const cancelTag = norm.cancellable ? '<span class="cancellable-tag">可取消</span>' : '';
-      const stageText = stageFooterText(norm);
+      const stageText = busyWait ? '排队等待 Agent 空闲' : stageFooterText(norm);
       if (norm.ackProtocol === 2 && norm.processingMode === 'driver' && norm.stage === 'helper_queued' && !entry.queuedClock) {
         const queuedAt = Date.parse(norm.queuedAt);
         if (Number.isFinite(queuedAt)) {

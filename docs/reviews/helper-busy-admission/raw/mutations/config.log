@@ -1,0 +1,14 @@
+test_busy_configuration_default_and_override (test_dispatch_lifecycle.BusyAdmissionTest.test_busy_configuration_default_and_override) ... FAIL
+
+======================================================================
+FAIL: test_busy_configuration_default_and_override (test_dispatch_lifecycle.BusyAdmissionTest.test_busy_configuration_default_and_override)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/busy-mut-wm7bkz5y/tests/test_dispatch_lifecycle.py", line 805, in test_busy_configuration_default_and_override
+    self.assertEqual(load_config(dict(base,SH_BUSY_ADMISSION_MAX_SECONDS='2400')).busy_admission_max_seconds,2400,'BA_CONFIG_LIMIT_IGNORED')
+AssertionError: 1800.0 != 2400 : BA_CONFIG_LIMIT_IGNORED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.034s
+
+FAILED (failures=1)

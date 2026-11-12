@@ -632,5 +632,204 @@ class MixedPrecisionGuardTest(unittest.TestCase):
         self.assertEqual(self.inbox.lifecycle(did)['state'],'admitted')
 
 
+
+
+class BusyAdmissionTest(unittest.TestCase):
+    """真实 driver 串行门＋adapter＋临时 inbox；只替换原生传输及虚拟时钟。"""
+    def setUp(self):
+        import os
+        import time
+        import threading
+        self.real_time = time
+        self.threading = threading
+        self.tmp = tempfile.TemporaryDirectory(prefix='ba-', dir='/tmp')
+        self.addCleanup(self.tmp.cleanup)
+        clean={k:v for k,v in os.environ.items() if not k.startswith(('SH_','DW_','DINGWEI_','DATAD_'))}
+        self.env_patch=patch.dict(os.environ,clean,clear=True);self.env_patch.start();self.addCleanup(self.env_patch.stop)
+        self.now = time.monotonic()
+        self.wall = time.time()
+        self.offset = 0.0
+        self.clock = SimpleNamespace(monotonic=lambda:self.now+self.offset,
+                                     time=lambda:self.wall+self.offset, sleep=lambda _: time.sleep(.002))
+        wall_patch=patch("time.time",lambda:self.wall+self.offset)
+        wall_patch.start();self.addCleanup(wall_patch.stop)
+        self.busy = threading.Event(); self.busy.set()
+        self.healthy = True
+        self.writes = []
+        self.results = []
+        self.errors = []
+        self.did = 'dw-dlv_'+'b'*32
+        self.env = {'body':'synthetic busy input','meta':{'delivery_id':self.did,
+            'delivery_ack_protocol':2,'processing_mode':'driver','ack_generation':1}}
+        self.inbox=DeliveryInbox(str(Path(self.tmp.name)/'inbox.db'),session_name='fixture')
+        self.inbox.accept(self.did,self.env);self.inbox.claim_next();self.inbox.begin_dispatch(self.did)
+
+    def prepare(self, which):
+        import threading
+        if which == 'codex':
+            from sessionhelper.codexDriver import CodexProtocolDriver
+            driver=CodexProtocolDriver(workdir=self.tmp.name,store_path=str(Path(self.tmp.name)/'driver.db'))
+            driver._thread_id=driver._session_id='fixture-root';driver._initialized=True
+            driver._active_turn_id='old-turn'
+            def request(method,params,timeout=0):
+                if method=='turn/start':
+                    driver._turn_start_writing(params)
+                    self.writes.append(params)
+                    return {'turn':{'id':'new-turn','status':'inProgress'}}
+                if method in ('thread/read','thread/resume'):
+                    return {'thread':{'id':'fixture-root','cwd':self.tmp.name,'status':{'type':'active'},'canAcceptDirectInput':True}}
+                if method=='thread/turns/list':return {'data':[]}
+                return {}
+            driver._rpc=SimpleNamespace(healthy=lambda:self.healthy,request=request)
+            driver._read_turn_state=lambda _:('processing','busy') if self.busy.is_set() else ('done','complete')
+            time_module='sessionhelper.codexDriver.time'
+        else:
+            from sessionhelper.claudeDriver import ClaudeProtocolDriver, _TurnState
+            driver=ClaudeProtocolDriver(cmd=['unused'],cwd=self.tmp.name,store_path=str(Path(self.tmp.name)/'driver.db'))
+            self.old=driver._active=_TurnState(envelope_id='old',turn_id='old-turn',accepted=threading.Event(),terminal_seen=threading.Event())
+            def write(frame):
+                self.writes.append(frame)
+                driver._active.accepted.set()
+            driver._proc=SimpleNamespace(poll=lambda:None if self.healthy else 1,stdin=SimpleNamespace(write=write,flush=lambda:None))
+            driver._reader_thread=SimpleNamespace(is_alive=lambda:True)
+            time_module='sessionhelper.claudeDriver.time'
+        self.driver=driver
+        self.addCleanup(self.release)
+        for module in ('sessionhelper.driver_adapter.time',time_module):
+            timer=patch(module,self.clock);timer.start();self.addCleanup(timer.stop)
+        cfg=SimpleNamespace(busy_buffer_max=5,turn_terminal_timeout_seconds=1800,admission_timeout_seconds=60,busy_admission_max_seconds=1800)
+        self.adapter=DriverAdapter(cfg,driver=driver);self.adapter._which=which;self.adapter._started=True
+        self.adapter.delivery_lifecycle=self.inbox
+        self.recoveries=[];self.adapter._recover_transport=lambda cmd:self.recoveries.append(cmd.delivery_id)
+        self.adapter.handle_delivery(self.env)
+        self.command=self.adapter._commands.start_next()
+        def run():
+            try:self.results.append(self.adapter._bounded_deliver(self.command))
+            except Exception as exc:self.errors.append(exc)
+        self.worker=threading.Thread(target=run);self.worker.start()
+        self.addCleanup(lambda:self.worker.join(2))
+        self.until(lambda:hasattr(self.command,'_busy_wait_event_at'),'BA_WAIT_NOT_OBSERVED')
+
+    def until(self, check, marker):
+        deadline=self.real_time.monotonic()+2
+        while not check() and self.real_time.monotonic()<deadline:self.real_time.sleep(.005)
+        self.assertTrue(check(),marker)
+
+    def release(self):
+        self.busy.clear()
+        if hasattr(self,'old'):self.old.terminal_seen.set()
+
+    def events(self):
+        rows=[]
+        while not self.adapter._event_q.empty():rows.append(json.loads(self.adapter._event_q.get_nowait()))
+        return rows
+
+    def busy90(self,which):
+        self.prepare(which)
+        self.offset=90
+        self.real_time.sleep(.06)
+        self.assertTrue(self.worker.is_alive(),'BA_BUSY90_EARLY_UNKNOWN')
+        self.assertEqual(self.inbox.lifecycle(self.did)['state'],'processing','BA_BUSY90_EARLY_UNKNOWN')
+        self.assertEqual(self.writes,[],'BA_BUSY90_SUBMITTED_WHILE_BUSY')
+        self.assertEqual(self.recoveries,[],'BA_HEALTHY_TRANSPORT_REPLACED')
+        events=[e for e in self.events() if e.get('data',{}).get('change')=='delivery_waiting_agent_idle']
+        self.assertTrue(events,'BA_WAIT_EVENT_MISSING')
+        self.assertTrue(all(e['data']['lifecycle']=='waiting' and e['delivery_id']==self.did and e['data']['status_text']=='排队等待 Agent 空闲' for e in events),'BA_WAIT_EVENT_INVALID')
+        self.release();self.worker.join(2)
+        self.assertFalse(self.worker.is_alive(),'BA_BUSY90_NOT_ADMITTED')
+        self.assertEqual(self.errors,[],'BA_WORKER_ERROR')
+        self.assertIsNotNone(self.results[0],'BA_BUSY90_NOT_ADMITTED')
+        self.assertTrue(self.adapter._admit_from_receipt(self.command,self.results[0]),'BA_ADMISSION_DEADLINE_NOT_EXTENDED')
+        self.assertEqual(self.inbox.lifecycle(self.did)['state'],'admitted','BA_ADMISSION_DEADLINE_NOT_EXTENDED')
+        self.driver.deliver(self.did,'synthetic busy input')
+        self.assertEqual(len(self.writes),1,'BA_DUPLICATE_SUBMISSION')
+
+    def cap(self,which):
+        import io
+        from contextlib import redirect_stdout
+        self.prepare(which)
+        self.offset=1799
+        self.real_time.sleep(.06)
+        self.assertTrue(self.worker.is_alive(),'BA_LIMIT_EARLY_UNKNOWN')
+        self.assertEqual(self.inbox.lifecycle(self.did)['state'],'processing','BA_LIMIT_EARLY_UNKNOWN')
+        output=io.StringIO()
+        with redirect_stdout(output):
+            self.offset=1801
+            self.worker.join(2)
+        self.assertFalse(self.worker.is_alive(),'BA_LIMIT_NOT_ENFORCED')
+        self.assertEqual(self.errors,[])
+        self.assertEqual(self.inbox.lifecycle(self.did)['state'],'admission_unknown','BA_LIMIT_NOT_UNKNOWN')
+        self.assertIn('[delivery][ALERT][BUSY_ADMISSION_TIMEOUT] id='+self.did+' driver='+which+' limit_seconds=1800;',output.getvalue(),'BA_LIMIT_WARNING_MISSING')
+        self.assertTrue(self.command._delivery_worker.wait(2),'BA_CANCEL_WORKER_NOT_STOPPED')
+        self.release();self.driver.deliver(self.did,'synthetic busy input')
+        self.assertEqual(self.writes,[],'BA_CANCELLED_LATE_SUBMISSION')
+        self.assertEqual(self.recoveries,[],'BA_LIMIT_REPLACED_HEALTHY_TRANSPORT')
+
+    def unhealthy(self,which):
+        self.prepare(which);self.healthy=False;self.offset=90
+        self.worker.join(2)
+        self.assertFalse(self.worker.is_alive(),'BA_UNHEALTHY_WAIT_EXTENDED')
+        self.assertEqual(self.writes,[],'BA_UNHEALTHY_SUBMISSION')
+        if which=='codex':
+            self.assertEqual(self.recoveries,[self.did],'BA_BAD_TRANSPORT_NOT_RECOVERED')
+            self.assertEqual(self.command.state,'queued','BA_UNSENT_TRANSPORT_NOT_DEFERRED')
+        else:
+            self.assertEqual(self.inbox.lifecycle(self.did)['state'],'admission_unknown','BA_BAD_TRANSPORT_NOT_UNKNOWN')
+
+    def test_codex_busy90_once(self):self.busy90('codex')
+    def test_claude_busy90_once(self):self.busy90('claude')
+    def test_codex_limit_cancels_late_submission(self):self.cap('codex')
+    def test_claude_limit_cancels_late_submission(self):self.cap('claude')
+    def test_codex_bad_transport_old_handling(self):self.unhealthy('codex')
+    def test_claude_bad_transport_old_handling(self):self.unhealthy('claude')
+
+    def test_submission_boundary_cannot_be_cancelled(self):
+        from sessionhelper.busy_admission import BusyAdmission
+        gate=BusyAdmission();gate.waiting(self.did)
+        self.assertTrue(gate.before_submit(self.did))
+        self.assertFalse(gate.cancel_waiting(self.did),'BA_POSSIBLE_SUBMISSION_CANCELLED')
+        self.assertFalse(gate.is_waiting(self.did),'BA_POSSIBLE_SUBMISSION_REQUEUED')
+        gate.waiting(self.did)
+        self.assertFalse(gate.is_waiting(self.did),'BA_SUBMISSION_REOPENED')
+
+    def test_cancelled_waiter_cannot_cross_submission_boundary(self):
+        from sessionhelper.busy_admission import BusyAdmission
+        gate=BusyAdmission();gate.waiting(self.did)
+        self.assertTrue(gate.cancel_waiting(self.did))
+        self.assertFalse(gate.before_submit(self.did),'BA_CANCELLED_CROSSED_BOUNDARY')
+
+    def test_busy_configuration_default_and_override(self):
+        from sessionhelper.config import load_config
+        base={'SH_SESSION_NAME':'fixture','SH_KEY_ID':'fixture','SH_SECRET':'synthetic'}
+        self.assertEqual(load_config(base).busy_admission_max_seconds,1800,'BA_DEFAULT_LIMIT')
+        self.assertEqual(load_config(dict(base,SH_BUSY_ADMISSION_MAX_SECONDS='2400')).busy_admission_max_seconds,2400,'BA_CONFIG_LIMIT_IGNORED')
+
+    def exemption_probe(self,which,*,submitted=None,healthy=True,stuck=False):
+        from sessionhelper.busy_admission import BusyAdmission
+        gate=BusyAdmission();gate.waiting(self.did)
+        driver=SimpleNamespace(_busy_admission=gate,submission_started=lambda _:submitted,
+            health=lambda:healthy,transport_recovery_required=lambda _:stuck)
+        adapter=DriverAdapter(SimpleNamespace(busy_buffer_max=5,turn_terminal_timeout_seconds=1800),driver=driver)
+        adapter._which=which
+        command=SimpleNamespace(delivery_id=self.did,text='synthetic',queue_seq=1)
+        return adapter._busy_admission_status(command,driver)
+
+    def test_possible_submission_has_no_busy_exemption(self):
+        for which in ('codex','claude'):
+            with self.subTest(driver=which):
+                self.assertIsNone(self.exemption_probe(which,submitted=self.now-61),'BA_POSSIBLE_SUBMISSION_EXTENDED')
+
+    def test_codex_stuck_writer_has_no_busy_exemption(self):
+        self.assertIsNone(self.exemption_probe('codex',stuck=True),'BA_STUCK_WRITER_EXTENDED')
+
+    def test_claude_stuck_writer_has_no_busy_exemption(self):
+        self.assertIsNone(self.exemption_probe('claude',stuck=True),'BA_STUCK_WRITER_EXTENDED')
+
+    def test_disconnected_transport_has_no_busy_exemption(self):
+        for which in ('codex','claude'):
+            with self.subTest(driver=which):
+                self.assertIsNone(self.exemption_probe(which,healthy=False),'BA_DISCONNECTED_EXTENDED')
+
+
 if __name__=='__main__':
     unittest.main()

@@ -1,0 +1,142 @@
+{
+  "utc": "2026-11-12T09:38:27.558388+00:00",
+  "control_rc": 0,
+  "browser_control_rc": 0,
+  "total": 19,
+  "killed": 19,
+  "results": [
+    {
+      "name": "codex-wait-evidence",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_codex_busy90_once",
+      "criterion": "BA_WAIT_NOT_OBSERVED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "claude-wait-evidence",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_claude_busy90_once",
+      "criterion": "BA_WAIT_NOT_OBSERVED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "codex-wait-limit",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_codex_limit_cancels_late_submission",
+      "criterion": "BA_LIMIT_NOT_ENFORCED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "claude-wait-limit",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_claude_limit_cancels_late_submission",
+      "criterion": "BA_LIMIT_NOT_ENFORCED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "warning",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_claude_limit_cancels_late_submission",
+      "criterion": "BA_LIMIT_WARNING_MISSING",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "wait-event",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_codex_busy90_once",
+      "criterion": "BA_WAIT_EVENT_MISSING",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "codex-bad-transport",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_codex_bad_transport_old_handling",
+      "criterion": "BA_BAD_TRANSPORT_NOT_RECOVERED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "claude-bad-transport",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_disconnected_transport_has_no_busy_exemption",
+      "criterion": "BA_DISCONNECTED_EXTENDED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "possible-submission",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_possible_submission_has_no_busy_exemption",
+      "criterion": "BA_POSSIBLE_SUBMISSION_EXTENDED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "codex-stuck-write",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_codex_stuck_writer_has_no_busy_exemption",
+      "criterion": "BA_STUCK_WRITER_EXTENDED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "claude-stuck-write",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_claude_stuck_writer_has_no_busy_exemption",
+      "criterion": "BA_STUCK_WRITER_EXTENDED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "cancel-boundary",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_cancelled_waiter_cannot_cross_submission_boundary",
+      "criterion": "BA_CANCELLED_CROSSED_BOUNDARY",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "cancel-possible",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_submission_boundary_cannot_be_cancelled",
+      "criterion": "BA_POSSIBLE_SUBMISSION_CANCELLED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "config",
+      "test": "test_dispatch_lifecycle.BusyAdmissionTest.test_busy_configuration_default_and_override",
+      "criterion": "BA_CONFIG_LIMIT_IGNORED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "view-wait-label",
+      "test": "browser",
+      "criterion": "BUSY_VISIBLE_WAITING",
+      "rc": 2,
+      "killed": true
+    },
+    {
+      "name": "view-prefix-merge",
+      "test": "browser",
+      "criterion": "BUSY_MERGE_PREFIX_ONCE",
+      "rc": 2,
+      "killed": true
+    },
+    {
+      "name": "view-canonical-input",
+      "test": "browser",
+      "criterion": "BUSY_CANONICAL_INPUT_PRESERVED",
+      "rc": 2,
+      "killed": true
+    },
+    {
+      "name": "view-busy-before-primary",
+      "test": "browser",
+      "criterion": "BUSY_BEFORE_PRIMARY_MERGED",
+      "rc": 2,
+      "killed": true
+    },
+    {
+      "name": "view-late-no-requeue",
+      "test": "browser",
+      "criterion": "BUSY_LATE_EVENT_NO_REQUEUE",
+      "rc": 2,
+      "killed": true
+    }
+  ]
+}

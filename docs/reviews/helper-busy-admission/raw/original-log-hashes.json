@@ -1,0 +1,10 @@
+{
+  "mutations/claude-bad-transport.log": {
+    "raw_bytes": 1871,
+    "raw_sha256": "e1a2f067a85c15ee8c7245b1f33d9d40ad04c570f586c38372cbf9532af74836"
+  },
+  "mutations/possible-submission.log": {
+    "raw_bytes": 1879,
+    "raw_sha256": "27448c8f4ad87ac7b8a12a5194391783a0324227ff4ca1a6f01d43a32a65ad1e"
+  }
+}

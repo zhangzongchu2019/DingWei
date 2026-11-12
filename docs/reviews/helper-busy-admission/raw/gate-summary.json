@@ -1,0 +1,88 @@
+[
+  {
+    "profile": "normal",
+    "argv": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+    "codex": "/usr/local/bin/codex",
+    "uid": 1001,
+    "start": "2026-11-12T09:38:01.195715+00:00",
+    "end": "2026-11-12T09:48:46.598658+00:00",
+    "rc": 0,
+    "log_path": "/tmp/busy-cf05/raw/canonical-normal.log",
+    "log_bytes": 1159048,
+    "log_sha256": "918fc73a748305c10563db02182f72d2cd422a1e7b23f22afa4c8c03c581f4a2",
+    "profiles": [
+      {
+        "actual": 1203,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1203,
+        "files": 94,
+        "groups": [
+          1194,
+          9
+        ],
+        "profile": "claude",
+        "rc": 0
+      },
+      {
+        "actual": 1203,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1203,
+        "files": 94,
+        "groups": [
+          1194,
+          9
+        ],
+        "profile": "codex",
+        "rc": 0
+      }
+    ],
+    "skip_lines": 0
+  },
+  {
+    "profile": "no-codex",
+    "argv": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/tmp/busy-cf05/bin:/usr/bin:/bin",
+    "codex": null,
+    "uid": 1001,
+    "start": "2026-11-12T09:38:01.195631+00:00",
+    "end": "2026-11-12T09:48:53.734879+00:00",
+    "rc": 0,
+    "log_path": "/tmp/busy-cf05/raw/canonical-no-codex.log",
+    "log_bytes": 1057421,
+    "log_sha256": "d98d0d8551062f9dd0bc52b829b85aa35eb43b21181bb6453d2b2bb9f24ae543",
+    "profiles": [
+      {
+        "actual": 1203,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1203,
+        "files": 94,
+        "groups": [
+          1194,
+          9
+        ],
+        "profile": "claude",
+        "rc": 0
+      },
+      {
+        "actual": 1203,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1203,
+        "files": 94,
+        "groups": [
+          1194,
+          9
+        ],
+        "profile": "codex",
+        "rc": 0
+      }
+    ],
+    "skip_lines": 0
+  }
+]

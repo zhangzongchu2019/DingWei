@@ -141,7 +141,6 @@ def claude_command(command=None):
 DEFAULT_STORE = "/home/ai-dev/transport-v2/.claude-driver-delivery.sqlite3"
 EVENT_DRAIN_TIMEOUT = 5.0        # 协议 done 后等终结事件排空的上限（契约 v3）
 TURN_ACCEPT_TIMEOUT = 30.0       # 投递后等 isReplay ACK 的上限
-PREV_TURN_WAIT = 180.0           # 投下一条前，等上一个 turn 完成的上限（串行到 turn 边界）
 # T-094: 一级按可归属增量事件后的空闲时长判卡死，二级限制回合总时长。
 STALL_TIMEOUT = 90.0             # 最后一次可归属增量事件后迟迟不 done ⇒ [delivery][STALLED]
 ABSOLUTE_TURN_TIMEOUT = 900.0    # 即使持续产出，单回合也不得无限运行
@@ -272,6 +271,10 @@ class ClaudeProtocolDriver(Driver):
         self._history_lock = threading.Lock()
 
         # —— turn 归属：claude 管道是串行的，任一时刻至多一个 active turn ——
+        from .busy_admission import BusyAdmission
+        self._busy_admission = BusyAdmission()
+        self._submission_started = {}
+        self._write_started = None
         self._active: Optional[_TurnState] = None
         self._active_lock = threading.Lock()
 
@@ -355,6 +358,13 @@ class ClaudeProtocolDriver(Driver):
         reader_ok = self._reader_thread is not None and self._reader_thread.is_alive()
         return proc_ok and reader_ok
 
+    def submission_started(self, envelope_id):
+        return self._submission_started.get(envelope_id)
+
+    def transport_recovery_required(self, timeout):
+        writing = self._write_started
+        return not self.health() or (writing is not None and time.monotonic() - writing >= timeout)
+
     # ---------------------------------------------------------------- 投递
 
     def deliver(self, envelope_id: str, body: str) -> DeliveryReceipt:
@@ -378,14 +388,16 @@ class ClaudeProtocolDriver(Driver):
             with self._active_lock:
                 prev = self._active
             if prev is not None and prev.envelope_id != envelope_id and not prev.terminal_seen.is_set():
-                previous_deadline=time.monotonic()+PREV_TURN_WAIT
-                while not prev.terminal_seen.is_set() and not self._stop.is_set() and time.monotonic()<previous_deadline:
-                    self._stop.wait(min(.05,max(0,previous_deadline-time.monotonic())))
+                self._busy_admission.waiting(envelope_id)
+                while not prev.terminal_seen.is_set() and not self._stop.is_set():
+                    if self._busy_admission.cancelled(envelope_id) or not self.health():
+                        return DeliveryReceipt(id=envelope_id, state="unknown", source="pipe", detail="busy wait cancelled or transport lost; no submission")
+                    self._stop.wait(.05)
                 if self._stop.is_set():
                     return DeliveryReceipt(id=envelope_id,state="unknown",source="pipe",detail="transport aborted while waiting for previous turn")
-                if not prev.terminal_seen.is_set():
-                    log.warning("[delivery][SERIAL_WAIT_TIMEOUT] prev turn %s not terminal after %.0fs; "
-                                "proceeding may risk merge", prev.envelope_id, PREV_TURN_WAIT)
+
+            if not self._busy_admission.before_submit(envelope_id):
+                return DeliveryReceipt(id=envelope_id, state="unknown", source="pipe", detail="busy wait cancelled; no submission")
 
             turn_id = uuid.uuid4().hex
             ts = _TurnState(
@@ -404,8 +416,13 @@ class ClaudeProtocolDriver(Driver):
             try:
                 with self._write_lock:
                     assert self._proc is not None and self._proc.stdin is not None
-                    self._proc.stdin.write(json.dumps(frame, ensure_ascii=False) + "\n")
-                    self._proc.stdin.flush()
+                    self._submission_started.setdefault(envelope_id, time.monotonic())
+                    self._write_started = time.monotonic()
+                    try:
+                        self._proc.stdin.write(json.dumps(frame, ensure_ascii=False) + "\n")
+                        self._proc.stdin.flush()
+                    finally:
+                        self._write_started = None
             except Exception as exc:
                 self._store.update_state(envelope_id, "failed", f"stdin write failed: {exc}")
                 return DeliveryReceipt(id=envelope_id, state="failed", source="pipe", detail=str(exc))

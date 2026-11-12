@@ -23,6 +23,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITES = (
+    ("renderer_model_admission", "node", ROOT / "view-service/renderer-model-admission-regression.js"),
     ("mcp_zero_consent", "python3", ROOT / "docs/reviews/mcp-zero-consent/browser_regression.py"),
     ("sub_agent_tree", "node", ROOT / "view-service/sub-agent-tree-browser-regression.js"),
     ("openspec_binding_admin", "node", ROOT / "view-service/openspec-binding-admin-regression.js"),

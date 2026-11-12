@@ -52,7 +52,30 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
     if (process.env.STALE_SCREENSHOT) {
       await reset(); await input('screenshot'); await failure('screenshot'); await page.screenshot({path:process.env.STALE_SCREENSHOT,fullPage:true});
     }
-    checks.finish(); console.log('MODEL_ADMISSION_BROWSER_PASS checks=15');
+    const busy = id => page.evaluate(id => handleIncomingEvent({kind:'state_change',delivery_id:id,text:'synthetic busy input',data:{change:'delivery_waiting_agent_idle',lifecycle:'waiting',state:'waiting',reason:'agent_busy',status_text:'排队等待 Agent 空闲'}}),id);
+    await reset(); await busy('dw-dlv-busy');
+    await checks.check('BUSY_VISIBLE_WAITING', async () => assert.ok((await page.locator('#waitingArea').innerText()).includes('排队等待 Agent 空闲')));
+    await checks.check('BUSY_NOT_UNKNOWN', async () => assert.ok(!(await page.locator('#waitingArea').innerText()).includes('未知')));
+    await reset();
+    await page.evaluate(() => handleIncomingEvent({kind:'input_posted',text:'canonical original input',message_id:'busy-message',delivery_id:'dlv-busy',stage:'helper_queued',cancellable:true}));
+    await busy('dw-dlv-busy');
+    const preserved=await page.evaluate(()=>({size:waitingDeliveries.size,event:waitingDeliveries.get('dlv-busy')?.event,text:waitingList.textContent}));
+    await checks.check('BUSY_MERGE_PREFIX_ONCE', async()=>assert.strictEqual(preserved.size,1));
+    await checks.check('BUSY_CANONICAL_INPUT_PRESERVED', async()=>{assert.strictEqual(preserved.event.kind,'input_posted');assert.strictEqual(preserved.event.message_id,'busy-message');assert.strictEqual(preserved.event.text,'canonical original input');assert.ok(preserved.text.includes('排队等待 Agent 空闲'));});
+    await reset(); await input('dlv-busy'); await busy('dw-dlv-busy');
+    await checks.check('BUSY_LATE_EVENT_NO_REQUEUE',async()=>assert.strictEqual(await page.evaluate(()=>waitingDeliveries.size),0));
+    await checks.check('BUSY_NO_PAGE_ERRORS',async()=>assert.deepStrictEqual(errors,[]));
+    await reset(); await busy('dw-dlv-first');
+    await page.evaluate(() => handleIncomingEvent({kind:'input_posted',text:'late canonical input',message_id:'first-message',delivery_id:'dlv-first',stage:'helper_queued',cancellable:true}));
+    await checks.check('BUSY_BEFORE_PRIMARY_MERGED',async()=>assert.strictEqual(await page.evaluate(()=>waitingDeliveries.size),1));
+    await checks.check('BUSY_BEFORE_PRIMARY_CANONICAL',async()=>assert.strictEqual(await page.evaluate(()=>waitingDeliveries.get('dlv-first')?.event.message_id),'first-message'));
+    await reset(); await page.evaluate(()=>{window.PROVENANCE_ICONS_V1=true;});await busy('dw-dlv-flag');
+    await checks.check('BUSY_FLAG_ON_VISIBLE',async()=>assert.ok((await page.locator('#waitingArea').innerText()).includes('排队等待 Agent 空闲')));
+    await page.evaluate(() => handleIncomingEvent({kind:'input_posted',text:'flag canonical input',message_id:'flag-message',delivery_id:'dlv-flag',stage:'helper_queued',cancellable:true}));
+    await busy('dw-dlv-flag');
+    await checks.check('BUSY_FLAG_ON_CANONICAL',async()=>assert.strictEqual(await page.evaluate(()=>waitingDeliveries.get('dlv-flag')?.event.message_id),'flag-message'));
+    await checks.check('BUSY_FLAG_ON_NO_DUPLICATE',async()=>assert.strictEqual(await page.evaluate(()=>waitingDeliveries.size),1));
+    checks.finish(); console.log('MODEL_ADMISSION_BROWSER_PASS checks=26');
   } finally {
     if(browser) await browser.close(); await fixture.close();
   }

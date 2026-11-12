@@ -1,0 +1,17 @@
+test_claude_limit_cancels_late_submission (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_limit_cancels_late_submission) ... FAIL
+
+======================================================================
+FAIL: test_claude_limit_cancels_late_submission (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_limit_cancels_late_submission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/busy-mut-wm7bkz5y/tests/test_dispatch_lifecycle.py", line 782, in test_claude_limit_cancels_late_submission
+    def test_claude_limit_cancels_late_submission(self):self.cap('claude')
+                                                        ^^^^^^^^^^^^^^^^^^
+  File "/tmp/busy-mut-wm7bkz5y/tests/test_dispatch_lifecycle.py", line 759, in cap
+    self.assertFalse(self.worker.is_alive(),'BA_LIMIT_NOT_ENFORCED')
+AssertionError: True is not false : BA_LIMIT_NOT_ENFORCED
+
+----------------------------------------------------------------------
+Ran 1 test in 4.133s
+
+FAILED (failures=1)

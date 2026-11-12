@@ -1,0 +1,14 @@
+test_cancelled_waiter_cannot_cross_submission_boundary (test_dispatch_lifecycle.BusyAdmissionTest.test_cancelled_waiter_cannot_cross_submission_boundary) ... FAIL
+
+======================================================================
+FAIL: test_cancelled_waiter_cannot_cross_submission_boundary (test_dispatch_lifecycle.BusyAdmissionTest.test_cancelled_waiter_cannot_cross_submission_boundary)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/busy-mut-wm7bkz5y/tests/test_dispatch_lifecycle.py", line 799, in test_cancelled_waiter_cannot_cross_submission_boundary
+    self.assertFalse(gate.before_submit(self.did),'BA_CANCELLED_CROSSED_BOUNDARY')
+AssertionError: True is not false : BA_CANCELLED_CROSSED_BOUNDARY
+
+----------------------------------------------------------------------
+Ran 1 test in 0.030s
+
+FAILED (failures=1)

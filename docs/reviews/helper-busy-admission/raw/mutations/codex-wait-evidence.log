@@ -1,0 +1,21 @@
+test_codex_busy90_once (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_busy90_once) ... FAIL
+
+======================================================================
+FAIL: test_codex_busy90_once (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_busy90_once)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/busy-mut-wm7bkz5y/tests/test_dispatch_lifecycle.py", line 779, in test_codex_busy90_once
+    def test_codex_busy90_once(self):self.busy90('codex')
+                                     ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/busy-mut-wm7bkz5y/tests/test_dispatch_lifecycle.py", line 728, in busy90
+    self.prepare(which)
+  File "/tmp/busy-mut-wm7bkz5y/tests/test_dispatch_lifecycle.py", line 711, in prepare
+    self.until(lambda:hasattr(self.command,'_busy_wait_event_at'),'BA_WAIT_NOT_OBSERVED')
+  File "/tmp/busy-mut-wm7bkz5y/tests/test_dispatch_lifecycle.py", line 716, in until
+    self.assertTrue(check(),marker)
+AssertionError: False is not true : BA_WAIT_NOT_OBSERVED
+
+----------------------------------------------------------------------
+Ran 1 test in 4.088s
+
+FAILED (failures=1)

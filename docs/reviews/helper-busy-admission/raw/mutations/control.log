@@ -1,0 +1,17 @@
+test_codex_busy90_once (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_busy90_once) ... ok
+test_claude_busy90_once (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_busy90_once) ... ok
+test_codex_limit_cancels_late_submission (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_limit_cancels_late_submission) ... ok
+test_claude_limit_cancels_late_submission (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_limit_cancels_late_submission) ... ok
+test_codex_bad_transport_old_handling (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_bad_transport_old_handling) ... ok
+test_disconnected_transport_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_disconnected_transport_has_no_busy_exemption) ... ok
+test_possible_submission_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_possible_submission_has_no_busy_exemption) ... ok
+test_codex_stuck_writer_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_stuck_writer_has_no_busy_exemption) ... ok
+test_claude_stuck_writer_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_stuck_writer_has_no_busy_exemption) ... ok
+test_cancelled_waiter_cannot_cross_submission_boundary (test_dispatch_lifecycle.BusyAdmissionTest.test_cancelled_waiter_cannot_cross_submission_boundary) ... ok
+test_submission_boundary_cannot_be_cancelled (test_dispatch_lifecycle.BusyAdmissionTest.test_submission_boundary_cannot_be_cancelled) ... ok
+test_busy_configuration_default_and_override (test_dispatch_lifecycle.BusyAdmissionTest.test_busy_configuration_default_and_override) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.990s
+
+OK

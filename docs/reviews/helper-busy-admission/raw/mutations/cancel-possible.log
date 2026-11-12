@@ -1,0 +1,14 @@
+test_submission_boundary_cannot_be_cancelled (test_dispatch_lifecycle.BusyAdmissionTest.test_submission_boundary_cannot_be_cancelled) ... FAIL
+
+======================================================================
+FAIL: test_submission_boundary_cannot_be_cancelled (test_dispatch_lifecycle.BusyAdmissionTest.test_submission_boundary_cannot_be_cancelled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/busy-mut-wm7bkz5y/tests/test_dispatch_lifecycle.py", line 790, in test_submission_boundary_cannot_be_cancelled
+    self.assertFalse(gate.cancel_waiting(self.did),'BA_POSSIBLE_SUBMISSION_CANCELLED')
+AssertionError: True is not false : BA_POSSIBLE_SUBMISSION_CANCELLED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.037s
+
+FAILED (failures=1)

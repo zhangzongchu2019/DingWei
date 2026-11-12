@@ -1,0 +1,14 @@
+test_codex_stuck_writer_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_stuck_writer_has_no_busy_exemption) ... FAIL
+
+======================================================================
+FAIL: test_codex_stuck_writer_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_stuck_writer_has_no_busy_exemption)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/busy-mut-wm7bkz5y/tests/test_dispatch_lifecycle.py", line 823, in test_codex_stuck_writer_has_no_busy_exemption
+    self.assertIsNone(self.exemption_probe('codex',stuck=True),'BA_STUCK_WRITER_EXTENDED')
+AssertionError: 'waiting' is not None : BA_STUCK_WRITER_EXTENDED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.036s
+
+FAILED (failures=1)

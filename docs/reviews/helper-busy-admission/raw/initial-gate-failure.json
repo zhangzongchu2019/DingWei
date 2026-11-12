@@ -1,0 +1,90 @@
+[
+  {
+    "profile": "normal",
+    "argv": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+    "codex": "/usr/local/bin/codex",
+    "uid": 1001,
+    "start": "2026-11-12T09:29:02.001104+00:00",
+    "end": "2026-11-12T09:37:25.899768+00:00",
+    "rc": 1,
+    "log_path": "/tmp/busy-cf05/raw/canonical-normal-initial.log",
+    "log_bytes": 1211747,
+    "log_sha256": "3b31636773ddaae6025d48b8f83141177ab8ae3c932846b4272760df380cc1ce",
+    "profiles": [
+      {
+        "actual": 1203,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1203,
+        "files": 94,
+        "groups": [
+          1194,
+          9
+        ],
+        "profile": "claude",
+        "rc": 1
+      },
+      {
+        "actual": 1203,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1203,
+        "files": 94,
+        "groups": [
+          1194,
+          9
+        ],
+        "profile": "codex",
+        "rc": 1
+      }
+    ],
+    "failure": "test_main_guard_last.MainGuardIsLastTest.test_no_definitions_after_main_guard",
+    "correction": "move unittest.main guard to end of test_dispatch_lifecycle.py"
+  },
+  {
+    "profile": "no-codex",
+    "argv": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/tmp/busy-cf05/bin:/usr/bin:/bin",
+    "codex": null,
+    "uid": 1001,
+    "start": "2026-11-12T09:29:02.006169+00:00",
+    "end": "2026-11-12T09:37:26.565187+00:00",
+    "rc": 1,
+    "log_path": "/tmp/busy-cf05/raw/canonical-no-codex-initial.log",
+    "log_bytes": 1073219,
+    "log_sha256": "021747e752a636f94229417996e76fdcaf90adc87955203acf44cdf1d0ec1648",
+    "profiles": [
+      {
+        "actual": 1203,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1203,
+        "files": 94,
+        "groups": [
+          1194,
+          9
+        ],
+        "profile": "claude",
+        "rc": 1
+      },
+      {
+        "actual": 1203,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1203,
+        "files": 94,
+        "groups": [
+          1194,
+          9
+        ],
+        "profile": "codex",
+        "rc": 1
+      }
+    ],
+    "failure": "test_main_guard_last.MainGuardIsLastTest.test_no_definitions_after_main_guard",
+    "correction": "move unittest.main guard to end of test_dispatch_lifecycle.py"
+  }
+]
