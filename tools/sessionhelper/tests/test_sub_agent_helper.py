@@ -590,6 +590,58 @@ class RuntimeTests(unittest.TestCase):
 
 
 
+class ConfiguredRootLaneTests(unittest.TestCase):
+    def test_root_configuration_does_not_bind_children_or_relax_broker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = Config(session_name='root', key_id='key', secret='synthetic-only',
+                         session_full_name='root.owner', state_dir=tmp,
+                         inbox_db=str(Path(tmp) / 'inbox.db'), sub_agents_v1=True,
+                         codex_bound_thread_id='root-configured')
+            with patch.dict(os.environ, {'SH_DRIVER': 'codex', 'SH_CLI_CWD': tmp,
+                                         'SH_CODEX_BOUND_THREAD_ID': 'root-configured'}):
+                adapter = DriverAdapter(cfg)
+                native = Native(tmp)
+                broker = AppServerBroker(native); broker.initialize({})
+                driver = adapter.driver
+                driver._rpc = broker.facade('', 1, 'root-configured', root=True)
+                driver._broker, driver._initialized = broker, True
+                adapter._started = True
+                # Existing M2-created thread, whose native tools were durably recorded.
+                runtime = SubAgentRuntime(cfg, adapter, 'root.owner', watchdog=False)
+                try:
+                    runtime.store.record_native_tools('root-configured')
+                    runtime.on_capability(dict(sub_agents_v1=True, conn_seq=7,
+                        max_supported_depth=1, subtree_revision=0))
+                    report = runtime.report()
+                    self.assertTrue(runtime.on_ack(dict(ok=True, conn_seq=7,
+                        subtree_revision=report['subtree_revision'])))
+                    child = runtime.create('child-under-configured-root')
+                    node = runtime.store.node(child['node_id'])
+                    child_driver = runtime.adapters[node['node_id']].driver
+                    self.assertNotEqual(node['native_thread_id'], 'root-configured')
+                    self.assertEqual(child_driver._required_bound_thread_id, '', 'ROOT_PIN_LEAKED_TO_CHILD')
+                    report = runtime.report()
+                    self.assertTrue(runtime.on_ack(dict(ok=True, conn_seq=7,
+                        subtree_revision=report['subtree_revision'])))
+                    runtime.accept(delivery(node, 'dw-child-message', 'child input'))
+                    runtime.worker_step()
+                    eventually(lambda: any(method == 'turn/start' for _, _, method, _ in native.calls))
+                    self.assertEqual(driver.deliver('root-message', 'root input').state, 'processing')
+                    turns = [params for _, _, method, params in native.calls if method == 'turn/start']
+                    self.assertEqual([p['threadId'] for p in turns],
+                                     [node['native_thread_id'], 'root-configured'])
+                    with self.assertRaises(PermissionError):
+                        child_driver._rpc.request('turn/start', dict(threadId='root-configured', input=[]))
+                    driver.stop()
+                    replacement = adapter._build_driver('codex')
+                    self.assertEqual(replacement._required_bound_thread_id,
+                                     'root-configured', 'ROOT_REPLACEMENT_LOST_PIN')
+                    replacement.stop()
+                    self.assertEqual(driver._thread_id, 'root-configured')
+                finally:
+                    runtime.shutdown()
+
+
 class ExistingRootToolsTests(unittest.TestCase):
     def setUp(self):
         selected = patch.dict(os.environ, {'SH_DRIVER': 'codex'})

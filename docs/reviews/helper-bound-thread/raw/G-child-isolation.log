@@ -1,0 +1,18 @@
+test_root_configuration_does_not_bind_children_or_relax_broker (test_sub_agent_helper.ConfiguredRootLaneTests.test_root_configuration_does_not_bind_children_or_relax_broker) ... [driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+FAIL
+
+======================================================================
+FAIL: test_root_configuration_does_not_bind_children_or_relax_broker (test_sub_agent_helper.ConfiguredRootLaneTests.test_root_configuration_does_not_bind_children_or_relax_broker)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/hbt782/hbt-mutation-431m48_j/tests/test_sub_agent_helper.py", line 622, in test_root_configuration_does_not_bind_children_or_relax_broker
+    self.assertEqual(child_driver._required_bound_thread_id, '', 'ROOT_PIN_LEAKED_TO_CHILD')
+AssertionError: 'e9ad8168-1210-4d5b-b1ba-a0f45d7e1fef' != ''
+- e9ad8168-1210-4d5b-b1ba-a0f45d7e1fef
+ : ROOT_PIN_LEAKED_TO_CHILD
+
+----------------------------------------------------------------------
+Ran 1 test in 0.590s
+
+FAILED (failures=1)

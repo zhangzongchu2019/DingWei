@@ -37,3 +37,5 @@ SH_CLI_REPLY_WAIT=60
 SH_OPEN_TIMEOUT=60                     # WS连接握手超时(秒),网络慢/国际链路调大
 SH_PROXY=off                          # off=强制直连(忽略容器HTTPS_PROXY环境变量);要走代理填 http://用户:密码@IP:端口
 # SH_DEBUG=1                         # 连不上时开,打详细连接诊断日志;连通后删掉
+
+# SH_CODEX_BOUND_THREAD_ID=完整目标thread-id # 根Codex显式绑定；停helper后改，private冲突拒启

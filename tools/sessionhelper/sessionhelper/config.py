@@ -88,6 +88,7 @@ class Config:
     codex_home: str = ""
     sub_agents_v1: bool = False
     codex_endpoint_mode: str = "legacy"
+    codex_bound_thread_id: str = ""
     cred_file: str = ""
     enroll_token_file: str = ""
     upload_max_per_hour: int = 20
@@ -254,6 +255,7 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         codex_home=expand_path(env.get("CODEX_HOME", "~/.codex")),
         sub_agents_v1=env.get("SH_SUB_AGENTS_V1", "0").lower() in ("1", "true", "yes"),
         codex_endpoint_mode=env.get("SH_CODEX_ENDPOINT_MODE", "legacy"),
+        codex_bound_thread_id=env.get("SH_CODEX_BOUND_THREAD_ID", "").strip(),
         cred_file=expand_path(env.get("SH_CRED_FILE", "")),
         enroll_token_file=expand_path(env.get("SH_ENROLL_TOKEN_FILE", "")
                                       or os.path.join(env.get("SH_STATE_DIR", "~/.dingwei"), "enroll-token.json")),

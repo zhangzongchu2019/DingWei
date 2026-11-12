@@ -1,0 +1,35 @@
+{
+  "rc": 0,
+  "start": "2026-11-11T23:28:08.201896+00:00",
+  "end": "2026-11-11T23:37:22.775897+00:00",
+  "profiles": [
+    {
+      "actual": 1179,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1179,
+      "files": 93,
+      "groups": [
+        1170,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1179,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1179,
+      "files": 93,
+      "groups": [
+        1170,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "full_log_local": "/tmp/helper-bound-thread-c782/canonical.log",
+  "full_log_bytes": 1025714,
+  "full_log_sha256": "5cac507cfcd44898ddd3feb596c1cf6017eca8b2221c1ead94d53333af407b81",
+  "evidence": "canonical-excerpt.log is an unchanged line selection; full log remains local to avoid adding a large file"
+}

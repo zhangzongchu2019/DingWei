@@ -1,0 +1,16 @@
+test_configured_root_read_before_exact_turn (test_codex_stale_thread.ConfiguredRootBinding.test_configured_root_read_before_exact_turn) ... ok
+test_unavailable_never_creates_and_failed_receipt_is_durable (test_codex_stale_thread.ConfiguredRootBinding.test_unavailable_never_creates_and_failed_receipt_is_durable) ... ok
+test_unset_factory_preserves_legacy_constructor_arguments (test_codex_stale_thread.ConfiguredRootBinding.test_unset_factory_preserves_legacy_constructor_arguments) ... ok
+test_private_binding_conflict_stops_startup_and_reports_both_ids (test_codex_stale_thread.ConfiguredRootBinding.test_private_binding_conflict_stops_startup_and_reports_both_ids) ... ok
+test_root_configuration_does_not_bind_children_or_relax_broker (test_sub_agent_helper.ConfiguredRootLaneTests.test_root_configuration_does_not_bind_children_or_relax_broker) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-child-message -> processing (turn=turn-5 status=inProgress)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_adapter_bound_thread_failure_has_no_injected_ack_and_publishes_reason (test_codex_stale_thread.CodexStaleThread.test_adapter_bound_thread_failure_has_no_injected_ack_and_publishes_reason) ... [driver-adapter] deliver id=dw-one -> failed (bound_thread_unavailable: error_class=missing_thread; method)
+[delivery] failed id=dw-one source=protocol (bound_thread_unavailable: error_class=missing_thread; method)
+ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.275s
+
+OK

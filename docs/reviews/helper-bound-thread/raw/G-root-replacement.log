@@ -1,0 +1,19 @@
+test_root_configuration_does_not_bind_children_or_relax_broker (test_sub_agent_helper.ConfiguredRootLaneTests.test_root_configuration_does_not_bind_children_or_relax_broker) ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-child-message -> processing (turn=turn-5 status=inProgress)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+FAIL
+
+======================================================================
+FAIL: test_root_configuration_does_not_bind_children_or_relax_broker (test_sub_agent_helper.ConfiguredRootLaneTests.test_root_configuration_does_not_bind_children_or_relax_broker)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/hbt782/hbt-mutation-431m48_j/tests/test_sub_agent_helper.py", line 637, in test_root_configuration_does_not_bind_children_or_relax_broker
+    self.assertEqual(replacement._required_bound_thread_id,
+AssertionError: '' != 'root-configured'
++ root-configured
+ : ROOT_REPLACEMENT_LOST_PIN
+
+----------------------------------------------------------------------
+Ran 1 test in 0.229s
+
+FAILED (failures=1)
