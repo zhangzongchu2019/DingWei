@@ -3,16 +3,45 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import time
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 
+
+class EnvironmentUnavailable(RuntimeError):
+    pass
+
+
+def check_environment():
+    env = os.environ.copy()
+    if not env.get("NODE_PATH"):
+        raise EnvironmentUnavailable("NODE_PATH is unset; set it to the Playwright node_modules directory")
+    try:
+        result = subprocess.run(
+            ["node", "--version"], cwd=ROOT, env=env, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False,
+        )
+    except OSError as error:
+        raise EnvironmentUnavailable(f"cannot run node: {error}") from error
+    version = (result.stdout or "").strip()
+    if result.returncode != 0:
+        raise EnvironmentUnavailable(f"cannot determine Node version (node --version: {version or 'no output'})")
+    try:
+        major = int(version.removeprefix("v").split(".", 1)[0])
+    except ValueError:
+        raise EnvironmentUnavailable(f"cannot parse Node version reported by node --version: {version!r}")
+    if major < 20:
+        raise EnvironmentUnavailable(f"Node {version} is too old; Playwright requires Node >=20")
+
+
 def run_mode(mode, output, cut=None, chain="consent"):
     mode_label = chain+"-"+mode
     run = output / mode_label
-    env = {"PATH": "/usr/bin:/bin:/home/dev/.local/bin", "HOME": "/home/dev", "GOPROXY": "off", "HUB_TEST_PG_STRICT": "1", "NODE_PATH": os.environ.get("NODE_PATH", "/tmp/coder-a3-playwright/node_modules")}
+    env = os.environ.copy()
+    env.update({"GOPROXY": "off", "HUB_TEST_PG_STRICT": "1"})
     hub = subprocess.Popen(["python3", str(HERE / "probe_launcher.py"), "--run-dir", str(run), "--browser-mode", mode, "--browser-chain", chain] + (["--browser-cut", cut] if cut else []), cwd=ROOT, env=env)
     rc = 1
     try:
@@ -48,13 +77,18 @@ if __name__ == "__main__":
     parser.add_argument("--cut", choices=("connect-csp", "selection-csp", "loopback-csp"))
     parser.add_argument("--chain", choices=("immediate", "consent"))
     args = parser.parse_args()
-    if args.output:
-        args.output.mkdir(parents=True, exist_ok=False)
-        for mode in ([args.mode] if args.mode else ("single", "multi")):
-            for chain in ([args.chain] if args.chain else ("immediate", "consent")):
-                run_mode(mode, args.output, args.cut, chain)
-    else:
-        with tempfile.TemporaryDirectory(prefix="zc-browser-") as directory:
+    try:
+        check_environment()
+        if args.output:
+            args.output.mkdir(parents=True, exist_ok=False)
             for mode in ([args.mode] if args.mode else ("single", "multi")):
-                for chain in ("immediate", "consent"):
-                    run_mode(mode, Path(directory), args.cut, chain)
+                for chain in ([args.chain] if args.chain else ("immediate", "consent")):
+                    run_mode(mode, args.output, args.cut, chain)
+        else:
+            with tempfile.TemporaryDirectory(prefix="zc-browser-") as directory:
+                for mode in ([args.mode] if args.mode else ("single", "multi")):
+                    for chain in ("immediate", "consent"):
+                        run_mode(mode, Path(directory), args.cut, chain)
+    except EnvironmentUnavailable as error:
+        print(f"ENVIRONMENT_UNAVAILABLE: {error}", file=sys.stderr)
+        raise SystemExit(3)
