@@ -1,0 +1,43 @@
+[
+  {
+    "commit": "c0fecb12ed86003ff2d29a1c0902cfb16bc3f8c7",
+    "tree": "5c52506fdf11d60cb8184bb246399407b50ea989",
+    "parents": [
+      "5395a1f5a1a730bbc52041c95314c1295e43cc69"
+    ],
+    "subject": "docs(helper): record busy admission delivery and Git object verification"
+  },
+  {
+    "commit": "e0de23713606d3e89f1bf578d268550e70d4786d",
+    "tree": "66a692678924ad93fa4fe69df03a2686afc9f6b4",
+    "parents": [
+      "99aed7ffd42db4777ca6dae78c8deb653fe9c7e1"
+    ],
+    "subject": "test(view): make persistence failure semantic"
+  },
+  {
+    "commit": "c56556baabbd0f0b4f886cb3886c8865e37b0058",
+    "tree": "cd2e5dec858c221acd77d4453bd4a232d67ab73c",
+    "parents": [
+      "c0fecb12ed86003ff2d29a1c0902cfb16bc3f8c7",
+      "e0de23713606d3e89f1bf578d268550e70d4786d"
+    ],
+    "subject": "merge: integrate frozen helper and View candidates for r59"
+  },
+  {
+    "commit": "d26a342d08d28bcae7fb393d50dba12b8359ba8f",
+    "tree": "97dac57e8ac07a70ee33c35f0f58218ad6fa514d",
+    "parents": [
+      "c56556baabbd0f0b4f886cb3886c8865e37b0058"
+    ],
+    "subject": "chore(version): pin r59 candidate as 0.2.3.39"
+  },
+  {
+    "commit": "a8fcb1ae921dcdb5685f781a7410a9b863f082e3",
+    "tree": "65430e46f224408770515a1aa2c38fd17503a510",
+    "parents": [
+      "d26a342d08d28bcae7fb393d50dba12b8359ba8f"
+    ],
+    "subject": "test(browser): register optional model admission screenshot input"
+  }
+]
