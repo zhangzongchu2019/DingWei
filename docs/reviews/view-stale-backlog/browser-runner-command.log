@@ -1,0 +1,7 @@
+START_UTC=2026-11-12T09:11:51Z
+node --version (PATH=/usr/local/bin:/usr/bin:/bin): v22.23.1
+命令：PATH=/usr/local/bin:/usr/bin:/bin NODE_PATH=/tmp/vux-playwright18/node_modules PLAYWRIGHT_BROWSERS_PATH=/home/dev/.cache/ms-playwright python3 tools/run-browser-regressions.py --receipt docs/reviews/view-stale-backlog/browser-receipt.txt
+套件未选择。全量收据见 browser-receipt.txt；其中 aggregate_rc=0。
+环境边界：仓内 docs/reviews/mcp-zero-consent/browser_regression.py 自行把子进程 PATH 固定为 /usr/bin:/bin:/home/dev/.local/bin，因此该子进程使用系统 Node v18.19.1 和 NODE_PATH 指定的兼容 Playwright；其余由 runner 启动的 Node 命令走 Node v22.23.1。未修改 runner/套件脚本。
+END_UTC=2026-11-12T09:20:13Z
+BROWSER_RUNNER_RC=0

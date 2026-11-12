@@ -1,0 +1,13 @@
+CODEX_THREAD_ID=01a1c778-375f-7441-8515-8b1eb6771cad
+Branch=togpt60lunazzc/view-stale-backlog
+Base=72d6d1a7949c2f1092d1d64d8f6185367a574564
+
+Targeted browser regression: checks=20 PASS, rc=0; 2026-11-12T09:12:28Z..09:12:30Z. See targeted-browser.log.
+Semantic mutations: six isolated mutations, all rc=2 with expected assertion failures; see mutations/*.txt. Markers: RETRYABLE_BACKLOG_NO_QUEUED_TIMER; BULK_UNTRACK_DEFAULT_CANCEL; BULK_UNTRACK_CONFIRM_IS_LOCAL; UNTRACK_PERSISTS_ACROSS_RELOAD; UNTRACK_STORAGE_EXPIRES_AFTER_30_DAYS; UNTRACK_STORAGE_CAP_500_KEEPS_NEWEST.
+Full browser runner: all 40 suites rc=0, aggregate_rc=0; 2026-11-12T09:11:51Z..09:20:13Z. See browser-receipt.txt and browser-runner-command.log.
+run-build-tests: rc=0; BUILD_TESTS_OK helper_profiles=2 python=27 shell=2; 2026-11-12T09:11:51Z..09:20:58Z. See run-build-tests.log.
+OpenSpec strict: 37 passed, 0 failed; rc=0. See openspec-strict.log.
+md-render sync: 6 sections byte-identical; rc=0. See md-render-sync.log.
+md-render parity: 103/103 outputs byte-identical; rc=0. See md-render-parity.log.
+Page version-literal scan: 76 added lines, 0 version-like literals; rc=0. See page-version-literal-scan.log.
+git diff --check: rc=0 before staging; repeat against staged tree before commit.

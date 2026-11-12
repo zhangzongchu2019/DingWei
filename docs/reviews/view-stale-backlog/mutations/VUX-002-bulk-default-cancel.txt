@@ -1,0 +1,75 @@
+  PASS CANCELLABLE_PHASE_HAS_DELETE
+  PASS TAKEN_PHASE_HAS_NO_DELETE
+  PASS REFUSED_CANCEL_EXPLAINS_WHY
+  PASS UNKNOWN_COPY_AND_NO_QUEUE_TIMER
+  PASS UNKNOWN_SUMMARY_MATCHES_VISIBLE_ROWS
+  PASS UNKNOWN_LIST_STABLE_NODE_AND_FOCUS
+  PASS UNTRACK_IS_LOCAL_ONLY
+  PASS RETRYABLE_BACKLOG_NO_QUEUED_TIMER
+  PASS RETRY_DIALOG_COPY_AND_DEFAULT_NO_RETRY
+  PASS RETRY_REQUIRES_EXPLICIT_CONFIRMATION
+  PASS REPLY_REMOVES_RETRY_BEFORE_CONFIRM
+  PASS LATE_ADMITTED_RESTORES_NORMAL_PROCESSED
+  PASS LATE_PROCESSED_RESTORES_NORMAL_PROCESSED
+  PASS EXPIRED_HIDDEN_FROM_WAITING_RETAINED_IN_UNKNOWN_LIST
+  FAIL BULK_UNTRACK_DEFAULT_CANCEL: Expected values to be strictly equal:
+
+false !== true
+
+  FAIL BULK_UNTRACK_CONFIRM_IS_LOCAL: locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('#inboxUnknownUntrackAll')
+    - locator resolved to <button type="button" id="inboxUnknownUntrackAll">全部不再跟踪</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <dialog open="" class="unknown-untrack-all-dialog" aria-labelledby="unknown-untrack-all-title">…</dialog> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <dialog open="" class="unknown-untrack-all-dialog" aria-labelledby="unknown-untrack-all-title">…</dialog> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    56 × waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <dialog open="" class="unknown-untrack-all-dialog" aria-labelledby="unknown-untrack-all-title">…</dialog> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+
+locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator('.waiting-item[data-delivery-id="persist-one"] .unknown-untrack-btn')
+    - locator resolved to <button type="button" class="unknown-untrack-btn">不再跟踪</button>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <dialog open="" class="unknown-untrack-all-dialog" aria-labelledby="unknown-untrack-all-title">…</dialog> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <dialog open="" class="unknown-untrack-all-dialog" aria-labelledby="unknown-untrack-all-title">…</dialog> intercepts pointer events
+    - retrying click action
+      - waiting 100ms
+    56 × waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <dialog open="" class="unknown-untrack-all-dialog" aria-labelledby="unknown-untrack-all-title">…</dialog> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+
+    at /tmp/vux-mut-rmk6fixi/view-service/renderer-delivery-status-regression.js:205:94
+
+mutation_rc=2

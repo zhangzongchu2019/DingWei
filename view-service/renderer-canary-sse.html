@@ -1142,7 +1142,7 @@
         <span class="status-item sb-res">内存 <strong id="memStat">--</strong></span>
         <span class="status-item sb-res">Agent 磁盘 <strong id="diskStat">未知</strong></span>
         <span class="status-item" id="inboxLagStat">注入状态未知</span>
-        <details class="status-item" id="inboxUnknownDetails" hidden><summary>查看本会话条目</summary><p id="inboxUnknownAggregate" hidden></p><ul id="inboxUnknownList"></ul></details>
+        <details class="status-item" id="inboxUnknownDetails" hidden><summary>查看本会话条目</summary><p id="inboxUnknownAggregate" hidden></p><button id="inboxUnknownUntrackAll" type="button" hidden>全部不再跟踪</button><ul id="inboxUnknownList"></ul></details>
         <span class="status-item sb-res" id="resourceFreshness" role="status">资源待更新</span>
       </div>
       <!-- 业主 2026-09-18 验收第 1 条：「选择文件上传时，没有任何提示，这个很容易认为是出问题了」
@@ -1752,11 +1752,49 @@
     })();
     // INBOX_LAG_STATE_END
     const UNKNOWN_DELIVERY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+    const UNKNOWN_UNTRACKED_STORAGE_PREFIX = 'dw-view-unknown-untracked-v1:';
+    const UNKNOWN_UNTRACKED_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+    const UNKNOWN_UNTRACKED_MAX_ENTRIES = 500;
+    const UNKNOWN_RETRYABLE_TEXT = 'Agent 忙时未能确认接收，可能未送达';
     const locallyUntrackedDeliveries = new Set();
     const processedDeliveries = new Set();
     let unknownListRenderSignature = null;
+    let locallyUntrackedSessionName = '';
     function viewNowMs(){ return typeof window.__viewUnknownUxNow === 'function' ? Number(window.__viewUnknownUxNow()) : Date.now(); }
     function deliveryAlreadyProcessed(deliveryId){ return !!deliveryId && processedDeliveries.has(String(deliveryId)); }
+    function isRetryableUnknownNorm(norm){ return norm?.reason==='unconfirmed_retryable' || ['unconfirmed_retryable','retried'].includes(norm?.status); }
+    function unknownUntrackSessionPrefix(sessionName){ return UNKNOWN_UNTRACKED_STORAGE_PREFIX+encodeURIComponent(String(sessionName))+':'; }
+    function pruneUnknownUntrackedStorage(now=viewNowMs()){
+      const retained=[];
+      try{
+        const keys=[];
+        for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key?.startsWith(UNKNOWN_UNTRACKED_STORAGE_PREFIX))keys.push(key);}
+        for(const key of keys){
+          const stamp=Number(localStorage.getItem(key));
+          if(!Number.isFinite(stamp)||stamp<=0||stamp>now||now-stamp>UNKNOWN_UNTRACKED_TTL_MS){localStorage.removeItem(key);continue;}
+          retained.push({key,stamp});
+        }
+        retained.sort((a,b)=>b.stamp-a.stamp||a.key.localeCompare(b.key));
+        for(const item of retained.slice(UNKNOWN_UNTRACKED_MAX_ENTRIES))localStorage.removeItem(item.key);
+        return retained.slice(0,UNKNOWN_UNTRACKED_MAX_ENTRIES);
+      }catch(_){return [];}
+    }
+    function restoreLocallyUntrackedForSession(sessionName){
+      const normalized=String(sessionName||'');
+      if(normalized===locallyUntrackedSessionName)return;
+      locallyUntrackedDeliveries.clear();locallyUntrackedSessionName=normalized;
+      if(!normalized)return;
+      const prefix=unknownUntrackSessionPrefix(normalized);
+      for(const item of pruneUnknownUntrackedStorage())if(item.key.startsWith(prefix)){
+        try{const id=decodeURIComponent(item.key.slice(prefix.length));if(id)locallyUntrackedDeliveries.add(id);}catch(_){try{localStorage.removeItem(item.key);}catch(__){}}
+      }
+    }
+    function persistLocallyUntrackedDelivery(deliveryId){
+      const session=String(stats.sessionName||''),id=String(deliveryId||''),now=viewNowMs();
+      if(!session||!id||!Number.isFinite(now)||now<=0)return;
+      pruneUnknownUntrackedStorage(now);
+      try{localStorage.setItem(unknownUntrackSessionPrefix(session)+encodeURIComponent(id),String(Math.trunc(now)));pruneUnknownUntrackedStorage(now);}catch(_){}
+    }
     function unknownSinceMs(ev, entry){
       if (Number.isFinite(entry.unknownSince)) return entry.unknownSince;
       const raw = ev?.occurred_at || ev?.updated_at || ev?._norm?.occurredAt || ev?.queued_at;
@@ -1766,7 +1804,7 @@
     }
     function isUnknownDelivery(entry){
       const n=entry?.event?._norm||{};
-      return n.reason==='model_admission_unknown' || ['unconfirmed_retryable','retried'].includes(n.status);
+      return n.reason==='model_admission_unknown' || isRetryableUnknownNorm(n);
     }
     function isUnknownDeliveryExpired(entry){
       return isUnknownDelivery(entry) && viewNowMs()-unknownSinceMs(entry.event,entry)>UNKNOWN_DELIVERY_MAX_AGE_MS;
@@ -1774,10 +1812,33 @@
     function untrackUnknownDelivery(deliveryId){
       if(!deliveryId)return;
       locallyUntrackedDeliveries.add(String(deliveryId));
+      persistLocallyUntrackedDelivery(deliveryId);
       const entry=waitingDeliveries.get(String(deliveryId));
       if(entry)entry.node.hidden=true;
       refreshUnknownDeliveryViews();
     }
+    function confirmUntrackAllUnknown(){
+      const ids=[...waitingDeliveries.entries()].filter(([id,entry])=>isUnknownDelivery(entry)&&!locallyUntrackedDeliveries.has(String(id))).map(([id])=>String(id));
+      if(!ids.length)return Promise.resolve(false);
+      return new Promise(resolve=>{
+        const dialog=document.createElement('dialog');dialog.className='unknown-untrack-all-dialog';
+        dialog.setAttribute('aria-labelledby','unknown-untrack-all-title');
+        dialog.innerHTML=`<form method="dialog"><h2 id="unknown-untrack-all-title">全部不再跟踪？</h2><p>将本页当前 ${ids.length} 条未知明细标记为不再跟踪。此操作只影响本浏览器显示。</p><button type="submit" value="cancel" autofocus>取消</button><button type="submit" value="confirm">全部不再跟踪</button></form>`;
+        let settled=false;
+        const finish=confirmed=>{
+          if(settled)return;settled=true;dialog.remove();
+          if(confirmed)for(const id of ids){const entry=waitingDeliveries.get(id);if(entry&&isUnknownDelivery(entry)){
+            locallyUntrackedDeliveries.add(id);persistLocallyUntrackedDelivery(id);entry.node.hidden=true;
+          }}
+          if(confirmed)refreshUnknownDeliveryViews();
+          resolve(confirmed);
+        };
+        dialog.addEventListener('close',()=>finish(dialog.returnValue==='confirm'));
+        dialog.addEventListener('cancel',()=>finish(false));
+        document.body.appendChild(dialog);dialog.showModal();dialog.querySelector('[value="cancel"]').focus();
+      });
+    }
+    document.getElementById('inboxUnknownUntrackAll')?.addEventListener('click',()=>{void confirmUntrackAllUnknown();});
     function refreshUnknownDeliveryViews(){
       for(const [id,entry] of waitingDeliveries){entry.node.hidden=locallyUntrackedDeliveries.has(String(id))||isUnknownDeliveryExpired(entry);}
       waitingArea.hidden=waitingDeliveries.size===0||[...waitingDeliveries.entries()].every(([id,x])=>x.node.hidden||locallyUntrackedDeliveries.has(String(id)));
@@ -1786,7 +1847,7 @@
     function refreshInboxLagLabel(){
       const el=document.getElementById('inboxLagStat');
       if(el){el.textContent=inboxLagState.display(performance.now());el.title='helper 上报的模型接收阶段；processed 不等于模型已接收；不代表业务已执行';}
-      const details=document.getElementById('inboxUnknownDetails'), list=document.getElementById('inboxUnknownList'), aggregate=document.getElementById('inboxUnknownAggregate');
+      const details=document.getElementById('inboxUnknownDetails'), list=document.getElementById('inboxUnknownList'), aggregate=document.getElementById('inboxUnknownAggregate'), untrackAll=document.getElementById('inboxUnknownUntrackAll');
       if(details&&list){
         const rawReported=Number(inboxLagState.record?.unknown||0);
         const reported=Number.isFinite(rawReported)?Math.max(0,Math.floor(rawReported)):0;
@@ -1794,7 +1855,7 @@
           .filter(([id,x])=>isUnknownDelivery(x)&&!locallyUntrackedDeliveries.has(String(id)))
           .map(([id,row])=>{
             const n=row.event?._norm||{};
-            return {id:String(id),text:n.text||'未知消息',reason:n.reason||'',status:n.status||'',expired:isUnknownDeliveryExpired(row)};
+            return {id:String(id),text:n.text||'未知消息',reason:n.reason||'',status:n.status||'',retryable:isRetryableUnknownNorm(n),expired:isUnknownDeliveryExpired(row)};
           });
         details.hidden=rows.length===0&&reported===0;
         details.querySelector('summary').textContent=`查看未知条目（${rows.length}）`;
@@ -1802,13 +1863,14 @@
           aggregate.hidden=reported<=rows.length;
           aggregate.textContent=reported>rows.length?`helper 上报 ${reported} 条；本页明细 ${rows.length} 条` : '';
         }
+        if(untrackAll)untrackAll.hidden=rows.length===0;
         const signature=JSON.stringify(rows);
         if(signature!==unknownListRenderSignature){
           unknownListRenderSignature=signature;
           list.replaceChildren();
           for(const row of rows){
             const li=document.createElement('li');
-            li.append(document.createTextNode((row.reason==='model_admission_unknown'?'已送达，Agent 忙时无法确认是否已接收':'未确认（可重发）')+'：'+row.text+(row.expired?' — 已超 24 小时':'')));
+            li.append(document.createTextNode((row.retryable?UNKNOWN_RETRYABLE_TEXT:(row.reason==='model_admission_unknown'?'已送达，Agent 忙时无法确认是否已接收':'未确认（可重发）'))+'：'+row.text+(row.expired?' — 已超 24 小时':'')));
             const untrack=document.createElement('button');untrack.type='button';untrack.className='unknown-untrack-btn';untrack.textContent='不再跟踪';untrack.addEventListener('click',()=>untrackUnknownDelivery(row.id));li.appendChild(untrack);
             list.appendChild(li);
           }
@@ -2729,6 +2791,7 @@
       const badge = provIc ? '' : sourceBadgeHtml(norm);
       const cancelTag = norm.cancellable ? '<span class="cancellable-tag">可取消</span>' : '';
       const stageText = stageFooterText(norm);
+      const visibleStageText = isRetryableUnknownNorm(norm) ? UNKNOWN_RETRYABLE_TEXT : stageText;
       if (norm.ackProtocol === 2 && norm.processingMode === 'driver' && norm.stage === 'helper_queued' && !entry.queuedClock) {
         const queuedAt = Date.parse(norm.queuedAt);
         if (Number.isFinite(queuedAt)) {
@@ -2738,11 +2801,11 @@
       if (provFlagOn()) {
         // 精简在途条(张宗楚灰度反馈#2):明确「⏳ 投递中」+单行截断,全文进 title——不与「已收到消息」混淆;
         // 删除寻址保留(截断足够辨认),终态仍事件驱动转出
-        const retryReady = norm.status === 'unconfirmed_retryable' || norm.status === 'retried';
+        const retryReady = isRetryableUnknownNorm(norm);
         entry.node.classList.toggle('waiting-item--pending', !retryReady);
-        entry.node.innerHTML = `${provIc}${badge}${retryReady ? `<span class="waiting-stage">${C1_REASON_TEXT.unconfirmed_retryable}${norm.status === 'retried' ? ' · 已重发' : ''}</span>` : '<span class="prov-spin" title="未达终态(注入/失败/取消/过期/终止)">⏳ 投递中</span>'}${stageText && !retryReady ? `<span class="waiting-stage">${escapeHtml(stageText)}</span>` : ''}<span class="waiting-text"></span>${cancelTag}`;
+        entry.node.innerHTML = `${provIc}${badge}${retryReady ? `<span class="waiting-stage">${UNKNOWN_RETRYABLE_TEXT}</span>` : '<span class="prov-spin" title="未达终态(注入/失败/取消/过期/终止)">⏳ 投递中</span>'}${visibleStageText && !retryReady ? `<span class="waiting-stage">${escapeHtml(visibleStageText)}</span>` : ''}<span class="waiting-text"></span>${cancelTag}`;
       } else {
-        entry.node.innerHTML = `${provIc}${badge}<span class="waiting-text"></span>${cancelTag}${stageText ? `<span class="waiting-stage">${escapeHtml(stageText)}</span>` : ''}`;
+        entry.node.innerHTML = `${provIc}${badge}<span class="waiting-text"></span>${cancelTag}${visibleStageText ? `<span class="waiting-stage">${escapeHtml(visibleStageText)}</span>` : ''}`;
       }
       const rawWaitText = entry.event.text || ev.data?.text || `delivery ${waitKey}`;  // flag 关=原样(与生产逐字)
       const waitText = provFlagOn() ? (ev._norm?.text || rawWaitText) : rawWaitText;   // flag 开:在途条用 payload 解析文本(norm.text 优先)
@@ -2781,7 +2844,7 @@
       const norm = entry.event._norm || {};
       const waiting = norm.ackProtocol === 2 && norm.processingMode === 'driver' && norm.stage === 'helper_queued';
       let note = entry.node.querySelector('.model-queued-wait');
-      if (!waiting || norm.reason === 'model_admission_unknown' || !entry.queuedClock) {
+      if (!waiting || norm.reason === 'model_admission_unknown' || isRetryableUnknownNorm(norm) || !entry.queuedClock) {
         if (note) note.remove();
         entry.node.classList.remove('waiting-item--model-delay');
         return;
@@ -4242,7 +4305,10 @@
     // The view updates this bottom status bar and does not append those
     // heartbeat state events to the conversation timeline.
     function applyStatusData(data) {
-      if (data.session_id || data.session) stats.sessionName = data.session_id || data.session;
+      if (data.session_id || data.session) {
+        const sessionName=data.session_id||data.session;
+        if(stats.sessionName!==sessionName){stats.sessionName=sessionName;restoreLocallyUntrackedForSession(sessionName);refreshUnknownDeliveryViews();}
+      }
       if (data.owner) stats.owner = data.owner;
       if (data.auth_mode) stats.authMode = data.auth_mode;
       if (data.model || data.driver) stats.model = data.model || data.driver;

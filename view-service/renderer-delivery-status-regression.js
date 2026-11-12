@@ -9,6 +9,7 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
     const page = await browser.newPage({viewport: {width: 1280, height: 900}});
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
+    await page.addInitScript(()=>{window.__unknownUxTestNow=Date.parse('2026-11-11T00:00:00Z');window.__viewUnknownUxNow=()=>window.__unknownUxTestNow;});
     await page.route('**/status', r => r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({session:'local-fixture',state:'idle',readonly:false,can_write:true})}));
     await page.route('**/events', r => r.fulfill({status:200,contentType:'text/event-stream',body:''}));
     await page.goto(fixture.url + '?mock=1&unlocked=1', {waitUntil:'domcontentloaded'});
@@ -17,6 +18,7 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
       clearInterval(statusTimer);
       window.retryCalls=[]; window.controlCalls=[]; window.__unknownUxTestNow=Date.parse('2026-11-11T00:00:00Z'); window.__viewUnknownUxNow=()=>window.__unknownUxTestNow;
       window.C2_CONTROL_TRANSPORT={send:async msg=>{window.controlCalls.push(msg);if(msg.kind==='retry')window.retryCalls.push(msg);return {ok:true};}};
+      applyStatusData({session:'local-fixture'});
       resetConversation(); finishTimelineReplay(false);
     });
     const emit = ev => page.evaluate(ev => handleIncomingEvent(ev), ev);
@@ -84,6 +86,25 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
       assert.strictEqual(await page.evaluate(()=>controlCalls.length),callsBeforeUntrack);
     });
 
+    await input('retryable-status'); await unknownStatus('retryable-status',{reason:'unconfirmed_retryable'});
+    await input('retried-status'); await unknownStatus('retried-status',{delivery_status:'retried',reason:''});
+    await input('retryable-reason-only'); await unknownStatus('retryable-reason-only',{delivery_status:'',reason:'unconfirmed_retryable'});
+    await page.evaluate(()=>{
+      for(const id of ['retryable-status','retried-status','retryable-reason-only']){
+        const entry=waitingDeliveries.get(id);entry.queuedClock={mono:performance.now(),elapsed:180000};r40PaintQueuedWait(entry);
+      }
+      refreshUnknownDeliveryViews();
+    });
+    await checks.check('RETRYABLE_BACKLOG_NO_QUEUED_TIMER', async()=>{
+      for(const id of ['retryable-status','retried-status','retryable-reason-only']){
+        const row=page.locator(`.waiting-item[data-delivery-id="${id}"]`),text=await row.innerText();
+        assert.ok(text.includes('Agent 忙时未能确认接收，可能未送达'),`${id} missing standard unknown copy`);
+        assert.ok(!text.includes('已排队')&&!text.includes('尚未注入会话'),`${id} has misleading timer copy`);
+        assert.strictEqual(await row.locator('.model-queued-wait').count(),0,`${id} created queue timer`);
+        assert.ok((await page.locator('#inboxUnknownList').innerText()).includes('Agent 忙时未能确认接收，可能未送达'));
+      }
+    });
+
     await input('retry-default'); await unknownStatus('retry-default',{reason:'model_admission_unknown'});
     const retryDefault=page.locator('.waiting-item[data-delivery-id="retry-default"] .waiting-retry-btn');
     await retryDefault.click();
@@ -148,7 +169,80 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
       assert.ok(text.includes('body expires'));
       assert.ok(text.includes('已超 24 小时'));
     });
+
+    await page.evaluate(()=>{
+      resetConversation();inboxLagState.record=null;inboxLagState.state='unknown';
+      window.controlCalls=[];refreshUnknownDeliveryViews();
+    });
+    await input('batch-one'); await unknownStatus('batch-one');
+    await input('batch-two'); await unknownStatus('batch-two');
+    const batchButton=page.locator('#inboxUnknownUntrackAll');
+    await checks.check('BULK_UNTRACK_DEFAULT_CANCEL', async()=>{
+      const before=await page.evaluate(()=>controlCalls.length);
+      await batchButton.click();
+      const dialog=page.locator('.unknown-untrack-all-dialog');
+      await dialog.waitFor();
+      assert.strictEqual(await dialog.locator('[value="cancel"]').evaluate(e=>document.activeElement===e),true);
+      await page.keyboard.press('Enter');
+      await dialog.waitFor({state:'detached'});
+      assert.strictEqual(await page.locator('#inboxUnknownList > li').count(),2);
+      assert.strictEqual(await page.locator('.waiting-item[data-delivery-id^="batch-"]').evaluateAll(es=>es.filter(e=>e.hidden).length),0);
+      assert.strictEqual(await page.evaluate(()=>controlCalls.length),before);
+    });
+    await checks.check('BULK_UNTRACK_CONFIRM_IS_LOCAL', async()=>{
+      const before=await page.evaluate(()=>controlCalls.length);
+      await batchButton.click();
+      const dialog=page.locator('.unknown-untrack-all-dialog');
+      await dialog.locator('[value="confirm"]').click();
+      await dialog.waitFor({state:'detached'});
+      assert.strictEqual(await page.locator('#inboxUnknownList > li').count(),0);
+      assert.strictEqual(await page.locator('.waiting-item[data-delivery-id^="batch-"]').evaluateAll(es=>es.filter(e=>e.hidden).length),2);
+      assert.strictEqual(await page.evaluate(()=>controlCalls.length),before);
+    });
+
+    await page.evaluate(()=>{window.__unknownUxTestNow=Date.parse('2026-11-11T00:00:00Z');window.__viewUnknownUxNow=()=>window.__unknownUxTestNow;resetConversation();inboxLagState.record=null;inboxLagState.state='unknown';refreshUnknownDeliveryViews();});
+    await input('persist-one'); await unknownStatus('persist-one');
+    await page.locator('.waiting-item[data-delivery-id="persist-one"] .unknown-untrack-btn').click();
+    await page.waitForFunction(()=>Array.from({length:localStorage.length},(_,i)=>localStorage.key(i)).some(k=>k?.endsWith(':persist-one')));
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>stats.sessionName==='local-fixture');
+    await page.evaluate(()=>{
+      clearInterval(statusTimer);window.controlCalls=[];window.retryCalls=[];
+      window.C2_CONTROL_TRANSPORT={send:async msg=>{window.controlCalls.push(msg);if(msg.kind==='retry')window.retryCalls.push(msg);return {ok:true};}};
+      resetConversation();applyStatusData({session:'local-fixture'});finishTimelineReplay(false);
+    });
+    await input('persist-one'); await unknownStatus('persist-one');
+    await checks.check('UNTRACK_PERSISTS_ACROSS_RELOAD', async()=>{
+      const row=page.locator('.waiting-item[data-delivery-id="persist-one"]');
+      assert.strictEqual(await row.count(),1);
+      assert.strictEqual(await row.isHidden(),true,`session=${await page.evaluate(()=>stats.sessionName)} restored=${JSON.stringify(await page.evaluate(()=>[...locallyUntrackedDeliveries]))} keys=${JSON.stringify(await page.evaluate(()=>Array.from({length:localStorage.length},(_,i)=>localStorage.key(i))))}`);
+      assert.strictEqual(await page.locator('#inboxUnknownList').innerText().then(t=>t.includes('body persist-one')),false);
+      assert.strictEqual(await page.evaluate(()=>controlCalls.length),0);
+    });
+
+    await page.evaluate(()=>{
+      const key='dw-view-unknown-untracked-v1:'+encodeURIComponent('local-fixture')+':ttl-old';
+      localStorage.setItem(key,String(window.__unknownUxTestNow-30*24*60*60*1000-1));
+    });
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>stats.sessionName==='local-fixture');
+    await checks.check('UNTRACK_STORAGE_EXPIRES_AFTER_30_DAYS', async()=>{
+      assert.strictEqual(await page.evaluate(()=>localStorage.getItem('dw-view-unknown-untracked-v1:'+encodeURIComponent('local-fixture')+':ttl-old')),null);
+    });
+
+    await page.evaluate(()=>{
+      for(let i=localStorage.length-1;i>=0;i--){const key=localStorage.key(i);if(key?.startsWith('dw-view-unknown-untracked-v1:'))localStorage.removeItem(key);}
+      for(let i=0;i<501;i++)localStorage.setItem('dw-view-unknown-untracked-v1:'+encodeURIComponent('local-fixture')+':cap-'+i,String(window.__unknownUxTestNow-i));
+    });
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>stats.sessionName==='local-fixture');
+    await checks.check('UNTRACK_STORAGE_CAP_500_KEEPS_NEWEST', async()=>{
+      const keys=await page.evaluate(()=>Array.from({length:localStorage.length},(_,i)=>localStorage.key(i)).filter(k=>k?.startsWith('dw-view-unknown-untracked-v1:')));
+      assert.strictEqual(keys.length,500);
+      assert.ok(keys.includes('dw-view-unknown-untracked-v1:'+encodeURIComponent('local-fixture')+':cap-0'));
+      assert.ok(!keys.includes('dw-view-unknown-untracked-v1:'+encodeURIComponent('local-fixture')+':cap-500'));
+    });
     await checks.check('NO_PAGE_ERRORS', async()=>assert.deepStrictEqual(errors,[]));
-    checks.finish(); console.log('DELIVERY_STATUS_BROWSER_PASS checks=14');
+    checks.finish(); console.log('DELIVERY_STATUS_BROWSER_PASS checks=20');
   } finally { if(browser) await browser.close(); await fixture.close(); }
 })().catch(finishRegression);
