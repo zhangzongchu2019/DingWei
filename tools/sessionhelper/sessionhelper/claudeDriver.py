@@ -669,6 +669,9 @@ class ClaudeProtocolDriver(Driver):
                     active.state = "done"
                     self._store.update_state(active.envelope_id, "done", "result frame")
                 active.terminal_seen.set()   # 终结事件已发出 ⇒ done 可以返回了（契约 v3）
+                with self._active_lock:
+                    if self._active is active:
+                        self._active = None
             return
 
         if t == "control_response":
