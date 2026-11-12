@@ -767,6 +767,8 @@ class CodexProtocolDriver(Driver):
         self._required_bound_thread_id = bound_thread_id if require_bound_thread else ""
         if require_bound_thread and not bound_thread_id:
             raise ValueError("configured bound thread id must not be empty")
+        self._recovery_thread_id = ""
+        self._recovery_rotation_blocked = False
         self._thread_id = bound_thread_id
         self._session_id = bound_thread_id  # compatibility with the conformance draft
         self._connection_generation = 0
@@ -1064,6 +1066,41 @@ class CodexProtocolDriver(Driver):
     def health(self) -> bool:
         return self._rpc is not None and self._rpc.healthy() and self._initialized
 
+    def inherit_recovery_thread(self, old) -> None:
+        """Carry the final stopped driver's binding, never a ledger/latest guess."""
+        if (self.lane_id, self.lane_generation) != (old.lane_id, old.lane_generation):
+            raise ValueError("recovery lane identity mismatch")
+        # Runtime context/tools belong to this same lane, not another lane.
+        self.context_provider = old.context_provider
+        self.dynamic_tools = old.dynamic_tools
+        self.native_tools_bound = old.native_tools_bound
+        if self._required_bound_thread_id:
+            return  # Configuration remains authoritative and fail-closed.
+        thread_id = old._thread_id
+        if thread_id:
+            self._thread_id = self._session_id = thread_id
+            self._verified_binding = None
+            if not self.lane_id:
+                self._recovery_thread_id = thread_id
+
+    def _validate_recovery_thread(self) -> None:
+        if self._recovery_rotation_blocked:
+            raise ThreadUnavailable("recovery rotation requires operator reconciliation")
+        try:
+            self._validate_bound_thread()
+        except Exception as exc:
+            reason = ("missing_thread" if isinstance(exc, JsonRpcError)
+                      and exc.classify(self._thread_id) == "missing_thread"
+                      else "thread_unavailable" if isinstance(exc, ThreadUnavailable) else "")
+            if (not reason or not self._recovery_thread_id
+                    or self._required_bound_thread_id or self.lane_id):
+                raise
+            # A lost create response or binding write must not create repeatedly.
+            self._recovery_rotation_blocked = True
+            self._ensure_thread(replacing_thread_id=self._recovery_thread_id, replacing_reason=reason)
+            self._recovery_rotation_blocked = False
+        self._recovery_thread_id = ""
+
     def deliver(self, envelope_id: str, body: str) -> DeliveryReceipt:
         with self._delivery_lock:
             self._sync_thread_alias()
@@ -1096,7 +1133,7 @@ class CodexProtocolDriver(Driver):
                             raise
                         return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
                 try:
-                    self._validate_bound_thread()
+                    self._validate_recovery_thread()
                 except Exception as exc:
                     return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
                 idle_error = self._wait_until_idle_for_delivery()
@@ -1590,7 +1627,7 @@ class CodexProtocolDriver(Driver):
         self._connection_generation += 1
         self._verified_binding = None
 
-    def _ensure_thread(self) -> None:
+    def _ensure_thread(self, *, replacing_thread_id="", replacing_reason="") -> None:
         # Explicit root binding is fail-closed: never replace an unavailable thread.
         if self._required_bound_thread_id:
             self._thread_id = self._session_id = self._required_bound_thread_id
@@ -1609,15 +1646,30 @@ class CodexProtocolDriver(Driver):
             params["modelProvider"] = self._model_provider
         if getattr(self,'dynamic_tools',None):params['dynamicTools']=self.dynamic_tools
         if callable(getattr(self,'context_provider',None)):params['developerInstructions']=self.context_provider(instructions=True)
-        result = self._request("thread/start", params)
+        if replacing_thread_id and hasattr(self._rpc, 'replace_root_thread'):
+            result = self._rpc.replace_root_thread(replacing_thread_id, params)
+        else:
+            result = self._request("thread/start", params)
         thread = result.get("thread", {})
         self._thread_id = thread["id"]
         self.native_tools_bound=bool(getattr(self,"dynamic_tools",None))
         self._session_id = self._thread_id
         if hasattr(self._rpc,'bind_thread'):self._rpc.bind_thread(self._thread_id)
+        if replacing_thread_id:
+            print(f'[delivery][THREAD_REPLACED] old_thread={replacing_thread_id} '
+                  f'new_thread={self._thread_id} reason={replacing_reason}', flush=True)
+            self._emit_event(SessionEvent(kind='state_change', session_id=self._thread_id,
+                data={'change': 'delivery_thread_replaced', 'old_thread_id': replacing_thread_id,
+                      'new_thread_id': self._thread_id, 'reason': replacing_reason}))
         if self._private_endpoint is not None:
-            self._private_endpoint.save_thread(self._thread_id)
-        self._verified_binding = self._binding_key()
+            if replacing_thread_id:
+                self._private_endpoint.replace_thread(replacing_thread_id, self._thread_id)
+            else:
+                self._private_endpoint.save_thread(self._thread_id)
+        # Replacements must pass the same read/cwd admission validation too.
+        self._verified_binding = None if replacing_thread_id else self._binding_key()
+        if replacing_thread_id:
+            self._validate_bound_thread()
 
     def _binding_key(self):
         return (self._rpc, self._connection_generation, self._thread_id,getattr(self._rpc,"generation",0))

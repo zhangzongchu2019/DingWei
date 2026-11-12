@@ -1,0 +1,88 @@
+[
+  {
+    "profile": "normal",
+    "argv": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+    "codex": "/usr/local/bin/codex",
+    "uid": 1001,
+    "start": "2026-11-12T09:01:07.380125+00:00",
+    "end": "2026-11-12T09:12:02.282987+00:00",
+    "rc": 0,
+    "log_path": "/tmp/hri-ceef/raw/canonical-normal.log",
+    "log_bytes": 1168061,
+    "log_sha256": "edffbdf746f631ddfcee378f97a24847567463596fed71c2348b087022252805",
+    "skip_lines": 0,
+    "profiles": [
+      {
+        "actual": 1190,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1190,
+        "files": 94,
+        "groups": [
+          1181,
+          9
+        ],
+        "profile": "claude",
+        "rc": 0
+      },
+      {
+        "actual": 1190,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1190,
+        "files": 94,
+        "groups": [
+          1181,
+          9
+        ],
+        "profile": "codex",
+        "rc": 0
+      }
+    ]
+  },
+  {
+    "profile": "no-codex",
+    "argv": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/tmp/hri-ceef/bin:/usr/bin:/bin",
+    "codex": null,
+    "uid": 1001,
+    "start": "2026-11-12T09:01:08.545236+00:00",
+    "end": "2026-11-12T09:12:04.945221+00:00",
+    "rc": 0,
+    "log_path": "/tmp/hri-ceef/raw/canonical-no-codex.log",
+    "log_bytes": 973421,
+    "log_sha256": "d8c7a49abaab1f9d259c37aa8ea1971a6f55c069831530ca6545e32569d7d226",
+    "skip_lines": 0,
+    "profiles": [
+      {
+        "actual": 1190,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1190,
+        "files": 94,
+        "groups": [
+          1181,
+          9
+        ],
+        "profile": "claude",
+        "rc": 0
+      },
+      {
+        "actual": 1190,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1190,
+        "files": 94,
+        "groups": [
+          1181,
+          9
+        ],
+        "profile": "codex",
+        "rc": 0
+      }
+    ]
+  }
+]

@@ -557,6 +557,9 @@ class DriverAdapter:
                     raise RuntimeError('delivery writer did not stop after transport abort')
                 old.stop()
                 replacement = self._build_driver(self._which)
+                inherit = getattr(replacement, 'inherit_recovery_thread', None)
+                if callable(inherit):
+                    inherit(old)
                 replacement.start()
                 replacement.on_activity = self._bridge_wake.set
                 self.driver = replacement

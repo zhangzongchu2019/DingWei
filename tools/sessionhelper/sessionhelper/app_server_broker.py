@@ -107,6 +107,9 @@ class LaneRpcFacade:
             self.bind_thread(result['thread']['id'])
         return result
 
+    def replace_root_thread(self, previous, params):
+        return self.broker.replace_root_thread(self, previous, params)
+
     def notify(self, method, params=None):
         if method != 'initialized':
             raise PermissionError('unscoped native notification')
@@ -130,6 +133,7 @@ class AppServerBroker:
         self._stop = threading.Event()
         self._init_lock = threading.Lock()
         self._recovery_lock = threading.Lock()
+        self._root_rotation_lock = threading.Lock()
         self._initialized = False
         self._ready = threading.Event()
         self._initialize_params = None
@@ -170,6 +174,27 @@ class AppServerBroker:
                 raise ValueError('lane thread binding is immutable')
             facade.thread_id = thread_id
             self._threads[thread_id] = facade
+
+    def replace_root_thread(self, facade, previous, params):
+        # Only the helper's inherited root may rotate. Ordinary bind remains
+        # immutable and child facades never receive manager creation privilege.
+        with self._root_rotation_lock:
+            with self._condition:
+                if (not facade.root or facade.identity.lane_id or facade.closed
+                        or facade.thread_id != previous
+                        or self._threads.get(previous) is not facade):
+                    raise PermissionError('root replacement binding mismatch')
+            result = self.request(facade, 'thread/start', params)
+            thread_id = result.get('thread', {}).get('id')
+            with self._condition:
+                if (not isinstance(thread_id, str) or not thread_id or thread_id == previous
+                        or thread_id in self._threads or facade.closed
+                        or self._threads.get(previous) is not facade):
+                    raise ValueError('root replacement result binding mismatch')
+                self._threads.pop(previous)
+                facade.thread_id = thread_id
+                self._threads[thread_id] = facade
+            return result
 
     def detach(self, facade):
         with self._condition:

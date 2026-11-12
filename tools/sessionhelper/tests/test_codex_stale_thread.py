@@ -560,5 +560,142 @@ class ConfiguredRootBinding(unittest.TestCase):
         self.assertEqual(self.rpc.calls, [])
 
 
+
+
+class RecoveryRPC(RPC):
+    def __init__(self, cwd, mode='ready'):
+        super().__init__(cwd)
+        self.mode = mode
+
+    def request(self, method, params, timeout=0):
+        if method in ('thread/read', 'thread/resume'):
+            self.calls.append((method, params))
+            old = params['threadId'] == 'bound-thread'
+            if old and self.mode == 'missing' and method == 'thread/resume':
+                raise JsonRpcError(method, {'code': -32600, 'message': 'no rollout found for thread id bound-thread'})
+            if old and self.mode == 'auth':
+                raise JsonRpcError(method, {'code': 401, 'message': '401 Unauthorized synthetic'})
+            if old and self.mode == 'rpc':
+                raise JsonRpcError(method, {'code': -32603, 'message': 'synthetic unknown server error'})
+            if old and self.mode == 'disconnected':
+                raise ConnectionError('synthetic disconnected')
+            unloaded = old and self.mode in ('missing', 'not_loaded') and method == 'thread/read'
+            return {'thread': {'id': params['threadId'],
+                'cwd': '/different/synthetic/cwd' if old and self.mode == 'cwd' else self.cwd,
+                'status': {'type': 'notLoaded' if unloaded else 'idle'}, 'canAcceptDirectInput': True}}
+        if method == 'thread/start':
+            self.calls.append((method, params))
+            return {'thread': {'id': 'replacement-thread'}}
+        return super().request(method, params, timeout)
+
+
+class RecoveryThreadInheritance(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.store = str(Path(self.tmp.name)/'ledger.db')
+
+    def driver(self, *, required=False, lane=''):
+        return CodexProtocolDriver(workdir=self.tmp.name, store_path=self.store,
+            bound_thread_id='bound-thread' if required or lane else '',
+            require_bound_thread=required, lane_id=lane)
+
+    def pair(self, mode='ready', required=False, lane=''):
+        old = self.driver(required=required, lane=lane)
+        old._thread_id = old._session_id = 'bound-thread'
+        new = self.driver(required=required, lane=lane)
+        new.inherit_recovery_thread(old)
+        rpc = RecoveryRPC(self.tmp.name, mode)
+        new._rpc, new._initialized = rpc, True
+        return old, new, rpc
+
+    def test_adapter_recovery_inherits_final_thread_and_never_replays_unknown(self):
+        from sessionhelper.config import Config
+        old, replacement, rpc = self.pair('not_loaded')
+        old._store.upsert('bound-thread', 'uncertain', '', 'hash', 'unknown', 'model_admission_unknown')
+        # Erase the direct test setup inheritance: this must come from adapter.
+        replacement._thread_id = replacement._session_id = replacement._recovery_thread_id = ''
+        old.abort_transport = mock.Mock()
+        old.stop = mock.Mock()
+        replacement.start = mock.Mock()
+        with mock.patch.dict(os.environ, {'SH_DRIVER': 'codex'}):
+            adapter = DriverAdapter(Config(session_name='test',key_id='k',secret='synthetic',state_dir=self.tmp.name),
+                                    driver=old, driver_factory=lambda: replacement)
+        adapter._recover_transport(types.SimpleNamespace(delivery_id='uncertain'))
+        self.assertTrue(adapter._transport_recovery.wait(3), 'HRI001_RECOVERY_COMPLETED')
+        self.assertIs(adapter.driver, replacement)
+        self.assertEqual(replacement._thread_id, 'bound-thread', 'HRI001_INHERIT_FINAL_ROOT')
+        self.assertEqual(replacement.deliver('uncertain', 'original').state, 'failed')
+        self.assertFalse(rpc.calls, 'HRI003_UNKNOWN_REPLAYED')
+        self.assertEqual(replacement.deliver('next', 'new input').state, 'processing')
+        methods = [m for m,_ in rpc.calls]
+        self.assertNotIn('thread/start', methods, 'HRI001_UNEXPECTED_NEW_THREAD')
+        self.assertLess(methods.index('thread/read'), methods.index('thread/resume'))
+        self.assertLess(methods.index('thread/resume'), methods.index('turn/start'))
+        self.assertEqual(rpc.calls[-1][1]['threadId'], 'bound-thread')
+        self.assertEqual([p['clientUserMessageId'] for m,p in rpc.calls if m=='turn/start'], ['next'])
+
+    def test_loaded_root_is_validated_and_continued_without_create(self):
+        _, new, rpc = self.pair()
+        self.assertEqual(new.deliver('next','new').state, 'processing')
+        methods = [m for m,_ in rpc.calls]
+        self.assertLess(methods.index('thread/read'), methods.index('turn/start'))
+        self.assertNotIn('thread/start', methods)
+        self.assertEqual(new._thread_id, 'bound-thread')
+
+    def test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn(self):
+        for mode,reason in [('missing','missing_thread'),('cwd','thread_unavailable')]:
+            with self.subTest(mode=mode):
+                _,new,rpc = self.pair(mode)
+                # Independent envelopes avoid durable idempotency between cases.
+                with mock.patch('sys.stdout',new_callable=io.StringIO) as output:
+                    receipt = new.deliver('new-'+mode,'input')
+                self.assertEqual(receipt.state,'processing','HRI002_FALLBACK_NOT_ADMITTED')
+                self.assertEqual(new._thread_id,'replacement-thread')
+                self.assertEqual(output.getvalue().strip(),
+                    '[delivery][THREAD_REPLACED] old_thread=bound-thread new_thread=replacement-thread reason='+reason,
+                    'HRI002_FIXED_WARNING_MISSING')
+                events=[e for e in new._event_log if e.data.get('change')=='delivery_thread_replaced']
+                self.assertEqual(len(events),1,'HRI002_STATE_EVENT_MISSING')
+                self.assertEqual(events[0].data,dict(change='delivery_thread_replaced',old_thread_id='bound-thread',
+                    new_thread_id='replacement-thread',reason=reason))
+                methods=[m for m,_ in rpc.calls]
+                self.assertEqual(methods.count('thread/start'),1)
+                self.assertLess(methods.index('thread/start'),methods.index('turn/start'))
+                self.assertEqual(rpc.calls[-1][1]['threadId'],'replacement-thread')
+
+    def test_configured_root_and_child_still_refuse_unavailable_thread(self):
+        for required,lane in [(True,''),(False,'child-lane')]:
+            with self.subTest(required=required,lane=lane):
+                _,new,rpc=self.pair('missing',required,lane)
+                receipt=new.deliver('rejected-'+str(required),'input')
+                self.assertEqual(receipt.state,'failed','HRI002_BOUND_OR_CHILD_OPENED')
+                self.assertNotIn('thread/start',[m for m,_ in rpc.calls],'HRI002_BOUND_OR_CHILD_OPENED')
+                self.assertFalse(any(e.data.get('change')=='delivery_thread_replaced' for e in new._event_log))
+
+    def test_auth_transport_and_unknown_rpc_errors_do_not_rotate(self):
+        for mode in ('auth','rpc','disconnected'):
+            _,new,rpc=self.pair(mode)
+            self.assertEqual(new.deliver('failure-'+mode,'input').state,'failed')
+            self.assertNotIn('thread/start',[m for m,_ in rpc.calls],'HRI002_UNKNOWN_ERROR_ROTATED')
+
+    def test_lost_create_response_does_not_retry_on_next_delivery(self):
+        _,new,rpc=self.pair('cwd')
+        request=rpc.request
+        def fail_create(method,params,timeout=0):
+            if method=='thread/start':
+                rpc.calls.append((method,params))
+                raise ConnectionError('synthetic lost create response')
+            return request(method,params,timeout)
+        rpc.request=fail_create
+        self.assertEqual(new.deliver('lost','input').state,'failed')
+        self.assertEqual(new.deliver('later','input').state,'failed')
+        self.assertEqual([m for m,_ in rpc.calls].count('thread/start'),1,'HRI002_UNCERTAIN_CREATE_RETRIED')
+
+    def test_lane_identity_mismatch_is_rejected(self):
+        old=self.driver(lane='child'); new=self.driver()
+        with self.assertRaises(ValueError):new.inherit_recovery_thread(old)
+
+
 if __name__ == '__main__':
     unittest.main()

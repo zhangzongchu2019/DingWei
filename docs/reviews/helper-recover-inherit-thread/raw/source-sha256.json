@@ -1,0 +1,30 @@
+[
+  {
+    "file": "tools/sessionhelper/sessionhelper/driver_adapter.py",
+    "sha256": "f18304c1677f5de8c9caf59c7f80ad1e18a0aeda3cf0a64f18d4b67f6861b590"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/sub_agent_runtime.py",
+    "sha256": "c965371ad4d1aed0a1baae289f1f261caeafac167378ea2fe84dd0d475c50bb3"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/private_endpoint.py",
+    "sha256": "39b394897fd0249ca941a653d3e3d3ee2d57cb25091334690620af83dad29464"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/app_server_broker.py",
+    "sha256": "efc018bbc9a984ce071d89e07d6a106153eae1d543ebb7e98b178d82c32e7f5c"
+  },
+  {
+    "file": "tools/sessionhelper/sessionhelper/codexDriver.py",
+    "sha256": "9f0773f6214e4b114a573eaab26f0b5a1b2b89a5c3cb6bbced4e373be234661e"
+  },
+  {
+    "file": "tools/sessionhelper/tests/test_codex_stale_thread.py",
+    "sha256": "820032192ab0fdd82e405a0632a84a6849962384bc088ba4bdd627693d05203e"
+  },
+  {
+    "file": "tools/sessionhelper/tests/test_sub_agent_helper.py",
+    "sha256": "bc6c1f428ffeed20ba325818b09a9d82e9f8a17781d6f995475aa373d85db4f3"
+  }
+]

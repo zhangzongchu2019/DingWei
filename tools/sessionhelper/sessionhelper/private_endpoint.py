@@ -712,6 +712,17 @@ class Client:
             write_json(fd, 'binding.json', {'format': 1, 'config': self.spec.fingerprint(),
                                          'boot': current['boot'], 'thread_id': thread_id})
 
+    def replace_thread(self, previous, thread_id):
+        """Unbound recovery only; retain writer/boot/config checks and compare old ID."""
+        thread_identifier(previous)
+        thread_identifier(thread_id)
+        if self.bound_thread() != previous:
+            fail('binding')
+        current = self.status()
+        with root_fd(self.spec) as fd:
+            write_json(fd, 'binding.json', {'format': 1, 'config': self.spec.fingerprint(),
+                                         'boot': current['boot'], 'thread_id': thread_id})
+
     def resume_command(self, thread_id):
         try:
             if type(thread_id) is not str or str(uuid.UUID(thread_id)) != thread_id:

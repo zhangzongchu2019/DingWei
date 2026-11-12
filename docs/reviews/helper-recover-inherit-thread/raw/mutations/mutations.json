@@ -1,0 +1,71 @@
+{
+  "utc": "2026-11-12T09:02:42.386898+00:00",
+  "control_rc": 0,
+  "total": 9,
+  "killed": 9,
+  "results": [
+    {
+      "name": "inherit",
+      "test": "test_codex_stale_thread.RecoveryThreadInheritance.test_adapter_recovery_inherits_final_thread_and_never_replays_unknown",
+      "criterion": "HRI001_INHERIT_FINAL_ROOT",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "fallback",
+      "test": "test_codex_stale_thread.RecoveryThreadInheritance.test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn",
+      "criterion": "HRI002_FALLBACK_NOT_ADMITTED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "warning",
+      "test": "test_codex_stale_thread.RecoveryThreadInheritance.test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn",
+      "criterion": "HRI002_FIXED_WARNING_MISSING",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "event",
+      "test": "test_codex_stale_thread.RecoveryThreadInheritance.test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn",
+      "criterion": "HRI002_STATE_EVENT_MISSING",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "explicit-bound",
+      "test": "test_codex_stale_thread.RecoveryThreadInheritance.test_configured_root_and_child_still_refuse_unavailable_thread",
+      "criterion": "HRI002_BOUND_OR_CHILD_OPENED",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "dynamic-root",
+      "test": "test_sub_agent_helper.RecoveryRootLaneTests.test_recovered_root_rotates_without_rebinding_children_and_factory_tracks_latest",
+      "criterion": "HRI004_ROOT_FACTORY_CAPTURED_FIRST_ID",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "no-replay",
+      "test": "test_codex_stale_thread.RecoveryThreadInheritance.test_adapter_recovery_inherits_final_thread_and_never_replays_unknown",
+      "criterion": "replacement.deliver('uncertain', 'original').state, 'failed'",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "cross-lane-write",
+      "test": "test_sub_agent_helper.RecoveryRootLaneTests.test_recovered_root_rotates_without_rebinding_children_and_factory_tracks_latest",
+      "criterion": "child.request('turn/start',dict(threadId=latest,input=[]))",
+      "rc": 1,
+      "killed": true
+    },
+    {
+      "name": "private-hint",
+      "test": "test_sub_agent_helper.RecoveryRootLaneTests.test_private_replacement_requires_writer_and_exact_previous_binding",
+      "criterion": "HRI004_PRIVATE_HINT_NOT_REPLACED",
+      "rc": 1,
+      "killed": true
+    }
+  ]
+}

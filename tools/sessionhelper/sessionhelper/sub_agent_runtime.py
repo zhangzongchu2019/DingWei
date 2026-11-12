@@ -85,7 +85,7 @@ class SubAgentRuntime:
                     self.ready = False
                     self._last_report = None
                     print('[sub-agent] ' + ROOT_TOOLS_UNAVAILABLE, flush=True)
-                self.root_adapter._lane_driver_factory = lambda: self._driver_for('', 1, driver._thread_id)
+                self.root_adapter._lane_driver_factory = lambda: self._driver_for('', 1, self.root_adapter.driver._thread_id)
             return self._broker
 
     def _require_root_tools(self):
@@ -107,6 +107,8 @@ class SubAgentRuntime:
             shared_facade=facade, bound_thread_id=thread_id,
             require_bound_thread=bool(not node_id and root._required_bound_thread_id),
             lane_id=node_id, lane_generation=generation)
+        if not node_id:
+            driver._private_endpoint = self._endpoint
         driver.context_provider = lambda instructions=False: self.context_input(node_id, instructions)
         driver.dynamic_tools = dynamic_tools() if node_id or self.root_tools_available else []
         return driver

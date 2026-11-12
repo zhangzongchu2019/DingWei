@@ -780,4 +780,79 @@ class ConnectionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(sent[0]['target_node_id'], 'a')
 
 
-if __name__ == '__main__': unittest.main()
+
+
+class RecoveryRootLaneTests(unittest.TestCase):
+    make_runtime = ExistingRootToolsTests.make_runtime
+
+    def setUp(self):
+        ExistingRootToolsTests.setUp(self)
+
+    def test_recovered_root_rotates_without_rebinding_children_and_factory_tracks_latest(self):
+        runtime, native, endpoint = self.runtime, self.native, self.endpoint
+        runtime._ensure_broker()
+        adapter = runtime.root_adapter
+        old = adapter.driver
+        broker = runtime._broker
+        child = broker.facade('child-lane', 1, 'child-thread')
+        self.addCleanup(child.stop)
+        saved=[]
+        def replace(previous, current):
+            self.assertEqual(previous, endpoint.bound)
+            endpoint.bound=current; saved.append((previous,current))
+        endpoint.replace_thread=replace
+        native_request=native.wait_request
+        def wrong_root(token, method, timeout=30):
+            if method=='thread/read' and token[2].get('threadId')=='existing-root':
+                return {'thread':{'id':'existing-root','cwd':'/wrong/root',
+                    'status':{'type':'idle'},'canAcceptDirectInput':True}}
+            return native_request(token,method,timeout)
+        native.wait_request=wrong_root
+        old.stop()
+        replacement=adapter._build_driver('codex')
+        replacement.inherit_recovery_thread(old)
+        replacement.start()
+        adapter.driver=replacement
+        with patch('sys.stdout'):
+            self.assertEqual(replacement.deliver('root-next','root input').state,'processing')
+        latest=replacement._thread_id
+        self.assertNotEqual(latest,'existing-root','HRI004_ROOT_DID_NOT_ROTATE')
+        self.assertEqual(saved,[('existing-root',latest)],'HRI004_PRIVATE_ROOT_HINT_STALE')
+        self.assertIs(broker._threads[latest],replacement._rpc)
+        self.assertIs(broker._threads['child-thread'],child,'HRI004_CHILD_BINDING_CHANGED')
+        self.assertNotIn('existing-root',broker._threads)
+        with self.assertRaises(PermissionError):child.request('turn/start',dict(threadId=latest,input=[]))
+        with self.assertRaises(PermissionError):child.replace_root_thread('child-thread',dict(cwd=self.tmp.name))
+        with self.assertRaises(PermissionError):replacement._rpc.request('thread/start',dict(cwd=self.tmp.name))
+        with self.assertRaises(ValueError):child.bind_thread(latest)
+        self.assertEqual(child.request('turn/start',dict(threadId='child-thread',input=[],clientUserMessageId='child-next'))['turn']['status'],'inProgress')
+        replacement.stop()
+        second=adapter._build_driver('codex')
+        self.addCleanup(second.stop)
+        self.assertEqual(second._thread_id,latest,'HRI004_ROOT_FACTORY_CAPTURED_FIRST_ID')
+        self.assertIs(second._private_endpoint,endpoint,'HRI004_PRIVATE_ENDPOINT_LOST')
+        self.assertEqual(child.thread_id,'child-thread')
+        # Creation was root-only, and the two admitted turns used distinct IDs.
+        turns=[p for _,_,m,p in native.calls if m=='turn/start']
+        self.assertEqual([p['threadId'] for p in turns],[latest,'child-thread'])
+
+    def test_private_replacement_requires_writer_and_exact_previous_binding(self):
+        from contextlib import nullcontext
+        from sessionhelper.private_endpoint import Client as PrivateEndpointClient, PrivateEndpointError
+        client=PrivateEndpointClient.__new__(PrivateEndpointClient)
+        old,new=str(uuid.uuid4()),str(uuid.uuid4())
+        client._writer=None
+        with self.assertRaises(PrivateEndpointError):client.replace_thread(old,new)
+        client.spec=types.SimpleNamespace(fingerprint=lambda:'synthetic-config')
+        with patch.object(client,'bound_thread',return_value=old), patch.object(client,'status',return_value={'boot':'synthetic-boot'}), \
+             patch('sessionhelper.private_endpoint.root_fd',return_value=nullcontext(99)), \
+             patch('sessionhelper.private_endpoint.write_json') as write:
+            client.replace_thread(old,new)
+            self.assertEqual(write.call_args.args[2]['thread_id'],new,'HRI004_PRIVATE_HINT_NOT_REPLACED')
+        with patch.object(client,'bound_thread',return_value='other'), patch('sessionhelper.private_endpoint.write_json') as write:
+            with self.assertRaises(PrivateEndpointError):client.replace_thread(old,new)
+            write.assert_not_called()
+
+
+if __name__ == '__main__':
+    unittest.main()

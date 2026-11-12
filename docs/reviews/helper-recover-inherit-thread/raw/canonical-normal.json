@@ -1,0 +1,17 @@
+{
+  "profile": "normal",
+  "argv": [
+    "sh",
+    "scripts/run-build-tests.sh"
+  ],
+  "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+  "codex": "/usr/local/bin/codex",
+  "uid": 1001,
+  "start": "2026-11-12T09:01:07.380125+00:00",
+  "end": "2026-11-12T09:12:02.282987+00:00",
+  "rc": 0,
+  "log_path": "/tmp/hri-ceef/raw/canonical-normal.log",
+  "log_bytes": 1168061,
+  "log_sha256": "edffbdf746f631ddfcee378f97a24847567463596fed71c2348b087022252805",
+  "skip_lines": 0
+}
