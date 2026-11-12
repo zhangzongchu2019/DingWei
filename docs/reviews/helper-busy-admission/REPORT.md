@@ -57,3 +57,5 @@
 
 
 复跑完整门：env -i HOME=<临时目录> TMPDIR=<短临时目录> PATH=<锁定venv/bin及测试PATH> HUB_TEST_PG_STRICT=1 LANG=C.UTF-8 TZ=UTC PYTHONDONTWRITEBYTECODE=1 sh scripts/run-build-tests.sh。普通PATH含/usr/local/bin（codex可见），无codex PATH以仅含node的临时bin替换/usr/local/bin；canonical内部再隔离SH_/DW_/DINGWEI_/DATAD_与CLI状态。完整源文件SHA见raw/source-sha256.json；所有交件文件清单见SHA256SUMS。日志副本仅剥行尾空白以满足diff检查，原始字节hash见raw/original-log-hashes.json，不改写读数/断言。
+
+实现与完整门/证据提交5395a1f5a1a730bbc52041c95314c1295e43cc69，tree 0ae16693b54207cccaf33a8bfe453257db6279e4，父c0777e4b0d26cabc588f22bdf3ae7ce90d412110，已快进push并核ls-remote同值。随后仅追加交付记录/已提交Git对象核验件，不改已测源码；最终tip/tree以平台交审回执为准。
