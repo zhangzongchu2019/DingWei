@@ -46,6 +46,7 @@ func optionsJSON(t *testing.T, o *Orchestrator, owner string) (string, map[strin
 
 // 契约第一节逐字段：五个顶层键；quota 只有 remaining 一层；各列表元素的键集合与契约相同（不多不少）。
 func TestOptionsJSONMatchesContract(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	o.combos = fakeCombos{m: map[string]bool{"codex|gpt|token_file": true, "claude|glm|api_key": false}}
@@ -123,6 +124,7 @@ func TestOptionsJSONMatchesContract(t *testing.T) {
 
 // 空列表序列化为 []，不是 null。
 func TestOptionsEmptyListsAreArrays(t *testing.T) {
+	parallelHostedTest(t)
 	svc, s := mkPoolSvc(t)
 	o := NewOrchestrator(s, svc, &fakeIdentity{}, &fakeGateway{}, fakeCombos{m: map[string]bool{}}, fakeCatalog{})
 	raw, _ := optionsJSON(t, o, "nobody")
@@ -138,6 +140,7 @@ func TestOptionsEmptyListsAreArrays(t *testing.T) {
 
 // fits 的四道闸各自独立起作用（原用例里 4c8g 置灰其实是内存闸抓的，agents 闸与 vcpu 闸被遮住）。
 func TestOptionsPlanFitsEachGate(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	fitsOf := func(t *testing.T, q Quota, seats []string) map[string]bool {
 		t.Helper()
@@ -195,6 +198,7 @@ func TestOptionsPlanFitsEachGate(t *testing.T) {
 
 // jobs.reason 只出契约第四节「进度」的七个机器码；状态机里记的其他东西一律收成 start_failed。
 func TestJobReasonOnlyContractCodes(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	cases := map[string]string{
@@ -227,6 +231,7 @@ func TestJobReasonOnlyContractCodes(t *testing.T) {
 // 组长裁定 lead-g4-joint-run-1 第 2 条：jobs 归属按席位 created_by——创建失败后 Agent 已 Retire（身份侧不再列出它），
 // 业主仍须读到 {stage:failed, reason}；别人与不存在同答 not_owner。
 func TestJobProgressForOwnerBySeat(t *testing.T) {
+	parallelHostedTest(t)
 	o, idp, gw, _ := mkOrch(t)
 	ctx := context.Background()
 	gw.failOn = "pull_image"
@@ -252,6 +257,7 @@ func TestJobProgressForOwnerBySeat(t *testing.T) {
 
 // 包 B2：options.models＝在线节点上报清单的并集；节点下线即从并集消失（修订 4）。
 func TestOptionsModelsUnionOnlineOnly(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	if err := s.setR31LegacyOnline(ctx, "nd_free", json.RawMessage(`{"mem_free_mb":16384,"models":["gpt-6.1-sol","gpt-5.5"]}`)); err != nil {

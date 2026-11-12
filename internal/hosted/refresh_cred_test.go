@@ -53,6 +53,7 @@ func refreshParams(t *testing.T, c NodeCommand) map[string]any {
 // C1：属主刷新 ⇒ 下发的是池内**最新**副本（先换密再刷新）；参数恰为 {seat_id, credential_file{content}}；
 // 席位停 starting（detail=refresh）等 MarkOnline；解密审计带 reason=refresh；池内副本＝当前件时照常执行不报错。
 func TestRefreshCredHappyPath(t *testing.T) {
+	parallelHostedTest(t)
 	lc, gw, s, id, acct := mkRefresh(t)
 	ctx := context.Background()
 	if _, err := lc.pool.UpdateSecretOwned(ctx, "zzc", acct, `{"access_token":"rotated"}`); err != nil {
@@ -96,6 +97,7 @@ func TestRefreshCredHappyPath(t *testing.T) {
 
 // C2：非属主（含管理员）⇒ not_owner，零节点指令、零解密。
 func TestRefreshCredOwnerOnly(t *testing.T) {
+	parallelHostedTest(t)
 	lc, gw, s, id, acct := mkRefresh(t)
 	ctx := context.Background()
 	for _, actor := range []string{"bob", "admin"} {
@@ -113,6 +115,7 @@ func TestRefreshCredOwnerOnly(t *testing.T) {
 
 // C3：状态门——busy／disabled ⇒ invalid_state；error 可刷。
 func TestRefreshCredStateGate(t *testing.T) {
+	parallelHostedTest(t)
 	lc, gw, s, id, _ := mkRefresh(t)
 	ctx := context.Background()
 	for _, st := range []string{"busy", "disabled"} {
@@ -136,6 +139,7 @@ func TestRefreshCredStateGate(t *testing.T) {
 
 // C4：账号已停用／属主不符 ⇒ account_not_allowed，零指令。
 func TestRefreshCredAccountGate(t *testing.T) {
+	parallelHostedTest(t)
 	lc, gw, s, id, acct := mkRefresh(t)
 	ctx := context.Background()
 	if _, err := s.exec(ctx, `UPDATE g4_account_pool SET state='disabled' WHERE id=$1`, acct); err != nil {
@@ -157,6 +161,7 @@ func TestRefreshCredAccountGate(t *testing.T) {
 
 // C5／C6／C13：节点回报三分——不通／旧节点／写失败 ⇒ 席位回原状态；重启失败 ⇒ error/start_failed。
 func TestRefreshCredNodeOutcomes(t *testing.T) {
+	parallelHostedTest(t)
 	cases := []struct {
 		name       string
 		down       bool
@@ -188,6 +193,7 @@ func TestRefreshCredNodeOutcomes(t *testing.T) {
 // C7／C11／C13（job）：refresh_cred 走 A1 job——旧节点 ⇒ job failed/node_unsupported；
 // 同席位有异 op 活跃 job ⇒ invalid_state；同 op 返回原 job。
 func TestRefreshCredAsJob(t *testing.T) {
+	parallelHostedTest(t)
 	lc, gw, s, id, _ := mkRefresh(t)
 	ctx := context.Background()
 	gw.errText = "unknown_command_type"
@@ -230,6 +236,7 @@ func TestRefreshCredAsJob(t *testing.T) {
 
 // C10：Hub 重启时 RecoverJobs 收尾 running 的 refresh_cred：席位 online ⇒ completed；否则 failed/internal_error。
 func TestRefreshCredRecoverJobs(t *testing.T) {
+	parallelHostedTest(t)
 	lc, _, s, id, _ := mkRefresh(t)
 	ctx := context.Background()
 	jid, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "refresh_cred"})
@@ -262,6 +269,7 @@ func TestRefreshCredRecoverJobs(t *testing.T) {
 // 复核 tosonnet55tc2k 第 1 批必改 1／2：刷新同 Restart「复验阻断 3」——凭据暂停中的 error 席位刷新须先 Resume；
 // 席位回原状态的分支（旧节点、写失败、节点不通、置 starting 写库失败）撤回本次 Resume；凭据本就活着则不动；Resume 失败 ⇒ 拒、零指令。
 func TestRefreshCredResumesSuspendedCredential(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	prep := func(t *testing.T, suspended bool) (*Lifecycle, *rcGw, *lcSusp, *Store, string) {
 		lc, gw, s, id, _ := mkRefresh(t)

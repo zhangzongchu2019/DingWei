@@ -10,6 +10,7 @@ import (
 )
 
 func TestQuotaRegistrationAndCapacityCannotSelfDowngrade(t *testing.T) {
+	parallelHostedTest(t)
 	n := Node{Labels: json.RawMessage(`{}`)}
 	if err := normalizeQuotaRegistration(&n); err != nil {
 		t.Fatal(err)
@@ -54,6 +55,7 @@ func TestQuotaRegistrationAndCapacityCannotSelfDowngrade(t *testing.T) {
 }
 
 func TestSoftNodeSchedulingConsentPriorityCapacityAndAudit(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	rev := strings.Repeat("a", 64)
@@ -139,6 +141,7 @@ func TestSoftNodeSchedulingConsentPriorityCapacityAndAudit(t *testing.T) {
 }
 
 func TestQuotaEventValidation(t *testing.T) {
+	parallelHostedTest(t)
 	for _, raw := range []string{`{broken`, `{"quota_events":[{}]}`, `{"quota_events":[{"id":"x","seat_id":"../escape","reason":"disk_limit","at":"2026-10-17T07:00:00Z"}]}`} {
 		if _, err := quotaEvents(json.RawMessage(raw)); err == nil {
 			t.Fatal("bad event accepted")
@@ -147,6 +150,7 @@ func TestQuotaEventValidation(t *testing.T) {
 }
 
 func TestSoftCreateFailureDoesNotAbortOrReleaseIdentity(t *testing.T) {
+	parallelHostedTest(t)
 	o, idp, gw, s := mkOrch(t)
 	ctx := context.Background()
 	rev := strings.Repeat("c", 64)
@@ -177,6 +181,7 @@ func TestSoftCreateFailureDoesNotAbortOrReleaseIdentity(t *testing.T) {
 }
 
 func TestSoftHeldLifecycleRefusesBeforeSideEffects(t *testing.T) {
+	parallelHostedTest(t)
 	l, log, _, gw, _, s, id := mkLifecycle(t)
 	ctx := context.Background()
 	seat, _ := s.GetSeat(ctx, id)
@@ -217,6 +222,7 @@ func TestSoftHeldLifecycleRefusesBeforeSideEffects(t *testing.T) {
 }
 
 func TestHardNodeResourceExtensionNegotiated(t *testing.T) {
+	parallelHostedTest(t)
 	o, _, _, s := mkOrch(t)
 	_ = o
 	ctx := context.Background()
@@ -235,6 +241,7 @@ func TestHardNodeResourceExtensionNegotiated(t *testing.T) {
 }
 
 func TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath(t *testing.T) {
+	parallelHostedTest(t)
 	for _, reason := range []string{"node_space_emergency", "node_inode_emergency", "node_space_unknown"} {
 		t.Run(reason, func(t *testing.T) {
 			o, _, _, s := mkOrch(t)
@@ -277,6 +284,7 @@ func TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath(t *testing.T) {
 }
 
 func TestQuotaUsageWarningNotifiesWithoutPrematureHold(t *testing.T) {
+	parallelHostedTest(t)
 	for _, flag := range []string{"space_warning", "usage_warning"} {
 		t.Run(flag, func(t *testing.T) {
 			o, _, _, s := mkOrch(t)

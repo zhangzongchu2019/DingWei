@@ -7,6 +7,7 @@ import (
 )
 
 func TestNodeCredentialLifecycle(t *testing.T) {
+	parallelHostedTest(t)
 	pool := testpool(t)
 	ctx := context.Background()
 	s := NewStore(pool)

@@ -16,10 +16,19 @@ import (
 // testpool 取库一律 pgtest.Pool——边界闸判据一「仓储包外 sql.Open 恒零」（判据二同守）。
 func testpool(t *testing.T) *repo.Pool {
 	t.Helper()
+	// Cold-cache toolBinary uses a per-process temporary build name. Complete
+	// the first fixture before parallel callers can request the same binary.
+	// Each call still owns a separate PG instance and its original cleanup.
+	var first *repo.Pool
+	hostedPGWarm.Do(func() { first = pgtest.Pool(t) })
+	if first != nil {
+		return first
+	}
 	return pgtest.Pool(t)
 }
 
 func TestPlanTable(t *testing.T) {
+	parallelHostedTest(t)
 	p, ok := PlanByID("2c4g")
 	if !ok || p.VCPU != 2 || p.MemMB != 4096 {
 		t.Fatalf("2c4g 读数错: %+v ok=%v", p, ok)
@@ -33,6 +42,7 @@ func TestPlanTable(t *testing.T) {
 }
 
 func TestSchemaApplyRollbackRepeatable(t *testing.T) {
+	parallelHostedTest(t)
 	pool := testpool(t)
 	ctx := context.Background()
 	s := NewStore(pool)
@@ -56,6 +66,7 @@ func TestSchemaApplyRollbackRepeatable(t *testing.T) {
 // （R-V2-DEPLOY-ARTIFACTS 甲案：DropDDL 曾漏拆 g4_backup——反向：从 DropDDL 去掉
 // g4_backup ⇒ 本格红）。apply→drop→apply 全链后核两端：建后十三表齐、拆后零残留。
 func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
+	parallelHostedTest(t)
 	pool := testpool(t)
 	ctx := context.Background()
 	s := NewStore(pool)
@@ -93,6 +104,7 @@ func TestSchemaDropLeavesNoG4Tables(t *testing.T) {
 }
 
 func TestAppliedLedgerRejectsMissingHostedTableWithoutRepair(t *testing.T) {
+	parallelHostedTest(t)
 	pool := testpool(t)
 	ctx := context.Background()
 	s := NewStore(pool)
@@ -128,6 +140,7 @@ VALUES('ag_old','nd_old','codex','gpt','token_file','2c4g','zzc') ON CONFLICT DO
 // 幂等 ALTER 加列、存量行可读（model=”＝节点默认）、新建写入新列。
 // 反向：去掉 SchemaDDL 里那行 ALTER ⇒ 本格红。
 func TestFrozenR30SchemaModelColumnMigration(t *testing.T) {
+	parallelHostedTest(t)
 	pool := testpool(t)
 	ctx := context.Background()
 	s := NewStore(pool)
@@ -194,6 +207,7 @@ func TestFrozenR30SchemaModelColumnMigration(t *testing.T) {
 }
 
 func TestNodeSeatPoolQuotaFlow(t *testing.T) {
+	parallelHostedTest(t)
 	pool := testpool(t)
 	ctx := context.Background()
 	s := NewStore(pool)
@@ -304,6 +318,7 @@ func TestNodeSeatPoolQuotaFlow(t *testing.T) {
 
 // TestAccessCtxValid htx 占位必须恒可用；且 qrow 的错误必须当场可见（M1 返修：不丢 QueryRow error）。
 func TestAccessCtxValid(t *testing.T) {
+	parallelHostedTest(t)
 	pool := testpool(t)
 	s := NewStore(pool)
 	var n int
@@ -320,6 +335,7 @@ func TestAccessCtxValid(t *testing.T) {
 // （包 A 与 B2 两处缺同存）。ApplySchema 两次（升级＋幂等重放）⇒ 席位可读且 model=”、
 // job 表与 model 列都在。反向：去 ALTER 或去 job 表 CREATE 各红。
 func TestFrozenR30ApplySchemaUpgradesPreA1PreB2Shape(t *testing.T) {
+	parallelHostedTest(t)
 	pool := testpool(t)
 	ctx := context.Background()
 	s := NewStore(pool)

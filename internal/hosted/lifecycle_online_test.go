@@ -10,6 +10,7 @@ import (
 )
 
 func TestEnableRestartWaitForAgentConnect(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	for _, op := range []string{"restart", "enable"} {
 		t.Run(op, func(t *testing.T) {
@@ -40,6 +41,7 @@ func TestEnableRestartWaitForAgentConnect(t *testing.T) {
 
 // 重启后 Agent 永不连入：5 分钟记 start_timeout；但这是用户在用的既有席位 —— 不吊销、不解绑，且仍可再重启。
 func TestRestartTimeoutKeepsExistingSeat(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, _, _, _, _, s, id := mkLifecycle(t)
 	idp := lc.idp.(*lcIdp).IdentityIssuer.(*fakeIdentity)
@@ -76,6 +78,7 @@ func TestRestartTimeoutKeepsExistingSeat(t *testing.T) {
 
 // 对照：新建席位的 starting 超时仍整个回收（吊销＋解绑）——区分只看 state_detail，不能把新建也放过。
 func TestCreateTimeoutStillRetires(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, idp, _, s := mkOrch(t)
 	out, err := o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "w1", NodeID: "auto",

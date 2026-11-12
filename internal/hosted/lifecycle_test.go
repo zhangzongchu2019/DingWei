@@ -168,6 +168,7 @@ func eqSeq(t *testing.T, name string, got, want []string) {
 const newerImage = "hub.local/dingwei/base-codex@sha256:" + "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 
 func TestDestroyCleanupSurvivesClientCancellation(t *testing.T) {
+	parallelHostedTest(t)
 	lc, _, _, gw, bk, st, id := mkLifecycle(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	lc.gw = &cancellingLifecycleGateway{inner: gw, cancel: cancel}
@@ -184,6 +185,7 @@ func TestDestroyCleanupSurvivesClientCancellation(t *testing.T) {
 }
 
 func TestLifecycleJobPersistsProgressAndMachineReason(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	t.Run("completed", func(t *testing.T) {
 		lc, _, _, _, _, _, id := mkLifecycle(t)
@@ -232,6 +234,7 @@ func TestLifecycleJobPersistsProgressAndMachineReason(t *testing.T) {
 }
 
 func TestLifecycleJobDuplicatePolicy(t *testing.T) {
+	parallelHostedTest(t)
 	lc, _, _, _, _, _, id := mkLifecycle(t)
 	ctx := context.Background()
 	first, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "disable", Confirm: true})
@@ -248,6 +251,7 @@ func TestLifecycleJobDuplicatePolicy(t *testing.T) {
 }
 
 func TestConcurrentDestroyRequestsShareOneJobAndOneBackup(t *testing.T) {
+	parallelHostedTest(t)
 	lc, log, _, _, _, _, id := mkLifecycle(t)
 	ctx := context.Background()
 	// Force both requests past activeJobForSeat before either INSERT becomes
@@ -303,6 +307,7 @@ FOR EACH ROW EXECUTE FUNCTION g4_test_lifecycle_enqueue_delay()`); err != nil {
 }
 
 func TestLifecycleJobRecoveryLeavesNoActiveRows(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	for _, tc := range []struct {
 		name, op, initialStage, wantStage, wantReason string
@@ -348,6 +353,7 @@ func TestLifecycleJobRecoveryLeavesNoActiveRows(t *testing.T) {
 }
 
 func TestDestroyCanBeRetriedAfterHubDiesMidJob(t *testing.T) {
+	parallelHostedTest(t)
 	lc, log, _, _, _, _, id := mkLifecycle(t)
 	ctx := context.Background()
 	deadJob, err := lc.EnqueueJob(ctx, LifecycleJobRequest{AgentID: id, Actor: "zzc", Op: "destroy", Confirm: true})
@@ -388,6 +394,7 @@ func TestDestroyCanBeRetriedAfterHubDiesMidJob(t *testing.T) {
 
 // 四操作＋重启的跨系统先后：同一条日志逐项等于预期（复验 L1/L2/L3/L4/L5 删闸对应）。
 func TestLifecycleOrderOnOneLog(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	t.Run("upgrade", func(t *testing.T) {
 		lc, log, _, _, _, _, id := mkLifecycle(t)
@@ -426,6 +433,7 @@ func TestLifecycleOrderOnOneLog(t *testing.T) {
 
 // 每道闸失败即止（复验 L6/L8/L17/L18＋状态闸）。
 func TestFailedGateStopsTheChain(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	t.Run("backup_fail_no_retire", func(t *testing.T) {
 		lc, log, _, _, bk, _, id := mkLifecycle(t)
@@ -483,6 +491,7 @@ func TestFailedGateStopsTheChain(t *testing.T) {
 // 复验阻断 3：重启一律先 Resume 再发 restart_seat（凭据若处于暂停，不先恢复就会「页面在跑、凭据拒连」）。
 // 第 7 条之后停用失败已不再留下暂停的凭据（见 TestNodeDownLeavesStateAndCredential）；这里的 Resume 是兜底。
 func TestRestartAfterFailedStopResumesCredential(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, log, _, gw, _, s, id := mkLifecycle(t)
 	gw.failOn = "stop_seat"
@@ -506,6 +515,7 @@ func TestRestartAfterFailedStopResumesCredential(t *testing.T) {
 
 // 复验阻断 4：归属本层强制——陌生人三操作全拒零副作用；管理用户销毁别人的也拒（业主 8971bddf）。
 func TestOwnershipEnforced(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	for name, op := range map[string]func(lc *Lifecycle, id string) error{
 		"upgrade": func(lc *Lifecycle, id string) error { return lc.Upgrade(ctx, id, "mallory", newerImage, false) },
@@ -527,6 +537,7 @@ func TestOwnershipEnforced(t *testing.T) {
 // 复验阻断 1+2：Hub 下发的 upgrade_seat／create_seat 参数满足节点契约
 // （image＋resources.memory_mb≥4/cpu_shares≥2＋token_file；升级的令牌是 Reissue 的新令牌）。
 func TestHubParamsSatisfyNodeContract(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, _, _, gw, _, _, id := mkLifecycle(t)
 	if err := lc.Upgrade(ctx, id, "zzc", newerImage, true); err != nil {
@@ -563,6 +574,7 @@ func TestHubParamsSatisfyNodeContract(t *testing.T) {
 
 // 复验阻断 5：节点离线销毁——席位 destroyed、无节点指令、留对账记录（审计＋事件标记）。
 func TestDestroyOfflineNodeLeavesReconcileRecord(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, log, _, _, _, s, id := mkLifecycle(t)
 	seat, _ := s.GetSeat(ctx, id)
@@ -602,6 +614,7 @@ func TestDestroyOfflineNodeLeavesReconcileRecord(t *testing.T) {
 
 // 保留：节点失败自动回滚（旧态仍在）＋裸调 confirm 闸。
 func TestUpgradeRollbackOnNodeFailure(t *testing.T) {
+	parallelHostedTest(t)
 	lc, _, _, gw, _, s, id := mkLifecycle(t)
 	gw.failOn = "upgrade_seat"
 	if err := lc.Upgrade(context.Background(), id, "zzc", newerImage, true); !errors.Is(err, ErrRolledBack) {
@@ -614,6 +627,7 @@ func TestUpgradeRollbackOnNodeFailure(t *testing.T) {
 }
 
 func TestConfirmRequiredGates(t *testing.T) {
+	parallelHostedTest(t)
 	lc, log, _, _, _, _, id := mkLifecycle(t)
 	if err := lc.Disable(context.Background(), id, "zzc", true, false); err != ErrConfirmRequired {
 		t.Fatalf("裸调停用应 confirm_required, 得 %v", err)
@@ -626,6 +640,7 @@ func TestConfirmRequiredGates(t *testing.T) {
 
 // 销毁后账号回池（复验 L13 对应格保留）。
 func TestDestroyReturnsAccountToPool(t *testing.T) {
+	parallelHostedTest(t)
 	lc, _, _, _, _, s, id := mkLifecycle(t)
 	if err := lc.Destroy(context.Background(), id, "zzc", true, true); err != nil {
 		t.Fatal(err)
@@ -642,6 +657,7 @@ func TestDestroyReturnsAccountToPool(t *testing.T) {
 
 // 停用中不可升级（先启用）。
 func TestUpgradeWhileDisabledRejected(t *testing.T) {
+	parallelHostedTest(t)
 	lc, _, _, _, _, _, id := mkLifecycle(t)
 	if err := lc.Disable(context.Background(), id, "zzc", true, true); err != nil {
 		t.Fatal(err)
@@ -663,6 +679,7 @@ func mkPoolSvcFromStore(t *testing.T, s *Store) *PoolService {
 // 组长 7fabddb0 ⑤后半句：重连后清理——ReconcileNode 对待对账席位补发 destroy_seat，
 // 成功写 reconcile_done；再次对账不再发（幂等收口）。
 func TestReconcileOnNodeReconnect(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, log, _, gw, bk, s, id := mkLifecycle(t)
 	seat, _ := s.GetSeat(ctx, id)
@@ -714,6 +731,7 @@ func TestReconcileOnNodeReconnect(t *testing.T) {
 
 // 备份已在某次重连里做过、但当时 destroy_seat 失败：下次重连不再重复备份，只补删。
 func TestReconcileDoesNotBackupTwice(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, log, _, gw, bk, s, id := mkLifecycle(t)
 	seat, _ := s.GetSeat(ctx, id)
@@ -739,6 +757,7 @@ func TestReconcileDoesNotBackupTwice(t *testing.T) {
 // 组长裁定 lead-g4-joint-run-1 第 7 条：节点离线 ⇒ 503 node_offline，且不改席位状态、不动凭据。
 // 两种「离线」都要守：库里已记离线（guard 先判，什么都不发生）；库里还记在线但发不到（发送失败后撤回凭据动作）。
 func TestNodeDownLeavesStateAndCredential(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	t.Run("node recorded offline: nothing happens", func(t *testing.T) {
 		for _, op := range []string{"disable", "restart", "upgrade"} {
@@ -835,6 +854,7 @@ func TestNodeDownLeavesStateAndCredential(t *testing.T) {
 
 // 组长裁定第 4 条：备份不可用 ⇒ backup_failed，原因放 Detail；Retire 与销毁都没发生。
 func TestDestroyBackupFailedTyped(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, log, _, _, bk, _, id := mkLifecycle(t)
 	bk.failOn = true
@@ -848,6 +868,7 @@ func TestDestroyBackupFailedTyped(t *testing.T) {
 
 // 复验三刀守卫（86d78377 附录 A）：①对账只发 destroy_seat ②节点失败不标记完成 ③只清本节点的。
 func TestReconcileGuards(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, _, _, gw, bk, s, id := mkLifecycle(t)
 	seat, _ := s.GetSeat(ctx, id)
@@ -906,6 +927,7 @@ func TestReconcileGuards(t *testing.T) {
 // 组长取甲（2026-10-02）：在线销毁先停容器、再备份、再删。停不下来 ⇒ node_offline，不备份、不吊销、不删、席位不变；
 // 停了但备份失败 ⇒ 席位记 error／backup_failed（Agent 确实不在了），凭据与账号都不动。
 func TestDestroyStopsBeforeBackup(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	for name, setup := range map[string]func(gw *lcGw){
 		"stop unreachable":   func(gw *lcGw) { gw.downOn = "stop_seat" },
@@ -948,6 +970,7 @@ func TestDestroyStopsBeforeBackup(t *testing.T) {
 // 包 B2 修订 3：upgrade 用落库记录值，不随节点默认漂移。
 // 反向：upgrade 参数不带 seat.Model（或取节点默认）⇒ 红。
 func TestUpgradeUsesRecordedModel(t *testing.T) {
+	parallelHostedTest(t)
 	lc, _, _, gw, _, s, id := mkLifecycle(t)
 	// 把席位的生效模型改落库值（建席时定死语义）
 	if err := s.SetSeatModel(context.Background(), id, "gpt-6.1-sol"); err != nil {

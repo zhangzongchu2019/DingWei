@@ -17,6 +17,7 @@ func mustKey(t *testing.T, b byte) []byte {
 }
 
 func TestWrapUnwrapRoundtrip(t *testing.T) {
+	parallelHostedTest(t)
 	master := mustKey(t, 0x11)
 	dk, err := GenerateDataKey()
 	if err != nil {
@@ -36,6 +37,7 @@ func TestWrapUnwrapRoundtrip(t *testing.T) {
 }
 
 func TestUnwrapWrongMasterFails(t *testing.T) {
+	parallelHostedTest(t)
 	dk, _ := GenerateDataKey()
 	wrapped, err := WrapDataKey(mustKey(t, 0x11), dk)
 	if err != nil {
@@ -47,6 +49,7 @@ func TestUnwrapWrongMasterFails(t *testing.T) {
 }
 
 func TestSealPerRecordNonceAndWrongKey(t *testing.T) {
+	parallelHostedTest(t)
 	dk := mustKey(t, 0x33)
 	c1, _ := SealSecret(dk, []byte("sk-same"))
 	c2, _ := SealSecret(dk, []byte("sk-same"))
@@ -66,6 +69,7 @@ func TestSealPerRecordNonceAndWrongKey(t *testing.T) {
 }
 
 func TestLoadMasterKeyPermAndForms(t *testing.T) {
+	parallelHostedTest(t)
 	dir := t.TempDir()
 	k := mustKey(t, 0x55)
 	// 权限宽于 600 ⇒ 拒
@@ -90,6 +94,7 @@ func TestLoadMasterKeyPermAndForms(t *testing.T) {
 }
 
 func TestTeamKeyServiceFlow(t *testing.T) {
+	parallelHostedTest(t)
 	pool := testpool(t)
 	ctx := context.Background()
 	s := NewStore(pool)

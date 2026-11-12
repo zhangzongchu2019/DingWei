@@ -8,6 +8,7 @@ import (
 )
 
 func TestLoginQuotaAuditDoesNotMutateHostedSeat(t *testing.T) {
+	parallelHostedTest(t)
 	_, _, _, s := mkOrch(t)
 	ctx := context.Background()
 	revision := strings.Repeat("a", 64)
@@ -49,6 +50,7 @@ func TestLoginQuotaAuditDoesNotMutateHostedSeat(t *testing.T) {
 }
 
 func TestLoginQuotaEventRequiresTypedLoginIdentity(t *testing.T) {
+	parallelHostedTest(t)
 	raw := `{"quota_events":[{"id":"` + strings.Repeat("b", 32) + `","writer_kind":"login","seat_id":"ag_not_login","reason":"disk_limit","at":"2026-10-17T09:00:00Z"}]}`
 	if _, err := quotaEvents(json.RawMessage(raw)); err == nil {
 		t.Fatal("login kind accepted arbitrary seat")

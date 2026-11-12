@@ -1,0 +1,11 @@
+{
+  "uid": 1001,
+  "go_version": "go version go1.22.2 linux/amd64",
+  "visible_cpu_count": 16,
+  "runtime_dependency_versions": {
+    "websockets": "15.0.1",
+    "pexpect": "4.9.0",
+    "ptyprocess": "0.7.0",
+    "certifi": "2026.7.22"
+  }
+}

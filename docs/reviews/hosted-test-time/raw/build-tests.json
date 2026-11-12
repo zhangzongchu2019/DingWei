@@ -1,0 +1,14 @@
+{
+  "cmd": [
+    "sh",
+    "scripts/run-build-tests.sh"
+  ],
+  "cwd": "/data/ai-dev-data/hosted-test-time-c782",
+  "start": "2026-11-11T04:27:16.787496+00:00",
+  "rc": 0,
+  "end": "2026-11-11T04:36:15.262675+00:00",
+  "packages": {},
+  "hosted_top": [],
+  "hosted_slow15": [],
+  "skips": []
+}

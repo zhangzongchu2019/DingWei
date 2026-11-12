@@ -1,0 +1,1996 @@
+{
+  "global_references": [
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 43,
+      "function": "TestAccountNameUniquePerOwner",
+      "variable": "ErrAccountNameTaken",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 60,
+      "function": "TestAccountLimitPerOwner",
+      "variable": "ErrAccountLimit",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 76,
+      "function": "TestAccountSecretValidation",
+      "variable": "ErrParams",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 80,
+      "function": "TestAccountSecretValidation",
+      "variable": "ErrSecretTooLarge",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 83,
+      "function": "TestAccountSecretValidation",
+      "variable": "ErrParams",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 89,
+      "function": "TestAccountSecretValidation",
+      "variable": "ErrParams",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 93,
+      "function": "TestAccountSecretValidation",
+      "variable": "ErrParams",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 145,
+      "function": "TestReleaseAndDestroyedNotCounted",
+      "variable": "ErrAccountBound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 194,
+      "function": "TestCreateVsDisableSerialized",
+      "variable": "ErrAccountInUse",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 221,
+      "function": "TestCreateVsDisableSerialized",
+      "variable": "ErrAccountNotAllowed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 250,
+      "function": "TestCreateSeatPKConflictIsNotAccountError",
+      "variable": "ErrAccountNotAllowed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 410,
+      "function": "TestDefenseInDepthAccountBoundaries",
+      "variable": "ErrAccountNotAllowed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 417,
+      "function": "TestDefenseInDepthAccountBoundaries",
+      "variable": "ErrAccountNotAllowed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/backup_test.go",
+      "line": 76,
+      "function": "uploadBackup",
+      "variable": "DefaultClient",
+      "kind": "reference",
+      "package": "net/http"
+    },
+    {
+      "file": "internal/hosted/backup_test.go",
+      "line": 92,
+      "function": "Read",
+      "variable": "EOF",
+      "kind": "reference",
+      "package": "io"
+    },
+    {
+      "file": "internal/hosted/backup_test.go",
+      "line": 323,
+      "function": "TestSweepExpiredBackupsReclaimsOnlyStalePending",
+      "variable": "ErrNotFound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/claude_model_test.go",
+      "line": 78,
+      "function": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
+      "variable": "ErrModelNotAvailable",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/claude_model_test.go",
+      "line": 89,
+      "function": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
+      "variable": "ErrModelNotAvailable",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/claude_model_test.go",
+      "line": 100,
+      "function": "TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed",
+      "variable": "ErrComboNotVerified",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_race_test.go",
+      "line": 76,
+      "function": "TestEnableRestartFailureAfterStarting",
+      "variable": "ErrStartFailed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_race_test.go",
+      "line": 86,
+      "function": "TestEnableRestartFailureAfterStarting",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_race_test.go",
+      "line": 97,
+      "function": "TestEnableRestartFailureAfterStarting",
+      "variable": "ErrStartFailed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_race_test.go",
+      "line": 97,
+      "function": "TestEnableRestartFailureAfterStarting",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_race_test.go",
+      "line": 132,
+      "function": "TestFailureAfterAgentConnectedKeepsOnline",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 248,
+      "function": "TestLifecycleJobDuplicatePolicy",
+      "variable": "ErrInvalidState",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 484,
+      "function": "TestFailedGateStopsTheChain",
+      "variable": "ErrInvalidState",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 498,
+      "function": "TestRestartAfterFailedStopResumesCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 529,
+      "function": "TestOwnershipEnforced",
+      "variable": "ErrNotOwner",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 620,
+      "function": "TestUpgradeRollbackOnNodeFailure",
+      "variable": "ErrRolledBack",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 632,
+      "function": "TestConfirmRequiredGates",
+      "variable": "ErrConfirmRequired",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 635,
+      "function": "TestConfirmRequiredGates",
+      "variable": "ErrConfirmRequired",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 665,
+      "function": "TestUpgradeWhileDisabledRejected",
+      "variable": "ErrInvalidState",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 778,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 790,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 815,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 826,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 839,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 849,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrStartFailed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 863,
+      "function": "TestDestroyBackupFailedTyped",
+      "variable": "ErrBackupFailed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 939,
+      "function": "TestDestroyStopsBeforeBackup",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 98,
+      "function": "authJSON",
+      "variable": "RawURLEncoding",
+      "kind": "reference",
+      "package": "encoding/base64"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 149,
+      "function": "TestLoginStartHappy",
+      "variable": "ErrNotFound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 152,
+      "function": "TestLoginStartHappy",
+      "variable": "ErrNotFound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 192,
+      "function": "TestLoginOnePerUserAndCooldown",
+      "variable": "ErrLoginInProgress",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 217,
+      "function": "TestLoginOnePerUserAndCooldown",
+      "variable": "ErrLoginRateLimited",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 246,
+      "function": "TestLoginConcurrencyCaps",
+      "variable": "ErrLoginBusy",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 260,
+      "function": "TestLoginEmailValidation",
+      "variable": "ErrEmailInvalid",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 264,
+      "function": "TestLoginEmailValidation",
+      "variable": "ErrComboIncompatible",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 318,
+      "function": "TestLoginCompleteOneShotExpiryAndFailures",
+      "variable": "ErrLoginNotActive",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 328,
+      "function": "TestLoginCompleteOneShotExpiryAndFailures",
+      "variable": "ErrLoginNotActive",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 364,
+      "function": "TestLoginRelogin",
+      "variable": "ErrNotFound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 368,
+      "function": "TestLoginRelogin",
+      "variable": "ErrComboIncompatible",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 406,
+      "function": "TestLoginStartNodeOutcomes",
+      "variable": "ErrNodeUnsupported",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 407,
+      "function": "TestLoginStartNodeOutcomes",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 408,
+      "function": "TestLoginStartNodeOutcomes",
+      "variable": "ErrLoginBusy",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 409,
+      "function": "TestLoginStartNodeOutcomes",
+      "variable": "ErrLoginStartFailed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 479,
+      "function": "TestLoginUploadBoundToSessionNode",
+      "variable": "ErrNotFound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 494,
+      "function": "TestLoginAccountLimitPrecheck",
+      "variable": "ErrAccountLimit",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 528,
+      "function": "TestLoginTotalCapBindsWithThreeNodes",
+      "variable": "ErrLoginBusy",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 546,
+      "function": "TestLoginPerNodeCapBindsWithOneNode",
+      "variable": "ErrLoginBusy",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 561,
+      "function": "TestLoginPrechecksAndEmailInSameInsert",
+      "variable": "ErrEmailInvalid",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 567,
+      "function": "TestLoginPrechecksAndEmailInSameInsert",
+      "variable": "ErrAccountNameTaken",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 622,
+      "function": "TestLoginClaimCompletingIsAtomic",
+      "variable": "ErrLoginNotActive",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 628,
+      "function": "TestLoginClaimCompletingIsAtomic",
+      "variable": "ErrLoginInProgress",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 747,
+      "function": "TestFrozenR30LoginSchemaUpgradesOldDefinition",
+      "variable": "ErrLoginInProgress",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/minimum_plan_test.go",
+      "line": 121,
+      "function": "TestMinimumPlanQuotaDebitsAndEveryDimension",
+      "variable": "ErrPlanExceedsQuota",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/minimum_plan_test.go",
+      "line": 196,
+      "function": "TestMinimumPlanOptionsAndRealCreateResources",
+      "variable": "ErrPlanExceedsQuota",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/minimum_plan_test.go",
+      "line": 196,
+      "function": "TestMinimumPlanOptionsAndRealCreateResources",
+      "variable": "ErrParams",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 74,
+      "function": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 85,
+      "function": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 132,
+      "function": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 215,
+      "function": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
+      "variable": "ErrSoftQuotaHeld",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 218,
+      "function": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
+      "variable": "ErrSoftQuotaHeld",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 321,
+      "function": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/nodecred_test.go",
+      "line": 32,
+      "function": "TestNodeCredentialLifecycle",
+      "variable": "ErrNodeAuth",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/nodecred_test.go",
+      "line": 36,
+      "function": "TestNodeCredentialLifecycle",
+      "variable": "ErrNodeAuth",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/nodecred_test.go",
+      "line": 45,
+      "function": "TestNodeCredentialLifecycle",
+      "variable": "ErrNodeAuth",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/nodecred_test.go",
+      "line": 56,
+      "function": "TestNodeCredentialLifecycle",
+      "variable": "ErrNodeRevoked",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 250,
+      "function": "TestClaudeMinimumPlanRemainsUnverified",
+      "variable": "ErrComboNotVerified",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 265,
+      "function": "TestCreateRejections",
+      "variable": "ErrComboIncompatible",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 270,
+      "function": "TestCreateRejections",
+      "variable": "ErrComboNotVerified",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 303,
+      "function": "TestCreateRejections",
+      "variable": "ErrAccountNotAllowed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 318,
+      "function": "TestCreateRejections",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 327,
+      "function": "TestCreateRejections",
+      "variable": "ErrQuotaExceeded",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 404,
+      "function": "TestPoolScheduling",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 436,
+      "function": "TestCreateGroupErrorsPropagate",
+      "variable": "ErrGroupNotFound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 436,
+      "function": "TestCreateGroupErrorsPropagate",
+      "variable": "ErrGroupClosed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 808,
+      "function": "TestCreateModelRejections",
+      "variable": "ErrModelNotAvailable",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 813,
+      "function": "TestCreateModelRejections",
+      "variable": "ErrModelNotSupported",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 831,
+      "function": "TestPickNodeStaleFrameTreatedOffline",
+      "variable": "ErrModelNotAvailable",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/parallel_test.go",
+      "line": 26,
+      "function": "parallelHostedTest",
+      "variable": "hostedTestSlots",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/parallel_test.go",
+      "line": 27,
+      "function": "parallelHostedTest",
+      "variable": "hostedTestSlots",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/plans_test.go",
+      "line": 36,
+      "function": "TestCheckCreateDiskGate",
+      "variable": "ErrPlanExceedsQuota",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/poolsvc_test.go",
+      "line": 131,
+      "function": "TestOwnedAccountLifecycle",
+      "variable": "ErrAccountBound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/poolsvc_test.go",
+      "line": 134,
+      "function": "TestOwnedAccountLifecycle",
+      "variable": "ErrAccountBound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/poolsvc_test.go",
+      "line": 143,
+      "function": "TestOwnedAccountLifecycle",
+      "variable": "ErrNotFound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/poolsvc_test.go",
+      "line": 146,
+      "function": "TestOwnedAccountLifecycle",
+      "variable": "ErrNotFound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/poolsvc_test.go",
+      "line": 166,
+      "function": "TestOwnedAccountLifecycle",
+      "variable": "ErrAccountInUse",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/poolsvc_test.go",
+      "line": 188,
+      "function": "TestOwnedAccountLifecycle",
+      "variable": "ErrForbiddenRole",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 31,
+      "function": "TestQuotaCheckBoundaries",
+      "variable": "ErrQuotaExceeded",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 69,
+      "function": "TestQuotaCheckBoundaries",
+      "variable": "ErrQuotaExceeded",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 77,
+      "function": "TestQuotaCheckBoundaries",
+      "variable": "ErrQuotaExceeded",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 82,
+      "function": "TestQuotaCheckBoundaries",
+      "variable": "ErrForbiddenRole",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 129,
+      "function": "TestCheckCreateCodeSplit",
+      "variable": "ErrPlanExceedsQuota",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 131,
+      "function": "TestCheckCreateCodeSplit",
+      "variable": "ErrPlanExceedsQuota",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 133,
+      "function": "TestCheckCreateCodeSplit",
+      "variable": "ErrQuotaExceeded",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 135,
+      "function": "TestCheckCreateCodeSplit",
+      "variable": "ErrQuotaExceeded",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 147,
+      "function": "TestCheckCreateCodeSplit",
+      "variable": "ErrQuotaExceeded",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 147,
+      "function": "TestCheckCreateCodeSplit",
+      "variable": "ErrPlanExceedsQuota",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 147,
+      "function": "TestCheckCreateCodeSplit",
+      "variable": "ErrPlanExceedsQuota",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 147,
+      "function": "TestCheckCreateCodeSplit",
+      "variable": "ErrQuotaExceeded",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 89,
+      "function": "TestR31NodeRegistrationCredentialAndAtomicAudit",
+      "variable": "ErrNodeExists",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 110,
+      "function": "TestR31NodeRegistrationCredentialAndAtomicAudit",
+      "variable": "ErrNotFound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 185,
+      "function": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 192,
+      "function": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 340,
+      "function": "TestR31AdmissionAndNodeRevocationCommitOrder",
+      "variable": "ErrForbiddenRole",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 365,
+      "function": "TestR31HardConcurrentReservationsDoNotOversell",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 381,
+      "function": "TestR31AdmissionUsesOwnerNotAdministratorAuditActor",
+      "variable": "ErrForbiddenRole",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/readapi_test.go",
+      "line": 252,
+      "function": "TestJobProgressForOwnerBySeat",
+      "variable": "ErrNotOwner",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 91,
+      "function": "TestReconcileSeatTimeoutDoesNotStallBatch",
+      "variable": "ReconcileSeatTimeout",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 92,
+      "function": "TestReconcileSeatTimeoutDoesNotStallBatch",
+      "variable": "ReconcileSeatTimeout",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 93,
+      "function": "TestReconcileSeatTimeoutDoesNotStallBatch",
+      "variable": "ReconcileSeatTimeout",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 133,
+      "function": "TestEmptyCreatedByRefused",
+      "variable": "ErrNotOwner",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 148,
+      "function": "TestUpgradeUnknownPlanNotSwallowed",
+      "variable": "plans",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 149,
+      "function": "TestUpgradeUnknownPlanNotSwallowed",
+      "variable": "plans",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 150,
+      "function": "TestUpgradeUnknownPlanNotSwallowed",
+      "variable": "plans",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 152,
+      "function": "TestUpgradeUnknownPlanNotSwallowed",
+      "variable": "ErrParams",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 152,
+      "function": "TestUpgradeUnknownPlanNotSwallowed",
+      "variable": "ErrRolledBack",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/refresh_cred_test.go",
+      "line": 104,
+      "function": "TestRefreshCredOwnerOnly",
+      "variable": "ErrNotOwner",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/refresh_cred_test.go",
+      "line": 125,
+      "function": "TestRefreshCredStateGate",
+      "variable": "ErrInvalidState",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/refresh_cred_test.go",
+      "line": 148,
+      "function": "TestRefreshCredAccountGate",
+      "variable": "ErrAccountNotAllowed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/refresh_cred_test.go",
+      "line": 154,
+      "function": "TestRefreshCredAccountGate",
+      "variable": "ErrAccountNotAllowed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/refresh_cred_test.go",
+      "line": 173,
+      "function": "TestRefreshCredNodeOutcomes",
+      "variable": "ErrNodeOffline",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/refresh_cred_test.go",
+      "line": 174,
+      "function": "TestRefreshCredNodeOutcomes",
+      "variable": "ErrNodeUnsupported",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/refresh_cred_test.go",
+      "line": 175,
+      "function": "TestRefreshCredNodeOutcomes",
+      "variable": "ErrCredInjectFailed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/refresh_cred_test.go",
+      "line": 176,
+      "function": "TestRefreshCredNodeOutcomes",
+      "variable": "ErrStartFailed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/refresh_cred_test.go",
+      "line": 222,
+      "function": "TestRefreshCredAsJob",
+      "variable": "ErrInvalidState",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reason_test.go",
+      "line": 33,
+      "function": "requireCapacityReasons",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reason_test.go",
+      "line": 42,
+      "function": "TestCapacityReasonSanitizationAndCompatibility",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reason_test.go",
+      "line": 48,
+      "function": "TestCapacityReasonSanitizationAndCompatibility",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reason_test.go",
+      "line": 86,
+      "function": "TestCapacityRequestReasonAndModelSelection",
+      "variable": "ErrModelNotAvailable",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reason_test.go",
+      "line": 90,
+      "function": "TestCapacityRequestReasonAndModelSelection",
+      "variable": "ErrModelNotAvailable",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reply_test.go",
+      "line": 125,
+      "function": "TestCapacityFinalGateLifecycleJobs",
+      "variable": "ErrNotOwner",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reply_test.go",
+      "line": 213,
+      "function": "TestCapacityFinalGateCreateJobsAndCleanup",
+      "variable": "ErrNotOwner",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 87,
+      "function": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 133,
+      "function": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 172,
+      "function": "TestCapacityStoreSerializesConcurrentReservations",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 209,
+      "function": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 229,
+      "function": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 237,
+      "function": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 244,
+      "function": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/softquota_notice_test.go",
+      "line": 12,
+      "function": "TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold",
+      "variable": "UTC",
+      "kind": "reference",
+      "package": "time"
+    },
+    {
+      "file": "internal/hosted/store_test.go",
+      "line": 23,
+      "function": "testpool",
+      "variable": "hostedPGWarm",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/store_test.go",
+      "line": 228,
+      "function": "TestNodeSeatPoolQuotaFlow",
+      "variable": "ErrNotFound",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/store_test.go",
+      "line": 251,
+      "function": "TestNodeSeatPoolQuotaFlow",
+      "variable": "ErrInvalidState",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/store_test.go",
+      "line": 282,
+      "function": "TestNodeSeatPoolQuotaFlow",
+      "variable": "ErrAccountNotAllowed",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/tokensvc_test.go",
+      "line": 21,
+      "function": "TestTokenWriteBackAndUnbindPrep",
+      "variable": "ErrNoBoundAccount",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/tokensvc_test.go",
+      "line": 70,
+      "function": "TestTokenWriteBackAndUnbindPrep",
+      "variable": "ErrNoBoundAccount",
+      "kind": "reference",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    }
+  ],
+  "package": "github.com/zhangzongchu2019/dingwei/internal/hosted",
+  "package_variables": [
+    "ErrAccountBound",
+    "ErrAccountInUse",
+    "ErrAccountLimit",
+    "ErrAccountNameTaken",
+    "ErrAccountNotAllowed",
+    "ErrBackupFailed",
+    "ErrComboIncompatible",
+    "ErrComboNotVerified",
+    "ErrConfirmRequired",
+    "ErrCredInjectFailed",
+    "ErrEmailInvalid",
+    "ErrForbiddenRole",
+    "ErrGroupClosed",
+    "ErrGroupNotFound",
+    "ErrHoldReleaseRefused",
+    "ErrInvalidState",
+    "ErrKeyDecrypt",
+    "ErrLoginBusy",
+    "ErrLoginInProgress",
+    "ErrLoginNotActive",
+    "ErrLoginRateLimited",
+    "ErrLoginStartFailed",
+    "ErrLoginUnavailable",
+    "ErrMasterKeyFile",
+    "ErrModelNotAvailable",
+    "ErrModelNotSupported",
+    "ErrNoActiveTeamKey",
+    "ErrNoBoundAccount",
+    "ErrNoNodeCapacity",
+    "ErrNodeAuth",
+    "ErrNodeExists",
+    "ErrNodeOffline",
+    "ErrNodeRevoked",
+    "ErrNodeUnsupported",
+    "ErrNotFound",
+    "ErrNotOwner",
+    "ErrParams",
+    "ErrPlanExceedsQuota",
+    "ErrQuotaExceeded",
+    "ErrRolledBack",
+    "ErrSecretTooLarge",
+    "ErrSoftQuotaHeld",
+    "ErrStartFailed",
+    "ReconcileSeatTimeout",
+    "claudeSeatModelID",
+    "hostedItemErrCount",
+    "hostedPGWarm",
+    "hostedTestSlots",
+    "jobFailReasons",
+    "loginCodePattern",
+    "loginReasonPattern",
+    "loginWriterID",
+    "nodeSeatID",
+    "plans",
+    "policyRevisionPattern",
+    "quotaEventIDPattern",
+    "seatStates"
+  ],
+  "test_files": 33,
+  "type_checked": true,
+  "write_candidates": [
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 76,
+      "function": "TestAccountSecretValidation",
+      "variable": "ErrParams",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 83,
+      "function": "TestAccountSecretValidation",
+      "variable": "ErrParams",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 89,
+      "function": "TestAccountSecretValidation",
+      "variable": "ErrParams",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 93,
+      "function": "TestAccountSecretValidation",
+      "variable": "ErrParams",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "line": 250,
+      "function": "TestCreateSeatPKConflictIsNotAccountError",
+      "variable": "ErrAccountNotAllowed",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/backup_test.go",
+      "line": 76,
+      "function": "uploadBackup",
+      "variable": "DefaultClient",
+      "kind": "method-call:Do",
+      "package": "net/http"
+    },
+    {
+      "file": "internal/hosted/backup_test.go",
+      "line": 323,
+      "function": "TestSweepExpiredBackupsReclaimsOnlyStalePending",
+      "variable": "ErrNotFound",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/claude_model_test.go",
+      "line": 78,
+      "function": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
+      "variable": "ErrModelNotAvailable",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/claude_model_test.go",
+      "line": 89,
+      "function": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
+      "variable": "ErrModelNotAvailable",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/claude_model_test.go",
+      "line": 100,
+      "function": "TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed",
+      "variable": "ErrComboNotVerified",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_race_test.go",
+      "line": 76,
+      "function": "TestEnableRestartFailureAfterStarting",
+      "variable": "ErrStartFailed",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_race_test.go",
+      "line": 86,
+      "function": "TestEnableRestartFailureAfterStarting",
+      "variable": "ErrNodeOffline",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_race_test.go",
+      "line": 132,
+      "function": "TestFailureAfterAgentConnectedKeepsOnline",
+      "variable": "ErrNodeOffline",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 248,
+      "function": "TestLifecycleJobDuplicatePolicy",
+      "variable": "ErrInvalidState",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 484,
+      "function": "TestFailedGateStopsTheChain",
+      "variable": "ErrInvalidState",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 498,
+      "function": "TestRestartAfterFailedStopResumesCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 529,
+      "function": "TestOwnershipEnforced",
+      "variable": "ErrNotOwner",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 620,
+      "function": "TestUpgradeRollbackOnNodeFailure",
+      "variable": "ErrRolledBack",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 665,
+      "function": "TestUpgradeWhileDisabledRejected",
+      "variable": "ErrInvalidState",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 778,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 790,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 815,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 826,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 839,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrNodeOffline",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 849,
+      "function": "TestNodeDownLeavesStateAndCredential",
+      "variable": "ErrStartFailed",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 863,
+      "function": "TestDestroyBackupFailedTyped",
+      "variable": "ErrBackupFailed",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "line": 939,
+      "function": "TestDestroyStopsBeforeBackup",
+      "variable": "ErrNodeOffline",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "line": 98,
+      "function": "authJSON",
+      "variable": "RawURLEncoding",
+      "kind": "method-call:EncodeToString",
+      "package": "encoding/base64"
+    },
+    {
+      "file": "internal/hosted/minimum_plan_test.go",
+      "line": 121,
+      "function": "TestMinimumPlanQuotaDebitsAndEveryDimension",
+      "variable": "ErrPlanExceedsQuota",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/minimum_plan_test.go",
+      "line": 196,
+      "function": "TestMinimumPlanOptionsAndRealCreateResources",
+      "variable": "ErrPlanExceedsQuota",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/minimum_plan_test.go",
+      "line": 196,
+      "function": "TestMinimumPlanOptionsAndRealCreateResources",
+      "variable": "ErrParams",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 74,
+      "function": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 85,
+      "function": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 132,
+      "function": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 215,
+      "function": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
+      "variable": "ErrSoftQuotaHeld",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 218,
+      "function": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
+      "variable": "ErrSoftQuotaHeld",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "line": 321,
+      "function": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 250,
+      "function": "TestClaudeMinimumPlanRemainsUnverified",
+      "variable": "ErrComboNotVerified",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 327,
+      "function": "TestCreateRejections",
+      "variable": "ErrQuotaExceeded",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 808,
+      "function": "TestCreateModelRejections",
+      "variable": "ErrModelNotAvailable",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 813,
+      "function": "TestCreateModelRejections",
+      "variable": "ErrModelNotSupported",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "line": 831,
+      "function": "TestPickNodeStaleFrameTreatedOffline",
+      "variable": "ErrModelNotAvailable",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/parallel_test.go",
+      "line": 26,
+      "function": "parallelHostedTest",
+      "variable": "hostedTestSlots",
+      "kind": "channel-send",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/parallel_test.go",
+      "line": 27,
+      "function": "parallelHostedTest",
+      "variable": "hostedTestSlots",
+      "kind": "channel-receive",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/plans_test.go",
+      "line": 36,
+      "function": "TestCheckCreateDiskGate",
+      "variable": "ErrPlanExceedsQuota",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 31,
+      "function": "TestQuotaCheckBoundaries",
+      "variable": "ErrQuotaExceeded",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 69,
+      "function": "TestQuotaCheckBoundaries",
+      "variable": "ErrQuotaExceeded",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 77,
+      "function": "TestQuotaCheckBoundaries",
+      "variable": "ErrQuotaExceeded",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 147,
+      "function": "TestCheckCreateCodeSplit",
+      "variable": "ErrPlanExceedsQuota",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "line": 147,
+      "function": "TestCheckCreateCodeSplit",
+      "variable": "ErrQuotaExceeded",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 89,
+      "function": "TestR31NodeRegistrationCredentialAndAtomicAudit",
+      "variable": "ErrNodeExists",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 110,
+      "function": "TestR31NodeRegistrationCredentialAndAtomicAudit",
+      "variable": "ErrNotFound",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 185,
+      "function": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 192,
+      "function": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 340,
+      "function": "TestR31AdmissionAndNodeRevocationCommitOrder",
+      "variable": "ErrForbiddenRole",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 365,
+      "function": "TestR31HardConcurrentReservationsDoNotOversell",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "line": 381,
+      "function": "TestR31AdmissionUsesOwnerNotAdministratorAuditActor",
+      "variable": "ErrForbiddenRole",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/readapi_test.go",
+      "line": 252,
+      "function": "TestJobProgressForOwnerBySeat",
+      "variable": "ErrNotOwner",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 91,
+      "function": "TestReconcileSeatTimeoutDoesNotStallBatch",
+      "variable": "ReconcileSeatTimeout",
+      "kind": "assignment-or-alias-write",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 92,
+      "function": "TestReconcileSeatTimeoutDoesNotStallBatch",
+      "variable": "ReconcileSeatTimeout",
+      "kind": "assignment-or-alias-write",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 93,
+      "function": "TestReconcileSeatTimeoutDoesNotStallBatch",
+      "variable": "ReconcileSeatTimeout",
+      "kind": "assignment-or-alias-write",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 133,
+      "function": "TestEmptyCreatedByRefused",
+      "variable": "ErrNotOwner",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 148,
+      "function": "TestUpgradeUnknownPlanNotSwallowed",
+      "variable": "plans",
+      "kind": "assignment-or-alias-write",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 149,
+      "function": "TestUpgradeUnknownPlanNotSwallowed",
+      "variable": "plans",
+      "kind": "builtin-mutation:delete",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 150,
+      "function": "TestUpgradeUnknownPlanNotSwallowed",
+      "variable": "plans",
+      "kind": "assignment-or-alias-write",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 152,
+      "function": "TestUpgradeUnknownPlanNotSwallowed",
+      "variable": "ErrParams",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "line": 152,
+      "function": "TestUpgradeUnknownPlanNotSwallowed",
+      "variable": "ErrRolledBack",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reason_test.go",
+      "line": 33,
+      "function": "requireCapacityReasons",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reason_test.go",
+      "line": 42,
+      "function": "TestCapacityReasonSanitizationAndCompatibility",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "method-call:Error",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reason_test.go",
+      "line": 48,
+      "function": "TestCapacityReasonSanitizationAndCompatibility",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reason_test.go",
+      "line": 86,
+      "function": "TestCapacityRequestReasonAndModelSelection",
+      "variable": "ErrModelNotAvailable",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reason_test.go",
+      "line": 90,
+      "function": "TestCapacityRequestReasonAndModelSelection",
+      "variable": "ErrModelNotAvailable",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reply_test.go",
+      "line": 125,
+      "function": "TestCapacityFinalGateLifecycleJobs",
+      "variable": "ErrNotOwner",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reply_test.go",
+      "line": 213,
+      "function": "TestCapacityFinalGateCreateJobsAndCleanup",
+      "variable": "ErrNotOwner",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 87,
+      "function": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 133,
+      "function": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 172,
+      "function": "TestCapacityStoreSerializesConcurrentReservations",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 209,
+      "function": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 229,
+      "function": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 237,
+      "function": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "line": 244,
+      "function": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "variable": "ErrNoNodeCapacity",
+      "kind": "call-argument-review",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    },
+    {
+      "file": "internal/hosted/softquota_notice_test.go",
+      "line": 12,
+      "function": "TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold",
+      "variable": "UTC",
+      "kind": "call-argument-review",
+      "package": "time"
+    },
+    {
+      "file": "internal/hosted/store_test.go",
+      "line": 23,
+      "function": "testpool",
+      "variable": "hostedPGWarm",
+      "kind": "method-call:Do",
+      "package": "github.com/zhangzongchu2019/dingwei/internal/hosted"
+    }
+  ]
+}

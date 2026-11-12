@@ -1,0 +1,2184 @@
+{
+  "cmd": [
+    "go",
+    "test",
+    "-json",
+    "-count=1",
+    "-p",
+    "2",
+    "-timeout",
+    "40m",
+    "./..."
+  ],
+  "cwd": "/data/ai-dev-data/hosted-test-time-c782",
+  "start": "2026-11-11T02:47:51.123410+00:00",
+  "rc": 0,
+  "end": "2026-11-11T03:04:00.814816+00:00",
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/cmd/dingwei-datad": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/fcs": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/feishu-fanout": {
+      "elapsed": [
+        22.574
+      ],
+      "counts": {
+        "pass": 9,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/file-service": {
+      "elapsed": [
+        0.068
+      ],
+      "counts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/mcs-demo": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/mcsd": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/nodeagent": {
+      "elapsed": [
+        0.003
+      ],
+      "counts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/subagent-rollback": {
+      "elapsed": [
+        0.21
+      ],
+      "counts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "elapsed": [
+        242.254
+      ],
+      "counts": {
+        "pass": 267,
+        "fail": 0,
+        "skip": 6
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/admin": {
+      "elapsed": [
+        11.358
+      ],
+      "counts": {
+        "pass": 274,
+        "fail": 0,
+        "skip": 1
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/agentmetrics": {
+      "elapsed": [
+        0.003
+      ],
+      "counts": {
+        "pass": 30,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/bridge": {
+      "elapsed": [
+        0.001
+      ],
+      "counts": {
+        "pass": 16,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/bus": {
+      "elapsed": [
+        1.139
+      ],
+      "counts": {
+        "pass": 14,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/changeflow": {
+      "elapsed": [
+        0.038
+      ],
+      "counts": {
+        "pass": 56,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/clarificationimage": {
+      "elapsed": [
+        0.004
+      ],
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/clock": {
+      "elapsed": [
+        0.001
+      ],
+      "counts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/config": {
+      "elapsed": [
+        0.002
+      ],
+      "counts": {
+        "pass": 12,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/consolemux": {
+      "elapsed": [
+        7.716
+      ],
+      "counts": {
+        "pass": 12,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/coordinatereview": {
+      "elapsed": [
+        3.5300000000000002
+      ],
+      "counts": {
+        "pass": 24,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/coordination": {
+      "elapsed": [
+        0.308
+      ],
+      "counts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/datad": {
+      "elapsed": [
+        0.764
+      ],
+      "counts": {
+        "pass": 51,
+        "fail": 0,
+        "skip": 12
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/evidence": {
+      "elapsed": [
+        0.879
+      ],
+      "counts": {
+        "pass": 6,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extseat": {
+      "elapsed": [
+        53.314
+      ],
+      "counts": {
+        "pass": 54,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extshared": {
+      "elapsed": [
+        0.002
+      ],
+      "counts": {
+        "pass": 8,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extwire": {
+      "elapsed": [
+        3.303
+      ],
+      "counts": {
+        "pass": 13,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/fanout": {
+      "elapsed": [
+        71.692
+      ],
+      "counts": {
+        "pass": 32,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/fcs": {
+      "elapsed": [
+        1.055
+      ],
+      "counts": {
+        "pass": 30,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/feishu": {
+      "elapsed": [
+        0.234
+      ],
+      "counts": {
+        "pass": 23,
+        "fail": 0,
+        "skip": 1
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/feishulogin": {
+      "elapsed": [
+        0.014
+      ],
+      "counts": {
+        "pass": 110,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/filepolicy": {
+      "elapsed": [
+        0.004
+      ],
+      "counts": {
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/fileservice": {
+      "elapsed": [
+        1.771
+      ],
+      "counts": {
+        "pass": 81,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/hosted": {
+      "elapsed": [
+        737.067
+      ],
+      "counts": {
+        "pass": 346,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/identity": {
+      "elapsed": [
+        94.558
+      ],
+      "counts": {
+        "pass": 215,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/identity/httpapi": {
+      "elapsed": [
+        3.335
+      ],
+      "counts": {
+        "pass": 65,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/identity/identitytest": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/jcs": {
+      "elapsed": [
+        0.002
+      ],
+      "counts": {
+        "pass": 8,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/lifecycle": {
+      "elapsed": [
+        0.003
+      ],
+      "counts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/llm": {
+      "elapsed": [
+        0.003
+      ],
+      "counts": {
+        "pass": 8,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/m5": {
+      "elapsed": [
+        2.136
+      ],
+      "counts": {
+        "pass": 22,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/m8": {
+      "elapsed": [
+        244.984
+      ],
+      "counts": {
+        "pass": 1543,
+        "fail": 0,
+        "skip": 37
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "elapsed": [
+        114.99
+      ],
+      "counts": {
+        "pass": 263,
+        "fail": 0,
+        "skip": 6
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/board": {
+      "elapsed": [
+        0.257
+      ],
+      "counts": {
+        "pass": 56,
+        "fail": 0,
+        "skip": 2
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/dea": {
+      "elapsed": [
+        0.002
+      ],
+      "counts": {
+        "pass": 8,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/demo": {
+      "elapsed": [
+        0.15
+      ],
+      "counts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/dispatch": {
+      "elapsed": [
+        0.026
+      ],
+      "counts": {
+        "pass": 7,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/hubdriver": {
+      "elapsed": [
+        0.027
+      ],
+      "counts": {
+        "pass": 21,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/mcsd": {
+      "elapsed": [
+        12.866
+      ],
+      "counts": {
+        "pass": 27,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/pool": {
+      "elapsed": [
+        0.153
+      ],
+      "counts": {
+        "pass": 20,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/rotation": {
+      "elapsed": [
+        0.022
+      ],
+      "counts": {
+        "pass": 26,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/mcs/route": {
+      "elapsed": [
+        0.003
+      ],
+      "counts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/model": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/nodeagent": {
+      "elapsed": [
+        6.442
+      ],
+      "counts": {
+        "pass": 272,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/nodegate": {
+      "elapsed": [
+        17.304
+      ],
+      "counts": {
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/obs": {
+      "elapsed": [
+        0.663
+      ],
+      "counts": {
+        "pass": 17,
+        "fail": 0,
+        "skip": 1
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/portal": {
+      "elapsed": [
+        0.314
+      ],
+      "counts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/r9pm": {
+      "elapsed": [
+        0.001
+      ],
+      "counts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/redact": {
+      "elapsed": [
+        0.002
+      ],
+      "counts": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/reminder": {
+      "elapsed": [
+        0.449
+      ],
+      "counts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/repo": {
+      "elapsed": [
+        4.053
+      ],
+      "counts": {
+        "pass": 14,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/router": {
+      "elapsed": [
+        0.001
+      ],
+      "counts": {
+        "pass": 8,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/schedule": {
+      "elapsed": [
+        1.049
+      ],
+      "counts": {
+        "pass": 9,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/scheduler": {
+      "elapsed": [
+        2.552
+      ],
+      "counts": {
+        "pass": 22,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/seatcapacity": {
+      "elapsed": [
+        0.002
+      ],
+      "counts": {
+        "pass": 9,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/secretbox": {
+      "elapsed": [
+        0.002
+      ],
+      "counts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/specconfirm": {
+      "elapsed": [
+        0.003
+      ],
+      "counts": {
+        "pass": 51,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/specread": {
+      "elapsed": [
+        0.077
+      ],
+      "counts": {
+        "pass": 105,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store": {
+      "elapsed": [
+        80.253
+      ],
+      "counts": {
+        "pass": 609,
+        "fail": 0,
+        "skip": 5
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store/migrate": {
+      "elapsed": [
+        59.532
+      ],
+      "counts": {
+        "pass": 44,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/store/pgtest": {
+      "elapsed": [
+        11.436
+      ],
+      "counts": {
+        "pass": 68,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/subagent": {
+      "elapsed": [
+        0.002
+      ],
+      "counts": {
+        "pass": 8,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/taskdispatch": {
+      "elapsed": [
+        34.004
+      ],
+      "counts": {
+        "pass": 54,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/tempgroup": {
+      "elapsed": [
+        18.225
+      ],
+      "counts": {
+        "pass": 8,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/trustedorigin": {
+      "elapsed": [
+        0.002
+      ],
+      "counts": {
+        "pass": 11,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/version": {
+      "elapsed": [
+        1.634
+      ],
+      "counts": {
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/worker": {
+      "elapsed": [
+        2.795
+      ],
+      "counts": {
+        "pass": 19,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/specs/tools/handle-escape": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/specs/tools/legacy-name": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/specs/tools/pending-debt": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/specs/tools/tenant-schema": {
+      "elapsed": [
+        0.002
+      ],
+      "counts": {
+        "pass": 13,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/tests/r32-task-flow/compat-probe": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/view-service": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/view-service/console-hosted-page-fixture": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "github.com/zhangzongchu2019/dingwei/view-service/p1seed": {
+      "elapsed": [],
+      "counts": {
+        "pass": 0,
+        "fail": 0,
+        "skip": 0
+      }
+    }
+  },
+  "hosted_top": [
+    {
+      "Test": "TestCreateFailurePathsAbortTheIssue",
+      "Action": "pass",
+      "Elapsed": 9.37
+    },
+    {
+      "Test": "TestAccountNameUniquePerOwner",
+      "Action": "pass",
+      "Elapsed": 3.18
+    },
+    {
+      "Test": "TestAccountLimitPerOwner",
+      "Action": "pass",
+      "Elapsed": 3.27
+    },
+    {
+      "Test": "TestAccountSecretValidation",
+      "Action": "pass",
+      "Elapsed": 3.21
+    },
+    {
+      "Test": "TestConcurrentCreateSameAccount",
+      "Action": "pass",
+      "Elapsed": 3.24
+    },
+    {
+      "Test": "TestReleaseAndDestroyedNotCounted",
+      "Action": "pass",
+      "Elapsed": 3.34
+    },
+    {
+      "Test": "TestCreateVsDisableSerialized",
+      "Action": "pass",
+      "Elapsed": 7.07
+    },
+    {
+      "Test": "TestCreateSeatPKConflictIsNotAccountError",
+      "Action": "pass",
+      "Elapsed": 3.11
+    },
+    {
+      "Test": "TestFrozenR30SchemaBackfillAndJobOp",
+      "Action": "pass",
+      "Elapsed": 2.89
+    },
+    {
+      "Test": "TestRollbackResetSQL",
+      "Action": "pass",
+      "Elapsed": 2.69
+    },
+    {
+      "Test": "TestRefreshStartingTimeoutIsExistingSeat",
+      "Action": "pass",
+      "Elapsed": 2.72
+    },
+    {
+      "Test": "TestLegacyBoundAccountSharable",
+      "Action": "pass",
+      "Elapsed": 2.57
+    },
+    {
+      "Test": "TestDefenseInDepthAccountBoundaries",
+      "Action": "pass",
+      "Elapsed": 2.6
+    },
+    {
+      "Test": "TestBackupPipelineEndToEnd",
+      "Action": "pass",
+      "Elapsed": 2.65
+    },
+    {
+      "Test": "TestBackupHandlerAuthAndStates",
+      "Action": "pass",
+      "Elapsed": 2.72
+    },
+    {
+      "Test": "TestSweepExpiredBackupsReclaimsOnlyStalePending",
+      "Action": "pass",
+      "Elapsed": 2.76
+    },
+    {
+      "Test": "TestClientCancellationOrphanPendingIsEventuallySwept",
+      "Action": "pass",
+      "Elapsed": 2.78
+    },
+    {
+      "Test": "TestBackupIntegrityRejected",
+      "Action": "pass",
+      "Elapsed": 16.31
+    },
+    {
+      "Test": "TestBackupChecksumControlPlane",
+      "Action": "pass",
+      "Elapsed": 19.4
+    },
+    {
+      "Test": "TestBackupFailureClearsPending",
+      "Action": "pass",
+      "Elapsed": 9.45
+    },
+    {
+      "Test": "TestBackupUsesLongTimeout",
+      "Action": "pass",
+      "Elapsed": 3.19
+    },
+    {
+      "Test": "TestBackupDuplicateUploadWhilePending",
+      "Action": "pass",
+      "Elapsed": 3.35
+    },
+    {
+      "Test": "TestBackupNodeOfflineStopsDestroy",
+      "Action": "pass",
+      "Elapsed": 3.3
+    },
+    {
+      "Test": "TestClaudeModelCreatePersistsAndDispatchesApprovedValue",
+      "Action": "pass",
+      "Elapsed": 3.41
+    },
+    {
+      "Test": "TestClaudeModelCreateRejectsUnapprovedAndMalformedBeforeIssue",
+      "Action": "pass",
+      "Elapsed": 3.28
+    },
+    {
+      "Test": "TestClaudeEmptyModelPreservesDefaultAndUnverifiedComboClosed",
+      "Action": "pass",
+      "Elapsed": 2.72
+    },
+    {
+      "Test": "TestWrapUnwrapRoundtrip",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestUnwrapWrongMasterFails",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestSealPerRecordNonceAndWrongKey",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestLoadMasterKeyPermAndForms",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestTeamKeyServiceFlow",
+      "Action": "pass",
+      "Elapsed": 3.32
+    },
+    {
+      "Test": "TestEnableRestartWaitForAgentConnect",
+      "Action": "pass",
+      "Elapsed": 6.35
+    },
+    {
+      "Test": "TestRestartTimeoutKeepsExistingSeat",
+      "Action": "pass",
+      "Elapsed": 3.44
+    },
+    {
+      "Test": "TestCreateTimeoutStillRetires",
+      "Action": "pass",
+      "Elapsed": 3.09
+    },
+    {
+      "Test": "TestZZ_AgentConnectingBeforeStartingIsNotLost",
+      "Action": "pass",
+      "Elapsed": 6.32
+    },
+    {
+      "Test": "TestEnableRestartFailureAfterStarting",
+      "Action": "pass",
+      "Elapsed": 11.66
+    },
+    {
+      "Test": "TestFailureAfterAgentConnectedKeepsOnline",
+      "Action": "pass",
+      "Elapsed": 2.69
+    },
+    {
+      "Test": "TestLateConnectAfterExistingTimeoutGoesOnline",
+      "Action": "pass",
+      "Elapsed": 5.59
+    },
+    {
+      "Test": "TestLateConnectOnlyForExistingTimeout",
+      "Action": "pass",
+      "Elapsed": 5.55
+    },
+    {
+      "Test": "TestRestartFailureAfterAgentConnectedKeepsOnline",
+      "Action": "pass",
+      "Elapsed": 5.45
+    },
+    {
+      "Test": "TestStartingWriteFailureUndoesResume",
+      "Action": "pass",
+      "Elapsed": 5.24
+    },
+    {
+      "Test": "TestOnlineAfterExistingTimeoutKeepsDetailCondition",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestStartingWriteFailureDoesNotSuspendALiveCredential",
+      "Action": "pass",
+      "Elapsed": 5.57
+    },
+    {
+      "Test": "TestDestroyCleanupSurvivesClientCancellation",
+      "Action": "pass",
+      "Elapsed": 2.8
+    },
+    {
+      "Test": "TestLifecycleJobPersistsProgressAndMachineReason",
+      "Action": "pass",
+      "Elapsed": 8.81
+    },
+    {
+      "Test": "TestLifecycleJobDuplicatePolicy",
+      "Action": "pass",
+      "Elapsed": 2.94
+    },
+    {
+      "Test": "TestConcurrentDestroyRequestsShareOneJobAndOneBackup",
+      "Action": "pass",
+      "Elapsed": 3.09
+    },
+    {
+      "Test": "TestLifecycleJobRecoveryLeavesNoActiveRows",
+      "Action": "pass",
+      "Elapsed": 8.37
+    },
+    {
+      "Test": "TestDestroyCanBeRetriedAfterHubDiesMidJob",
+      "Action": "pass",
+      "Elapsed": 3.11
+    },
+    {
+      "Test": "TestLifecycleOrderOnOneLog",
+      "Action": "pass",
+      "Elapsed": 11.74
+    },
+    {
+      "Test": "TestFailedGateStopsTheChain",
+      "Action": "pass",
+      "Elapsed": 14.03
+    },
+    {
+      "Test": "TestRestartAfterFailedStopResumesCredential",
+      "Action": "pass",
+      "Elapsed": 3.26
+    },
+    {
+      "Test": "TestOwnershipEnforced",
+      "Action": "pass",
+      "Elapsed": 11.29
+    },
+    {
+      "Test": "TestHubParamsSatisfyNodeContract",
+      "Action": "pass",
+      "Elapsed": 2.78
+    },
+    {
+      "Test": "TestDestroyOfflineNodeLeavesReconcileRecord",
+      "Action": "pass",
+      "Elapsed": 2.82
+    },
+    {
+      "Test": "TestUpgradeRollbackOnNodeFailure",
+      "Action": "pass",
+      "Elapsed": 2.81
+    },
+    {
+      "Test": "TestConfirmRequiredGates",
+      "Action": "pass",
+      "Elapsed": 2.78
+    },
+    {
+      "Test": "TestDestroyReturnsAccountToPool",
+      "Action": "pass",
+      "Elapsed": 2.78
+    },
+    {
+      "Test": "TestUpgradeWhileDisabledRejected",
+      "Action": "pass",
+      "Elapsed": 2.72
+    },
+    {
+      "Test": "TestReconcileOnNodeReconnect",
+      "Action": "pass",
+      "Elapsed": 2.74
+    },
+    {
+      "Test": "TestReconcileDoesNotBackupTwice",
+      "Action": "pass",
+      "Elapsed": 2.71
+    },
+    {
+      "Test": "TestNodeDownLeavesStateAndCredential",
+      "Action": "pass",
+      "Elapsed": 24.53
+    },
+    {
+      "Test": "TestDestroyBackupFailedTyped",
+      "Action": "pass",
+      "Elapsed": 2.82
+    },
+    {
+      "Test": "TestReconcileGuards",
+      "Action": "pass",
+      "Elapsed": 5.57
+    },
+    {
+      "Test": "TestDestroyStopsBeforeBackup",
+      "Action": "pass",
+      "Elapsed": 8.17
+    },
+    {
+      "Test": "TestUpgradeUsesRecordedModel",
+      "Action": "pass",
+      "Elapsed": 2.75
+    },
+    {
+      "Test": "TestLoginStartHappy",
+      "Action": "pass",
+      "Elapsed": 2.78
+    },
+    {
+      "Test": "TestLoginStartExpiresOwnStaleSession",
+      "Action": "pass",
+      "Elapsed": 2.78
+    },
+    {
+      "Test": "TestLoginOnePerUserAndCooldown",
+      "Action": "pass",
+      "Elapsed": 2.83
+    },
+    {
+      "Test": "TestLoginConcurrencyCaps",
+      "Action": "pass",
+      "Elapsed": 2.73
+    },
+    {
+      "Test": "TestLoginEmailValidation",
+      "Action": "pass",
+      "Elapsed": 2.81
+    },
+    {
+      "Test": "TestLoginCompleteRegisters",
+      "Action": "pass",
+      "Elapsed": 2.96
+    },
+    {
+      "Test": "TestLoginCompleteOneShotExpiryAndFailures",
+      "Action": "pass",
+      "Elapsed": 2.93
+    },
+    {
+      "Test": "TestLoginRelogin",
+      "Action": "pass",
+      "Elapsed": 2.94
+    },
+    {
+      "Test": "TestLoginStartNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 12.18
+    },
+    {
+      "Test": "TestLoginSweepAndRecover",
+      "Action": "pass",
+      "Elapsed": 2.81
+    },
+    {
+      "Test": "TestLoginUploadBoundToSessionNode",
+      "Action": "pass",
+      "Elapsed": 2.88
+    },
+    {
+      "Test": "TestLoginAccountLimitPrecheck",
+      "Action": "pass",
+      "Elapsed": 2.76
+    },
+    {
+      "Test": "TestIDTokenEmail",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestLoginTotalCapBindsWithThreeNodes",
+      "Action": "pass",
+      "Elapsed": 2.77
+    },
+    {
+      "Test": "TestLoginPerNodeCapBindsWithOneNode",
+      "Action": "pass",
+      "Elapsed": 2.72
+    },
+    {
+      "Test": "TestLoginPrechecksAndEmailInSameInsert",
+      "Action": "pass",
+      "Elapsed": 2.77
+    },
+    {
+      "Test": "TestLoginDoneNotOverwrittenBySweepOrCancel",
+      "Action": "pass",
+      "Elapsed": 2.84
+    },
+    {
+      "Test": "TestLoginClaimCompletingIsAtomic",
+      "Action": "pass",
+      "Elapsed": 3.36
+    },
+    {
+      "Test": "TestLoginTerminalStatesClearLinkAndCode",
+      "Action": "pass",
+      "Elapsed": 11.27
+    },
+    {
+      "Test": "TestLoginStaleCompletingIsSwept",
+      "Action": "pass",
+      "Elapsed": 2.74
+    },
+    {
+      "Test": "TestFrozenR30LoginSchemaUpgradesOldDefinition",
+      "Action": "pass",
+      "Elapsed": 3.16
+    },
+    {
+      "Test": "TestLoginStaleCompletingWithoutClaimedAt",
+      "Action": "pass",
+      "Elapsed": 2.95
+    },
+    {
+      "Test": "TestMinimumPlanDefinitionAndNetCapacity",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestFrozenR30MinimumPlanSchemaUpgradesOldConstraint",
+      "Action": "pass",
+      "Elapsed": 2.81
+    },
+    {
+      "Test": "TestMinimumPlanQuotaDebitsAndEveryDimension",
+      "Action": "pass",
+      "Elapsed": 2.65
+    },
+    {
+      "Test": "TestMinimumPlanOptionsAndRealCreateResources",
+      "Action": "pass",
+      "Elapsed": 2.7
+    },
+    {
+      "Test": "TestLoginQuotaAuditDoesNotMutateHostedSeat",
+      "Action": "pass",
+      "Elapsed": 2.7
+    },
+    {
+      "Test": "TestLoginQuotaEventRequiresTypedLoginIdentity",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestQuotaRegistrationAndCapacityCannotSelfDowngrade",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestSoftNodeSchedulingConsentPriorityCapacityAndAudit",
+      "Action": "pass",
+      "Elapsed": 2.78
+    },
+    {
+      "Test": "TestQuotaEventValidation",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestSoftCreateFailureDoesNotAbortOrReleaseIdentity",
+      "Action": "pass",
+      "Elapsed": 2.83
+    },
+    {
+      "Test": "TestSoftHeldLifecycleRefusesBeforeSideEffects",
+      "Action": "pass",
+      "Elapsed": 3.37
+    },
+    {
+      "Test": "TestHardNodeResourceExtensionNegotiated",
+      "Action": "pass",
+      "Elapsed": 2.91
+    },
+    {
+      "Test": "TestQuotaEmergencyReasonsUseExistingAuditAndHoldPath",
+      "Action": "pass",
+      "Elapsed": 8.06
+    },
+    {
+      "Test": "TestQuotaUsageWarningNotifiesWithoutPrematureHold",
+      "Action": "pass",
+      "Elapsed": 5.35
+    },
+    {
+      "Test": "TestNodeCredentialLifecycle",
+      "Action": "pass",
+      "Elapsed": 2.6
+    },
+    {
+      "Test": "TestStartingUntilAgentConnectsElseTimeout",
+      "Action": "pass",
+      "Elapsed": 2.71
+    },
+    {
+      "Test": "TestMarkOnlineOnlyFromStarting",
+      "Action": "pass",
+      "Elapsed": 2.68
+    },
+    {
+      "Test": "TestCreateHappyPathCodexFirst",
+      "Action": "pass",
+      "Elapsed": 2.68
+    },
+    {
+      "Test": "TestClaudeMinimumPlanRemainsUnverified",
+      "Action": "pass",
+      "Elapsed": 2.59
+    },
+    {
+      "Test": "TestCreateRejections",
+      "Action": "pass",
+      "Elapsed": 2.59
+    },
+    {
+      "Test": "TestRunJobFailureCleanup",
+      "Action": "pass",
+      "Elapsed": 2.53
+    },
+    {
+      "Test": "TestSweepTimeouts",
+      "Action": "pass",
+      "Elapsed": 2.69
+    },
+    {
+      "Test": "TestPoolScheduling",
+      "Action": "pass",
+      "Elapsed": 2.59
+    },
+    {
+      "Test": "TestCreateWithoutGroupSucceeds",
+      "Action": "pass",
+      "Elapsed": 2.65
+    },
+    {
+      "Test": "TestCreateGroupErrorsPropagate",
+      "Action": "pass",
+      "Elapsed": 5.34
+    },
+    {
+      "Test": "TestHostedOverlay",
+      "Action": "pass",
+      "Elapsed": 2.75
+    },
+    {
+      "Test": "TestRunJobMissingTokenFailsClosed",
+      "Action": "pass",
+      "Elapsed": 2.84
+    },
+    {
+      "Test": "TestOptionsViewAndJobProgress",
+      "Action": "pass",
+      "Elapsed": 2.73
+    },
+    {
+      "Test": "TestHostedItemErrorCounted",
+      "Action": "pass",
+      "Elapsed": 2.61
+    },
+    {
+      "Test": "TestOnlineOnlyViaMarkOnline",
+      "Action": "pass",
+      "Elapsed": 2.57
+    },
+    {
+      "Test": "TestNeverConnectsSweepedStartTimeout",
+      "Action": "pass",
+      "Elapsed": 2.75
+    },
+    {
+      "Test": "TestCreateWithModelSelectsSupportingNode",
+      "Action": "pass",
+      "Elapsed": 2.65
+    },
+    {
+      "Test": "TestCreateModelRejections",
+      "Action": "pass",
+      "Elapsed": 2.66
+    },
+    {
+      "Test": "TestPickNodeStaleFrameTreatedOffline",
+      "Action": "pass",
+      "Elapsed": 2.53
+    },
+    {
+      "Test": "TestNodeHasModelToleratesMissingKey",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestPlanDiskTiersPinned",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestCheckCreateDiskGate",
+      "Action": "pass",
+      "Elapsed": 2.52
+    },
+    {
+      "Test": "TestClaudeTokenFileABI",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestOwnedAccountLifecycle",
+      "Action": "pass",
+      "Elapsed": 2.63
+    },
+    {
+      "Test": "TestTokenFileDisplayNoContentTail",
+      "Action": "pass",
+      "Elapsed": 2.52
+    },
+    {
+      "Test": "TestQuotaCheckBoundaries",
+      "Action": "pass",
+      "Elapsed": 2.7
+    },
+    {
+      "Test": "TestQuotaListWithUsage",
+      "Action": "pass",
+      "Elapsed": 2.64
+    },
+    {
+      "Test": "TestCheckCreateCodeSplit",
+      "Action": "pass",
+      "Elapsed": 10.55
+    },
+    {
+      "Test": "TestR31NodeRegistrationCredentialAndAtomicAudit",
+      "Action": "pass",
+      "Elapsed": 2.62
+    },
+    {
+      "Test": "TestR31NodeGroupAccessAndRevocation",
+      "Action": "pass",
+      "Elapsed": 2.55
+    },
+    {
+      "Test": "TestR31HardCapacityAllDimensionsAndLegacyUnknown",
+      "Action": "pass",
+      "Elapsed": 2.58
+    },
+    {
+      "Test": "TestR31NodeDisableSurvivesHeartbeatAndBlocksFinalAdmission",
+      "Action": "pass",
+      "Elapsed": 2.52
+    },
+    {
+      "Test": "TestR31NodeOptionsHideModelsAndQueuedRevocation",
+      "Action": "pass",
+      "Elapsed": 2.63
+    },
+    {
+      "Test": "TestR31AdmissionAndNodeRevocationCommitOrder",
+      "Action": "pass",
+      "Elapsed": 3.41
+    },
+    {
+      "Test": "TestR31HardConcurrentReservationsDoNotOversell",
+      "Action": "pass",
+      "Elapsed": 3.06
+    },
+    {
+      "Test": "TestR31AdmissionUsesOwnerNotAdministratorAuditActor",
+      "Action": "pass",
+      "Elapsed": 2.83
+    },
+    {
+      "Test": "TestR31HostedApplySchemaUsesUnifiedLedger",
+      "Action": "pass",
+      "Elapsed": 2.6
+    },
+    {
+      "Test": "TestR31StatePatchCannotRestoreConcurrentRevocation",
+      "Action": "pass",
+      "Elapsed": 2.87
+    },
+    {
+      "Test": "TestOptionsJSONMatchesContract",
+      "Action": "pass",
+      "Elapsed": 2.76
+    },
+    {
+      "Test": "TestOptionsEmptyListsAreArrays",
+      "Action": "pass",
+      "Elapsed": 2.83
+    },
+    {
+      "Test": "TestOptionsPlanFitsEachGate",
+      "Action": "pass",
+      "Elapsed": 12.37
+    },
+    {
+      "Test": "TestJobReasonOnlyContractCodes",
+      "Action": "pass",
+      "Elapsed": 3.34
+    },
+    {
+      "Test": "TestJobProgressForOwnerBySeat",
+      "Action": "pass",
+      "Elapsed": 3.34
+    },
+    {
+      "Test": "TestOptionsModelsUnionOnlineOnly",
+      "Action": "pass",
+      "Elapsed": 3.03
+    },
+    {
+      "Test": "TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess",
+      "Action": "pass",
+      "Elapsed": 3.14
+    },
+    {
+      "Test": "TestReconcileSeatTimeoutDoesNotStallBatch",
+      "Action": "pass",
+      "Elapsed": 3.1
+    },
+    {
+      "Test": "TestEmptyCreatedByRefused",
+      "Action": "pass",
+      "Elapsed": 3.22
+    },
+    {
+      "Test": "TestUpgradeUnknownPlanNotSwallowed",
+      "Action": "pass",
+      "Elapsed": 2.79
+    },
+    {
+      "Test": "TestRefreshCredHappyPath",
+      "Action": "pass",
+      "Elapsed": 2.78
+    },
+    {
+      "Test": "TestRefreshCredOwnerOnly",
+      "Action": "pass",
+      "Elapsed": 2.71
+    },
+    {
+      "Test": "TestRefreshCredStateGate",
+      "Action": "pass",
+      "Elapsed": 2.9
+    },
+    {
+      "Test": "TestRefreshCredAccountGate",
+      "Action": "pass",
+      "Elapsed": 2.84
+    },
+    {
+      "Test": "TestRefreshCredNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 11.39
+    },
+    {
+      "Test": "TestRefreshCredAsJob",
+      "Action": "pass",
+      "Elapsed": 2.89
+    },
+    {
+      "Test": "TestRefreshCredRecoverJobs",
+      "Action": "pass",
+      "Elapsed": 2.9
+    },
+    {
+      "Test": "TestRefreshCredResumesSuspendedCredential",
+      "Action": "pass",
+      "Elapsed": 19.73
+    },
+    {
+      "Test": "TestStaticRegistriesFailClosed",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestCapacityReasonSanitizationAndCompatibility",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestCapacityRequestReasonAndModelSelection",
+      "Action": "pass",
+      "Elapsed": 2.81
+    },
+    {
+      "Test": "TestCapacityStartReasonAndUnknown",
+      "Action": "pass",
+      "Elapsed": 2.8
+    },
+    {
+      "Test": "TestCapacityReplyStrictProtocolAndRegistration",
+      "Action": "pass",
+      "Elapsed": 2.75
+    },
+    {
+      "Test": "TestCapacityFinalGateLifecycleJobs",
+      "Action": "pass",
+      "Elapsed": 2.92
+    },
+    {
+      "Test": "TestCapacityFinalGateCreateJobsAndCleanup",
+      "Action": "pass",
+      "Elapsed": 2.88
+    },
+    {
+      "Test": "TestCapacityRealCreatePendingEightNinthAndExistingStart",
+      "Action": "pass",
+      "Elapsed": 2.83
+    },
+    {
+      "Test": "TestCapacityStoreSerializesConcurrentReservations",
+      "Action": "pass",
+      "Elapsed": 2.8
+    },
+    {
+      "Test": "TestCapacityUnknownReservesForeignLoadAndLegacyHard",
+      "Action": "pass",
+      "Elapsed": 2.81
+    },
+    {
+      "Test": "TestQuotaNoticeDistinguishesMeasurementFailureFromUsageThreshold",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestSoftHoldHubReleaseAuditAndUncertainNoResend",
+      "Action": "pass",
+      "Elapsed": 2.84
+    },
+    {
+      "Test": "TestSoftQuotaMonitorProjectionAndDurableTwoRecipientNotices",
+      "Action": "pass",
+      "Elapsed": 2.79
+    },
+    {
+      "Test": "TestSoftHoldOwnerIntentAndNodeProofBeforeSeparateRestart",
+      "Action": "pass",
+      "Elapsed": 2.82
+    },
+    {
+      "Test": "TestSoftHoldReleasePendingEventConverges",
+      "Action": "pass",
+      "Elapsed": 18.58
+    },
+    {
+      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
+      "Action": "pass",
+      "Elapsed": 25.96
+    },
+    {
+      "Test": "TestSoftHoldLegacyEventStateAppliedOnce",
+      "Action": "pass",
+      "Elapsed": 3.25
+    },
+    {
+      "Test": "TestPlanTable",
+      "Action": "pass",
+      "Elapsed": 0
+    },
+    {
+      "Test": "TestSchemaApplyRollbackRepeatable",
+      "Action": "pass",
+      "Elapsed": 3.41
+    },
+    {
+      "Test": "TestSchemaDropLeavesNoG4Tables",
+      "Action": "pass",
+      "Elapsed": 3.26
+    },
+    {
+      "Test": "TestAppliedLedgerRejectsMissingHostedTableWithoutRepair",
+      "Action": "pass",
+      "Elapsed": 3.24
+    },
+    {
+      "Test": "TestFrozenR30SchemaModelColumnMigration",
+      "Action": "pass",
+      "Elapsed": 2.96
+    },
+    {
+      "Test": "TestNodeSeatPoolQuotaFlow",
+      "Action": "pass",
+      "Elapsed": 3.1
+    },
+    {
+      "Test": "TestAccessCtxValid",
+      "Action": "pass",
+      "Elapsed": 2.75
+    },
+    {
+      "Test": "TestFrozenR30ApplySchemaUpgradesPreA1PreB2Shape",
+      "Action": "pass",
+      "Elapsed": 2.82
+    },
+    {
+      "Test": "TestTokenWriteBackAndUnbindPrep",
+      "Action": "pass",
+      "Elapsed": 3.19
+    }
+  ],
+  "hosted_slow15": [
+    {
+      "Test": "TestSoftHoldReleaseReplayPreservesCurrentHazards",
+      "Action": "pass",
+      "Elapsed": 25.96
+    },
+    {
+      "Test": "TestNodeDownLeavesStateAndCredential",
+      "Action": "pass",
+      "Elapsed": 24.53
+    },
+    {
+      "Test": "TestRefreshCredResumesSuspendedCredential",
+      "Action": "pass",
+      "Elapsed": 19.73
+    },
+    {
+      "Test": "TestBackupChecksumControlPlane",
+      "Action": "pass",
+      "Elapsed": 19.4
+    },
+    {
+      "Test": "TestSoftHoldReleasePendingEventConverges",
+      "Action": "pass",
+      "Elapsed": 18.58
+    },
+    {
+      "Test": "TestBackupIntegrityRejected",
+      "Action": "pass",
+      "Elapsed": 16.31
+    },
+    {
+      "Test": "TestFailedGateStopsTheChain",
+      "Action": "pass",
+      "Elapsed": 14.03
+    },
+    {
+      "Test": "TestOptionsPlanFitsEachGate",
+      "Action": "pass",
+      "Elapsed": 12.37
+    },
+    {
+      "Test": "TestLoginStartNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 12.18
+    },
+    {
+      "Test": "TestLifecycleOrderOnOneLog",
+      "Action": "pass",
+      "Elapsed": 11.74
+    },
+    {
+      "Test": "TestEnableRestartFailureAfterStarting",
+      "Action": "pass",
+      "Elapsed": 11.66
+    },
+    {
+      "Test": "TestRefreshCredNodeOutcomes",
+      "Action": "pass",
+      "Elapsed": 11.39
+    },
+    {
+      "Test": "TestOwnershipEnforced",
+      "Action": "pass",
+      "Elapsed": 11.29
+    },
+    {
+      "Test": "TestLoginTerminalStatesClearLinkAndCode",
+      "Action": "pass",
+      "Elapsed": 11.27
+    },
+    {
+      "Test": "TestCheckCreateCodeSplit",
+      "Action": "pass",
+      "Elapsed": 10.55
+    }
+  ],
+  "skips": [
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/admin",
+      "test": "TestGateDumpDoorABaseline",
+      "condition": "=== RUN   TestGateDumpDoorABaseline\n    gate_baseline_dump_test.go:41: 设 DW_ADMIN_BASELINE_OUT 才跑(跨构建基线字节对照用)\n--- SKIP: TestGateDumpDoorABaseline (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGAssignFull",
+      "condition": "=== RUN   TestPGAssignFull\n    assignment_pg_integration_test.go:103: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n--- SKIP: TestPGAssignFull (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGA2ConcurrentUnique",
+      "condition": "=== RUN   TestPGA2ConcurrentUnique\n    assignment_pg_integration_test.go:234: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n--- SKIP: TestPGA2ConcurrentUnique (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGACLThreeRoles",
+      "condition": "=== RUN   TestPGACLThreeRoles\n    assignment_pg_integration_test.go:298: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n--- SKIP: TestPGACLThreeRoles (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGRoleNoLeak",
+      "condition": "=== RUN   TestPGRoleNoLeak\n    assignment_pg_integration_test.go:342: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n--- SKIP: TestPGRoleNoLeak (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGGCFirstResults",
+      "condition": "=== RUN   TestPGGCFirstResults\n    assignment_pg_integration_test.go:376: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n--- SKIP: TestPGGCFirstResults (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGMigrateOnly",
+      "condition": "=== RUN   TestPGMigrateOnly\n    assignment_pg_integration_test.go:425: DATAD_TEST_PG_DSN 未设\n--- SKIP: TestPGMigrateOnly (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB3CrossTask",
+      "condition": "=== RUN   TestPGB3CrossTask\n    assignment_pg_integration_test.go:436: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n--- SKIP: TestPGB3CrossTask (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGB4PutAssignInterleave",
+      "condition": "=== RUN   TestPGB4PutAssignInterleave\n    assignment_pg_integration_test.go:471: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n--- SKIP: TestPGB4PutAssignInterleave (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1CrossTaskConcurrentSameRID",
+      "condition": "=== RUN   TestPGC1CrossTaskConcurrentSameRID\n    assignment_pg_integration_test.go:542: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n--- SKIP: TestPGC1CrossTaskConcurrentSameRID (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1ResponseLossRetry",
+      "condition": "=== RUN   TestPGC1ResponseLossRetry\n    assignment_pg_integration_test.go:605: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n--- SKIP: TestPGC1ResponseLossRetry (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGC1LockOrderNoDeadlock",
+      "condition": "=== RUN   TestPGC1LockOrderNoDeadlock\n    assignment_pg_integration_test.go:637: DATAD_TEST_PG_DSN 未设:PG 集成候真 PG(核心逻辑 Mem 同套已盖;真并发/ACL/GC 仅此处证)\n--- SKIP: TestPGC1LockOrderNoDeadlock (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/datad",
+      "test": "TestPGIntegration",
+      "condition": "=== RUN   TestPGIntegration\n    pg_integration_test.go:21: DATAD_TEST_PG_DSN 未设:PG 集成候 prodops 实例(D4c),核心逻辑已由 MemStore 同套用例盖\n--- SKIP: TestPGIntegration (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/feishu",
+      "test": "TestReceiverPinnedSDKProcess",
+      "condition": "=== RUN   TestReceiverPinnedSDKProcess\n    lifecycle_sdk_process_test.go:28: process-reaped SDK fixture: run alone with HLC_PINNED_SDK_PROCESS=1\n--- SKIP: TestReceiverPinnedSDKProcess (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestNPSessionPG8To9AndR50BinaryCompatibility",
+      "condition": "=== RUN   TestNPSessionPG8To9AndR50BinaryCompatibility\n    np_session_migration_binary_test.go:26: set independently built current and certified R50 binary paths\n--- SKIP: TestNPSessionPG8To9AndR50BinaryCompatibility (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestR31OldBinarySchemaReadCompatibility",
+      "condition": "=== RUN   TestR31OldBinarySchemaReadCompatibility\n    r31_rollback_compat_test.go:23: requires independently built R30 binary via R31_R30_BINARY\n--- SKIP: TestR31OldBinarySchemaReadCompatibility (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestHLCFaultProcessMatrix",
+      "condition": "=== RUN   TestHLCFaultProcessMatrix\n    shutdown_fault_process_test.go:94: isolated fault/watchdog runner tests/hlc/fault_matrix.py\n--- SKIP: TestHLCFaultProcessMatrix (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestHLCBindFailure",
+      "condition": "=== RUN   TestHLCBindFailure\n    shutdown_fault_process_test.go:329: isolated startup failure runner\n--- SKIP: TestHLCBindFailure (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestHLCLoadMatrix",
+      "condition": "=== RUN   TestHLCLoadMatrix\n    shutdown_load_test.go:563: isolated actual-process matrix: tests/hlc/process_matrix.py\n--- SKIP: TestHLCLoadMatrix (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/cmd/workpulse",
+      "test": "TestHLCS007Full",
+      "condition": "=== RUN   TestHLCS007Full\n    shutdown_mixed_fault_process_test.go:164: isolated full mixed fault: tests/hlc/s007_full.py\n--- SKIP: TestHLCS007Full (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeviceClaimAcrossActualClientAndHub",
+      "condition": "=== RUN   TestDeviceClaimAcrossActualClientAndHub\n    claim_client_integration_test.go:33: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime enrollment\n--- SKIP: TestDeviceClaimAcrossActualClientAndHub (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeviceClaimAcrossActualClientAndPostgres",
+      "condition": "=== RUN   TestDeviceClaimAcrossActualClientAndPostgres\n    claim_client_integration_test.go:45: run scripts/test-desktop-hub-roundtrip.sh for cross-runtime PostgreSQL enrollment\n--- SKIP: TestDeviceClaimAcrossActualClientAndPostgres (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestChangeEvidenceConsoleBrowser",
+      "condition": "=== RUN   TestChangeEvidenceConsoleBrowser\n    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration\n--- SKIP: TestChangeEvidenceConsoleBrowser (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestMuxProductHTTP1EightSeats",
+      "condition": "=== RUN   TestMuxProductHTTP1EightSeats\n    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration\n--- SKIP: TestMuxProductHTTP1EightSeats (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsolePlatformPayloadDump",
+      "condition": "=== RUN   TestConsolePlatformPayloadDump\n    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)\n--- SKIP: TestConsolePlatformPayloadDump (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "condition": "=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel\n    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically\n--- SKIP: TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+      "condition": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude\n2026/11/11 02:55:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.16s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+      "condition": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex\n2026/11/11 02:55:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.15s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+      "condition": "=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit\n2026/11/11 02:55:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit (0.15s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected\n2026/11/11 02:55:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.15s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm\n2026/11/11 02:55:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.14s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected\n2026/11/11 02:55:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.15s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+      "condition": "=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm\n2026/11/11 02:55:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm (0.17s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread\n2026/11/11 02:55:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.14s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist\n2026/11/11 02:55:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.15s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread\n2026/11/11 02:55:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.15s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+      "condition": "=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist\n2026/11/11 02:55:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist (0.15s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+      "condition": "=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/claude\n2026/11/11 02:55:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.15s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+      "condition": "=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/codex\n2026/11/11 02:55:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/codex (0.15s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+      "condition": "=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude\n2026/11/11 02:55:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.24s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+      "condition": "=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex\n2026/11/11 02:55:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex (0.24s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDeliveryACKActualCLILateWireTerminal",
+      "condition": "=== RUN   TestDeliveryACKActualCLILateWireTerminal\n2026/11/11 02:55:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/11 02:55:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance\n--- SKIP: TestDeliveryACKActualCLILateWireTerminal (0.16s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestDesktopMCPRoundTripAcrossRealHub",
+      "condition": "=== RUN   TestDesktopMCPRoundTripAcrossRealHub\n    desktop_mcp_roundtrip_test.go:25: run scripts/test-desktop-hub-roundtrip.sh for the cross-runtime gate\n--- SKIP: TestDesktopMCPRoundTripAcrossRealHub (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestFailureNoticeDriverTurnEndToEnd",
+      "condition": "=== RUN   TestFailureNoticeDriverTurnEndToEnd\n    failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime\n--- SKIP: TestFailureNoticeDriverTurnEndToEnd (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestGroupReplyMCP",
+      "condition": "=== RUN   TestGroupReplyMCP\n    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON\n--- SKIP: TestGroupReplyMCP (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+      "condition": "=== RUN   TestHelperSelfUpdateEndToEnd/install_restart_confirm\n    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python\n--- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+      "condition": "=== RUN   TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory\n    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python\n--- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "condition": "=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason\n    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python\n--- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHelper0232MixedVersionEndToEnd",
+      "condition": "=== RUN   TestHelper0232MixedVersionEndToEnd\n    helper_update_e2e_test.go:55: explicit immutable release pins required\n--- SKIP: TestHelper0232MixedVersionEndToEnd (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestHostedBodySendAcrossRealHub",
+      "condition": "=== RUN   TestHostedBodySendAcrossRealHub\n    hosted_body_send_test.go:23: set explicit isolated integration interpreter\n--- SKIP: TestHostedBodySendAcrossRealHub (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestEnvelopeReadTimeoutEnvironmentChild",
+      "condition": "=== RUN   TestEnvelopeReadTimeoutEnvironmentChild\n    hub_timeout_contract_test.go:50: subprocess probe only\n--- SKIP: TestEnvelopeReadTimeoutEnvironmentChild (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+      "condition": "=== RUN   TestPilotQuestionAcrossRealHTTPHelperIPCMCP\n    pilot_question_roundtrip_test.go:17: set locked helper Python; canonical runs this local integration\n--- SKIP: TestPilotQuestionAcrossRealHTTPHelperIPCMCP (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+      "condition": "=== RUN   TestPilotTemplateAcrossRealHTTPHelperIPCMCP\n    pilot_template_roundtrip_test.go:17: set locked helper Python; canonical runs loopback integration\n--- SKIP: TestPilotTemplateAcrossRealHTTPHelperIPCMCP (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+      "condition": "=== RUN   TestProjectContextAcrossRealHTTPHelperIPCMCP\n    project_context_roundtrip_test.go:17: set DW_DESKTOP_INTEGRATION_PYTHON to the locked helper test venv; canonical shell gate runs the cross-runtime set\n--- SKIP: TestProjectContextAcrossRealHTTPHelperIPCMCP (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSessionHistoryTwentyAgentPublishP99",
+      "condition": "=== RUN   TestSessionHistoryTwentyAgentPublishP99\n    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate\n--- SKIP: TestSessionHistoryTwentyAgentPublishP99 (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestSpecMCPEndToEnd",
+      "condition": "=== RUN   TestSpecMCPEndToEnd\n    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses\n--- SKIP: TestSpecMCPEndToEnd (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestBlockerAcrossRealHTTPHelperIPCMCP",
+      "condition": "=== RUN   TestBlockerAcrossRealHTTPHelperIPCMCP\n    task_blocker_roundtrip_test.go:21: set locked helper Python; canonical runs this local integration\n--- SKIP: TestBlockerAcrossRealHTTPHelperIPCMCP (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserAuthorizeChainReachesLoopback",
+      "condition": "=== RUN   TestBrowserAuthorizeChainReachesLoopback\n    browser_e2e_test.go:31: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserAuthorizeChainReachesLoopback (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserCallbackExplainsMissingTarget",
+      "condition": "=== RUN   TestBrowserCallbackExplainsMissingTarget\n    browser_e2e_test.go:35: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserCallbackExplainsMissingTarget (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserClaudeCodeLocalhostConsentChains/immediate-302",
+      "condition": "=== RUN   TestBrowserClaudeCodeLocalhostConsentChains/immediate-302\n    browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserClaudeCodeLocalhostConsentChains/immediate-302 (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserClaudeCodeLocalhostConsentChains/consent-page",
+      "condition": "=== RUN   TestBrowserClaudeCodeLocalhostConsentChains/consent-page\n    browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserClaudeCodeLocalhostConsentChains/consent-page (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserCodexIPLoopbackConsentChains/immediate-302",
+      "condition": "=== RUN   TestBrowserCodexIPLoopbackConsentChains/immediate-302\n    browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserCodexIPLoopbackConsentChains/immediate-302 (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcpgw",
+      "test": "TestBrowserCodexIPLoopbackConsentChains/consent-page",
+      "condition": "=== RUN   TestBrowserCodexIPLoopbackConsentChains/consent-page\n    browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>\n--- SKIP: TestBrowserCodexIPLoopbackConsentChains/consent-page (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestTCN5b_SameRidDifferentPayloadConflict",
+      "condition": "=== RUN   TestTCN5b_SameRidDifferentPayloadConflict\n    m2neg_cases_test.go:136: N5b digest 冲突检测未实现:基线 Send 无 payload/digest 参数(O1=board vNext 域),契约锚 §1.3@28f09dae,vNext 落地后启用本判据(期望 idempotency_conflict+冲突事件)\n--- SKIP: TestTCN5b_SameRidDifferentPayloadConflict (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/mcs/board",
+      "test": "TestConformance_GAP_SLATimeoutAnnotate",
+      "condition": "=== RUN   TestConformance_GAP_SLATimeoutAnnotate\n    conformance_test.go:385: 覆盖缺口（有意登记，非遗漏）：导出面无 SLA 设置入口，既有 TestSweep_TimeoutAnnotateThenTerminalClears 依赖裸 SQL 造前置，故该语义暂无法用外部包 conformance 固化。须先扩导出面（契约变更，归门方判）。\n--- SKIP: TestConformance_GAP_SLATimeoutAnnotate (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/obs",
+      "test": "TestMonitorPageInRealChrome",
+      "condition": "=== RUN   TestMonitorPageInRealChrome\n    page_browser_test.go:26: set OBS_PUPPETEER to an installed puppeteer-core directory for the real Chrome page check\n--- SKIP: TestMonitorPageInRealChrome (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "condition": "=== RUN   TestConsoleTaskLegacyDODMigrationPendingProductionCount\n    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision\n--- SKIP: TestConsoleTaskLegacyDODMigrationPendingProductionCount (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "condition": "=== RUN   TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling\n    console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed\n--- SKIP: TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+      "condition": "=== RUN   TestFeishuStickyOldHubMigrationRollbackCompatibility\n    feishu_sticky_compat_test.go:116: R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate\n--- SKIP: TestFeishuStickyOldHubMigrationRollbackCompatibility (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+      "condition": "=== RUN   TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy\n    task_dispatch_compat_test.go:196: exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate\n--- SKIP: TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy (0.00s)\n"
+    },
+    {
+      "package": "github.com/zhangzongchu2019/dingwei/internal/store",
+      "test": "TestR10RestartChildAuthority",
+      "condition": "=== RUN   TestR10RestartChildAuthority\n    task_dispatch_restart_test.go:22: subprocess-only probe, exercised by TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice\n--- SKIP: TestR10RestartChildAuthority (0.00s)\n"
+    }
+  ]
+}

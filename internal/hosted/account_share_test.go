@@ -36,6 +36,7 @@ func ensureNode(t *testing.T, s *Store) {
 
 // P5：两人同名都可建；本人重名拒（不泄露他人名字）；旧的全局 UNIQUE 确已去掉。
 func TestAccountNameUniquePerOwner(t *testing.T) {
+	parallelHostedTest(t)
 	svc, _ := mkPoolSvc(t)
 	mkAcct(t, svc, "zzc", "my-key")
 	mkAcct(t, svc, "bob", "my-key")
@@ -46,6 +47,7 @@ func TestAccountNameUniquePerOwner(t *testing.T) {
 
 // P13：每人上限 20（停用的也计入）；他人不受影响。
 func TestAccountLimitPerOwner(t *testing.T) {
+	parallelHostedTest(t)
 	svc, _ := mkPoolSvc(t)
 	ctx := context.Background()
 	var last Account
@@ -66,6 +68,7 @@ func TestAccountLimitPerOwner(t *testing.T) {
 
 // P7：凭据校验——token_file 须 JSON、超 64KiB 拒、空拒；错误文本不回显输入。
 func TestAccountSecretValidation(t *testing.T) {
+	parallelHostedTest(t)
 	svc, _ := mkPoolSvc(t)
 	ctx := context.Background()
 	const marker = "SECRET-MARKER-should-not-echo"
@@ -94,6 +97,7 @@ func TestAccountSecretValidation(t *testing.T) {
 
 // T14（S14）：同账号并发建两席都成功（不得有唯一约束把共用挡掉）；in_use＝2。
 func TestConcurrentCreateSameAccount(t *testing.T) {
+	parallelHostedTest(t)
 	svc, s := mkPoolSvc(t)
 	ensureNode(t, s)
 	a := mkAcct(t, svc, "zzc", "shared")
@@ -119,6 +123,7 @@ func TestConcurrentCreateSameAccount(t *testing.T) {
 
 // T2／T9／T8：释放一席不误伤另一席；并发释放两席后可停用；历史 destroyed 行（account_ref 未清）不计数、不挡停用。
 func TestReleaseAndDestroyedNotCounted(t *testing.T) {
+	parallelHostedTest(t)
 	svc, s := mkPoolSvc(t)
 	ctx := context.Background()
 	ensureNode(t, s)
@@ -163,6 +168,7 @@ func TestReleaseAndDestroyedNotCounted(t *testing.T) {
 // T11（确定性交错，两种先后）：建席持 FOR SHARE 未插行 ⇔ 停用持 FOR UPDATE 未数引用。
 // 任一先后都必须恰一成功，不得出现「已停用账号被新席引用」。撤锁 ⇒ 交错下必红（R8）。
 func TestCreateVsDisableSerialized(t *testing.T) {
+	parallelHostedTest(t)
 	t.Run("create first", func(t *testing.T) {
 		svc, s := mkPoolSvc(t)
 		ctx := context.Background()
@@ -233,6 +239,7 @@ func assertNoDisabledWithRef(t *testing.T, s *Store, acctID string) {
 
 // 9.5：条件插入失败区分原因——主键冲突原样返回存储错误，不映射成 account_not_allowed。
 func TestCreateSeatPKConflictIsNotAccountError(t *testing.T) {
+	parallelHostedTest(t)
 	svc, s := mkPoolSvc(t)
 	ensureNode(t, s)
 	a := mkAcct(t, svc, "zzc", "pk")
@@ -248,6 +255,7 @@ func TestCreateSeatPKConflictIsNotAccountError(t *testing.T) {
 // P8／P8'／P9：存量回填（恰一授权 ⇒ 归该用户；多授权／无授权保持无主；已有属主不被覆盖）、ApplySchema 幂等、
 // job op 的 CHECK 收 refresh_cred、仍拒未知 op。
 func TestFrozenR30SchemaBackfillAndJobOp(t *testing.T) {
+	parallelHostedTest(t)
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
 	ins := func(id, owner string) {
@@ -302,6 +310,7 @@ const rollbackResetSQL = `UPDATE g4_account_pool SET state='available', bound_ag
                     WHERE s.account_ref = g4_account_pool.id AND s.state <> 'destroyed')`
 
 func TestRollbackResetSQL(t *testing.T) {
+	parallelHostedTest(t)
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
 	ensureNode(t, s)
@@ -327,6 +336,7 @@ VALUES($1,$1,'api_key','codex','gpt','\x00',1,'x','zzc','bound','ag_legacy')`, i
 // 刷新凭据的 starting（detail=refresh）超时按既有席位处置：只记 error/start_timeout，不吊销、不释放引用。
 // 撤掉 existingSeatStarting 对 refresh 的识别 ⇒ 被当新建回收（Retire＋释放）⇒ 红。
 func TestRefreshStartingTimeoutIsExistingSeat(t *testing.T) {
+	parallelHostedTest(t)
 	o, idp, _, s := mkOrch(t)
 	ctx := context.Background()
 	acct := acctOf(t, o.pool)
@@ -357,6 +367,7 @@ func TestRefreshStartingTimeoutIsExistingSeat(t *testing.T) {
 // T13：存量形态（旧版独占留下的 state='bound'、bound_agent_id 指向旧席）仍可被本人第二席共用——
 // 可选只排除 disabled，不认 bound；R2（下拉恢复只认 available）⇒ 本格红。
 func TestLegacyBoundAccountSharable(t *testing.T) {
+	parallelHostedTest(t)
 	_, s := mkPoolSvc(t)
 	ctx := context.Background()
 	ensureNode(t, s)
@@ -382,6 +393,7 @@ VALUES('acct_legacy','legacy','token_file','codex','gpt','\x00',1,'x','zzc','bou
 // ② Store.CreateSeat 直接用他人账号／无主账号 ⇒ ErrAccountNotAllowed；
 // ③ 列表与下拉的 in_use 不计已销毁席位。
 func TestDefenseInDepthAccountBoundaries(t *testing.T) {
+	parallelHostedTest(t)
 	svc, s := mkPoolSvc(t)
 	ctx := context.Background()
 	ensureNode(t, s)

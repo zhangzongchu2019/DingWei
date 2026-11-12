@@ -10,6 +10,7 @@ import (
 // 反向：把任一档 DiskMB 改回 0（去掉赋值），本格即红。
 
 func TestPlanDiskTiersPinned(t *testing.T) {
+	parallelHostedTest(t)
 	for id, want := range map[string]int64{"2c4g": 8192, "4c8g": 16384} {
 		p, ok := PlanByID(id)
 		if !ok {
@@ -24,6 +25,7 @@ func TestPlanDiskTiersPinned(t *testing.T) {
 // 磁盘闸在 CheckCreate 独立起作用：vCPU／内存／Agent 数都宽裕，只有磁盘不够 4c8g 档 ⇒ plan_exceeds_quota，
 // 剩余 JSON 的 disk_gb 随档位显形（8G 剩 8G，装不下 16G 档）。
 func TestCheckCreateDiskGate(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	big, _ := PlanByID("4c8g")
 	qs, _, _ := mkQuotaSvc(t)

@@ -8,6 +8,7 @@ import (
 )
 
 func TestClaudeTokenFileABI(t *testing.T) {
+	parallelHostedTest(t)
 	// This is a structure-only contract.  It deliberately does not inspect or
 	// accept a real provider login state before an owner-approved ABI exists.
 	for _, raw := range []string{`{}`, `{"opaque":"synthetic"}`} {
@@ -97,6 +98,7 @@ func auditCount(t *testing.T, s *Store, action, target string) int {
 
 // 0.2.1.101（R-V2-ACCOUNT-PER-USER）：属主本人登记／可见／解密边界／换密／停用守卫／启用；管理员只停用启用。
 func TestOwnedAccountLifecycle(t *testing.T) {
+	parallelHostedTest(t)
 	svc, s := mkPoolSvc(t)
 	ctx := context.Background()
 
@@ -197,6 +199,7 @@ func TestOwnedAccountLifecycle(t *testing.T) {
 
 // M1 返修第 16 条④：token_file 类不落内容尾部（页面显示「已入池＋登记时间」）；api_key 类照旧。
 func TestTokenFileDisplayNoContentTail(t *testing.T) {
+	parallelHostedTest(t)
 	svc, _ := mkPoolSvc(t)
 	ctx := context.Background()
 	a, err := svc.RegisterOwned(ctx, "zzc", "team-codex", "token_file", "codex", "gpt", `{"access_token":"abcd1234","refresh_token":"zz"}`)

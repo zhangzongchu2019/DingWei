@@ -35,6 +35,7 @@ func requireCapacityReasons(t *testing.T, err error, want ...string) {
 	}
 }
 func TestCapacityReasonSanitizationAndCompatibility(t *testing.T) {
+	parallelHostedTest(t)
 	raw := []string{"disk", "cpu", "cpu", "/private/credential", "memory", "seat_limit", "policy_invalid"}
 	err := capacityFailure(raw)
 	requireCapacityReasons(t, fmt.Errorf("wrapped: %w", err), "cpu", "memory", "disk", "seat_limit", "load_unknown")
@@ -50,6 +51,7 @@ func TestCapacityReasonSanitizationAndCompatibility(t *testing.T) {
 	requireCapacityReasons(t, &NodeCapacityError{}, "load_unknown")
 }
 func TestCapacityRequestReasonAndModelSelection(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	rev := strings.Repeat("d", 64)
@@ -117,6 +119,7 @@ func TestCapacityRequestReasonAndModelSelection(t *testing.T) {
 	requireCapacityReasons(t, err, "cpu", "memory")
 }
 func TestCapacityStartReasonAndUnknown(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	rev := strings.Repeat("e", 64)

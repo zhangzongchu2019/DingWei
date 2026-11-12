@@ -10,6 +10,7 @@ import (
 )
 
 func TestStartingUntilAgentConnectsElseTimeout(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, idp, _, s := mkOrch(t)
 	out, err := o.Create(ctx, CreateRequest{OwnerLC: "zzc", By: "zzc", Name: "w1", NodeID: "auto",
@@ -49,6 +50,7 @@ func TestStartingUntilAgentConnectsElseTimeout(t *testing.T) {
 
 // MarkOnline 只认 starting → online；别的状态（已 online、升级中、停用、不存在）一律不改、不报错。
 func TestMarkOnlineOnlyFromStarting(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	for _, state := range []string{"online", "busy", "disabled"} {

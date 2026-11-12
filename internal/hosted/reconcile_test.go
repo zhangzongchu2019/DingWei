@@ -27,6 +27,7 @@ func zzPendingSeat(t *testing.T, s *Store, id, nodeID string) {
 
 // 命令必须是 destroy_seat；节点回失败不得标记完成；只清本节点的席位（复验 R3／R4／R5 三刀）。
 func TestZZ_ReconcileSendsDestroyOnlyForThisNodeAndOnlyMarksDoneOnSuccess(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	o, _, _, s := mkOrch(t)
 	zzPendingSeat(t, s, "ag_ra", "nd_free")
@@ -108,6 +109,7 @@ func TestReconcileSeatTimeoutDoesNotStallBatch(t *testing.T) {
 
 // created_by 为空串：归属不明，四操作与销毁一律 not_owner，管理用户也不豁免；什么都不发生。
 func TestEmptyCreatedByRefused(t *testing.T) {
+	parallelHostedTest(t)
 	ctx := context.Background()
 	lc, log, _, _, _, s, _ := mkLifecycle(t)
 	if err := s.CreateSeat(ctx, Seat{AgentID: "ag_orphan", NodeID: "nd_free", CLI: "codex", LLM: "gpt", CredKind: "token_file",

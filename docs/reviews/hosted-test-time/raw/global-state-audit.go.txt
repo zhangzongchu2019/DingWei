@@ -1,0 +1,222 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"go/ast"
+	"go/importer"
+	"go/parser"
+	"go/token"
+	"go/types"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
+	"strings"
+)
+
+type pkgJSON struct {
+	ImportPath, Export, Dir string
+	GoFiles, TestGoFiles    []string
+}
+type entry struct {
+	File     string `json:"file"`
+	Line     int    `json:"line"`
+	Function string `json:"function"`
+	Variable string `json:"variable"`
+	Kind     string `json:"kind"`
+	Package  string `json:"package"`
+}
+
+func main() {
+	root := os.Args[1]
+	cmd := exec.Command("go", "list", "-export", "-deps", "-test", "-json", "./internal/hosted")
+	cmd.Dir = root
+	b, err := cmd.Output()
+	if err != nil {
+		panic(err)
+	}
+	dec := json.NewDecoder(strings.NewReader(string(b)))
+	exports := map[string]string{}
+	var target pkgJSON
+	for {
+		var p pkgJSON
+		if err := dec.Decode(&p); err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		if p.Export != "" {
+			exports[p.ImportPath] = p.Export
+		}
+		if len(p.TestGoFiles) > 0 && strings.HasSuffix(p.ImportPath, "/internal/hosted") {
+			target = p
+		}
+	}
+	fs := token.NewFileSet()
+	var files []*ast.File
+	for _, name := range append(target.GoFiles, target.TestGoFiles...) {
+		f, err := parser.ParseFile(fs, filepath.Join(target.Dir, name), nil, 0)
+		if err != nil {
+			panic(err)
+		}
+		files = append(files, f)
+	}
+	info := &types.Info{Defs: map[*ast.Ident]types.Object{}, Uses: map[*ast.Ident]types.Object{}, Types: map[ast.Expr]types.TypeAndValue{}}
+	imp := importer.ForCompiler(fs, "gc", func(path string) (io.ReadCloser, error) { return os.Open(exports[path]) })
+	conf := types.Config{Importer: imp, GoVersion: "go1.22"}
+	pkg, err := conf.Check(target.ImportPath, fs, files, info)
+	if err != nil {
+		panic(err)
+	}
+	global := func(obj types.Object) bool {
+		v, ok := obj.(*types.Var)
+		return ok && v.Pkg() != nil && v.Parent() == v.Pkg().Scope()
+	}
+	// 局部别名也加入候选；值复制可能产生保守误报，后续逐项人工分类。
+	alias := map[types.Object]types.Object{}
+	var resolve func(ast.Expr) types.Object
+	resolve = func(e ast.Expr) types.Object {
+		switch x := e.(type) {
+		case *ast.Ident:
+			o := info.Uses[x]
+			if o == nil {
+				o = info.Defs[x]
+			}
+			if a := alias[o]; a != nil {
+				return a
+			}
+			if global(o) {
+				return o
+			}
+		case *ast.IndexExpr:
+			return resolve(x.X)
+		case *ast.SelectorExpr:
+			if o := info.Uses[x.Sel]; global(o) {
+				return o
+			}
+			return resolve(x.X)
+		case *ast.StarExpr:
+			return resolve(x.X)
+		case *ast.UnaryExpr:
+			return resolve(x.X)
+		case *ast.SliceExpr:
+			return resolve(x.X)
+		case *ast.ParenExpr:
+			return resolve(x.X)
+		}
+		return nil
+	}
+	for _, f := range files {
+		ast.Inspect(f, func(n ast.Node) bool {
+			if spec, ok := n.(*ast.ValueSpec); ok && len(spec.Names) == len(spec.Values) {
+				for i, id := range spec.Names {
+					if obj := info.Defs[id]; obj != nil && !global(obj) {
+						if g := resolve(spec.Values[i]); g != nil {
+							alias[obj] = g
+						}
+					}
+				}
+			}
+			a, ok := n.(*ast.AssignStmt)
+			if !ok {
+				return true
+			}
+			if len(a.Lhs) == len(a.Rhs) {
+				for i, l := range a.Lhs {
+					if id, ok := l.(*ast.Ident); ok {
+						if g := resolve(a.Rhs[i]); g != nil {
+							o := info.Defs[id]
+							if o == nil {
+								o = info.Uses[id]
+							}
+							if !global(o) {
+								alias[o] = g
+							}
+						}
+					}
+				}
+			}
+			return true
+		})
+	}
+	var writes, refs []entry
+	globals := []string{}
+	for _, n := range pkg.Scope().Names() {
+		if global(pkg.Scope().Lookup(n)) {
+			globals = append(globals, n)
+		}
+	}
+	add := func(dst *[]entry, pos token.Pos, fn string, obj types.Object, kind string) {
+		if obj == nil {
+			return
+		}
+		p := fs.Position(pos)
+		name, _ := filepath.Rel(root, p.Filename)
+		*dst = append(*dst, entry{name, p.Line, fn, obj.Name(), kind, obj.Pkg().Path()})
+	}
+	for _, f := range files {
+		if !strings.HasSuffix(fs.Position(f.Pos()).Filename, "_test.go") {
+			continue
+		}
+		for _, decl := range f.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok {
+				continue
+			}
+			ast.Inspect(fn.Body, func(n ast.Node) bool {
+				switch x := n.(type) {
+				case *ast.Ident:
+					if o := info.Uses[x]; global(o) {
+						add(&refs, x.Pos(), fn.Name.Name, o, "reference")
+					}
+				case *ast.AssignStmt:
+					for _, l := range x.Lhs {
+						add(&writes, l.Pos(), fn.Name.Name, resolve(l), "assignment-or-alias-write")
+					}
+				case *ast.IncDecStmt:
+					add(&writes, x.Pos(), fn.Name.Name, resolve(x.X), "increment")
+				case *ast.RangeStmt:
+					if x.Tok == token.ASSIGN {
+						for _, lhs := range []ast.Expr{x.Key, x.Value} {
+							if lhs != nil {
+								add(&writes, lhs.Pos(), fn.Name.Name, resolve(lhs), "range-assignment")
+							}
+						}
+					}
+				case *ast.SendStmt:
+					add(&writes, x.Pos(), fn.Name.Name, resolve(x.Chan), "channel-send")
+				case *ast.UnaryExpr:
+					if x.Op == token.ARROW {
+						add(&writes, x.Pos(), fn.Name.Name, resolve(x.X), "channel-receive")
+					}
+				case *ast.CallExpr:
+					if s, ok := x.Fun.(*ast.SelectorExpr); ok {
+						add(&writes, s.Pos(), fn.Name.Name, resolve(s.X), "method-call:"+s.Sel.Name)
+					}
+					for _, arg := range x.Args {
+						if g := resolve(arg); g != nil {
+							kind := "call-argument-review"
+							if id, ok := x.Fun.(*ast.Ident); ok && (id.Name == "delete" || id.Name == "clear" || id.Name == "close") {
+								kind = "builtin-mutation:" + id.Name
+							}
+							add(&writes, arg.Pos(), fn.Name.Name, g, kind)
+						}
+					}
+				}
+				return true
+			})
+		}
+	}
+	sort.Slice(writes, func(i, j int) bool {
+		a, b := writes[i], writes[j]
+		if a.File != b.File {
+			return a.File < b.File
+		}
+		return a.Line < b.Line
+	})
+	result := map[string]any{"package": target.ImportPath, "test_files": len(target.TestGoFiles), "package_variables": globals, "write_candidates": writes, "global_references": refs, "type_checked": true}
+	out, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Println(string(out))
+}

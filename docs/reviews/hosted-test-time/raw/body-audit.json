@@ -1,0 +1,175 @@
+{
+  "base": "329eb9f9c45d2d785a0429b01eaa0fa5264fe15d",
+  "top_level_before": 185,
+  "top_level_after": 185,
+  "restored_bodies": 185,
+  "scheduled_parallel": 183,
+  "serial_global_writers": [
+    "TestReconcileSeatTimeoutDoesNotStallBatch",
+    "TestUpgradeUnknownPlanNotSwallowed"
+  ],
+  "original_files_unchanged_after_restoration": true,
+  "products_changed": false,
+  "files": [
+    {
+      "file": "internal/hosted/abort_test.go",
+      "scheduled": 1,
+      "original_sha256": "5916c92935dd17b6638e727e8acd2d08dd414fa8dd54f7e33b361332f99cc44f"
+    },
+    {
+      "file": "internal/hosted/account_share_test.go",
+      "scheduled": 12,
+      "original_sha256": "2922d3b03cf65570d6c634ddc78b5b7b86f31595aab132f673aaba997364b2ce"
+    },
+    {
+      "file": "internal/hosted/backup_test.go",
+      "scheduled": 10,
+      "original_sha256": "389ee280690881cec96b729329ed0672668812dafa2142d56c863a3e223decbc"
+    },
+    {
+      "file": "internal/hosted/claude_model_test.go",
+      "scheduled": 3,
+      "original_sha256": "0d2accc9ab3934bfb5ed5f5278032e3dce49e6abcc7b3bd4e48f7ec20bb094b0"
+    },
+    {
+      "file": "internal/hosted/keys_test.go",
+      "scheduled": 5,
+      "original_sha256": "9fccaf3b08ba928eb181250a4ba51d2f8d080793eabb857dc82ba425ccdad03b"
+    },
+    {
+      "file": "internal/hosted/lifecycle_online_test.go",
+      "scheduled": 3,
+      "original_sha256": "da7b759c4903dbb35145246eb3c73057541da0359d00cba7d4663040b8facbb1"
+    },
+    {
+      "file": "internal/hosted/lifecycle_race_test.go",
+      "scheduled": 9,
+      "original_sha256": "7ba3a9bf7060ae3e07a122226bc6cf78aaa15e096faf5ab3e58c676629d15ce6"
+    },
+    {
+      "file": "internal/hosted/lifecycle_test.go",
+      "scheduled": 23,
+      "original_sha256": "9ce622951949e73a89ec23e0521e4670823452cb356a466b0f52310505a3784e"
+    },
+    {
+      "file": "internal/hosted/login_test.go",
+      "scheduled": 22,
+      "original_sha256": "1b6e6ec630a81c9363efefd7bd5d040bd8a06a61432c8660420d07a43fdff857"
+    },
+    {
+      "file": "internal/hosted/minimum_plan_test.go",
+      "scheduled": 4,
+      "original_sha256": "5c218384a19ddca51e82a749fa5370f0cd71811a5850a0ede252f7c28d1e8e2e"
+    },
+    {
+      "file": "internal/hosted/node_quota_login_test.go",
+      "scheduled": 2,
+      "original_sha256": "c401f5c2fafa6d0c1a4099c611066980aa2c496dc003ec5941d35a0cba604677"
+    },
+    {
+      "file": "internal/hosted/node_quota_test.go",
+      "scheduled": 8,
+      "original_sha256": "21eb21fc8ec16ce9a7bc31ccd52c1fe9b19991d5939bb698b4977f3d0293723e"
+    },
+    {
+      "file": "internal/hosted/nodecred_test.go",
+      "scheduled": 1,
+      "original_sha256": "4a9c7217c9ce7324e437ba5e5b31e77a57d86a2cffb2072b1cc13a6617b40392"
+    },
+    {
+      "file": "internal/hosted/online_test.go",
+      "scheduled": 2,
+      "original_sha256": "4ece7d2f8f1082db10acbbef7db7a89071ebfec567ad94a49ba70c3d9a9eb7db"
+    },
+    {
+      "file": "internal/hosted/orchestrator_test.go",
+      "scheduled": 18,
+      "original_sha256": "c5648cd6a0e626f7114952b39c234c7947cb2655140926b5bf30e60182e98869"
+    },
+    {
+      "file": "internal/hosted/plans_test.go",
+      "scheduled": 2,
+      "original_sha256": "f30483f8ceee9b847e78be3267bbfff96e27dcc863fe862c17c4d447de1c6e83"
+    },
+    {
+      "file": "internal/hosted/poolsvc_test.go",
+      "scheduled": 3,
+      "original_sha256": "57b9bdb1d731e6d35f004754584d727d9cc85d1efb0a08d4efd2a89a29b597fc"
+    },
+    {
+      "file": "internal/hosted/quotasvc_test.go",
+      "scheduled": 3,
+      "original_sha256": "e51a0ef6bd180d2edc657946238c72d9574827e507299b9cad3abe300665c7fc"
+    },
+    {
+      "file": "internal/hosted/r31_hosted_test.go",
+      "scheduled": 10,
+      "original_sha256": "6ffce4b5b9974abc4ddc53852df0447b73329c47d5b8f5c83d56418144bb37f7"
+    },
+    {
+      "file": "internal/hosted/r31_legacy_fixture_test.go",
+      "scheduled": 0,
+      "original_sha256": "269804b892fe81b8792fef4b53a2f1f1e328d839b69a92f292ae0c8cd18888ce"
+    },
+    {
+      "file": "internal/hosted/readapi_test.go",
+      "scheduled": 6,
+      "original_sha256": "03be7852c876edd9c663a8c00f01d4526d0e44c956496797500cc9fef59a965f"
+    },
+    {
+      "file": "internal/hosted/reconcile_test.go",
+      "scheduled": 2,
+      "original_sha256": "e87afad839f7d6de1b3a29489122656e0c7d97e296d37d4936b5e416539b197c"
+    },
+    {
+      "file": "internal/hosted/refresh_cred_test.go",
+      "scheduled": 8,
+      "original_sha256": "1074f02a66c1eee5face23ee9f3340df532ad0facc6fd5aa5b6366522aa7ce8f"
+    },
+    {
+      "file": "internal/hosted/registry_test.go",
+      "scheduled": 1,
+      "original_sha256": "e35dcd617b3d1c5ea18878b34b850b68a85115d355d0eeb4563cea4f101c7cd3"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reason_test.go",
+      "scheduled": 3,
+      "original_sha256": "a56caf754ccfe9d84da3a8f70f02ea4d9a38db76f401cb368e2edc940aa42eae"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_reply_test.go",
+      "scheduled": 3,
+      "original_sha256": "26bdde71e1b5ed59c40a5aa1eb329c7fdb6ac7a3aeb1ffc78fb59f2ebd12c8ea"
+    },
+    {
+      "file": "internal/hosted/seat_capacity_test.go",
+      "scheduled": 3,
+      "original_sha256": "80f79b9f52ae960d4becf989ed3f83ecf7aaa0eafacfb2dc42765ef9979e45c9"
+    },
+    {
+      "file": "internal/hosted/softquota_notice_test.go",
+      "scheduled": 1,
+      "original_sha256": "591d59bf0951c14489fd0a9798c2f94afa74b45d9ac3a6494d01f56cc90e3829"
+    },
+    {
+      "file": "internal/hosted/softquota_release_test.go",
+      "scheduled": 3,
+      "original_sha256": "4c2d4634816ccd76946ee3b2db6890e0bea8c6f15ab58f6d6788f787e2091fb9"
+    },
+    {
+      "file": "internal/hosted/softquota_replay_test.go",
+      "scheduled": 3,
+      "original_sha256": "c80b3fc5253d529ca3d1bbee25d0b628c5bb38d48095559138b34d6fd461edce"
+    },
+    {
+      "file": "internal/hosted/store_test.go",
+      "scheduled": 8,
+      "original_sha256": "e05211cd998391d283e17ffe200d8501418078e719db407abda066c3e5aa8294"
+    },
+    {
+      "file": "internal/hosted/tokensvc_test.go",
+      "scheduled": 1,
+      "original_sha256": "fbcd8bd13788eb557864bea308d2f47a2a68f2e0233eb1450f9863491c84c31a"
+    }
+  ]
+}

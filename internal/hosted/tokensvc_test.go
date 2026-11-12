@@ -6,6 +6,7 @@ import (
 )
 
 func TestTokenWriteBackAndUnbindPrep(t *testing.T) {
+	parallelHostedTest(t)
 	svc, s := mkPoolSvc(t)
 	ctx := context.Background()
 
