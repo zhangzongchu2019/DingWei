@@ -1,0 +1,37 @@
+{
+  "source": "prodops supplement d48c6fd6595a551bd351078f6cc8b5b0d7ea0817",
+  "storageKey": "same owner/agent/session_name and generation",
+  "generation": "0fda970aaff3905c61684736ec808452",
+  "seq": [
+    3907,
+    3953
+  ],
+  "kindCounts": {
+    "user_input": 14,
+    "assistant_text": 12,
+    "tool_call": 13,
+    "state_change": 8
+  },
+  "userInputSessionId": "",
+  "claudeSessionId": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+  "queuedInputTurnId": "",
+  "knownTurnIds": [
+    "8d0b99cd394a4e6dbd3c6e87e09594c3",
+    "fb86893a830448d7bd5450c307fe8d2e",
+    "123f55eecf9a487e976eb3dd540697e6"
+  ],
+  "turnOverlapCount": 7,
+  "remainingTurnIds": "synthetic placeholders because supplement only supplies first three",
+  "switchPageIds": [
+    "bc19e89c-41f7-4109-ae86-660ac1ef39dc",
+    "1be22a87-c900-4378-87b7-2c862ffc7c1d",
+    "83e9a02a-e451-488e-a699-c62fa95ae27e"
+  ],
+  "scenarios": [
+    "refresh all current 47",
+    "realtime inputs from history then Claude-side events by SSE",
+    "upward pagination into two older session-id values then current id",
+    "same latest page with session_id transitions bc19 -> 1be22 -> 83e9"
+  ],
+  "notes": "Response bodies synthetic; current window kind/seq order follows raw. Older pagination records are diagnostic transition fixtures, not claimed as captured production seq."
+}

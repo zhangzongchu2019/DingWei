@@ -1,0 +1,109 @@
+database=/var/lib/dingwei-dw123/workpulse-history.db
+open=mode=ro; PRAGMA query_only=ON
+window=[2026-11-12T12:40:00Z,2026-11-12T14:40:00Z)
+SCHEMA session_history_event: CREATE TABLE session_history_event (
+ owner_key TEXT NOT NULL,
+ agent_key_id TEXT NOT NULL,
+ session_name TEXT NOT NULL,
+ generation TEXT NOT NULL,
+ seq INTEGER NOT NULL,
+ event_id TEXT NOT NULL UNIQUE,
+ received_at_ms INTEGER NOT NULL,
+ event_type TEXT NOT NULL,
+ payload_json BLOB NOT NULL,
+ record_bytes INTEGER NOT NULL,
+ PRIMARY KEY(owner_key,agent_key_id,session_name,generation,seq)
+)
+SCHEMA session_history_generation: CREATE TABLE session_history_generation (
+ owner_key TEXT NOT NULL,
+ agent_key_id TEXT NOT NULL,
+ session_name TEXT NOT NULL,
+ generation TEXT NOT NULL,
+ next_seq INTEGER NOT NULL,
+ oldest_seq INTEGER NOT NULL DEFAULT 0,
+ newest_seq INTEGER NOT NULL DEFAULT 0,
+ gap_through_seq INTEGER NOT NULL DEFAULT 0,
+ retained_bytes INTEGER NOT NULL DEFAULT 0,
+ PRIMARY KEY(owner_key,agent_key_id,session_name),
+ UNIQUE(owner_key,agent_key_id,session_name,generation)
+)
+SCHEMA session_history_gap: CREATE TABLE session_history_gap (
+ gap_id TEXT PRIMARY KEY,
+ owner_key TEXT NOT NULL,
+ agent_key_id TEXT NOT NULL,
+ session_name TEXT NOT NULL,
+ generation TEXT NOT NULL,
+ after_seq INTEGER NOT NULL,
+ before_seq INTEGER,
+ started_at_ms INTEGER NOT NULL,
+ ended_at_ms INTEGER,
+ reason TEXT NOT NULL,
+ lost_event_count INTEGER NOT NULL DEFAULT 1
+)
+SCHEMA session_history_runtime_state: CREATE TABLE session_history_runtime_state (
+ singleton INTEGER PRIMARY KEY CHECK(singleton=1),
+ enabled INTEGER NOT NULL,
+ changed_at_ms INTEGER NOT NULL,
+ disabled_since_ms INTEGER,
+ initialized INTEGER NOT NULL DEFAULT 0,
+ retained_bytes INTEGER NOT NULL DEFAULT 0
+)
+SCHEMA session_history_migrations: CREATE TABLE session_history_migrations(version TEXT PRIMARY KEY,digest TEXT NOT NULL,applied_at TEXT NOT NULL)
+RUNTIME enabled,initialized: (1, 1)
+TARGET owner_key,agent_key_id,session_name,count,min_seq,max_seq: [('u_zhangzongchu', 'ag_52ed2bd653dc7f499b9954cd2bfa1372', 'opus50tc2k', 47, 3907, 3953)]
+event_type,count: [('session_event', 47)]
+kind,count,distinct_session_id,distinct_turn_id,null_session_id,null_turn_id:
+assistant_text | 12 | 1 | 7 | 0 | 0
+state_change | 8 | 1 | 7 | 0 | 0
+tool_call | 13 | 1 | 7 | 0 | 0
+user_input | 14 | 1 | 8 | 0 | 0
+state_change subtype,change,count: [('success', 'turn_completed', 8)]
+user_input lifecycle,count: [('admitted', 7), ('queued', 7)]
+latest 50: kind | received_at_utc | seq
+state_change | 2026-11-12T14:35:08.619Z | 3953
+assistant_text | 2026-11-12T14:35:08.587Z | 3952
+tool_call | 2026-11-12T14:35:06.845Z | 3951
+user_input | 2026-11-12T14:35:05.063Z | 3950
+user_input | 2026-11-12T14:35:03.637Z | 3949
+state_change | 2026-11-12T14:33:23.360Z | 3948
+assistant_text | 2026-11-12T14:33:23.344Z | 3947
+tool_call | 2026-11-12T14:33:15.536Z | 3946
+tool_call | 2026-11-12T14:33:05.068Z | 3945
+state_change | 2026-11-12T14:07:48.537Z | 3944
+assistant_text | 2026-11-12T14:07:48.493Z | 3943
+tool_call | 2026-11-12T14:07:31.982Z | 3942
+assistant_text | 2026-11-12T14:07:27.575Z | 3941
+tool_call | 2026-11-12T14:07:24.247Z | 3940
+assistant_text | 2026-11-12T14:07:23.391Z | 3939
+tool_call | 2026-11-12T14:07:08.241Z | 3938
+user_input | 2026-11-12T14:06:56.126Z | 3937
+user_input | 2026-11-12T14:06:53.626Z | 3936
+state_change | 2026-11-12T14:05:09.805Z | 3935
+assistant_text | 2026-11-12T14:05:09.775Z | 3934
+tool_call | 2026-11-12T14:05:07.720Z | 3933
+user_input | 2026-11-12T14:05:05.403Z | 3932
+user_input | 2026-11-12T14:05:03.668Z | 3931
+state_change | 2026-11-12T13:49:34.868Z | 3930
+assistant_text | 2026-11-12T13:49:34.775Z | 3929
+tool_call | 2026-11-12T13:49:31.095Z | 3928
+user_input | 2026-11-12T13:49:28.367Z | 3927
+user_input | 2026-11-12T13:49:26.363Z | 3926
+state_change | 2026-11-12T13:39:25.764Z | 3925
+assistant_text | 2026-11-12T13:39:25.735Z | 3924
+tool_call | 2026-11-12T13:39:19.725Z | 3923
+tool_call | 2026-11-12T13:39:07.537Z | 3922
+assistant_text | 2026-11-12T13:39:05.738Z | 3921
+user_input | 2026-11-12T13:39:04.351Z | 3920
+user_input | 2026-11-12T13:39:03.133Z | 3919
+state_change | 2026-11-12T13:35:10.727Z | 3918
+assistant_text | 2026-11-12T13:35:10.691Z | 3917
+tool_call | 2026-11-12T13:35:07.733Z | 3916
+user_input | 2026-11-12T13:35:05.523Z | 3915
+user_input | 2026-11-12T13:35:03.680Z | 3914
+state_change | 2026-11-12T13:05:19.835Z | 3913
+assistant_text | 2026-11-12T13:05:19.803Z | 3912
+tool_call | 2026-11-12T13:05:15.143Z | 3911
+assistant_text | 2026-11-12T13:05:10.624Z | 3910
+tool_call | 2026-11-12T13:05:07.002Z | 3909
+user_input | 2026-11-12T13:05:05.123Z | 3908
+user_input | 2026-11-12T13:05:03.508Z | 3907

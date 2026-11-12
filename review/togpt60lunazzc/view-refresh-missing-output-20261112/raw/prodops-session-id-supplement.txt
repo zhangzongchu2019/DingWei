@@ -1,0 +1,30 @@
+database=/var/lib/dingwei-dw123/workpulse-history.db; mode=ro; PRAGMA query_only=ON
+history_key u_zhangzongchu ag_52ed2bd653dc7f499b9954cd2bfa1372 opus50tc2k
+requested_window=[2026-11-12T12:40:00Z,2026-11-12T14:40:00Z)
+current_generation,count: [('0fda970aaff3905c61684736ec808452', 47)]
+kind | payload.session_id | count
+assistant_text | 83e9a02a-e451-488e-a699-c62fa95ae27e | 12
+state_change | 83e9a02a-e451-488e-a699-c62fa95ae27e | 8
+tool_call | 83e9a02a-e451-488e-a699-c62fa95ae27e | 13
+user_input |  | 14
+user_input_turn_distinct=8; earliest_three=['', '8d0b99cd394a4e6dbd3c6e87e09594c3', 'fb86893a830448d7bd5450c307fe8d2e']
+user_input_turn_first_times=[('', '2026-11-12T13:05:03.508Z'), ('8d0b99cd394a4e6dbd3c6e87e09594c3', '2026-11-12T13:05:05.123Z'), ('fb86893a830448d7bd5450c307fe8d2e', '2026-11-12T13:35:05.523Z')]
+assistant_text_turn_distinct=7; earliest_three=['8d0b99cd394a4e6dbd3c6e87e09594c3', 'fb86893a830448d7bd5450c307fe8d2e', '123f55eecf9a487e976eb3dd540697e6']
+assistant_text_turn_first_times=[('8d0b99cd394a4e6dbd3c6e87e09594c3', '2026-11-12T13:05:10.624Z'), ('fb86893a830448d7bd5450c307fe8d2e', '2026-11-12T13:35:10.691Z'), ('123f55eecf9a487e976eb3dd540697e6', '2026-11-12T13:39:05.738Z')]
+turn_intersection_count=7
+preceding_window=[2026-11-11T12:40:00Z,2026-11-12T12:40:00Z)
+preceding_generation,count: [('0fda970aaff3905c61684736ec808452', 1405)]
+payload.session_id | count | first_utc | last_utc
+'' | 346 | 2026-11-11T13:04:55.760Z | 2026-11-12T12:38:33.499Z
+'bc19e89c-41f7-4109-ae86-660ac1ef39dc' | 291 | 2026-11-11T13:05:21.130Z | 2026-11-12T01:50:24.617Z
+'1be22a87-c900-4378-87b7-2c862ffc7c1d' | 259 | 2026-11-12T02:00:45.353Z | 2026-11-12T04:36:57.490Z
+'83e9a02a-e451-488e-a699-c62fa95ae27e' | 509 | 2026-11-12T04:57:23.455Z | 2026-11-12T12:38:41.719Z
+combined_26h_session_ids: [('',), ('1be22a87-c900-4378-87b7-2c862ffc7c1d',), ('83e9a02a-e451-488e-a699-c62fa95ae27e',), ('bc19e89c-41f7-4109-ae86-660ac1ef39dc',)]
+combined_26h_session_id,count,first,last:
+'' | 360 | 2026-11-11T13:04:55.760Z | 2026-11-12T14:35:05.063Z
+'bc19e89c-41f7-4109-ae86-660ac1ef39dc' | 291 | 2026-11-11T13:05:21.130Z | 2026-11-12T01:50:24.617Z
+'1be22a87-c900-4378-87b7-2c862ffc7c1d' | 259 | 2026-11-12T02:00:45.353Z | 2026-11-12T04:36:57.490Z
+'83e9a02a-e451-488e-a699-c62fa95ae27e' | 542 | 2026-11-12T04:57:23.455Z | 2026-11-12T14:35:08.619Z
+user_input lifecycle | empty_session_id | empty_turn_id | count
+admitted | 1 | 0 | 7
+queued | 1 | 1 | 7

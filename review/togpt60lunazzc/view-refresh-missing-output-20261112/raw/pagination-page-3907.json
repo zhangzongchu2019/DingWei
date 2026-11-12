@@ -1,0 +1,99 @@
+{
+  "generation": "0fda970aaff3905c61684736ec808452",
+  "high_water": 3953,
+  "events": [
+    {
+      "cursor": {
+        "generation": "0fda970aaff3905c61684736ec808452",
+        "seq": 3881
+      },
+      "event_id": "older-3881",
+      "received_at": "2026-11-11T13:44:41.000Z",
+      "event": "{\"kind\":\"user_input\",\"text\":\"FIXTURE_USER_3881\",\"session_id\":\"\",\"turn_id\":\"\",\"delivery_id\":\"input-queued-3881\",\"data\":{\"lifecycle\":\"queued\"}}"
+    },
+    {
+      "cursor": {
+        "generation": "0fda970aaff3905c61684736ec808452",
+        "seq": 3882
+      },
+      "event_id": "older-3882",
+      "received_at": "2026-11-11T13:44:42.000Z",
+      "event": "{\"kind\":\"user_input\",\"text\":\"FIXTURE_USER_3882\",\"session_id\":\"\",\"turn_id\":\"8d0b99cd394a4e6dbd3c6e87e09594c3\",\"delivery_id\":\"input-8d0b99cd394a4e6dbd3c6e87e09594c3\",\"data\":{\"lifecycle\":\"admitted\"}}"
+    },
+    {
+      "cursor": {
+        "generation": "0fda970aaff3905c61684736ec808452",
+        "seq": 3883
+      },
+      "event_id": "older-3883",
+      "received_at": "2026-11-11T13:44:43.000Z",
+      "event": "{\"kind\":\"tool_call\",\"text\":\"FIXTURE_TOOL_3883\",\"session_id\":\"bc19e89c-41f7-4109-ae86-660ac1ef39dc\",\"turn_id\":\"8d0b99cd394a4e6dbd3c6e87e09594c3\",\"delivery_id\":\"reply-1\"}"
+    },
+    {
+      "cursor": {
+        "generation": "0fda970aaff3905c61684736ec808452",
+        "seq": 3884
+      },
+      "event_id": "older-3884",
+      "received_at": "2026-11-11T13:44:44.000Z",
+      "event": "{\"kind\":\"assistant_text\",\"text\":\"FIXTURE_ASSISTANT_3884\",\"session_id\":\"bc19e89c-41f7-4109-ae86-660ac1ef39dc\",\"turn_id\":\"8d0b99cd394a4e6dbd3c6e87e09594c3\",\"delivery_id\":\"reply-1\"}"
+    },
+    {
+      "cursor": {
+        "generation": "0fda970aaff3905c61684736ec808452",
+        "seq": 3885
+      },
+      "event_id": "older-3885",
+      "received_at": "2026-11-11T13:44:45.000Z",
+      "event": "{\"kind\":\"state_change\",\"text\":\"\",\"session_id\":\"bc19e89c-41f7-4109-ae86-660ac1ef39dc\",\"turn_id\":\"8d0b99cd394a4e6dbd3c6e87e09594c3\",\"delivery_id\":\"reply-1\",\"data\":{\"change\":\"turn_completed\",\"subtype\":\"success\"}}"
+    },
+    {
+      "cursor": {
+        "generation": "0fda970aaff3905c61684736ec808452",
+        "seq": 3886
+      },
+      "event_id": "older-3886",
+      "received_at": "2026-11-11T13:44:46.000Z",
+      "event": "{\"kind\":\"user_input\",\"text\":\"FIXTURE_USER_3886\",\"session_id\":\"\",\"turn_id\":\"\",\"delivery_id\":\"input-queued-3886\",\"data\":{\"lifecycle\":\"queued\"}}"
+    },
+    {
+      "cursor": {
+        "generation": "0fda970aaff3905c61684736ec808452",
+        "seq": 3887
+      },
+      "event_id": "older-3887",
+      "received_at": "2026-11-11T13:44:47.000Z",
+      "event": "{\"kind\":\"user_input\",\"text\":\"FIXTURE_USER_3887\",\"session_id\":\"\",\"turn_id\":\"fb86893a830448d7bd5450c307fe8d2e\",\"delivery_id\":\"input-fb86893a830448d7bd5450c307fe8d2e\",\"data\":{\"lifecycle\":\"admitted\"}}"
+    },
+    {
+      "cursor": {
+        "generation": "0fda970aaff3905c61684736ec808452",
+        "seq": 3888
+      },
+      "event_id": "older-3888",
+      "received_at": "2026-11-11T13:44:48.000Z",
+      "event": "{\"kind\":\"tool_call\",\"text\":\"FIXTURE_TOOL_3888\",\"session_id\":\"1be22a87-c900-4378-87b7-2c862ffc7c1d\",\"turn_id\":\"fb86893a830448d7bd5450c307fe8d2e\",\"delivery_id\":\"reply-2\"}"
+    },
+    {
+      "cursor": {
+        "generation": "0fda970aaff3905c61684736ec808452",
+        "seq": 3889
+      },
+      "event_id": "older-3889",
+      "received_at": "2026-11-11T13:44:49.000Z",
+      "event": "{\"kind\":\"assistant_text\",\"text\":\"FIXTURE_ASSISTANT_3889\",\"session_id\":\"1be22a87-c900-4378-87b7-2c862ffc7c1d\",\"turn_id\":\"fb86893a830448d7bd5450c307fe8d2e\",\"delivery_id\":\"reply-2\"}"
+    },
+    {
+      "cursor": {
+        "generation": "0fda970aaff3905c61684736ec808452",
+        "seq": 3890
+      },
+      "event_id": "older-3890",
+      "received_at": "2026-11-11T13:44:50.000Z",
+      "event": "{\"kind\":\"state_change\",\"text\":\"\",\"session_id\":\"1be22a87-c900-4378-87b7-2c862ffc7c1d\",\"turn_id\":\"fb86893a830448d7bd5450c307fe8d2e\",\"delivery_id\":\"reply-2\",\"data\":{\"change\":\"turn_completed\",\"subtype\":\"success\"}}"
+    }
+  ],
+  "gaps": [],
+  "has_older": false,
+  "before_seq": null
+}
