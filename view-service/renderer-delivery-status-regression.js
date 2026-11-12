@@ -202,17 +202,22 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
 
     await page.evaluate(()=>{window.__unknownUxTestNow=Date.parse('2026-11-11T00:00:00Z');window.__viewUnknownUxNow=()=>window.__unknownUxTestNow;resetConversation();inboxLagState.record=null;inboxLagState.state='unknown';refreshUnknownDeliveryViews();});
     await input('persist-one'); await unknownStatus('persist-one');
-    await page.locator('.waiting-item[data-delivery-id="persist-one"] .unknown-untrack-btn').click();
-    await page.waitForFunction(()=>Array.from({length:localStorage.length},(_,i)=>localStorage.key(i)).some(k=>k?.endsWith(':persist-one')));
-    await page.reload({waitUntil:'domcontentloaded'});
-    await page.waitForFunction(()=>stats.sessionName==='local-fixture');
-    await page.evaluate(()=>{
-      clearInterval(statusTimer);window.controlCalls=[];window.retryCalls=[];
-      window.C2_CONTROL_TRANSPORT={send:async msg=>{window.controlCalls.push(msg);if(msg.kind==='retry')window.retryCalls.push(msg);return {ok:true};}};
-      resetConversation();applyStatusData({session:'local-fixture'});finishTimelineReplay(false);
-    });
-    await input('persist-one'); await unknownStatus('persist-one');
     await checks.check('UNTRACK_PERSISTS_ACROSS_RELOAD', async()=>{
+      const storageKey='dw-view-unknown-untracked-v1:'+encodeURIComponent('local-fixture')+':persist-one';
+      await page.locator('.waiting-item[data-delivery-id="persist-one"] .unknown-untrack-btn').click();
+      let waitError='';
+      try{await page.waitForFunction(key=>localStorage.getItem(key)!==null,storageKey,{timeout:1000});}
+      catch(error){waitError=error.message;}
+      const storedKeys=await page.evaluate(()=>Array.from({length:localStorage.length},(_,i)=>localStorage.key(i)));
+      assert.ok(!waitError&&storedKeys.includes(storageKey),`UNTRACK_PERSISTS_ACROSS_RELOAD: localStorage 标记未写入；wait=${waitError||'key absent'} keys=${JSON.stringify(storedKeys)}`);
+      await page.reload({waitUntil:'domcontentloaded'});
+      await page.waitForFunction(()=>stats.sessionName==='local-fixture');
+      await page.evaluate(()=>{
+        clearInterval(statusTimer);window.controlCalls=[];window.retryCalls=[];
+        window.C2_CONTROL_TRANSPORT={send:async msg=>{window.controlCalls.push(msg);if(msg.kind==='retry')window.retryCalls.push(msg);return {ok:true};}};
+        resetConversation();applyStatusData({session:'local-fixture'});finishTimelineReplay(false);
+      });
+      await input('persist-one'); await unknownStatus('persist-one');
       const row=page.locator('.waiting-item[data-delivery-id="persist-one"]');
       assert.strictEqual(await row.count(),1);
       assert.strictEqual(await row.isHidden(),true,`session=${await page.evaluate(()=>stats.sessionName)} restored=${JSON.stringify(await page.evaluate(()=>[...locallyUntrackedDeliveries]))} keys=${JSON.stringify(await page.evaluate(()=>Array.from({length:localStorage.length},(_,i)=>localStorage.key(i))))}`);
