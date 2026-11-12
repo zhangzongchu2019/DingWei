@@ -1,0 +1,1082 @@
+[
+  {
+    "seq": 3907,
+    "event_id": "1ba1438e5b4d4358b5c95ea53975b024",
+    "received_at_ms": 1794488703508,
+    "event_type": "session_event",
+    "record_bytes": 649,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "queued",
+        "source": "agent",
+        "display_name": "xxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3346,
+        "enqueued_at": 1794488702.8421953
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003346:queued",
+      "delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52",
+      "turn_id": "",
+      "origin_delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52"
+    }
+  },
+  {
+    "seq": 3908,
+    "event_id": "43dde35bfb1e47268de9d75f21125b2c",
+    "received_at_ms": 1794488705123,
+    "event_type": "session_event",
+    "record_bytes": 720,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "admitted",
+        "source": "agent",
+        "display_name": "xxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3346,
+        "enqueued_at": 1794488702.8421953,
+        "admitted_at": 1794488704.4625986
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003346:admitted",
+      "delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52",
+      "turn_id": "8d0b99cd394a4e6dbd3c6e87e09594c3",
+      "origin_delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52"
+    }
+  },
+  {
+    "seq": 3909,
+    "event_id": "f6813181973d4a8e8fe2c62302219b86",
+    "received_at_ms": 1794488707002,
+    "event_type": "session_event",
+    "record_bytes": 1000,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "510",
+      "delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52",
+      "turn_id": "8d0b99cd394a4e6dbd3c6e87e09594c3",
+      "ts": 1794488706341,
+      "origin_delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52"
+    }
+  },
+  {
+    "seq": 3910,
+    "event_id": "47201c7e3e024955b83352d862c3ce0f",
+    "received_at_ms": 1794488710624,
+    "event_type": "session_event",
+    "record_bytes": 691,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "511",
+      "delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52",
+      "turn_id": "8d0b99cd394a4e6dbd3c6e87e09594c3",
+      "ts": 1794488709963,
+      "origin_delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52"
+    }
+  },
+  {
+    "seq": 3911,
+    "event_id": "b9aaa5d1ca6c4302880981ba01386e44",
+    "received_at_ms": 1794488715143,
+    "event_type": "session_event",
+    "record_bytes": 1490,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "512",
+      "delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52",
+      "turn_id": "8d0b99cd394a4e6dbd3c6e87e09594c3",
+      "ts": 1794488714482,
+      "origin_delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52"
+    }
+  },
+  {
+    "seq": 3912,
+    "event_id": "62a3e319f06b488f8674f2c19718a86d",
+    "received_at_ms": 1794488719803,
+    "event_type": "session_event",
+    "record_bytes": 1544,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "513",
+      "delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52",
+      "turn_id": "8d0b99cd394a4e6dbd3c6e87e09594c3",
+      "ts": 1794488719142,
+      "origin_delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52"
+    }
+  },
+  {
+    "seq": 3913,
+    "event_id": "da922f3558244d959fe38e6c534e1c58",
+    "received_at_ms": 1794488719835,
+    "event_type": "session_event",
+    "record_bytes": 695,
+    "payload": {
+      "kind": "state_change",
+      "text": "",
+      "data": {
+        "change": "turn_completed",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 3,
+        "cost_usd": 31.321672999999993,
+        "admitted_at": 1794488704.449556,
+        "processed_at": 1794488719.1588187
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "514",
+      "delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52",
+      "turn_id": "8d0b99cd394a4e6dbd3c6e87e09594c3",
+      "ts": 1794488719173,
+      "origin_delivery_id": "dw-dlv_34fc7ead5ce4a1f5310d31e825339d52"
+    }
+  },
+  {
+    "seq": 3914,
+    "event_id": "109e4edf198f49bf8333420a73c89fb6",
+    "received_at_ms": 1794490503680,
+    "event_type": "session_event",
+    "record_bytes": 648,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "queued",
+        "source": "agent",
+        "display_name": "xxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3347,
+        "enqueued_at": 1794490503.013107
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003347:queued",
+      "delivery_id": "dw-dlv_a9f5dbef641a7ad9d245e66fd1bca180",
+      "turn_id": "",
+      "origin_delivery_id": "dw-dlv_a9f5dbef641a7ad9d245e66fd1bca180"
+    }
+  },
+  {
+    "seq": 3915,
+    "event_id": "9db1c52957114c9c8f7f666c458a7b3e",
+    "received_at_ms": 1794490505523,
+    "event_type": "session_event",
+    "record_bytes": 719,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "admitted",
+        "source": "agent",
+        "display_name": "xxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3347,
+        "enqueued_at": 1794490503.013107,
+        "admitted_at": 1794490504.8616302
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003347:admitted",
+      "delivery_id": "dw-dlv_a9f5dbef641a7ad9d245e66fd1bca180",
+      "turn_id": "fb86893a830448d7bd5450c307fe8d2e",
+      "origin_delivery_id": "dw-dlv_a9f5dbef641a7ad9d245e66fd1bca180"
+    }
+  },
+  {
+    "seq": 3916,
+    "event_id": "49afc816b06348fb94ca24ae4efd0084",
+    "received_at_ms": 1794490507733,
+    "event_type": "session_event",
+    "record_bytes": 1091,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "515",
+      "delivery_id": "dw-dlv_a9f5dbef641a7ad9d245e66fd1bca180",
+      "turn_id": "fb86893a830448d7bd5450c307fe8d2e",
+      "ts": 1794490507071,
+      "origin_delivery_id": "dw-dlv_a9f5dbef641a7ad9d245e66fd1bca180"
+    }
+  },
+  {
+    "seq": 3917,
+    "event_id": "1b47b875ca574cc4a2f87cb190a98e2a",
+    "received_at_ms": 1794490510691,
+    "event_type": "session_event",
+    "record_bytes": 758,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "516",
+      "delivery_id": "dw-dlv_a9f5dbef641a7ad9d245e66fd1bca180",
+      "turn_id": "fb86893a830448d7bd5450c307fe8d2e",
+      "ts": 1794490510029,
+      "origin_delivery_id": "dw-dlv_a9f5dbef641a7ad9d245e66fd1bca180"
+    }
+  },
+  {
+    "seq": 3918,
+    "event_id": "1db773fb2edf4c0f8d11220d4e2585dd",
+    "received_at_ms": 1794490510727,
+    "event_type": "session_event",
+    "record_bytes": 695,
+    "payload": {
+      "kind": "state_change",
+      "text": "",
+      "data": {
+        "change": "turn_completed",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 2,
+        "cost_usd": 31.548929799999996,
+        "admitted_at": 1794490504.8527687,
+        "processed_at": 1794490510.049326
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "517",
+      "delivery_id": "dw-dlv_a9f5dbef641a7ad9d245e66fd1bca180",
+      "turn_id": "fb86893a830448d7bd5450c307fe8d2e",
+      "ts": 1794490510065,
+      "origin_delivery_id": "dw-dlv_a9f5dbef641a7ad9d245e66fd1bca180"
+    }
+  },
+  {
+    "seq": 3919,
+    "event_id": "9c1499ad4cc94e619f635a9886eeb0ee",
+    "received_at_ms": 1794490743133,
+    "event_type": "session_event",
+    "record_bytes": 762,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "queued",
+        "source": "agent",
+        "display_name": "xxxxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3348,
+        "enqueued_at": 1794490742.4670646
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003348:queued",
+      "delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca",
+      "turn_id": "",
+      "origin_delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca"
+    }
+  },
+  {
+    "seq": 3920,
+    "event_id": "2eacbbfc83304202a70aff68feb61d1f",
+    "received_at_ms": 1794490744351,
+    "event_type": "session_event",
+    "record_bytes": 833,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "admitted",
+        "source": "agent",
+        "display_name": "xxxxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3348,
+        "enqueued_at": 1794490742.4670646,
+        "admitted_at": 1794490743.6900005
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003348:admitted",
+      "delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca",
+      "turn_id": "123f55eecf9a487e976eb3dd540697e6",
+      "origin_delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca"
+    }
+  },
+  {
+    "seq": 3921,
+    "event_id": "c9c134ba2cf44de7a5aa43673048f12e",
+    "received_at_ms": 1794490745738,
+    "event_type": "session_event",
+    "record_bytes": 623,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "518",
+      "delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca",
+      "turn_id": "123f55eecf9a487e976eb3dd540697e6",
+      "ts": 1794490745076,
+      "origin_delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca"
+    }
+  },
+  {
+    "seq": 3922,
+    "event_id": "67abc90545254939ada67158505dbe81",
+    "received_at_ms": 1794490747537,
+    "event_type": "session_event",
+    "record_bytes": 939,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "519",
+      "delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca",
+      "turn_id": "123f55eecf9a487e976eb3dd540697e6",
+      "ts": 1794490746875,
+      "origin_delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca"
+    }
+  },
+  {
+    "seq": 3923,
+    "event_id": "dc757738fd1d4492a88d7cf2404246b5",
+    "received_at_ms": 1794490759725,
+    "event_type": "session_event",
+    "record_bytes": 2487,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "520",
+      "delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca",
+      "turn_id": "123f55eecf9a487e976eb3dd540697e6",
+      "ts": 1794490759063,
+      "origin_delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca"
+    }
+  },
+  {
+    "seq": 3924,
+    "event_id": "eb8cb5729b474ccf9d2d19577d7a2151",
+    "received_at_ms": 1794490765735,
+    "event_type": "session_event",
+    "record_bytes": 1681,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "521",
+      "delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca",
+      "turn_id": "123f55eecf9a487e976eb3dd540697e6",
+      "ts": 1794490765073,
+      "origin_delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca"
+    }
+  },
+  {
+    "seq": 3925,
+    "event_id": "dba22c1382a643a2817cc6e4dd149dc6",
+    "received_at_ms": 1794490765764,
+    "event_type": "session_event",
+    "record_bytes": 695,
+    "payload": {
+      "kind": "state_change",
+      "text": "",
+      "data": {
+        "change": "turn_completed",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 3,
+        "cost_usd": 31.923304999999996,
+        "admitted_at": 1794490743.6810215,
+        "processed_at": 1794490765.085945
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "522",
+      "delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca",
+      "turn_id": "123f55eecf9a487e976eb3dd540697e6",
+      "ts": 1794490765102,
+      "origin_delivery_id": "dw-dlv_b317752f5e0f54a37a290f320792b8ca"
+    }
+  },
+  {
+    "seq": 3926,
+    "event_id": "a612977fa7f44285b16321d0e6dc9b8e",
+    "received_at_ms": 1794491366363,
+    "event_type": "session_event",
+    "record_bytes": 1251,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "queued",
+        "source": "agent",
+        "display_name": "xxxxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3349,
+        "enqueued_at": 1794491365.697606
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003349:queued",
+      "delivery_id": "dw-dlv_10de8de91c82e0897bdd6082f7084791",
+      "turn_id": "",
+      "origin_delivery_id": "dw-dlv_10de8de91c82e0897bdd6082f7084791"
+    }
+  },
+  {
+    "seq": 3927,
+    "event_id": "782d8aa39e5749b88c92c3f21d84839a",
+    "received_at_ms": 1794491368367,
+    "event_type": "session_event",
+    "record_bytes": 1322,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "admitted",
+        "source": "agent",
+        "display_name": "xxxxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3349,
+        "enqueued_at": 1794491365.697606,
+        "admitted_at": 1794491367.7060933
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003349:admitted",
+      "delivery_id": "dw-dlv_10de8de91c82e0897bdd6082f7084791",
+      "turn_id": "bf99e4a4cd4749d3b268114a6ec47e31",
+      "origin_delivery_id": "dw-dlv_10de8de91c82e0897bdd6082f7084791"
+    }
+  },
+  {
+    "seq": 3928,
+    "event_id": "e164cf9fa38641f6935472055c7f4224",
+    "received_at_ms": 1794491371095,
+    "event_type": "session_event",
+    "record_bytes": 1100,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "523",
+      "delivery_id": "dw-dlv_10de8de91c82e0897bdd6082f7084791",
+      "turn_id": "bf99e4a4cd4749d3b268114a6ec47e31",
+      "ts": 1794491370433,
+      "origin_delivery_id": "dw-dlv_10de8de91c82e0897bdd6082f7084791"
+    }
+  },
+  {
+    "seq": 3929,
+    "event_id": "0952f0034c77439aacdc0d45adc9be0f",
+    "received_at_ms": 1794491374775,
+    "event_type": "session_event",
+    "record_bytes": 1125,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "524",
+      "delivery_id": "dw-dlv_10de8de91c82e0897bdd6082f7084791",
+      "turn_id": "bf99e4a4cd4749d3b268114a6ec47e31",
+      "ts": 1794491374113,
+      "origin_delivery_id": "dw-dlv_10de8de91c82e0897bdd6082f7084791"
+    }
+  },
+  {
+    "seq": 3930,
+    "event_id": "c772b8734dc0433190d5eb4e3c03e604",
+    "received_at_ms": 1794491374868,
+    "event_type": "session_event",
+    "record_bytes": 693,
+    "payload": {
+      "kind": "state_change",
+      "text": "",
+      "data": {
+        "change": "turn_completed",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 2,
+        "cost_usd": 32.15885779999999,
+        "admitted_at": 1794491367.695647,
+        "processed_at": 1794491374.127834
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "525",
+      "delivery_id": "dw-dlv_10de8de91c82e0897bdd6082f7084791",
+      "turn_id": "bf99e4a4cd4749d3b268114a6ec47e31",
+      "ts": 1794491374141,
+      "origin_delivery_id": "dw-dlv_10de8de91c82e0897bdd6082f7084791"
+    }
+  },
+  {
+    "seq": 3931,
+    "event_id": "f4674588216b4a55b3e5db74541dbfc2",
+    "received_at_ms": 1794492303668,
+    "event_type": "session_event",
+    "record_bytes": 649,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "queued",
+        "source": "agent",
+        "display_name": "xxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3350,
+        "enqueued_at": 1794492302.9993029
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003350:queued",
+      "delivery_id": "dw-dlv_ee9ea02cf73f78e58db0e4f1ea43f0c3",
+      "turn_id": "",
+      "origin_delivery_id": "dw-dlv_ee9ea02cf73f78e58db0e4f1ea43f0c3"
+    }
+  },
+  {
+    "seq": 3932,
+    "event_id": "88733279796846e0bc5034d25f4cc4c8",
+    "received_at_ms": 1794492305403,
+    "event_type": "session_event",
+    "record_bytes": 719,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "admitted",
+        "source": "agent",
+        "display_name": "xxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3350,
+        "enqueued_at": 1794492302.9993029,
+        "admitted_at": 1794492304.741256
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003350:admitted",
+      "delivery_id": "dw-dlv_ee9ea02cf73f78e58db0e4f1ea43f0c3",
+      "turn_id": "b3938446ea2a452bb82ca35df84e6a3e",
+      "origin_delivery_id": "dw-dlv_ee9ea02cf73f78e58db0e4f1ea43f0c3"
+    }
+  },
+  {
+    "seq": 3933,
+    "event_id": "261b171ea6cc4fe8ad1b462d9cbfa94d",
+    "received_at_ms": 1794492307720,
+    "event_type": "session_event",
+    "record_bytes": 1000,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "526",
+      "delivery_id": "dw-dlv_ee9ea02cf73f78e58db0e4f1ea43f0c3",
+      "turn_id": "b3938446ea2a452bb82ca35df84e6a3e",
+      "ts": 1794492307058,
+      "origin_delivery_id": "dw-dlv_ee9ea02cf73f78e58db0e4f1ea43f0c3"
+    }
+  },
+  {
+    "seq": 3934,
+    "event_id": "6dad15a08a994afbb6dea17e4e669516",
+    "received_at_ms": 1794492309775,
+    "event_type": "session_event",
+    "record_bytes": 733,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "527",
+      "delivery_id": "dw-dlv_ee9ea02cf73f78e58db0e4f1ea43f0c3",
+      "turn_id": "b3938446ea2a452bb82ca35df84e6a3e",
+      "ts": 1794492309112,
+      "origin_delivery_id": "dw-dlv_ee9ea02cf73f78e58db0e4f1ea43f0c3"
+    }
+  },
+  {
+    "seq": 3935,
+    "event_id": "df2883cbb6d74a739223db1bbd0bb4a5",
+    "received_at_ms": 1794492309805,
+    "event_type": "session_event",
+    "record_bytes": 688,
+    "payload": {
+      "kind": "state_change",
+      "text": "",
+      "data": {
+        "change": "turn_completed",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 2,
+        "cost_usd": 32.3856262,
+        "admitted_at": 1794492304.7316737,
+        "processed_at": 1794492309.1305568
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "528",
+      "delivery_id": "dw-dlv_ee9ea02cf73f78e58db0e4f1ea43f0c3",
+      "turn_id": "b3938446ea2a452bb82ca35df84e6a3e",
+      "ts": 1794492309143,
+      "origin_delivery_id": "dw-dlv_ee9ea02cf73f78e58db0e4f1ea43f0c3"
+    }
+  },
+  {
+    "seq": 3936,
+    "event_id": "0fbf01b968ac41a29b35a4472be4fb73",
+    "received_at_ms": 1794492413626,
+    "event_type": "session_event",
+    "record_bytes": 891,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "queued",
+        "source": "agent",
+        "display_name": "xxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3351,
+        "enqueued_at": 1794492412.9596925
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003351:queued",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "",
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3937,
+    "event_id": "ba804eb2cc2242a18c4c8a41828fa9b5",
+    "received_at_ms": 1794492416126,
+    "event_type": "session_event",
+    "record_bytes": 961,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "admitted",
+        "source": "agent",
+        "display_name": "xxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3351,
+        "enqueued_at": 1794492412.9596925,
+        "admitted_at": 1794492415.464042
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003351:admitted",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3938,
+    "event_id": "aa4f83f1b1aa4c2e8da28142ad222b7f",
+    "received_at_ms": 1794492428241,
+    "event_type": "session_event",
+    "record_bytes": 3602,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "529",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "ts": 1794492427578,
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3939,
+    "event_id": "02a0134fa52c4fd8bb8adc926404d954",
+    "received_at_ms": 1794492443391,
+    "event_type": "session_event",
+    "record_bytes": 590,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "530",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "ts": 1794492442729,
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3940,
+    "event_id": "21b196aaa8d942bda848a0ec61e9e2ee",
+    "received_at_ms": 1794492444247,
+    "event_type": "session_event",
+    "record_bytes": 669,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "531",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "ts": 1794492443585,
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3941,
+    "event_id": "32c1a1a912764c94ad00f6127c24ccf4",
+    "received_at_ms": 1794492447575,
+    "event_type": "session_event",
+    "record_bytes": 649,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "532",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "ts": 1794492446912,
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3942,
+    "event_id": "3bbf3b6b78224f03983b0999d6eb6c98",
+    "received_at_ms": 1794492451982,
+    "event_type": "session_event",
+    "record_bytes": 1705,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "533",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "ts": 1794492451320,
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3943,
+    "event_id": "44ada73f37964a24b4f2d348cc77e335",
+    "received_at_ms": 1794492468493,
+    "event_type": "session_event",
+    "record_bytes": 2859,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "534",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "ts": 1794492467831,
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3944,
+    "event_id": "41498e9d1847484582344a20e347f862",
+    "received_at_ms": 1794492468537,
+    "event_type": "session_event",
+    "record_bytes": 695,
+    "payload": {
+      "kind": "state_change",
+      "text": "",
+      "data": {
+        "change": "turn_completed",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 4,
+        "cost_usd": 32.91252999999999,
+        "admitted_at": 1794492415.4506063,
+        "processed_at": 1794492467.8629575
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "535",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "ts": 1794492467875,
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3945,
+    "event_id": "e2833430042f4a5280abc7148c235a3b",
+    "received_at_ms": 1794493985068,
+    "event_type": "session_event",
+    "record_bytes": 720,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "536",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "ts": 1794493984406,
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3946,
+    "event_id": "5d8d9a15b2954ca0884a66ffb1b6bb6b",
+    "received_at_ms": 1794493995536,
+    "event_type": "session_event",
+    "record_bytes": 2156,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "537",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "ts": 1794493994874,
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3947,
+    "event_id": "745584c8750b43309b80fb20905b6db4",
+    "received_at_ms": 1794494003344,
+    "event_type": "session_event",
+    "record_bytes": 1747,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "538",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "ts": 1794494002681,
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3948,
+    "event_id": "79e7fd4efe4547eea6e0d491bb22271e",
+    "received_at_ms": 1794494003360,
+    "event_type": "session_event",
+    "record_bytes": 694,
+    "payload": {
+      "kind": "state_change",
+      "text": "",
+      "data": {
+        "change": "turn_completed",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 3,
+        "cost_usd": 33.30110419999999,
+        "admitted_at": 1794492415.4506063,
+        "processed_at": 1794494002.695235
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "539",
+      "delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8",
+      "turn_id": "7ff9249180b744f6be0205c17fcdc3c5",
+      "ts": 1794494002697,
+      "origin_delivery_id": "dw-dlv_cc2052090756bbc55b62b5a3dd5e52a8"
+    }
+  },
+  {
+    "seq": 3949,
+    "event_id": "c76be8ec2bfd44f593b99aa034d2389c",
+    "received_at_ms": 1794494103637,
+    "event_type": "session_event",
+    "record_bytes": 649,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "queued",
+        "source": "agent",
+        "display_name": "xxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3352,
+        "enqueued_at": 1794494102.9691625
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003352:queued",
+      "delivery_id": "dw-dlv_7c6a08aa3667bbe41fd49ff16a0f1518",
+      "turn_id": "",
+      "origin_delivery_id": "dw-dlv_7c6a08aa3667bbe41fd49ff16a0f1518"
+    }
+  },
+  {
+    "seq": 3950,
+    "event_id": "f678f41ed55746cf8874cfe719e3038e",
+    "received_at_ms": 1794494105063,
+    "event_type": "session_event",
+    "record_bytes": 720,
+    "payload": {
+      "kind": "user_input",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {
+        "lifecycle": "admitted",
+        "source": "agent",
+        "display_name": "xxxxx",
+        "open_id": "",
+        "bot_channel_id": "",
+        "queue_seq": 3352,
+        "enqueued_at": 1794494102.9691625,
+        "admitted_at": 1794494104.4004817
+      },
+      "session_id": "",
+      "cursor": "queue:00000000000000003352:admitted",
+      "delivery_id": "dw-dlv_7c6a08aa3667bbe41fd49ff16a0f1518",
+      "turn_id": "f6ace1c7bac046c0a85599bc69503300",
+      "origin_delivery_id": "dw-dlv_7c6a08aa3667bbe41fd49ff16a0f1518"
+    }
+  },
+  {
+    "seq": 3951,
+    "event_id": "c94ca2c11b0c40f79090b51a778fcf06",
+    "received_at_ms": 1794494106845,
+    "event_type": "session_event",
+    "record_bytes": 1000,
+    "payload": {
+      "kind": "tool_call",
+      "text": "",
+      "data": {
+        "name": "Bash",
+        "input": {
+          "command": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "540",
+      "delivery_id": "dw-dlv_7c6a08aa3667bbe41fd49ff16a0f1518",
+      "turn_id": "f6ace1c7bac046c0a85599bc69503300",
+      "ts": 1794494106183,
+      "origin_delivery_id": "dw-dlv_7c6a08aa3667bbe41fd49ff16a0f1518"
+    }
+  },
+  {
+    "seq": 3952,
+    "event_id": "2b6aad287dee4b7894f71a3ab2290596",
+    "received_at_ms": 1794494108587,
+    "event_type": "session_event",
+    "record_bytes": 671,
+    "payload": {
+      "kind": "assistant_text",
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "data": {},
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "541",
+      "delivery_id": "dw-dlv_7c6a08aa3667bbe41fd49ff16a0f1518",
+      "turn_id": "f6ace1c7bac046c0a85599bc69503300",
+      "ts": 1794494107924,
+      "origin_delivery_id": "dw-dlv_7c6a08aa3667bbe41fd49ff16a0f1518"
+    }
+  },
+  {
+    "seq": 3953,
+    "event_id": "b0cec0bd60874a619164c91e4f275014",
+    "received_at_ms": 1794494108619,
+    "event_type": "session_event",
+    "record_bytes": 695,
+    "payload": {
+      "kind": "state_change",
+      "text": "",
+      "data": {
+        "change": "turn_completed",
+        "subtype": "success",
+        "is_error": false,
+        "num_turns": 2,
+        "cost_usd": 33.53197339999999,
+        "admitted_at": 1794494104.3903863,
+        "processed_at": 1794494107.9398026
+      },
+      "session_id": "83e9a02a-e451-488e-a699-c62fa95ae27e",
+      "cursor": "542",
+      "delivery_id": "dw-dlv_7c6a08aa3667bbe41fd49ff16a0f1518",
+      "turn_id": "f6ace1c7bac046c0a85599bc69503300",
+      "ts": 1794494107956,
+      "origin_delivery_id": "dw-dlv_7c6a08aa3667bbe41fd49ff16a0f1518"
+    }
+  }
+]

@@ -1,0 +1,142 @@
+{
+  "capture_utc": "2026-11-12T16:03:06.625846+00:00",
+  "database": "/var/lib/dingwei-dw123/workpulse-history.db",
+  "open_mode": "mode=ro; PRAGMA query_only=ON; BEGIN snapshot",
+  "generation_row": {
+    "owner_key": "u_zhangzongchu",
+    "agent_key_id": "ag_52ed2bd653dc7f499b9954cd2bfa1372",
+    "session_name": "opus50tc2k",
+    "generation": "0fda970aaff3905c61684736ec808452",
+    "next_seq": 4058,
+    "oldest_seq": 1,
+    "newest_seq": 4057,
+    "gap_through_seq": 0,
+    "retained_bytes": 5101785
+  },
+  "first_page_sql": "SELECT seq,event_id,received_at_ms,payload_json FROM session_history_event WHERE owner_key=? AND agent_key_id=? AND session_name=? AND generation=? ORDER BY seq DESC LIMIT 100",
+  "first_page_outer_field_names": [
+    "generation",
+    "high_water",
+    "events",
+    "gaps",
+    "has_older",
+    "before_seq",
+    "gap_before"
+  ],
+  "first_page_outer_without_events": {
+    "generation": "0fda970aaff3905c61684736ec808452",
+    "high_water": 4057,
+    "gaps": [],
+    "has_older": true,
+    "before_seq": 3958,
+    "gap_before": false
+  },
+  "first_page_event_envelope_fields": [
+    "cursor",
+    "event_id",
+    "received_at",
+    "event"
+  ],
+  "first_page_event_count": 100,
+  "window_event_count": 47,
+  "window_seq_range": [
+    3907,
+    3953
+  ],
+  "first_page_seq_range": [
+    3958,
+    4057
+  ],
+  "string_handling_counts": [
+    {
+      "path": "payload.cursor",
+      "action": "preserved",
+      "count": 147
+    },
+    {
+      "path": "payload.data.bot_channel_id",
+      "action": "preserved",
+      "count": 46
+    },
+    {
+      "path": "payload.data.change",
+      "action": "preserved",
+      "count": 25
+    },
+    {
+      "path": "payload.data.display_name",
+      "action": "masked",
+      "count": 46
+    },
+    {
+      "path": "payload.data.input.command",
+      "action": "masked",
+      "count": 41
+    },
+    {
+      "path": "payload.data.input.content",
+      "action": "masked",
+      "count": 1
+    },
+    {
+      "path": "payload.data.input.file_path",
+      "action": "masked",
+      "count": 1
+    },
+    {
+      "path": "payload.data.lifecycle",
+      "action": "preserved",
+      "count": 46
+    },
+    {
+      "path": "payload.data.name",
+      "action": "preserved",
+      "count": 42
+    },
+    {
+      "path": "payload.data.open_id",
+      "action": "preserved",
+      "count": 46
+    },
+    {
+      "path": "payload.data.source",
+      "action": "preserved",
+      "count": 46
+    },
+    {
+      "path": "payload.data.subtype",
+      "action": "preserved",
+      "count": 25
+    },
+    {
+      "path": "payload.delivery_id",
+      "action": "preserved",
+      "count": 147
+    },
+    {
+      "path": "payload.kind",
+      "action": "preserved",
+      "count": 147
+    },
+    {
+      "path": "payload.origin_delivery_id",
+      "action": "preserved",
+      "count": 147
+    },
+    {
+      "path": "payload.session_id",
+      "action": "preserved",
+      "count": 147
+    },
+    {
+      "path": "payload.text",
+      "action": "masked",
+      "count": 147
+    },
+    {
+      "path": "payload.turn_id",
+      "action": "preserved",
+      "count": 147
+    }
+  ]
+}

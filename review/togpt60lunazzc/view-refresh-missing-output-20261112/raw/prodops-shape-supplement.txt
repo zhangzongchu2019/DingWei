@@ -1,0 +1,127 @@
+database=/var/lib/dingwei-dw123/workpulse-history.db; mode=ro; PRAGMA query_only=ON
+window=[2026-11-12T12:40:00Z,2026-11-12T14:40:00Z)
+SAMPLE kind=user_input latest_rank=1 received_at=2026-11-12T14:35:05.063Z seq=3950 record_bytes=720
+payload : object keys=8
+payload.cursor : string chars=35 utf8_bytes=35
+payload.data : object keys=8
+payload.data.admitted_at : number
+payload.data.bot_channel_id : string chars=0 utf8_bytes=0
+payload.data.display_name : string chars=5 utf8_bytes=5
+payload.data.enqueued_at : number
+payload.data.lifecycle : string chars=8 utf8_bytes=8
+payload.data.open_id : string chars=0 utf8_bytes=0
+payload.data.queue_seq : integer
+payload.data.source : string chars=5 utf8_bytes=5
+payload.delivery_id : string chars=39 utf8_bytes=39
+payload.kind : string chars=10 utf8_bytes=10
+payload.origin_delivery_id : string chars=39 utf8_bytes=39
+payload.session_id : string chars=0 utf8_bytes=0
+payload.text : string chars=44 utf8_bytes=44
+payload.turn_id : string chars=32 utf8_bytes=32
+SAMPLE kind=user_input latest_rank=2 received_at=2026-11-12T14:35:03.637Z seq=3949 record_bytes=649
+payload : object keys=8
+payload.cursor : string chars=33 utf8_bytes=33
+payload.data : object keys=7
+payload.data.bot_channel_id : string chars=0 utf8_bytes=0
+payload.data.display_name : string chars=5 utf8_bytes=5
+payload.data.enqueued_at : number
+payload.data.lifecycle : string chars=6 utf8_bytes=6
+payload.data.open_id : string chars=0 utf8_bytes=0
+payload.data.queue_seq : integer
+payload.data.source : string chars=5 utf8_bytes=5
+payload.delivery_id : string chars=39 utf8_bytes=39
+payload.kind : string chars=10 utf8_bytes=10
+payload.origin_delivery_id : string chars=39 utf8_bytes=39
+payload.session_id : string chars=0 utf8_bytes=0
+payload.text : string chars=44 utf8_bytes=44
+payload.turn_id : string chars=0 utf8_bytes=0
+SAMPLE kind=assistant_text latest_rank=1 received_at=2026-11-12T14:35:08.587Z seq=3952 record_bytes=671
+payload : object keys=9
+payload.cursor : string chars=3 utf8_bytes=3
+payload.data : object keys=0
+payload.delivery_id : string chars=39 utf8_bytes=39
+payload.kind : string chars=14 utf8_bytes=14
+payload.origin_delivery_id : string chars=39 utf8_bytes=39
+payload.session_id : string chars=36 utf8_bytes=36
+payload.text : string chars=53 utf8_bytes=159
+payload.ts : integer
+payload.turn_id : string chars=32 utf8_bytes=32
+SAMPLE kind=assistant_text latest_rank=2 received_at=2026-11-12T14:33:23.344Z seq=3947 record_bytes=1747
+payload : object keys=9
+payload.cursor : string chars=3 utf8_bytes=3
+payload.data : object keys=0
+payload.delivery_id : string chars=39 utf8_bytes=39
+payload.kind : string chars=14 utf8_bytes=14
+payload.origin_delivery_id : string chars=39 utf8_bytes=39
+payload.session_id : string chars=36 utf8_bytes=36
+payload.text : string chars=602 utf8_bytes=1218
+payload.ts : integer
+payload.turn_id : string chars=32 utf8_bytes=32
+SAMPLE kind=tool_call latest_rank=1 received_at=2026-11-12T14:35:06.845Z seq=3951 record_bytes=1000
+payload : object keys=9
+payload.cursor : string chars=3 utf8_bytes=3
+payload.data : object keys=2
+payload.data.input : object keys=1
+payload.data.input.command : string chars=445 utf8_bytes=445
+payload.data.name : string chars=4 utf8_bytes=4
+payload.delivery_id : string chars=39 utf8_bytes=39
+payload.kind : string chars=9 utf8_bytes=9
+payload.origin_delivery_id : string chars=39 utf8_bytes=39
+payload.session_id : string chars=36 utf8_bytes=36
+payload.text : string chars=0 utf8_bytes=0
+payload.ts : integer
+payload.turn_id : string chars=32 utf8_bytes=32
+SAMPLE kind=tool_call latest_rank=2 received_at=2026-11-12T14:33:15.536Z seq=3946 record_bytes=2156
+payload : object keys=9
+payload.cursor : string chars=3 utf8_bytes=3
+payload.data : object keys=2
+payload.data.input : object keys=1
+payload.data.input.command : string chars=1215 utf8_bytes=1599
+payload.data.name : string chars=4 utf8_bytes=4
+payload.delivery_id : string chars=39 utf8_bytes=39
+payload.kind : string chars=9 utf8_bytes=9
+payload.origin_delivery_id : string chars=39 utf8_bytes=39
+payload.session_id : string chars=36 utf8_bytes=36
+payload.text : string chars=0 utf8_bytes=0
+payload.ts : integer
+payload.turn_id : string chars=32 utf8_bytes=32
+SAMPLE kind=state_change latest_rank=1 received_at=2026-11-12T14:35:08.619Z seq=3953 record_bytes=695
+payload : object keys=9
+payload.cursor : string chars=3 utf8_bytes=3
+payload.data : object keys=7
+payload.data.admitted_at : number
+payload.data.change : string chars=14 utf8_bytes=14
+payload.data.cost_usd : number
+payload.data.is_error : boolean
+payload.data.num_turns : integer
+payload.data.processed_at : number
+payload.data.subtype : string chars=7 utf8_bytes=7
+payload.delivery_id : string chars=39 utf8_bytes=39
+payload.kind : string chars=12 utf8_bytes=12
+payload.origin_delivery_id : string chars=39 utf8_bytes=39
+payload.session_id : string chars=36 utf8_bytes=36
+payload.text : string chars=0 utf8_bytes=0
+payload.ts : integer
+payload.turn_id : string chars=32 utf8_bytes=32
+SAMPLE kind=state_change latest_rank=2 received_at=2026-11-12T14:33:23.360Z seq=3948 record_bytes=694
+payload : object keys=9
+payload.cursor : string chars=3 utf8_bytes=3
+payload.data : object keys=7
+payload.data.admitted_at : number
+payload.data.change : string chars=14 utf8_bytes=14
+payload.data.cost_usd : number
+payload.data.is_error : boolean
+payload.data.num_turns : integer
+payload.data.processed_at : number
+payload.data.subtype : string chars=7 utf8_bytes=7
+payload.delivery_id : string chars=39 utf8_bytes=39
+payload.kind : string chars=12 utf8_bytes=12
+payload.origin_delivery_id : string chars=39 utf8_bytes=39
+payload.session_id : string chars=36 utf8_bytes=36
+payload.text : string chars=0 utf8_bytes=0
+payload.ts : integer
+payload.turn_id : string chars=32 utf8_bytes=32
+GENERATION generation | next_seq | oldest_seq | newest_seq | gap_through_seq | retained_bytes
+0fda970aaff3905c61684736ec808452 | 4026 | 1 | 4025 | 0 | 5055064
+GAP count: 0
+WINDOW record_count,sum_record_bytes,max_record_bytes: (47, 49673, 3602)
