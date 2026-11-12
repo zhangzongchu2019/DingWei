@@ -9,6 +9,7 @@ import io
 import os
 from pathlib import Path
 import queue
+import sys
 import tempfile
 import threading
 import types
@@ -417,6 +418,11 @@ class RPCErrorShapes(unittest.TestCase):
 class ConfiguredRootBinding(unittest.TestCase):
     def setUp(self):
         from sessionhelper.config import load_config
+        # Transports are fake, but the real endpoint Spec validates its binary.
+        # Use the fixture interpreter instead of requiring a host Codex install.
+        codex_binary = mock.patch('sessionhelper.codexDriver._CODEX_BIN', sys.executable)
+        codex_binary.start()
+        self.addCleanup(codex_binary.stop)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.env = dict(SH_DRIVER='codex', SH_SESSION_NAME='fixture', SH_OWNER='owner',
