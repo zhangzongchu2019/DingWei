@@ -1142,7 +1142,7 @@
         <span class="status-item sb-res">内存 <strong id="memStat">--</strong></span>
         <span class="status-item sb-res">Agent 磁盘 <strong id="diskStat">未知</strong></span>
         <span class="status-item" id="inboxLagStat">注入状态未知</span>
-        <details class="status-item" id="inboxUnknownDetails" hidden><summary>查看本会话条目</summary><ul id="inboxUnknownList"></ul></details>
+        <details class="status-item" id="inboxUnknownDetails" hidden><summary>查看本会话条目</summary><p id="inboxUnknownAggregate" hidden></p><ul id="inboxUnknownList"></ul></details>
         <span class="status-item sb-res" id="resourceFreshness" role="status">资源待更新</span>
       </div>
       <!-- 业主 2026-09-18 验收第 1 条：「选择文件上传时，没有任何提示，这个很容易认为是出问题了」
@@ -1754,7 +1754,7 @@
     const UNKNOWN_DELIVERY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
     const locallyUntrackedDeliveries = new Set();
     const processedDeliveries = new Set();
-    const deliveryByTurn = new Map();
+    let unknownListRenderSignature = null;
     function viewNowMs(){ return typeof window.__viewUnknownUxNow === 'function' ? Number(window.__viewUnknownUxNow()) : Date.now(); }
     function deliveryAlreadyProcessed(deliveryId){ return !!deliveryId && processedDeliveries.has(String(deliveryId)); }
     function unknownSinceMs(ev, entry){
@@ -1786,20 +1786,32 @@
     function refreshInboxLagLabel(){
       const el=document.getElementById('inboxLagStat');
       if(el){el.textContent=inboxLagState.display(performance.now());el.title='helper 上报的模型接收阶段；processed 不等于模型已接收；不代表业务已执行';}
-      const details=document.getElementById('inboxUnknownDetails'), list=document.getElementById('inboxUnknownList');
+      const details=document.getElementById('inboxUnknownDetails'), list=document.getElementById('inboxUnknownList'), aggregate=document.getElementById('inboxUnknownAggregate');
       if(details&&list){
-        const reported=inboxLagState.record?.unknown||0;
-        const rows=[...waitingDeliveries.entries()].filter(([id,x])=>isUnknownDelivery(x)&&!locallyUntrackedDeliveries.has(String(id)));
+        const rawReported=Number(inboxLagState.record?.unknown||0);
+        const reported=Number.isFinite(rawReported)?Math.max(0,Math.floor(rawReported)):0;
+        const rows=[...waitingDeliveries.entries()]
+          .filter(([id,x])=>isUnknownDelivery(x)&&!locallyUntrackedDeliveries.has(String(id)))
+          .map(([id,row])=>{
+            const n=row.event?._norm||{};
+            return {id:String(id),text:n.text||'未知消息',reason:n.reason||'',status:n.status||'',expired:isUnknownDeliveryExpired(row)};
+          });
         details.hidden=rows.length===0&&reported===0;
-        details.querySelector('summary').textContent=`查看未知条目（${reported||rows.length}）`;
-        list.textContent='';
-        if(!rows.length&&reported){const li=document.createElement('li');li.textContent='当前页面没有收到这些条目的明细事件';list.appendChild(li);}
-        for(const [id,row] of rows){
-          const li=document.createElement('li');
-          const n=row.event?._norm||{};
-          li.append(document.createTextNode((n.reason==='model_admission_unknown'?'已送达，Agent 忙时无法确认是否已接收':'未确认（可重发）')+'：'+(n.text||'未知消息')+(isUnknownDeliveryExpired(row)?' — 已超 24 小时':'')));
-          const untrack=document.createElement('button');untrack.type='button';untrack.className='unknown-untrack-btn';untrack.textContent='不再跟踪';untrack.addEventListener('click',()=>untrackUnknownDelivery(id));li.appendChild(untrack);
-          list.appendChild(li);
+        details.querySelector('summary').textContent=`查看未知条目（${rows.length}）`;
+        if(aggregate){
+          aggregate.hidden=reported<=rows.length;
+          aggregate.textContent=reported>rows.length?`helper 上报 ${reported} 条；本页明细 ${rows.length} 条` : '';
+        }
+        const signature=JSON.stringify(rows);
+        if(signature!==unknownListRenderSignature){
+          unknownListRenderSignature=signature;
+          list.replaceChildren();
+          for(const row of rows){
+            const li=document.createElement('li');
+            li.append(document.createTextNode((row.reason==='model_admission_unknown'?'已送达，Agent 忙时无法确认是否已接收':'未确认（可重发）')+'：'+row.text+(row.expired?' — 已超 24 小时':'')));
+            const untrack=document.createElement('button');untrack.type='button';untrack.className='unknown-untrack-btn';untrack.textContent='不再跟踪';untrack.addEventListener('click',()=>untrackUnknownDelivery(row.id));li.appendChild(untrack);
+            list.appendChild(li);
+          }
         }
       }
     }
@@ -1992,6 +2004,7 @@
       turnGroupSegments.clear();
       injectionFences.clear();
       waitingDeliveries.clear();
+      unknownListRenderSignature = null;
       // D:重置会话时一并清渲染队列与输入卡索引,否则这些 Map 指向已被 textContent='' 摘掉的游离节点
       assistantEntries.clear();
       pendingRenders.clear();
@@ -2486,8 +2499,7 @@
       }
       ev = normalizeEvent(ev);
       const eventDeliveryId=ev._norm.deliveryId||ev._norm.originDlv;
-      if(ev.kind==='delivery_update'&&ev._norm.stage==='cli_injected'&&ev._norm.deliveryId&&ev._norm.turnId)deliveryByTurn.set(String(ev._norm.turnId),String(ev._norm.deliveryId));
-      const repliedDeliveryId=eventDeliveryId||deliveryByTurn.get(String(ev._norm.turnId||ev.turn_id||''));
+      const repliedDeliveryId=eventDeliveryId;
       if(repliedDeliveryId && ((ev.kind==='delivery_update' && ev._norm.stage==='turn_processed') ||
           ev.kind==='mention_reply' || ev.kind==='assistant_text')) {
         processedDeliveries.add(String(repliedDeliveryId));

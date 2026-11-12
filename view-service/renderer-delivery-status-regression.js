@@ -15,7 +15,7 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
     const checks = regressionCollector();
     await page.evaluate(() => {
       clearInterval(statusTimer);
-      window.retryCalls=[]; window.controlCalls=[]; window.__viewUnknownUxNow=()=>Date.parse('2026-11-11T00:00:00Z');
+      window.retryCalls=[]; window.controlCalls=[]; window.__unknownUxTestNow=Date.parse('2026-11-11T00:00:00Z'); window.__viewUnknownUxNow=()=>window.__unknownUxTestNow;
       window.C2_CONTROL_TRANSPORT={send:async msg=>{window.controlCalls.push(msg);if(msg.kind==='retry')window.retryCalls.push(msg);return {ok:true};}};
       resetConversation(); finishTimelineReplay(false);
     });
@@ -31,7 +31,7 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
     await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-queued',observed_delivery_id:'queued',delivery_stage:'helper_queued',reason:'cancel_not_cancelable',cancellable:false});
     await checks.check('REFUSED_CANCEL_EXPLAINS_WHY', async()=>assert.ok((await page.locator('.waiting-item[data-delivery-id="queued"]').innerText()).includes('已交给 Agent，无法撤回')));
 
-    await input('unknown', {queued_at:'2000-01-01T00:00:00Z'});
+    await input('unknown', {queued_at:'2000-01-01T00:00:00Z',text:'target-unknown-body'});
     await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-unknown',observed_delivery_id:'unknown',delivery_stage:'helper_queued',reason:'model_admission_unknown',cancellable:false,ack_protocol:2,processing_mode:'driver',occurred_at:'2026-11-11T00:00:00Z'});
     await page.evaluate(()=>{const e=waitingDeliveries.get('unknown');e.queuedClock={mono:performance.now(),elapsed:600000};r40PaintQueuedWait(e);refreshUnknownDeliveryViews();});
     await page.locator('#inboxUnknownDetails summary').click();
@@ -45,11 +45,42 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
       assert.strictEqual(await row.locator('.waiting-retry-btn').count(),0);
     });
 
+    await input('unknown-two');
+    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-unknown-two',observed_delivery_id:'unknown-two',delivery_stage:'helper_queued',reason:'model_admission_unknown',cancellable:false,ack_protocol:2,processing_mode:'driver',occurred_at:'2026-11-11T00:00:00Z'});
+    await page.evaluate(()=>{
+      inboxLagState.state='fresh';
+      inboxLagState.record={unknown:5,count:0,age:0,received:performance.now(),deadline:Infinity,clockUncertain:false};
+      refreshUnknownDeliveryViews();
+    });
+    await checks.check('UNKNOWN_SUMMARY_MATCHES_VISIBLE_ROWS', async()=>{
+      assert.strictEqual(await page.locator('#inboxUnknownDetails summary').innerText(),'查看未知条目（2）');
+      assert.strictEqual(await page.locator('#inboxUnknownList > li').count(),2);
+      assert.strictEqual(await page.locator('#inboxUnknownAggregate').innerText(),'helper 上报 5 条；本页明细 2 条');
+    });
+
+    const stableButton=page.locator('#inboxUnknownList > li .unknown-untrack-btn').first();
+    await stableButton.focus();
+    await page.evaluate(()=>{
+      window.__unknownUxTrackedButton=document.querySelector('#inboxUnknownList > li .unknown-untrack-btn');
+      for(let i=0;i<3;i++){window.__unknownUxTestNow+=1000;refreshUnknownDeliveryViews();}
+      inboxLagState.record.unknown=6;
+      refreshUnknownDeliveryViews();
+    });
+    await checks.check('UNKNOWN_LIST_STABLE_NODE_AND_FOCUS', async()=>{
+      assert.strictEqual(await stableButton.evaluate(e=>e===window.__unknownUxTrackedButton),true);
+      assert.strictEqual(await stableButton.evaluate(e=>document.activeElement===e),true);
+      assert.strictEqual(await page.locator('#inboxUnknownAggregate').innerText(),'helper 上报 6 条；本页明细 2 条');
+    });
+    await page.evaluate(()=>{inboxLagState.record.unknown=5;refreshUnknownDeliveryViews();});
+
     const callsBeforeUntrack=await page.evaluate(()=>controlCalls.length);
     await page.locator('.waiting-item[data-delivery-id="unknown"] .unknown-untrack-btn').click();
     await checks.check('UNTRACK_IS_LOCAL_ONLY', async()=>{
       assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="unknown"]').isHidden(),true);
-      assert.ok(!(await page.locator('#inboxUnknownList').innerText()).includes('body unknown'));
+      assert.ok(!(await page.locator('#inboxUnknownList').innerText()).includes('target-unknown-body'));
+      assert.strictEqual(await page.locator('#inboxUnknownDetails summary').innerText(),'查看未知条目（1）');
+      assert.strictEqual(await page.locator('#inboxUnknownList > li').count(),1);
+      assert.strictEqual(await page.locator('#inboxUnknownAggregate').innerText(),'helper 上报 5 条；本页明细 1 条');
       assert.strictEqual(await page.evaluate(()=>controlCalls.length),callsBeforeUntrack);
     });
 
@@ -118,6 +149,6 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
       assert.ok(text.includes('已超 24 小时'));
     });
     await checks.check('NO_PAGE_ERRORS', async()=>assert.deepStrictEqual(errors,[]));
-    checks.finish(); console.log('DELIVERY_STATUS_BROWSER_PASS checks=12');
+    checks.finish(); console.log('DELIVERY_STATUS_BROWSER_PASS checks=14');
   } finally { if(browser) await browser.close(); await fixture.close(); }
 })().catch(finishRegression);
