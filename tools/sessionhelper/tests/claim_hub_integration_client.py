@@ -85,7 +85,7 @@ async def connect(config, credential):
     cfg = Config(session_name=credential.agent_name.lower(), key_id="", secret=credential.secret,
                  ws_base='ws'+config['base'][4:], mode='desktop', tool='CODEX',
                  cli_cwd=str(state), state_dir=str(state), inbox_db=str(state/'inbox.sqlite'),
-                 mcp_ipc_sock=str(state/'mcp.sock'), collect=False,
+                 mcp_ipc_sock=config['mcp_ipc_sock'], collect=False,
                  provision_audit_db=str(state/'provision.sqlite'),
                  provision_versions_file=str(state/'versions.json'),
                  provision_update_state_file=str(state/'update.json'))

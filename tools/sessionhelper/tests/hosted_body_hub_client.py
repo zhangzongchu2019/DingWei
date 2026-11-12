@@ -16,7 +16,7 @@ async def main():
     home.chmod(0o700)
     cfg = Config('desktop', 'u_zzc', seed['secret'], mode='echo', ws_base=seed['base'], collect=False,
                  cli_cwd=str(home), state_dir=str(home/'.dingwei'), inbox_db=str(home/'inbox.sqlite3'),
-                 mcp_ipc_sock=str(home/'s'), ipc_send_body_only=True,
+                 mcp_ipc_sock=seed['mcp_ipc_sock'], ipc_send_body_only=True,
                  provision_audit_db=str(home/'audit'), provision_versions_file=str(home/'versions'),
                  provision_update_state_file=str(home/'provision'))
     helper = SessionHelper(cfg); helper.enroll_credential = Credential('desktop', seed['secret'])

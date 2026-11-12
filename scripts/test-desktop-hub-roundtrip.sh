@@ -1,5 +1,7 @@
 #!/bin/sh
 # Isolated cross-runtime gate: real localhost Hub/enrollment, temporary DB/HOME, no AI.
+# Integration clients allocate IPC sockets under fixed /tmp; Go-provided paths are
+# byte-checked, so caller TMPDIR cannot push those AF_UNIX endpoints over sun_path's limit.
 set -eu
 task_root="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 cd "$task_root"

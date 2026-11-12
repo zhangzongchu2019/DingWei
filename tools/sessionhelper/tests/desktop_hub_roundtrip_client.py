@@ -24,7 +24,7 @@ async def main():
     cfg = Config(session_name='desktop', key_id=bootstrap['key_id'], secret=bootstrap['secret'],
                  ws_base=bootstrap['ws_base'], mode='desktop', tool='CODEX', cli_cwd=str(state),
                  state_dir=str(state), inbox_db=str(state/'inbox.sqlite'),
-                 mcp_ipc_sock=str(state/'mcp.sock'), collect=False,
+                 mcp_ipc_sock=bootstrap['mcp_ipc_sock'], collect=False,
                  provision_audit_db=str(state/'provision.sqlite'),
                  provision_versions_file=str(state/'versions.json'),
                  provision_update_state_file=str(state/'update.json'))

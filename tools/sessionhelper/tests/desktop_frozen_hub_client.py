@@ -20,14 +20,14 @@ async def main():
     env.update(SH_ENROLL='1', SH_MODE='desktop', SH_SESSION_NAME='desktop', SH_TOOL='CODEX',
                SH_STATE_DIR=str(state), SH_WS_BASE=bootstrap['ws_base'],
                SH_INBOX_DB=str(state/'inbox.sqlite'), SH_CLI_CWD=str(state), SH_COLLECT='0',
-               DINGWEI_MCP_IPC_SOCK=str(state/'mcp.sock'))
+               DINGWEI_MCP_IPC_SOCK=bootstrap['mcp_ipc_sock'])
     helper = await asyncio.create_subprocess_exec(binary, env=env, cwd=state,
                 stdin=asyncio.subprocess.DEVNULL, stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL)
     mcp = None
     try:
         async with asyncio.timeout(8):
-            while not (state/'mcp.sock').exists():
+            while not Path(bootstrap['mcp_ipc_sock']).exists():
                 assert helper.returncode is None
                 await asyncio.sleep(.01)
         mcp = await asyncio.create_subprocess_exec(binary, '--mcp', env=env,

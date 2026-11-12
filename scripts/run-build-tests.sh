@@ -5,6 +5,31 @@ set -eu
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# Socket-backed tests need room for their own names under the Unix path limit.
+# Keep the caller's value for diagnostics, but run the suite under a short root.
+RBT_CALLER_TMPDIR="${TMPDIR-}"
+export RBT_CALLER_TMPDIR
+if ! RBT_EFFECTIVE_TMPDIR="$(mktemp -d /tmp/rbt.XXXXXX 2>/dev/null)"; then
+  echo "ENVIRONMENT_UNAVAILABLE: cannot create short TMPDIR under /tmp" >&2
+  exit 2
+fi
+if [ "${#RBT_EFFECTIVE_TMPDIR}" -gt 40 ]; then
+  rbt_tmpdir_length=${#RBT_EFFECTIVE_TMPDIR}
+  rmdir "$RBT_EFFECTIVE_TMPDIR" 2>/dev/null || true
+  echo "ENVIRONMENT_UNAVAILABLE: short TMPDIR path is ${rbt_tmpdir_length} bytes; maximum is 40" >&2
+  exit 2
+fi
+TMPDIR="$RBT_EFFECTIVE_TMPDIR"
+export TMPDIR
+printf 'TMPDIR caller=%s effective=%s\n' "${#RBT_CALLER_TMPDIR}" "$TMPDIR"
+cleanup_rbt_tmpdir() {
+  rm -rf -- "$RBT_EFFECTIVE_TMPDIR"
+}
+trap cleanup_rbt_tmpdir EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 # 质量闸先于测试执行；set -e 保留每个闸的真实失败退出码。
 for gate in repo-boundary-gate dependency-ratchet tenant-isolation-gate; do
   echo "GATE $gate"
