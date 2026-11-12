@@ -37,7 +37,7 @@
 
 ## 验证记录
 
-- `openspec validate --all --strict`：OpenSpec 1.16.0，35 passed、0 failed，2026-11-12T04:52:40Z，见 `openspec-strict.txt`。
+- `openspec validate --all --strict`：OpenSpec 1.16.0，35 passed、0 failed，2026-11-12T05:05:19Z，见 `openspec-strict.txt`。
 - 定向浏览器回归：12/12，rc=0，2026-11-12T04:54:00Z–04:54:01Z，确认用例含 `reason=model_admission_unknown` 与 `status=unconfirmed_retryable`，见 `targeted-browser.txt`。四个语义变异复跑均 `rc=2` 且各自红在对应判据，原始输出见 `mutations/VUX-001-queue-copy.txt` 至 `VUX-004-expiry.txt`，完整 runner 输出另有同名 `.log`。
 - 全量浏览器 runner：最终兼容运行见原始字节压缩件 `browser-compat-run.txt.gz` 与 `browser-compat-receipt.txt`，2026-11-12T04:54:18Z–05:02:31Z，40/40 套件 `aggregate_rc=0`、runner `rc=0`。`mcp_zero_consent` 的四链均为 `issued=true`，并确认 `realHub=true`、`realTemporaryPG=true`。md-render sync/parity 子门均为 `rc=0`。首次全量尝试见 `browser-run.txt.gz`／`browser-receipt.txt`：其他套件通过，但 `mcp_zero_consent` 子进程选到 Node 18.19.1，而该次安装的 Playwright 要求 Node 20，环境门失败；改用兼容 Node 18 的 Playwright 后完整 runner 全绿。两份 `.gz` 都是 runner 原始 stdout/stderr 字节，仅用 gzip 保存。
 - `scripts/run-build-tests.sh`：rc=0，2026-11-12T04:41:33Z–04:50:41Z，`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`，原始日志 `run-build-tests.txt`。

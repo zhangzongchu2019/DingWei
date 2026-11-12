@@ -5,7 +5,7 @@
 - [x] T-03 扩展浏览器回归，覆盖四项要求并执行语义变异。
 - [x] T-04 完成页面版本来源只读调研并记录报告。
 - [x] T-05 执行 md-render/page-literal、OpenSpec strict、浏览器及 run-build-tests 门，整理原始日志。
-- [ ] T-06 生成 SHA256SUMS，提交并推送分支，核验 ls-remote。
+- [x] T-06 生成 SHA256SUMS，提交并推送分支，核验 ls-remote。
 
 ## 交接记录
 
@@ -20,4 +20,8 @@
 - 日期：2026-11-12；执行者：togpt60lunazzc；commit：待提交。
   - 完成：全量浏览器 runner 40/40、md-render sync/parity、OpenSpec strict 35/0、run-build-tests (`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`)、console 版本角标 4 项及 `git diff --check` 全通过；四条语义变异复跑均红在指定判据；报告、原始日志与 SHA256SUMS 已整理且 18/18 校验通过。
   - 阻塞：无。
-  - 下一步：生成校验和、提交并推送，核对远端分支 tip。
+  - 下一步：提交并推送，核对远端分支 tip。
+- 日期：2026-11-12；执行者：togpt60lunazzc；内容提交：`47042045a148c68f0c958d9267a186b95ea8569e`。
+  - 完成：分支 `togpt60lunazzc/view-unknown-ux` 已推送；推送后 `ls-remote` 返回同一 tip。
+  - 阻塞：无。
+  - 下一步：无。

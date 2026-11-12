@@ -1,4 +1,4 @@
-openspec_start=2026-11-12T04:52:40+00:00
+openspec_start=2026-11-12T05:05:19+00:00
 ✓ spec/agent-addressing
 ✓ change/agent-http-mcp-gateway
 ✓ spec/change-lifecycle-evidence
@@ -35,5 +35,5 @@ openspec_start=2026-11-12T04:52:40+00:00
 ✓ spec/trusted-origin-policy
 ✓ change/view-unknown-ux
 Totals: 35 passed, 0 failed (35 items)
-openspec_end=2026-11-12T04:52:40+00:00
+openspec_end=2026-11-12T05:05:19+00:00
 openspec_rc=0
