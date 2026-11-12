@@ -8,11 +8,11 @@
 - [x] T-06 每类新增判据执行语义变异并记录红点。
 - [x] T-07 只读记录 Hub admission_unknown 终态现状与 expired_unknown 设计利弊。
 - [x] T-08 执行定向与全量浏览器、OpenSpec strict、run-build-tests、版本字面量扫描、diff 检查；整理 SHA256SUMS。
-- [ ] T-09 提交、推送并核验 ls-remote。
+- [x] T-09 提交、推送并核验 ls-remote。
 
 ## 交接记录
 
 - 日期：2026-11-12；执行者：togpt60lunazzc；commit：待提交。
-  - 完成：页面文案/计时、本地标记、批量不再跟踪、回归与 Hub 只读报告均已完成；浏览器 runner 40/40 aggregate_rc=0、run-build-tests rc0、OpenSpec strict 37/0、md-render sync/parity、版本扫描与 diff 检查通过；6 项语义变异各在指定判据红。
+  - 完成：页面文案/计时、本地标记、批量不再跟踪、回归与 Hub 只读报告均已完成；浏览器 runner 40/40 aggregate_rc=0、run-build-tests rc0、OpenSpec strict 37/0、md-render sync/parity、版本扫描与 diff 检查通过；6 项语义变异各在指定判据红。实现首提交 `bcf395dde871ebe331e4ddc9f8b1633ad5692d22` 已推送，`ls-remote` 一致。
   - 阻塞：无。
-  - 下一步：生成证据 SHA256SUMS，提交并推送后核对 ls-remote。
+  - 下一步：无；本单完成。
