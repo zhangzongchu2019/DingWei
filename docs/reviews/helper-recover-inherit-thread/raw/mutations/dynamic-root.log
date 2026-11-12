@@ -1,0 +1,18 @@
+test_recovered_root_rotates_without_rebinding_children_and_factory_tracks_latest (test_sub_agent_helper.RecoveryRootLaneTests.test_recovered_root_rotates_without_rebinding_children_and_factory_tracks_latest) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+FAIL
+
+======================================================================
+FAIL: test_recovered_root_rotates_without_rebinding_children_and_factory_tracks_latest (test_sub_agent_helper.RecoveryRootLaneTests.test_recovered_root_rotates_without_rebinding_children_and_factory_tracks_latest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/hri-mut-tn2_e5aq/tests/test_sub_agent_helper.py", line 833, in test_recovered_root_rotates_without_rebinding_children_and_factory_tracks_latest
+    self.assertEqual(second._thread_id,latest,'HRI004_ROOT_FACTORY_CAPTURED_FIRST_ID')
+AssertionError: 'existing-root' != '00ed50a2-7ce4-4ba5-a20a-326be53ded49'
+- existing-root
++ 00ed50a2-7ce4-4ba5-a20a-326be53ded49
+ : HRI004_ROOT_FACTORY_CAPTURED_FIRST_ID
+
+----------------------------------------------------------------------
+Ran 1 test in 0.070s
+
+FAILED (failures=1)

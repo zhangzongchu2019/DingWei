@@ -1,0 +1,9 @@
+PASS view-service release core
+--- PASS: TestDeviceClaimAcrossActualClientAndHub (1.96s)
+--- PASS: TestDeviceClaimAcrossActualClientAndPostgres (37.95s)
+--- PASS: TestDesktopMCPRoundTripAcrossRealHub (3.04s)
+--- PASS: TestHostedBodySendAcrossRealHub (4.67s)
+--- PASS: TestProjectContextAcrossRealHTTPHelperIPCMCP (0.43s)
+--- PASS: TestBlockerAcrossRealHTTPHelperIPCMCP (1.19s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	49.251s

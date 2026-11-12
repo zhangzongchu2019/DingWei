@@ -1,0 +1,17 @@
+test_adapter_recovery_inherits_final_thread_and_never_replays_unknown (test_codex_stale_thread.RecoveryThreadInheritance.test_adapter_recovery_inherits_final_thread_and_never_replays_unknown) ... [delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+FAIL
+
+======================================================================
+FAIL: test_adapter_recovery_inherits_final_thread_and_never_replays_unknown (test_codex_stale_thread.RecoveryThreadInheritance.test_adapter_recovery_inherits_final_thread_and_never_replays_unknown)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/hri-mut-tn2_e5aq/tests/test_codex_stale_thread.py", line 629, in test_adapter_recovery_inherits_final_thread_and_never_replays_unknown
+    self.assertEqual(replacement._thread_id, 'bound-thread', 'HRI001_INHERIT_FINAL_ROOT')
+AssertionError: '' != 'bound-thread'
++ bound-thread
+ : HRI001_INHERIT_FINAL_ROOT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.011s
+
+FAILED (failures=1)

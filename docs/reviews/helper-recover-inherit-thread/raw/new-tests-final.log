@@ -1,0 +1,6 @@
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+----------------------------------------------------------------------
+Ran 9 tests in 0.217s
+
+OK

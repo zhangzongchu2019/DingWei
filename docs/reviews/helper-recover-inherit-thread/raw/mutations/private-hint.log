@@ -1,0 +1,17 @@
+test_private_replacement_requires_writer_and_exact_previous_binding (test_sub_agent_helper.RecoveryRootLaneTests.test_private_replacement_requires_writer_and_exact_previous_binding) ... FAIL
+
+======================================================================
+FAIL: test_private_replacement_requires_writer_and_exact_previous_binding (test_sub_agent_helper.RecoveryRootLaneTests.test_private_replacement_requires_writer_and_exact_previous_binding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/hri-mut-tn2_e5aq/tests/test_sub_agent_helper.py", line 852, in test_private_replacement_requires_writer_and_exact_previous_binding
+    self.assertEqual(write.call_args.args[2]['thread_id'],new,'HRI004_PRIVATE_HINT_NOT_REPLACED')
+AssertionError: 'eaee367f-851b-497a-be5d-d5291963aceb' != '5064daf7-6d93-4cc8-ac3f-6f439290beb4'
+- eaee367f-851b-497a-be5d-d5291963aceb
++ 5064daf7-6d93-4cc8-ac3f-6f439290beb4
+ : HRI004_PRIVATE_HINT_NOT_REPLACED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.054s
+
+FAILED (failures=1)

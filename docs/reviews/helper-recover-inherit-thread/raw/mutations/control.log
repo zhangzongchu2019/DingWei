@@ -1,0 +1,12 @@
+test_adapter_recovery_inherits_final_thread_and_never_replays_unknown (test_codex_stale_thread.RecoveryThreadInheritance.test_adapter_recovery_inherits_final_thread_and_never_replays_unknown) ... [delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+ok
+test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn (test_codex_stale_thread.RecoveryThreadInheritance.test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn) ... ok
+test_configured_root_and_child_still_refuse_unavailable_thread (test_codex_stale_thread.RecoveryThreadInheritance.test_configured_root_and_child_still_refuse_unavailable_thread) ... ok
+test_recovered_root_rotates_without_rebinding_children_and_factory_tracks_latest (test_sub_agent_helper.RecoveryRootLaneTests.test_recovered_root_rotates_without_rebinding_children_and_factory_tracks_latest) ... [sub-agent] sub_agent_existing_root_tools_unavailable: 当前主会话未安装子 Agent 控制工具，需重开主会话后再创建子 Agent。
+ok
+test_private_replacement_requires_writer_and_exact_previous_binding (test_sub_agent_helper.RecoveryRootLaneTests.test_private_replacement_requires_writer_and_exact_previous_binding) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.155s
+
+OK

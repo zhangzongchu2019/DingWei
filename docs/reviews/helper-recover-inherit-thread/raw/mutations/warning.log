@@ -1,0 +1,28 @@
+test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn (test_codex_stale_thread.RecoveryThreadInheritance.test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn) ... 
+  test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn (test_codex_stale_thread.RecoveryThreadInheritance.test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn) (mode='missing') ... FAIL
+  test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn (test_codex_stale_thread.RecoveryThreadInheritance.test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn) (mode='cwd') ... FAIL
+
+======================================================================
+FAIL: test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn (test_codex_stale_thread.RecoveryThreadInheritance.test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn) (mode='missing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/hri-mut-tn2_e5aq/tests/test_codex_stale_thread.py", line 657, in test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn
+    self.assertEqual(output.getvalue().strip(),
+AssertionError: '' != '[delivery][THREAD_REPLACED] old_thread=bo[58 chars]read'
++ [delivery][THREAD_REPLACED] old_thread=bound-thread new_thread=replacement-thread reason=missing_thread
+ : HRI002_FIXED_WARNING_MISSING
+
+======================================================================
+FAIL: test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn (test_codex_stale_thread.RecoveryThreadInheritance.test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn) (mode='cwd')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/hri-mut-tn2_e5aq/tests/test_codex_stale_thread.py", line 657, in test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn
+    self.assertEqual(output.getvalue().strip(),
+AssertionError: '' != '[delivery][THREAD_REPLACED] old_thread=bo[62 chars]able'
++ [delivery][THREAD_REPLACED] old_thread=bound-thread new_thread=replacement-thread reason=thread_unavailable
+ : HRI002_FIXED_WARNING_MISSING
+
+----------------------------------------------------------------------
+Ran 1 test in 0.020s
+
+FAILED (failures=2)

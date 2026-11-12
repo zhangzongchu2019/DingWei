@@ -67,3 +67,5 @@ adapter 恢复时仍先中止旧传输并等待旧投递worker退出。停止旧
 复跑使用 /tmp/coder-0232-locked-venv/bin 的锁定Python环境；常规PATH加 /usr/local/bin:/usr/bin:/bin；无codex PATH以仅含node的临时bin替代/usr/local/bin。两者 env -i、独立临时HOME和短TMPDIR；canonical本身再隔离SH_/DW_/DINGWEI_/DATAD_与CLI状态目录，并运行claude/codex两个profile。不存在在线helper/Codex守护进程调用或升级动作。
 
 最终commit/tree/父与远端ls-remote同值坐标由交审回执提供，不自验收，由opus独立复核及安排r59集成。
+
+实现提交 f17fa09072fa6ca19011ece9fe9b33ff3eb68cb0，父3c9f2722fd5b2e05b52188a8ccb664427f5debdd。首次提交后核Git对象发现仓库通用 *.log 忽略规则滤掉了报告引用的日志，本次追加证据提交显式纳入这些日志；不改写已推实现提交，不改产品源码/测试，原27文件manifest在最终Git对象中逐项验证。最终tip/tree/父仍以交审回执为准。
