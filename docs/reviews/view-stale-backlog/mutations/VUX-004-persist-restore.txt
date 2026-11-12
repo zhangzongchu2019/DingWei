@@ -1,0 +1,50 @@
+  PASS CANCELLABLE_PHASE_HAS_DELETE
+  PASS TAKEN_PHASE_HAS_NO_DELETE
+  PASS REFUSED_CANCEL_EXPLAINS_WHY
+  PASS UNKNOWN_COPY_AND_NO_QUEUE_TIMER
+  PASS UNKNOWN_SUMMARY_MATCHES_VISIBLE_ROWS
+  PASS UNKNOWN_LIST_STABLE_NODE_AND_FOCUS
+  PASS UNTRACK_IS_LOCAL_ONLY
+  PASS RETRYABLE_BACKLOG_NO_QUEUED_TIMER
+  PASS RETRY_DIALOG_COPY_AND_DEFAULT_NO_RETRY
+  PASS RETRY_REQUIRES_EXPLICIT_CONFIRMATION
+  PASS REPLY_REMOVES_RETRY_BEFORE_CONFIRM
+  PASS LATE_ADMITTED_RESTORES_NORMAL_PROCESSED
+  PASS LATE_PROCESSED_RESTORES_NORMAL_PROCESSED
+  PASS EXPIRED_HIDDEN_FROM_WAITING_RETAINED_IN_UNKNOWN_LIST
+  PASS BULK_UNTRACK_DEFAULT_CANCEL
+  PASS BULK_UNTRACK_CONFIRM_IS_LOCAL
+  FAIL UNTRACK_PERSISTS_ACROSS_RELOAD: session=local-fixture restored=[] keys=["dw-view-unknown-untracked-v1:local-fixture:persist-one"]
+
+false !== true
+
+  FAIL UNTRACK_STORAGE_EXPIRES_AFTER_30_DAYS: Expected values to be strictly equal:
++ actual - expected
+
++ '1791763199999'
+- null
+
+  FAIL UNTRACK_STORAGE_CAP_500_KEEPS_NEWEST: Expected values to be strictly equal:
+
+501 !== 500
+
+  PASS NO_PAGE_ERRORS
+Error: 3 regression check(s) failed
+UNTRACK_PERSISTS_ACROSS_RELOAD: session=local-fixture restored=[] keys=["dw-view-unknown-untracked-v1:local-fixture:persist-one"]
+
+false !== true
+
+UNTRACK_STORAGE_EXPIRES_AFTER_30_DAYS: Expected values to be strictly equal:
++ actual - expected
+
++ '1791763199999'
+- null
+
+UNTRACK_STORAGE_CAP_500_KEEPS_NEWEST: Expected values to be strictly equal:
+
+501 !== 500
+
+    at Object.finish (/tmp/vux-mut-j215rqw2/view-service/renderer-regression-selfhost.js:20:34)
+    at /tmp/vux-mut-j215rqw2/view-service/renderer-delivery-status-regression.js:246:12
+
+mutation_rc=2

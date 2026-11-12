@@ -1,0 +1,12 @@
+md-render-core-parity(共享件 vs 产品页 · 输出逐字节对账 · 不比源字节)
+  产品件  renderer-canary-sse.html  sha256=21a06ecd2f5eebc8…
+  共享件  md-render-core.js  sha256=0f03c242f05e359d…
+  规范来源: browser=https://dw123.cmjrt.com core=https://dw123.cmjrt.com
+  location 对齐 ✅ https://dw123.cmjrt.com:50443|https://dw123.cmjrt.com:50443/view/parity-session
+  对账 103 项:逐字节相同 103 · 不同 0
+  🔵 本件没验到:①只比纯函数输出,不比 DOM/CSS/事件与"取不到图时的下载出路";
+               ②样本是我选的,不穷尽;③两侧 location 由本件垫成同一 origin,
+                 真实 spec 页的 origin 未必相同 ⇒ 那一侧要按它自己的 origin 重验;
+               ④headless Chromium · Linux,业主的 macOS + 系统 Chrome 上没跑过。
+
+md-render-core-parity PASS: 103/103 项输出逐字节相同(含 17 注入形状 · 8 类图片扩展名 · 表格/代码/列表)

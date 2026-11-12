@@ -1,0 +1,39 @@
+MUTATION=VUX-002-confirmation
+EXPECTED_RED=RETRY_DIALOG_COPY_AND_DEFAULT_NO_RETRY
+RC=2
+  PASS CANCELLABLE_PHASE_HAS_DELETE
+  PASS TAKEN_PHASE_HAS_NO_DELETE
+  PASS REFUSED_CANCEL_EXPLAINS_WHY
+  PASS UNKNOWN_COPY_AND_NO_QUEUE_TIMER
+  PASS UNTRACK_IS_LOCAL_ONLY
+  FAIL RETRY_DIALOG_COPY_AND_DEFAULT_NO_RETRY: Expected values to be strictly equal:
+
+false !== true
+
+  FAIL RETRY_REQUIRES_EXPLICIT_CONFIRMATION: Expected values to be strictly equal:
+
+false !== true
+
+  FAIL REPLY_REMOVES_RETRY_BEFORE_CONFIRM: Expected values to be strictly equal:
+
+3 !== 1
+
+  PASS LATE_ADMITTED_RESTORES_NORMAL_PROCESSED
+  PASS LATE_PROCESSED_RESTORES_NORMAL_PROCESSED
+  PASS EXPIRED_HIDDEN_FROM_WAITING_RETAINED_IN_UNKNOWN_LIST
+  PASS NO_PAGE_ERRORS
+Error: 3 regression check(s) failed
+RETRY_DIALOG_COPY_AND_DEFAULT_NO_RETRY: Expected values to be strictly equal:
+
+false !== true
+
+RETRY_REQUIRES_EXPLICIT_CONFIRMATION: Expected values to be strictly equal:
+
+false !== true
+
+REPLY_REMOVES_RETRY_BEFORE_CONFIRM: Expected values to be strictly equal:
+
+3 !== 1
+
+    at Object.finish (/tmp/vux-mutant-1qamu0ue/view-service/renderer-regression-selfhost.js:20:34)
+    at /tmp/vux-mutant-1qamu0ue/view-service/renderer-delivery-status-regression.js:121:12
