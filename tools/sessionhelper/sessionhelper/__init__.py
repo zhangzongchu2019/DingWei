@@ -1,3 +1,3 @@
 """sessionHelper package."""
 
-__version__ = "0.2.3.38"
+__version__ = "0.2.3.39"
