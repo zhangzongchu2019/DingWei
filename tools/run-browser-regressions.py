@@ -36,6 +36,7 @@ SUITES = (
     ("console_temp_groups_offstate", "node", ROOT / "view-service/console-temp-groups-offstate-regression.js"),
     ("console_temp_groups", "node", ROOT / "view-service/console-temp-groups-regression.js"),
     ("renderer_in_console_iframe", "node", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
+    ("history_event_object", "node", ROOT / "view-service/history-event-object-regression.js"),
     ("renderer_sse_reconnect", "node", ROOT / "view-service/renderer-sse-reconnect.js"),
     ("r15_session_history_pagination", "node", ROOT / "view-service/r15-session-history-browser-regression.js"),
     ("renderer_timeline_order", "node", ROOT / "view-service/renderer-timeline-order-regression.js"),
@@ -75,6 +76,8 @@ OVERRIDE_ENV_NAMES = (
     "HUB_V2_GOLDEN_FILE", "NODE_PATH", "PLAYWRIGHT_BROWSERS_PATH", "PW_CHANNEL",
     "RENDERER_FILE", "RENDERER_OVERRIDE", "TIMELINE_DEBUG",
     "STALE_SCREENSHOT",  # model admission suite: optional screenshot output path
+    "MUTATE_HISTORY_EVENT_OBJECT",  # history_event_object: one-cut negative control
+    "HISTORY_REPLAY_BASELINE",  # history_event_object: explicit pre-fix comparison only
     # renderer_flood_stress：反向期望、读数落盘路径、推入时限（取值固定在套件里，这三项只改判法／落点／时限）
     "STRESS_EXPECT_MUTANT", "STRESS_READINGS", "STRESS_DEADLINE_S",
 )

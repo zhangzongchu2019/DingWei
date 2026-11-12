@@ -4642,6 +4642,15 @@
     let initialHistoryStreamOpen = null;
     const historyLivePending = [];
     const historyEventIDs = new Set();
+    // json.RawMessage is emitted as an object by the history API. Older fixtures
+    // and callers may still provide serialized JSON, so accept both envelopes.
+    function parseHistoryEvent(value) {
+      let ev = value;
+      if (typeof value === 'string') {
+        try { ev = JSON.parse(value); } catch (_) { return null; }
+      }
+      return ev && typeof ev === 'object' && !Array.isArray(ev) ? { ...ev } : null;
+    }
     function markHistoryEvent(ev) {
       const id = ev?._history?.event_id;
       if (!id) return false;
@@ -4678,14 +4687,18 @@
         const anchorTop = anchor?.getBoundingClientRect().top;
         const prior = new Set(timeline.children);
         historyApplying = true;
+        let invalidHistoryEventRows = 0;
         for (const row of (page.events || [])) {
-          let ev;
-          try { ev = JSON.parse(row.event); } catch (_) { continue; }
+          const ev = parseHistoryEvent(row?.event);
+          if (!ev) { invalidHistoryEventRows++; continue; }
           delete ev._history_gap;
           ev._history = { generation: row.cursor.generation, seq: row.cursor.seq, event_id: row.event_id };
           ev._hubSeq = Number(row.cursor.seq);
           setTimelineEventEpoch(ev, `history:${row.cursor.generation}`);
           handleIncomingEvent(ev);
+        }
+        if (invalidHistoryEventRows) {
+          console.warn(`history page skipped ${invalidHistoryEventRows} invalid event row(s)`);
         }
         // History rows must have concrete timeline nodes before we compute the
         // insertion set. Live user_input replay normally has an echo merge hold;
