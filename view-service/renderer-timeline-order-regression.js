@@ -8,8 +8,8 @@ const { chromium } = require('playwright');
 let source = fs.readFileSync(process.env.RENDERER_OVERRIDE || path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
 const mutationAppend = process.argv.includes('--mutate-append');
 const mutationNoSplit = process.argv.includes('--mutate-no-split');
-const mutationLatestFirst = process.argv.includes('--mutate-latest-first');
-const mutationLatestReload = process.argv.includes('--mutate-latest-reload');
+const mutationLatestOrder = process.argv.includes('--mutate-latest-order');
+const latestReloadOnly = process.argv.includes('--latest-reload-only');
 const mutationLatestTimestamp = process.argv.includes('--mutate-latest-timestamp');
 const roundsArg = process.argv.find(arg => arg.startsWith('--rounds='));
 const rounds = Math.max(1, Math.min(20, Number(roundsArg?.split('=')[1]) || 1));
@@ -122,6 +122,9 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/view/timeline/events') {
     res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
     res.write(': connected\n\n');
+    if (activeMode === 'latest-input') {
+      res.write('id: abcdef0123456789-1\ndata: {"kind":"state_change","data":{"change":"synthetic_epoch_seed"}}\n\n');
+    }
     if (activeMode === 'live') {
       const rows = events('live', activeN);
       let index = 0;
@@ -213,7 +216,7 @@ async function benchmarkHistoryInsert(page) {
   });
 }
 
-async function checkLatestInput(page, n, afterReload) {
+async function checkLatestInput(page, n, afterReload, verify = true) {
   const url = `http://127.0.0.1:${server.address().port}/view/timeline?mode=latest-input&n=${n}`;
   if (afterReload) await page.reload({ waitUntil: 'domcontentloaded' });
   else await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -224,7 +227,7 @@ async function checkLatestInput(page, n, afterReload) {
   const inputText = `TIMELINE_LATEST_INPUT_${n}_${afterReload ? 'RELOAD' : 'FIRST'}`;
   const outputText = `TIMELINE_LATEST_OUTPUT_${n}_${afterReload ? 'RELOAD' : 'FIRST'}`;
   await page.evaluate(({ turnId, inputText, outputText, n, afterReload }) => {
-    const epoch = `hub:latest-${n}-${afterReload ? 'reload' : 'first'}`;
+    const epoch = 'abcdef0123456789';
     const input = { kind: 'user_input', text: inputText, turn_id: turnId, delivery_id: turnId,
       data: { lifecycle: 'admitted' }, _hubSeq: 10, _hubEpoch: epoch };
     const output = { kind: 'assistant_text', text: outputText, turn_id: turnId, delivery_id: turnId,
@@ -236,9 +239,6 @@ async function checkLatestInput(page, n, afterReload) {
   }, { turnId, inputText, outputText, n, afterReload });
   await page.getByText(outputText, { exact: false }).waitFor({ timeout: 10000 });
   await page.waitForFunction(() => pendingRenders.size === 0, null, { timeout: 10000 });
-  if ((afterReload && mutationLatestReload) || (!afterReload && mutationLatestFirst)) {
-    await page.locator(`#timeline > .turn-group[data-turn-key="${turnId}"]`).evaluate(node => node.parentNode.insertBefore(node, node.parentNode.firstChild));
-  }
   const state = await page.evaluate(({ oldText, inputText, outputText, turnId }) => {
     const groups = [...document.querySelectorAll('#timeline > .turn-group')];
     const oldIndex = groups.findIndex(group => group.innerText.includes(oldText));
@@ -252,13 +252,15 @@ async function checkLatestInput(page, n, afterReload) {
       inputFound: !!next?.innerText.includes(inputText), outputFound: !!next?.innerText.includes(outputText), inputTs, outputTs };
   }, { oldText, inputText, outputText, turnId });
   const cell = afterReload ? '③ refresh then new input' : '② history then live new input';
-  assert(state.oldIndex >= 0 && state.latestIndex === state.groupCount - 1,
-    `${cell}: new turn must follow old history output; state=${JSON.stringify(state)}`);
-  assert.deepStrictEqual(state.segmentKinds, ['user', 'assistant'],
-    `${cell}: same new turn must keep input before output; state=${JSON.stringify(state)}`);
-  assert(state.inputFound && state.outputFound, `${cell}: both segments must render; state=${JSON.stringify(state)}`);
-  assert(Number.isFinite(state.inputTs) && Number.isFinite(state.outputTs) && state.inputTs <= state.outputTs,
-    `${cell}: input fallback time must be present and no later than output; state=${JSON.stringify(state)}`);
+  if (verify) {
+    assert(state.oldIndex >= 0 && state.latestIndex === state.groupCount - 1,
+      `${cell}: new turn must follow old history output; state=${JSON.stringify(state)}`);
+    assert.deepStrictEqual(state.segmentKinds, ['user', 'assistant'],
+      `${cell}: same new turn must keep input before output; state=${JSON.stringify(state)}`);
+    assert(state.inputFound && state.outputFound, `${cell}: both segments must render; state=${JSON.stringify(state)}`);
+    assert(Number.isFinite(state.inputTs) && Number.isFinite(state.outputTs) && state.inputTs <= state.outputTs,
+      `${cell}: input fallback time must be present and no later than output; state=${JSON.stringify(state)}`);
+  }
   return state;
 }
 
@@ -277,6 +279,11 @@ async function main() {
     assert.strictEqual(source.split(anchor).length - 1, 1, 'input arrival timestamp fallback anchor must be unique');
     source = source.replace(anchor, '      // mutant: omit input arrival timestamp fallback\n');
   }
+  if (mutationLatestOrder) {
+    const anchor = '      if (Number.isFinite(aTs) && Number.isFinite(bTs) && aTs !== bTs) return aTs - bTs;\n';
+    assert.strictEqual(source.split(anchor).length - 1, 1, 'cross-epoch timestamp-order anchor must be unique');
+    source = source.replace(anchor, '      // mutant: use epoch rank before event time\n');
+  }
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
   try {
@@ -290,7 +297,7 @@ async function main() {
       await check(page, 'history-page', i);
       await check(page, 'after-end', i);
       await check(page, 'idle', i);
-      const latestFirst = await checkLatestInput(page, i, false);
+      const latestFirst = await checkLatestInput(page, i, false, !latestReloadOnly);
       const latestAfterReload = await checkLatestInput(page, i, true);
       console.log(`LATEST_INPUT_ORDER ${JSON.stringify({ first: latestFirst, afterReload: latestAfterReload })}`);
       await page.close();

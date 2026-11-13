@@ -3603,6 +3603,12 @@
     function compareTimelineKey(aRank, aSeq, bRank, bSeq) {
       return aRank === bRank ? aSeq - bSeq : aRank - bRank;
     }
+    function compareTimelineNodes(a, b) {
+      const aTs = timelineTimestamp(a), bTs = timelineTimestamp(b);
+      if (Number.isFinite(aTs) && Number.isFinite(bTs) && aTs !== bTs) return aTs - bTs;
+      return compareTimelineKey(Number(a?.dataset?.timelineEpochOrder) || 0, timelineSequence(a),
+        Number(b?.dataset?.timelineEpochOrder) || 0, timelineSequence(b));
+    }
     function setNodeTimelineKey(node, rank, seq) {
       node.dataset.timelineEpochOrder = String(rank);
       node.dataset.timelineSeq = String(seq);
@@ -3633,7 +3639,9 @@
         const rank = Number(node.dataset.timelineEpochOrder) || 0;
         const oldRank = Number(node._timelineEpochOrderAtPlacement);
         const oldSeq = Number(node._timelineSeqAtPlacement);
-        if (node.parentNode === timeline && oldRank === rank && oldSeq === seq) return;
+        const ts = timelineTimestamp(node);
+        const oldTs = Number(node._timelineTsAtPlacement);
+        if (node.parentNode === timeline && oldRank === rank && oldSeq === seq && Object.is(oldTs, ts)) return;
         if (node.parentNode === timeline) {
           forgetTimelineSequenceNode(node);
           timeline.removeChild(node);
@@ -3642,15 +3650,15 @@
         while (low < high) {
           const mid = (low + high) >>> 1;
           const current = timelineSequencedNodes[mid];
-          const currentRank = Number(current.dataset.timelineEpochOrder) || 0;
           const currentSeq = timelineSequence(current);
-          if (Number.isFinite(currentSeq) && compareTimelineKey(currentRank, currentSeq, rank, seq) <= 0) low = mid + 1;
+          if (Number.isFinite(currentSeq) && compareTimelineNodes(current, node) <= 0) low = mid + 1;
           else high = mid;
         }
         const next = timelineSequencedNodes[low] || null;
         timelineSequencedNodes.splice(low, 0, node);
         node._timelineEpochOrderAtPlacement = rank;
         node._timelineSeqAtPlacement = seq;
+        node._timelineTsAtPlacement = ts;
         timeline.insertBefore(node, next);
         return;
       }
@@ -3845,6 +3853,11 @@
       }
       const prevEv = group.events[group.events.length - 1];
       group.events.push(ev);   // 不做 cursor 去重:同一 item 的多片 delta 共用 cursor,去重会吞正文
+      const eventTimes = group.events.map(event => Number(event?.ts)).filter(ts => Number.isFinite(ts) && ts > 0);
+      const priorTimelineTs = timelineTimestamp(group.node);
+      const nextTimelineTs = eventTimes.length ? Math.min(...eventTimes) : NaN;
+      if (Number.isFinite(nextTimelineTs)) group.node.dataset.timelineTs = String(nextTimelineTs);
+      const timelineTsChanged = Number.isFinite(nextTimelineTs) && nextTimelineTs !== priorTimelineTs;
       const seq = Number(ev._hubSeq);
       if (Number.isSafeInteger(seq) && seq > 0) {
         const rank = timelineEventRank(ev);
@@ -3855,6 +3868,7 @@
           placeTimelineNode(group.node);
         }
       } else if (!group.node.parentNode) placeTimelineNode(group.node);
+      if (timelineTsChanged) placeTimelineNode(group.node);
       // R-V2-0105 件一压力格：按 cursor 顺序到达（常态）不置乱序，重渲与合并就不必每次全量重排；
       // 全量重排在 2 万条时每次约百毫秒，每片都触发一次重渲时页面整个卡住（含同页 Agent 列表轮询）。
       // 平局（同 cursor 多片）保持到达序，与稳定排序结果相同。

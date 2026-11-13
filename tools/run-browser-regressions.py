@@ -78,6 +78,7 @@ OVERRIDE_ENV_NAMES = (
     "STALE_SCREENSHOT",  # model admission suite: optional screenshot output path
     "MUTATE_HISTORY_EVENT_OBJECT",  # history_event_object: one-cut negative control
     "MUTATE_HISTORY_SSE_INPUT_BUFFER",  # history_event_object: remove initial SSE buffering for the replay regression
+    "MUTATE_HISTORY_INPUT_RECEIVED_AT",  # history_event_object: remove the received_at fallback for history inputs without ts
     "HISTORY_REPLAY_BASELINE",  # history_event_object: explicit pre-fix comparison only
     # renderer_flood_stress：反向期望、读数落盘路径、推入时限（取值固定在套件里，这三项只改判法／落点／时限）
     "STRESS_EXPECT_MUTANT", "STRESS_READINGS", "STRESS_DEADLINE_S",
