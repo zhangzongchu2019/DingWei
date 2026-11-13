@@ -122,7 +122,8 @@ async function main() {
     }, originalFirst);
     assert.ok(order.first.includes('R15_HISTORY_SEQ_001') && order.seq100NextIsOriginal,
       `timeline order invalid: ${JSON.stringify(order)} before=${JSON.stringify(beforeScroll)} after=${JSON.stringify(afterScroll)}`);
-    assert.strictEqual(await timeline.locator('[data-message-id^="r15-paired-message-"]').count(), 1, 'history input_posted/user_input echo with one delivery rendered more than one user card');
+    assert.strictEqual(await timeline.locator('.turn-user').filter({ hasText: 'R15_HISTORY_SEQ_051_ECHO' }).count(), 1,
+      'history input_posted/user_input echo with one delivery must render once in its turn input segment');
     assert.ok(Math.abs(afterTop - beforeTop) <= 2, `scroll anchor shifted ${afterTop - beforeTop}px before=${JSON.stringify(beforeScroll)} after=${JSON.stringify(afterScroll)} anchor=${JSON.stringify(anchorState)} first=${JSON.stringify(firstState)}`);
     await page.evaluate(() => fetch('/view/r15/test-live', { method: 'POST' }));
     await page.getByText('R15_LIVE_AFTER_PAGE').waitFor({ timeout: 7000 });
