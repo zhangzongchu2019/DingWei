@@ -102,10 +102,11 @@ const server = http.createServer((req, res) => {
       const generation = before ? 'gen-after-restart' : 'gen-before-restart';
       const seq = before ? 1 : 9;
       const marker = before ? 'HISTORY_AFTER_RESTART' : 'HISTORY_BEFORE_RESTART';
+      const chronologicalTs = BASE + (before ? 9 : 1);
       const event = { kind: 'assistant_text', text: marker, delivery_id: marker, turn_id: 'history-generation-shared-turn',
-        session_id: 'history-epoch-session', ts: BASE + seq, data: {}, cursor: null };
+        session_id: 'history-epoch-session', ts: chronologicalTs, data: {}, cursor: null };
       const rows = [{ cursor: { generation, seq }, event_id: `${generation}-${seq}`,
-        received_at: new Date(BASE + seq).toISOString(), event: JSON.stringify(event) }];
+        received_at: new Date(chronologicalTs).toISOString(), event: JSON.stringify(event) }];
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
       res.end(JSON.stringify({ generation, high_water: seq, events: rows, has_older: !before, before_seq: seq })); return;
     }

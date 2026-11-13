@@ -1,0 +1,11 @@
+{
+  "source_commit": "216186ee811a2a3ca7567a74390d65636a56aa42",
+  "capture_session": "opus50tc2k.zzc",
+  "redacted": true,
+  "files_sha256": {
+    "history.json": "9c9a18479533a6d9ff81a8e0deb9c2cd83fd25cd6829bd4c324e0d35e7f50d5e",
+    "sse-frames.jsonl": "5cc07e330be09aa8bebad4ddc383ed13615901105a18e31a689c2ac744bdd91e",
+    "capture-metrics.json": "eae3740e235691248b95a1a04e35618d5c5c9aedb8e55b2c8c3ea6b35b6e6a9d"
+  },
+  "replay": "history JSON plus SSE frames in capture order, preserving each frame event name and id"
+}

@@ -2153,6 +2153,7 @@
     };
 
     const c1DeliveryCards = new Map();   // deliveryMergeKey -> messageIdKey(display v1 copy 归并寻址:observed_delivery_id→primary 卡)
+    const deliveryTurnInputs = new Map(); // deliveryMergeKey -> turnKey, so history-first input suppresses its later canonical card
     const pendingModelAdmissionFailures = new Map();
     function paintModelAdmissionFailure(deliveryId) {
       const key = deliveryMergeKey(deliveryId);
@@ -2720,11 +2721,24 @@
         const pKey = c1DeliveryCards.get(deliveryMergeKey(echoKey));
         const pEntry = pKey ? c1InputCards.get(pKey) : null;
         if (pEntry && pEntry.footer) {
+          const turnKey = turnKeyFor(ev);
+          if (turnKey) {
+            // input_posted is the delivery card while the input is queued. Once
+            // its admitted user_input supplies a turn, move that same input into
+            // the turn group and discard the provisional standalone card.
+            pEntry.card?.remove();
+            c1InputCards.delete(pKey);
+            for (const [deliveryKey, mappedKey] of c1DeliveryCards) {
+              if (mappedKey === pKey) c1DeliveryCards.delete(deliveryKey);
+            }
+            ev.ts = Number.isFinite(ev.ts) ? ev.ts : Date.now();
+          } else {
           c1Footnote(pEntry, 'echo_merge', '已回显');
           rendered += 1;
           updateMetrics();
           if (shouldFollow) scheduleTimelineToBottom();
           return;
+          }
         }
         if (!historyApplying) {
           bufferMergeCopy(echoKey, ev, { admit: true, holdMs: C2_ECHO_HOLD_MS, footKey: 'echo_merge' });
@@ -2906,7 +2920,7 @@
     }
 
     function turnKeyFor(ev) {
-      return ev.turn_id || ev.delivery_id || '';
+      return ev.turn_id || ev._norm?.turnId || ev.delivery_id || '';
     }
 
     function compareCursor(a, b) {
@@ -3708,19 +3722,39 @@
 
     function renderEvent(ev) {
       if (ev.kind === 'state_change' && ev.data?.change === 'session_init') return renderState(ev);
-      if (ev.kind === 'input_posted') return renderUser(ev);   // C1:canonical 输入事件,不经 turn 分组
+      if (ev.kind === 'input_posted') {
+        const inputDelivery = ev._norm?.originDlv || ev._norm?.deliveryId || ev.delivery_id || '';
+        if (inputDelivery && deliveryTurnInputs.has(deliveryMergeKey(inputDelivery))) return;
+        return renderUser(ev);   // C1:canonical 输入事件,不经 turn 分组
+      }
       // 🔴 T-074:legacy `user_input` 与 canonical `input_posted` 描述的是**同一条输入**,
       // 却分别落到两条渲染路径(前者经 turn 分组、后者走独立输入卡),于是同一条输入画两次。
       // ⇒ 若该笔投递**已经有卡**(合卡索引命中,前缀两种写法已归一),就让它就地更新,
       //   不另起分组节点。
       // ⚠️ **带守卫,不无条件抑制**:若 input_posted 未到(索引未命中),user_input 仍照常渲染 ——
       //   否则在只有 legacy 事件的场景下,消息会整个消失。今晚已经因无守卫的抑制栽过一次。
-      if (ev.kind === 'user_input' && ev.delivery_id
-          && c1DeliveryCards.has(deliveryMergeKey(ev.delivery_id))) {
-        return renderUser(ev);
+      const inputDelivery = ev._norm?.originDlv || ev._norm?.deliveryId || ev.delivery_id || '';
+      if (ev.kind === 'user_input' && inputDelivery
+          && c1DeliveryCards.has(deliveryMergeKey(inputDelivery))) {
+        const key = c1DeliveryCards.get(deliveryMergeKey(inputDelivery));
+        const entry = c1InputCards.get(key);
+        const turnKey = turnKeyFor(ev);
+        if (!turnKey) return renderUser(ev);
+        deliveryTurnInputs.set(deliveryMergeKey(inputDelivery), turnKey);
+        // The canonical input_posted card is provisional until a turn is known.
+        // Move it into this turn exactly once when the admitted echo arrives.
+        entry?.card?.remove();
+        c1InputCards.delete(key);
+        for (const [deliveryKey, mappedKey] of c1DeliveryCards) {
+          if (mappedKey === key) c1DeliveryCards.delete(deliveryKey);
+        }
       }
       const turnKey = turnKeyFor(ev);
       if (turnKey && ['user_input', 'assistant_text', 'tool_call', 'state_change', 'error'].includes(ev.kind)) {
+        if (ev.kind === 'user_input') {
+          const delivery = ev._norm?.originDlv || ev._norm?.deliveryId || ev.delivery_id || '';
+          if (delivery) deliveryTurnInputs.set(deliveryMergeKey(delivery), turnKey);
+        }
         return renderTurnEvent(turnKey, ev);
       }
       if (HIDDEN_TIMELINE_CARD_KINDS.has(ev.kind)) {
@@ -3737,10 +3771,11 @@
       // ts=UTC epoch 毫秒(helper 打戳);按查看者本地时区渲染,悬停给完整本地时间+UTC。
       // 旧事件(ring 回放的无 ts 存量)不显示,不兜底猜时间。
       if (!Number.isFinite(ev?.ts)) return '';
-      const d = new Date(ev.ts);
+      const ts = ev.ts;
+      const d = new Date(ts);
       if (Number.isNaN(d.getTime())) return '';   // 超Date值域的ts同走不显示不猜,防toISOString抛RangeError丢整卡(dev55 R1 F1)
       const full = `${d.toLocaleString()} (${d.toISOString()} UTC)`;
-      return `<span class="event-time" data-ts="${ev.ts}" title="${escapeHtml(full)}">${escapeHtml(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }))}</span>`;
+      return `<span class="event-time" data-ts="${ts}" title="${escapeHtml(full)}">${escapeHtml(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }))}</span>`;
     }
 
     function eventMetaHtml(ev) {
