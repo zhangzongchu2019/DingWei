@@ -1,0 +1,47 @@
+{
+  "job": "go-short",
+  "argv": [
+    "go",
+    "test",
+    "-json",
+    "-v",
+    "-count=1",
+    "-p=2",
+    "-timeout=60m",
+    "./cmd/workpulse",
+    "./internal/changeflow/...",
+    "./internal/coordinatereview/...",
+    "./internal/specconfirm/...",
+    "./internal/specread/...",
+    "./internal/taskdispatch/...",
+    "./internal/store/...",
+    "./internal/m8/..."
+  ],
+  "env": {
+    "HOME": "/tmp/r59-closeout-gates/h-go-short",
+    "TMPDIR": "/tmp/r59g",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "HUB_TEST_PG_STRICT": "1",
+    "GOTOOLCHAIN": "local",
+    "GOCACHE": "/tmp/busy-cf05/h-normal/.cache/go-build",
+    "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+    "GOFLAGS": "-p=2",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "OPENSPEC_TELEMETRY": "0"
+  },
+  "uid": 1001,
+  "start": "2026-11-13T11:15:24.755977+00:00",
+  "end": "2026-11-13T11:23:04.486168+00:00",
+  "rc": 0,
+  "head": "ee2dacab35622746c2806da7a299db5478f38241",
+  "note": "归档工作树测试；HEAD为复盘提交，工作树改动仅openspec/docs，完整准备树随后提交",
+  "full_log": {
+    "path": "/tmp/r59-closeout-gates/go-short.log",
+    "bytes": 4048335,
+    "sha256": "8c2f4c7d015ddf8f865b7a1236745ceb22d4fa9df0a8e42db715d7fd42a1eca0"
+  }
+}

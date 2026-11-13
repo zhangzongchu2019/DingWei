@@ -30,4 +30,26 @@ BOUNDARY.json核基线祖先、复盘来源、保留10项目录零差异。最�
 
 ## 门读数
 
-执行中，最终结果待本次门完成后补齐。Go整跑使用HUB_TEST_PG_STRICT=1、-json -v -count=1，全部SKIP名称与原因单列；canonical使用干净环境与锁定venv。原始长日志只保留本机路径、字节数及SHA256，提交逐行摘录。
+完整Go命令：
+
+```sh
+HUB_TEST_PG_STRICT=1 go test -json -v -count=1 -p=2 -timeout=60m ./cmd/workpulse ./internal/changeflow/... ./internal/coordinatereview/... ./internal/specconfirm/... ./internal/specread/... ./internal/taskdispatch/... ./internal/store/... ./internal/m8/...
+```
+
+实际子进程由显式白名单环境启动，普通uid1001；Go1.22.2/Node22.23.1/锁定venv Python3.12.3/OpenSpec1.16.0，详情versions.json与raw/*-command.json；剥离继承SH_/DW_/DINGWEI_状态。Go最终TMPDIR=/tmp/r59g；依赖与编译缓存只读复用本机测试缓存，GOPROXY=off、GOSUMDB=off。-v完整纯文本已从JSON的Output事件逐行重建，见gate-metadata.json的verbose_log。
+
+| 门 | 结果 | UTC |
+|---|---|---|
+| canonical | rc0；两profile各1203/1203、94文件、27 Python/2 shell，unittest SKIP 0 | 2026-11-13T11:11:38.824979+00:00～2026-11-13T11:21:24.374813+00:00 |
+| 指定Go全包最终重跑 | rc0；全部事件2823 PASS/0 FAIL/48 SKIP，顶层1579/0/30 | 2026-11-13T11:15:24.755977+00:00～2026-11-13T11:23:04.486168+00:00 |
+| OpenSpec1.16.0全仓strict | 35 passed/0 failed，rc0 | 完整原文raw/final-strict.txt |
+| 本次逐任务坐标 | 58 checked/0 missing，10项任务覆盖，rc0 | raw/final-coords.txt |
+| 旧清账坐标 | 45 checked/0 missing，rc0 | raw/final-old-coords.txt |
+| 归档spec内容核对 | 26条增量Requirement正文与主spec逐节精确一致 | archive-spec-coverage.json |
+| 边界与diff-check | rc0；docs/openspec以外0路径、保留10项目录与基线一致 | BOUNDARY.json |
+
+其中internal/m8整包为1545 PASS/0 FAIL/37 SKIP，package rc0。48条SKIP全名与原因见SKIPS.md；均为既有opt-in、独立二进制/浏览器/故障矩阵/性能门或待裁定fixture，不记为通过。其中跨runtime部分在canonical shell另有实际执行，仍不抹掉Go独立整跑中的原始SKIP。
+
+首轮Go整体rc1：2822 PASS/1 FAIL/48 SKIP，仅TestNotifySocketFirstStopPreservesNewListenerAtReboundPath的Unix socket路径过长（bind: invalid argument）；原-v及JSON哈希、命令与失败摘录全部保留。仅缩短TMPDIR后将全部指定包以-count=1完整重跑rc0，该用例PASS；没有改源码、测试或放宽断言。首轮的internal/m8自身包仍PASS，最终以完整重跑读数为交件门。
+
+验证期间产品与OpenSpec归档树保持相同；归档承载提交ee2dacab3只把已核工作树入Git，之后只补docs证据，不改变产品或规格。最终tip/tree由推送核对后的平台回执给出；不以本报告当作独立验收或整版GO。

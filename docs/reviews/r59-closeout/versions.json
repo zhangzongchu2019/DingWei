@@ -1,0 +1,7 @@
+{
+  "go": "go version go1.22.2 linux/amd64",
+  "node": "v22.23.1",
+  "python": "Python 3.12.3",
+  "openspec": "1.16.0",
+  "uid": "1001"
+}

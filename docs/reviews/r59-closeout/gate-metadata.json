@@ -1,0 +1,140 @@
+{
+  "go": {
+    "job": "go",
+    "argv": [
+      "go",
+      "test",
+      "-json",
+      "-v",
+      "-count=1",
+      "-p=2",
+      "-timeout=60m",
+      "./cmd/workpulse",
+      "./internal/changeflow/...",
+      "./internal/coordinatereview/...",
+      "./internal/specconfirm/...",
+      "./internal/specread/...",
+      "./internal/taskdispatch/...",
+      "./internal/store/...",
+      "./internal/m8/..."
+    ],
+    "env": {
+      "HOME": "/tmp/r59-closeout-gates/h-go",
+      "TMPDIR": "/tmp/r59-closeout-gates/t-go",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "HUB_TEST_PG_STRICT": "1",
+      "GOTOOLCHAIN": "local",
+      "GOCACHE": "/tmp/busy-cf05/h-normal/.cache/go-build",
+      "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+      "GOFLAGS": "-p=2",
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "OPENSPEC_TELEMETRY": "0"
+    },
+    "uid": 1001,
+    "start": "2026-11-13T11:11:39.981340+00:00",
+    "end": "2026-11-13T11:19:51.405423+00:00",
+    "rc": 1,
+    "head": "ee2dacab35622746c2806da7a299db5478f38241",
+    "note": "归档工作树测试；HEAD为复盘提交，工作树改动仅openspec/docs，完整准备树随后提交",
+    "full_log": {
+      "path": "/tmp/r59-closeout-gates/go.log",
+      "bytes": 4053405,
+      "sha256": "49efbf7708519be7b16c898d5b519dd468f32e6014ce9726635e6dd6367c90b9"
+    },
+    "verbose_log": {
+      "path": "/tmp/r59-closeout-gates/go-v.txt",
+      "bytes": 1029684,
+      "sha256": "fdcd2c826e7cd3ae516f4301a805d4973f27aef0e6f31583a86639172e6cdbee"
+    }
+  },
+  "go-short": {
+    "job": "go-short",
+    "argv": [
+      "go",
+      "test",
+      "-json",
+      "-v",
+      "-count=1",
+      "-p=2",
+      "-timeout=60m",
+      "./cmd/workpulse",
+      "./internal/changeflow/...",
+      "./internal/coordinatereview/...",
+      "./internal/specconfirm/...",
+      "./internal/specread/...",
+      "./internal/taskdispatch/...",
+      "./internal/store/...",
+      "./internal/m8/..."
+    ],
+    "env": {
+      "HOME": "/tmp/r59-closeout-gates/h-go-short",
+      "TMPDIR": "/tmp/r59g",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "HUB_TEST_PG_STRICT": "1",
+      "GOTOOLCHAIN": "local",
+      "GOCACHE": "/tmp/busy-cf05/h-normal/.cache/go-build",
+      "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+      "GOFLAGS": "-p=2",
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "OPENSPEC_TELEMETRY": "0"
+    },
+    "uid": 1001,
+    "start": "2026-11-13T11:15:24.755977+00:00",
+    "end": "2026-11-13T11:23:04.486168+00:00",
+    "rc": 0,
+    "head": "ee2dacab35622746c2806da7a299db5478f38241",
+    "note": "归档工作树测试；HEAD为复盘提交，工作树改动仅openspec/docs，完整准备树随后提交",
+    "full_log": {
+      "path": "/tmp/r59-closeout-gates/go-short.log",
+      "bytes": 4048335,
+      "sha256": "8c2f4c7d015ddf8f865b7a1236745ceb22d4fa9df0a8e42db715d7fd42a1eca0"
+    },
+    "verbose_log": {
+      "path": "/tmp/r59-closeout-gates/go-short-v.txt",
+      "bytes": 1026158,
+      "sha256": "85b51d675db5453ede726aab11603eb98a63e31e00b82b37cce98500baa912cb"
+    }
+  },
+  "canonical": {
+    "job": "canonical",
+    "argv": [
+      "sh",
+      "scripts/run-build-tests.sh"
+    ],
+    "env": {
+      "HOME": "/tmp/r59-closeout-gates/h-canonical",
+      "TMPDIR": "/tmp/r59-closeout-gates/t-canonical",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "HUB_TEST_PG_STRICT": "1",
+      "GOTOOLCHAIN": "local",
+      "GOCACHE": "/tmp/busy-cf05/h-normal/.cache/go-build",
+      "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+      "GOFLAGS": "-p=2",
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "OPENSPEC_TELEMETRY": "0"
+    },
+    "uid": 1001,
+    "start": "2026-11-13T11:11:38.824979+00:00",
+    "end": "2026-11-13T11:21:24.374813+00:00",
+    "rc": 0,
+    "head": "ee2dacab35622746c2806da7a299db5478f38241",
+    "note": "归档工作树测试；HEAD为复盘提交，工作树改动仅openspec/docs，完整准备树随后提交",
+    "full_log": {
+      "path": "/tmp/r59-closeout-gates/canonical.log",
+      "bytes": 1103236,
+      "sha256": "d0a8013eb4a0be40d2c528877052d8487b2e4a5669c5ed4d68922fe1d4ae4f3c"
+    }
+  }
+}

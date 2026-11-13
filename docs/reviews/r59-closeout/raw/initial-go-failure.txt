@@ -1,0 +1,2 @@
+github.com/zhangzongchu2019/dingwei/cmd/workpulse TestNotifySocketFirstStopPreservesNewListenerAtReboundPath
+internal_notify_test.go:214: listen unix /tmp/r59-closeout-gates/t-go/TestNotifySocketFirstStopPreservesNewListenerAtReboundPath1866841300/001/notify.sock: bind: invalid argument

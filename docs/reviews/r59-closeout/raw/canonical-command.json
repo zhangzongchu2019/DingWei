@@ -1,0 +1,34 @@
+{
+  "job": "canonical",
+  "argv": [
+    "sh",
+    "scripts/run-build-tests.sh"
+  ],
+  "env": {
+    "HOME": "/tmp/r59-closeout-gates/h-canonical",
+    "TMPDIR": "/tmp/r59-closeout-gates/t-canonical",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "HUB_TEST_PG_STRICT": "1",
+    "GOTOOLCHAIN": "local",
+    "GOCACHE": "/tmp/busy-cf05/h-normal/.cache/go-build",
+    "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+    "GOFLAGS": "-p=2",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "OPENSPEC_TELEMETRY": "0"
+  },
+  "uid": 1001,
+  "start": "2026-11-13T11:11:38.824979+00:00",
+  "end": "2026-11-13T11:21:24.374813+00:00",
+  "rc": 0,
+  "head": "ee2dacab35622746c2806da7a299db5478f38241",
+  "note": "归档工作树测试；HEAD为复盘提交，工作树改动仅openspec/docs，完整准备树随后提交",
+  "full_log": {
+    "path": "/tmp/r59-closeout-gates/canonical.log",
+    "bytes": 1103236,
+    "sha256": "d0a8013eb4a0be40d2c528877052d8487b2e4a5669c5ed4d68922fe1d4ae4f3c"
+  }
+}

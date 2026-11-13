@@ -1,0 +1,32 @@
+{
+  "rc": 0,
+  "profiles": [
+    {
+      "actual": 1203,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1203,
+      "files": 94,
+      "groups": [
+        1194,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1203,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1203,
+      "files": 94,
+      "groups": [
+        1194,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "python_files": 27,
+  "shell_files": 2,
+  "unittest_skips": []
+}

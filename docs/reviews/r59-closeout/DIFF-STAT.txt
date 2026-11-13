@@ -1,0 +1,80 @@
+ .../2026-11-13-view-refresh-input-output.md        |  79 +++++++++
+ docs/reviews/r59-closeout/BOUNDARY.json            |  30 ++++
+ docs/reviews/r59-closeout/COORDINATES.md           |  30 ++++
+ docs/reviews/r59-closeout/HANDOFF.md               |  20 +++
+ docs/reviews/r59-closeout/INVENTORY.md             |  27 +++
+ docs/reviews/r59-closeout/REPORT.md                |  33 ++++
+ docs/reviews/r59-closeout/TABLE.md                 |  60 +++++++
+ .../r59-closeout/archive-spec-coverage.json        | 163 +++++++++++++++++
+ docs/reviews/r59-closeout/check_coords.py          |  47 +++++
+ docs/reviews/r59-closeout/inventory-before.json    | 192 +++++++++++++++++++++
+ docs/reviews/r59-closeout/raw/archive.txt          | 123 +++++++++++++
+ docs/reviews/r59-closeout/raw/coords.txt           |  59 +++++++
+ .../raw/missing-coordinate-negative.txt            |  59 +++++++
+ docs/reviews/r59-closeout/raw/original-coords.txt  |  46 +++++
+ docs/reviews/r59-closeout/raw/strict-after.txt     |  36 ++++
+ docs/reviews/r59-closeout/raw/strict-before.txt    |  46 +++++
+ .../2026-11-13-helper-bound-thread}/context.md     |   0
+ .../2026-11-13-helper-bound-thread}/design.md      |   0
+ .../2026-11-13-helper-bound-thread}/proposal.md    |   0
+ .../specs/helper-delivery-evidence/spec.md         |   0
+ .../2026-11-13-helper-bound-thread/tasks.md        |  17 ++
+ .../2026-11-13-helper-busy-admission}/context.md   |   0
+ .../2026-11-13-helper-busy-admission}/design.md    |   0
+ .../2026-11-13-helper-busy-admission}/proposal.md  |   0
+ .../specs/helper-delivery-evidence/spec.md         |   0
+ .../2026-11-13-helper-busy-admission}/tasks.md     |  16 +-
+ .../context.md                                     |   0
+ .../design.md                                      |   0
+ .../proposal.md                                    |   0
+ .../specs/helper-delivery-evidence/spec.md         |   0
+ .../tasks.md                                       |  22 +++
+ .../2026-11-13-r58-integration}/context.md         |   0
+ .../2026-11-13-r58-integration}/design.md          |   0
+ .../2026-11-13-r58-integration}/proposal.md        |   0
+ .../specs/release-quality-gates/spec.md            |   0
+ .../archive/2026-11-13-r58-integration/tasks.md    |  15 ++
+ .../2026-11-13-r59-integration}/context.md         |   0
+ .../2026-11-13-r59-integration}/design.md          |   0
+ .../2026-11-13-r59-integration}/proposal.md        |   0
+ .../specs/release-quality-gates/spec.md            |   0
+ .../2026-11-13-r59-integration}/tasks.md           |  16 +-
+ .../design.md                                      |   0
+ .../proposal.md                                    |   0
+ .../specs/console-timeline-order/spec.md           |   0
+ .../tasks.md                                       |  25 ++-
+ .../context.md                                     |   4 +
+ .../design.md                                      |   5 +
+ .../proposal.md                                    |  15 ++
+ .../specs/console-session-history/spec.md          |  12 ++
+ .../tasks.md                                       |  11 ++
+ .../2026-11-13-view-stale-backlog}/context.md      |   0
+ .../2026-11-13-view-stale-backlog}/design.md       |   0
+ .../2026-11-13-view-stale-backlog}/proposal.md     |   0
+ .../specs/view-unknown-ux/spec.md                  |   0
+ .../archive/2026-11-13-view-stale-backlog/tasks.md |  24 +++
+ .../context.md                                     |   0
+ .../2026-11-13-view-unknown-ux-followup}/design.md |   0
+ .../proposal.md                                    |   0
+ .../specs/view-unknown-ux/spec.md                  |   0
+ .../2026-11-13-view-unknown-ux-followup/tasks.md   |  13 ++
+ .../2026-11-13-view-unknown-ux}/context.md         |   0
+ .../2026-11-13-view-unknown-ux}/design.md          |   0
+ .../2026-11-13-view-unknown-ux}/proposal.md        |   0
+ .../specs/view-unknown-ux/spec.md                  |   0
+ .../2026-11-13-view-unknown-ux}/tasks.md           |  18 +-
+ openspec/changes/helper-bound-thread/tasks.md      |  11 --
+ .../changes/helper-recover-inherit-thread/tasks.md |  16 --
+ openspec/changes/r58-integration/tasks.md          |   9 -
+ openspec/changes/view-stale-backlog/tasks.md       |  18 --
+ openspec/changes/view-unknown-ux-followup/tasks.md |   7 -
+ openspec/specs/console-session-history/context.md  |   4 +
+ openspec/specs/console-session-history/spec.md     |  11 ++
+ openspec/specs/console-timeline-order/context.md   |   4 +
+ openspec/specs/helper-delivery-evidence/context.md |   4 +
+ openspec/specs/helper-delivery-evidence/spec.md    |  88 +++++++++-
+ openspec/specs/release-quality-gates/context.md    |   4 +
+ openspec/specs/release-quality-gates/spec.md       |  28 +++
+ openspec/specs/view-unknown-ux/context.md          |   5 +
+ openspec/specs/view-unknown-ux/spec.md             | 127 ++++++++++++++
+ 79 files changed, 1512 insertions(+), 87 deletions(-)
