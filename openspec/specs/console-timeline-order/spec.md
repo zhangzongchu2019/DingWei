@@ -7,7 +7,7 @@
 
 ### Requirement: R51-TIMELINE-001 时间线按 Hub 事件序号定位消息
 
-Console MUST 对带 Hub cursor 的用户输入、Agent 回复和历史节点使用同一规则，按 Hub epoch 内的 seq 升序放入时间线。helper `ts` 与 Hub `updated_at` 来自不同机器，不得用两者的毫秒差判定卡片先后。收到 `cli_injected` 确认后，renderer MUST 按 `input_posted` 的 Hub seq 将对应同回合输出分到卡片前后两段，文本合并不得跨过用户卡。实时渲染、刷新重建和向上历史分页 MUST 保持同一顺序；没有 Hub cursor 的旧节点 MUST 保留稳定回退顺序。
+Console MUST 将回合组与独立卡放在同一时间轴排序。两节点属于同 Hub epoch 且均有 seq 时 MUST 按 seq 升序；节点跨 epoch／跨流时 MUST 按 DOM 首个可见 `.event-time[data-ts]` 的事件时间排序；无 Hub seq 的输入卡 MUST 使用自身事件时间。helper 时钟与 Hub 时钟不得用于同 epoch 内取代 seq。收到 `cli_injected` 确认后，renderer MUST 按 `input_posted` 的 Hub seq 将对应同回合输出分到卡片前后两段，文本合并不得跨过用户卡。实时渲染、刷新重建和向上历史分页 MUST 保持同一顺序；没有可用时间和 Hub seq 的旧节点 MUST 保留稳定回退顺序。
 
 #### Scenario: R51-TIMELINE-S001 回合中注入并迟到确认
 
@@ -28,3 +28,13 @@ Console MUST 对带 Hub cursor 的用户输入、Agent 回复和历史节点使�
 
 - **WHEN** 最新历史页已含注入确认和较晚输出，向上翻页才读到较早的输入卡及回合输出
 - **THEN** renderer 使用暂存的注入栅栏重建回合分段，按 Hub seq 插入节点，历史与实时顺序稳定，原可视锚点保持不变
+
+#### Scenario: R51-TIMELINE-S005 独立输入卡与回合组共用事件时间轴
+
+- **WHEN** 七张无 Hub seq 的输入卡分别处于相邻回合组事件时间之间，且按任意顺序到达或回放
+- **THEN** 整条 timeline 子节点首个 `.event-time[data-ts]` 单调不减，七张卡分别位于对应的前后回合组之间；删除跨流事件时间比较后此断言 MUST 失败
+
+#### Scenario: R51-TIMELINE-S006 同 epoch 时钟偏差
+
+- **WHEN** 同一 Hub epoch 的两个节点事件时间与 Hub seq 顺序相反
+- **THEN** renderer MUST 仍按 seq 放置两个节点

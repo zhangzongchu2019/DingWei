@@ -11,6 +11,7 @@ const mutationNoSplit = process.argv.includes('--mutate-no-split');
 const mutationLatestOrder = process.argv.includes('--mutate-latest-order');
 const latestReloadOnly = process.argv.includes('--latest-reload-only');
 const mutationLatestTimestamp = process.argv.includes('--mutate-latest-timestamp');
+const mutationCrossStreamTime = process.argv.includes('--mutate-cross-stream-time');
 const roundsArg = process.argv.find(arg => arg.startsWith('--rounds='));
 const rounds = Math.max(1, Math.min(20, Number(roundsArg?.split('=')[1]) || 1));
 const BASE = 1793820000000;
@@ -216,6 +217,66 @@ async function benchmarkHistoryInsert(page) {
   });
 }
 
+async function checkCrossStreamTimeline(page) {
+  const result = await page.evaluate(() => {
+    const host = document.getElementById('timeline');
+    host.replaceChildren();
+    timelineSequencedNodes.length = 0;
+    const expected = [];
+    const add = (kind, label, ts) => {
+      const node = document.createElement('article');
+      node.className = kind === 'turn' ? 'turn-group' : 'message-card user';
+      node.dataset.regressionLabel = label;
+      const time = document.createElement('span');
+      time.className = 'event-time';
+      time.dataset.ts = String(ts);
+      node.appendChild(time);
+      expected.push({ label, ts, kind });
+      placeTimelineNode(node);
+    };
+    // Seven individually named inputs have no Hub seq. Each must land between
+    // the neighboring turn groups on the same event-time axis.
+    for (let i = 1; i <= 8; i++) add('turn', `S_VIEW_TURN_${String(i).padStart(2, '0')}`, i * 1000);
+    for (let i = 1; i <= 7; i++) add('input', `S_VIEW_INPUT_${i}`, i * 1000 + 500);
+    const nodes = [...host.children].map(node => ({
+      label: node.dataset.regressionLabel,
+      ts: Number(node.querySelector('.event-time[data-ts]')?.dataset.ts),
+      kind: node.classList.contains('turn-group') ? 'turn' : 'input',
+    }));
+    const eachInputBetweenTurns = Array.from({ length: 7 }, (_, n) => {
+      const i = n + 1;
+      const at = nodes.findIndex(node => node.label === `S_VIEW_INPUT_${i}`);
+      return at > 0 && at < nodes.length - 1
+        && nodes[at - 1].label === `S_VIEW_TURN_${String(i).padStart(2, '0')}`
+        && nodes[at + 1].label === `S_VIEW_TURN_${String(i + 1).padStart(2, '0')}`;
+    });
+    return { nodes, monotonic: nodes.every((node, i) => i === 0 || nodes[i - 1].ts <= node.ts), eachInputBetweenTurns };
+  });
+  assert(result.monotonic, `whole timeline event-time must be monotonic: ${JSON.stringify(result.nodes)}`);
+  for (let i = 0; i < 7; i++) assert.strictEqual(result.eachInputBetweenTurns[i], true,
+    `S_VIEW_INPUT_${i + 1} must sit between its adjacent turn groups: ${JSON.stringify(result.nodes)}`);
+  const sameEpoch = await page.evaluate(() => {
+    const host = document.getElementById('timeline');
+    host.replaceChildren();
+    timelineSequencedNodes.length = 0;
+    const add = (seq, ts) => {
+      const node = document.createElement('article');
+      node.dataset.timelineEpochOrder = '77';
+      node.dataset.timelineSeq = String(seq);
+      const time = document.createElement('span');
+      time.className = 'event-time';
+      time.dataset.ts = String(ts);
+      node.appendChild(time);
+      placeTimelineNode(node);
+    };
+    add(2, 1000);
+    add(1, 9000);
+    return [...host.children].map(node => Number(node.dataset.timelineSeq));
+  });
+  assert.deepStrictEqual(sameEpoch, [1, 2], `same-epoch sequence must override clock skew: ${JSON.stringify(sameEpoch)}`);
+  return result;
+}
+
 async function checkLatestInput(page, n, afterReload, verify = true) {
   const url = `http://127.0.0.1:${server.address().port}/view/timeline?mode=latest-input&n=${n}`;
   if (afterReload) await page.reload({ waitUntil: 'domcontentloaded' });
@@ -284,11 +345,20 @@ async function main() {
     assert.strictEqual(source.split(anchor).length - 1, 1, 'cross-epoch timestamp-order anchor must be unique');
     source = source.replace(anchor, '      // mutant: use epoch rank before event time\n');
   }
+  if (mutationCrossStreamTime) {
+    const anchor = '      if (Number.isFinite(aTs) && Number.isFinite(bTs) && aTs !== bTs) return aTs - bTs;\n';
+    assert.strictEqual(source.split(anchor).length - 1, 1, 'cross-stream event-time comparator anchor must be unique');
+    source = source.replace(anchor, '      // mutant: omit cross-stream event-time ordering\n');
+  }
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
   try {
     for (let i = 1; i <= rounds; i++) {
       const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+      await page.goto(`http://127.0.0.1:${server.address().port}/view/timeline?mode=idle&n=${i}`, { waitUntil: 'domcontentloaded' });
+      await page.waitForFunction(() => !!document.getElementById('timeline'), null, { timeout: 10000 });
+      const crossStream = await checkCrossStreamTimeline(page);
+      console.log(`CROSS_STREAM_TIMELINE ${JSON.stringify(crossStream)}`);
       for (const mode of ['claude', 'codex']) {
         await check(page, mode, i);
         await check(page, mode, i, true);
@@ -306,7 +376,7 @@ async function main() {
     const bench = await benchmarkHistoryInsert(benchPage);
     await benchPage.close();
     assert.ok(bench.unsequencedNoticeStable, 'unsequenced notice must not break sequenced node ordering');
-    console.log(`PASS rounds=${rounds} realtime=${rounds} claude_active=${rounds * 2} codex_active=${rounds * 2} reload_replay=${rounds * 2} history_older_page=${rounds} late_after_end=${rounds} idle_order=${rounds} benchmark_2000_plus_100_ms=${bench.elapsedMs.toFixed(2)} benchmark_children=${bench.children} unsequenced_notice=stable renderer_sha=${require('crypto').createHash('sha256').update(source).digest('hex')}`);
+    console.log(`PASS rounds=${rounds} cross_stream_inputs=7 whole_timeline_monotonic=true realtime=${rounds} claude_active=${rounds * 2} codex_active=${rounds * 2} reload_replay=${rounds * 2} history_older_page=${rounds} late_after_end=${rounds} idle_order=${rounds} benchmark_2000_plus_100_ms=${bench.elapsedMs.toFixed(2)} benchmark_children=${bench.children} unsequenced_notice=stable renderer_sha=${require('crypto').createHash('sha256').update(source).digest('hex')}`);
   } finally {
     await browser.close();
     await new Promise(resolve => server.close(resolve));

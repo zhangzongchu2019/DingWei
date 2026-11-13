@@ -10,7 +10,7 @@
 
 ## 代码与测试位置
 
-- 共用定位逻辑：`view-service/renderer-canary-sse.html` 的 timeline node helpers。
+- 共用定位逻辑：`view-service/renderer-canary-sse.html` 的 timeline node helpers。所有顶层回合组和独立卡进入同一定位流程；同 Hub epoch 按 seq，跨 epoch／跨流按首个可见 `.event-time[data-ts]`，无 seq 输入卡直接使用该事件时间。
 - 回归：`view-service/renderer-timeline-order-regression.js`，并登记在 `tools/run-browser-regressions.py`。
 - 浏览器测试使用本地 HTTP fixture 提供真实 renderer、History JSON 和 EventSource，不依赖线上 Hub。
 

@@ -3583,11 +3583,13 @@
     }
 
     function timelineTimestamp(node) {
+      // Match the visible timeline contract: the first rendered event-time is
+      // the timestamp represented by this top-level node. Provisional nodes use
+      // their explicit timestamp until their event-time child is rendered.
+      const rendered = Number(node?.querySelector?.('.event-time[data-ts]')?.dataset?.ts);
+      if (Number.isFinite(rendered) && rendered > 0) return rendered;
       const explicit = Number(node?.dataset?.timelineTs);
-      if (Number.isFinite(explicit) && explicit > 0) return explicit;
-      const values = [...(node?.querySelectorAll?.('.event-time[data-ts]') || [])]
-        .map(el => Number(el.dataset.ts)).filter(value => Number.isFinite(value) && value > 0);
-      return values.length ? Math.min(...values) : NaN;
+      return Number.isFinite(explicit) && explicit > 0 ? explicit : NaN;
     }
 
     function timelineSequence(node) {
@@ -3620,9 +3622,20 @@
     }
     function compareTimelineNodes(a, b) {
       const aTs = timelineTimestamp(a), bTs = timelineTimestamp(b);
+      const aSeq = timelineSequence(a), bSeq = timelineSequence(b);
+      const aRank = Number(a?.dataset?.timelineEpochOrder) || 0;
+      const bRank = Number(b?.dataset?.timelineEpochOrder) || 0;
+      // Within one Hub epoch, sequence is authoritative even if clocks disagree.
+      // Across epochs/streams, compare the event timestamps exposed by .event-time.
+      if (Number.isFinite(aSeq) && Number.isFinite(bSeq) && aRank === bRank) {
+        return aSeq - bSeq;
+      }
       if (Number.isFinite(aTs) && Number.isFinite(bTs) && aTs !== bTs) return aTs - bTs;
-      return compareTimelineKey(Number(a?.dataset?.timelineEpochOrder) || 0, timelineSequence(a),
-        Number(b?.dataset?.timelineEpochOrder) || 0, timelineSequence(b));
+      if (Number.isFinite(aSeq) && Number.isFinite(bSeq)) {
+        return compareTimelineKey(aRank, aSeq, bRank, bSeq);
+      }
+      if (Number.isFinite(aSeq) !== Number.isFinite(bSeq)) return Number.isFinite(aSeq) ? -1 : 1;
+      return 0;
     }
     function setNodeTimelineKey(node, rank, seq) {
       node.dataset.timelineEpochOrder = String(rank);
@@ -3643,55 +3656,45 @@
       if (index >= 0) timelineSequencedNodes.splice(index, 1);
     }
 
-    // Keep timeline order stable across live delivery, history replay and older-page insertion.
-    // Event timestamps are the sender's chronology; unknown timestamps retain caller order.
+    // Keep all top-level timeline nodes on one axis across live delivery, history replay,
+    // and older-page insertion. A same-epoch Hub sequence wins; cross-stream nodes use
+    // their rendered event time. Nodes without either key retain their relative position.
     function placeTimelineNode(node, fallbackBefore = null) {
       const seq = timelineSequence(node);
+      const ts = timelineTimestamp(node);
+      const rank = Number(node?.dataset?.timelineEpochOrder) || 0;
+      const oldRank = Number(node._timelineEpochOrderAtPlacement);
+      const oldSeq = Number(node._timelineSeqAtPlacement);
+      const oldTs = Number(node._timelineTsAtPlacement);
+      if (node.parentNode === timeline && oldRank === rank && Object.is(oldSeq, seq) && Object.is(oldTs, ts)) return;
+      if (node.parentNode === timeline) {
+        forgetTimelineSequenceNode(node);
+        timeline.removeChild(node);
+      }
       if (Number.isFinite(seq)) {
-        // Search only the maintained sequenced-node index. Notifications and
-        // gap markers have no sequence and may sit between timeline children;
-        // they must not invalidate the binary-search ordering invariant.
-        const rank = Number(node.dataset.timelineEpochOrder) || 0;
-        const oldRank = Number(node._timelineEpochOrderAtPlacement);
-        const oldSeq = Number(node._timelineSeqAtPlacement);
-        const ts = timelineTimestamp(node);
-        const oldTs = Number(node._timelineTsAtPlacement);
-        if (node.parentNode === timeline && oldRank === rank && oldSeq === seq && Object.is(oldTs, ts)) return;
-        if (node.parentNode === timeline) {
-          forgetTimelineSequenceNode(node);
-          timeline.removeChild(node);
-        }
         let low = 0, high = timelineSequencedNodes.length;
         while (low < high) {
           const mid = (low + high) >>> 1;
-          const current = timelineSequencedNodes[mid];
-          const currentSeq = timelineSequence(current);
-          if (Number.isFinite(currentSeq) && compareTimelineNodes(current, node) <= 0) low = mid + 1;
+          if (compareTimelineNodes(timelineSequencedNodes[mid], node) <= 0) low = mid + 1;
           else high = mid;
         }
-        const next = timelineSequencedNodes[low] || null;
         timelineSequencedNodes.splice(low, 0, node);
-        node._timelineEpochOrderAtPlacement = rank;
-        node._timelineSeqAtPlacement = seq;
-        node._timelineTsAtPlacement = ts;
-        timeline.insertBefore(node, next);
-        return;
       }
-      const ts = timelineTimestamp(node);
-      if (!Number.isFinite(ts)) {
-        if (fallbackBefore?.parentNode === timeline) timeline.insertBefore(node, fallbackBefore);
-        else timeline.appendChild(node);
-        return;
-      }
+      node._timelineEpochOrderAtPlacement = rank;
+      node._timelineSeqAtPlacement = seq;
+      node._timelineTsAtPlacement = ts;
       for (const current of timeline.children) {
-        if (current === node) continue;
         const currentTs = timelineTimestamp(current);
-        if (Number.isFinite(currentTs) && currentTs > ts) {
+        const nodeHasKey = Number.isFinite(ts) || Number.isFinite(seq);
+        const currentHasKey = Number.isFinite(currentTs) || Number.isFinite(timelineSequence(current));
+        if (!nodeHasKey || !currentHasKey) continue;
+        if (compareTimelineNodes(node, current) < 0) {
           timeline.insertBefore(node, current);
           return;
         }
       }
-      timeline.appendChild(node);
+      if (fallbackBefore?.parentNode === timeline) timeline.insertBefore(node, fallbackBefore);
+      else timeline.appendChild(node);
     }
 
     function baseCard(ev, cls = '', cardClass = 'message-card') {
@@ -4114,6 +4117,7 @@
         html += `<footer class="turn-completed" title="回合完成" aria-label="回合完成">✓</footer>`;
       }
       group.node.innerHTML = html;
+      placeTimelineNode(group.node);
       // 0.2.0.6 A：innerHTML 会连附件一起抹掉 ⇒ 重渲后把附件区接回去，已渲染过的不重建。
       if (group.node._fileHost) group.node.appendChild(group.node._fileHost);
       if (group.node._overCapNote) group.node.appendChild(group.node._overCapNote);
