@@ -14,6 +14,7 @@ const mutationLatestTimestamp = process.argv.includes('--mutate-latest-timestamp
 const mutationCrossStreamTime = process.argv.includes('--mutate-cross-stream-time');
 const mutationNoCrossEpochPair = process.argv.includes('--mutate-no-cross-epoch-pair');
 const mutationWrongCrossEpochSegment = process.argv.includes('--mutate-wrong-cross-epoch-segment');
+const mutationCrossEpochReposition = process.argv.includes('--mutate-cross-epoch-reposition');
 const roundsArg = process.argv.find(arg => arg.startsWith('--rounds='));
 const rounds = Math.max(1, Math.min(20, Number(roundsArg?.split('=')[1]) || 1));
 const BASE = 1793820000000;
@@ -328,7 +329,7 @@ async function checkLatestInput(page, n, afterReload, verify = true) {
 }
 
 async function checkCrossEpochTurnPairing(page) {
-  const state = await page.evaluate(() => {
+  await page.evaluate(() => {
     const host = document.getElementById('timeline');
     host.replaceChildren();
     timelineSequencedNodes.length = 0;
@@ -339,18 +340,45 @@ async function checkCrossEpochTurnPairing(page) {
       setTimelineEventEpoch(event, `hub:${epoch}`);
       renderTurnEvent(turn, event);
     };
+    // The captured failure has a lower-ranked live epoch than the history
+    // segment it pairs into, so its seq key would sort behind the queued card.
+    timelineEpochRank('hub:live');
     add(1, 1000, 'CROSS_EPOCH_EARLY', 'history');
     add(20, 9000, 'CROSS_EPOCH_LATE', 'history');
     splitTurnGroupAtHubSequence(turn, 10, timelineEventRank({ _timelineEpoch: 'hub:history' }));
-    add(1, 8800, 'CROSS_EPOCH_LIVE', 'live');
+    const queued = document.createElement('article');
+    queued.className = 'event-card';
+    queued.dataset.timelineTs = '8900';
+    queued.dataset.timelineEpochOrder = String(timelineEpochRank('hub:live'));
+    queued.dataset.timelineSeq = '9';
+    const queuedTime = document.createElement('span');
+    queuedTime.className = 'event-time';
+    queuedTime.dataset.ts = '8900';
+    queued.appendChild(queuedTime);
+    placeTimelineNode(queued);
+    add(10, 8800, 'CROSS_EPOCH_LIVE', 'live');
+  });
+  await page.waitForTimeout(100);
+  const state = await page.evaluate(() => {
+    const host = document.getElementById('timeline');
+    const turn = 'cross-epoch-turn';
     const groups = turnGroupSegments.get(turn) || [];
+    const queued = host.querySelector('.event-card');
+    const nodes = Array.from(host.children);
+    const liveGroup = groups.find(group => group.events.some(event => event.text === 'CROSS_EPOCH_LIVE'));
+    const timestamps = nodes.map(timelineTimestamp);
     return { groupCount: groups.length,
       texts: groups.map(group => group.events.map(event => event.text).join(' ')),
-      liveGroup: groups.findIndex(group => group.events.some(event => event.text === 'CROSS_EPOCH_LIVE')) };
+      liveGroup: groups.indexOf(liveGroup),
+      liveBeforeQueued: Boolean(liveGroup && nodes.indexOf(liveGroup.node) < nodes.indexOf(queued)),
+      timestamps,
+      monotonic: timestamps.every((ts, i) => !Number.isFinite(ts) || i === 0 || !Number.isFinite(timestamps[i - 1]) || timestamps[i - 1] <= ts) };
   });
   assert.strictEqual(state.groupCount, 2, `cross-epoch event must not create a third turn segment: ${JSON.stringify(state)}`);
   assert.strictEqual(state.liveGroup, 1, `new event must join the time-nearest existing segment: ${JSON.stringify(state)}`);
   assert(state.texts[1].includes('CROSS_EPOCH_LATE'), `paired segment must retain existing events: ${JSON.stringify(state)}`);
+  assert(state.liveBeforeQueued, `paired group must stay before the later queued card: ${JSON.stringify(state)}`);
+  assert(state.monotonic, `whole timeline timestamps must remain monotonic: ${JSON.stringify(state)}`);
   return state;
 }
 
@@ -373,6 +401,11 @@ async function main() {
     const anchor = 'Math.abs(segmentTs - eventTs) < Math.abs(timelineTimestamp(nearest.node) - eventTs)';
     assert.strictEqual(source.split(anchor).length - 1, 1, 'cross-epoch segment mutation anchor must be unique');
     source = source.replace(anchor, 'false /* mutant: keep earliest segment, ignoring time */');
+  }
+  if (mutationCrossEpochReposition) {
+    const anchor = '        if (rank === group.timelineEpochOrder\n            && compareTimelineKey(rank, seq, group.timelineEpochOrder, group.timelineSeq) < 0) {';
+    assert.strictEqual(source.split(anchor).length - 1, 1, 'cross-epoch reposition mutation anchor must be unique');
+    source = source.replace(anchor, '        if (compareTimelineKey(rank, seq, group.timelineEpochOrder, group.timelineSeq) < 0) { // mutant: let foreign epoch rewrite group key');
   }
   if (mutationLatestTimestamp) {
     const anchor = "      if (ev?.kind === 'user_input' && !Number.isFinite(ev.ts)) ev.ts = Date.now();\n";

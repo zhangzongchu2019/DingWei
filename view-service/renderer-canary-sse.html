@@ -3918,7 +3918,11 @@
       const seq = Number(ev._hubSeq);
       if (Number.isSafeInteger(seq) && seq > 0) {
         const rank = timelineEventRank(ev);
-        if (compareTimelineKey(rank, seq, group.timelineEpochOrder, group.timelineSeq) < 0) {
+        // An event from another epoch may be paired into this visual group,
+        // but its sequence key belongs to that epoch and must not reposition
+        // the group's original timeline anchor.
+        if (rank === group.timelineEpochOrder
+            && compareTimelineKey(rank, seq, group.timelineEpochOrder, group.timelineSeq) < 0) {
           group.timelineEpochOrder = rank;
           group.timelineSeq = seq;
           setNodeTimelineKey(group.node, rank, seq);

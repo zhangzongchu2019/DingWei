@@ -33,3 +33,8 @@ Console MUST 将回合组与独立卡放在同一时间轴排序。两节点属�
 
 - **WHEN** 同一 Hub epoch 的两个节点事件时间与 Hub seq 顺序相反
 - **THEN** renderer MUST 仍按 seq 放置两个节点
+
+#### Scenario: R51-TIMELINE-S007 跨 epoch 并入保留原组位置
+
+- **WHEN** 同一 turn 已有 history 分段，较低 rank 的 live epoch 到来一个应并入该分段的事件，且轴上已有时间更晚、seq 更早的排队卡
+- **THEN** renderer MUST 将事件并入该组但保留该组的原 epoch/seq 定位键；整组 MUST 仍位于排队卡之前，且可见时间戳沿整轴单调不减
