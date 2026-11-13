@@ -2523,6 +2523,9 @@
     }
 
     function handleIncomingEvent(ev) {
+      // Hub/helper timestamps are optional on user_input. Stamp at the stream
+      // boundary so live ordering and the visible time use the actual arrival.
+      if (ev?.kind === 'user_input' && !Number.isFinite(ev.ts)) ev.ts = Date.now();
       if (historyBootstrapPending && !historyApplying && (ev?._history || ev?._history_gap || (ev?._hubSeq && ev?._hubEpoch))) {
         historyLivePending.push(ev);
         return;
@@ -2907,6 +2910,7 @@
     }
 
     function compareCursor(a, b) {
+      if (Number.isFinite(a?.ts) && Number.isFinite(b?.ts) && a.ts !== b.ts) return a.ts - b.ts;
       return String(a.cursor ?? '').localeCompare(String(b.cursor ?? ''), undefined, { numeric: true, sensitivity: 'base' });
     }
 
@@ -4706,6 +4710,10 @@
         for (const row of (page.events || [])) {
           const ev = parseHistoryEvent(row?.event);
           if (!ev) { invalidHistoryEventRows++; continue; }
+          if (ev.kind === 'user_input' && !Number.isFinite(ev.ts)) {
+            const receivedAt = Date.parse(row?.received_at || '');
+            if (Number.isFinite(receivedAt)) ev.ts = receivedAt;
+          }
           delete ev._history_gap;
           ev._history = { generation: row.cursor.generation, seq: row.cursor.seq, event_id: row.event_id };
           ev._hubSeq = Number(row.cursor.seq);

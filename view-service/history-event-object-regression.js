@@ -209,7 +209,9 @@ async function inspectInputReplay(browser) {
           key: group.dataset.turnKey,
           segments: Array.from(group.children).filter(node => [...node.classList].some(name => /^turn-(user|assistant|tool|error)$/.test(name)))
             .map(node => ({ kind: [...node.classList].find(name => /^turn-(user|assistant|tool|error)$/.test(name)),
-              text: node.querySelector('.event-content')?.textContent || '' })),
+              text: node.querySelector('.event-content')?.textContent || '',
+              ts: Number(node.querySelector('.event-time')?.dataset.ts) || null,
+              timeTitle: node.querySelector('.event-time')?.title || '' })),
         })),
         waitingItems: document.querySelectorAll('#waitingList .waiting-item').length,
       }));
@@ -239,6 +241,11 @@ async function inspectInputReplay(browser) {
     const assistantIndex = group.segments.findIndex(segment => segment.kind === 'turn-assistant');
     assert(userIndex >= 0 && assistantIndex > userIndex, `history+SSE replay: input must precede output in turn ${turn}`);
     assert.equal(group.segments[userIndex].text, text, `history+SSE replay: input duplicated or changed in turn ${turn}`);
+    assert(Number.isFinite(group.segments[userIndex].ts), `history+SSE replay: input must show its event/Hub-received time in turn ${turn}`);
+    assert.match(group.segments[userIndex].timeTitle, /\(.+ UTC\)$/, `history+SSE replay: input hover must include local time and UTC in turn ${turn}`);
+    assert(Number.isFinite(group.segments[assistantIndex].ts), `history+SSE replay: output fixture must carry a timestamp in turn ${turn}`);
+    assert(group.segments[userIndex].ts <= group.segments[assistantIndex].ts,
+      `history+SSE replay: input time must be no later than its output in turn ${turn}`);
   }
   const summary = groups => groups.map(group => ({ key: group.key, segments: group.segments.map(segment => segment.kind),
     userChars: group.segments.filter(segment => segment.kind === 'turn-user').reduce((n, segment) => n + segment.text.length, 0),
