@@ -2064,6 +2064,7 @@
       messageNodes.clear();
       turnGroups.clear();
       turnGroupSegments.clear();
+      historyInputReplayKeys.clear();
       injectionFences.clear();
       waitingDeliveries.clear();
       unknownListRenderSignature = null;
@@ -2522,7 +2523,7 @@
     }
 
     function handleIncomingEvent(ev) {
-      if (historyBootstrapPending && !historyApplying && (ev?._history || ev?._history_gap)) {
+      if (historyBootstrapPending && !historyApplying && (ev?._history || ev?._history_gap || (ev?._hubSeq && ev?._hubEpoch))) {
         historyLivePending.push(ev);
         return;
       }
@@ -2534,6 +2535,11 @@
     }
 
     function dispatchIncomingEvent(ev) {
+      const replayKey = historyInputReplayKey(ev);
+      if (!historyApplying && !historyBootstrapPending && replayKey && historyInputReplayKeys.has(replayKey)) return;
+      if (historyApplying && ev?.kind === 'user_input') {
+        if (replayKey) historyInputReplayKeys.add(replayKey);
+      }
       const historyCursor = ev?._history;
       if (!historyApplying && !historyBootstrapPending && historyCursor
           && historyCursor.generation === historyGeneration
@@ -4642,6 +4648,15 @@
     let initialHistoryStreamOpen = null;
     const historyLivePending = [];
     const historyEventIDs = new Set();
+    const historyInputReplayKeys = new Set();
+    // The first sequenced SSE replay can race the initial history fetch. Cache
+    // semantic user-input identities so the history copy wins without creating
+    // a second, differently-ranked turn group.
+    function historyInputReplayKey(ev) {
+      if (ev?.kind !== 'user_input') return '';
+      return JSON.stringify([ev.cursor || '', ev.delivery_id || '', ev.origin_delivery_id || '', ev.turn_id || '',
+        ev.data?.lifecycle || ev.data?.state || '', ev.text || '']);
+    }
     // json.RawMessage is emitted as an object by the history API. Older fixtures
     // and callers may still provide serialized JSON, so accept both envelopes.
     function parseHistoryEvent(value) {
@@ -4730,6 +4745,8 @@
           for (const ev of historyLivePending.splice(0)) {
             const cursor = ev?._history;
             if (cursor && cursor.generation === historyGeneration && Number(cursor.seq) <= historyHighWater) continue;
+            const replayKey = historyInputReplayKey(ev);
+            if (replayKey && historyInputReplayKeys.has(replayKey)) continue;
             handleIncomingEvent(ev);
           }
         }

@@ -66,7 +66,8 @@ const parserSource = `    function parseHistoryEvent(value) {
     }`;
 assert(currentRenderer.includes(parserSource), 'history event object parser missing from current renderer');
 const mutation = process.env.MUTATE_HISTORY_EVENT_OBJECT || '';
-const rendererUnderTest = REPLAY_BASELINE ? null : mutation === 'object'
+const historySSEMutation = process.env.MUTATE_HISTORY_SSE_INPUT_BUFFER === '1';
+const parsedRendererUnderTest = REPLAY_BASELINE ? null : mutation === 'object'
   ? currentRenderer.replace(parserSource, `    function parseHistoryEvent(value) {
       if (typeof value !== 'string') return null;
       try { const ev = JSON.parse(value); return ev && typeof ev === 'object' && !Array.isArray(ev) ? { ...ev } : null; } catch (_) { return null; }
@@ -77,6 +78,12 @@ const rendererUnderTest = REPLAY_BASELINE ? null : mutation === 'object'
       return value && typeof value === 'object' && !Array.isArray(value) ? { ...value } : null;
     }`)
     : currentRenderer;
+const sseBufferCondition = 'historyBootstrapPending && !historyApplying && (ev?._history || ev?._history_gap || (ev?._hubSeq && ev?._hubEpoch))';
+assert(currentRenderer.includes(sseBufferCondition), 'history/SSE bootstrap buffer guard missing');
+const rendererUnderTest = historySSEMutation
+  ? parsedRendererUnderTest.replace(sseBufferCondition, 'historyBootstrapPending && !historyApplying && (ev?._history || ev?._history_gap)')
+  : parsedRendererUnderTest;
+if (historySSEMutation) assert.notEqual(rendererUnderTest, parsedRendererUnderTest, 'SSE input buffer mutation did not apply');
 const go = fs.readFileSync(path.join(ROOT, 'internal/m8/console_auth.go'), 'utf8');
 const htmlStart = 'const consolePageHTML = `';
 const htmlEnd = '`\n\nfunc (h *Hub) HandleConsoleAgents';
@@ -87,6 +94,7 @@ const consoleHTML = go.slice(start + htmlStart.length, end);
 let currentRendererName = 'r59';
 let currentResponse = null;
 let historyEventMode = 'object';
+let replayHistoryAsSSE = false;
 const historyRequests = [];
 const eventStreams = new Map();
 const server = http.createServer((req, res) => {
@@ -138,6 +146,12 @@ const server = http.createServer((req, res) => {
     if (endpoint === 'events') {
       res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
       res.write(': fixture stream open\n\n');
+      if (name === SESSION && replayHistoryAsSSE) {
+        for (const row of (currentResponse?.events || [])) {
+          const event = row.event?.kind === 'user_input' ? row.event : { kind: 'control', text: '' };
+          res.write(`id: ${eventGeneration}-${row.cursor.seq}\ndata: ${JSON.stringify(event)}\n\n`);
+        }
+      }
       eventStreams.set(name, res);
       req.on('close', () => eventStreams.delete(name));
       return;
@@ -183,10 +197,58 @@ async function assertCurrentOutput(frame, location) {
   const { assistantGroupTexts, ...summary } = actual;
   return { expectedAssistantEvents: REPLAY_BASELINE ? 0 : assistantRows.length, fixtureAssistantEvents: assistantRows.length, expectedRenderedGroups: REPLAY_BASELINE ? 0 : expectedAssistantGroups.length, expectedAssistantTextChars: REPLAY_BASELINE ? 0 : assistantTextChars, ...summary };
 }
+async function inspectInputReplay(browser) {
+  async function capture(replay) {
+    replayHistoryAsSSE = replay;
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    try {
+      await page.goto(`http://127.0.0.1:${server.address().port}/view/${encodeURIComponent(SESSION)}`, { waitUntil: 'domcontentloaded' });
+      await waitForHistory(page.mainFrame());
+      return await page.locator('#timeline').evaluate(timeline => Array.from(timeline.querySelectorAll('.turn-group')).map(group => ({
+        key: group.dataset.turnKey,
+        segments: Array.from(group.children).filter(node => [...node.classList].some(name => /^turn-(user|assistant|tool|error)$/.test(name)))
+          .map(node => ({ kind: [...node.classList].find(name => /^turn-(user|assistant|tool|error)$/.test(name)),
+            text: node.querySelector('.event-content')?.textContent || '' })),
+      })));
+    } finally { await page.close(); }
+  }
+  currentResponse = firstPage;
+  const historyOnly = await capture(false);
+  const historyPlusSSE = await capture(true);
+  replayHistoryAsSSE = false;
+  const expectedInputs = new Map(rows.map(row => row.payload).filter(event => event.kind === 'user_input'
+    && event.data?.lifecycle === 'admitted' && event.turn_id).map(event => [event.turn_id, event.text || '']));
+  assert.equal(historyOnly.length, 17, 'history-only first page should have 17 turn-groups');
+  assert.equal(expectedInputs.size, 16, 'fixture should have 16 admitted input turns');
+  const actualUserGroups = historyPlusSSE.filter(group => group.segments.some(segment => segment.kind === 'turn-user'));
+  assert.equal(actualUserGroups.length, expectedInputs.size,
+    `history+SSE replay: expected ${expectedInputs.size} input turn-groups from fixture, got ${actualUserGroups.length}`);
+  assert.equal(historyPlusSSE.length, historyOnly.length,
+    `history+SSE replay: duplicated or split turn-groups; history=${historyOnly.length}, combined=${historyPlusSSE.length}`);
+  for (const [turn, text] of expectedInputs) {
+    const matches = historyPlusSSE.filter(group => group.key === turn);
+    assert.equal(matches.length, 1, `history+SSE replay: expected one group for input turn ${turn}, got ${matches.length}`);
+    const group = matches[0];
+    assert.equal(group.segments.filter(segment => segment.kind === 'turn-user').length, 1,
+      `history+SSE replay: expected one input section in turn ${turn}`);
+    const userIndex = group.segments.findIndex(segment => segment.kind === 'turn-user');
+    const assistantIndex = group.segments.findIndex(segment => segment.kind === 'turn-assistant');
+    assert(userIndex >= 0 && assistantIndex > userIndex, `history+SSE replay: input must precede output in turn ${turn}`);
+    assert.equal(group.segments[userIndex].text, text, `history+SSE replay: input duplicated or changed in turn ${turn}`);
+  }
+  const summary = groups => groups.map(group => ({ key: group.key, segments: group.segments.map(segment => segment.kind),
+    userChars: group.segments.filter(segment => segment.kind === 'turn-user').reduce((n, segment) => n + segment.text.length, 0),
+    assistantChars: group.segments.filter(segment => segment.kind === 'turn-assistant').reduce((n, segment) => n + segment.text.length, 0) }));
+  console.log(`INPUT_HISTORY_SSE_DIAGNOSTIC ${JSON.stringify({ historyOnly: summary(historyOnly), historyPlusSSE: summary(historyPlusSSE) })}`);
+}
 async function runVersion(browser, version) {
   currentRendererName = version;
   const results = [];
   historyRequests.length = 0;
+  if (!REPLAY_BASELINE && version === 'r59-fixed') {
+    await inspectInputReplay(browser);
+    historyRequests.length = 0;
+  }
   // Direct View path.
   const direct = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   await direct.goto(`http://127.0.0.1:${server.address().port}/view/${encodeURIComponent(SESSION)}`, { waitUntil: 'domcontentloaded' });
