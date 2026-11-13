@@ -2692,7 +2692,7 @@
       // admitted(带 turn)才是单一回显渲染点(生命周期幂等,renderer 自治,不依赖 helper 改)
       if (ev.kind === 'user_input') {
         const echoWait = waitingDeliveries.get(ev._norm.originDlv || ev._norm.deliveryId);
-        if (echoWait && echoWait.event.kind === 'input_posted') {
+        if (echoWait && echoWait.event.kind === 'input_posted' && !turnKeyFor(ev)) {
           // Queue/admission echoes are not the Hub's negotiated ACK evidence.
           // Keep the primary waiting card until its canonical phase update.
           rendered += 1; updateMetrics(); return;
