@@ -204,12 +204,15 @@ async function inspectInputReplay(browser) {
     try {
       await page.goto(`http://127.0.0.1:${server.address().port}/view/${encodeURIComponent(SESSION)}`, { waitUntil: 'domcontentloaded' });
       await waitForHistory(page.mainFrame());
-      return await page.locator('#timeline').evaluate(timeline => Array.from(timeline.querySelectorAll('.turn-group')).map(group => ({
-        key: group.dataset.turnKey,
-        segments: Array.from(group.children).filter(node => [...node.classList].some(name => /^turn-(user|assistant|tool|error)$/.test(name)))
-          .map(node => ({ kind: [...node.classList].find(name => /^turn-(user|assistant|tool|error)$/.test(name)),
-            text: node.querySelector('.event-content')?.textContent || '' })),
-      })));
+      return await page.evaluate(() => ({
+        groups: Array.from(document.querySelectorAll('#timeline .turn-group')).map(group => ({
+          key: group.dataset.turnKey,
+          segments: Array.from(group.children).filter(node => [...node.classList].some(name => /^turn-(user|assistant|tool|error)$/.test(name)))
+            .map(node => ({ kind: [...node.classList].find(name => /^turn-(user|assistant|tool|error)$/.test(name)),
+              text: node.querySelector('.event-content')?.textContent || '' })),
+        })),
+        waitingItems: document.querySelectorAll('#waitingList .waiting-item').length,
+      }));
     } finally { await page.close(); }
   }
   currentResponse = firstPage;
@@ -218,15 +221,16 @@ async function inspectInputReplay(browser) {
   replayHistoryAsSSE = false;
   const expectedInputs = new Map(rows.map(row => row.payload).filter(event => event.kind === 'user_input'
     && event.data?.lifecycle === 'admitted' && event.turn_id).map(event => [event.turn_id, event.text || '']));
-  assert.equal(historyOnly.length, 17, 'history-only first page should have 17 turn-groups');
+  assert.equal(historyOnly.groups.length, 17, 'history-only first page should have 17 turn-groups');
   assert.equal(expectedInputs.size, 16, 'fixture should have 16 admitted input turns');
-  const actualUserGroups = historyPlusSSE.filter(group => group.segments.some(segment => segment.kind === 'turn-user'));
+  assert.equal(historyPlusSSE.waitingItems, historyOnly.waitingItems, 'history+SSE replay should not change the waiting input count');
+  const actualUserGroups = historyPlusSSE.groups.filter(group => group.segments.some(segment => segment.kind === 'turn-user'));
   assert.equal(actualUserGroups.length, expectedInputs.size,
     `history+SSE replay: expected ${expectedInputs.size} input turn-groups from fixture, got ${actualUserGroups.length}`);
-  assert.equal(historyPlusSSE.length, historyOnly.length,
-    `history+SSE replay: duplicated or split turn-groups; history=${historyOnly.length}, combined=${historyPlusSSE.length}`);
+  assert.equal(historyPlusSSE.groups.length, historyOnly.groups.length,
+    `history+SSE replay: duplicated or split turn-groups; history=${historyOnly.groups.length}, combined=${historyPlusSSE.groups.length}`);
   for (const [turn, text] of expectedInputs) {
-    const matches = historyPlusSSE.filter(group => group.key === turn);
+    const matches = historyPlusSSE.groups.filter(group => group.key === turn);
     assert.equal(matches.length, 1, `history+SSE replay: expected one group for input turn ${turn}, got ${matches.length}`);
     const group = matches[0];
     assert.equal(group.segments.filter(segment => segment.kind === 'turn-user').length, 1,
@@ -239,7 +243,8 @@ async function inspectInputReplay(browser) {
   const summary = groups => groups.map(group => ({ key: group.key, segments: group.segments.map(segment => segment.kind),
     userChars: group.segments.filter(segment => segment.kind === 'turn-user').reduce((n, segment) => n + segment.text.length, 0),
     assistantChars: group.segments.filter(segment => segment.kind === 'turn-assistant').reduce((n, segment) => n + segment.text.length, 0) }));
-  console.log(`INPUT_HISTORY_SSE_DIAGNOSTIC ${JSON.stringify({ historyOnly: summary(historyOnly), historyPlusSSE: summary(historyPlusSSE) })}`);
+  console.log(`INPUT_HISTORY_SSE_DIAGNOSTIC ${JSON.stringify({ historyOnly: { groups: summary(historyOnly.groups), waitingItems: historyOnly.waitingItems },
+    historyPlusSSE: { groups: summary(historyPlusSSE.groups), waitingItems: historyPlusSSE.waitingItems } })}`);
 }
 async function runVersion(browser, version) {
   currentRendererName = version;
