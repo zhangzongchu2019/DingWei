@@ -103,7 +103,7 @@ const server = http.createServer((req, res) => {
       const seq = before ? 1 : 9;
       const marker = before ? 'HISTORY_AFTER_RESTART' : 'HISTORY_BEFORE_RESTART';
       const chronologicalTs = BASE + (before ? 9 : 1);
-      const event = { kind: 'assistant_text', text: marker, delivery_id: marker, turn_id: 'history-generation-shared-turn',
+      const event = { kind: 'assistant_text', text: marker, delivery_id: marker, turn_id: `history-generation-${generation}-turn`,
         session_id: 'history-epoch-session', ts: chronologicalTs, data: {}, cursor: null };
       const rows = [{ cursor: { generation, seq }, event_id: `${generation}-${seq}`,
         received_at: new Date(chronologicalTs).toISOString(), event: JSON.stringify(event) }];

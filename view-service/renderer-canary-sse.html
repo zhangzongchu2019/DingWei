@@ -3860,6 +3860,20 @@
         group = segments.find(segment => segment.timelineEpochOrder === eventRank
           && hubSeq >= segment.rangeStart && hubSeq < segment.rangeEnd) || null;
         if (!group) group = segments.find(segment => segment.timelineEpochOrder === eventRank) || null;
+        // A turn can span the history and live epochs. If this epoch has no
+        // segment for the turn, keep the event with the time-nearest existing
+        // segment instead of creating a second visual turn for the same ID.
+        if (!group && segments.length) {
+          const eventTs = Number(ev.ts);
+          if (Number.isFinite(eventTs)) {
+            group = segments.reduce((nearest, segment) => {
+              const segmentTs = timelineTimestamp(segment.node);
+              if (!Number.isFinite(segmentTs)) return nearest;
+              return !nearest || Math.abs(segmentTs - eventTs) < Math.abs(timelineTimestamp(nearest.node) - eventTs)
+                ? segment : nearest;
+            }, null);
+          }
+        }
       }
       if (!group) {
         const node = document.createElement('article');

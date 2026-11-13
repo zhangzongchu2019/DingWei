@@ -12,6 +12,8 @@ const mutationLatestOrder = process.argv.includes('--mutate-latest-order');
 const latestReloadOnly = process.argv.includes('--latest-reload-only');
 const mutationLatestTimestamp = process.argv.includes('--mutate-latest-timestamp');
 const mutationCrossStreamTime = process.argv.includes('--mutate-cross-stream-time');
+const mutationNoCrossEpochPair = process.argv.includes('--mutate-no-cross-epoch-pair');
+const mutationWrongCrossEpochSegment = process.argv.includes('--mutate-wrong-cross-epoch-segment');
 const roundsArg = process.argv.find(arg => arg.startsWith('--rounds='));
 const rounds = Math.max(1, Math.min(20, Number(roundsArg?.split('=')[1]) || 1));
 const BASE = 1793820000000;
@@ -325,6 +327,33 @@ async function checkLatestInput(page, n, afterReload, verify = true) {
   return state;
 }
 
+async function checkCrossEpochTurnPairing(page) {
+  const state = await page.evaluate(() => {
+    const host = document.getElementById('timeline');
+    host.replaceChildren();
+    timelineSequencedNodes.length = 0;
+    turnGroups.clear(); turnGroupSegments.clear();
+    const turn = 'cross-epoch-turn';
+    const add = (seq, ts, text, epoch) => {
+      const event = { kind: 'assistant_text', text, turn_id: turn, delivery_id: turn, ts, _hubSeq: seq, data: {} };
+      setTimelineEventEpoch(event, `hub:${epoch}`);
+      renderTurnEvent(turn, event);
+    };
+    add(1, 1000, 'CROSS_EPOCH_EARLY', 'history');
+    add(20, 9000, 'CROSS_EPOCH_LATE', 'history');
+    splitTurnGroupAtHubSequence(turn, 10, timelineEventRank({ _timelineEpoch: 'hub:history' }));
+    add(1, 8800, 'CROSS_EPOCH_LIVE', 'live');
+    const groups = turnGroupSegments.get(turn) || [];
+    return { groupCount: groups.length,
+      texts: groups.map(group => group.events.map(event => event.text).join(' ')),
+      liveGroup: groups.findIndex(group => group.events.some(event => event.text === 'CROSS_EPOCH_LIVE')) };
+  });
+  assert.strictEqual(state.groupCount, 2, `cross-epoch event must not create a third turn segment: ${JSON.stringify(state)}`);
+  assert.strictEqual(state.liveGroup, 1, `new event must join the time-nearest existing segment: ${JSON.stringify(state)}`);
+  assert(state.texts[1].includes('CROSS_EPOCH_LATE'), `paired segment must retain existing events: ${JSON.stringify(state)}`);
+  return state;
+}
+
 async function main() {
   if (mutationAppend || mutationNoSplit) {
     const anchor = mutationAppend
@@ -334,6 +363,16 @@ async function main() {
     source = mutationAppend
       ? source.replace(anchor, `${anchor}      timeline.appendChild(node); // mutant: append instead of sequence positioning\n      return;\n`)
       : source.replace(anchor, `            // mutant: no turn-group split at the injection fence\n`);
+  }
+  if (mutationNoCrossEpochPair) {
+    const anchor = '        if (!group && segments.length) {\n';
+    assert.strictEqual(source.split(anchor).length - 1, 1, 'cross-epoch pairing mutation anchor must be unique');
+    source = source.replace(anchor, '        if (false && !group && segments.length) { // mutant: never pair across epochs\n');
+  }
+  if (mutationWrongCrossEpochSegment) {
+    const anchor = 'Math.abs(segmentTs - eventTs) < Math.abs(timelineTimestamp(nearest.node) - eventTs)';
+    assert.strictEqual(source.split(anchor).length - 1, 1, 'cross-epoch segment mutation anchor must be unique');
+    source = source.replace(anchor, 'false /* mutant: keep earliest segment, ignoring time */');
   }
   if (mutationLatestTimestamp) {
     const anchor = "      if (ev?.kind === 'user_input' && !Number.isFinite(ev.ts)) ev.ts = Date.now();\n";
@@ -359,6 +398,8 @@ async function main() {
       await page.waitForFunction(() => !!document.getElementById('timeline'), null, { timeout: 10000 });
       const crossStream = await checkCrossStreamTimeline(page);
       console.log(`CROSS_STREAM_TIMELINE ${JSON.stringify(crossStream)}`);
+      const crossEpoch = await checkCrossEpochTurnPairing(page);
+      console.log(`CROSS_EPOCH_TURN_PAIRING ${JSON.stringify(crossEpoch)}`);
       for (const mode of ['claude', 'codex']) {
         await check(page, mode, i);
         await check(page, mode, i, true);
