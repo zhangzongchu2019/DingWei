@@ -8,6 +8,9 @@ const { chromium } = require('playwright');
 let source = fs.readFileSync(process.env.RENDERER_OVERRIDE || path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
 const mutationAppend = process.argv.includes('--mutate-append');
 const mutationNoSplit = process.argv.includes('--mutate-no-split');
+const mutationLatestFirst = process.argv.includes('--mutate-latest-first');
+const mutationLatestReload = process.argv.includes('--mutate-latest-reload');
+const mutationLatestTimestamp = process.argv.includes('--mutate-latest-timestamp');
 const roundsArg = process.argv.find(arg => arg.startsWith('--rounds='));
 const rounds = Math.max(1, Math.min(20, Number(roundsArg?.split('=')[1]) || 1));
 const BASE = 1793820000000;
@@ -31,7 +34,12 @@ function events(mode, n) {
     updated_at: new Date(BASE + 4000).toISOString(), reason: '', cancellable: true, interruptible: false };
   const completed = { kind: 'state_change', data: { change: 'turn_completed' }, delivery_id: `reply-${n}`, turn_id: turn, ts: BASE + 6000 };
   let list;
-  if (mode === 'claude' || mode === 'live') {
+  if (mode === 'latest-input') {
+    list = [
+      { kind: 'assistant_text', text: `TIMELINE_OLD_OUTPUT_${n}`, delivery_id: `old-reply-${n}`,
+        turn_id: `old-turn-${n}`, ts: BASE + 1000, data: {} },
+    ];
+  } else if (mode === 'claude' || mode === 'live') {
     list = [
       { kind: 'assistant_text', text: `TIMELINE_EARLY_${label}_${n}`, delivery_id: `reply-${n}`, turn_id: turn, ts: BASE + 1000 },
       user,
@@ -205,6 +213,55 @@ async function benchmarkHistoryInsert(page) {
   });
 }
 
+async function checkLatestInput(page, n, afterReload) {
+  const url = `http://127.0.0.1:${server.address().port}/view/timeline?mode=latest-input&n=${n}`;
+  if (afterReload) await page.reload({ waitUntil: 'domcontentloaded' });
+  else await page.goto(url, { waitUntil: 'domcontentloaded' });
+  const oldText = `TIMELINE_OLD_OUTPUT_${n}`;
+  await page.getByText(oldText, { exact: false }).waitFor({ timeout: 10000 });
+  await page.waitForFunction(() => historyBootstrapPending === false, null, { timeout: 10000 });
+  const turnId = `latest-turn-${n}-${afterReload ? 'reload' : 'first'}`;
+  const inputText = `TIMELINE_LATEST_INPUT_${n}_${afterReload ? 'RELOAD' : 'FIRST'}`;
+  const outputText = `TIMELINE_LATEST_OUTPUT_${n}_${afterReload ? 'RELOAD' : 'FIRST'}`;
+  await page.evaluate(({ turnId, inputText, outputText, n, afterReload }) => {
+    const epoch = `hub:latest-${n}-${afterReload ? 'reload' : 'first'}`;
+    const input = { kind: 'user_input', text: inputText, turn_id: turnId, delivery_id: turnId,
+      data: { lifecycle: 'admitted' }, _hubSeq: 10, _hubEpoch: epoch };
+    const output = { kind: 'assistant_text', text: outputText, turn_id: turnId, delivery_id: turnId,
+      ts: Date.now() + 1000, _hubSeq: 11, _hubEpoch: epoch, data: {} };
+    setTimelineEventEpoch(input, `hub:${epoch}`);
+    setTimelineEventEpoch(output, `hub:${epoch}`);
+    handleIncomingEvent(input);
+    handleIncomingEvent(output);
+  }, { turnId, inputText, outputText, n, afterReload });
+  await page.getByText(outputText, { exact: false }).waitFor({ timeout: 10000 });
+  await page.waitForFunction(() => pendingRenders.size === 0, null, { timeout: 10000 });
+  if ((afterReload && mutationLatestReload) || (!afterReload && mutationLatestFirst)) {
+    await page.locator(`#timeline > .turn-group[data-turn-key="${turnId}"]`).evaluate(node => node.parentNode.insertBefore(node, node.parentNode.firstChild));
+  }
+  const state = await page.evaluate(({ oldText, inputText, outputText, turnId }) => {
+    const groups = [...document.querySelectorAll('#timeline > .turn-group')];
+    const oldIndex = groups.findIndex(group => group.innerText.includes(oldText));
+    const next = groups.find(group => group.dataset.turnKey === turnId);
+    const latestIndex = groups.indexOf(next);
+    const sections = next ? [...next.querySelectorAll('.turn-user,.turn-assistant')] : [];
+    const inputTs = Number(next?.querySelector('.turn-user .event-time')?.dataset.ts);
+    const outputTs = Number(next?.querySelector('.turn-assistant .event-time')?.dataset.ts);
+    return { oldIndex, latestIndex, groupCount: groups.length,
+      segmentKinds: sections.map(section => section.classList.contains('turn-user') ? 'user' : 'assistant'),
+      inputFound: !!next?.innerText.includes(inputText), outputFound: !!next?.innerText.includes(outputText), inputTs, outputTs };
+  }, { oldText, inputText, outputText, turnId });
+  const cell = afterReload ? '③ refresh then new input' : '② history then live new input';
+  assert(state.oldIndex >= 0 && state.latestIndex === state.groupCount - 1,
+    `${cell}: new turn must follow old history output; state=${JSON.stringify(state)}`);
+  assert.deepStrictEqual(state.segmentKinds, ['user', 'assistant'],
+    `${cell}: same new turn must keep input before output; state=${JSON.stringify(state)}`);
+  assert(state.inputFound && state.outputFound, `${cell}: both segments must render; state=${JSON.stringify(state)}`);
+  assert(Number.isFinite(state.inputTs) && Number.isFinite(state.outputTs) && state.inputTs <= state.outputTs,
+    `${cell}: input fallback time must be present and no later than output; state=${JSON.stringify(state)}`);
+  return state;
+}
+
 async function main() {
   if (mutationAppend || mutationNoSplit) {
     const anchor = mutationAppend
@@ -214,6 +271,11 @@ async function main() {
     source = mutationAppend
       ? source.replace(anchor, `${anchor}      timeline.appendChild(node); // mutant: append instead of sequence positioning\n      return;\n`)
       : source.replace(anchor, `            // mutant: no turn-group split at the injection fence\n`);
+  }
+  if (mutationLatestTimestamp) {
+    const anchor = "      if (ev?.kind === 'user_input' && !Number.isFinite(ev.ts)) ev.ts = Date.now();\n";
+    assert.strictEqual(source.split(anchor).length - 1, 1, 'input arrival timestamp fallback anchor must be unique');
+    source = source.replace(anchor, '      // mutant: omit input arrival timestamp fallback\n');
   }
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const browser = await chromium.launch(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {});
@@ -228,6 +290,9 @@ async function main() {
       await check(page, 'history-page', i);
       await check(page, 'after-end', i);
       await check(page, 'idle', i);
+      const latestFirst = await checkLatestInput(page, i, false);
+      const latestAfterReload = await checkLatestInput(page, i, true);
+      console.log(`LATEST_INPUT_ORDER ${JSON.stringify({ first: latestFirst, afterReload: latestAfterReload })}`);
       await page.close();
     }
     const benchPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });

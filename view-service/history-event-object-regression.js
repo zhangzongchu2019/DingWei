@@ -67,6 +67,7 @@ const parserSource = `    function parseHistoryEvent(value) {
 assert(currentRenderer.includes(parserSource), 'history event object parser missing from current renderer');
 const mutation = process.env.MUTATE_HISTORY_EVENT_OBJECT || '';
 const historySSEMutation = process.env.MUTATE_HISTORY_SSE_INPUT_BUFFER === '1';
+const inputTimeMutation = process.env.MUTATE_HISTORY_INPUT_RECEIVED_AT === '1';
 const parsedRendererUnderTest = REPLAY_BASELINE ? null : mutation === 'object'
   ? currentRenderer.replace(parserSource, `    function parseHistoryEvent(value) {
       if (typeof value !== 'string') return null;
@@ -80,9 +81,17 @@ const parsedRendererUnderTest = REPLAY_BASELINE ? null : mutation === 'object'
     : currentRenderer;
 const sseBufferCondition = 'historyBootstrapPending && !historyApplying && (ev?._history || ev?._history_gap || (ev?._hubSeq && ev?._hubEpoch))';
 assert(currentRenderer.includes(sseBufferCondition), 'history/SSE bootstrap buffer guard missing');
-const rendererUnderTest = historySSEMutation
-  ? parsedRendererUnderTest.replace(sseBufferCondition, 'historyBootstrapPending && !historyApplying && (ev?._history || ev?._history_gap)')
+const receivedAtFallback = `          if (ev.kind === 'user_input' && !Number.isFinite(ev.ts)) {
+            const receivedAt = Date.parse(row?.received_at || '');
+            if (Number.isFinite(receivedAt)) ev.ts = receivedAt;
+          }`;
+assert(currentRenderer.includes(receivedAtFallback), 'history input received_at fallback missing');
+let rendererUnderTest = inputTimeMutation
+  ? parsedRendererUnderTest.replace(receivedAtFallback, '          // mutant: omit Hub received_at timestamp fallback')
   : parsedRendererUnderTest;
+if (inputTimeMutation) assert.notEqual(rendererUnderTest, parsedRendererUnderTest, 'history received_at mutation did not apply');
+if (historySSEMutation) rendererUnderTest = rendererUnderTest.replace(sseBufferCondition,
+  'historyBootstrapPending && !historyApplying && (ev?._history || ev?._history_gap)');
 if (historySSEMutation) assert.notEqual(rendererUnderTest, parsedRendererUnderTest, 'SSE input buffer mutation did not apply');
 const go = fs.readFileSync(path.join(ROOT, 'internal/m8/console_auth.go'), 'utf8');
 const htmlStart = 'const consolePageHTML = `';
@@ -223,6 +232,9 @@ async function inspectInputReplay(browser) {
   replayHistoryAsSSE = false;
   const expectedInputs = new Map(rows.map(row => row.payload).filter(event => event.kind === 'user_input'
     && event.data?.lifecycle === 'admitted' && event.turn_id).map(event => [event.turn_id, event.text || '']));
+  const expectedInputTimes = new Map(rows.filter(row => row.payload.kind === 'user_input'
+    && row.payload.data?.lifecycle === 'admitted' && row.payload.turn_id).map(row => [row.payload.turn_id,
+      Number.isFinite(row.payload.ts) ? row.payload.ts : row.received_at_ms]));
   assert.equal(historyOnly.groups.length, 17, 'history-only first page should have 17 turn-groups');
   assert.equal(expectedInputs.size, 16, 'fixture should have 16 admitted input turns');
   assert.equal(historyPlusSSE.waitingItems, historyOnly.waitingItems, 'history+SSE replay should not change the waiting input count');
@@ -241,9 +253,13 @@ async function inspectInputReplay(browser) {
     const assistantIndex = group.segments.findIndex(segment => segment.kind === 'turn-assistant');
     assert(userIndex >= 0 && assistantIndex > userIndex, `history+SSE replay: input must precede output in turn ${turn}`);
     assert.equal(group.segments[userIndex].text, text, `history+SSE replay: input duplicated or changed in turn ${turn}`);
-    assert(Number.isFinite(group.segments[userIndex].ts), `history+SSE replay: input must show its event/Hub-received time in turn ${turn}`);
+    assert(group.segments[userIndex].ts !== null && Number.isFinite(group.segments[userIndex].ts),
+      `history+SSE replay: input must show its event/Hub-received time in turn ${turn}`);
+    assert.equal(group.segments[userIndex].ts, expectedInputTimes.get(turn),
+      `history+SSE replay: input without ts must use row.received_at in turn ${turn}`);
     assert.match(group.segments[userIndex].timeTitle, /\(.+ UTC\)$/, `history+SSE replay: input hover must include local time and UTC in turn ${turn}`);
-    assert(Number.isFinite(group.segments[assistantIndex].ts), `history+SSE replay: output fixture must carry a timestamp in turn ${turn}`);
+    assert(group.segments[assistantIndex].ts !== null && Number.isFinite(group.segments[assistantIndex].ts),
+      `history+SSE replay: output fixture must carry a timestamp in turn ${turn}`);
     assert(group.segments[userIndex].ts <= group.segments[assistantIndex].ts,
       `history+SSE replay: input time must be no later than its output in turn ${turn}`);
   }
