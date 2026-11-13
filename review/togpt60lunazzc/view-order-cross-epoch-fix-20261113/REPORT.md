@@ -50,3 +50,18 @@ renderer-epoch-order-regression.js 将两代 history 共用的 `turn_id` 改为 
 - 构建门：`PATH=/tmp/dw-test-venv/bin:$PATH scripts/run-build-tests.sh`，rc=0。
 - OpenSpec strict 命令如上，rc=0。
 - 未部署。
+
+## 2026-11-13 复核补跑
+
+只复核 `togpt60lunazzc/view-order-cross-epoch-fix`；当前 renderer SHA 与上节相同。没有 cherry-pick 或引用 `d622f9c2` / `view-order-live-pairing-fix`。
+
+- 带 SSE `id` 的单次推送回放（judge `0d6dc7477`、`55bdcce59`，等待 2000 ms）复核四条现成抓包：长抓包 `300515067` 的 Gmail 为 58 nodes、9 turn groups、49 input cards，唯一 `badTurns=(ordinal 0, prev C)`，`tsInversions=0`；同抓包 50tc2k 为 94 nodes、11 groups、83 cards，唯一 `(0,C)`、倒挂 0。短抓包 `9af18013` 的 Gmail 为 59 nodes、10 groups、49 cards，唯一 `(0,C)`、倒挂 0；50tc2k 为 96 nodes、10 groups、86 cards，唯一 `(0,C)`、倒挂 0。四路均 `misplacedCards=0`、`duplicateInputs=0`。这确认位置改正没有引入 d622 的输入卡大面积转组行为。
+- 定向 Chrome：`NODE_PATH=/tmp/dw-filecard-playwright/node_modules PW_CHANNEL=chrome node view-service/renderer-timeline-order-regression.js --rounds=1` 与 `node view-service/renderer-epoch-order-regression.js` 通过。位置及配对相关变异 `--mutate-no-cross-epoch-pair`、`--mutate-wrong-cross-epoch-segment`、`--mutate-cross-epoch-reposition`、`--mutate-cross-stream-time` 均以 rc=1 命中对应断言；定位键变异具体红于“paired group must stay before the later queued card”，同一读数显示时间倒挂。
+- 浏览器全量：2026-11-13T06:01:06Z，`NODE_PATH=/tmp/dw-filecard-playwright/node_modules PW_CHANNEL=chrome python3 tools/run-browser-regressions.py`，43/43 suites、aggregate rc=0。receipt 绑定 `bb22e77c4b76c09fdba8c4a9db47a7461187170a` 与 renderer SHA `4a8d8cc1b2af87087b85ca8e55f2ba0e055cb1b26f88974321867fbde664ce85`。
+- OpenSpec strict：`env -i HOME=/home/dev PATH=/usr/local/bin:/usr/bin:/bin OPENSPEC_TELEMETRY=0 npm_config_cache=/home/dev/.npm npx --yes @fission-ai/openspec@1.16.0 validate --all --strict --no-interactive`，43 passed，0 failed。
+- 构建门：`env -i HOME=/home/dev PATH=/tmp/dw-test-venv/bin:/usr/local/bin:/usr/bin:/bin TZ=UTC PYTHONDONTWRITEBYTECODE=1 GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOPATH=/home/dev/go GOMODCACHE=/home/dev/go/pkg/mod GOCACHE=/home/dev/.cache/go-build TMPDIR=/tmp bash scripts/run-build-tests.sh`，2026-11-13 06:01–06:11 UTC，rc=0；`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`，每个 helper profile 实跑 1203 项。此命令使用 `env -i`，PATH 首位 `/tmp/dw-test-venv/bin`，Python 为 `/tmp/dw-test-venv/bin/python3`。
+- 先前“四个 helper 文件未收集到用例”的 rc=1，可追溯记录在仓库 `EVIDENCE.md` 的 2026-11-05 行：`TMPDIR=$(mktemp -d /tmp/r52to.XXXX) scripts/run-build-tests.sh`。该次没有 `env -i`、没有 PATH/venv 前置，沿用继承 PATH 并解析到 `/usr/bin/python3`；缺 `pexpect`、`websockets` 后 discovery 对 Claude 与 Codex 两 profile 都报那四个文件无用例。之后锁定 venv 的干净复跑通过。若所指 rc=1 是另一条未留档命令，则其原始环境无法从当前仓库证据核实；不把两者混为一谈。
+
+`renderer-epoch-order-regression.js` 第 106 行的 fixture 改动理由见“实现与回归”：原来共享 turn_id 会把跨 generation 的两个 marker 合成同一 visual group，使比较两个 timeline 子节点位置的历史顺序判据失去辨别力；改为 generation 独立 ID 后仍测原来的两节点顺序。它没有删断言或放宽判据；共享 turn_id 的跨 epoch 并组另由 `checkCrossEpochTurnPairing` 覆盖。
+
+结果仅供分支复核；未冻结、未部署。冻结前仍由 prodops 在隔离环境另跑构建门。

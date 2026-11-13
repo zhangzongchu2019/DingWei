@@ -13,3 +13,5 @@
 - 日期：2026-11-13；执行者：togpt60lunazzc；commit：本次修复提交。完成：目标真实 Chrome 回归通过；`--mutate-cross-stream-time` 在整时间轴单调判据失败；`npx @fission-ai/openspec@1.16.0 validate --all --strict` 43/43 通过；`scripts/run-build-tests.sh` rc=0。评审方 `out/view-input-20261113/replay3.cjs` 未随工作树提供，新增 7 张逐张断言的混合轴 fixture。阻塞：无。下一步：评审席在推送 tip 复跑真实两路判定器。
 - 日期：2026-11-13；执行者：togpt60lunazzc；commit：待提交。完成：跨 epoch 并组的位置回归及恢复错误定位键改写的变异刀已加入；定向 Chrome 回归通过，变异按位置与单调断言转红。阻塞：两路真流回放、epoch 与全量套件尚待执行。下一步：完成全部复核门并推送供复核，不上线。
 - 日期：2026-11-13；执行者：togpt60lunazzc；commit：待提交。完成：长抓包（300515067）与 9af18013 两会话均仅剩 badTurns ordinal 0、tsInversions 0；三套定向浏览器回归与全量 43 套通过；构建测试门双 profile 1203/1203、Python 27、shell 2 通过；OpenSpec strict 43/43 通过；全部相关变异按对应断言转红。阻塞：无。下一步：推送提交供 opus50tc2k.zzc 复核；不部署。
+
+- 日期：2026-11-13；执行者：togpt60lunazzc；commit：随本次文档补记提交。完成：带 id 单次推送复放长/短抓包共四路，只剩各自唯一首屏项 `(0,C)` 且 `tsInversions=0`；定向跨 epoch 四把相关变异均按各自判据转红；43 套浏览器 aggregate、OpenSpec strict、干净 `env -i` 构建门全部通过。附录明确第 106 行 fixture 理由及历史四文件 discovery rc=1 可核实的环境（无 env-i、无 venv，系统 Python 缺依赖）。阻塞：冻结前等待 prodops 在隔离环境复跑构建门及外席复核。下一步：等待两项独立复核，保持不部署、不冻结。
