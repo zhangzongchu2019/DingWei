@@ -37,6 +37,7 @@ SUITES = (
     ("console_temp_groups", "node", ROOT / "view-service/console-temp-groups-regression.js"),
     ("renderer_in_console_iframe", "node", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
     ("history_event_object", "node", ROOT / "view-service/history-event-object-regression.js"),
+    ("view_input_capture_replay", "node", ROOT / "view-service/capture-input-replay-regression.js"),
     ("renderer_sse_reconnect", "node", ROOT / "view-service/renderer-sse-reconnect.js"),
     ("r15_session_history_pagination", "node", ROOT / "view-service/r15-session-history-browser-regression.js"),
     ("renderer_timeline_order", "node", ROOT / "view-service/renderer-timeline-order-regression.js"),

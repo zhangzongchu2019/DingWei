@@ -2527,6 +2527,7 @@
       // Hub/helper timestamps are optional on user_input. Stamp at the stream
       // boundary so live ordering and the visible time use the actual arrival.
       if (ev?.kind === 'user_input' && !Number.isFinite(ev.ts)) ev.ts = Date.now();
+      if (ev?.kind === 'input_posted' && !Number.isFinite(ev._arrivalTs)) ev._arrivalTs = Date.now();
       if (historyBootstrapPending && !historyApplying && (ev?._history || ev?._history_gap || (ev?._hubSeq && ev?._hubEpoch))) {
         historyLivePending.push(ev);
         return;
@@ -3770,8 +3771,12 @@
     function eventTimeHtml(ev) {
       // ts=UTC epoch 毫秒(helper 打戳);按查看者本地时区渲染,悬停给完整本地时间+UTC。
       // 旧事件(ring 回放的无 ts 存量)不显示,不兜底猜时间。
-      if (!Number.isFinite(ev?.ts)) return '';
-      const ts = ev.ts;
+      let ts = ev?.ts;
+      if (!Number.isFinite(ts) && ev?.kind === 'input_posted') {
+        const updatedAt = Date.parse(ev.updated_at || '');
+        ts = Number.isFinite(updatedAt) ? updatedAt : ev._arrivalTs;
+      }
+      if (!Number.isFinite(ts)) return '';
       const d = new Date(ts);
       if (Number.isNaN(d.getTime())) return '';   // 超Date值域的ts同走不显示不猜,防toISOString抛RangeError丢整卡(dev55 R1 F1)
       const full = `${d.toLocaleString()} (${d.toISOString()} UTC)`;
@@ -4222,6 +4227,11 @@
         return;
       }
       const { card, content } = baseCard(ev, 'user');
+      if (ev.kind === 'input_posted') {
+        const updatedAt = Date.parse(ev.updated_at || '');
+        const timelineTs = Number.isFinite(updatedAt) ? updatedAt : Number(ev._arrivalTs);
+        if (Number.isFinite(timelineTs)) card.dataset.timelineTs = String(timelineTs);
+      }
       if (Number.isSafeInteger(Number(ev._hubSeq)) && Number(ev._hubSeq) > 0) card.dataset.timelineSeq = String(Number(ev._hubSeq));
       if (Number.isSafeInteger(Number(ev._hubSeq)) && Number(ev._hubSeq) > 0) card.dataset.timelineEpochOrder = String(timelineEventRank(ev));
       content.textContent = ev.text || norm.text || '';
@@ -4762,6 +4772,10 @@
           if (ev.kind === 'user_input' && !Number.isFinite(ev.ts)) {
             const receivedAt = Date.parse(row?.received_at || '');
             if (Number.isFinite(receivedAt)) ev.ts = receivedAt;
+          }
+          if (ev.kind === 'input_posted' && !Number.isFinite(ev._arrivalTs)) {
+            const receivedAt = Date.parse(row?.received_at || '');
+            if (Number.isFinite(receivedAt)) ev._arrivalTs = receivedAt;
           }
           delete ev._history_gap;
           ev._history = { generation: row.cursor.generation, seq: row.cursor.seq, event_id: row.event_id };

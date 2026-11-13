@@ -63,7 +63,7 @@ function events(mode, n) {
   } else if (mode === 'after-end') {
     list = [
       { kind: 'assistant_text', text: `TIMELINE_EARLY_AFTER_END_${n}`, delivery_id: `reply-${n}`, turn_id: turn, ts: BASE + 5000 },
-      completed, user, accepted,
+      completed, { ...user, updated_at: new Date(BASE + 7000).toISOString() }, accepted,
     ];
   } else if (mode === 'history-page') {
     list = [
