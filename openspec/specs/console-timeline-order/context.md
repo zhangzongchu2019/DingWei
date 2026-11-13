@@ -18,3 +18,7 @@
 
 - Node.js 与仓库既有 Playwright/Chromium 测试环境；无新增依赖。
 - 负载轮次使用本机 CPU 饱和进程，并记录 `/proc/loadavg`。
+
+## 2026-11-13结项准备
+
+r59补录：a0e28049含跨流统一轴及4871e32b/bb22e77c跨epoch配对与定位键保护；S007已有主规格，归档不重复添加。产品与四刀/两代回放见review/togpt60lunazzc/view-order-cross-epoch-fix-20261113/REPORT.md。

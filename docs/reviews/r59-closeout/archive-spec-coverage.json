@@ -1,0 +1,163 @@
+{
+  "checked": 26,
+  "missing": 0,
+  "normalization": "仅去delta的ADDED/MODIFIED Requirements标题后比正文；首轮未剥标题导致HCD004误报，修正比较器后逐节机核",
+  "rows": [
+    {
+      "change": "helper-bound-thread",
+      "capability": "helper-delivery-evidence",
+      "requirement": "HBT-001 根 thread 显式绑定且不可替代",
+      "exact_section_match": true
+    },
+    {
+      "change": "helper-bound-thread",
+      "capability": "helper-delivery-evidence",
+      "requirement": "HBT-002 private 绑定冲突停止启动",
+      "exact_section_match": true
+    },
+    {
+      "change": "helper-bound-thread",
+      "capability": "helper-delivery-evidence",
+      "requirement": "HBT-003 保留未配置与子分道行为",
+      "exact_section_match": true
+    },
+    {
+      "change": "helper-recover-inherit-thread",
+      "capability": "helper-delivery-evidence",
+      "requirement": "HRI-001 恢复继承与首投校验",
+      "exact_section_match": true
+    },
+    {
+      "change": "helper-recover-inherit-thread",
+      "capability": "helper-delivery-evidence",
+      "requirement": "HRI-002 未绑定不可用根显式换新",
+      "exact_section_match": true
+    },
+    {
+      "change": "helper-recover-inherit-thread",
+      "capability": "helper-delivery-evidence",
+      "requirement": "HRI-003 未知投递不重放",
+      "exact_section_match": true
+    },
+    {
+      "change": "helper-recover-inherit-thread",
+      "capability": "helper-delivery-evidence",
+      "requirement": "HRI-004 broker 根子分道隔离",
+      "exact_section_match": true
+    },
+    {
+      "change": "helper-busy-admission",
+      "capability": "helper-delivery-evidence",
+      "requirement": "HCD-004 忙等待不能无条件替换健康传输",
+      "exact_section_match": true
+    },
+    {
+      "change": "helper-busy-admission",
+      "capability": "helper-delivery-evidence",
+      "requirement": "HBA-001 有界等待与原子取消",
+      "exact_section_match": true
+    },
+    {
+      "change": "helper-busy-admission",
+      "capability": "helper-delivery-evidence",
+      "requirement": "HBA-002 等待状态复用事件通道",
+      "exact_section_match": true
+    },
+    {
+      "change": "helper-busy-admission",
+      "capability": "helper-delivery-evidence",
+      "requirement": "HBA-003 传输故障不获忙等待豁免",
+      "exact_section_match": true
+    },
+    {
+      "change": "r58-integration",
+      "capability": "release-quality-gates",
+      "requirement": "R58I-001 r58冻结输入组合验证",
+      "exact_section_match": true
+    },
+    {
+      "change": "r59-integration",
+      "capability": "release-quality-gates",
+      "requirement": "R59I-001 冻结父关系与最小冲突合并",
+      "exact_section_match": true
+    },
+    {
+      "change": "r59-integration",
+      "capability": "release-quality-gates",
+      "requirement": "R59I-002 版本位独立提交",
+      "exact_section_match": true
+    },
+    {
+      "change": "r59-integration",
+      "capability": "release-quality-gates",
+      "requirement": "R59I-003 统一隔离门与可追溯交件",
+      "exact_section_match": true
+    },
+    {
+      "change": "view-unknown-ux",
+      "capability": "view-unknown-ux",
+      "requirement": "VUX-001 未知状态使用明确措辞",
+      "exact_section_match": true
+    },
+    {
+      "change": "view-unknown-ux",
+      "capability": "view-unknown-ux",
+      "requirement": "VUX-002 重发须确认且服从已处理事实",
+      "exact_section_match": true
+    },
+    {
+      "change": "view-unknown-ux",
+      "capability": "view-unknown-ux",
+      "requirement": "VUX-003 不再跟踪仅改变本页展示",
+      "exact_section_match": true
+    },
+    {
+      "change": "view-unknown-ux",
+      "capability": "view-unknown-ux",
+      "requirement": "VUX-004 过期未知条目收起",
+      "exact_section_match": true
+    },
+    {
+      "change": "view-unknown-ux-followup",
+      "capability": "view-unknown-ux",
+      "requirement": "VUX-005 未变化的未知列表保留 DOM",
+      "exact_section_match": true
+    },
+    {
+      "change": "view-unknown-ux-followup",
+      "capability": "view-unknown-ux",
+      "requirement": "VUX-006 摘要数字对应本页可见明细",
+      "exact_section_match": true
+    },
+    {
+      "change": "view-stale-backlog",
+      "capability": "view-unknown-ux",
+      "requirement": "VUX-007 retryable unknown 不显示排队时长",
+      "exact_section_match": true
+    },
+    {
+      "change": "view-stale-backlog",
+      "capability": "view-unknown-ux",
+      "requirement": "VUX-008 本地不再跟踪按会话持久化并限额",
+      "exact_section_match": true
+    },
+    {
+      "change": "view-stale-backlog",
+      "capability": "view-unknown-ux",
+      "requirement": "VUX-009 批量不再跟踪需取消默认确认",
+      "exact_section_match": true
+    },
+    {
+      "change": "view-cross-stream-timeline",
+      "capability": "console-timeline-order",
+      "requirement": "R51-TIMELINE-001 时间线按 Hub 事件序号定位消息",
+      "exact_section_match": true
+    },
+    {
+      "change": "view-history-object-envelope",
+      "capability": "console-session-history",
+      "requirement": "VHO-001 历史对象与字符串信封兼容",
+      "exact_section_match": true
+    }
+  ]
+}

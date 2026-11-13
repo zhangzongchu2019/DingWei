@@ -1,0 +1,30 @@
+{
+  "base": "a0e280494b2b086c1fac3f765b0d31eb38ec5c09",
+  "ordered_ancestors": [
+    "153bac4dfe6794a8f2d9438eb4ac4e76d6aa400d",
+    "2e1e4c9db3c42cf7c987a548fa9214aad67a9f0c",
+    "c22bb63fb190ca62fe121bb88856e13a84b1e270",
+    "a0e280494b2b086c1fac3f765b0d31eb38ec5c09"
+  ],
+  "main_base": "153bac4dfe6794a8f2d9438eb4ac4e76d6aa400d",
+  "main_distance": 50,
+  "retrospective_source": "17834990309f05ffa6c9307a7ba954e5bd133ecc",
+  "retrospective_cherry_pick": "ebd74ffc8e73b9bed09db73d65c0e3e6c3f2bd09",
+  "retrospective_resolution": "基线没有文档，保留来源tip完整正文；单提交只创建docs/retrospectives/2026-11-13-view-refresh-input-output.md，不带来源父提交或产品改动",
+  "retrospective_author": "本席按当前Git身份提交，原始来源commit单独保留",
+  "outside_docs_openspec": [],
+  "retained_changes": [
+    "agent-http-mcp-gateway",
+    "feishu-agent-sticky-default",
+    "hub-graceful-shutdown",
+    "r1-identify-high-risk-changes",
+    "r11-freeze-legacy-console-spec",
+    "r5-render-openspec-readonly",
+    "r6-coordinate-review",
+    "r7-confirm-immutable-version",
+    "r8-evidence-driven-change-lifecycle",
+    "r9-pm-decision-request"
+  ],
+  "retained_changes_byte_identical": true,
+  "view_cross_epoch_decision": "并入原view-cross-stream-timeline，已有T-05～07/S007，沿用同一需求身份；4871e32b、bb22e77c与a0e28049报告补精确坐标，不另建重复change"
+}

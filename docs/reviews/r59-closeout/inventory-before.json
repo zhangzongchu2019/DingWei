@@ -1,0 +1,192 @@
+[
+  {
+    "change": "agent-http-mcp-gateway",
+    "checked": 11,
+    "total": 14,
+    "all_checked": 11,
+    "all_total": 14,
+    "remaining": [
+      "- [ ] T-04 实现飞书网页扫码、本团队tenant校验、稳定主体、OAuth metadata/CIMD与2026-07-28无状态MCP：server/discover、每请求_meta/头/resultType及四工具，验证对话式/自主循环互操作，不依赖initialize/Mcp-Session-Id。 【乙；交接：尚缺真实飞书网页登录/真实第三方 MCP SDK 对话式与自主循环互操作；由集成负责人安排真实身份与标准客户端验收。2026-11-09 r56.2（0de00bc45）现网补证：业主真实飞书网页登录与授权通过，Codex 桌面版（真实第三方 MCP 客户端）发出消息、目标 ts3opus55.zzc 收到（rulings ㊿-补36 19385acb）；仍缺：外部端收取回复的实证（prodops 只读取证 75a63db34bcf 待交）与自主循环互操作。业主另令走完整身份（乙，external-agent-full-identity，㊿-补38 cabde8a5）。】",
+      "- [ ] T-10 后续实现跑构建/相关race/strict与标准MCP互操作，完成迁移/备份sequence/回滚方案，另行独立验收和发布；本次文档门原文见validation/。 【乙；交接：尚缺真实第三方标准 MCP SDK 互操作验收；需独立 QA/业主完成后补齐交接与切换验收。现有证据明确未做此项。】",
+      "- [ ] T-13 评估可选本人收件资源＋subscriptions/listen通知：权限隔离、通知不充ACK、断流主动收件；无订阅客户端保留25秒轮询。二期私有WSS仅在必要时另立项，若一期通知足够可不做；开发前再核定稿/SDK状态。 【乙；交接：缺少收件资源/subscriptions-listen 的一期取舍结论与实现；由 PM/业主定是否二期立项，若保留则另派实现及验证。】"
+    ]
+  },
+  {
+    "change": "feishu-agent-sticky-default",
+    "checked": 12,
+    "total": 14,
+    "all_checked": 12,
+    "all_total": 14,
+    "remaining": [
+      "- [ ] T-08 另获授权做真实飞书桌面/移动端复制回入、Hub重启和迟到/并发读数，逐格记录实际目标、重复/缺失、TTL与候选格式；不向真实业主/Agent发送未授权探测。 【乙；交接：缺真实飞书桌面/移动端复制回入及Hub重启、迟到/并发矩阵；业主授权并提供真实客户端后由 QA/prodops 执行。】",
+      "- [ ] T-09 未来实施完成后跑相关整包/race、全仓strict与构建门、独立验收，再另申请预发/生产GO；不以apply/archive、T-01/02勾选或旧测试通过代替业务验收。 【乙；交接：独立验收报告记录 F-01 安全阻断；实现负责人修复后，由 QA 在最终源锚独立复验，再申请 GO。证据：docs/reviews/togpt60-r49-r14-t09-acceptance/REPORT.md @ f0801adbdc9946a803067610d0d106b0e0e61ce2】"
+    ]
+  },
+  {
+    "change": "helper-bound-thread",
+    "checked": 5,
+    "total": 5,
+    "all_checked": 5,
+    "all_total": 5,
+    "remaining": []
+  },
+  {
+    "change": "helper-busy-admission",
+    "checked": 5,
+    "total": 5,
+    "all_checked": 5,
+    "all_total": 5,
+    "remaining": []
+  },
+  {
+    "change": "helper-recover-inherit-thread",
+    "checked": 6,
+    "total": 6,
+    "all_checked": 6,
+    "all_total": 6,
+    "remaining": []
+  },
+  {
+    "change": "hub-graceful-shutdown",
+    "checked": 10,
+    "total": 11,
+    "all_checked": 15,
+    "all_total": 16,
+    "remaining": [
+      "- [ ] T-11 未来实现完成后跑相关Go/race/构建门、全OpenSpec strict，更新代码context/逐格证据；另行申请预发及生产GO，不能以提案归档或tasks勾选代替发布。 【乙；交接（组长 2026-11-08 更正）：停机修复已随 r48 上线；本项剩独立 QA 对 S011 的验收与证据回写，不需另行实现。】"
+    ]
+  },
+  {
+    "change": "r1-identify-high-risk-changes",
+    "checked": 5,
+    "total": 8,
+    "all_checked": 5,
+    "all_total": 8,
+    "remaining": [
+      "- [ ] T-03 按已决R1-PM01 A核R1-A01～04，写回匹配语义/规则schema与合并方式、负责人/ACL、两种提供方diff/评论/合并接口与凭据管理位置；核派单后变化并strict，未知前不实施或开启评论。 【乙；交接：真实 GitHub/工蜂 ACL、审阅/评论/合并接口及凭据位置未核；由 prodops/提供方负责人补事实后更新规格。】",
+      "- [ ] T-05 实现R1-003/004提供方和双端投递；验证各S01/S02的GitHub/工蜂、越权/撤权/缺scope、错误坐标、部分失败、查回去重、无源码/秘密外发，记录实际接口及secret位置。 【乙；交接：GitHub 与工蜂仍为 ErrUnavailable stub，真实权限及双端投递未接；由实现席按提供方事实接线并独立验证。】",
+      "- [ ] T-08 按全部R1场景及其格逐一记PASS/FAIL/未执行/不适用和证据，重点用隔离MR实测双端而非仅mock；QA执行独立验收，获预发授权后才验证环境并另申GO。 【乙；交接：缺真实隔离 MR 双端验收与独立 QA；由 QA 用真实受控仓库完成，获得授权后再申预发GO。】"
+    ]
+  },
+  {
+    "change": "r11-freeze-legacy-console-spec",
+    "checked": 5,
+    "total": 8,
+    "all_checked": 5,
+    "all_total": 8,
+    "remaining": [
+      "- [ ] T-05 落实已批 LCS-002：原旧列表仅可信业主可见并只读，非业主无入口且读取拒绝；深链接同样核业主并只读。不新建历史查询/检索入口，不新增共享链接治理工程；同步业主/非业主浏览器、直读越权与历史标记、保留一个月且无单独授权到期不清理用例，更新列表说明。 【乙；交接：LCS-002 业主只读旧列表尚未实现；由实现负责人完成列表入口/服务端授权与浏览器格。】",
+      "- [ ] T-07 核心八格及包/构建验证见 EVIDENCE.md；整体仍待 T-05 的 LCS-S003/006，不提前勾选。按 LCS-S001～010 逐场景记录 PASS/FAIL/未执行/不适用与证据坐标，复跑受影响测试门和 strict，提交干净锚给独立审阅；不得用勾选或结构通过代替业务验收。 【乙；交接：尚缺LCS-002及依赖S003/006格、完整独立审阅；实现完成后由 QA 逐场景复验。】",
+      "- [ ] T-08 在另获预发授权后验证切换与查询发布集，交付生效点/回退边界/历史快照证据并交审；未获 GO 不执行环境变更。 【乙；交接：无预发授权与切换发布证据；业主授权后由 prodops 验证并交审。】"
+    ]
+  },
+  {
+    "change": "r5-render-openspec-readonly",
+    "checked": 6,
+    "total": 8,
+    "all_checked": 6,
+    "all_total": 8,
+    "remaining": [
+      "- [ ] T-07 按 CSR-S001～015 逐场景记录 PASS/FAIL/未执行/不适用和证据位置，复跑受影响门与 strict；用真实受控仓库托管提供方测试仓/获权与失权主体验证，模拟适配器通过不能冒充真实权限继承验收。 【乙；交接：缺真实受控 Git 托管测试仓及获权/失权主体完整CSR矩阵；由 QA 与提供方负责人补真实权限验证。】",
+      "- [ ] T-08 获预发授权后复核浏览器网络记录、API 访问审计、凭据不出服务端和固定坐标阅读；冻结干净提交交独立审阅。未获 GO 不部署，未获真实测试权限不做线上探测。 【乙；交接：缺获授权预发的网络/审计/凭据路径验收；由业主授权后 prodops 与独立审阅者执行。】"
+    ]
+  },
+  {
+    "change": "r58-integration",
+    "checked": 3,
+    "total": 5,
+    "all_checked": 3,
+    "all_total": 5,
+    "remaining": [
+      "- [ ] T-04 固定最终tip，跑完整指定门与两刀变异。",
+      "- [ ] T-05 通过后推送并核ls-remote，在独立证据分支及send.py交件。"
+    ]
+  },
+  {
+    "change": "r59-integration",
+    "checked": 5,
+    "total": 5,
+    "all_checked": 5,
+    "all_total": 5,
+    "remaining": []
+  },
+  {
+    "change": "r6-coordinate-review",
+    "checked": 6,
+    "total": 8,
+    "all_checked": 6,
+    "all_total": 8,
+    "remaining": [
+      "- [ ] T-07 按 R6 全部场景逐个记录 PASS/FAIL/未执行/不适用与证据；四格场景逐格单列。用真实受控 Git 测试仓、独立权限主体与浏览器验证，不能以模拟通过替代真实权限验收；由质量保障组独立复核，非本席自验收。 【乙；交接：缺真实受控 Git 仓/独立权限主体及 QA 全场景复核；由 QA/提供方负责人完成。】",
+      "- [ ] T-08 获授权再做预发，复核源码未通过消息/文件服务交换、完整坐标审计、实际出站信封、超时提醒和重审提示，另行申请 GO。未获授权不部署、不重启、不改线上配置。 【乙；交接：缺预发授权及实际出站信封、超时提醒/重审提示环境核验；业主授权后由 prodops执行。】"
+    ]
+  },
+  {
+    "change": "r7-confirm-immutable-version",
+    "checked": 5,
+    "total": 11,
+    "all_checked": 5,
+    "all_total": 11,
+    "remaining": [
+      "- [ ] T-03 等 prodops 核主体/ACL、仓库/commit/目录查询事实和凭据管理位置；按已批共用 R7-PM01 及三类豁免，补反例样本及预期、实际接口/时限/路径，复核本次派单后规格变化并 strict；未定不得实施版本有效性自动判定。 【乙；交接：实际 GitHub/工蜂主体ACL、目录查询事实及secret位置未核；prodops/提供方负责人补事实。】",
+      "- [ ] T-04 实现 R7-001/002/006，S01/S02：合法事实与可见坐标、逐主体授权/拒绝、异常输入、缓存撤权和界面语义；同步相应正反验证，记录证据。 【乙；交接：当前 R7 bridge 默认503、提供方/ACL接线未完成；由实现席按核实接口完成并测撤权/异常矩阵。】",
+      "- [ ] T-05 实现 R7-003～005，S01/S02：带版本策略比较、四类实质变化、三类豁免及混合实质修改反例、无关变化、强推、历史不可读、并发/迟到与未知判定；逐格验证该失效确实失效、不该失效不误失效，并记录证据。 【乙；交接：缺真实版本策略读取与全场景失效判定，核心实现未完成；实现席补齐。】",
+      "- [ ] T-06 实现 R7-007，S01/S02：追加历史/幂等及确认不生成验收发布；执行该提醒确实提醒、该拒确实拒且正常路径不误拒的相应场景。 【乙；交接：缺R7真实提醒/拒绝路径和追加历史验收；实现席完成后交独立QA。】",
+      "- [ ] T-07 按 R7 全部场景逐个记录 PASS/FAIL/未执行/不适用与证据；四格场景逐格单列。用真实受控 Git 测试仓、独立权限主体与浏览器验证，不能以模拟通过替代真实权限验收；由质量保障组独立复核，非本席自验收。 【乙；交接：缺真实受控Git仓、独立权限主体与全场景独立复核；由 QA 执行。】",
+      "- [ ] T-08 获授权再做预发，复核源码未通过消息/文件服务交换、完整坐标审计、确认失效和 MR/委员会区分，另行申请 GO。未获授权不部署、不重启、不改线上配置。 【乙；交接：缺预发授权与环境GO证据；业主授权后 prodops 验证。】"
+    ]
+  },
+  {
+    "change": "r8-evidence-driven-change-lifecycle",
+    "checked": 6,
+    "total": 8,
+    "all_checked": 6,
+    "all_total": 8,
+    "remaining": [
+      "- [ ] T-03 按已决R8-A05核R8-A01～04：GitHub/工蜂当前head/所需审阅集合/批准有效性及显式委员会标记字段、可信推进/结果/QA/发布主体、MR/PM及委员会范围按需R7完整当前事实、任务/场景集合与适用映射、发布关联、事务与幂等；补实际代码位置/接口和secret管理位置，核派单后规格并strict，依赖未知前不开放推进。 【乙；交接：真实 GitHub/工蜂有效审批、PM/委员会字段、可信主体与secret位置未核；prodops/提供方负责人补事实。】",
+      "- [ ] T-08 对R8全场景及各格记录PASS/FAIL/未执行/不适用和证据；用真实受控事实和隔离数据逐边验收，QA独立复核，不以stub通过代替R7/R9/提供方可用证明；另获预发授权再验证环境与申请GO。 【乙；交接：缺真实提供方受控事实及独立QA/预发授权；由 QA 与 owner 完成，不能以stub测试代替。】"
+    ]
+  },
+  {
+    "change": "r9-pm-decision-request",
+    "checked": 9,
+    "total": 10,
+    "all_checked": 11,
+    "all_total": 12,
+    "remaining": [
+      "- [ ] T-10 验收后另申请预发/生产GO与切换就绪结论；群通知保持挂起不依赖，不新接Slack、不archive/apply、不改R10/r46冻结分支。 【乙；交接：缺验收后预发/生产GO与切换就绪结论；由独立QA出验收，业主/PM批GO，prodops记录发布事实。】"
+    ]
+  },
+  {
+    "change": "view-cross-stream-timeline",
+    "checked": 7,
+    "total": 7,
+    "all_checked": 7,
+    "all_total": 7,
+    "remaining": []
+  },
+  {
+    "change": "view-stale-backlog",
+    "checked": 9,
+    "total": 9,
+    "all_checked": 9,
+    "all_total": 9,
+    "remaining": []
+  },
+  {
+    "change": "view-unknown-ux",
+    "checked": 6,
+    "total": 6,
+    "all_checked": 6,
+    "all_total": 6,
+    "remaining": []
+  },
+  {
+    "change": "view-unknown-ux-followup",
+    "checked": 5,
+    "total": 5,
+    "all_checked": 5,
+    "all_total": 5,
+    "remaining": []
+  }
+]

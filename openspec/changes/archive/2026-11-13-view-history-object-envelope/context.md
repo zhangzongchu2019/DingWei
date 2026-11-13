@@ -1,0 +1,4 @@
+# Context
+
+主能力：console-session-history；读取既有context.md与spec.md。产品实现2e1e4c9db3c42cf7c987a548fa9214aad67a9f0c已在线性发布链内；renderer的parseHistoryEvent/loadSessionHistory，回归view-service/history-event-object-regression.js，登记tools/run-browser-regressions.py。复盘17834990309f05ffa6c9307a7ba954e5bd133ecc在本准备分支单提交cherry-pick。
+测试仅需既有Node22、Playwright/Chromium环境；不引入依赖或操作现网。证据见同change tasks.md精确坐标及docs/reviews/r59-closeout。平台时间线依Git发布链，不虚构独立时间线文件。
