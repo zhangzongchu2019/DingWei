@@ -80,7 +80,7 @@ writer每次轮询先检查24小时期限，即使完全离线也落可见recove
 
 累计4096/65536且无GC会确定耗尽，原“只属候选可用性取舍”处置撤回。上文无自动GC/永存栅栏段落仅为旧ba候选历史；以下是当前合同（SL-007、SL-S014、019～021）。helper本地账本的保留与上限没有在本次顺手改变。
 
-Hub `WP_OUTBOUND_INTENT_RETENTION` 默认168h（7天），允许Go duration格式配置，但必须严格大于helper24h恢复窗+2h余量（26h本身拒绝，26h1ns可用）。非法/负值/溢出拒启，有限错误文案不复述原始值。配置装配在启动打开SQLite后、迁移/服务启动前；错误会关闭已开DB，只记录通过校验的duration。默认未配置的测试/嵌入式store同样7天，不依赖cmd才能有安全默认。
+Hub `WP_OUTBOUND_INTENT_RETENTION` 默认168h（7天），允许Go duration格式配置，但必须严格大于helper24h恢复窗+2h余量且不超过30天（26h本身拒绝，26h1ns可用，720h可用、720h1ns拒绝）。非法/负值/溢出拒启，有限错误文案不复述原始值。配置装配在启动打开SQLite后、迁移/服务启动前；错误会关闭已开DB，只记录通过校验的duration。默认未配置的测试/嵌入式store同样7天，不依赖cmd才能有安全默认。
 
 推理前提是合规helper：outbound_queue.WINDOW=24h，step即使完全离线也expire，claim不领取超窗行；重启后先按同一持久created检查，不导入旧unknown批量补送。Hub的保留窗从本机首次接受时刻起算，通常比helper剩余恢复期更长，7天覆盖自动重送窗。最小值另加2h：运维应保持两端时钟各在UTC±15min内，创建到恢复期间的时钟变动合并按1h预留，其余1h覆盖重启调度、30s租约/退避与10s回执在途等余量。默认7天的余量远大于此。超过该时钟/回拨假设必须暂停恢复writer核时钟；不是“任意回拨也安全”的证明，24h常量变更必须协调Hub校验地板。本次Python合同回归固定WINDOW=24*3600。
 
@@ -95,3 +95,20 @@ Hub `WP_OUTBOUND_INTENT_RETENTION` 默认168h（7天），允许Go duration格�
 ### 集成观测：保留期外未终结栅栏（组长2026-11-16T20:50:50Z非阻塞意见）
 
 栅栏总存量按同一采样时刻及当前保留期拆为窗内W、超期仍有未终结原delivery/失败通知引用的P、超期可清但尚未清的E：W受全局65536/单sender4096限制；因delivery_id唯一，P不超过仍有未终结原投递或通知引用的不同原delivery_id数量，随积压增长而没有独立固定容量上界（含admission_unknown，不因超期丢掉身份权威）；E仅在成功新受理事务中每次最多回收256条，无新受理时不会主动下降。因此不能以65536宣称全表或磁盘硬上界。集成/运维观测应分别记录W/P/E、最老超期栅栏年龄及未终结投递积压；至少报告“保留期外存量=P+E”，不得将其当窗内容量或重送/模型执行次数。清理子查询虽走created_at索引，每次新受理仍可能重扫P，256只约束删除条数，不保证扫描量或延迟上界。此处仅定义后续受审只读观测口径，本版不新增指标接口、后台清理或代码，不据此授权查询/修改现网。
+
+
+## 23:15:43Z caller保留窗与结构化拒绝修订
+
+12f冻结已撤销，旧接受与门仅历史。caller表request新增created REAL；旧(id,digest)库在BEGIN IMMEDIATE内ALTER/当前时刻填全部旧行/建created索引，保留原ID与digest，不猜历史年龄。迁移原先已满的65536行可能在新窗内暂时拒新直至到期，拒绝可重试；不能为立即放行删除未知旧数据。每次同ID先核摘要，匹配恢复、冲突拒绝，不刷新年龄或换ID。新ID只计created>=cutoff的窗内配额65536，成功受理事务最多删256已超期且非pending caller行；边界等于cutoff保留。旧/超期未终结行不计窗内但不淘汰。
+
+helper配置SH_OUTBOUND_CALLER_RETENTION_SECONDS为整数秒，默认604800、严格大于93600且不超过2592000；Config加载/直接构造及Queue初始化均校验，不回显非法原值。自动恢复WINDOW仍86400不扩张。Hub WP_OUTBOUND_INTENT_RETENTION亦加<=720h上界，和原>26h余量配套。caller读取生产helper登记的caller_policy保留期；无登记时读同名环境或安全默认，不能把任意大配置退化成终身quota。有限配置错误在启动拒绝，不新增网络API/HubDDL/VERSION。
+
+不能猜自定义outbox路径：生产app在IPC监听与恢复writer启动前，把实际cfg.inbox_db+'.outbound.db'绝对路径登记到同一HOME的私有outbound-caller.db/caller_outbox，并保存经过验证的策略。文件仍0600、只存ID/摘要/时刻/本地路径/秒数，无正文、secret或env原值。测试中的临时Outbox构造不会擅自写外部caller登记；仅生产装配显式调用登记。
+
+caller受理持有caller库BEGIN IMMEDIATE，按路径顺序对已登记outbox开启独立BEGIN IMMEDIATE保留写锁，只读local_queued/unknown的request_id集合；普通outbox事务从不再借caller锁，启动登记也不持outbox事务，故锁序无反向。outbox锁保持至caller检查/删除/插入提交完毕，不能先读快照、放锁再删。锁获取总预算0.25秒、每个busy等待最多0.05秒；查询/文件打开本身不冒称可强制实时中断。没有登记、路径丢失、锁忙、旧schema不可读或损坏时整轮跳过GC，不能推定无pending；仍只计窗内额度。受控路径是本机私有helper登记，不接受网络传入路径。
+
+这不是跨库原子写业务：caller只写自身库，outbox锁为稳定快照，无outbox数据修改，关闭回滚其空事务；caller提交失败不放出新IPC正文。旧pending与不可核查关联会留在窗外；P/E、登记失效时跳过GC都意味着65536不是全表/磁盘上界，不承诺任意时钟回拨/双helper乱用同HOME也安全。正常同席必须保留私有HOME/原outbox；受审运维观察应分别数caller窗内W、超期仍有责任或不可核查的P、可清E、最老年龄及失效登记，不据此授权删库或查现网。遗失outbox需要先人工对账，不可简单删除登记当已终结。
+
+补核helper outbox也有MAX_RECORDS65536全表累计，同类停摆不能留下：沿用相同经过验证保留期，在新受理事务内只清created<cutoff且state明确为hub_durable_queued/rejected的终态，最多256；新增created索引，记录quota只计窗内。local_queued/unknown即使过期也不删除，仍由原1024 pending/32MiB正文限制；缺少结果证据时因真实未终结资源满而拒新是有意安全边界，不与历史已终态永久挤满混同。审计事件原8192有界策略不变。
+
+CallerJournalRejected为本机有限类型，保留ValueError兼容但CLI ipc_send/MCP _ipc_send先专门捕获。caller_journal_full输出definitive_failure/rejected/none、原request_id/status_ref、retryable=true；idempotency_conflict同形但retryable=false；MCP isError内容携带字段而非-32602。CLI预分配ID，普通账本I/O异常也带ID并明确暂不可用，known拒绝在IPC正文写出前完成；unknown语义/退出码2/不得新ID盲发不变。只改参数格式不合法仍可为工具invalid arguments，不让运行时容量/摘要冲突伪装参数错误。

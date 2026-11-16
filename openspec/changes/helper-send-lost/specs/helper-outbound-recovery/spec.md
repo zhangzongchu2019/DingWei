@@ -64,7 +64,7 @@ Hub MUST 将认证sender_agent_id与source_message_id的唯一裁决、稳定目
 - **THEN** helper保留unknown及原ID/正文，不伪造历史未接受；权限恢复时仍只能恢复同ID原回执，不创建第二业务意图
 
 ### Requirement: SL-006 调用方失败语义不掩盖
-send.py与MCP MUST 保留结构化phase、accepted_by、request/source/delivery ID及reason；unknown或rejected不得打印无条件sent成功或仅因IPC ok返回成功语义。临时且可证未接管失败SHALL可用原意图重试；已可能提交/IPC未确认时须先查询，不能换通道或生成新ID自动发送。
+send.py与MCP MUST 保留结构化phase、accepted_by、request/source/delivery ID及reason；unknown或rejected不得打印无条件sent成功或仅因IPC ok返回成功语义。caller_journal_full MUST rejected、reason=caller_journal_full、retryable=true；idempotency_conflict MUST rejected、同名reason、retryable=false，两者CLI/MCP均带request_id，不得折为JSON-RPC invalid arguments。临时且可证未接管失败SHALL可用原意图重试；已可能提交/IPC未确认时须先查询，不能换通道或生成新ID自动发送。
 
 #### Scenario: SL-S018 协商超时与旧未知保持
 - **WHEN** 当前WS十秒内未给出持久恢复能力或明确不支持，随后升级为支持的新代际
@@ -73,6 +73,10 @@ send.py与MCP MUST 保留结构化phase、accepted_by、request/source/delivery 
 #### Scenario: SL-S012 helper返回unknown或拒绝
 - **WHEN** IPC传输成功但业务结果为unknown或rejected
 - **THEN** CLI/MCP明确显示对应非成功结果和查询键，不能仅打印sent并隐藏回执字段
+
+#### Scenario: SL-S022 调用方账本拒绝可观测
+- **WHEN** caller账本达到窗内容量，或同request_id出现不同摘要
+- **THEN** CLI与MCP均返回含request_id/reason/retryable的rejected；满额可重试、摘要冲突不可重试，MCP不是-32602，且未向IPC提交正文
 
 ### Requirement: SL-007 恢复有界且与模型执行隔离
 outbox MUST 有单writer/租约、受限退避与容量/期限，可查询每次恢复及可见终局；helper在24小时恢复窗外MUST停止自动重交。Hub栅栏SHALL默认保留7天，可配且启动时须大于24小时加2小时时钟/重连余量；容量只计窗内行。仅超期且不再承担未终结投递/失败通知身份绑定的栅栏可有界清理，窗内裁决不得丢。自动恢复仅重交发送意图，不调用目标CLI重做；超期/容量不得伪造成功或清未知正文。幂等保证限于此自动恢复合同，不宣称任意人为越窗直投仍有永久裁决。
@@ -94,12 +98,24 @@ outbox MUST 有单writer/租约、受限退避与容量/期限，可查询每次
 - **THEN** 容量只计算窗内行，新意图可原子受理；一次事务最多清256个可清超期行，边界等于截止时刻及窗内裁决保留且同ID恢复原delivery
 
 #### Scenario: SL-S020 启动校验保留窗与时钟余量
-- **WHEN** 启动配置保留期为空、有效，或不大于24小时加2小时余量/格式非法
-- **THEN** 默认使用168小时，有效配置生效；不安全或非法值拒绝启动且不输出原始配置值，栅栏年龄由Hub接受时钟确定
+- **WHEN** 启动配置保留期为空、有效，或不大于24小时加2小时余量/超过30天/格式非法
+- **THEN** Hub与helper均默认使用168小时，保留期必须大于26小时且不超过720小时，helper以SH_OUTBOUND_CALLER_RETENTION_SECONDS整数秒配置；有效配置生效；不安全或非法值拒绝启动且不输出原始配置值，栅栏年龄由Hub接受时钟确定
 
 #### Scenario: SL-S021 超期但仍在途的身份绑定
 - **WHEN** 超期栅栏仍绑定未终结投递或待发HUB失败通知
 - **THEN** 先保留该稳定身份权威且不计入窗内容量；相关投递/通知终结后才可按有界GC清理，不因GC改投同名替代身份
+
+#### Scenario: SL-S023 调用方旧库迁移与窗内去重
+- **WHEN** 旧request表只有id/digest，或保留窗内再次使用同ID
+- **THEN** 原子补created并以迁移当前时刻保留旧行/摘要，窗内同ID原映射不变；未知outbox关联不得当无未终结责任
+
+#### Scenario: SL-S024 caller超期清理保留未终结请求
+- **WHEN** 新调用方意图到达且有超期caller记录，其中outbox仍有local_queued/unknown
+- **THEN** 只计窗内配额、每次至多清256个已超期且非未终结ID；读取outbox未终结快照和删除之间阻止并发写穿越，outbox缺失/不可读/锁忙则不清理；不删除未终结或窗内行
+
+#### Scenario: SL-S025 helper终态历史释放容量
+- **WHEN** helper outbox有大量过期hub_durable_queued/rejected历史且新意图到达
+- **THEN** 记录配额只计保留窗内、每次最多清256过期终态，local_queued/unknown和窗内/边界行保留，不因历史永久拒新；未终结正文数量/字节仍受原硬界约束
 
 ### Requirement: SL-008 脱敏发端与Hub对账
 系统 MUST 为发送意图、写出边界、接管/拒绝/未知和Hub裁决留下可关联的脱敏元数据及部署/保存期信息；按认证sender/source身份关联，不搜正文当原信。规模报告SHALL分开已确认接受、明确未提交、未匹配未知和证据缺口，Hub单侧不能产生丢失分母，日志缺失不得当零丢失。

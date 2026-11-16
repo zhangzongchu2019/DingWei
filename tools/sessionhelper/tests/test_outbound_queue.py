@@ -302,11 +302,14 @@ class CallerReceiptTest(unittest.TestCase):
 class OfflineListenerLifetimeTest(unittest.IsolatedAsyncioTestCase):
     async def test_real_run_forever_accepts_during_transport_outage(self):
         from pathlib import Path
+        from unittest import mock
+        from sessionhelper import send_dingwei as caller
         try:import test_file_upload as fx
         except ImportError:from tests import test_file_upload as fx
-        with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(os.environ,{'HOME':directory}):
             layout=fx.Layout(Path(directory))
             helper=fx.make_helper(layout)
+            helper.cfg.outbound_caller_retention_seconds=48*3600
             async def offline_transport():
                 helper.outbound_recovery.queue.update_peer('sender',[{'agent_id':'target','full_name':'target.owner','aliases':['target']}])
                 await asyncio.Event().wait()
@@ -314,6 +317,10 @@ class OfflineListenerLifetimeTest(unittest.IsolatedAsyncioTestCase):
             task=asyncio.create_task(helper.run_forever())
             try:
                 await asyncio.wait_for(helper.ipc_bound.wait(),3)
+                with caller._caller_db(time.time()) as db:
+                    self.assertIn((helper.outbound_recovery.queue.path,),db.execute('SELECT path FROM caller_outbox').fetchall(),'production startup did not register the actual outbox')
+                    self.assertEqual(db.execute('SELECT retention FROM caller_policy WHERE id=1').fetchone()[0],48*3600)
+                self.assertEqual(helper.outbound_recovery.queue.retention,48*3600)
                 result=await asyncio.to_thread(fx.raw_ipc,layout.sock,{'type':'mcp_send','to':'target','body':'body','request_id':'offline'})
                 self.assertEqual(result['outcome']['phase'],'local_queued')
                 self.assertIsNone(helper.outbound_receipts.connection)
@@ -339,3 +346,140 @@ class ReceiptSchemaTest(unittest.TestCase):
         self.assertEqual(checked_outcome(hub,'caller')['outcome'],'unknown')
         hub['delivery_id']='dw-dlv_'+'b'*32
         self.assertEqual(checked_outcome(hub,'caller')['outcome'],'accepted')
+
+
+class CallerRetentionTest(unittest.TestCase):
+    def setUp(self):
+        from unittest import mock
+        from sessionhelper import send_dingwei as caller
+        self.caller=caller; self.mock=mock; self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
+        self.enterContext(mock.patch.dict(os.environ,{'HOME':self.tmp.name}))
+        self.now=1000000
+        self.enterContext(mock.patch.object(caller.time,'time',side_effect=lambda:self.now))
+        self.q=OutboundQueue(os.path.join(self.tmp.name,'outbox.db'),clock=lambda:self.now)
+        self.q.update_peer('sender',TEST_RECOVERY_CAP['targets'])
+        caller.register_caller_outbox(self.q.path)
+    def seed(self,ident,created):
+        with self.caller._caller_db(self.now) as db:
+            db.execute('INSERT INTO request(id,digest,created) VALUES(?,?,?)',(ident,'existing-digest',created))
+    def rows(self):
+        with self.caller._caller_db(self.now) as db:return dict(db.execute('SELECT id,created FROM request'))
+    def test_old_schema_migration_preserves_ids_and_starts_safe_window(self):
+        import sqlite3
+        path=os.path.join(self.tmp.name,'.dingwei','outbound-caller.db')
+        os.unlink(path)
+        with sqlite3.connect(path) as db:
+            db.execute('CREATE TABLE request(id TEXT PRIMARY KEY,digest TEXT NOT NULL)')
+            db.executemany('INSERT INTO request VALUES(?,?)',[('legacy-1','digest-1'),('legacy-2','digest-2')])
+        self.caller.register_caller_outbox(self.q.path)
+        with self.caller._caller_db(self.now) as db:
+            self.assertEqual(db.execute('SELECT id,digest,created FROM request ORDER BY id').fetchall(),[('legacy-1','digest-1',self.now),('legacy-2','digest-2',self.now)])
+        self.caller.remember_request('new','target','body',{})
+        self.assertIn('legacy-1',self.rows())
+    def test_window_capacity_ignores_expired_and_cleanup_is_bounded(self):
+        cutoff=self.now-self.caller.DEFAULT_CALLER_RETENTION
+        for i in range(6):self.seed('expired-'+str(i),cutoff-1)
+        self.seed('boundary',cutoff)
+        with self.mock.patch.object(self.caller,'CALLER_MAX_RECORDS',2),self.mock.patch.object(self.caller,'CALLER_CLEANUP_BATCH',2):
+            self.caller.remember_request('new','target','body',{})
+        rows=self.rows()
+        self.assertEqual(len([i for i in rows if i.startswith('expired-')]),4,'caller cleanup did not remove exactly one bounded batch')
+        self.assertIn('boundary',rows,'window boundary fence was deleted')
+        self.assertEqual(rows['new'],self.now)
+    def test_window_same_id_and_conflicting_digest_survive(self):
+        self.caller.remember_request('stable','target','body',{})
+        self.now+=1
+        self.assertEqual(self.caller.remember_request('stable','target','body',{}),'stable')
+        with self.assertRaises(self.caller.CallerJournalRejected) as got:self.caller.remember_request('stable','target','changed',{})
+        self.assertEqual((got.exception.reason,got.exception.request_id,got.exception.retryable),('idempotency_conflict','stable',False))
+    def test_pending_outbox_ids_are_never_deleted(self):
+        cutoff=self.now-self.caller.DEFAULT_CALLER_RETENTION
+        for i,state in enumerate(('local_queued','unknown')):
+            ident='pending-'+str(i);self.seed(ident,cutoff-1)
+            self.q.submit(ident,'target','body',{})
+            with self.q.db() as db:db.execute('UPDATE outbound_request SET state=?,created=? WHERE request_id=?',(state,cutoff-1,ident))
+        self.seed('finished',cutoff-1)
+        self.caller.remember_request('new','target','body',{})
+        rows=self.rows();self.assertIn('pending-0',rows);self.assertIn('pending-1',rows);self.assertNotIn('finished',rows)
+    def test_unregistered_outbox_does_not_allow_cleanup(self):
+        self.seed('unassociated',self.now-self.caller.DEFAULT_CALLER_RETENTION-1)
+        with self.caller._caller_db(self.now) as db:db.execute('DELETE FROM caller_outbox')
+        self.caller.remember_request('new','target','body',{})
+        self.assertIn('unassociated',self.rows(),'missing outbox association was treated as terminal')
+    def test_locked_or_missing_outbox_is_not_inferred_terminal(self):
+        import sqlite3
+        cutoff=self.now-self.caller.DEFAULT_CALLER_RETENTION
+        for mode in ('locked','missing'):
+            with self.subTest(mode=mode):
+                ident='keep-'+mode;self.seed(ident,cutoff-1)
+                if mode=='locked':
+                    conn=sqlite3.connect(self.q.path);conn.execute('BEGIN IMMEDIATE')
+                else:
+                    with self.caller._caller_db(self.now) as db:db.execute('INSERT INTO caller_outbox VALUES(?)',(self.q.path+'.absent',))
+                try:self.caller.remember_request('new-'+mode,'target','body',{})
+                finally:
+                    if mode=='locked':conn.close()
+                self.assertIn(ident,self.rows(),'unreadable outbox was mistaken for no pending responsibility')
+    def test_pending_snapshot_holds_writer_until_caller_commit(self):
+        import threading
+        entered=threading.Event();done=threading.Event();errors=[]
+        def submit():
+            entered.set()
+            try:self.q.submit('concurrent','target','body',{})
+            except Exception as exc:errors.append(type(exc).__name__)
+            finally:done.set()
+        with self.caller._caller_db(self.now) as db:
+            db.execute('BEGIN IMMEDIATE')
+            with self.caller._caller_pending(db) as pending:
+                self.assertIsNotNone(pending)
+                t=threading.Thread(target=submit);t.start();entered.wait(1)
+                self.assertFalse(done.wait(.1),'outbox writer crossed the protected cleanup snapshot')
+                db.commit()
+        t.join(2);self.assertTrue(done.is_set());self.assertEqual(errors,[])
+    def test_caller_full_cli_and_mcp_return_structured_retryable_rejection(self):
+        self.seed('recent1',self.now);self.seed('recent2',self.now)
+        with self.mock.patch.object(self.caller,'CALLER_MAX_RECORDS',2):
+            self.assert_refused_both('full','body','caller_journal_full',True)
+    def test_caller_conflict_cli_and_mcp_do_not_become_invalid_arguments(self):
+        self.caller.remember_request('conflict-cli','target','original',{'ipc_body_amr_v1':True})
+        self.caller.remember_request('conflict-mcp','target','original',{})
+        self.assert_refused_both('conflict','changed','idempotency_conflict',False,split=True)
+    def assert_refused_both(self,rid,body,reason,retryable,split=False):
+        import contextlib,io,sys
+        from sessionhelper import mcp_shim
+        cli_id=rid+'-cli' if split else rid
+        output=io.StringIO();error=io.StringIO()
+        with self.mock.patch.object(sys,'argv',['send.py','target','--request-id',cli_id,body]),contextlib.redirect_stdout(output),contextlib.redirect_stderr(error),self.mock.patch.object(self.caller.socket,'socket',side_effect=AssertionError('no IPC on journal refusal')):
+            with self.assertRaises(SystemExit) as stopped:self.caller.main()
+        self.assertEqual(stopped.exception.code,1)
+        result=json.loads(output.getvalue());self.assertEqual((result['outcome'],result['phase'],result['reason'],result['request_id'],result['retryable']),('definitive_failure','rejected',reason,cli_id,retryable))
+        self.assertIn('发送失败：'+reason,error.getvalue())
+        mcp_id=rid+'-mcp' if split else rid
+        with self.mock.patch.object(mcp_shim,'_ipc_request',side_effect=AssertionError('no IPC on journal refusal')):
+            response=mcp_shim._dispatch(mcp_shim.Request('2.0','tools/call',{'name':'send_message','arguments':{'to':'target','body':body,'request_id':mcp_id}},123))
+        self.assertIsNone(response.error,'journal refusal became JSON-RPC invalid arguments')
+        self.assertTrue(response.result['isError'])
+        result=json.loads(response.result['content'][0]['text']);self.assertEqual((result['outcome'],result['phase'],result['reason'],result['request_id'],result['retryable']),('definitive_failure','rejected',reason,mcp_id,retryable))
+    def test_helper_retention_bounds_and_configuration_reject_at_startup(self):
+        from sessionhelper.config import Config,load_config
+        for raw in ('', '93601','604800','2592000'):
+            value=self.caller.parse_caller_retention(raw);self.assertGreater(value,93600);self.assertLessEqual(value,2592000)
+        for raw in ('93600','86400','2592001','nan','inf','-1','INVALID_PRIVATE_VALUE'):
+            with self.subTest(raw=raw):
+                with self.assertRaises(ValueError) as caught:self.caller.parse_caller_retention(raw)
+                self.assertNotIn('INVALID_PRIVATE_VALUE',str(caught.exception))
+                with self.assertRaises(ValueError):Config('fixture','synthetic','synthetic',outbound_caller_retention_seconds=raw)
+                with self.assertRaises(ValueError):load_config({'SH_SESSION_NAME':'fixture','SH_KEY_ID':'synthetic','SH_SECRET':'synthetic','SH_OUTBOUND_CALLER_RETENTION_SECONDS':raw})
+    def test_outbox_history_cleanup_releases_capacity_but_preserves_pending(self):
+        cutoff=self.now-self.caller.DEFAULT_CALLER_RETENTION
+        with self.q.db() as db:
+            db.executemany("INSERT INTO outbound_request(request_id,sender_id,source_id,target_id,target,digest,body,meta,state,created,next_attempt) VALUES(?,'sender',?,'target','target.owner','digest','','{}','hub_durable_queued',?,?)",[(f'old-{i}',f'old-source-{i}',cutoff-1,cutoff-1) for i in range(259)])
+            for state in ('local_queued','unknown'):
+                db.execute("INSERT INTO outbound_request(request_id,sender_id,source_id,target_id,target,digest,body,meta,state,created,next_attempt) VALUES(?,'sender',?,'target','target.owner','digest','unfinished','{}',?,?,?)",(state,state,state,cutoff-1,cutoff-1))
+            db.execute("INSERT INTO outbound_request(request_id,sender_id,source_id,target_id,target,digest,body,meta,state,created,next_attempt) VALUES('boundary','sender','boundary-source','target','target.owner','digest','','{}','rejected',?,?)",(cutoff,cutoff))
+        self.q.MAX_RECORDS=2
+        result=self.q.submit('new','target','new body',{});self.assertEqual(result['phase'],'local_queued')
+        with self.q.db() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM outbound_request WHERE request_id LIKE 'old-%'").fetchone()[0],3,'outbox terminal cleanup is absent or unbounded')
+            for ident in ('local_queued','unknown','boundary'):
+                self.assertIsNotNone(db.execute('SELECT 1 FROM outbound_request WHERE request_id=?',(ident,)).fetchone(),'cleanup erased pending/window outbox fence')

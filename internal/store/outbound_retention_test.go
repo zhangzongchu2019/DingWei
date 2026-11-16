@@ -147,7 +147,7 @@ func TestOutboundIntentRetentionUsesServerAcceptanceClock(t *testing.T) {
 }
 func TestOutboundIntentRetentionConfiguration(t *testing.T) {
 	db, _, _ := outboundRetentionFixture(t)
-	for _, raw := range []string{"", "168h", "48h", "26h1ns"} {
+	for _, raw := range []string{"", "168h", "48h", "26h1ns", "720h"} {
 		if err := db.ConfigureOutboundIntentRetention(raw); err != nil {
 			t.Fatal(raw, err)
 		}
@@ -160,7 +160,7 @@ func TestOutboundIntentRetentionConfiguration(t *testing.T) {
 		}
 	}
 	before := db.OutboundIntentRetention()
-	for _, raw := range []string{"garbage", "SENSITIVE_BAD_INPUT", "0", "-1h", "24h", "26h", "999999999999999999999h"} {
+	for _, raw := range []string{"garbage", "SENSITIVE_BAD_INPUT", "0", "-1h", "24h", "26h", "720h1ns", "721h", "999999999999999999999h"} {
 		err := db.ConfigureOutboundIntentRetention(raw)
 		if err == nil {
 			t.Fatal("unsafe retention accepted", raw)

@@ -140,10 +140,12 @@ def _tool_failure(request_id, category: str, caller_request_id=None) -> Response
 
 
 def _ipc_send(payload: dict[str, Any]) -> dict[str, Any]:
-    from sessionhelper.send_dingwei import remember_request, checked_outcome
+    from sessionhelper.send_dingwei import remember_request, checked_outcome, CallerJournalRejected
     rid=payload.get('request_id') or _uuid.uuid4().hex
     try:
         remember_request(rid,payload['to'],payload['body'],{k:v for k,v in payload.items() if k not in ('to','body','request_id')})
+    except CallerJournalRejected as exc:
+        return exc.outcome()
     except (OSError,sqlite3.Error):
         return {'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':'caller_journal_unavailable','request_id':rid,'retryable':True}
     try:

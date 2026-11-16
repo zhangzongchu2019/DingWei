@@ -13,8 +13,8 @@ from .outbound_receipt import OutboundRejected, OutboundReceiptError
 
 class OutboundRecovery:
     CAPABILITY_WAIT = 10.0
-    def __init__(self, path, broker, source_address, refresh=None):
-        self.queue = OutboundQueue(path)
+    def __init__(self, path, broker, source_address, refresh=None, *, retention=None):
+        self.queue = OutboundQueue(path, **({'retention':retention} if retention is not None else {}))
         self.broker, self.source_address = broker, source_address
         self.refresh=refresh
         self._last_catalog_refresh=time.monotonic()

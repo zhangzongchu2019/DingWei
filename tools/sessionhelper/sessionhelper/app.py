@@ -327,7 +327,10 @@ class SessionHelper(SubAgentConnection):
         self.outbound_recovery = await asyncio.to_thread(
             OutboundRecovery, self.cfg.inbox_db + '.outbound.db',
             self.outbound_receipts, lambda: self.book.self_addr,
-            lambda: self.session_capabilities_envelope({'outbound_receipt_v1':True,'outbound_receipt_cap_nonce':self.outbound_receipts.cap_nonce}))
+            lambda: self.session_capabilities_envelope({'outbound_receipt_v1':True,'outbound_receipt_cap_nonce':self.outbound_receipts.cap_nonce}),
+            retention=self.cfg.outbound_caller_retention_seconds)
+        from .send_dingwei import register_caller_outbox
+        await asyncio.to_thread(register_caller_outbox, self.outbound_recovery.queue.path, self.cfg.outbound_caller_retention_seconds)
         self._persistent_ipc = True
         async def ipc_lifetime():
             await self._ipc_server(None, self.outbound_recovery.handler())

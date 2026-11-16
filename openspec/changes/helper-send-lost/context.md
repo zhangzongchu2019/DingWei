@@ -26,3 +26,5 @@ Node22.23.1，OpenSpec1.16.0，OPENSPEC_TELEMETRY=0。普通uid1001、短独立H
 
 ### 2026-11-16组长容量退回当前状态
 旧6163fbb4/ba7acae7停止交审，累计永存栅栏方案被退回。本轮只修时间窗保留/有界GC及配置/0077索引、物理身份绑定保护和回归；默认168h、启动>26h、容量仅窗内计。新冻结产品锚及完整门尚待生成，旧25刀/旧绿门不得冒称覆盖新实现。最终再给qwen一次新tip；③优先、②产品167不受影响。
+
+2026-11-16T23:15:43Z组长撤销12f冻结：caller历史容量、MCP错误折叠、retention上界需改。新代码入口send_dingwei.py caller注册/created迁移/保护GC与异常类型、mcp_shim专门捕获、config/app启动配置登记、outbound_queue/recovery同类终态历史清理、store/cmd上下界；不改0077/VERSION。原门不外推新源；当前工作态定向绿，固定新源完整门/全刀及新独立复核待完成。

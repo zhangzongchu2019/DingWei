@@ -73,6 +73,7 @@ class Config:
     busy_admission_max_seconds: float = 1800.0
     turn_terminal_timeout_seconds: float = 1800.0
     inbox_db: str = ""
+    outbound_caller_retention_seconds: int = 7 * 24 * 3600
     busy_reply_text: str = "消息已收到，但此时忙，稍后处理你的请求"
     provision_allowed_hosts: tuple[str, ...] = ("dingwei.wegoab.com",)
     provision_audit_db: str = ""
@@ -98,6 +99,10 @@ class Config:
     ipc_upload_only: bool = False
     # Hosted: upload plus text-only mcp_send; legacy upload_only wins if both set.
     ipc_send_body_only: bool = False
+
+    def __post_init__(self):
+        from .send_dingwei import parse_caller_retention
+        self.outbound_caller_retention_seconds = parse_caller_retention(self.outbound_caller_retention_seconds)
 
     @property
     def registered_session_name(self) -> str:
@@ -237,6 +242,7 @@ def load_config(env: dict[str, str] | None = None) -> Config:
         busy_admission_max_seconds=max(0.1, float(env.get("SH_BUSY_ADMISSION_MAX_SECONDS", "1800"))),
         turn_terminal_timeout_seconds=max(0.1, float(env.get("SH_TURN_TERMINAL_TIMEOUT_SECONDS", "1800"))),
         inbox_db=expand_path(env.get("SH_INBOX_DB", default_inbox_db(session_name))),
+        outbound_caller_retention_seconds=env.get("SH_OUTBOUND_CALLER_RETENTION_SECONDS", ""),
         busy_reply_text=env.get("SH_BUSY_REPLY_TEXT", "消息已收到，但此时忙，稍后处理你的请求"),
         provision_allowed_hosts=tuple(
             item.strip().lower()

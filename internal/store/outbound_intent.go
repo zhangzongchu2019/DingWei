@@ -18,6 +18,7 @@ var ErrOutboundCapacity = errors.New("outbound ledger capacity")
 const OutboundHelperRecoveryWindow = 24 * time.Hour
 const OutboundRetentionSafetyMargin = 2 * time.Hour
 const DefaultOutboundIntentRetention = 7 * 24 * time.Hour
+const MaxOutboundIntentRetention = 30 * 24 * time.Hour
 const OutboundIntentCleanupBatch = 256
 const outboundIntentStamp = "2006-01-02T15:04:05.000000000Z"
 
@@ -26,12 +27,12 @@ func (s *SQLite) ConfigureOutboundIntentRetention(raw string) error {
 	if strings.TrimSpace(raw) != "" {
 		parsed, err := time.ParseDuration(strings.TrimSpace(raw))
 		if err != nil {
-			return errors.New("WP_OUTBOUND_INTENT_RETENTION must be a duration greater than 26h")
+			return errors.New("WP_OUTBOUND_INTENT_RETENTION must be a duration greater than 26h and at most 720h")
 		}
 		retention = parsed
 	}
-	if retention <= OutboundHelperRecoveryWindow+OutboundRetentionSafetyMargin {
-		return errors.New("WP_OUTBOUND_INTENT_RETENTION must exceed the 24h helper window plus 2h safety margin")
+	if retention <= OutboundHelperRecoveryWindow+OutboundRetentionSafetyMargin || retention > MaxOutboundIntentRetention {
+		return errors.New("WP_OUTBOUND_INTENT_RETENTION must exceed the 24h helper window plus 2h safety margin and not exceed 720h")
 	}
 	s.outboundRetentionNS.Store(int64(retention))
 	return nil

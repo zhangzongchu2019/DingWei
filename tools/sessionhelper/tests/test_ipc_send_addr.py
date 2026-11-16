@@ -48,7 +48,9 @@ class TestIPCSendAddressCompletion(unittest.TestCase):
         with mock.patch.object(sys, "argv", [str(SEND_SCRIPT), "agent.user#key", "hello"]), \
              mock.patch.object(send_dingwei, "ipc_send", return_value={"ok": True, "request_id":"fixture", "outcome": {"to": "agent.user#key", "outcome":"accepted", "phase":"local_queued", "accepted_by":"local_helper","request_id":"fixture","source_message_id":"a"*32}}) as ipc:
             send_dingwei.main()
-        ipc.assert_called_once_with("agent.user#key", "hello", None)
+        self.assertEqual(ipc.call_count,1)
+        self.assertEqual(ipc.call_args.args[:2],("agent.user#key","hello"))
+        self.assertRegex(ipc.call_args.args[2],r"^[0-9a-f]{32}$")
 
 
 class DestinationIdentityTest(unittest.TestCase):

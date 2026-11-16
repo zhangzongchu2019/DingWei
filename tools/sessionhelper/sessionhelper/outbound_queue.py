@@ -14,6 +14,7 @@ import secrets
 import time
 import uuid
 from . import __version__
+from .send_dingwei import DEFAULT_CALLER_RETENTION, parse_caller_retention
 
 
 class QueueRejected(Exception):
@@ -34,7 +35,8 @@ class OutboundQueue:
     MAX_ATTEMPTS = 64
     WINDOW = 24 * 3600
 
-    def __init__(self, path, *, clock=time.time):
+    def __init__(self, path, *, clock=time.time, retention=DEFAULT_CALLER_RETENTION):
+        self.retention = parse_caller_retention(retention)
         self.path, self.clock = os.path.abspath(path), clock
         os.makedirs(os.path.dirname(self.path), mode=0o700, exist_ok=True)
         if os.path.lexists(self.path) and (os.path.islink(self.path) or not os.path.isfile(self.path)):
@@ -53,6 +55,7 @@ class OutboundQueue:
               lease_owner TEXT NOT NULL DEFAULT '', lease_until REAL NOT NULL DEFAULT 0,
               ever_attempted INTEGER NOT NULL DEFAULT 0);
             CREATE INDEX IF NOT EXISTS outbound_pending ON outbound_request(state,sender_id,next_attempt,created);
+            CREATE INDEX IF NOT EXISTS outbound_created ON outbound_request(created,request_id);
             CREATE TABLE IF NOT EXISTS outbound_event(seq INTEGER PRIMARY KEY AUTOINCREMENT,source_id TEXT NOT NULL,ts REAL NOT NULL,data TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS outbound_event_source ON outbound_event(source_id,seq);
             CREATE TABLE IF NOT EXISTS outbound_target(alias TEXT PRIMARY KEY, agent_id TEXT NOT NULL, full_name TEXT NOT NULL);
@@ -136,7 +139,9 @@ class OutboundQueue:
             binding = db.execute('SELECT * FROM outbound_target WHERE alias=?', (alias,)).fetchone()
             if not sender or not binding: raise QueueRejected('target_identity_unavailable', True)
             count, size = db.execute("SELECT count(*),COALESCE(sum(length(CAST(body AS BLOB))+length(CAST(meta AS BLOB))),0) FROM outbound_request WHERE state IN ('local_queued','unknown')").fetchone()
-            total = db.execute('SELECT count(*) FROM outbound_request').fetchone()[0]
+            cutoff = now - self.retention
+            db.execute("DELETE FROM outbound_request WHERE request_id IN (SELECT request_id FROM outbound_request WHERE created<? AND state IN ('hub_durable_queued','rejected') ORDER BY created,request_id LIMIT 256)", (cutoff,))
+            total = db.execute('SELECT count(*) FROM outbound_request WHERE created>=?',(cutoff,)).fetchone()[0]
             if count >= self.MAX_PENDING or size + len(body.encode()) + len(metadata.encode()) > self.MAX_BYTES or total >= self.MAX_RECORDS:
                 raise QueueRejected('local_queue_full', True)
             sid = uuid.uuid4().hex
