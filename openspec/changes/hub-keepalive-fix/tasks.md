@@ -15,12 +15,14 @@
 
 ## R60实施（2026-11-16T16:05:24Z授权）
 
-- [ ] I-01 完成单Reader/顺序有界worker与全局预算/连接清理。
-- [ ] I-02 viewer独立有界输出/总截止、touch合并/存储等待取消、session总写截止。
-- [ ] I-03 journal有限分类与drop计数、正值配置、helper文本UTF8分块。
-- [ ] I-04 固定候选后完整canonical/Go/PG strict/focused race/OpenSpec与逐保护删改须红，保留每轮原失败。
+- [x] I-01 完成单Reader/顺序有界worker与全局预算/连接清理。
+- [x] I-02 viewer独立有界输出/总截止、touch合并/存储等待取消、session总写截止。
+- [x] I-03 journal有限分类与drop计数、正值配置、helper文本UTF8分块。
+- [x] I-04 固定候选后完整canonical/Go/PG strict/focused race/OpenSpec与逐保护删改须红，保留每轮原失败。
 - [ ] I-05 普通推送核远端，qwen独立只读复核/组长终审；不自集成/不部署。
 
 - 2026-11-16 coder56solzzc，工作基d2cc47c7。完成：Reader/队列按流式8KiB增量预留预算，含处理/读取中的64项、32MiB及全Hub256MiB；慢viewer总截止/独立输出与重连gap、合并touch/历史结果等待取消、journal脱敏非阻塞/drop计数/正值配置、helper UTF8分块。真实WS慢业务6.1s对照/ACK提交前无确认/满队列/关停/慢viewer与日志pipe+socket背压均定向通过；工作态focused race已绿但非固定锚门。曾有测试助手命名/字段编译错，保留原失败；未改既有flaky去涂绿。阻塞：固定锚全包/canonical/变异和独立复核未完成。下一步：固定候选，冻结产品期间跑门/删保护；不自验收/不部署。
 
 - 2026-11-16 coder56solzzc，7be26af20固定源四树Go/PG strict整包rc0（m8/store/obs/cmd，逐名SKIP待报告）、12刀及补3刀均编译成功/业务断言红；非最终交审。追加收口：无效启动配置关闭已建Hub，ACK失败事务亦无确认且同ACK可恢复，session默认2秒也涵盖持槽等待；满队列故障用例可安全取消回收，避免删除保护时仅靠Go超时。上述定向已绿；固定新候选后重跑固定门/变异，不沿用7be完整门作最终结论。
+
+- 2026-11-16T19:21:54Z coder56solzzc，冻结产品源1671a59667c544ff3a3e0270ac2a293e15560d20。完成：同源canonical/build/Go全包/PG strict/focused race/strict及17项编译成功业务断言红，证据与全部原失败见docs/reviews/r60-hub-keepalive。阻塞：独立只读评审和组长终审未完成；下一步普通推送核远端并只请求该最终源复核，不自验收/不合入/不部署。
