@@ -31,7 +31,7 @@ const { finishRegression, launchChromium, regressionCollector, startRendererServ
             const before = await page.evaluate(({kind,linked}) => {
               resetConversation(); finishTimelineReplay(false);
               window.testInput = {kind:'input_posted',schema_version:'delivery.v2',message_id:'primary-source',delivery_id:'dw-dlv-primary',payload:'primary request',stage:'hub_received',delivery:{role:'primary'},cancellable:true};
-              window.testUpdate = (stage,extra={}) => handleIncomingEvent({kind:'delivery_update',schema_version:'delivery.v2',message_id:'primary-source',observed_delivery_id:'dw-dlv-primary',delivery:{role:'primary'},delivery_stage:stage,ack_protocol:2,processing_mode:'driver',cancellable:false,...extra});
+              window.testUpdate = (stage,extra={}) => handleIncomingEvent({kind:'delivery_update',schema_version:'delivery.v2',message_id:'primary-source',observed_delivery_id:'dw-dlv-primary',delivery_stage:stage,ack_protocol:2,processing_mode:'driver',cancellable:false,...extra});
               handleIncomingEvent(testInput);
               testUpdate('helper_queued');
               handleIncomingEvent({kind,delivery_id:linked?'dw-dlv-primary':'',turn_id:'native-turn',text:kind==='assistant_text'?'native answer':kind==='user_input'?'unlinked echo':'',data:kind==='state_change'?{raw_method:'turn/completed',change:'turn_completed',status:'completed',turn:{id:'native-turn',status:'completed'}}:kind==='assistant_text'?{raw_method:'item/agentMessage/delta',item_id:'native-item',thread_id:'native-thread'}:{lifecycle:'admitted'}});

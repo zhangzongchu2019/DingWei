@@ -10,9 +10,14 @@ const ROOT = path.resolve(__dirname, '..');
 const OLD_RENDERER_COMMIT = 'a0e28049';
 const OLD_RENDERER = execFileSync('git', ['show', `${OLD_RENDERER_COMMIT}:view-service/renderer-canary-sse.html`], {cwd: ROOT, encoding: 'utf8'});
 const NEW_RENDERER = fs.readFileSync(path.join(__dirname, 'renderer-canary-sse.html'), 'utf8');
-const ROLE_GUARD = "if (ev.kind === 'delivery_update' && !hasExactPrimaryDeliveryTarget(ev)) {\n        rememberUnmatchedPrimaryDeliveryUpdate(ev);\n        return;\n      }";
+const ROLE_GUARD = "if (ev.kind === 'delivery_update' && ev.delivery?.role\n          && !hasExactPrimaryDeliveryTarget(ev)) {";
+const ROLE_AUTH = "if (ev.delivery?.role === 'primary' && hasExactPrimaryDeliveryTarget(ev)) {";
 if (!NEW_RENDERER.includes(ROLE_GUARD)) throw new Error('retry role guard anchor missing');
-const MUTANT_NO_ROLE_GUARD = NEW_RENDERER.replace(ROLE_GUARD, '// mutant: role guard removed');
+if (!NEW_RENDERER.includes(ROLE_AUTH)) throw new Error('retry role authorization anchor missing');
+const MUTANT_NO_LEGACY_LIFECYCLE = NEW_RENDERER.replace(ROLE_GUARD,
+  "if (ev.kind === 'delivery_update' && (ev.delivery?.role || true)\n          && !hasExactPrimaryDeliveryTarget(ev)) {");
+const MUTANT_ROLELESS_RETRY = NEW_RENDERER.replace(ROLE_AUTH,
+  "if ((!ev.delivery?.role || ev.delivery.role === 'primary') && (!ev.delivery?.role || hasExactPrimaryDeliveryTarget(ev))) {");
 
 async function openScenario(browser, renderer, name) {
   const fixture = await startRendererServer(renderer);
@@ -108,14 +113,30 @@ async function rowState(page, id) {
       assert.ok((await senderPage.page.locator('#timeline').innerText()).includes('sender-side copy'));
     });
 
-    // old Hub + new renderer: missing role means no lifecycle mutation or button.
+    // Old Hub + new renderer: retain legacy lifecycle progression without
+    // granting retry from an untagged status update.
     const oldNew = await openScenario(browser, NEW_RENDERER, 'old-hub-new-renderer'); scenarios.push(oldNew);
-    await emit(oldNew.page, primaryInput('on'));
-    await emit(oldNew.page, lifecycle('on', null));
-    await checks.check('MATRIX_OLD_HUB_NEW_RENDERER_FAIL_CLOSED', async () => {
-      const state = await rowState(oldNew.page, 'on');
-      assert.strictEqual(state.buttons, 0);
-      assert.ok(!state.text.includes('未确认（可重发）'));
+    await emit(oldNew.page, primaryInput('legacy-status'));
+    await emit(oldNew.page, lifecycle('legacy-status', null));
+    await emit(oldNew.page, { ...lifecycle('legacy-status', null), delivery_stage: 'helper_queued',
+      delivery_status: 'unconfirmed_retryable', reason: 'unconfirmed_retryable' });
+    await checks.check('MATRIX_OLD_HUB_NEW_RENDERER_LEGACY_STATUS_NO_RETRY', async () => {
+      assert.strictEqual((await rowState(oldNew.page, 'legacy-status')).buttons, 0);
+      assert.ok((await rowState(oldNew.page, 'legacy-status')).text.includes('Agent 忙时未能确认接收'));
+    });
+    await emit(oldNew.page, { ...lifecycle('legacy-status', null), delivery_stage: 'cli_injected', turn_id: 'legacy-turn' });
+    await checks.check('OLD_HUB_NEW_RENDERER_LEGACY_CLI_INJECTED_ADVANCES', async () => {
+      assert.strictEqual((await rowState(oldNew.page, 'legacy-status')).count, 0);
+      assert.ok((await oldNew.page.locator('#timeline').innerText()).includes('body legacy-status'));
+      assert.ok(!(await oldNew.page.locator('#timeline .waiting-retry-btn').count()));
+    });
+
+    await emit(oldNew.page, primaryInput('legacy-processed'));
+    await emit(oldNew.page, { ...lifecycle('legacy-processed', null), delivery_stage: 'turn_processed',
+      delivery_status: 'processed', turn_id: 'legacy-turn-processed' });
+    await checks.check('OLD_HUB_NEW_RENDERER_LEGACY_TURN_PROCESSED_ADVANCES', async () => {
+      assert.strictEqual((await rowState(oldNew.page, 'legacy-processed')).count, 0);
+      assert.ok(await oldNew.page.evaluate(() => processedDeliveries.has('legacy-processed')));
     });
 
     // new Hub + new renderer: copy and wrong IDs do nothing; exact primary works.
@@ -127,8 +148,18 @@ async function rowState(page, id) {
       const state = await rowState(newNew.page, 'nn');
       assert.strictEqual(state.buttons, 0);
       assert.ok(!state.text.includes('未确认（可重发）'));
+      const lifecycleState = await newNew.page.evaluate(() => {
+        const entry = waitingDeliveries.get('nn');
+        return {stage: entry.event._norm.stage, status: entry.event._norm.status};
+      });
+      assert.deepStrictEqual(lifecycleState, {stage: 'helper_queued', status: undefined});
     });
-    await emit(newNew.page, lifecycle('nn', 'primary'));
+    await emit(newNew.page, { ...lifecycle('nn', 'primary'), delivery_status: '', reason: '' });
+    await checks.check('PRIMARY_EXACT_ID_LIFECYCLE_WITHOUT_RETRYABLE_STATUS', async () => {
+      assert.strictEqual((await rowState(newNew.page, 'nn')).buttons, 0);
+    });
+    await emit(newNew.page, { ...lifecycle('nn', 'primary'), delivery_status: 'unconfirmed_retryable',
+      reason: 'unconfirmed_retryable' });
     await checks.check('PRIMARY_EXACT_ID_ENABLES_RETRY', async () => {
       assert.strictEqual((await rowState(newNew.page, 'nn')).buttons, 1);
     });
@@ -185,30 +216,30 @@ async function rowState(page, id) {
       assert.ok(attempts.every(body => !Object.hasOwn(body, 'message_id')));
     });
 
-    // The fixed browser suite must turn red in its business assertion if Hub
-    // omits the role field or the renderer's role guard is deleted.
+    const noRole = await openScenario(browser, MUTANT_ROLELESS_RETRY, 'renderer-role-requirement-deleted'); scenarios.push(noRole);
+    await emit(noRole.page, primaryInput('no-role-mutant'));
+    await emit(noRole.page, { ...lifecycle('no-role-mutant', null), delivery_stage: 'helper_queued',
+      delivery_status: 'unconfirmed_retryable', reason: 'unconfirmed_retryable' });
     await checks.check('MUTATION_ROLE_FIELD_DELETION_RED', async () => {
-      const state = await rowState(oldNew.page, 'on');
-      try { assert.strictEqual(state.buttons, 1, 'BUSINESS_ASSERTION_ROLE_FIELD_REQUIRED'); }
-      catch (error) { assert.match(error.message, /BUSINESS_ASSERTION_ROLE_FIELD_REQUIRED/); console.log('  MUTATION_RED role_field_removed at BUSINESS_ASSERTION_ROLE_FIELD_REQUIRED'); return; }
-      throw new Error('role field deletion survived');
+      try { assert.strictEqual((await rowState(noRole.page, 'no-role-mutant')).buttons, 0, 'BUSINESS_ASSERTION_ROLELESS_MUST_NOT_RETRY'); }
+      catch (error) { assert.match(error.message, /BUSINESS_ASSERTION_ROLELESS_MUST_NOT_RETRY/); console.log('  MUTATION_RED role_requirement_removed at BUSINESS_ASSERTION_ROLELESS_MUST_NOT_RETRY'); return; }
+      throw new Error('role requirement deletion survived');
     });
 
-    const noGuard = await openScenario(browser, MUTANT_NO_ROLE_GUARD, 'renderer-role-guard-deleted'); scenarios.push(noGuard);
+    const noGuard = await openScenario(browser, MUTANT_NO_LEGACY_LIFECYCLE, 'renderer-legacy-lifecycle-branch-deleted'); scenarios.push(noGuard);
     await emit(noGuard.page, primaryInput('mutant'));
-    await emit(noGuard.page, lifecycle('mutant', 'copy'));
-    await checks.check('MUTATION_ROLE_GUARD_DELETION_RED', async () => {
-      const state = await rowState(noGuard.page, 'mutant');
-      try { assert.strictEqual(state.buttons, 0, 'BUSINESS_ASSERTION_COPY_MUST_NOT_RETRY'); }
-      catch (error) { assert.match(error.message, /BUSINESS_ASSERTION_COPY_MUST_NOT_RETRY/); console.log('  MUTATION_RED renderer_role_guard_removed at BUSINESS_ASSERTION_COPY_MUST_NOT_RETRY'); return; }
-      throw new Error('renderer role guard deletion survived');
+    await emit(noGuard.page, { ...lifecycle('mutant', null), delivery_stage: 'cli_injected', turn_id: 'mutant-turn' });
+    await checks.check('MUTATION_LEGACY_BRANCH_REMOVAL_RED', async () => {
+      try { assert.strictEqual((await rowState(noGuard.page, 'mutant')).count, 0, 'BUSINESS_ASSERTION_LEGACY_CLI_INJECTED_ADVANCES'); }
+      catch (error) { assert.match(error.message, /BUSINESS_ASSERTION_LEGACY_CLI_INJECTED_ADVANCES/); console.log('  MUTATION_RED legacy_branch_removed at BUSINESS_ASSERTION_LEGACY_CLI_INJECTED_ADVANCES'); return; }
+      throw new Error('legacy lifecycle branch deletion survived');
     });
 
     await checks.check('NO_PAGE_ERRORS', async () => {
       for (const scenario of scenarios) assert.deepStrictEqual(scenario.errors, [], scenario.name);
     });
     checks.finish();
-    console.log('RETRY_ROLE_BROWSER_PASS combinations=4 assertions=14 mutations=2-red');
+    console.log('RETRY_ROLE_BROWSER_PASS combinations=4 assertions=17 mutations=2-red');
   } finally {
     for (const scenario of scenarios) await closeScenario(scenario);
     if (browser) await browser.close();

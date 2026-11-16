@@ -27,7 +27,7 @@ function check(value, message) { assertions++; assert.ok(value, message); }
       await page.evaluate(() => {
         resetConversation();
         window.ackInput = (id) => handleIncomingEvent({kind:'input_posted',schema_version:'delivery.v2',message_id:'source-'+id,delivery_id:id,payload:'fixture '+id,stage:'hub_received',source:{kind:'agent',trust_decision:'trusted'},delivery:{role:'primary'},cancellable:true});
-        window.ackUpdate = (id,phase,extra={}) => handleIncomingEvent({kind:'delivery_update',schema_version:'delivery.v2',message_id:'source-'+id,observed_delivery_id:id,delivery:{role:'primary'},delivery_stage:phase,cancellable:phase==='helper_queued',ack_protocol:2,processing_mode:'driver',ack_generation:1,...extra});
+        window.ackUpdate = (id,phase,extra={}) => handleIncomingEvent({kind:'delivery_update',schema_version:'delivery.v2',message_id:'source-'+id,observed_delivery_id:id,delivery_stage:phase,cancellable:phase==='helper_queued',ack_protocol:2,processing_mode:'driver',ack_generation:1,...extra});
         ackInput('dw-dlv-A');
         ackUpdate('dw-dlv-A','helper_queued',{queued_at:new Date(Date.now()).toISOString()});
       });

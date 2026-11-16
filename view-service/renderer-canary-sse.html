@@ -2631,10 +2631,11 @@
         timeline.appendChild(notice);
       }
       ev = normalizeEvent(ev);
-      // delivery_update is actionable only with Hub role proof and an exact
-      // canonical primary delivery match. Legacy/copy updates are display-only
-      // omissions here: they cannot mutate waits, card stages, or retry state.
-      if (ev.kind === 'delivery_update' && !hasExactPrimaryDeliveryTarget(ev)) {
+      // Older Hub/history updates have no role: preserve their pre-R60 lifecycle
+      // behavior, but they never authorize retry. A tagged copy or a tagged
+      // primary update without an exact canonical match must not touch a wait.
+      if (ev.kind === 'delivery_update' && ev.delivery?.role
+          && !hasExactPrimaryDeliveryTarget(ev)) {
         rememberUnmatchedPrimaryDeliveryUpdate(ev);
         return;
       }
@@ -2704,6 +2705,12 @@
           const rawVer = ev.schema_version ?? ev.meta?.schema_version;
           const canonicalUpdate = ev.kind === 'delivery_update' && (rawVer === 'delivery.v2' || rawVer === 2 || rawVer === '2');
           if (canonicalUpdate) {
+            // Only an explicitly tagged, exactly matched primary update may
+            // grant retry. Role-less legacy updates still advance lifecycle.
+            if (ev.delivery?.role === 'primary' && hasExactPrimaryDeliveryTarget(ev)) {
+              if (ev.delivery_status === 'unconfirmed_retryable') wEntry.retryRoleVerified = true;
+              else if (typeof ev.delivery_status === 'string' && ev.delivery_status) wEntry.retryRoleVerified = false;
+            }
             if (norm.stageIdx >= currentStageIdx) {
               for (const field of ['ackProtocol','processingMode','occurredAt','turnOutcome']) {
                 if (norm[field] !== null && norm[field] !== '' && current[field] !== norm[field]) {
@@ -2881,7 +2888,7 @@
         node.className = 'waiting-item';
         node.dataset.deliveryId = waitKey;
         waitingList.appendChild(node);
-        entry = { node, event: ev, unknownSince: null,
+        entry = { node, event: ev, unknownSince: null, retryRoleVerified: false,
           canonicalDeliveryId: ev.kind === 'input_posted' && ev.delivery?.role === 'primary' ? String(ev.delivery_id || '') : '' };
         waitingDeliveries.set(waitKey, entry);
       } else if (ev.text && !busyWait) {
@@ -2933,7 +2940,7 @@
       }
       const retryAllowed = norm.status === 'unconfirmed_retryable' && norm.deliveryMode === 'primary'
         && entry.event?.kind === 'input_posted' && entry.event?.delivery?.role === 'primary'
-        && entry.canonicalDeliveryId === waitKey;
+        && entry.canonicalDeliveryId === waitKey && entry.retryRoleVerified === true;
       if (retryAllowed && !entry.node.querySelector('.waiting-retry-btn')) {
         const btn = document.createElement('button');
         btn.type = 'button'; btn.className = 'waiting-retry-btn'; btn.textContent = '重发';

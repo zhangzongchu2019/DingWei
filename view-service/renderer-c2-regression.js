@@ -69,7 +69,7 @@ const emit = (page, ev) => page.evaluate(e => handleIncomingEvent(e), ev);
 const src = { display_name: '飞书', trust_decision: 'trusted' };
 const inputPosted = (id, text, extra = {}) => ({
   kind: 'input_posted', message_id: id, delivery_id: `dlv-${id}`,
-  delivery: { role: 'primary' }, source: src, stage: 'generated', cancellable: true, payload: text, ...extra,
+  source: src, stage: 'generated', cancellable: true, payload: text, ...extra,
 });
 const controlEv = (ctlKind, text, extra = {}) => ({
   kind: 'input_posted', message_id: `ctl-${ctlKind}`, delivery_id: `ctl-${ctlKind}`,
@@ -99,17 +99,12 @@ const v2posted = (id, source, role, stage = 'hub_received') => ({
 });
 const v2update = (id, dlvId, stage, status, reason = '') => ({
   schema_version: 'delivery.v2', kind: 'delivery_update', message_id: id,
-  observed_delivery_id: dlvId, delivery: { role: 'primary' }, delivery_stage: stage,
+  observed_delivery_id: dlvId, delivery_stage: stage,
   ...(status ? { delivery_status: status } : {}),
   reason, cancelable: false, interruptible: false, updated_at: V2_TS,
 });
 const hubV2Golden = JSON.parse(fs.readFileSync(HUB_V2_GOLDEN_FILE, 'utf8'));
-const goldenEvent = name => {
-  const event = JSON.parse(JSON.stringify(hubV2Golden[name]));
-  // Hub publication adds the audience role at the two View fan-out points.
-  if (event.kind === 'delivery_update') event.delivery = { role: 'primary' };
-  return event;
-};
+const goldenEvent = name => JSON.parse(JSON.stringify(hubV2Golden[name]));
 
 async function main() {
   const rendererBody = fs.readFileSync(RENDERER_FILE, 'utf8');
