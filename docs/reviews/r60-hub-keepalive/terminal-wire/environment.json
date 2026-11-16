@@ -1,0 +1,16 @@
+{
+  "python": "3.12.3",
+  "go": "go version go1.22.2 linux/amd64",
+  "kernel": "7.0.0-30-generic",
+  "uid": 1001,
+  "affinity_cpu_count": 16,
+  "cgroup_cpu_max": "max 100000",
+  "websockets": "15.0.1",
+  "go_websocket": "github.com/coder/websocket v1.8.13",
+  "server_binary_sha256": "443d516c3d457c8696837841699d8b3104a9fea2ac50c824abbea8068ad40489",
+  "harness_sha256": {
+    "server.go.txt": "4219f142672cdd75dcb9d43833a49a8f1bb986430ac0b3feea362050f56ce2e4",
+    "probe.py.txt": "1c01741c2866cd4c5005628e0e24b37053db0b72bc111dc1d846ff0782b09357",
+    "probe-small-buffer.py.txt": "f0f89b2756cad580a3bfc7a261a51f1fcf7c0352216e8c3824b1ab9e66949276"
+  }
+}

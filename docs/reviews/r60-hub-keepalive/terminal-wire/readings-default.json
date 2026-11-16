@@ -1,0 +1,972 @@
+{
+  "source_commit": "1671a59667c544ff3a3e0270ac2a293e15560d20",
+  "baseline": "d2cc47c7e699eb45efb3a07ee197aa8c20a9f07e",
+  "fixture_bytes": 8388608,
+  "fixture_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed",
+  "websockets": "15.0.1",
+  "rows": [
+    {
+      "label": "0mbps-0-chunked",
+      "rate_mbps": 0,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "0mbps-0-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:52:39.439207698Z",
+        "end": "2026-11-16T19:52:40.029962177Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 3.458,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 2.201,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 2.912,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 1.661,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 2.043,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.462,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 3.185,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 2,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 1.762,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 3.003,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.658,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.176,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.269,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.277,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.276,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 3.458,
+      "ping_samples": 15,
+      "above_default_5s": false
+    },
+    {
+      "label": "0mbps-0-baseline",
+      "rate_mbps": 0,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "0mbps-0-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:52:40.432435473Z",
+        "end": "2026-11-16T19:52:40.609681775Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 19.581,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.24,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 71.602,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.726,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.258,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.287,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.29,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.288,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 71.602,
+      "ping_samples": 8,
+      "above_default_5s": false
+    },
+    {
+      "label": "0mbps-1-baseline",
+      "rate_mbps": 0,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "0mbps-1-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:52:41.013165372Z",
+        "end": "2026-11-16T19:52:41.194398284Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 1.579,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.29,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 56.261,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.243,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.348,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.311,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.302,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.285,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 56.261,
+      "ping_samples": 8,
+      "above_default_5s": false
+    },
+    {
+      "label": "0mbps-1-chunked",
+      "rate_mbps": 0,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "0mbps-1-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:52:41.597162331Z",
+        "end": "2026-11-16T19:52:42.244983235Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 2.599,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 2.262,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 2.718,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.307,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 2.079,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 2.659,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.252,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 2.313,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 3.287,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 3.608,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 3.757,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 3.533,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.209,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.322,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.306,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.376,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.334,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 3.757,
+      "ping_samples": 17,
+      "above_default_5s": false
+    },
+    {
+      "label": "50mbps-0-chunked",
+      "rate_mbps": 50,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "50mbps-0-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:52:42.673807045Z",
+        "end": "2026-11-16T19:52:44.064134801Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 18.625,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 80.886,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 188.986,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 402.094,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 327.636,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 291.179,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 0.213,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 0.176,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 0.298,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 0.32,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 0.264,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 402.094,
+      "ping_samples": 11,
+      "above_default_5s": false
+    },
+    {
+      "label": "50mbps-0-baseline",
+      "rate_mbps": 50,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "50mbps-0-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:52:44.466798468Z",
+        "end": "2026-11-16T19:52:45.977381194Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 22.203,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.265,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 1403.822,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.305,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.292,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.296,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.345,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.309,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 1403.822,
+      "ping_samples": 8,
+      "above_default_5s": false
+    },
+    {
+      "label": "50mbps-1-baseline",
+      "rate_mbps": 50,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "50mbps-1-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:52:46.380049111Z",
+        "end": "2026-11-16T19:52:47.88588331Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.246,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 1412.463,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.345,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.259,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.296,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.408,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.341,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 1412.463,
+      "ping_samples": 7,
+      "above_default_5s": false
+    },
+    {
+      "label": "50mbps-1-chunked",
+      "rate_mbps": 50,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "50mbps-1-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:52:48.290215704Z",
+        "end": "2026-11-16T19:52:49.677151431Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 8.816,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 78.884,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 190.097,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 400.809,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 290.506,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 334.009,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 9.269,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 0.157,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 0.35,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 0.35,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 0.308,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 0.307,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 400.809,
+      "ping_samples": 12,
+      "above_default_5s": false
+    },
+    {
+      "label": "10mbps-0-chunked",
+      "rate_mbps": 10,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "10mbps-0-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:52:50.086749001Z",
+        "end": "2026-11-16T19:52:56.878989083Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 275.9,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 1986.856,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 1548.085,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 1530.401,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 1401.872,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 0.281,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 0.145,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 1.358,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 1.419,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 1.368,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 1986.856,
+      "ping_samples": 10,
+      "above_default_5s": false
+    },
+    {
+      "label": "10mbps-0-baseline",
+      "rate_mbps": 10,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "10mbps-0-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:52:57.283793741Z",
+        "end": "2026-11-16T19:53:04.169068163Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 23.118,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 1.362,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 6782.564,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 1.361,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 0.234,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 0.348,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 1.363,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 0.392,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 6782.564,
+      "ping_samples": 8,
+      "above_default_5s": true
+    },
+    {
+      "label": "10mbps-1-baseline",
+      "rate_mbps": 10,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "10mbps-1-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:53:04.574123346Z",
+        "end": "2026-11-16T19:53:11.452104561Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 16.001,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 1.365,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 6766.208,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 1.353,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 1.369,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 1.35,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 1.382,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 0.368,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 6766.208,
+      "ping_samples": 8,
+      "above_default_5s": true
+    },
+    {
+      "label": "10mbps-1-chunked",
+      "rate_mbps": 10,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 2626560,
+      "socket_sendbuf_requested": 0,
+      "transport_write_buffer_limits": [
+        8192,
+        32768
+      ],
+      "server": {
+        "label": "10mbps-1-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:53:11.856014146Z",
+        "end": "2026-11-16T19:53:18.651535107Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 35.307,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 491.246,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 1766.046,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 1528.952,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 1542.794,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 1385.705,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 0.23,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 1.346,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 0.32,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 1.377,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 1.362,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 1766.046,
+      "ping_samples": 11,
+      "above_default_5s": false
+    }
+  ]
+}

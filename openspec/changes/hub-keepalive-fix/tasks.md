@@ -26,3 +26,5 @@
 - 2026-11-16 coder56solzzc，7be26af20固定源四树Go/PG strict整包rc0（m8/store/obs/cmd，逐名SKIP待报告）、12刀及补3刀均编译成功/业务断言红；非最终交审。追加收口：无效启动配置关闭已建Hub，ACK失败事务亦无确认且同ACK可恢复，session默认2秒也涵盖持槽等待；满队列故障用例可安全取消回收，避免删除保护时仅靠Go超时。上述定向已绿；固定新候选后重跑固定门/变异，不沿用7be完整门作最终结论。
 
 - 2026-11-16T19:21:54Z coder56solzzc，冻结产品源1671a59667c544ff3a3e0270ac2a293e15560d20。完成：同源canonical/build/Go全包/PG strict/focused race/strict及17项编译成功业务断言红，证据与全部原失败见docs/reviews/r60-hub-keepalive。阻塞：独立只读评审和组长终审未完成；下一步普通推送核远端并只请求该最终源复核，不自验收/不合入/不部署。
+
+- 2026-11-16T19:55Z coder56solzzc，承接组长19:33:23Z复核：Hub侧接受167冻结源，helper分块按HKF-PM04补真实WS对照证据。完成：同连接8MiB合成Unicode突发、实际frame/Pong读数、默认与受限缓冲/校准限速/不限速各两轮，正文SHA相等；默认10Mbps baseline6.78/6.77秒、chunked1.99/1.77秒，源/命令/UTC/原SHA与吞吐代价见docs/reviews/r60-hub-keepalive/terminal-wire。本次仅docs/任务记录追加，产品及spec/design不改，不把试验计入原17刀或自签收条件。阻塞：组长确认补证及qwen独立复核；下一步：普通推送核远端，集成四树Go逐条列SQLite首次FAIL对应测试，不能以单跑抵消。

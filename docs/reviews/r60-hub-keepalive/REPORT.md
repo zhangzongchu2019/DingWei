@@ -57,3 +57,14 @@ UTF8正文32KiB不等于wire帧32KiB：JSON转义可至多约6倍正文另加met
 | strict-reviewed | 0 | 0 | 0 | 0 | 0 |
 
 Canonical helper 两 profile：claude 1204/1204 rc0；codex 1204/1204 rc0；末尾 BUILD_TESTS_OK helper_profiles=2 python=27 shell=2。表格的 Go PASS 不与 Python/helper 子项混算。focused race 不是全包 race。strict CLI 明细见原日志。
+
+
+## 组长复核与HKF-PM04补证（纯docs追加，产品不变）
+
+组长2026-11-16T19:33:23Z已接受167冻结源的Hub侧，且独立删除Reader同步交接保护后slow_business用例转红；helper分块须另补真实WS峰值/控制帧测量，②并入前待齐。本段不把Hub侧接受拔高成整项独立PASS或部署GO，qwen仍按其③优先后复核。
+
+详见[真实WS测量](terminal-wire/README.md)、原始逐Ping/帧数据及SHA。相同8MiB合成Unicode突发、同一真实WS、交替两轮，默认客户端socket：去分块峰值8,388,833字节frame payload，分块32,993；配置10Mbps上限，baseline最长Pong6782.564/6766.208ms，chunked1986.856/1766.046ms；50Mbps上限baseline1403.822/1412.463ms，chunked402.094/400.809ms。正文长度/顺序/SHA一致，未使用fake ws。首轮受限缓冲的146ms不能当默认缓冲结论；实际吞吐、CPU/时钟/采样限制、首轮限速器方法偏差均在补证中披露。
+
+这是作者本地受控协议测量：精确运行冻结terminal_loop原方法、真实Go/Python WS，但不是完整Hub鉴权/DB/CLI/LLM或公网TLS压测，不是现网峰值或419次历史根因统计。该条件存在明确控制延迟影响，作者建议保留helper分块，由组长确认并入条件；未改app.py或其它产品文件。本次只追加docs/reviews内测量夹具源码与报告证据，无二进制/凭据/正文历史上传。
+
+SQLite interrupted(9)首轮FAIL原因仍未定；R60集成必须完整四树Go，并逐条列TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent的结果，不能以单跑或旧源PASS替代。当前仅文档补证，未做集成、未抬版本、未部署。

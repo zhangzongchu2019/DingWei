@@ -1,0 +1,1597 @@
+{
+  "source_commit": "1671a59667c544ff3a3e0270ac2a293e15560d20",
+  "baseline": "d2cc47c7e699eb45efb3a07ee197aa8c20a9f07e",
+  "fixture_bytes": 8388608,
+  "fixture_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed",
+  "websockets": "15.0.1",
+  "rows": [
+    {
+      "label": "0mbps-0-chunked",
+      "rate_mbps": 0,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "0mbps-0-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:51:15.121011789Z",
+        "end": "2026-11-16T19:51:15.738538072Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.588,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 3.61,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 1.858,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 2.15,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 1.698,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 3.028,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.525,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 2.997,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 3.546,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.241,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 3.917,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.224,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.278,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.362,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.388,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-chunked",
+          "millis": 0.386,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 3.917,
+      "ping_samples": 16,
+      "above_default_5s": false
+    },
+    {
+      "label": "0mbps-0-baseline",
+      "rate_mbps": 0,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "0mbps-0-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:51:16.141453765Z",
+        "end": "2026-11-16T19:51:16.342242606Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 7.326,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.264,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 72.374,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.272,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.302,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.281,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.348,
+          "error": ""
+        },
+        {
+          "label": "0mbps-0-baseline",
+          "millis": 0.325,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 72.374,
+      "ping_samples": 8,
+      "above_default_5s": false
+    },
+    {
+      "label": "0mbps-1-baseline",
+      "rate_mbps": 0,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "0mbps-1-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:51:16.744811963Z",
+        "end": "2026-11-16T19:51:16.924041421Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.323,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.301,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 54.065,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.245,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.349,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.342,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.301,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-baseline",
+          "millis": 0.349,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 54.065,
+      "ping_samples": 8,
+      "above_default_5s": false
+    },
+    {
+      "label": "0mbps-1-chunked",
+      "rate_mbps": 0,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "0mbps-1-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:51:17.326931206Z",
+        "end": "2026-11-16T19:51:17.993030523Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.255,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 3.304,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 3.401,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 3.291,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 4.067,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.212,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 1.169,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 2.854,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 3.3,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 3.12,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 2.921,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.572,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 3.351,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.266,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.273,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.319,
+          "error": ""
+        },
+        {
+          "label": "0mbps-1-chunked",
+          "millis": 0.325,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 4.067,
+      "ping_samples": 17,
+      "above_default_5s": false
+    },
+    {
+      "label": "50mbps-0-chunked",
+      "rate_mbps": 50,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "50mbps-0-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:51:18.420623934Z",
+        "end": "2026-11-16T19:51:19.80112762Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 22.709,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 21.387,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 20.284,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 23.713,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 21.334,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 24.773,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 24.302,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 27.059,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 19.24,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 27.803,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 21.372,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 29.183,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 24.387,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 22.497,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 26.152,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 23.626,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 26.941,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 25.666,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 29.015,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 26.983,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 31.173,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 28.952,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 23.554,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 25.762,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 25.713,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 22.315,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 21.173,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 0.215,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 0.298,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 0.337,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-chunked",
+          "millis": 0.294,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 31.173,
+      "ping_samples": 31,
+      "above_default_5s": false
+    },
+    {
+      "label": "50mbps-0-baseline",
+      "rate_mbps": 50,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "50mbps-0-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:51:20.203417823Z",
+        "end": "2026-11-16T19:51:21.712373538Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 7.488,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.254,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 1392.046,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.308,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.189,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.285,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.349,
+          "error": ""
+        },
+        {
+          "label": "50mbps-0-baseline",
+          "millis": 0.306,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 1392.046,
+      "ping_samples": 8,
+      "above_default_5s": false
+    },
+    {
+      "label": "50mbps-1-baseline",
+      "rate_mbps": 50,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "50mbps-1-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:51:22.11468314Z",
+        "end": "2026-11-16T19:51:23.622076907Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 20.934,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.27,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 1401.885,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.236,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.324,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.303,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.307,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-baseline",
+          "millis": 0.291,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 1401.885,
+      "ping_samples": 8,
+      "above_default_5s": false
+    },
+    {
+      "label": "50mbps-1-chunked",
+      "rate_mbps": 50,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "50mbps-1-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:51:24.025233326Z",
+        "end": "2026-11-16T19:51:25.415215606Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 19.522,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 20.764,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 23.925,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 13.803,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 16.929,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 15.198,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 22.897,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 16.037,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 24.932,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 18.131,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 27.796,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 21.73,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 23.122,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 22.695,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 19.923,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 24.043,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 21.042,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 26.388,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 19.783,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 27.76,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 19.951,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 23.989,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 22.148,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 25.305,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 19.549,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 27.242,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 20.039,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 0.256,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 0.389,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 0.336,
+          "error": ""
+        },
+        {
+          "label": "50mbps-1-chunked",
+          "millis": 0.369,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 27.796,
+      "ping_samples": 31,
+      "above_default_5s": false
+    },
+    {
+      "label": "10mbps-0-chunked",
+      "rate_mbps": 10,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "10mbps-0-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:51:25.825221455Z",
+        "end": "2026-11-16T19:51:32.620426567Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 112.817,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 145.655,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 146.111,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 146.096,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 140.101,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 75.403,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 146.507,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 144.861,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 115.058,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 102.075,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 145.387,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 145.965,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 114.519,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 102.072,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 145.515,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 145.317,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 121.797,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 94.455,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 146.292,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 121.115,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 146.344,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 95.016,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 146.118,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 145.114,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 121.527,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 94.3,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 146.064,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 146.21,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 120.93,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 95.274,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 145.614,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 145.955,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 145.807,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 96.636,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 126.334,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 141.731,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 142.656,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 97.368,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 125.25,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 146.448,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 139.028,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 97.146,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 126.251,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 145.505,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 145.762,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 140.617,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 75.121,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 146.25,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 146.137,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 114.327,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 102.888,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 144.485,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 94.316,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 0.203,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 0.227,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 1.41,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 1.484,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-chunked",
+          "millis": 1.431,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 146.507,
+      "ping_samples": 58,
+      "above_default_5s": false
+    },
+    {
+      "label": "10mbps-0-baseline",
+      "rate_mbps": 10,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "10mbps-0-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:51:33.024272818Z",
+        "end": "2026-11-16T19:51:39.929123338Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 34.834,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 0.307,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 0.358,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 6754.176,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 1.382,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 0.43,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 0.344,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 0.392,
+          "error": ""
+        },
+        {
+          "label": "10mbps-0-baseline",
+          "millis": 1.375,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 6754.176,
+      "ping_samples": 9,
+      "above_default_5s": true
+    },
+    {
+      "label": "10mbps-1-baseline",
+      "rate_mbps": 10,
+      "variant": "baseline",
+      "outgoing_data_frames": 1,
+      "max_actual_frame_payload_bytes": 8388833,
+      "total_frame_payload_bytes": 8388833,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "10mbps-1-baseline",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 1,
+        "max_message_bytes": 8388833,
+        "start": "2026-11-16T19:51:40.334420267Z",
+        "end": "2026-11-16T19:51:47.22040245Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 1.342,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 6795.372,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 1.334,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 0.18,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 1.351,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 1.335,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-baseline",
+          "millis": 1.377,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 6795.372,
+      "ping_samples": 7,
+      "above_default_5s": true
+    },
+    {
+      "label": "10mbps-1-chunked",
+      "rate_mbps": 10,
+      "variant": "chunked",
+      "outgoing_data_frames": 280,
+      "max_actual_frame_payload_bytes": 32993,
+      "total_frame_payload_bytes": 8451608,
+      "socket_sendbuf_actual": 65536,
+      "server": {
+        "label": "10mbps-1-chunked",
+        "expected": 8388608,
+        "body_bytes": 8388608,
+        "frames": 280,
+        "max_message_bytes": 32993,
+        "start": "2026-11-16T19:51:47.626293772Z",
+        "end": "2026-11-16T19:51:54.422184697Z",
+        "body_sha256": "0eae9225a496a4c4d636a07a5a89fdcb441c05073d7eb333ebd8232aa3dc31ed"
+      },
+      "pings": [
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 111.554,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 96.148,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 120.581,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.667,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.324,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 96.353,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 126.359,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 146.284,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 139.046,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 96.361,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 126.234,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.549,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.968,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 141.67,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 74.846,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.965,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.683,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 114.751,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 102.034,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.804,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.657,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 114.227,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 101.624,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.612,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.683,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 115.037,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 101.454,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 146.121,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 120.886,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.489,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 95.372,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 146.159,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 121.144,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.386,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 95.104,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 146.339,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.677,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 121.552,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 94.173,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.756,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.923,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 121.364,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 102.397,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 138.446,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 146.607,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.651,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 96.098,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 126.156,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 139.906,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.034,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 97.218,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 126.236,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 145.115,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 20.161,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 0.164,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 1.384,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 1.401,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 1.364,
+          "error": ""
+        },
+        {
+          "label": "10mbps-1-chunked",
+          "millis": 0.201,
+          "error": ""
+        }
+      ],
+      "max_control_rtt_ms": 146.607,
+      "ping_samples": 59,
+      "above_default_5s": false
+    }
+  ]
+}

@@ -1,0 +1,203 @@
+package main
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"github.com/coder/websocket"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"strconv"
+	"sync"
+	"time"
+)
+
+type Case struct {
+	Label      string    `json:"label"`
+	Expected   int       `json:"expected"`
+	BodyBytes  int       `json:"body_bytes"`
+	Frames     int       `json:"frames"`
+	MaxMessage int       `json:"max_message_bytes"`
+	Start      time.Time `json:"start"`
+	End        time.Time `json:"end"`
+	Digest     string    `json:"body_sha256"`
+}
+type Ping struct {
+	Label  string  `json:"label"`
+	Millis float64 `json:"millis"`
+	Error  string  `json:"error"`
+}
+
+var mu sync.Mutex
+var cases = map[string]*Case{}
+var pings = []Ping{}
+
+func main() {
+	backend, _ := net.Listen("tcp", "127.0.0.1:0")
+	mux := http.NewServeMux()
+	mux.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+		json.NewEncoder(w).Encode(map[string]any{"cases": cases, "pings": pings})
+	})
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		c, e := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
+		if e != nil {
+			return
+		}
+		defer c.CloseNow()
+		c.SetReadLimit(16 << 20)
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		var label string
+		var lm sync.Mutex
+		done := make(chan struct{})
+		defer func() { cancel(); <-done }()
+		go func() {
+			defer close(done)
+			t := time.NewTicker(50 * time.Millisecond)
+			defer t.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+					lm.Lock()
+					l := label
+					lm.Unlock()
+					if l == "" {
+						continue
+					}
+					pc, stop := context.WithTimeout(ctx, 20*time.Second)
+					start := time.Now()
+					err := c.Ping(pc)
+					stop()
+					cl := ""
+					if err != nil {
+						if ctx.Err() != nil {
+							cl = "cancelled"
+						} else if pc.Err() != nil {
+							cl = "deadline"
+						} else {
+							cl = "other"
+						}
+					}
+					mu.Lock()
+					pings = append(pings, Ping{l, float64(time.Since(start).Microseconds()) / 1000, cl})
+					mu.Unlock()
+				}
+			}
+		}()
+		hash := sha256.New()
+		for {
+			_, raw, err := c.Read(ctx)
+			if err != nil {
+				return
+			}
+			var v struct {
+				Probe    string         `json:"probe"`
+				Label    string         `json:"label"`
+				Expected int            `json:"expected"`
+				Body     string         `json:"body"`
+				Meta     map[string]any `json:"meta"`
+			}
+			if json.Unmarshal(raw, &v) != nil {
+				return
+			}
+			if v.Probe == "start" {
+				hash.Reset()
+				mu.Lock()
+				cases[v.Label] = &Case{Label: v.Label, Expected: v.Expected, Start: time.Now().UTC()}
+				mu.Unlock()
+				lm.Lock()
+				label = v.Label
+				lm.Unlock()
+				c.Write(ctx, websocket.MessageText, []byte(`{"probe":"ready"}`))
+				continue
+			}
+			if v.Probe == "end" {
+				lm.Lock()
+				label = ""
+				lm.Unlock()
+				c.Write(ctx, websocket.MessageText, []byte(`{"probe":"ended"}`))
+				continue
+			}
+			if v.Meta["type"] != "terminal_output" {
+				continue
+			}
+			lm.Lock()
+			l := label
+			lm.Unlock()
+			if l == "" {
+				continue
+			}
+			b := []byte(v.Body)
+			hash.Write(b)
+			mu.Lock()
+			s := cases[l]
+			s.BodyBytes += len(b)
+			s.Frames++
+			if len(raw) > s.MaxMessage {
+				s.MaxMessage = len(raw)
+			}
+			complete := s.BodyBytes == s.Expected
+			if complete {
+				s.End = time.Now().UTC()
+				s.Digest = hex.EncodeToString(hash.Sum(nil))
+			}
+			mu.Unlock()
+			if complete {
+				c.Write(ctx, websocket.MessageText, []byte(`{"probe":"complete"}`))
+			}
+		}
+	})
+	go http.Serve(backend, mux)
+	front, _ := net.Listen("tcp", "127.0.0.1:0")
+	fmt.Printf("{\"backend\":%q,\"proxy\":%q}\n", backend.Addr().String(), front.Addr().String())
+	for {
+		a, e := front.Accept()
+		if e != nil {
+			return
+		}
+		go func(a net.Conn) {
+			defer a.Close()
+			b, e := net.Dial("tcp", backend.Addr().String())
+			if e != nil {
+				return
+			}
+			defer b.Close()
+			rate, _ := strconv.Atoi(os.Getenv("PROBE_MBPS"))
+			if t, ok := a.(*net.TCPConn); ok {
+				t.SetReadBuffer(32768)
+			}
+			go func() { io.Copy(a, b); a.Close() }()
+			buf := make([]byte, 8192)
+			var due time.Time
+			for {
+				n, e := a.Read(buf)
+				if n > 0 {
+					if rate > 0 {
+						now := time.Now()
+						if due.IsZero() || now.Sub(due) > 25*time.Millisecond {
+							due = now
+						}
+						due = due.Add(time.Duration(float64(n) * 8 / float64(rate*1000000) * float64(time.Second)))
+						if delay := time.Until(due); delay > 0 {
+							time.Sleep(delay)
+						}
+					}
+					if _, er := b.Write(buf[:n]); er != nil {
+						return
+					}
+				}
+				if e != nil {
+					return
+				}
+			}
+		}(a)
+	}
+}

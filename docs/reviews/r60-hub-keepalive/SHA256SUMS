@@ -1,4 +1,4 @@
-9797f4e2d9664b1b37ae35662a94513c78eae436250880322321c1707e9929a8  docs/reviews/r60-hub-keepalive/REPORT.md
+1dd6a2595f3aa8ad3993eb51da932f0438dfcb2962e2134b5b68d785f57b5504  docs/reviews/r60-hub-keepalive/REPORT.md
 0e1e39b1aa32e8975359d643219347f3d9e781acb50ad92c999ae783b6864bf6  docs/reviews/r60-hub-keepalive/evidence/README.md
 21c74851b5395fa0c086d021b419fad8f478585a443c40cb75f968e013d05f2c  docs/reviews/r60-hub-keepalive/evidence/SKIPS.md
 8b305bacfe1ec6c6ba357f51d7963483b87e59567086a10420065567f6f7c5db  docs/reviews/r60-hub-keepalive/evidence/VERIFY.py
@@ -57,3 +57,16 @@ b8d723da0807863571b9cb203a642394aa808810a1c6bd338a179146d7e7cd2f  docs/reviews/r
 326b6b8d29a34d0dcb1e0c16234cc87763548a8eba54842502730ad572acacc4  docs/reviews/r60-hub-keepalive/evidence/raw/strict-reviewed.log.gz
 560bf4b5a9be685dc6c1695bfb081ea810d133e4bc3703f5c3db214b3d0c06ab  docs/reviews/r60-hub-keepalive/evidence/raw/viewer-first.log.gz
 2c99e35056133c068df6b11fb139db4df0073b0c6f68ddfad78298547177f494  docs/reviews/r60-hub-keepalive/evidence/raw/viewer-gap.log.gz
+7e6bc2b282b8e39eb3a8000e5795ae1e131ec3928f8fce1d56b8fb44c437e56b  docs/reviews/r60-hub-keepalive/terminal-wire/README.md
+f1eb1c0f5e82a81caa943e58c20ad9b1852cddb3b0f53b971bfa64693b91c5cc  docs/reviews/r60-hub-keepalive/terminal-wire/environment.json
+f0f89b2756cad580a3bfc7a261a51f1fcf7c0352216e8c3824b1ab9e66949276  docs/reviews/r60-hub-keepalive/terminal-wire/probe-small-buffer.py.txt
+1c01741c2866cd4c5005628e0e24b37053db0b72bc111dc1d846ff0782b09357  docs/reviews/r60-hub-keepalive/terminal-wire/probe.py.txt
+f61f27bd17de546264aa58f40f3aafaac7021e0ef69c17f6b1b4cd7664a037ec  docs/reviews/r60-hub-keepalive/terminal-wire/raw/terminal-wire-build.log.gz
+f61f27bd17de546264aa58f40f3aafaac7021e0ef69c17f6b1b4cd7664a037ec  docs/reviews/r60-hub-keepalive/terminal-wire/raw/terminal-wire-calibrated-build.log.gz
+4db85bce0b5eb04183f9bf3229f5f6f54d122979d27899c1f1032401ac552b8f  docs/reviews/r60-hub-keepalive/terminal-wire/raw/terminal-wire-calibrated.log.gz
+adacd0e7869db30a2b30523848613ddd02fc86477372018cf78b424210ed9e7a  docs/reviews/r60-hub-keepalive/terminal-wire/raw/terminal-wire-default-buffer.log.gz
+383b23b8679be180d17d623f3716a837e2ac98c0b4fb0cdbacc7e5aca70917aa  docs/reviews/r60-hub-keepalive/terminal-wire/raw/terminal-wire-probe.log.gz
+3d8bf49db67d50dba1fe009dc8ff02e6e050074007b5c4df89c8187bfe47c805  docs/reviews/r60-hub-keepalive/terminal-wire/readings-default.json
+65c8980eafd66c6390f81212b882952b4de8c1ba09334a4defad7b3380528474  docs/reviews/r60-hub-keepalive/terminal-wire/readings-small-buffer.json
+c7b85deb059f9e5f7f8e03b74ef6d6701116f5db60f6f90e3b50162d44f384b3  docs/reviews/r60-hub-keepalive/terminal-wire/runs.json
+4219f142672cdd75dcb9d43833a49a8f1bb986430ac0b3feea362050f56ce2e4  docs/reviews/r60-hub-keepalive/terminal-wire/server.go.txt
