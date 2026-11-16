@@ -57,7 +57,7 @@ func (h *Hub) writeRecoveryReceipt(ctx context.Context, c *sessionClient, env mo
 	_ = c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress(systemAddressName, c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: time.Now().Unix(), Meta: meta})
 }
 func (h *Hub) handleRecoverableOutbound(ctx context.Context, c *sessionClient, env model.Envelope) bool {
-	if !metaBool(env.Meta, outboundRecoveryKey) {
+	if _, present := env.Meta[outboundRecoveryKey]; !present {
 		return false
 	}
 	reply := func(state, reason, id string) { h.writeRecoveryReceipt(ctx, c, env, state, reason, id) }
@@ -66,7 +66,7 @@ func (h *Hub) handleRecoverableOutbound(ctx context.Context, c *sessionClient, e
 	_, ne := hex.DecodeString(nonce)
 	sid := c.metricsAgentID
 	addr, ae := parseAddress(env.To)
-	if !ok || sid == "" || ne != nil || len(nonce) != 32 || len(env.ID) != 32 || len(env.Body) > 1<<20 || ae != nil || addr.Kind != addressSession || !reliablePrimaryEnvelope(env) || metaString(env.Meta, "outbound_sender_id") != sid {
+	if !metaBool(env.Meta, outboundRecoveryKey) || !ok || sid == "" || ne != nil || len(nonce) != 32 || len(env.ID) != 32 || len(env.Body) > 1<<20 || ae != nil || addr.Kind != addressSession || !reliablePrimaryEnvelope(env) || metaString(env.Meta, "outbound_sender_id") != sid {
 		reply("rejected", "outbound_recovery_unsupported", "")
 		return true
 	}
@@ -123,7 +123,7 @@ func (h *Hub) handleRecoverableOutbound(ctx context.Context, c *sessionClient, e
 		reply("unknown", "identity_unavailable", "")
 		return true
 	}
-	if sourceUser.State != identity.UserActive || source.State != identity.AgentActive {
+	if sourceUser.State != identity.UserActive || source.State != identity.AgentActive || source.Origin == identity.OriginExternal {
 		reply("rejected", "permission_denied", "")
 		return true
 	}

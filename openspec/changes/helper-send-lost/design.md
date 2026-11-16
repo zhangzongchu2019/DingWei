@@ -45,4 +45,10 @@ SL-004：迁移0077新增outbound_intent，以认证sender/source复合唯一；
 
 SL-005：认证capability提供sender稳定ID和最多1024个当前可见目标的ID/全名/别名，helper持久保存供离线受理；未知目标无绑定时target_identity_unavailable，不把裸名猜成ID。原意图固定targetID，重连不换目标；提交与物理发送前再次核身份、名称、用户状态、编组权限。权限检查沿用现有Identity服务，不宣称新增跨SQLite/PG分布式事务或撤权与每个字节写出的原子性。每代capability nonce及socket对象绑定回执，旧Hub不写body。首批为专属凭据普通根Agent单目标可靠队列；飞书/外部/子Agent、实际正文AMR扇出/语法通知明确unsupported，不移除标记改变语义。desktop专用reply路径保持独立。capability目标目录是有界快照，离线可漏新目标、不能凭同名替换恢复旧目标。
 
-SL-008：helper恢复日志只含source/sender/target稳定ID、attempt、phase、固定reason、delivery及版本，无正文/完整信封/凭据；本地账本与Hub裁决可按sender/source对账。caller私有摘要与source映射不自动上传。字段/路径和门证据见context与REPORT；未实跑门不得标绿。
+SL-008：helper私有outbound_event审计只含source/sender/target稳定ID、attempt、phase、固定reason、delivery及版本，无正文/完整信封/凭据；不在async控制路径同步flush外管道，避免新增事件循环反压；本地账本与Hub裁决可按sender/source对账。caller私有摘要与source映射不自动上传。字段/路径和门证据见context与REPORT；未实跑门不得标绿。
+
+
+R60查询补充（SL-002/005/006）：request_not_found只表示本地当前快照无映射，不证明另一个IPC提交已经停止，故仍unknown/保留同request_id。发送协议能力与目标目录可用性分开协商；临时目录错误不得伪装成旧Hub。目录不可用时只保留同一认证sender的既有私有绑定；换sender清目录并显式sender_identity_changed，不把旧意图改投新身份。目录每60秒或未知目标请求后只刷新元数据，不触发业务重发；没有绑定的新目标先target_identity_unavailable/可用原号重试。MCP调用方账本本身写失败在IPC写出前明确拒绝，查询传输失败仍返回原查询号。首轮候选canonical的两个profile均因旧工具数量断言26失败（新增dw_send_status后应27），原rc1记录保留；修正数量断言不放松工具权限或语义。
+
+
+诊断保留（SL-007/008）：新helper审计表最多保留8192个最近恢复阶段事件；`dw_send_status`最多返回该意图最近4条，并同时给审计最早序号/时刻。旧诊断淘汰不删除正文、request/source映射或Hub幂等栅栏；7天统计必须说明这段有限覆盖，不能推定完整日志。attempt计数是恢复领取，不代表实际网络帧或模型执行次数。临时存储错误只暂停writer/让查询返回unknown，不在async循环同步打印外管道；恢复后仍同source ID。v1范围校验前置于terminal/session_event/PM结果等业务分派，非法/false恢复标记不允许落回旧发送路径。

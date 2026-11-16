@@ -3,11 +3,13 @@ package m8
 import (
 	"context"
 	"errors"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -20,7 +22,7 @@ func TestOutboundRecoveryReplaysOriginalAcceptanceAndRejectsConflict(t *testing.
 	if !metaBool(cap.Meta, outboundRecoveryKey) || metaString(cap.Meta, "sender_agent_id") != e.agID {
 		t.Fatalf("recovery not negotiated: %+v", cap.Meta)
 	}
-	env := model.Envelope{ID: strings.Repeat("b", 32), To: "opus50ts.zzc#enrolled", Body: "durable body", Meta: map[string]any{"type": "agent_route", outboundReceiptRequestKey: true, outboundRecoveryKey: true, outboundReceiptNonceKey: strings.Repeat("c", 32), "outbound_sender_id": e.agID, "outbound_target_id": e.agID}}
+	env := model.Envelope{ID: strings.Repeat("b", 32), To: "opus50ts.zzc#enrolled", Body: "durable body", Meta: map[string]any{"type": "agent_route", outboundReceiptRequestKey: true, outboundRecoveryKey: true, outboundReceiptNonceKey: strings.Repeat("c", 32), "outbound_sender_id": e.agID, "outbound_target_id": e.agID, ipcBodyAMRMetaKey: true}}
 	receipt := func() model.Envelope {
 		w.send(env)
 		return w.until(func(e model.Envelope) bool { return metaString(e.Meta, "type") == "outbound_receipt" })
@@ -33,6 +35,12 @@ func TestOutboundRecoveryReplaysOriginalAcceptanceAndRejectsConflict(t *testing.
 	old, err := db.GetOutboundIntent(e.ctx, e.agID, env.ID)
 	if err != nil || old == nil || old.DeliveryID != metaString(first.Meta, "delivery_id") {
 		t.Fatal("receipt not durable", err)
+	}
+	delivered := w.until(func(e model.Envelope) bool { return e.ID == env.ID && metaString(e.Meta, "type") == "delivery" })
+	for _, key := range []string{outboundRecoveryKey, outboundReceiptNonceKey, "outbound_sender_id", "outbound_target_id", ipcBodyAMRMetaKey} {
+		if _, exists := delivered.Meta[key]; exists {
+			t.Fatal("sender transport metadata leaked to recipient", key)
+		}
 	}
 	// Existing in-memory envelope claims cannot eat the replay receipt.
 	second := receipt()
@@ -130,5 +138,60 @@ func TestOutboundRecoveryStableTargetAndRevocationCheckedAtPhysicalWrite(t *test
 	}
 	if err = e.hub.checkOutboundDelivery(e.ctx, original, &d); !errors.Is(err, errOutboundDenied) {
 		t.Fatal("revoked sender reached target", err)
+	}
+}
+
+type outboundIdentityCatalogFault struct {
+	identity.Store
+	fail atomic.Bool
+}
+
+func (s *outboundIdentityCatalogFault) GetUser(ctx context.Context, id string) (*identity.User, error) {
+	if s.fail.Load() {
+		return nil, errors.New("temporary identity read")
+	}
+	return s.Store.GetUser(ctx, id)
+}
+func TestOutboundRecoveryDirectoryFailureIsNotUnsupportedProtocol(t *testing.T) {
+	e := newAgentEnv(t)
+	fault := &outboundIdentityCatalogFault{Store: e.svc.Store}
+	e.svc.Store = fault
+	w := subWire(t, e)
+	cap := func() model.Envelope {
+		w.send(model.Envelope{ID: randomHex(16), Meta: map[string]any{"type": "session_capabilities", outboundReceiptRequestKey: true, "outbound_receipt_cap_nonce": strings.Repeat("a", 32)}})
+		return w.until(func(e model.Envelope) bool { return metaString(e.Meta, "type") == "outbound_capabilities" })
+	}
+	fault.fail.Store(true)
+	partial := cap()
+	if !metaBool(partial.Meta, outboundRecoveryKey) || metaBool(partial.Meta, "targets_available") || metaString(partial.Meta, "sender_agent_id") != e.agID {
+		t.Fatal("temporary catalog failure disguised as old Hub", partial.Meta)
+	}
+	fault.fail.Store(false)
+	restored := cap()
+	if !metaBool(restored.Meta, "targets_available") {
+		t.Fatal("catalog did not recover on same socket", restored.Meta)
+	}
+}
+
+func TestOutboundRecoveryUnsupportedCannotFallThroughToOutputOrLegacySend(t *testing.T) {
+	e := newAgentEnv(t)
+	w := subWire(t, e)
+	w.send(model.Envelope{ID: "scope-cap", Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true, outboundReceiptRequestKey: true, "outbound_receipt_cap_nonce": strings.Repeat("a", 32)}})
+	w.until(func(e model.Envelope) bool { return metaString(e.Meta, "type") == "outbound_capabilities" })
+	for i, typ := range []string{"terminal_output", "agent_route"} {
+		meta := map[string]any{"type": typ, outboundReceiptRequestKey: true, outboundRecoveryKey: true, outboundReceiptNonceKey: strings.Repeat("b", 32), "outbound_sender_id": e.agID, "outbound_target_id": e.agID}
+		if i == 1 {
+			meta[outboundRecoveryKey] = false
+		}
+		w.send(model.Envelope{ID: strings.Repeat(string(rune('c'+i)), 32), To: "opus50ts.zzc#enrolled", Body: "MUST-NOT-REACH-OUTPUT", Meta: meta})
+		response := w.until(func(e model.Envelope) bool { return metaString(e.Meta, "type") == "outbound_receipt" })
+		if metaString(response.Meta, "state") != "rejected" {
+			t.Fatal("unsupported path silently wrote body", response.Meta)
+		}
+	}
+	e.hub.mu.Lock()
+	defer e.hub.mu.Unlock()
+	if st := e.hub.terminals[terminalKey(AgentKeyID("zzc"), "opus50ts")]; st != nil && strings.Contains(st.buffer, "MUST-NOT-REACH-OUTPUT") {
+		t.Fatal("rejected intent affected terminal output")
 	}
 }

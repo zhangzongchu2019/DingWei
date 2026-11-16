@@ -92,9 +92,9 @@ class OutboundReceiptBroker:
                     meta.get('nonce') == self.cap_nonce and type(meta.get('version')) is int and
                     meta['version']==1 and meta.get('durable_agent_queue') is True):
                 self.negotiated = True
-                if (meta.get('outbound_recovery_v1') is True and isinstance(meta.get('sender_agent_id'),str)
+                if (meta.get('outbound_recovery_v1') is True and isinstance(meta.get('sender_agent_id'),str) and 0<len(meta['sender_agent_id'])<=256
                         and isinstance(meta.get('targets'),list) and len(meta['targets'])<=1024):
-                    self.recovery = {'sender_id':meta['sender_agent_id'], 'targets':meta['targets']}
+                    self.recovery = {'sender_id':meta['sender_agent_id'], 'targets':meta['targets'], 'targets_available':meta.get('targets_available',True) is True}
             return True
         if meta.get('type') == 'delivery_status_result_v1':
             pending = self.status_pending.get(meta.get('nonce')) if isinstance(meta.get('nonce'), str) else None
@@ -123,7 +123,10 @@ class OutboundReceiptBroker:
             future.set_result({'ok': True, 'stage': 'hub_durable_queued',
                                'source_message_id':meta['source_message_id'], 'delivery_id':meta['delivery_id']})
         elif meta.get('state')=='unknown' and meta.get('durable') is False:
-            future.set_exception(OutboundReceiptError('Hub confirmation unavailable'))
+            error=OutboundReceiptError('Hub confirmation unavailable')
+            reason=meta.get('reason')
+            error.reason=reason if isinstance(reason,str) and re.fullmatch(r'[a-z_]{1,64}',reason) else 'outbound_confirmation_unavailable'
+            future.set_exception(error)
         elif meta.get('state')=='rejected' and meta.get('durable') is False:
             reason=meta.get('reason')
             error=OutboundRejected('Hub rejected outbound request')

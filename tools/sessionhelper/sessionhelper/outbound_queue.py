@@ -13,6 +13,7 @@ import sqlite3
 import secrets
 import time
 import uuid
+from . import __version__
 
 
 class QueueRejected(Exception):
@@ -29,6 +30,7 @@ class OutboundQueue:
     MAX_PENDING = 1024
     MAX_BYTES = 32 << 20
     MAX_RECORDS = 65536
+    MAX_AUDIT = 8192
     MAX_ATTEMPTS = 64
     WINDOW = 24 * 3600
 
@@ -51,6 +53,8 @@ class OutboundQueue:
               lease_owner TEXT NOT NULL DEFAULT '', lease_until REAL NOT NULL DEFAULT 0,
               ever_attempted INTEGER NOT NULL DEFAULT 0);
             CREATE INDEX IF NOT EXISTS outbound_pending ON outbound_request(state,sender_id,next_attempt,created);
+            CREATE TABLE IF NOT EXISTS outbound_event(seq INTEGER PRIMARY KEY AUTOINCREMENT,source_id TEXT NOT NULL,ts REAL NOT NULL,data TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS outbound_event_source ON outbound_event(source_id,seq);
             CREATE TABLE IF NOT EXISTS outbound_target(alias TEXT PRIMARY KEY, agent_id TEXT NOT NULL, full_name TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS outbound_peer(key TEXT PRIMARY KEY,value TEXT NOT NULL);
             ''')
@@ -68,12 +72,19 @@ class OutboundQueue:
             raise ValueError('invalid authenticated sender')
         with self.db() as db:
             db.execute('BEGIN IMMEDIATE')
+            old=db.execute("SELECT value FROM outbound_peer WHERE key='sender_id'").fetchone()
             db.execute("INSERT OR REPLACE INTO outbound_peer VALUES('sender_id',?)", (sender_id,))
+            if old and old[0]!=sender_id:
+                db.execute("UPDATE outbound_request SET state=CASE WHEN ever_attempted=1 THEN 'unknown' ELSE 'rejected' END,reason='sender_identity_changed',body=CASE WHEN ever_attempted=0 THEN '' ELSE body END,meta=CASE WHEN ever_attempted=0 THEN '{}' ELSE meta END WHERE sender_id!=? AND state IN ('local_queued','unknown')",(sender_id,))
+            if targets is None and old and old[0]==sender_id:
+                db.commit();return
             db.execute('DELETE FROM outbound_target')
+            if targets is None:
+                db.commit();return
             for target in targets[:1024]:
                 if not isinstance(target, dict): continue
                 aid, full = target.get('agent_id'), target.get('full_name')
-                if not isinstance(aid, str) or not aid or not isinstance(full, str) or len(full) > 256: continue
+                if not isinstance(aid, str) or not 0<len(aid)<=256 or not isinstance(full, str) or not 0<len(full)<=256: continue
                 aliases = target.get('aliases', [])
                 if not isinstance(aliases, list): continue
                 for alias in [full, *aliases[:2]]:
@@ -134,8 +145,24 @@ class OutboundQueue:
 
     def status(self, request_id):
         with self.db() as db:
-            r = db.execute('SELECT * FROM outbound_request WHERE request_id=?', (request_id,)).fetchone()
-            return self.outcome(r) if r else {'phase': 'rejected', 'accepted_by': 'none', 'outcome': 'definitive_failure', 'reason': 'request_not_found', 'request_id': request_id, 'retryable': False}
+            r=db.execute('SELECT * FROM outbound_request WHERE request_id=?',(request_id,)).fetchone()
+            if r is None:
+                # A concurrent IPC transaction may still be committing. Absence
+                # here is not proof that the original request never took effect.
+                return {'phase':'unknown','accepted_by':'unknown','outcome':'unknown','reason':'request_not_found','request_id':request_id,'status_ref':request_id,'retryable':False}
+            result=self.outcome(r)
+            result['recent_attempts']=[json.loads(e[0]) for e in db.execute('SELECT data FROM outbound_event WHERE source_id=? ORDER BY seq DESC LIMIT 4',(r['source_id'],))]
+            oldest=db.execute('SELECT min(seq),min(ts) FROM outbound_event').fetchone()
+            result['audit_retention']={'maximum_events':self.MAX_AUDIT,'oldest_sequence':oldest[0],'oldest_utc_epoch':oldest[1]}
+            return result
+
+    def record(self,db,row,phase,reason,delivery_id=''):
+        event={'source_message_id':row['source_id'],'sender_agent_id':row['sender_id'],'target_agent_id':row['target_id'],
+               'attempt':row['attempts'],'phase':phase,'reason':reason,'delivery_id':delivery_id,'helper_version':__version__,'utc_epoch':self.clock()}
+        db.execute('INSERT INTO outbound_event(source_id,ts,data) VALUES(?,?,?)',(row['source_id'],self.clock(),json.dumps(event,sort_keys=True)))
+        # Diagnostic retention is bounded; business bodies and idempotency
+        # fences are separate and are never evicted with these events.
+        db.execute('DELETE FROM outbound_event WHERE seq <= (SELECT COALESCE(max(seq),0)-? FROM outbound_event)',(self.MAX_AUDIT,))
 
     @staticmethod
     def outcome(row):
@@ -143,7 +170,7 @@ class OutboundQueue:
         result = {'request_id': row['request_id'], 'source_message_id': row['source_id'], 'to': row['target'],
                   'phase': phase, 'accepted_by': 'hub' if phase == 'hub_durable_queued' else ('none' if phase == 'rejected' else 'local_helper'),
                   'outcome': 'accepted' if phase in ('local_queued', 'hub_durable_queued') else ('unknown' if phase == 'unknown' else 'definitive_failure'),
-                  'reason': row['reason'], 'retryable': False, 'status_ref': row['request_id']}
+                  'reason': row['reason'], 'retryable': False, 'status_ref': row['request_id'], 'attempts':row['attempts']}
         if row['delivery_id']: result['delivery_id'] = row['delivery_id']
         if phase == 'unknown': result['accepted_by'] = 'unknown'
         return result
@@ -158,7 +185,9 @@ class OutboundQueue:
             row = db.execute("SELECT * FROM outbound_request WHERE sender_id=? AND state IN ('local_queued','unknown') AND created>? AND attempts<? AND next_attempt<=? AND lease_until<=? ORDER BY created,request_id LIMIT 1", (sender_id, now - self.WINDOW, self.MAX_ATTEMPTS, now, now)).fetchone()
             if not row: db.commit(); return None
             db.execute("UPDATE outbound_request SET state='unknown',ever_attempted=1,attempts=attempts+1,lease_owner=?,lease_until=? WHERE request_id=?", (owner, now + 30, row['request_id']))
-            result = dict(db.execute('SELECT * FROM outbound_request WHERE request_id=?', (row['request_id'],)).fetchone()); db.commit(); return result
+            result = dict(db.execute('SELECT * FROM outbound_request WHERE request_id=?', (row['request_id'],)).fetchone())
+            self.record(db,result,'unknown','outbound_confirmation_pending')
+            db.commit();return result
 
     def finish(self, request_id, owner, *, phase, reason='', delivery_id=''):
         if phase not in ('hub_durable_queued', 'rejected', 'unknown', 'local_queued'): raise ValueError('invalid outbound phase')
@@ -170,6 +199,7 @@ class OutboundQueue:
                 phase, reason = 'unknown', 'outbound_recovery_exhausted'
             delay = min(30, 2 ** min(5, row['attempts'] - 1) + secrets.randbelow(100)/100)
             db.execute("UPDATE outbound_request SET state=?,reason=?,delivery_id=?,lease_owner='',lease_until=0,next_attempt=?,body=CASE WHEN ? IN ('hub_durable_queued','rejected') THEN '' ELSE body END,meta=CASE WHEN ? IN ('hub_durable_queued','rejected') THEN '{}' ELSE meta END WHERE request_id=?", (phase, reason, delivery_id, self.clock() + delay, phase, phase, request_id))
+            self.record(db,row,phase,reason,delivery_id)
             db.commit(); return True
 
     def unsupported_peer(self):

@@ -17,6 +17,7 @@ unknown 保留 request_id，使用 --status 查询，不自动重发或换新 ID
 import json
 import os
 import socket
+import sqlite3
 import sys
 import uuid
 
@@ -53,7 +54,6 @@ def unsupported_sub_agent_target(to: str) -> bool:
 def remember_request(request_id, target, body, meta=None):
     """Persist the caller identity before the first IPC write; never store body."""
     import hashlib
-    import sqlite3
     import re
     rid=request_id or uuid.uuid4().hex
     if not isinstance(rid,str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,128}',rid):
@@ -111,10 +111,13 @@ def main() -> None:
         if len(args)<2:sys.exit('usage: send.py target [--request-id ID] body | --file PATH; send.py --status ID')
         if unsupported_sub_agent_target(args[0]):sys.exit('发送失败：三段及以上子 Agent 目标当前不受支持；未降级为父会话，未发送。')
         recipient=complete_addr(args[0])
-        body=open(args[2],encoding='utf-8').read() if args[1]=='--file' and len(args)>2 else ' '.join(args[1:])
+        try:
+            body=open(args[2],encoding='utf-8').read() if args[1]=='--file' and len(args)>2 else ' '.join(args[1:])
+        except (OSError,ValueError):
+            print(json.dumps({'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':'input_unavailable','retryable':False}));sys.exit(1)
         if not body.strip():sys.exit('empty body')
         try:resp=ipc_send(recipient,body,rid)
-        except (ValueError,OSError):
+        except (ValueError,OSError,sqlite3.Error):
             print(json.dumps({'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':'caller_journal_rejected','retryable':False}));sys.exit(1)
     out=resp.get('outcome')
     if resp.get('ok') is False and not isinstance(out,dict):

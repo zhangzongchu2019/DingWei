@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import re
 import os
+import sqlite3
 import sys
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -140,7 +141,11 @@ def _tool_failure(request_id, category: str, caller_request_id=None) -> Response
 
 def _ipc_send(payload: dict[str, Any]) -> dict[str, Any]:
     from sessionhelper.send_dingwei import remember_request
-    rid=remember_request(payload.get('request_id'),payload['to'],payload['body'],{k:v for k,v in payload.items() if k not in ('to','body','request_id')})
+    rid=payload.get('request_id') or _uuid.uuid4().hex
+    try:
+        remember_request(rid,payload['to'],payload['body'],{k:v for k,v in payload.items() if k not in ('to','body','request_id')})
+    except (OSError,sqlite3.Error):
+        return {'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':'caller_journal_unavailable','request_id':rid,'retryable':True}
     try:
         result=_ipc_request({"type":"mcp_send",**payload,"request_id":rid})
     except _IPCFailure as exc:
@@ -156,7 +161,10 @@ def _ipc_send(payload: dict[str, Any]) -> dict[str, Any]:
 def _ipc_request(payload: dict[str, Any], *, timeout=None) -> dict[str, Any]:
     """Forward a validated send request to the live sessionHelper via a
     local Unix-domain socket, then return the helperʼs outcome."""
-    payload.setdefault("request_id", _uuid.uuid4().hex[:12])
+    if payload.get("type") in ("mcp_send","mcp_send_status"):
+        payload.setdefault("request_id", _uuid.uuid4().hex[:12])
+    else:
+        payload["request_id"]=_uuid.uuid4().hex[:12]
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
     if payload.get("type") == "spec_write_v1":
         rejection = spec_body_rejection(payload.get("body") or {})
@@ -281,7 +289,11 @@ _SEND_TOOL_SCHEMA["properties"]["request_id"]={"type":"string","pattern":"^[A-Za
 def _send_status(args):
     if not isinstance(args,dict) or set(args)!={'request_id'} or not isinstance(args['request_id'],str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,128}',args['request_id']):
         raise ValueError('invalid request ID')
-    return _ipc_request({'type':'mcp_send_status','request_id':args['request_id']})
+    try:
+        return _ipc_request({'type':'mcp_send_status','request_id':args['request_id']})
+    except _IPCFailure as exc:
+        exc.caller_request_id=args['request_id']
+        raise
 
 
 @register("send_message", "经 DingWei hub 向队友发送消息", _SEND_TOOL_SCHEMA)

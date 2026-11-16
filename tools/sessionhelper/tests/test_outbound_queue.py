@@ -41,7 +41,37 @@ class DurableQueueTest(unittest.TestCase):
         self.q.submit('one','target','body',{})
         self.q.update_peer('new-sender',[{'agent_id':'new-target','full_name':'target.owner','aliases':['target']}])
         self.assertIsNone(self.q.claim('writer','new-sender'))
-        r=self.q.claim('writer','sender');self.assertEqual(r['target_id'],'target')
+        self.assertEqual(self.q.status('one')['reason'],'sender_identity_changed')
+        self.assertEqual(self.q.status('one')['phase'],'rejected')
+
+
+    def test_absent_status_is_unknown_not_proof_of_non_acceptance(self):
+        result=self.q.status('may-be-submitting')
+        self.assertEqual(result['outcome'],'unknown')
+        self.assertEqual(result['status_ref'],'may-be-submitting')
+
+
+    def test_directory_failure_preserves_only_same_sender_cached_binding(self):
+        self.q.update_peer('sender',None)
+        self.assertEqual(self.q.submit('one','target','body',{})['phase'],'local_queued')
+        self.q.update_peer('different-sender',None)
+        with self.assertRaises(QueueRejected) as e:self.q.submit('two','target','body',{})
+        self.assertEqual(e.exception.reason,'target_identity_unavailable')
+
+
+    def test_attempt_audit_is_body_free_bounded_and_separate_from_fence(self):
+        self.q.MAX_AUDIT=2
+        original=self.q.submit('one','target','PRIVATE-BODY-SENTINEL',{})
+        for n in range(3):
+            row=self.q.claim('writer','sender')
+            self.assertIsNotNone(row)
+            self.q.finish('one','writer',phase='unknown')
+            self.now+=31
+        result=self.q.status('one')
+        self.assertEqual(len(result['recent_attempts']),2)
+        self.assertNotIn('PRIVATE-BODY-SENTINEL',json.dumps(result))
+        self.assertEqual(result['source_message_id'],original['source_message_id'])
+        with self.q.db() as db:self.assertEqual(db.execute('SELECT body FROM outbound_request').fetchone()[0],'PRIVATE-BODY-SENTINEL')
 
 
 class RecoveryWorkerTest(unittest.IsolatedAsyncioTestCase):
@@ -141,6 +171,21 @@ class CallerReceiptTest(unittest.TestCase):
             with self.assertRaises(SystemExit) as e:send_dingwei.main()
             self.assertEqual(e.exception.code,2)
             result=json.loads(output.getvalue());self.assertEqual(result['outcome'],'unknown');self.assertEqual(result['request_id'],'stable')
+
+
+    def test_mcp_status_transport_error_keeps_original_query_id(self):
+        from unittest import mock
+        from sessionhelper import mcp_shim
+        with mock.patch.object(mcp_shim,'_ipc_request',side_effect=mcp_shim._IPCFailure('ipc_unavailable')):
+            r=mcp_shim._dispatch(mcp_shim.Request('2.0','tools/call',{'name':'dw_send_status','arguments':{'request_id':'original'}},1))
+        data=json.loads(r.result['content'][0]['text'])
+        self.assertTrue(r.result['isError']);self.assertEqual(data['request_id'],'original')
+    def test_mcp_caller_journal_failure_never_dispatches(self):
+        from unittest import mock
+        from sessionhelper import mcp_shim
+        with mock.patch('sessionhelper.send_dingwei.remember_request',side_effect=OSError('private path')),mock.patch.object(mcp_shim,'_ipc_request',side_effect=AssertionError('IPC must not run')):
+            data=mcp_shim._send_message({'to':'target','body':'body','request_id':'original'})
+        self.assertEqual(data['outcome'],'definitive_failure');self.assertTrue(data['retryable']);self.assertEqual(data['request_id'],'original')
 
 
 class OfflineListenerLifetimeTest(unittest.IsolatedAsyncioTestCase):

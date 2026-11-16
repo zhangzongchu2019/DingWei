@@ -326,7 +326,8 @@ class SessionHelper(SubAgentConnection):
         from .outbound_recovery import OutboundRecovery
         self.outbound_recovery = await asyncio.to_thread(
             OutboundRecovery, self.cfg.inbox_db + '.outbound.db',
-            self.outbound_receipts, lambda: self.book.self_addr)
+            self.outbound_receipts, lambda: self.book.self_addr,
+            lambda: self.session_capabilities_envelope({'outbound_receipt_v1':True,'outbound_receipt_cap_nonce':self.outbound_receipts.cap_nonce}))
         self._persistent_ipc = True
         async def ipc_lifetime():
             await self._ipc_server(None, self.outbound_recovery.handler())

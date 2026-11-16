@@ -92,25 +92,36 @@ func (h *Hub) writeOutboundCapabilities(c *sessionClient, env model.Envelope) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	metadata := map[string]any{"type": "outbound_capabilities", "version": 1, "nonce": nonce, "durable_agent_queue": h.Repo != nil, "system": true, "no_mirror": true}
-	if _, ok := h.Repo.(outboundIntentRepository); ok && h.Identity != nil {
-		if sender, full, e := h.subAgentRoot(ctx, c); e == nil {
-			candidates, e := h.Identity.MentionCandidates(ctx, sender)
-			if e == nil {
-				targets := []map[string]any{{"agent_id": sender, "full_name": full, "aliases": []string{c.sessionName}}}
-				for _, candidate := range candidates {
-					if string(candidate.Agent.Origin) == "external" {
-						continue
+	if _, ok := h.Repo.(outboundIntentRepository); ok && h.Identity != nil && c.metricsAgentID != "" {
+		// Protocol support is independent of a temporarily unavailable directory.
+		// Otherwise one failed identity read could masquerade as an old Hub and
+		// incorrectly reject locally accepted, never-yet-written intents.
+		metadata[outboundRecoveryKey] = true
+		metadata["sender_agent_id"] = c.metricsAgentID
+		metadata["targets"] = []map[string]any{}
+		metadata["targets_available"] = false
+		source, e := h.Identity.Store.GetAgent(ctx, c.metricsAgentID)
+		if e == nil && source.State == "active" && string(source.Origin) != "external" {
+			user, e := h.Identity.Store.GetUser(ctx, source.OwnerLC)
+			if e == nil && user.State == "active" {
+				candidates, e := h.Identity.MentionCandidates(ctx, source.ID)
+				if e == nil {
+					targets := []map[string]any{{"agent_id": source.ID, "full_name": source.NameLC() + "." + user.ShortNameLC(), "aliases": []string{c.sessionName}}}
+					for _, candidate := range candidates {
+						if string(candidate.Agent.Origin) == "external" {
+							continue
+						}
+						if len(targets) >= 1024 {
+							break
+						}
+						targets = append(targets, map[string]any{"agent_id": candidate.Agent.ID, "full_name": candidate.FullName, "aliases": []string{candidate.Insert}})
 					}
-					if len(targets) >= 1024 {
-						break
-					}
-					targets = append(targets, map[string]any{"agent_id": candidate.Agent.ID, "full_name": candidate.FullName, "aliases": []string{candidate.Insert}})
+					metadata["targets"] = targets
+					metadata["targets_available"] = true
 				}
-				metadata["outbound_recovery_v1"] = true
-				metadata["sender_agent_id"] = sender
-				metadata["targets"] = targets
 			}
 		}
 	}
+
 	_ = c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress(systemAddressName, c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: time.Now().Unix(), Meta: metadata})
 }

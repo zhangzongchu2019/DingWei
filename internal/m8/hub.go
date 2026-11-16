@@ -1431,6 +1431,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		delete(env.Meta, "source_session_name")
 		delete(env.Meta, hubIngressMetaKey)
 		env.Meta[hubIngressMetaKey] = hubIngressAgent
+		if h.handleRecoverableOutbound(r.Context(), c, env) {
+			continue
+		}
 		if metaString(env.Meta, "type") == "console_spec_pm_assist_result" {
 			h.handlePMSpecAssistResult(r.Context(), metaString(env.Meta, "request_id"), c, env.Body)
 			continue
@@ -1452,9 +1455,6 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		}
 		if h.amr != nil && h.amr.shouldDropLegacyAgentRoute(c.keyID, c.sessionName, env) {
 			log.Printf("amr decision=legacy_route_dropped session=%s", c.sessionName)
-			continue
-		}
-		if h.handleRecoverableOutbound(r.Context(), c, env) {
 			continue
 		}
 		if h.handleConfirmedOutbound(r.Context(), c, env) {
@@ -4419,7 +4419,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			// Receipt control flag belongs to the sender/Hub only.
 			cleanMeta := make(map[string]any, len(env.Meta))
 			for k, v := range env.Meta {
-				if k != outboundReceiptRequestKey && k != outboundReceiptNonceKey && k != inboxReceiptRequestKey && k != outboundRecoveryKey && k != "outbound_sender_id" && k != "outbound_target_id" {
+				if k != outboundReceiptRequestKey && k != outboundReceiptNonceKey && k != inboxReceiptRequestKey && k != outboundRecoveryKey && k != "outbound_sender_id" && k != "outbound_target_id" && (k != ipcBodyAMRMetaKey || recoveryIntent(ctx) == nil) {
 					cleanMeta[k] = v
 				}
 			}
