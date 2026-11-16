@@ -381,7 +381,8 @@ class CallerRetentionTest(unittest.TestCase):
         for i in range(6):self.seed('expired-'+str(i),cutoff-1)
         self.seed('boundary',cutoff)
         with self.mock.patch.object(self.caller,'CALLER_MAX_RECORDS',2),self.mock.patch.object(self.caller,'CALLER_CLEANUP_BATCH',2):
-            self.caller.remember_request('new','target','body',{})
+            try:self.caller.remember_request('new','target','body',{})
+            except self.caller.CallerJournalRejected as exc:self.fail('expired caller rows consumed the window quota: '+exc.reason)
         rows=self.rows()
         self.assertEqual(len([i for i in rows if i.startswith('expired-')]),4,'caller cleanup did not remove exactly one bounded batch')
         self.assertIn('boundary',rows,'window boundary fence was deleted')
@@ -478,7 +479,9 @@ class CallerRetentionTest(unittest.TestCase):
                 db.execute("INSERT INTO outbound_request(request_id,sender_id,source_id,target_id,target,digest,body,meta,state,created,next_attempt) VALUES(?,'sender',?,'target','target.owner','digest','unfinished','{}',?,?,?)",(state,state,state,cutoff-1,cutoff-1))
             db.execute("INSERT INTO outbound_request(request_id,sender_id,source_id,target_id,target,digest,body,meta,state,created,next_attempt) VALUES('boundary','sender','boundary-source','target','target.owner','digest','','{}','rejected',?,?)",(cutoff,cutoff))
         self.q.MAX_RECORDS=2
-        result=self.q.submit('new','target','new body',{});self.assertEqual(result['phase'],'local_queued')
+        try:result=self.q.submit('new','target','new body',{})
+        except QueueRejected as exc:self.fail('expired outbox rows consumed the window quota: '+exc.reason)
+        self.assertEqual(result['phase'],'local_queued')
         with self.q.db() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM outbound_request WHERE request_id LIKE 'old-%'").fetchone()[0],3,'outbox terminal cleanup is absent or unbounded')
             for ident in ('local_queued','unknown','boundary'):

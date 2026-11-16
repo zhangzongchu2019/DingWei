@@ -24,7 +24,7 @@ ALLOWED = {
                   "供 CLI 子进程继承以运行 dingwei-file（R-V2-AGENT-FILE-UPLOAD）；读取仍走 env_get"),
     "mcp_shim.py": (1, "自包含入口：无包内 import，可能被当脚本直接启动，加相对 import 会改启动语义"),
     "dingwei_file.py": (1, "自包含入口：同 mcp_shim"),
-    "send_dingwei.py": (1, "被拷贝成 ~/.dingwei/send.py 单文件独立运行，无法 import 包；只读 IPC socket 入口，不再读 SH_KEY_ID 推断接收方"),
+    "send_dingwei.py": (2, "被拷贝成 ~/.dingwei/send.py 单文件独立运行，无法 import 包；读取 IPC socket 入口与尚无已注册 helper 策略时的 SH_OUTBOUND_CALLER_RETENTION_SECONDS（只验证时间窗，不读取凭据），不再读 SH_KEY_ID 推断接收方"),
 }
 
 
