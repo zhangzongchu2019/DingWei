@@ -2724,6 +2724,7 @@
         if (pEntry && pEntry.footer) {
           const turnKey = turnKeyFor(ev);
           if (turnKey) {
+            retainCanonicalTrustedProvenance(pEntry, ev);
             // input_posted is the delivery card while the input is queued. Once
             // its admitted user_input supplies a turn, move that same input into
             // the turn group and discard the provisional standalone card.
@@ -3744,6 +3745,7 @@
         const entry = c1InputCards.get(key);
         const turnKey = turnKeyFor(ev);
         if (!turnKey) return renderUser(ev);
+        retainCanonicalTrustedProvenance(entry, ev);
         deliveryTurnInputs.set(deliveryMergeKey(inputDelivery), turnKey);
         // The canonical input_posted card is provisional until a turn is known.
         // Move it into this turn exactly once when the admitted echo arrives.
@@ -3769,6 +3771,16 @@
       if (ev.kind === 'assistant_text') return renderAssistant(ev);
       if (ev.kind === 'error') return renderError(ev);
       renderUnknown(ev);
+    }
+
+    function retainCanonicalTrustedProvenance(entry, admittedEvent) {
+      // This call site is reached only after exact delivery-id lookup. Reuse
+      // normalized Hub-attested provenance from the canonical primary; never
+      // derive trust from the helper echo.
+      const canonical = entry?.canonicalPrimary ? entry.canonicalProvenance : null;
+      if (canonical?.trusted === true && admittedEvent?._norm && !admittedEvent._norm.conflict) {
+        admittedEvent._norm.prov = { ...canonical };
+      }
     }
 
     function eventTimeHtml(ev) {
@@ -4272,6 +4284,8 @@
       if (entry) {
         entry.card = card;
         entry.canonicalPrimary = ev.kind === 'input_posted';
+        entry.canonicalProvenance = entry.canonicalPrimary && norm.deliveryMode === 'primary' && norm.prov?.trusted === true
+          ? { ...norm.prov } : null;
         entry.content = content;
         entry.footer = footer;
         entry.stageEl = footer.querySelector('.stage-text');

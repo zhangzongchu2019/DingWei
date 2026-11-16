@@ -15,6 +15,13 @@ When the renderer has a canonical `input_posted` event for a delivery and later 
 - **AND** that input displays the Agent provenance icon from the canonical event
 - **AND** the input is associated with the admitted turn
 
+#### Scenario: Timer Agent source remains visible after admission
+
+- **GIVEN** a Hub-attested trusted Agent `input_posted` event whose display name is `timer`
+- **AND** a matching admitted `user_input` echo has no provenance block
+- **WHEN** the renderer merges the echo into its turn
+- **THEN** exactly one input is visible and its timer Agent source icon remains visible
+
 ### Requirement: Preserve provenance across injection acknowledgement
 
 When a `delivery_update` for a canonical input reports `cli_injected`, the renderer MUST move the canonical event to the timeline without dropping its provenance. A later admitted echo for that delivery MUST follow the trusted-provenance merge requirement.
