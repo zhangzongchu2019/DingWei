@@ -387,6 +387,8 @@ class CallerRetentionTest(unittest.TestCase):
         self.assertEqual(len([i for i in rows if i.startswith('expired-')]),4,'caller cleanup did not remove exactly one bounded batch')
         self.assertIn('boundary',rows,'window boundary fence was deleted')
         self.assertEqual(rows['new'],self.now)
+        self.caller.remember_request('next','target','next body',{})
+        self.assertIn('boundary',self.rows(),'cleanup crossed the retention window once old backlog drained')
     def test_window_same_id_and_conflicting_digest_survive(self):
         self.caller.remember_request('stable','target','body',{})
         self.now+=1
