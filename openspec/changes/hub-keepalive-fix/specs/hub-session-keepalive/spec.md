@@ -79,3 +79,11 @@ Hub MUST 对每次实际保活失败保留一条可关联session/connSeq的journ
 #### Scenario: HKF-S014 关停后拒绝新viewer输出工作
 - **WHEN** Hub后台组已封口却试图建立真实viewer输出责任
 - **THEN** 连接关闭并标记可见gap，不保留假活跃worker或静默丢输出
+
+
+### Requirement: HKF-009 控制回执写失败可观测
+会话出站接受回执与投递ACK确认在网络写失败时 MUST 各自累计有限obs计数，不得撤销已提交投递或ACK，不得将计数等同投递失败；发送端 MUST 以原消息身份查询恢复，不盲重做。
+
+#### Scenario: HKF-S015 两秒背压下回执不确定且可恢复
+- **WHEN** 真实会话的写槽被占用超过两秒，已提交投递的出站回执或ACK确认写入失败
+- **THEN** 对应outbound_receipt_write_fail或delivery_ack_confirm_write_fail加一，另一计数和diagnostic_drop不变，持久责任仍在；故障消除后原消息/投递身份恢复回执，成功写不增加失败计数

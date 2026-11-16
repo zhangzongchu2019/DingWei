@@ -422,3 +422,74 @@ func TestSessionIngressReadFailurePreservesTransportCause(t *testing.T) {
 		t.Fatal("reader EOF was relabelled as request cancellation", err)
 	}
 }
+
+// Contend the production write slot, rather than fabricating a write result.
+// No control frame is written on timeout; a committed ACK must remain committed.
+func TestSessionWriteDefaultControlFailuresAreObservableAndPreserveCommit(t *testing.T) {
+	counter := func() obs.WSView {
+		for _, v := range obs.Default.Snapshot().WS {
+			if v.Kind == "session" {
+				return v
+			}
+		}
+		t.Fatal("session observation missing")
+		return obs.WSView{}
+	}
+	for _, kind := range []string{"outbound_receipt", "delivery_ack_confirm"} {
+		t.Run(kind, func(t *testing.T) {
+			f := newACKV2Fixture(t, true)
+			before := counter()
+			// The fixture has already initialized the real connection's write slot.
+			<-f.client.writeGate
+			held := true
+			defer func() {
+				if held {
+					f.client.writeGate <- struct{}{}
+				}
+			}()
+			started := time.Now()
+			if kind == "outbound_receipt" {
+				f.hub.writeOutboundReceipt(f.ctx, f.client, "stable-source", strings.Repeat("a", 32), "queued", "ack-wire")
+			} else {
+				f.hub.handleDeliveryACKV2(f.ctx, f.client, f.ack("queued", "", "", f.stamp), f.record())
+			}
+			if elapsed := time.Since(started); elapsed < 1900*time.Millisecond || elapsed > 4*time.Second {
+				t.Fatalf("control write did not respect total two-second limit: %s", elapsed)
+			}
+			after := counter()
+			if kind == "outbound_receipt" {
+				if after.OutboundReceiptWriteFail != before.OutboundReceiptWriteFail+1 || after.DeliveryACKConfirmWriteFail != before.DeliveryACKConfirmWriteFail {
+					t.Fatalf("outbound receipt failure not separately observable: before=%+v after=%+v", before, after)
+				}
+				if d := f.record(); d.ID != "ack-wire" || d.State != "sent" {
+					t.Fatalf("receipt failure changed durable delivery: %+v", d)
+				}
+			} else {
+				if after.DeliveryACKConfirmWriteFail != before.DeliveryACKConfirmWriteFail+1 || after.OutboundReceiptWriteFail != before.OutboundReceiptWriteFail {
+					t.Fatalf("ACK confirm failure not separately observable: before=%+v after=%+v", before, after)
+				}
+				if d := f.record(); d.ID != "ack-wire" || d.State != "delivered" {
+					t.Fatalf("confirm failure rolled back committed ACK: %+v", d)
+				}
+			}
+			if after.DiagnosticDrop != before.DiagnosticDrop {
+				t.Fatal("control failure polluted diagnostic drop counter")
+			}
+			f.client.writeGate <- struct{}{}
+			held = false
+			if kind == "outbound_receipt" {
+				f.hub.writeOutboundReceipt(f.ctx, f.client, "stable-source", strings.Repeat("a", 32), "queued", "ack-wire")
+				got := f.readEnvUntil(f.conn, time.Second, func(e model.Envelope) bool { return metaString(e.Meta, "type") == "outbound_receipt" })
+				if got == nil || metaString(got.Meta, "delivery_id") != "ack-wire" || metaString(got.Meta, "source_message_id") != "stable-source" {
+					t.Fatalf("original receipt not restored: %+v", got)
+				}
+			} else {
+				f.sendAndConfirm("queued", "", "", f.stamp)
+			}
+			final := counter()
+			if final.OutboundReceiptWriteFail != after.OutboundReceiptWriteFail || final.DeliveryACKConfirmWriteFail != after.DeliveryACKConfirmWriteFail {
+				t.Fatal("successful control write counted as failure")
+			}
+		})
+	}
+}

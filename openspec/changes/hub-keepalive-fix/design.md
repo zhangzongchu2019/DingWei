@@ -66,8 +66,11 @@ helper仅terminal_output按UTF-8正文32768字节分块，每块前sleep(0)让�
 
 Q-1补对端真实收到Ping并禁止Pong后再取消的竞态，不用先cancel或固定sleep假装覆盖。保护删除须红在journal/PingFail/关闭分类。Q-2恢复legacy离线状态和正常Close：先停止接受该viewer的新输出，再由每既有viewer至多一个Hub登记的viewer_offline清理工作写readonly“会话已离线”，状态写仍共用1秒取槽+I/O预算；成功后用库正常关闭码1000与session offline原因。库Close本身写关闭帧最多5秒、等回应最多5秒（还含库自身goroutine退出等待），不冒称总握手1秒；不把这些等待放回Agent清理循环。已有output worker保持连接绑定，清理在结束后cancel；丢失显示内容或状态失败标gap。Hub封口拒绝清理时不建游离goroutine，明确gap并CloseNow。生命周期总关停预算/超时原样报告，不把尚未完成握手说成清理成功；不新增每输出帧goroutine。closeTerminalLocked不再为马上关闭的旧viewer白起output worker。
 
-Q-3诊断queue_items改为预算q.items，含在读/处理中，和字节口径一致。Q-4 reader/Pong/worker/journal的年龄钟统一h.now，UTC与注入时钟一致；elapsed仍用真实Stopwatch，不混为配置预算。Q-5后台组拒绝启动输出时stopped按q.mu保护并可见gap/关闭；Q-7若touch worker未获生命周期接纳则停止该连接，不留下只能塞通知却无人消费的假活跃路径。
+Q-3诊断queue_items改为预算q.items，含在读/处理中，和字节口径一致。Q-4 reader/Pong/worker/journal的年龄钟统一h.now，UTC与注入时钟一致；elapsed仍用真实Stopwatch，不混为配置预算。Q-5后台组拒绝启动输出时stopped按q.mu保护并可见gap/关闭；Q-7按组长22:00:43Z令只记关停期观察，不改touch后台登记行为。
 
-Q-6必须在正式集成/发版说明保留：sessionClient.write两秒总截止也覆盖outbound receipt与delivery_ack_confirm，其调用点仍忽略返回错误。相比旧的长等待，这可能提高“已提交但回执写失败”的频率，不能拿现网旧构建unknown样本估算本次增量。失败不回滚已提交业务、更不许可换新ID盲重发；①持久outbox/原sender+source ID恢复原回执、dw_send_status与delivery_status查询承担兜底。①②联合验证须注入慢读/写背压导致回执超过两秒，观测发送侧unknown或未确认状态、持久接纳仍在，以及故障消失后原ID/原delivery可恢复，不能伪造已收/模型已执行。本②单源未含①，不能把这格冒称已通过或计SKIP；集成前必须实际补联合读数。未增加控制写失败计数器，诊断drop仍只按原语义，不混作unknown统计。
+Q-6必须在正式集成/发版说明保留：sessionClient.write两秒总截止也覆盖outbound receipt与delivery_ack_confirm，其调用点在错误时分别累计有限obs计数。相比旧的长等待，这可能提高“已提交但回执写失败”的频率，不能拿现网旧构建unknown样本估算本次增量。失败不回滚已提交业务、更不许可换新ID盲重发；①持久outbox/原sender+source ID恢复原回执、dw_send_status与delivery_status查询承担兜底。①②联合验证须注入慢读/写背压导致回执超过两秒，观测发送侧unknown或未确认状态、持久接纳仍在，以及故障消失后原ID/原delivery可恢复，不能伪造已收/模型已执行。本②单源未含①，不能把这格冒称已通过或计SKIP；集成前必须实际补联合读数。控制写失败计数见下段，diagnostic_drop只按原语义，不混作unknown统计。
 
 HKF-PM04既有真实WS补证的helper/夹具字节本轮不改，仍只复用有限控制帧结论；不限速大正文吞吐下降是已披露代价，正式发版说明需点明，不上调为生产SLO或解释419次。
+
+
+组长22:00:43Z处置补正：Q6新增session obs有限计数outbound_receipt_write_fail与delivery_ack_confirm_write_fail，各自在对应c.write返回错误时加一（含两秒写槽/I/O截止或caller取消）；不混入diagnostic_drop、不按错误字符串/ID扩张标签，不回滚已提交队列/ACK，也不把失败计数解释为丢信或模型未执行。Console monitor底层WS快照可观测；进程重启清零，不是持久账本。①dw_send_status/原sender+source幂等恢复仍是兜底。②本源用真实连接写槽占用超过2秒测到计数及原delivery ACK提交/同ID回执恢复；未包含①helper outbox，因此完整①②联合格仍待集成。Q7依令仅观察，撤回eca中的touch后台拒绝退出额外改动，保留关停期已知边界。

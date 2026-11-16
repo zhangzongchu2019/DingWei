@@ -54,10 +54,12 @@ func (h *Hub) handleDeliveryACKV2(ctx context.Context, c *sessionClient, env mod
 		return true
 	}
 	// The confirmation is emitted only after the phase transaction commits.
-	_ = c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress("workpulse", c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: h.now().Unix(), Meta: map[string]any{
+	if err := c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress("workpulse", c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: h.now().Unix(), Meta: map[string]any{
 		"type": "delivery_ack_confirm", "delivery_id": d.ID, "ack_protocol": 2,
 		"processing_mode": mode, "ack_generation": d.AckGeneration, "state": phase,
-	}})
+	}}); err != nil {
+		c.obsConn.DeliveryACKConfirmWriteFailed()
+	}
 	// Re-emitting the current maximum stage supports replay after Hub restart;
 	// a late queued ACK must not publish a regression from injected/processed.
 	switch result.State {
