@@ -3,7 +3,7 @@
 - 派单：组长 opus50tc2k.zzc，2026-11-16T16:05:24Z，delivery `dw-dlv_39ae6d690231e41b165d1feda136311d`；补正 16:06:35Z，delivery `dw-dlv_c6d3f8b67fd09329ca98b23714ad5d18`（业主 rulings ㊿-补124「两个 MCP --- 修复」⇒ 两工具必须修复可用，不接受「下线＋错误码」）。
 - 执行：qwen38mvb4.zzc（唯一执行者）。复核：togpt60lunazzc。终审：组长。
 - 仓库 `git@git.code.tencent.com:wego-ai/dingwei.git`，分支 `qwen38mvb4/r60-mcp-tools`，基线 main `d2cc47c7e699eb45efb3a07ee197aa8c20a9f07e`。
-- 规格：`openspec/changes/r60-mcp-helper-tools/`（9 条需求增量 SHB-001～006、MLO-001～003，21 个 Scenario）。
+- 规格：`openspec/changes/r60-mcp-helper-tools/`（9 条需求增量 SHB-001～006、MLO-001～003，24 个 Scenario＝首轮 21＋改单 SHB-S022～S024）。
 - 边界：不部署、不并 main、不 apply／archive、不动 r59 冻结锚与镜像。未连现网、未向在线席位发探针、未读取他席数据；helper 环境事实只取本机自身进程。
 - 下文基线行号相对 `d2cc47c7e`，可用 `git show d2cc47c7e:<文件>` 独立核对；新增代码按「文件＋符号」给出。
 
@@ -150,6 +150,42 @@
 - 处置：改测试的造场景方式，不再碰 `sessionClient` 字段——改用 `e.svc.Store.(*identity.MemStore).SetUserState(ctx, "zzc", identity.UserDisabled, ...)` 让 `metricsBinding` 的「属主须 active」这一既有校验自然失败（`internal/m8/agent_disk_metrics.go:30-31`）。断言强度不变：仍要求回 `ok=false/status=unavailable` 且 `client.heartbeat` 未被写入。
 - 复验：最终树 `-race` 全 6 个 `TestSessionHeartbeat*` PASS、`ok 63.088s`、0 处 DATA RACE（第 5 节）；因该用例的造场景机制变了，G7 刀在最终树上重跑仍 KILLED（第 4 节表内 19:32:35Z 行），且全 34 刀一并重跑。
 - 连带修订：规格场景 `SHB-S012` 原写「凭据绑定身份缺失」，只覆盖 `metricsBinding` 的一个分支；已改为「绑定校验任一项不通过（`metricsAgentID` 缺失／Agent 非 active 或非 selfhost／`key_id`·会话名不符／属主非 active）」，与该用例实际走的分支和 G7 刀删除的整处校验对齐，避免规格与测试口径漂移。需求正文未改。
+
+### 4.3 改单三刀（组长 2026-11-16T21:59:28Z）与旧刀重跑
+
+改单要求 a／b／c 三格用例，并各配一刀「删／挪保护必须转红」。三刀都在**最终树**上隔离运行（`go test ./internal/m8/ -run '^<用例名>$' -count=1 -v`），转红全部是业务断言，不是编译失败、也不是 panic；每刀跑完立即以运行前读入的原文整体回写还原。
+
+还原证据（三条独立、都是**内容**级）：`internal/m8/session_heartbeat.go` 的 sha256 = `b78b05291e3a1a824a11d502c93a072353fba0df14ed2c31de0f0b781655a489`，与本单产品锚 `b4c42adb75c7` 里该文件的 blob 逐字节相同；`git diff --stat HEAD -- internal/m8/session_heartbeat.go` 为空；`git status --porcelain` 中该产品文件不出现（只有测试与文档被改）。
+
+🔴 口径更正（本席自查，适用于本轮与此前两轮）：本席此前记录的 `git ls-files -s -c -o --exclude-standard | sort | sha256sum`（本轮 `39ab6711…`、首轮 `25bd9d81…`）反映的是**索引**状态，不是工作树内容——变异只在临时改文件后立即回写、从不 `git add`，所以该值同值只能证明「索引未变」，**不能**单独用作「逐字节还原」的证据。首轮 REPORT §4／tasks T-08 用它作还原证明的表述据此更正：还原的实际证据是产品文件相对 HEAD 无 diff，且最终树上重跑的门与变异读数自洽。本轮不再拿该哈希充当还原证明，只作为「索引未被本席改动」的旁证保留。
+
+| 刀 | 判据 | 产品编辑（`internal/m8/session_heartbeat.go`） | 隔离用例 | rc | 起始 UTC | 转红的断言 |
+| --- | --- | --- | --- | --- | --- | --- |
+| G15 | SHB-S022（改单 a） | `:94` 的 `if !current \|\| !inboxInstance.MatchString(nonce) {` → `if false && !current \|\| !inboxInstance.MatchString(nonce) {`（等价于去掉 `!current`，保留 nonce 判断且仍可编译） | `TestSessionHeartbeatSupersededConnectionIsSilentForEveryBodyClass` | 1 | 2026-11-16T22:39:30Z | `legal_body` → `session_heartbeat_test.go:566 a dropped frame was billed to the superseded connection`；`invalid_body` → `:556 invalid_body must be dropped silently, but the connection answered: … result:map[ok:false status:invalid]`；`oversize_body` 仍绿（在 `:85` 已被丢弃） |
+| G16 | SHB-S023（改单 b） | 把计费三行 `h.mu.Lock()`／`c.lastHeartbeatAttempt = now`／`h.mu.Unlock()` 连同其注释移到 `validSessionHeartbeat` 的 invalid 分支之后 | `TestSessionHeartbeatInvalidAttemptIsBilledBeforeValidation` | 1 | 2026-11-16T22:39:48Z | `:605 the invalid attempt was not billed, so the legal frame escaped the throttle map[ok:true … status:recorded]` |
+| G17 | SHB-S024（改单 c） | 删去 `:85` 的 `len(env.Body) > sessionHeartbeatMaxBytes`（只留 `c == nil`）⇒ 4096 上界改由 `validSessionHeartbeat` 在计费之后判定，即「把超长判断挪到计费之后」 | `TestSessionHeartbeatOversizeFrameIsNotBilled` | 1 | 2026-11-16T22:40:05Z | `:637 the oversize frame must be dropped silently, but the connection answered: … result:map[ok:false status:invalid]` |
+
+旧刀在同一最终树上隔离重跑（确认新用例没有把旧刀的红吃掉）：
+
+| 刀 | 产品编辑 | 隔离用例 | rc | 起始 UTC | 转红的断言 |
+| --- | --- | --- | --- | --- | --- |
+| G4n（＝旧 G4） | 1 秒限流短路 | `TestSessionHeartbeatInvalidAttemptIsBilledBeforeValidation` | 1 | 2026-11-16T22:41:24Z | `:605 … escaped the throttle` |
+| G5n（＝旧 G5） | `:94` 两个条件一起短路 | `TestSessionHeartbeatSupersededConnectionIsSilentForEveryBodyClass` | 1 | 2026-11-16T22:41:40Z | `:566` ＋ `:556`（与 G15 同） |
+
+加上首轮 34 刀，本单累计 **37 刀全部 KILLED**（34＋G15／G16／G17），无存活、无改判、无把失败改成 SKIP。
+
+**改单 d：34 刀里为何没有刀钉住这两处**——如实记账，两处都是**刀的形状与用例强度**问题，不是产品缺陷：
+
+- **a**：旧 **G5** 是最接近的一刀，但它把 `:94` 的 `!current` 与 nonce 校验**一起**短路，所以它的红只来自 nonce 分支（`TestSessionHeartbeatSilentDrops/bad_nonce`，第 4 节 19:32:01Z 行），`old_connection` 格当时是绿的。旧用例集的 `old_connection` 格只发**合法**正文，且只断言「不写样本／读出口不为 ok」，从不断言「不应答」；而合法正文即使删掉 `!current`，也会被 `:118` 的第二道连接复核挡在缓存写入之前，行为完全相同。两处叠加，`!current` 单独一刀就存活了——与组长 21:58Z 两刀的读数一致。新 a 用例补的正是这两点：三类正文各一格、在真实套接字上断言零应答、并断言不计费（`lastHeartbeatAttempt` 保持零值）。
+- **b**：旧 **G4**（删 1 秒限流）与旧 **G6**（删超界静默丢弃）都不动**计费点的位置**；旧的限流用例序列是「合法→合法」，把计费移到校验之后在该序列里不可分辨（第一帧照样计费、第二帧照样 throttled）。所以「尝试先计费再校验」这半句在旧 34 刀里没有对应的刀。新 b 用例改用「不合法→合法」把它变成可分辨的：计费若在校验之后，第二帧就是 `recorded` 而不是 `throttled`。
+- **c**：旧 **G6** 与 G17 是**同一处产品编辑**，但旧 G6 的红来自 `TestSessionHeartbeatSilentDrops` 夹具的 **nil-conn panic**（该夹具的 `sessionClient` 没有 `conn`，一旦走到应答路径就 panic），红得不够干净；而且 panic 会中断整个测试二进制——本轮 package 级重跑 G17 时 `SilentDrops/oversize_body` 先 panic，新 c 用例根本没跑到（`passed=15`、rc=1，该轮判定记为 RED_OTHER 而不是 KILLED，读数保留在 `/tmp/r60/mutation-results-gaidan.json`）。因此 c 刀改在真实套接字上隔离取证，得到干净的业务断言红。
+
+两处取证口径的更正（本席自查，均为**测试侧**问题，产品未改）：
+
+1. `assertNoEnvelope`（`internal/m8/hub_test.go:6533`）读到**第一个可忽略帧就返回**，而新准入连接总会先收到一条 `agent_network_skill` 上线指南推送；于是「静默」断言会被这条推送吃掉，把紧随其后的心跳应答藏起来。首轮 a／c 用例因此只在「不计费」断言上转红，没有抓到应答泄漏。改为后台常驻读取、只转发可能是应答的帧（`session_heartbeat_result_v1` 或 `meta.error=true`），再用定时器断言窗口内静默（`replyFrames`／`assertNoHeartbeatReply`）。
+2. 用带超时的 context 直接 `conn.Read` 会**关掉连接**（coder/websocket 语义），首轮 c 用例因此在第二帧写入时报 `use of closed network connection`；上一条的后台读取形状同时解决了这一点。
+
+隔离日志与 sha256：`/tmp/r60/mut-G15i.log`、`mut-G16i.log`、`mut-G17i.log`、`mut-G4n.log`、`mut-G5n.log`，元数据 `/tmp/r60/mutation-gaidan-isolated-meta.json`、`/tmp/r60/mutation-oldcuts-meta.json`（本机，不随 Git；刀文本与命令已在上表逐字给出，可据此重放）。
 
 ## 5. 门与读数
 
@@ -335,6 +371,42 @@ STRICT_RC=0        2026-11-16T20:52:06Z（全部文档编辑定稿之后重跑�
 | `gate-wrongpython-{inventory,discovery}.log`（第 4 轮复现） | 见 5.6 |
 | `openspec-strict-final.log`（中间轮 20:49:22Z）与 `openspec-strict-final2.log`（定稿轮 20:52:06Z） | 两份逐字节相同，sha256 同为 `5480ae3f63e25204fffe7be44517799fd72e4a9cc567160e857705b044055eac` |
 
+改单轮（T-13）新增：
+
+| 文件 | sha256 |
+| --- | --- |
+| `build-tests-gaidan.log`（改单后绿轮全量门，16121 行） | `c788fdd3e3a879bd17d4f1b4af13e67faacffde44e7c459868dc19792762205e` |
+| `go-m8-gaidan-v.log`（`-v`，930／19／0 与 1572／37／0 的出处） | `f3eeafd229e7bd2c44cc2c10f19685183f25f4adf3e86bd2762b296c09876f6a` |
+| `go-race-gaidan.log`（定向 `-race` 27 PASS、0 DATA RACE） | `58dc14d60374f1949b7a909f300704f5078f7a067be220932b2ae12d45c0c976` |
+| `new3-focused-v3.log`（定向非 race，27 PASS） | `e2cca56ee3a344d13781a359d0f7c5aafff67d90e77b97ba8f088450504dfd0b` |
+| `mut-G15i.log`／`mut-G16i.log`／`mut-G17i.log`（改单三刀隔离红） | `0ca6a64b…1cf04`／`b9646e38…0d219`／`2313d4da…81eb3`（全值见 4.3 与 `/tmp/r60/mutation-gaidan-isolated-meta.json`） |
+| `mut-G4n.log`／`mut-G5n.log`（旧刀在新用例上重跑） | `33d86bbb…d6fe`／`8e7f4150…5d11` |
+| `mutation-results-gaidan.json`（package 级那轮，含 G17 记为 RED_OTHER 的原因） | `f48e10a6848af1017af15eb8914103579a6ff7584e8154da2f923164c2f6510e` |
+| `mutation-gaidan-isolated-meta.json`／`mutation-oldcuts-meta.json` | `a057c4d7…91024`／`56c9ec59…de496` |
+| `openspec-strict-gaidan.log`（红轮 35／1）与 `openspec-strict-gaidan2.log`（绿轮 36／0） | `f184f940…3400c`／`e95944fe…d90d9` |
+| `PROBE-superseded-reply-path_test.go.txt`（临时探针，定位 4.3 末两条取证口径；跑完已从树内移除，未提交） | `d5034c0f6fa61b278cedc6a67ed49fafece12bfdef8eddfd268ca8f98dd3e7e5` |
+| `skip-names-gaidan.txt`（改单轮 37 个 SKIP 逐名，与 5.3 清单 `diff` 为空） | `cb4d4b8aea4268884253138bac72d55ee3d1909b226c0db54807feb9da7872cf` |
+
+### 5.11 改单（T-13）后的门重跑
+
+环境与 5.0 完全相同（`env -i`＋白名单、普通用户 `is3`、`HOME=/tmp/r60home`、`TMPDIR=/tmp/r60tmp`、`GOPROXY=off`、`GOFLAGS=-mod=mod`、helper 一律走锁定 venv `/opt/dingwei/sessionhelper-venv/bin/python3`＝Python 3.12.3；`PATH` 前置该 venv，避免 5.6 那次操作错误）。产品文件相对 `b4c42adb75c7` 逐字节未动（`internal/m8/session_heartbeat.go` sha256 `b78b05291e3a1a824a11d502c93a072353fba0df14ed2c31de0f0b781655a489`，证据见 4.3）；本轮只改 `internal/m8/session_heartbeat_test.go` 与 4 份文档（spec／design／tasks／本报告）。未连现网、未向任何在线席位发探针、未用 PostgreSQL、未读取他席数据。
+
+| 项 | 命令 | 读数 | UTC |
+| --- | --- | --- | --- |
+| 全量门 | `sh scripts/run-build-tests.sh` | `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`、`BUILD_TESTS_RC=0`；两 profile 各 **1230／1230**（`groups=[1221,9]`、`files=96`、`rc=0`）；三闸 repo-boundary／dependency-ratchet／tenant-isolation 全过；`HELPER_INVENTORY_OK files=96`（本轮未新增 helper 测试文件，清单与计数未改） | 22:52:47Z～23:06:04Z（**一次绿，无重试**） |
+| 受影响包整包 | `go test ./internal/m8/ -count=1 -v -timeout 60m` | rc=0，`ok 445.813s`；顶层 **930 PASS／19 SKIP／0 FAIL**，含子测试 **1572 PASS／37 SKIP／0 FAIL** | 22:43:02Z～22:50:30Z |
+| SKIP 集合 | 同上日志逐名提取后与 5.3 清单比对 | **37 名逐字节相同**（`diff` 为空）⇒ 未新增 SKIP、未把失败改成 SKIP | 22:50:30Z |
+| 并发检测（定向） | `go test ./internal/m8/ -run TestSessionHeartbeat -race -count=1 -v` | rc=0，`ok 73.537s`，**27 PASS**（9 顶层＋18 子格）／0 FAIL／0 SKIP／**0 处 `WARNING: DATA RACE`** | 22:50:30Z～22:52:15Z |
+| 定向（非 race） | `go test ./internal/m8/ -run TestSessionHeartbeat -count=1 -v` | rc=0，`ok 6.215s`，27 PASS／0 FAIL | 22:38Z |
+| vet | `go vet ./internal/m8/` | rc=1，7 条全部为 `feishu_sticky*_test.go` composites 既有告警（不在本单 diff 内），本单文件 0 条（见 5.4） | 22:24Z |
+| OpenSpec 严格校验 | `OPENSPEC_TELEMETRY=0 npm exec --yes --package=@fission-ai/openspec@1.16.0 -- openspec validate --all --strict --no-interactive` | **36 passed／0 failed，`STRICT_RC=0`** | 22:50:52Z（规格定稿轮）与 **23:09:20Z～23:09:22Z（全部文档含 tasks 交接记录定稿后重跑，同样 36／0、rc=0**，日志 `openspec-strict-gaidan3.log` sha256 `087abb1bd0ce5a56f5462fbff53d466a6d74070a47eeea112beee39f84744385`） |
+
+计数变化对齐：顶层 PASS 927→**930**（新增 3 个测试），含子测试 1566→**1572**（3 个新测试＋a 用例的 3 个子格），SKIP 19／37 两个口径均不变。
+
+**如实记录本轮一次 rc≠0**：22:4xZ 那次 strict 是 **35 passed／1 failed、rc=1**，原因是本席把 SHB-003 需求正文写到 **592 字符**，触发 strict 的 `Requirement text is very long (>500 characters)`。处置：把「三类成本恒定／不查身份」与「只靠第二道复核会漏出 `invalid` 应答」的细节移到 `design.md` 决定 4 与新场景 SHB-S022 的 THEN，需求正文压到 **490 字符**，规范语义不减；重跑 36／36、rc=0。没有通过放宽校验、删场景或改判据的方式转绿。红轮与绿轮日志都留档（见 5.10）。
+
+**未跑＝不覆盖（本轮）**：浏览器全量回归（本单无前端改动，与首轮同口径）、`identity`／`store`／`cmd` 等未受影响包、整包 `-race`、canonical 之外的发布级门。首轮的未覆盖项（7 节）继续有效，本轮没有把它们变成已覆盖。
+
 ## 6. 部署依赖与兼容
 
 - helper 与 Hub 需**同批发布**。只升 helper：能力头缺失 ⇒ 工具返回确定的 `unsupported`（不再是 `helper_rejected`，也不会把未知子类型发给旧 Hub）。只升 Hub：旧 helper 不发该子类型 ⇒ 行为无变化。
@@ -347,6 +419,7 @@ STRICT_RC=0        2026-11-16T20:52:06Z（全部文档编辑定稿之后重跑�
 - 无前端展示：业主侧只能经既有签名路由读到 `session_heartbeat` 字段；Console／View 是否展示为 SHB-PM01，本单未做，也因此**没有浏览器回归读数**。
 - 未覆盖：多 Hub 实例间的自报一致性（与 `inbox_lag` 同一单实例假设）、心跳历史序列与告警阈值、真实现网 Hub 上的端到端自报（未连现网、未发探针）。
 - 不承诺：Hub 重启后的自报连续性、可用性百分比、以及 `heartbeat_report` 之外的其它 datad 遗留工具（`project_context` 等）的通路修复。
+- 测试形状观察（未改，如实记）：既有 `TestSessionHeartbeatSilentDrops` 的夹具 `sessionClient` 没有 `conn`，因此「本不该应答却应答了」在该夹具里表现为 **nil-conn panic** 而不是干净的断言红，且 panic 会中断整个测试二进制、掩盖同轮其它用例。改单 a／c 两格改用真实套接字（`replyFrames`＋定时器）取证，得到干净的业务断言红；旧夹具保持原样未动——改它会牵动 5 个既有格，超出改单「只补 a／b／c」的范围，如需统一另立单。
 
 ## 8. 坐标索引
 

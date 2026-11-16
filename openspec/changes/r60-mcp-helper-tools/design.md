@@ -31,6 +31,10 @@ shim 先按固定 schema 校验参数（非法即失败，不产生 IPC 请求�
 
 沿用 `agent_disk_metrics.go:39-71` 的纪律：先取 `lastHeartbeatAttempt` 判 1 秒窗口，被限流者立刻拿到 `throttled` + `retry_after_ms`（>0 且 ≤1000）并且不覆盖已存样本；通过限流后才计费本次尝试，再做解析与身份查询。这样一条连接无法用非法正文把 Hub 拖进无界的身份解析。IPC 监听器对处理器加 5 秒上限（超时 → `unknown`），shim 侧给 8 秒，留出手工可见的差值；处理器抛 `ValueError`／`TypeError` → `invalid`；未接处理器 → `unsupported`。四种负结果都不是 `helper_rejected`。
 
+**计费前的三道闸门（有意的边界例外；组长 2026-11-16T21:59:28Z 改单第一条）**：`handleSessionHeartbeat` 在计费点之前静默丢弃三类帧——超过 4096 字节的正文（`internal/m8/session_heartbeat.go:85`）、非法 nonce 与非当前连接（同文件 `:94`）。三者成本恒定：长度是 `len()`，nonce 是一次已编译正则，当前连接是一次已在 `h.mu` 内的指针比较；都不查身份、都不应答。不计费是刻意的——超界帧若计费，紧随其后的合法自报就会拿到 `throttled`，于是一条畸形帧就能把同一连接的正常心跳限流掉。因此「尝试先计费再校验」的准确含义是：**通过这三道之后**的语义校验（`validSessionHeartbeat`）与身份查询（`metricsBinding`）之前必须计费。
+
+被顶替连接的「不应答」只能由 `:94` 的首道复核保证。`:118` 的第二道连接复核位于 `validSessionHeartbeat` 之后，只挡得住缓存写入、挡不住 `invalid` 应答，因此它是缓存防线而不是不应答的保证。SHB-S022／S023／S024 按这个差别分别钉住三类正文的静默与不计费、不合法帧先计费、超界帧不计费。
+
 ### 5. 业主侧读取：追加字段而不是新路由（SHB-006）
 
 读取挂在既有 View Service 签名路由 `POST /internal/view-v2/{session}/resources`（`agent_disk_metrics.go:99-176`），响应体追加 `session_heartbeat` 键。理由：该路由已有属主签名、`ResolveFullName` 与 `req.Agent` 的双重校验、以及 `len(body) > 4096 → 503` 的硬界；新增路由会复制这三件事并扩大评审面。读取路径自身再核 `metricsBinding`、连接未被顶替、样本是否存在：未绑定或身份不符 → `unknown`；无样本 → `unsupported`；有样本 → `ok` + `report` + `observed_at_ms` + `age_ms` + `stale` + `connection_seq`。读取不续期样本，超过 30 分钟只标记 `stale=true`，样本仍可见——「旧但真实」优于「渲染成新鲜的零值」。
@@ -71,6 +75,10 @@ helper 在**任何写入之前**的未命中返回上附显式标记 `outcome=no
 34 刀全部 KILLED，逐刀命令、UTC 与转红用例见 `docs/reviews/r60-mcp-helper-tools/REPORT.md` 第 4 节。判据↔刀号：SHB-001＝G13／P1／P19；SHB-002＝G1／G2／G3／P4／P5／P6／P15／P16；SHB-003＝G5／G6／G7／G14／P8／P9；SHB-004＝G4／P7／P17／P18；SHB-005＝P2／P3／P3b；SHB-006＝G8／G9／G10／G11／G12；MLO-001＝P12／P13；MLO-002＝P10／P11；MLO-003＝P14。
 
 首轮 33 刀中 G9、G11、P3 存活，原因都是**用例强度不足而非产品缺陷**：G9 的连接级复核在 `currentSessionHeartbeat` 已重查当前连接时被冗余掩盖，G11 的调用方 agent_id 复核被读侧 `metricsBinding` 掩盖，P3 的 `abort` 被 5 秒超时掩盖（结果相同、只是慢）。已分别补：直接调用 `sessionHeartbeatForClient` 断言被顶替连接读为 `offline`；连接合法绑定时用错误的调用方 agent_id 断言 `unknown`；`abort` 后以 `wait_for(task, 0.5)` 断言立即释放，并断言别的连接断开不释放本连接等待方（新增 P3b 刀）。补强后 4 刀全部 KILLED。
+
+改单三刀（组长 2026-11-16T21:59:28Z；隔离运行，转红均为业务断言而非 panic 或编译失败，全部 KILLED）：**G15** 去掉 `:94` 的 `!current`（保留 nonce 判断）⇒ `TestSessionHeartbeatSupersededConnectionIsSilentForEveryBodyClass` 的 legal_body 与 invalid_body 两格红（SHB-S022）；**G16** 把计费移到 `validSessionHeartbeat` 之后 ⇒ `TestSessionHeartbeatInvalidAttemptIsBilledBeforeValidation` 红（SHB-S023）；**G17** 把 4096 上界判断挪到计费之后（等价于删去 `:85` 的长度条件，让 `validSessionHeartbeat` 的同款判断在计费之后生效）⇒ `TestSessionHeartbeatOversizeFrameIsNotBilled` 红（SHB-S024）。判据↔刀号补充：SHB-S022＝G15／G5；SHB-S023＝G16／G4；SHB-S024＝G17（与旧 G6 同一处产品编辑）。累计 37 刀（34＋3）全部 KILLED。
+
+两处口径差别如实记账：其一，旧 **G5** 把 `:94` 的两个条件一起短路，其红只来自 nonce 分支（`SilentDrops/bad_nonce`），而旧 `old_connection` 格只发合法正文且只断言不写样本、从不断言不应答，所以 `!current` 单独一刀在旧用例集下存活——这正是 G15 补的缺口；其二，旧 **G6** 的红来自 `TestSessionHeartbeatSilentDrops` 夹具的 nil-conn panic（红得不够干净，且 panic 会中断整个测试二进制、掩盖同轮其它用例），G17 改在真实套接字上给出「不应答」的业务断言红。逐刀 UTC、rc、日志 sha256 与取证口径更正见 REPORT §4.3。
 
 ## 部署与兼容
 

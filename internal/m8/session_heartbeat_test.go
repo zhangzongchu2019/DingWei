@@ -42,6 +42,116 @@ func resetHeartbeatThrottle(h *Hub, c *sessionClient) {
 	h.mu.Unlock()
 }
 
+func oversizeHeartbeatBody() string {
+	return `{"schema":"session-heartbeat/v1","status":"active","task":"` + strings.Repeat("x", sessionHeartbeatMaxBytes) + `"}`
+}
+
+func waitHeartbeatClient(t *testing.T, e *agentEnv, keyID string) *sessionClient {
+	t.Helper()
+	var c *sessionClient
+	waitFor(t, 2*time.Second, "session client", func() bool {
+		e.hub.mu.Lock()
+		c = e.hub.sessionClients[keyID]["opus50ts"]
+		e.hub.mu.Unlock()
+		return c != nil
+	})
+	return c
+}
+
+// The registry moves to a replacement while the superseded socket keeps being
+// served by its own read loop. The replacement owns a real websocket so an
+// accidental reply is observable instead of a nil-conn panic (same fixture shape
+// as attachAMRNoticeClient). Returns the replacement's peer side.
+func publishHeartbeatReplacement(t *testing.T, e *agentEnv, ctx context.Context, old *sessionClient) (*websocket.Conn, *sessionClient) {
+	t.Helper()
+	accepted := make(chan *websocket.Conn, 1)
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		accepted <- conn
+		<-release
+	}))
+	peer, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(server.URL, "http"), nil)
+	if err != nil {
+		close(release)
+		server.Close()
+		t.Fatal(err)
+	}
+	serverConn := <-accepted
+	replacement := &sessionClient{conn: serverConn, keyID: old.keyID, sessionName: old.sessionName,
+		metricsAgentID: old.metricsAgentID, metricsGeneration: old.metricsGeneration, connSeq: old.connSeq + 1}
+	e.hub.mu.Lock()
+	e.hub.sessionClients[old.keyID][old.sessionName] = replacement
+	e.hub.mu.Unlock()
+	t.Cleanup(func() {
+		peer.CloseNow()
+		serverConn.CloseNow()
+		close(release)
+		server.Close()
+	})
+	return peer, replacement
+}
+
+// replyFrames reads a connection in the background and forwards only frames that
+// could answer a self-report: heartbeat results and error envelopes. Two details
+// force this shape. assertNoEnvelope stops at the first ignorable frame, and a
+// freshly admitted connection always gets the onboarding push first, so a heartbeat
+// reply queued right behind it would stay hidden. And reading with a deadline
+// context closes the connection, which would break every later send in the same
+// case, so silence is asserted with a timer over an ongoing read instead.
+func replyFrames(ctx context.Context, conn *websocket.Conn) <-chan model.Envelope {
+	replies := make(chan model.Envelope, 16)
+	go func() {
+		defer close(replies)
+		for {
+			_, data, err := conn.Read(ctx)
+			if err != nil {
+				return
+			}
+			var env model.Envelope
+			if err := json.Unmarshal(data, &env); err != nil {
+				continue
+			}
+			if metaString(env.Meta, "type") == "session_heartbeat_result_v1" || metaBool(env.Meta, "error") {
+				replies <- env
+			}
+		}
+	}()
+	return replies
+}
+
+func assertNoHeartbeatReply(t *testing.T, replies <-chan model.Envelope, wait time.Duration, what string) {
+	t.Helper()
+	timer := time.NewTimer(wait)
+	defer timer.Stop()
+	select {
+	case env, open := <-replies:
+		if open {
+			t.Fatalf("%s must be dropped silently, but the connection answered: %+v", what, env)
+		}
+	case <-timer.C:
+	}
+}
+
+func waitHeartbeatReply(t *testing.T, replies <-chan model.Envelope, wait time.Duration) model.Envelope {
+	t.Helper()
+	timer := time.NewTimer(wait)
+	defer timer.Stop()
+	select {
+	case env, open := <-replies:
+		if !open {
+			t.Fatal("the connection closed before the reply arrived")
+		}
+		return env
+	case <-timer.C:
+		t.Fatal("no reply within the window")
+	}
+	return model.Envelope{}
+}
+
 // Real authenticated socket: capability header, correlated reply, throttle,
 // stored self-report and the rule that a control subtype never reaches a peer.
 func TestSessionHeartbeatWireRoundTripThrottleAndPeerIsolation(t *testing.T) {
@@ -269,7 +379,7 @@ func TestSessionHeartbeatSilentDrops(t *testing.T) {
 			case "short_nonce":
 				env.Meta["nonce"] = strings.Repeat("f", 31)
 			case "oversize_body":
-				env.Body = `{"schema":"session-heartbeat/v1","status":"active","task":"` + strings.Repeat("x", sessionHeartbeatMaxBytes) + `"}`
+				env.Body = oversizeHeartbeatBody()
 			case "old_connection":
 				replacement := &sessionClient{keyID: c.keyID, sessionName: c.sessionName, metricsAgentID: c.metricsAgentID, connSeq: c.connSeq + 1}
 				h.sessionClients[c.keyID][c.sessionName] = replacement
@@ -413,5 +523,139 @@ func TestSessionHeartbeatOwnerRouteStaysWithinBound(t *testing.T) {
 	}
 	if decoded["agent_disk"] == nil || decoded["inbox_lag"] == nil {
 		t.Fatal("additive field displaced an existing one", decoded)
+	}
+}
+
+// 组长改单 a（21:59:28Z）：注册表已指向替代连接、而旧连接的读循环仍在服务时，
+// 三类正文都必须静默——合法、语义不合法、超界。第二道 current 复核只挡住缓存写入，
+// 挡不住应答，所以删掉 session_heartbeat.go:94 的首道 !current 必须让 invalid 格转红。
+// 静默丢弃也不计费：计费发生在三道闸门之后。
+func TestSessionHeartbeatSupersededConnectionIsSilentForEveryBodyClass(t *testing.T) {
+	keyID := AgentKeyID("zzc")
+	cases := []struct{ name, body string }{
+		{"legal_body", heartbeatBody("active", "R60-③", "", "")},
+		{"invalid_body", heartbeatBody("paused", "", "", "")},
+		{"oversize_body", oversizeHeartbeatBody()},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			e := newAgentEnv(t)
+			ctx, cancel := context.WithTimeout(e.ctx, 10*time.Second)
+			defer cancel()
+			source, _ := e.dialWithHeaders(e.cred, "")
+			defer source.CloseNow()
+			old := waitHeartbeatClient(t, e, keyID)
+			replacementPeer, replacement := publishHeartbeatReplacement(t, e, ctx, old)
+			sourceReplies := replyFrames(ctx, source)
+			replacementReplies := replyFrames(ctx, replacementPeer)
+			env := heartbeatEnvelope(strings.Repeat("a", 32), tc.body)
+			env.From, env.To, env.ID = "opus50ts#enrolled", "workpulse#"+keyID, randomHex(16)
+			if err := writeEnvelope(ctx, source, env); err != nil {
+				t.Fatal(err)
+			}
+			assertNoHeartbeatReply(t, sourceReplies, 400*time.Millisecond, tc.name)
+			assertNoHeartbeatReply(t, replacementReplies, 200*time.Millisecond, "replacement of "+tc.name)
+			e.hub.mu.Lock()
+			stored, billed := old.heartbeat, old.lastHeartbeatAttempt
+			inherited := replacement.heartbeat
+			e.hub.mu.Unlock()
+			if stored != nil || inherited != nil {
+				t.Fatal("silent drop stored a sample", stored, inherited)
+			}
+			if !billed.IsZero() {
+				t.Fatal("a dropped frame was billed to the superseded connection", billed)
+			}
+			if got := e.hub.currentSessionHeartbeat(ctx, "Opus50TS.zzc", e.agID); got["status"] == "ok" {
+				t.Fatal("silent drop became readable", got)
+			}
+		})
+	}
+}
+
+// 组长改单 b：尝试先计费、后校验。语义不合法的一帧消耗掉该连接 1 秒额度，
+// 紧随其后的合法帧拿到确定的 throttled 而不是 recorded。把计费移到
+// validSessionHeartbeat 之后必须让本用例转红。
+func TestSessionHeartbeatInvalidAttemptIsBilledBeforeValidation(t *testing.T) {
+	e := newAgentEnv(t)
+	ctx, cancel := context.WithTimeout(e.ctx, 10*time.Second)
+	defer cancel()
+	source, _ := e.dialWithHeaders(e.cred, "")
+	defer source.CloseNow()
+	keyID := AgentKeyID("zzc")
+	client := waitHeartbeatClient(t, e, keyID)
+	report := func(nonce, body string) map[string]any {
+		t.Helper()
+		env := heartbeatEnvelope(nonce, body)
+		env.From, env.To, env.ID = "opus50ts#enrolled", "workpulse#"+keyID, randomHex(16)
+		if err := writeEnvelope(ctx, source, env); err != nil {
+			t.Fatal(err)
+		}
+		reply := readEnvelopeOfType(t, ctx, source, "session_heartbeat_result_v1")
+		if metaString(reply.Meta, "nonce") != nonce {
+			t.Fatal("reply is not correlated to the request", reply.Meta)
+		}
+		result, _ := reply.Meta["result"].(map[string]any)
+		return result
+	}
+	if result := report(strings.Repeat("b", 32), heartbeatBody("paused", "", "", "")); result["ok"] != false || result["status"] != "invalid" {
+		t.Fatal("expected a definite invalid", result)
+	}
+	result := report(strings.Repeat("c", 32), heartbeatBody("active", "legal right after invalid", "", ""))
+	if result["ok"] != false || result["status"] != "throttled" {
+		t.Fatal("the invalid attempt was not billed, so the legal frame escaped the throttle", result)
+	}
+	if retryAfter, ok := result["retry_after_ms"].(float64); !ok || retryAfter <= 0 || retryAfter > 1000 {
+		t.Fatal("retry_after_ms", result)
+	}
+	if got := e.hub.currentSessionHeartbeat(ctx, "Opus50TS.zzc", e.agID); got["status"] != "unsupported" {
+		t.Fatal("neither frame may store a sample", got)
+	}
+	e.hub.mu.Lock()
+	billed := client.lastHeartbeatAttempt
+	e.hub.mu.Unlock()
+	if billed.IsZero() {
+		t.Fatal("the rejected attempt never reached the billing point")
+	}
+}
+
+// 组长改单 c：4096 字节上界在计费之前判定，所以超界帧既不应答也不占额度，
+// 紧随其后的合法帧仍被 recorded。把超界判断挪到计费之后必须让本用例转红。
+func TestSessionHeartbeatOversizeFrameIsNotBilled(t *testing.T) {
+	e := newAgentEnv(t)
+	ctx, cancel := context.WithTimeout(e.ctx, 10*time.Second)
+	defer cancel()
+	source, _ := e.dialWithHeaders(e.cred, "")
+	defer source.CloseNow()
+	keyID := AgentKeyID("zzc")
+	client := waitHeartbeatClient(t, e, keyID)
+	replies := replyFrames(ctx, source)
+	oversize := heartbeatEnvelope(strings.Repeat("d", 32), oversizeHeartbeatBody())
+	oversize.From, oversize.To, oversize.ID = "opus50ts#enrolled", "workpulse#"+keyID, randomHex(16)
+	if err := writeEnvelope(ctx, source, oversize); err != nil {
+		t.Fatal(err)
+	}
+	assertNoHeartbeatReply(t, replies, 400*time.Millisecond, "the oversize frame")
+	legal := heartbeatEnvelope(strings.Repeat("e", 32), heartbeatBody("busy", "legal right after oversize", "", ""))
+	legal.From, legal.To, legal.ID = "opus50ts#enrolled", "workpulse#"+keyID, randomHex(16)
+	if err := writeEnvelope(ctx, source, legal); err != nil {
+		t.Fatal(err)
+	}
+	reply := waitHeartbeatReply(t, replies, envelopeReadTimeout)
+	if metaString(reply.Meta, "nonce") != strings.Repeat("e", 32) {
+		t.Fatal("the oversize frame answered, or the reply is not correlated", reply.Meta)
+	}
+	if result, _ := reply.Meta["result"].(map[string]any); result["ok"] != true || result["status"] != "recorded" {
+		t.Fatal("an unbilled oversize frame must not throttle the next legal report", reply.Meta)
+	}
+	got := e.hub.currentSessionHeartbeat(ctx, "Opus50TS.zzc", e.agID)
+	report, _ := got["report"].(map[string]any)
+	if got["status"] != "ok" || report["status"] != "busy" || report["task"] != "legal right after oversize" {
+		t.Fatal("stored self-report", got)
+	}
+	e.hub.mu.Lock()
+	billed := client.lastHeartbeatAttempt
+	e.hub.mu.Unlock()
+	if billed.IsZero() {
+		t.Fatal("the legal frame was never billed")
 	}
 }

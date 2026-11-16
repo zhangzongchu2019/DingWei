@@ -44,7 +44,7 @@ helper MUST 只在会话握手响应头含 `X-DW-Session-Heartbeat: session-hear
 
 ### Requirement: SHB-003 就地消费、连接身份与关联应答
 
-Hub MUST 在会话接收路径就地消费 `session_heartbeat_v1`，即使拒绝也 MUST NOT 让它进入会话环、AMR、收件箱、投递 ACK、成本管线或任何对端；同组其它连接 MUST 看不到该子类型与其应答。上报者身份 MUST 只取已认证连接，MUST NOT 读正文或信封中自称的名字。写样本前 MUST 校验该连接的凭据绑定身份。应答 MUST 以 32 位十六进制 nonce 关联，helper MUST 只在 nonce、连接对象、发送方为 workpulse、目标为本席、类型为结果子类型且 result 为对象全部匹配时解析；解析结果 MUST 限于 ok／status／retry_after_ms／recorded_at_ms，Hub 附加字段 MUST NOT 透出。无法关联的报告、被顶替的连接与超界正文 MUST 静默丢弃且不应答。
+Hub MUST 在会话接收路径就地消费 `session_heartbeat_v1`，即使拒绝也 MUST NOT 让它进入会话环、AMR、收件箱、投递 ACK、成本管线或任何对端；同组其它连接 MUST 看不到该子类型与其应答。上报者身份 MUST 只取已认证连接，MUST NOT 读正文或信封中自称的名字。写样本前 MUST 校验该连接的凭据绑定身份。应答 MUST 以 32 位十六进制 nonce 关联，helper MUST 只在 nonce、连接对象、发送方为 workpulse、目标为本席、类型为结果子类型且 result 为对象全部匹配时解析；解析结果 MUST 限于 ok／status／retry_after_ms／recorded_at_ms，Hub 附加字段 MUST NOT 透出。无法关联的报告（nonce 非法或长度不足）、被顶替的连接与超界正文 MUST 在计费与身份查询之前静默丢弃：不应答、不写样本、不计入限流尝试。不应答 MUST 由计费点之前的首道连接复核保证；写样本前的第二道复核只是缓存防线，MUST NOT 被当成不应答的保证。
 
 #### Scenario: SHB-S008 应答只回到上报连接
 - **WHEN** 一次自报被记录
@@ -66,9 +66,13 @@ Hub MUST 在会话接收路径就地消费 `session_heartbeat_v1`，即使拒绝
 - **WHEN** 连接的凭据绑定校验任一项不通过时上报（`metricsAgentID` 缺失、Agent 非 active 或非 selfhost、`key_id`／会话名不符、属主非 active）
 - **THEN** 回 `ok=false, status=unavailable`，且不写任何样本
 
+#### Scenario: SHB-S022 被顶替连接对三类正文都静默且不计费
+- **WHEN** 注册表已指向替代连接、而旧连接的读循环仍在服务时，旧连接分别发送合法正文、语义不合法正文与超过 4096 字节的正文
+- **THEN** 三格都不应答（旧连接与替代连接在整个观察窗内都收不到心跳结果或错误信封）、都不写样本、`lastHeartbeatAttempt` 保持零值，读出口不为 `ok`；只靠写样本前的第二道连接复核时，语义不合法那一格会漏出 `invalid` 应答
+
 ### Requirement: SHB-004 限流、在途上限与确定负结果
 
-Hub MUST 对每个连接限制自报为每 1 秒最多一次，并 MUST 在身份查询之前计费尝试次数；被限流者 MUST 收到确定的 `ok=false, status=throttled` 与 `retry_after_ms`（大于 0 且不超过 1000），且 MUST NOT 覆盖已存样本。helper MUST 限制同时在途的自报数量，超限返回确定的 `busy` 且不发帧。IPC 监听器 MUST 在 5 秒内等待处理器，超时返回 `unknown`。以上负结果 MUST 是确定值，MUST NOT 被折叠成 `helper_rejected`。
+Hub MUST 对每个连接限制自报为每 1 秒最多一次，并 MUST 在语义校验与身份查询之前计费尝试次数；被限流者 MUST 收到确定的 `ok=false, status=throttled` 与 `retry_after_ms`（大于 0 且不超过 1000），且 MUST NOT 覆盖已存样本。计费点之前只有 SHB-003 的三道闸门——超过 4096 字节的正文、非法 nonce、非当前连接；被这三道静默丢弃的帧 MUST NOT 计费，否则一条畸形帧就能把同一连接随后的合法自报挤进限流窗口。「尝试先计费」的准确范围是：通过上述三道之后的语义校验与身份查询之前必须计费，使一条连接无法用非法正文把 Hub 拖进无界的身份解析。helper MUST 限制同时在途的自报数量，超限返回确定的 `busy` 且不发帧。IPC 监听器 MUST 在 5 秒内等待处理器，超时返回 `unknown`。以上负结果 MUST 是确定值，MUST NOT 被折叠成 `helper_rejected`。
 
 #### Scenario: SHB-S013 一秒内第二次被限流
 - **WHEN** 记录成功后立即再次上报
@@ -81,6 +85,14 @@ Hub MUST 对每个连接限制自报为每 1 秒最多一次，并 MUST 在身�
 #### Scenario: SHB-S015 慢处理器
 - **WHEN** 处理器超过 5 秒未返回
 - **THEN** IPC 结果为 `unknown`，不是 `helper_rejected`
+
+#### Scenario: SHB-S023 语义不合法帧先计费
+- **WHEN** 当前连接先发语义不合法正文并拿到 `invalid`，随即在 1 秒内发合法正文
+- **THEN** 第二次回 `throttled` 且 `retry_after_ms` 在 0 到 1000 之间，两帧都不写样本，且该连接的 `lastHeartbeatAttempt` 已被第一帧置位
+
+#### Scenario: SHB-S024 超界正文不计费
+- **WHEN** 当前连接先发超过 4096 字节的正文（静默丢弃），随即在 1 秒内发合法正文
+- **THEN** 第一帧无任何应答，第二帧回 `recorded`、nonce 与其对应，并可从读出口取回；超界帧没有占用该连接的 1 秒额度
 
 ### Requirement: SHB-005 无应答即 unknown 且绝不自动重发
 
