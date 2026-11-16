@@ -189,6 +189,7 @@ func run(logger *slog.Logger) error {
 	outbound := bus.NewBestEffortDBQueue(queueCtx, st, model.DirectionOut, writeQueueConfig)
 	prefixHub := m8.New(st, consoleAuthMode)
 	if err := configureSessionKeepaliveForRun(prefixHub, logger); err != nil {
+		prefixHub.Close()
 		return err
 	}
 	prefixHub.SessionHistory = historyStore

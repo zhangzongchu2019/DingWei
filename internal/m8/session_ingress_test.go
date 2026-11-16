@@ -206,13 +206,14 @@ func TestSessionIngressOverflowClosesWithoutBlockingOrAck(t *testing.T) {
 	h, _, ctx := newTestHub(t)
 	done := make(chan error, 1)
 	reg := obs.New(nil)
+	allCtx, stopAll := context.WithCancel(ctx)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := websocket.Accept(w, r, nil)
 		if err != nil {
 			return
 		}
 		defer conn.CloseNow()
-		readerCtx, cancel := context.WithCancel(r.Context())
+		readerCtx, cancel := context.WithCancel(allCtx)
 		defer cancel()
 		c := &sessionClient{conn: conn, obsConn: reg.OpenWS("session")}
 		q := h.startSessionIngress(readerCtx, cancel, c)
@@ -225,6 +226,7 @@ func TestSessionIngressOverflowClosesWithoutBlockingOrAck(t *testing.T) {
 		done <- cause
 	}))
 	defer srv.Close()
+	defer stopAll()
 	peer, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http"), nil)
 	if err != nil {
 		t.Fatal(err)

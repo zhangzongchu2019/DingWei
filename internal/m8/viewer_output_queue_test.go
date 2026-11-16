@@ -137,3 +137,58 @@ func TestSessionWriteWaitHasTotalCancellationBudget(t *testing.T) {
 		t.Fatal("session lock wait ignored caller deadline", err)
 	}
 }
+
+func TestSessionWriteDefaultBudgetIncludesContendedSlot(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	_ = h
+	ready := make(chan *sessionClient, 1)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.CloseNow()
+		c := &sessionClient{conn: conn}
+		c.writeGateOnce.Do(func() { c.writeGate = make(chan struct{}, 1) })
+		ready <- c
+		for {
+			if _, _, err = conn.Read(r.Context()); err != nil {
+				return
+			}
+		}
+	}))
+	defer srv.Close()
+	peer, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer peer.CloseNow()
+	c := <-ready
+	call, cancel := context.WithCancel(context.Background())
+	finished := make(chan struct{})
+	result := make(chan error, 1)
+	go func() {
+		defer close(finished)
+		result <- c.write(call, errorEnvelope("fixture", "fixture", "", "bounded status"))
+	}()
+	defer func() {
+		cancel()
+		select {
+		case c.writeGate <- struct{}{}:
+		default:
+		}
+		select {
+		case <-finished:
+		case <-time.After(time.Second):
+			t.Error("session writer not reclaimed")
+		}
+	}()
+	select {
+	case err = <-result:
+		if !errors.Is(err, context.DeadlineExceeded) {
+			t.Fatal("missing default write deadline", err)
+		}
+	case <-time.After(2500 * time.Millisecond):
+		t.Fatal("default session write budget excluded lock wait")
+	}
+}
