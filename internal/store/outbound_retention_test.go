@@ -28,8 +28,10 @@ func seedOutboundFence(t *testing.T, db *SQLite, id string, at time.Time) {
 }
 func TestOutboundIntentRetentionReleasesExpiredCapacityBoundedly(t *testing.T) {
 	db, ctx, c := outboundRetentionFixture(t)
+	// Leave at least the global limit even after one cleanup batch: a global
+	// all-time-count regression must still reject this otherwise valid admission.
 	expired := c.T.Add(-DefaultOutboundIntentRetention - time.Nanosecond)
-	_, err := db.db.ExecContext(ctx, `WITH RECURSIVE n(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM n WHERE i<65536)
+	_, err := db.db.ExecContext(ctx, `WITH RECURSIVE n(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM n WHERE i<65792)
  INSERT INTO outbound_intent(sender_id,source_message_id,target_id,digest,delivery_id,created_at)
  SELECT CASE WHEN i<=4096 THEN 'sender' ELSE printf('bulk-%d',i) END,printf('expired-%d',i),'target',?,printf('expired-delivery-%d',i),? FROM n`, strings.Repeat("a", 64), expired.UTC().Format(outboundIntentStamp))
 	if err != nil {
@@ -44,7 +46,7 @@ func TestOutboundIntentRetentionReleasesExpiredCapacityBoundedly(t *testing.T) {
 	if err = db.db.QueryRow(`SELECT count(*) FROM outbound_intent WHERE created_at<?`, c.T.Add(-DefaultOutboundIntentRetention).Format(outboundIntentStamp)).Scan(&remaining); err != nil {
 		t.Fatal(err)
 	}
-	if remaining != 65536-OutboundIntentCleanupBatch {
+	if remaining != 65792-OutboundIntentCleanupBatch {
 		t.Fatalf("cleanup must remove exactly one bounded batch of expired fences, remaining=%d", remaining)
 	}
 	again, created, err := db.CommitOutboundSessionDelivery(ctx, v, d)
