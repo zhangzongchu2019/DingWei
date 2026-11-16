@@ -1,0 +1,7 @@
+# 最小现状基线
+
+hub.go:1333～1490只有一个Read后同步分派循环；每帧先touchSessionEndpoint。Go coder/websocket v1.8.13的Ping必须有并发Reader读取Pong。terminal.go:516～554在Reader业务分派内依次向真实legacy viewer写，取mu channel与Background网络写均无总截止；现代session event fanout另有非阻塞通道。
+
+SessionHistory.Append有2秒事务预算，但外层等result没有select取消；主SQLite仅1连接、busy_timeout5000，touch的调用上下文是整个WS生命周期。现有应用keepalive间隔30s、timeout5s，实例字段仅测试函数赋值，无env/CLI入口。watchSessionKeepalive任意Ping错误都计失败并设keepalive_failed；obs只为成功Ping记录RTT桶，失败当前无逐笔journal。
+
+以下ADDED为待审目标，不是现行实现；monitor类别主因与每次失败具体阻塞点须区分。

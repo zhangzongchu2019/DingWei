@@ -16,7 +16,7 @@ def terminal_method():
         result = fn(*args)
         return await result if inspect.isawaitable(result) else result
     facade = SimpleNamespace(to_thread=to_thread, Future=asyncio.Future,
-        create_task=asyncio.create_task, gather=asyncio.gather, get_running_loop=asyncio.get_running_loop)
+        create_task=asyncio.create_task, gather=asyncio.gather, get_running_loop=asyncio.get_running_loop, sleep=asyncio.sleep)
     ns = {"asyncio": facade, "json": json,
           "session_addr": lambda *args: "fixture",
           "envelope": lambda to, body, origin, meta: {"body": body}}
@@ -146,3 +146,32 @@ class TerminalStartTest(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TerminalBoundedOutputTest(unittest.IsolatedAsyncioTestCase):
+    async def test_unicode_chunks_keep_order_and_yield_between_bounded_frames(self):
+        text=('中🙂abc\x1b[32m'*15000)
+        first=True;frames=[];control=[];done=asyncio.Event()
+        async def chunk(timeout):
+            nonlocal first
+            if first:first=False;return text
+            await asyncio.Future()
+        async def control_task():
+            while not done.is_set():
+                control.append(len(frames));await asyncio.sleep(0)
+        class WS:
+            async def send(self,value):
+                frames.append(json.loads(value)['body'])
+                if sum(len(x) for x in frames)==len(text):done.set()
+        # A chunk already above the batch bound must be sent before reading
+        # another source chunk, and the fake send itself never yields.
+        reader=asyncio.create_task(terminal_method()(helper(SimpleNamespace(next_terminal_chunk=chunk)),WS()))
+        tick=asyncio.create_task(control_task())
+        try:
+            await asyncio.wait_for(done.wait(),1)
+            self.assertGreater(len(frames),2)
+            self.assertEqual(''.join(frames),text)
+            self.assertTrue(all(len(x.encode('utf-8'))<=32768 for x in frames))
+            self.assertTrue(any(0<n<len(frames) for n in control),'control task starved between frames')
+        finally:
+            reader.cancel();tick.cancel();await asyncio.gather(reader,tick,return_exceptions=True)

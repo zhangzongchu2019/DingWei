@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
@@ -110,6 +111,8 @@ func (st *terminalState) eventRingSnapshotLocked() []sessionSeqEvent {
 }
 
 type terminalViewer struct {
+	outputGap      atomic.Bool
+	output         *viewerOutputQueue
 	id             string
 	code           string
 	conn           *websocket.Conn // nil ⇒ 无活连接(View Service 虚拟 viewer;或网页断连宽限中)
@@ -185,6 +188,9 @@ func (h *Hub) closeTerminalLocked(keyID, sessionName string) []*terminalViewer {
 	}
 	viewers := make([]*terminalViewer, 0, len(st.viewers))
 	for _, v := range st.viewers {
+		if v.conn != nil && v.output == nil {
+			h.startViewerOutput(h.backgroundContext(), v)
+		}
 		viewers = append(viewers, v)
 	}
 	h.adoptRingLocked(st)
@@ -407,9 +413,11 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		if reclaim != nil {
 			// 新对象继承旧 id/code,替换 map 里旧对象(旧连接的 defer 据 v!=viewer 不误删)
 			viewer = &terminalViewer{id: reclaim.id, code: reclaim.code, conn: conn, mu: mu, pageID: pageID}
+			viewer.outputGap.Store(reclaim.outputGap.Load())
 		} else {
 			viewer = &terminalViewer{id: randomHex(8), code: h.uniqueTerminalCodeLocked(), conn: conn, mu: mu, pageID: pageID}
 		}
+		h.startViewerOutput(r.Context(), viewer)
 		st.viewers[viewer.id] = viewer
 		isWriter = st.writerPage == viewer.id
 		if isWriter {
@@ -427,6 +435,9 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer func() {
+		if viewer.output != nil {
+			viewer.output.cancel()
+		}
 		h.mu.Lock()
 		if cur := h.terminals[terminalKey(st.keyID, st.sessionName)]; cur != nil {
 			if v := cur.viewers[viewer.id]; v == viewer { // 仍是本连接(未被重连认领替换)
@@ -446,6 +457,11 @@ func (h *Hub) HandleTerminalViewWS(w http.ResponseWriter, r *http.Request) {
 		h.mu.Unlock()
 		_ = conn.Close(websocket.StatusNormalClosure, "bye")
 	}()
+	if viewer.outputGap.Swap(false) {
+		hasBuffer = true
+		buf = "\r\n[HUB：此前终端显示中断，以下仅为保留缓冲。]\r\n" + buf
+		_ = terminalWrite(r.Context(), viewer, map[string]any{"type": "status", "readonly": !isWriter, "history_gap": true, "message": "此前终端显示中断；仅重放保留缓冲，可能缺少输出。"})
+	}
 	if hasBuffer {
 		_ = terminalWrite(r.Context(), viewer, map[string]any{"type": "output", "data": buf})
 	}
@@ -519,8 +535,17 @@ func terminalWrite(ctx context.Context, v *terminalViewer, payload map[string]an
 	if v == nil || v.conn == nil {
 		return nil
 	}
-	data, _ := json.Marshal(payload)
-	<-v.mu
+	ctx, cancel := context.WithTimeout(ctx, viewerWriteLimit)
+	defer cancel()
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-v.mu:
+	}
 	defer func() { v.mu <- struct{}{} }()
 	return v.conn.Write(ctx, websocket.MessageText, data)
 }
@@ -550,7 +575,9 @@ func (h *Hub) handleTerminalOutputEnvelope(c *sessionClient, env model.Envelope)
 	}
 	h.mu.Unlock()
 	for _, v := range viewers {
-		_ = terminalWrite(context.Background(), v, map[string]any{"type": "output", "data": data})
+		if v.output != nil {
+			v.output.enqueue(data)
+		}
 	}
 	if emitSyncItem {
 		for _, target := range syncTargets {

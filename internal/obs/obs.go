@@ -95,12 +95,13 @@ type streamStat struct {
 }
 
 type wsStat struct {
-	opened  uint64
-	active  int64
-	closed  map[string]uint64
-	pingOK  uint64
-	pingErr uint64
-	rtt     *histogram
+	diagnosticDrop uint64
+	opened         uint64
+	active         int64
+	closed         map[string]uint64
+	pingOK         uint64
+	pingErr        uint64
+	rtt            *histogram
 }
 
 // Identity 是运行身份。字符串为空表示 UNKNOWN（快照里给 null 加原因）。
@@ -340,6 +341,15 @@ func (c *WSConn) Ping(rtt time.Duration, err error) {
 	s.rtt.observe(float64(rtt) / float64(time.Millisecond))
 }
 
+func (c *WSConn) DiagnosticDrop() {
+	if c == nil {
+		return
+	}
+	c.r.mu.Lock()
+	c.r.wsFor(c.kind).diagnosticDrop++
+	c.r.mu.Unlock()
+}
+
 func knownWSKind(k string) bool {
 	switch k {
 	case "session", "service", "view", "node":
@@ -350,7 +360,7 @@ func knownWSKind(k string) bool {
 
 func knownLocalReason(r string) bool {
 	switch r {
-	case "keepalive_failed", "idle_timeout", "replaced", "revoked", "rejected", "server_shutdown":
+	case "business_queue_overflow", "keepalive_failed", "idle_timeout", "replaced", "revoked", "rejected", "server_shutdown":
 		return true
 	}
 	return false
@@ -466,13 +476,14 @@ type StreamSeries struct {
 }
 
 type WSView struct {
-	Kind     string            `json:"kind"`
-	Opened   uint64            `json:"opened"`
-	Active   int64             `json:"active"`
-	Closed   map[string]uint64 `json:"closed_by_reason"`
-	PingOK   uint64            `json:"ping_ok"`
-	PingFail uint64            `json:"ping_fail"`
-	PingRTT  HistogramView     `json:"ping_rtt_ms"`
+	DiagnosticDrop uint64            `json:"diagnostic_drop"`
+	Kind           string            `json:"kind"`
+	Opened         uint64            `json:"opened"`
+	Active         int64             `json:"active"`
+	Closed         map[string]uint64 `json:"closed_by_reason"`
+	PingOK         uint64            `json:"ping_ok"`
+	PingFail       uint64            `json:"ping_fail"`
+	PingRTT        HistogramView     `json:"ping_rtt_ms"`
 }
 
 type NotInstrumented struct {
@@ -618,7 +629,7 @@ func (r *Registry) Snapshot() Snapshot {
 			closed[k] = v
 		}
 		wv = append(wv, WSView{Kind: kind, Opened: s.opened, Active: s.active, Closed: closed,
-			PingOK: s.pingOK, PingFail: s.pingErr, PingRTT: s.rtt.view()})
+			PingOK: s.pingOK, PingFail: s.pingErr, PingRTT: s.rtt.view(), DiagnosticDrop: s.diagnosticDrop})
 	}
 	sort.Slice(wv, func(i, j int) bool { return wv[i].Kind < wv[j].Kind })
 

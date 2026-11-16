@@ -2077,14 +2077,28 @@ class SessionHelper(SubAgentConnection):
                     continue
                 deadline = asyncio.get_running_loop().time() + 0.12
                 chunks = [chunk]
-                while asyncio.get_running_loop().time() < deadline:
+                batch_chars = len(chunk)
+                while batch_chars < 32768 and asyncio.get_running_loop().time() < deadline:
                     more = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.01)
                     if not more:
                         break
                     chunks.append(more)
+                    batch_chars += len(more)
                 body = "".join(chunks)
                 meta = {"type": "terminal_output", "session": self.cfg.session_name, "key_id": self.cfg.key_id, "no_mirror": True}
-                await ws.send(json.dumps(envelope(session_addr("workpulse", self.cfg.key_id), body, self.book.self_addr, meta), ensure_ascii=False))
+                # Only display text is split; structured session_event remains
+                # opaque. UTF-8 byte accounting never cuts a code point.
+                part=[];part_bytes=0
+                for char in body:
+                    n=len(char.encode('utf-8',errors='replace'))
+                    if part_bytes+n>32768:
+                        await asyncio.sleep(0)
+                        await ws.send(json.dumps(envelope(session_addr("workpulse", self.cfg.key_id), ''.join(part), self.book.self_addr, meta), ensure_ascii=False))
+                        part=[];part_bytes=0
+                    part.append(char);part_bytes+=n
+                if part:
+                    await asyncio.sleep(0)
+                    await ws.send(json.dumps(envelope(session_addr("workpulse", self.cfg.key_id), ''.join(part), self.book.self_addr, meta), ensure_ascii=False))
         finally:
             if start_task is not None:
                 start_task.cancel()

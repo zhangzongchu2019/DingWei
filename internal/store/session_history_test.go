@@ -588,3 +588,33 @@ func TestSessionHistoryPageStopsAtFourMiBAndKeepsCursorExclusive(t *testing.T) {
 		t.Fatalf("cursor skip/overlap: older last=%d current first=%d", older.Events[len(older.Events)-1].Cursor.Seq, page.Events[0].Cursor.Seq)
 	}
 }
+
+// A request accepted by the writer queue is not a committed history cursor.
+// If the writer is withheld, cancellation must bound the caller's result wait.
+func TestSessionHistoryCancellationBoundsWriterResultWait(t *testing.T) {
+	h := &SessionHistory{appendQueue: make(chan *historyAppendRequest, 1)}
+	h.enabled.Store(true)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	result := make(chan error, 1)
+	go func() {
+		cursor, err := h.Append(ctx, "owner", "agent", "session", "wait-gate", "assistant_text", []byte(`{"text":"fixture"}`), time.Now())
+		if err == nil || cursor != (SessionHistoryCursor{}) {
+			result <- errors.New("uncommitted cursor reported as accepted")
+			return
+		}
+		result <- err
+	}()
+	request := <-h.appendQueue
+	select {
+	case err := <-result:
+		if !errors.Is(err, context.DeadlineExceeded) {
+			t.Fatal("wrong cancellation result", err)
+		}
+	case <-time.After(200 * time.Millisecond):
+		request.result <- historyAppendResult{err: context.DeadlineExceeded}
+		<-result
+		t.Fatal("caller waited indefinitely for the history writer")
+	}
+	request.result <- historyAppendResult{err: context.DeadlineExceeded}
+}

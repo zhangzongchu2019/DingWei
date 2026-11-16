@@ -71,6 +71,9 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
+	keepaliveJournal    func([]byte) bool
+	ingressBudgetMu     sync.Mutex
+	ingressBudgetBytes  int
 	ExternalSeats       ExternalSeats
 	ExternalCopyReplies ExternalCopyReplyLookup
 	TempGroups          *tempgroup.Service
@@ -257,6 +260,12 @@ type client struct {
 }
 
 type sessionClient struct {
+	ingress          *sessionIngress
+	writeGate        chan struct{}
+	writeGateOnce    sync.Once
+	touchNotify      chan struct{}
+	lastPongAt       time.Time
+	lastReadAt       time.Time
 	subAgentMu       sync.Mutex // serializes scoped writes with reports/closure
 	subAgentsV1      bool       // stateMu; only current credential connection can negotiate
 	subTreeReady     bool
@@ -1170,14 +1179,15 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		OnPingReceived: func(ctx context.Context, payload []byte) bool {
 			if c != nil {
 				c.recordActivity(h.now().UTC())
-				h.backgroundWork("owned", func() { h.touchSessionEndpoint(context.Background(), c) })
+				c.scheduleTouch()
 			}
 			return true
 		},
 		OnPongReceived: func(ctx context.Context, payload []byte) {
 			if c != nil {
 				c.recordActivity(h.now().UTC())
-				h.backgroundWork("owned", func() { h.touchSessionEndpoint(context.Background(), c) })
+				c.recordPong(h.now().UTC())
+				c.scheduleTouch()
 			}
 		},
 	})
@@ -1207,9 +1217,24 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	c.metricsAgentID = a.metricsAgentID
 	c.metricsGeneration = randomHex(16)
 	c.obsConn = obsConn
+	connectionRequestCtx := r.Context()
+	ingressCtx, stopIngress := context.WithCancel(connectionRequestCtx)
+	stopHubIngress := context.AfterFunc(h.lifetime().ctx, stopIngress)
+	r = r.WithContext(ingressCtx)
+	c.touchNotify = make(chan struct{}, 1)
+	c.ingress = h.startSessionIngress(ingressCtx, stopIngress, c)
+	defer func() {
+		stopHubIngress()
+		stopIngress()
+		_ = conn.CloseNow()
+		if c.ingress != nil {
+			c.ingress.joinAndRelease()
+		}
+	}()
+	h.backgroundWork("session_touch", func() { h.runSessionTouch(ingressCtx, c) })
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	h.backgroundWork("owned", func() { h.watchSessionIdle(idleWatchdogCtx, c) })
-	h.backgroundWork("owned", func() { h.watchSessionKeepalive(idleWatchdogCtx, c) })
+	h.backgroundWork("owned", func() { h.watchSessionKeepalive(ingressCtx, c) })
 	skillCtx, skillCancel := context.WithCancel(context.Background())
 	c.skillCancel = skillCancel
 	// Send onboarding before publishing the client to directory broadcasters, so
@@ -1306,9 +1331,13 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			h.releaseSessionDeliveryLeases(c, "session_disconnected")
 		}
 		for _, viewer := range terminalViewers {
-			_ = terminalWrite(context.Background(), viewer, map[string]any{"type": "status", "readonly": true, "message": "会话已离线"})
-			if viewer != nil && viewer.conn != nil {
-				_ = viewer.conn.Close(websocket.StatusNormalClosure, "session offline")
+			if viewer != nil {
+				if viewer.output != nil {
+					viewer.output.cancel()
+					_ = viewer.output.conn.CloseNow()
+				} else if viewer.conn != nil {
+					_ = viewer.conn.CloseNow()
+				}
 			}
 		}
 		if conn != nil {
@@ -1333,10 +1362,10 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	for {
 		_, data, err := h.readSessionMessage(r.Context(), c)
 		if err != nil {
-			obsReadErr = obsWSReadErr(r.Context(), err)
+			obsReadErr = obsWSReadErr(connectionRequestCtx, err)
 			return
 		}
-		h.touchSessionEndpoint(r.Context(), c)
+		c.scheduleTouch()
 		var env model.Envelope
 		if err := json.Unmarshal(data, &env); err != nil {
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, "", "信封解析失败："+err.Error()))
@@ -1364,6 +1393,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		}
 		if env.TS == 0 {
 			env.TS = time.Now().Unix()
+			if c.ingress != nil && !c.ingress.activeAt.IsZero() {
+				env.TS = c.ingress.activeAt.Unix()
+			}
 		}
 		if c.targetBot != "" {
 			if env.Meta == nil {
@@ -6150,6 +6182,9 @@ func yesNo(v bool) string {
 }
 
 func (h *Hub) readSessionMessage(ctx context.Context, c *sessionClient) (websocket.MessageType, []byte, error) {
+	if c.ingress != nil {
+		return c.ingress.next(ctx)
+	}
 	typ, data, err := c.conn.Read(ctx)
 	if err == nil {
 		c.recordActivity(h.now().UTC())
@@ -6236,14 +6271,21 @@ func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
 			}
 			pingStart := time.Now()
 			err := c.conn.Ping(pingCtx)
-			c.obsConn.Ping(time.Since(pingStart), err)
+			pingErr := pingCtx.Err()
+			if ctx.Err() == nil {
+				c.obsConn.Ping(time.Since(pingStart), err)
+			}
 			if hook := keepalivePingHook.Load(); hook != nil {
 				(*hook)(true)
 			}
 			cancel()
+			if ctx.Err() != nil {
+				return
+			}
 			if err != nil {
+				h.recordKeepaliveFailure(c, interval, timeout, time.Since(pingStart), keepaliveErrorClass(err, pingErr))
 				c.obsConn.SetLocalReason("keepalive_failed")
-				_ = c.conn.Close(websocket.StatusGoingAway, "keepalive failed")
+				_ = c.conn.CloseNow()
 				return
 			}
 		}
@@ -6297,9 +6339,19 @@ func sessionConnSeqName(sessionName string, seq int) string {
 }
 
 func (c *sessionClient) write(ctx context.Context, env model.Envelope) error {
-	payload, _ := json.Marshal(env)
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	ctx, cancel := context.WithTimeout(ctx, sessionWriteLimit)
+	defer cancel()
+	payload, err := json.Marshal(env)
+	if err != nil {
+		return err
+	}
+	c.writeGateOnce.Do(func() { c.writeGate = make(chan struct{}, 1); c.writeGate <- struct{}{} })
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-c.writeGate:
+	}
+	defer func() { c.writeGate <- struct{}{} }()
 	return c.conn.Write(ctx, websocket.MessageText, payload)
 }
 
