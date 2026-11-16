@@ -108,3 +108,38 @@ func TestOutboundIntentMigrationRejectsPartialOrChangedSchema(t *testing.T) {
 		})
 	}
 }
+
+func TestOutboundIntentCapacityPreservesOldReceiptAndRejectsNewAtomically(t *testing.T) {
+	db := openMigrated(t, filepath.Join(t.TempDir(), "capacity.db"))
+	defer db.Close()
+	ctx := context.Background()
+	// One sender reaches its last slot at the same time as the global last slot.
+	_, err := db.db.ExecContext(ctx, `WITH RECURSIVE n(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM n WHERE i<65535)
+ INSERT INTO outbound_intent(sender_id,source_message_id,target_id,digest,delivery_id,created_at)
+ SELECT CASE WHEN i<=4095 THEN 'sender' ELSE printf('bulk-%d',i) END,printf('seed-%d',i),'target',?,printf('seed-delivery-%d',i),'2026-11-16T00:00:00Z' FROM n`, strings.Repeat("a", 64))
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, d := outboundFixture(1)
+	first, created, err := db.CommitOutboundSessionDelivery(ctx, v, d)
+	if err != nil || !created {
+		t.Fatal("last capacity slot rejected", err)
+	}
+	again, created, err := db.CommitOutboundSessionDelivery(ctx, v, d)
+	if err != nil || created || again.DeliveryID != first.DeliveryID {
+		t.Fatal("full capacity lost prior receipt", err)
+	}
+	for _, sender := range []string{"sender", "new-sender"} {
+		next, delivery := outboundFixture(2)
+		next.SenderID = sender
+		if _, _, err = db.CommitOutboundSessionDelivery(ctx, next, delivery); !errors.Is(err, ErrOutboundCapacity) {
+			t.Fatal("capacity overflow accepted", sender, err)
+		}
+		if got, _ := db.GetOutboundIntent(ctx, sender, next.SourceMessageID); got != nil {
+			t.Fatal("rejected admission left a fence", got)
+		}
+		if got, _ := db.GetSessionDelivery(ctx, delivery.ID); got != nil {
+			t.Fatal("rejected admission left a recipient row", got)
+		}
+	}
+}

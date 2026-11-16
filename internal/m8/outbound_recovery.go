@@ -154,7 +154,9 @@ func (h *Hub) handleRecoverableOutbound(ctx context.Context, c *sessionClient, e
 	env.To = sessionAddress(target.NameLC(), AgentKeyID(target.OwnerLC))
 	ctx = context.WithValue(ctx, outboundRecoveryContext{}, intent)
 	if e = h.RouteEnvelope(ctx, env); e != nil {
-		if errors.Is(e, errOutboundTargetUnsupported) {
+		if errors.Is(e, store.ErrOutboundCapacity) {
+			reply("rejected", "hub_outbound_capacity", "")
+		} else if errors.Is(e, errOutboundTargetUnsupported) {
 			reply("rejected", "outbound_target_unsupported", "")
 		} else if errors.Is(e, store.ErrOutboundConflict) {
 			reply("rejected", "idempotency_conflict", "")

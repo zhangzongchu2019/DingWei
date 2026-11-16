@@ -249,3 +249,21 @@ func TestOutboundRecoveryFailureNoticeIsVisibleAndBoundToOriginalSender(t *testi
 		t.Fatal("failure exposed original business or opened reply loop")
 	}
 }
+
+type outboundCapacityRepo struct{ *store.SQLite }
+
+func (r *outboundCapacityRepo) CommitOutboundSessionDelivery(context.Context, model.OutboundIntent, model.SessionDelivery) (*model.OutboundIntent, bool, error) {
+	return nil, false, store.ErrOutboundCapacity
+}
+func TestOutboundRecoveryKnownCapacityFailureIsNotAmbiguousAcceptance(t *testing.T) {
+	e := newAgentEnv(t)
+	e.hub.Repo = &outboundCapacityRepo{e.hub.Repo.(*store.SQLite)}
+	w := subWire(t, e)
+	w.send(model.Envelope{ID: "capacity-caps", Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true, outboundReceiptRequestKey: true, "outbound_receipt_cap_nonce": strings.Repeat("a", 32)}})
+	w.until(func(e model.Envelope) bool { return metaString(e.Meta, "type") == "outbound_capabilities" })
+	w.send(model.Envelope{ID: strings.Repeat("9", 32), To: "opus50ts.zzc#enrolled", Body: "capacity fixture", Meta: map[string]any{"type": "agent_route", outboundReceiptRequestKey: true, outboundRecoveryKey: true, outboundReceiptNonceKey: strings.Repeat("8", 32), "outbound_sender_id": e.agID, "outbound_target_id": e.agID}})
+	receipt := w.until(func(e model.Envelope) bool { return metaString(e.Meta, "type") == "outbound_receipt" })
+	if metaString(receipt.Meta, "state") != "rejected" || metaString(receipt.Meta, "reason") != "hub_outbound_capacity" {
+		t.Fatal("known atomic refusal presented as unknown/success", receipt.Meta)
+	}
+}
