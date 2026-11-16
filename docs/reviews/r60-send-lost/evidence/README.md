@@ -1,3 +1,5 @@
+> 历史证据：本目录仅对旧产品ba7acae7成立；容量退回后的当前权威门见../evidence-retention/。不要在新产品工作树上以本目录manifest冒称当前覆盖。
+
 # 固定源作者证据
 
 source_commit=ba7acae7798eda8a6d17f3e03dfa07c8c65835f1；基main d2cc47c7。各 gate 均保存起止工作树状态及 UTC，raw_file 是原始日志 gzip（解压 SHA 在 JSON）。

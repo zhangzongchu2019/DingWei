@@ -1,0 +1,259 @@
+{
+  "source_commit": "12f851f239e43a3049cb3c366b335e368295f584",
+  "tree": "66a07f90edd5280c7cb0a1a6dd3f9deee7a671c1",
+  "parent": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+  "files": [
+    {
+      "path": "VERSION",
+      "bytes": 9,
+      "sha256": "b01339f3bea6df76597dadc477661addcf64436a1a939f83c4a9315029afee2c",
+      "git_blob": "e9c490961e9afd592b706b9b31d9878e6ecc8379"
+    },
+    {
+      "path": "cmd/workpulse/main.go",
+      "bytes": 50361,
+      "sha256": "5ff51577764ce7f14ed1ef2a3a05451e1758380854e44cc85411e4280a6548d1",
+      "git_blob": "93f8197a844cf54d9c0f9778df3902103ce5a28e"
+    },
+    {
+      "path": "cmd/workpulse/outbound_retention.go",
+      "bytes": 245,
+      "sha256": "420adba51f40ba54f206f4bad4c2c36c42b700ef5c3e46fde374e69d96f5aee8",
+      "git_blob": "d88685cac7cf5def4b34fa4913b95721abd73b31"
+    },
+    {
+      "path": "cmd/workpulse/outbound_retention_test.go",
+      "bytes": 977,
+      "sha256": "14f9dce3daffb927e4dc45bea12aa1ac161093b04573cd6350d1bbabbac875a3",
+      "git_blob": "7175bdeb456a08dcce2e9b70dabac5ef0be371e4"
+    },
+    {
+      "path": "deploy/test_build_entrypoints.py",
+      "bytes": 14492,
+      "sha256": "12146b82323d609346a61a2afbc8e07c003c8d9bf291725cd7c4aeabc5e68039",
+      "git_blob": "c54e3a21e54593ddf8e6a441a839cecdee01641e"
+    },
+    {
+      "path": "go.mod",
+      "bytes": 1684,
+      "sha256": "40e2ea16c0b8fcd72990174b0eed8eac51a6d305ffe0634898d847e184d43510",
+      "git_blob": "362bb888ef3346356e451a58cd87064e84474317"
+    },
+    {
+      "path": "go.sum",
+      "bytes": 11210,
+      "sha256": "bf70c12f906c5501f71fea73fda264e30d64d463de5b4ce04989d36698512822",
+      "git_blob": "871e6a788732f19d19a470cc34dfdb8e366b364f"
+    },
+    {
+      "path": "internal/m8/extseat_sender_e2e_test.go",
+      "bytes": 18169,
+      "sha256": "0d85c86a67372f7ff333c672ff9615aa22b864a813a9200d6be4211ce3f3cd1b",
+      "git_blob": "16353f4c592a4e35b07f1907a97a59513e93a98b"
+    },
+    {
+      "path": "internal/m8/hosted_body_send_test.go",
+      "bytes": 4178,
+      "sha256": "ffb82de9d517d3796caee2ea51115fc3580e55f7e4991016cd96178fd4965ee6",
+      "git_blob": "65ab53b52127c388951145a892cd78e393a3321f"
+    },
+    {
+      "path": "internal/m8/hub.go",
+      "bytes": 261913,
+      "sha256": "ab315f3bb5a7a2db3b6d930bc7c2f488ce98546198d4b5fc518fefe5eb6b1fcc",
+      "git_blob": "21f8cc760661e402316993122c1978b5fc196bf4"
+    },
+    {
+      "path": "internal/m8/outbound_receipt.go",
+      "bytes": 5704,
+      "sha256": "eef54718bed3ae3b8c79a51863640867b3c034743f4b886796e75081c96d7042",
+      "git_blob": "0c7ef6dd88a014e5b11a38d3664e0031a5874772"
+    },
+    {
+      "path": "internal/m8/outbound_recovery.go",
+      "bytes": 8894,
+      "sha256": "54ff77ea6ca9f0c602ef8fdc5b1db39964305fcc6fc84e4070b0dc5a3cc6701f",
+      "git_blob": "872e9e8fd45ea54f30c948cd461ca508dc1d4cff"
+    },
+    {
+      "path": "internal/m8/outbound_recovery_test.go",
+      "bytes": 14107,
+      "sha256": "740b492559249cbe6b2a1158c285a223e5c4110cfc262dd8ddccc1cfa43886b9",
+      "git_blob": "1524eb0c2fd9cc9995b1108e5d53387b1cea30a0"
+    },
+    {
+      "path": "internal/m8/sub_agent.go",
+      "bytes": 18157,
+      "sha256": "04a573e778b3aa8debc85b78f37cc987c678221f2db87f5a7a09a489e9f1cf89",
+      "git_blob": "842714f83d027833fbc2cf11c11539693f942177"
+    },
+    {
+      "path": "internal/model/failure_notice.go",
+      "bytes": 730,
+      "sha256": "d9640d2ed1a063f99c1f362bc46b2bd6ea79ccd70e2d80a0a597d25d635b210a",
+      "git_blob": "f22af4eb81521cacbd64e53a154ba438a17162ba"
+    },
+    {
+      "path": "internal/model/outbound_intent.go",
+      "bytes": 367,
+      "sha256": "dcdaf1fe1efdce2829a107737ac24a99bc5791feb4a142bdb50b80b66a84cacb",
+      "git_blob": "4b33b38fcd1bc3439f8aa5b5f9ee5e8d26b2f885"
+    },
+    {
+      "path": "internal/store/failure_notice.go",
+      "bytes": 8292,
+      "sha256": "b5e85e975f48b08d5a198503c66bd50153563ef08f78616b8a95d1824843cb91",
+      "git_blob": "9a98a72dfc9c047f347c1830d57c64d6a0b91dd1"
+    },
+    {
+      "path": "internal/store/migrations/0077_outbound_intent.sql",
+      "bytes": 501,
+      "sha256": "da82f7b6174ba57375b3997919baacbc863d01c7cb326e87f255dc6e0bcb9291",
+      "git_blob": "16e7fb6d540b7a9db9e841ae36a0cc8336c3c1f9"
+    },
+    {
+      "path": "internal/store/outbound_intent.go",
+      "bytes": 6633,
+      "sha256": "915b0ca12f7e503355b189735ca82724fcce70ae5d3b8889f7fd2243810b77af",
+      "git_blob": "4918adfd2e9089c550ebab48678fa006135fb66b"
+    },
+    {
+      "path": "internal/store/outbound_intent_test.go",
+      "bytes": 5472,
+      "sha256": "ca6d0db385de94c32fc3a2d29dc4f8d7a76d7b4e3f91e1965453a8cabb94249a",
+      "git_blob": "b2a6b41f8cd2c5fd82365d7a1a918f011b708c14"
+    },
+    {
+      "path": "internal/store/outbound_retention_test.go",
+      "bytes": 8823,
+      "sha256": "2691fdaced29e5b7728ac2e671cbe875310894c45c609771e29e69ee838f5cb7",
+      "git_blob": "5ea105175a220d58a576d7670cd4bcb69f926002"
+    },
+    {
+      "path": "internal/store/sqlite.go",
+      "bytes": 182555,
+      "sha256": "027028afe39388b322763698e375aa0dd41c0202151dde270c0ce9c050d32982",
+      "git_blob": "07fb4ae1ddd484867cd7f6e44b4dbf869960bb1f"
+    },
+    {
+      "path": "scripts/helper-test-files.txt",
+      "bytes": 4934,
+      "sha256": "52bbab2f93aa5a366c9d94d92ecdf2f340e2990b62a54a2f7302f4fc13b07788",
+      "git_blob": "1c117e1dd827b2eb22a33931dd78eed05d42a703"
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/app.py",
+      "bytes": 120814,
+      "sha256": "ad782e06aef295d0587b25e69e49d2c087e9a518e9b6925667f345719f797c69",
+      "git_blob": "bbbcfcbad000db52eee95925c6a68246f22e5a5f"
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/ipc_listener.py",
+      "bytes": 32655,
+      "sha256": "441a5c62798d7d4b8d7a903162138fcb7f047c9b4c822c38c6d9b531ea03d377",
+      "git_blob": "805b6f1f45265ec5a3418e3d1e0166edfd22006e"
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/mcp_shim.py",
+      "bytes": 52145,
+      "sha256": "464da85561249a96468b716d7cefd09b1908cf2ce8ddc187776a453bded3ae2b",
+      "git_blob": "75cb0e6bd20dfc73e97f5b6142724a0dc2cbc3ac"
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/outbound_queue.py",
+      "bytes": 15854,
+      "sha256": "c0350b40e68b810e64e65ebb462f22715f3391b3985ddb36fd581dfd0338aba7",
+      "git_blob": "d36271d42214cfc268e1639f692909261e5d6ce9"
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/outbound_receipt.py",
+      "bytes": 9447,
+      "sha256": "500477a44ffbbbca0a4a0957a296c354776c9a8bc6c4d6669d7b1a7d69acfa0f",
+      "git_blob": "c3b62964f0db1e203612e9318fe36ed043cc9104"
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/outbound_recovery.py",
+      "bytes": 7197,
+      "sha256": "cdd9579d9d1d6d1e245db70263b9a19b000dc06f5589d5747270779829fcd6f0",
+      "git_blob": "4726c0ad36933b4209354ec90d9c4facd2381969"
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/send_dingwei.py",
+      "bytes": 8169,
+      "sha256": "8ccdd301132a227440d54cc9f63cc0b9b9e0e93661ad5200395f7ddd744edf3c",
+      "git_blob": "d3543f996fdc5b6906555020396fc688b573259a"
+    },
+    {
+      "path": "tools/sessionhelper/tests/hosted_body_hub_client.py",
+      "bytes": 4670,
+      "sha256": "a4e59cd675f8f429c02d0d2665d1c5ea67ccf2baccecade67546847a0c25e338",
+      "git_blob": "ce0ec8520a64751e3106c9857c12afd33b114dfa"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_connection_reconnect_backoff.py",
+      "bytes": 3173,
+      "sha256": "4e0c60f36f1c0564410861463123b0ed21bcd1f68aa7e9e696fa200ba6076653",
+      "git_blob": "490851d028ed1e5a963ec04455965319e8ae6f49"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_env_read_single_entry.py",
+      "bytes": 5369,
+      "sha256": "a98b6ee801a2ec5c0eeee7855bd3ccb9f3a5f7013cfde1d2ef7f80f75cdc37c5",
+      "git_blob": "53e3dedf367fa96d5c24264880b900aa106d2d8c"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_hosted_mcp_send.py",
+      "bytes": 10692,
+      "sha256": "3a4da86343480ffb3439adbfce6d17b94c96bcc7173303a9752b3940d3a31fb0",
+      "git_blob": "9d1239281ba3ca097e32a99a9b1fb3a85847ddd4"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_ipc_send_addr.py",
+      "bytes": 2901,
+      "sha256": "a329722a53eff950705aaa998552a4e5ea654567320fb806f0c9c702c8a05098",
+      "git_blob": "5f1f880fd6adee7d6d5b8cadaa6deae4bb524006"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_mcp_forwarder.py",
+      "bytes": 8437,
+      "sha256": "e6731e4fd18a69ea7ced8cff2bc88511e5521b72ff230ea52fb238eec46afa5b",
+      "git_blob": "828c9c69ca6fa1bd1a06a2246ad1f3281b78fe01"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_mcp_shim_transport_errors.py",
+      "bytes": 13703,
+      "sha256": "06eb95a42207c29790dd5b7d3a81e5a27c379e099bfdcc099aa4118034af24be",
+      "git_blob": "00adf317ade250f58312a7e973a0339c1d391171"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_outbound_queue.py",
+      "bytes": 22107,
+      "sha256": "e450e6647a14d6d55507b8722672cf36f94992a3bdac77ac368643b0572b369f",
+      "git_blob": "bbd235ad12c5d311208c5e0a909538364d19470a"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_outbound_receipt.py",
+      "bytes": 8445,
+      "sha256": "921902b4edce5a0cf935f776e0f2c44ea62d2a2bcf0c94e80dd4f0db41099c98",
+      "git_blob": "2403332c1c9afc5002ae086285d66740eabe8727"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_pilot_question.py",
+      "bytes": 6869,
+      "sha256": "ee79a1f4fd1fd6035049c258c3005bd9aa8a8ea2d51ad9ed0ee2c02b1cdfb89a",
+      "git_blob": "33f52d3983b83010e0cc0ab6a5a2bb9c5de8ba57"
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_pilot_template.py",
+      "bytes": 2929,
+      "sha256": "f07138b185bc63cb54c87678106b58fc413c0ce8b92857f6c40a17f99b0f4d81",
+      "git_blob": "2310fcd40c5fe994d435609c0250e3fbb0cdaba4"
+    },
+    {
+      "path": "view-service/renderer-canary-sse.html",
+      "bytes": 378121,
+      "sha256": "4a8d8cc1b2af87087b85ca8e55f2ba0e055cb1b26f88974321867fbde664ce85",
+      "git_blob": "d5edc522d78390789816daaf1222ccf25d511807"
+    }
+  ]
+}

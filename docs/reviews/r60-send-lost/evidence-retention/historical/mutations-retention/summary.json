@@ -1,0 +1,545 @@
+[
+  {
+    "name": "source_id_stable",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_recovery.py",
+    "before": "source_id=row['source_id']",
+    "after": "source_id=uuid.uuid4().hex",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_disconnect_then_same_id_and_lost_receipt_recovery (test_outbound_queue.RecoveryWorkerTest.test_disconnect_then_same_id_and_lost_receipt_recovery)",
+      "AssertionError: Lists differ: ['41bd425af2664eb9aed951886685cd50', 'aecc8c214a8f4799a90b81c6acab5e96'] != ['bb33548ec6e34c1f88f9664503cdb3d3', 'bb33548ec6e34c1f88f9664503cdb3d3']"
+    ],
+    "raw_sha256": "b248277950011b9ef880917e90e2c81f51af1a6aa44503d5c5e3fe2ef046cadd",
+    "utc": "2026-11-16T20:21:43.692169+00:00"
+  },
+  {
+    "name": "unknown_body_retained",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_queue.py",
+    "before": "IN ('hub_durable_queued','rejected')",
+    "after": "IN ('hub_durable_queued','rejected','unknown')",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_offline_admission_restart_and_conflict (test_outbound_queue.DurableQueueTest.test_offline_admission_restart_and_conflict)",
+      "AssertionError: '' != 'body'"
+    ],
+    "raw_sha256": "7f49c0b47be3023e80f67100e7f765e90a48e6d7dbff474d651073efd05efac4",
+    "utc": "2026-11-16T20:21:43.920557+00:00"
+  },
+  {
+    "name": "local_commit_before_acceptance",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_queue.py",
+    "before": "try:db.commit()",
+    "after": "try:db.rollback()",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_offline_admission_restart_and_conflict (test_outbound_queue.DurableQueueTest.test_offline_admission_restart_and_conflict)",
+      "AssertionError: {'req[38 chars]d': '77e86c4296074728baa6f509cad42adb', 'to': [163 chars]': 0} != {'req[38 chars]d': '898fb446cc304b82a6415ace255e1bd7', 'to': [163 chars]': 0}"
+    ],
+    "raw_sha256": "8ff1d6d76f99fc2cd782684b193db68211fae78d9a6d97734fc8442a075e86a0",
+    "utc": "2026-11-16T20:21:44.150427+00:00"
+  },
+  {
+    "name": "one_writer",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_recovery.py",
+    "before": "try: fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)",
+    "after": "try: pass",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_only_one_process_writer_can_hold_outbox (test_outbound_queue.RecoveryWorkerTest.test_only_one_process_writer_can_hold_outbox)",
+      "AssertionError: second writer was not rejected while the first owned the outbox"
+    ],
+    "raw_sha256": "9e0ae44b70b9aeafb8f229211fc27a8822761e915520da03e0b18c22691583c4",
+    "utc": "2026-11-16T20:21:44.880544+00:00"
+  },
+  {
+    "name": "receipt_responsibility_schema",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/send_dingwei.py",
+    "before": "if valid:return out",
+    "after": "if isinstance(out,dict):return out",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_accepted_requires_correlated_responsibility_identifiers (test_outbound_queue.ReceiptSchemaTest.test_accepted_requires_correlated_responsibility_identifiers)",
+      "AssertionError: 'accepted' != 'unknown'"
+    ],
+    "raw_sha256": "8265d863f3358a0dad88c8e9dd8384b13458a2ea48e3bca11b5a86b960493fa6",
+    "utc": "2026-11-16T20:21:45.059167+00:00"
+  },
+  {
+    "name": "physical_identity_fence",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/m8/outbound_recovery.go",
+    "before": "func (h *Hub) checkOutboundDelivery(ctx context.Context, c *sessionClient, d *model.SessionDelivery) error {",
+    "after": "func (h *Hub) checkOutboundDelivery(ctx context.Context, c *sessionClient, d *model.SessionDelivery) error {\nreturn nil",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_recovery_test.go:151: same-name replacement inherited delivery <nil>",
+      "--- FAIL: TestOutboundRecoveryStableTargetAndRevocationCheckedAtPhysicalWrite (0.15s)"
+    ],
+    "raw_sha256": "5776f017c2997b0a3369bcc280581f8d2942b0ba4f7ef262f0ebff62caf83c6d",
+    "utc": "2026-11-16T20:21:49.950132+00:00"
+  },
+  {
+    "name": "business_digest",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/m8/outbound_recovery.go",
+    "before": "[]any{env.To, env.Body, meta}",
+    "after": "[]any{env.To, meta}",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_recovery_test.go:54: changed body was accepted map[delivery_id:dw-dlv_d32de770c4a823e3c5d2a9123fbaafec durable:true no_mirror:true nonce:cccccccccccccccccccccccccccccccc reason: recovery_version:1 source_message_id:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb state:queued system:true type:outbound_receipt version:1]",
+      "--- FAIL: TestOutboundRecoveryReplaysOriginalAcceptanceAndRejectsConflict (0.19s)"
+    ],
+    "raw_sha256": "9fea6e292ab0147ff631fbfb601f7109b979b71a9c61f92af594f6a1ebea358d",
+    "utc": "2026-11-16T20:22:02.812529+00:00"
+  },
+  {
+    "name": "atomic_acceptance_queue",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "if _, err = tx.ExecContext(ctx, `INSERT INTO session_delivery",
+    "after": "if err=tx.Commit();err!=nil{return nil,false,err}\nif _, err = s.db.ExecContext(ctx, `INSERT INTO session_delivery",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_intent_test.go:83: partial acceptance fence: &{SenderID:sender SourceMessageID:2 TargetID:target Digest:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa DeliveryID:dw-dlv_00000000000000000000000000000003 CreatedAt:2026-11-16 20:22:06.727748871 +0000 UTC} <nil>",
+      "--- FAIL: TestOutboundIntentRecipientFailureRollsBackAcceptance (0.17s)"
+    ],
+    "raw_sha256": "38bc8e6a18e3f34fea03c852b972e78844bcaf769b71d8da21ffa1cc4ab49332",
+    "utc": "2026-11-16T20:22:06.766935+00:00"
+  },
+  {
+    "name": "durable_receipt_replay",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "if old != nil {",
+    "after": "if false && old != nil {",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_intent_test.go:36: same intent: constraint failed: UNIQUE constraint failed: outbound_intent.sender_id, outbound_intent.source_message_id (1555) <nil>",
+      "    outbound_intent_test.go:36: same intent: constraint failed: UNIQUE constraint failed: outbound_intent.sender_id, outbound_intent.source_message_id (1555) <nil>",
+      "    outbound_intent_test.go:36: same intent: constraint failed: UNIQUE constraint failed: outbound_intent.sender_id, outbound_intent.source_message_id (1555) <nil>",
+      "    outbound_intent_test.go:36: same intent: constraint failed: UNIQUE constraint failed: outbound_intent.sender_id, outbound_intent.source_message_id (1555) <nil>",
+      "    outbound_intent_test.go:36: same intent: constraint failed: UNIQUE constraint failed: outbound_intent.sender_id, outbound_intent.source_message_id (1555) <nil>",
+      "    outbound_intent_test.go:36: same intent: constraint failed: UNIQUE constraint failed: outbound_intent.sender_id, outbound_intent.source_message_id (1555) <nil>",
+      "    outbound_intent_test.go:36: same intent: constraint failed: UNIQUE constraint failed: outbound_intent.sender_id, outbound_intent.source_message_id (1555) <nil>",
+      "    outbound_intent_test.go:52: constraint failed: UNIQUE constraint failed: outbound_intent.sender_id, outbound_intent.source_message_id (1555)",
+      "--- FAIL: TestOutboundIntentAtomicConcurrentRestartAndRetention (0.16s)"
+    ],
+    "raw_sha256": "a161a7884e22b3559fd922a14b436b48305195f4bfe4234ef370295d484714a7",
+    "utc": "2026-11-16T20:22:10.755584+00:00"
+  },
+  {
+    "name": "old_hub_no_fallback",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_recovery.py",
+    "before": "if not cap:\n            self._unsupported_ws=ws\n            await asyncio.to_thread(self.queue.unsupported_peer)\n            return  # Old Hub: no body write and an explicit local result.",
+    "after": "if not cap:\n            cap={'sender_id':self.queue.sender(),'targets':[]}",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_old_or_missing_capability_never_writes (test_outbound_queue.RecoveryWorkerTest.test_old_or_missing_capability_never_writes)",
+      "AssertionError: old Hub received body"
+    ],
+    "raw_sha256": "612078e76af49f873b071982268425d9f8ca001ae9045d35fb18fe6a6e8dc9e8",
+    "utc": "2026-11-16T20:22:10.984006+00:00"
+  },
+  {
+    "name": "nonce_generation",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_receipt.py",
+    "before": "meta.get('nonce') != nonce",
+    "after": "False",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_wrong_nonce_or_other_connection_not_accepted (test_outbound_receipt.ReceiptTest.test_wrong_nonce_or_other_connection_not_accepted)",
+      "AssertionError: OutboundReceiptError not raised"
+    ],
+    "raw_sha256": "8f7480c21b474f2094190d90477b49ebe785169d69025c808f4eca5ac70b7b03",
+    "utc": "2026-11-16T20:22:11.162396+00:00"
+  },
+  {
+    "name": "temporary_not_revocation",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/m8/sub_agent.go",
+    "before": "if errors.Is(err, errOutboundDenied) {\n\t\treturn true",
+    "after": "if err != nil {\n\t\treturn true",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_recovery_test.go:124: temporary read misclassified: synthetic temporary read",
+      "--- FAIL: TestOutboundRecoveryPhysicalGuardPreservesTemporaryError (0.14s)"
+    ],
+    "raw_sha256": "0ee92e088dd2ae04e6b0b4fc0b2d8cb33dafb0d6d7e7d9f7b624127717bb768e",
+    "utc": "2026-11-16T20:22:24.082600+00:00"
+  },
+  {
+    "name": "status_current_actor",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_queue.py",
+    "before": "expected=actor_id if actor_id is not None else (sender[0] if sender else '')",
+    "after": "expected=r['sender_id']",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_replacement_sender_cannot_recover_prior_receipt_before_catalog_tick (test_outbound_queue.DurableQueueTest.test_replacement_sender_cannot_recover_prior_receipt_before_catalog_tick)",
+      "AssertionError: 'source_message_id' unexpectedly found in {'request_id': 'one', 'source_message_id': '26975b793489493aa7d8b51116f688c0', 'to': 'target.owner', 'phase': 'local_queued', 'accepted_by': 'local_helper', 'outcome': 'accepted', 'reason': '', 'retryable': False, 'status_ref': 'one', 'attempts': 0, 'recent_attempts': [], 'audit_retention': {'maximum_events': 8192, 'oldest_sequence': None, 'oldest_utc_epoch': None}}"
+    ],
+    "raw_sha256": "229f3b9e60509e64e55763fec0feae68bb80f8b43a464aa32e7978a8e31e1689",
+    "utc": "2026-11-16T20:22:24.311675+00:00"
+  },
+  {
+    "name": "notice_original_sender",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/m8/outbound_recovery.go",
+    "before": "h.Identity == nil || c.metricsAgentID != intent.SenderID",
+    "after": "h.Identity == nil",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_recovery_test.go:244: source name replacement inherited old notice <nil>",
+      "--- FAIL: TestOutboundRecoveryFailureNoticeIsVisibleAndBoundToOriginalSender (0.17s)"
+    ],
+    "raw_sha256": "f8b0dee4983a64295041905f184ea75e8b7bf85bbe99dc7c499b5c6418fb4630",
+    "utc": "2026-11-16T20:22:37.635335+00:00"
+  },
+  {
+    "name": "verified_owner_alias",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_queue.py",
+    "before": "alias = target.lower()",
+    "after": "alias = target.split('#',1)[0].lower()",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_explicit_owner_key_is_not_silently_discarded (test_outbound_queue.DurableQueueTest.test_explicit_owner_key_is_not_silently_discarded)",
+      "AssertionError: QueueRejected not raised"
+    ],
+    "raw_sha256": "b50c1dae0cd862e284d0e6a77124ce141a7e2fb9a3b01e12cfd5dbd69dc0fa6e",
+    "utc": "2026-11-16T20:22:37.863884+00:00"
+  },
+  {
+    "name": "legacy_schema_preflight",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/sqlite.go",
+    "before": " || name == \"0077_outbound_intent.sql\"",
+    "after": "",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    migration_ledger_test.go:172: \u53d7\u63a7\u786e\u8ba4\u540e\u4ecd\u62d2: migrate 0077_outbound_intent.sql: SQL logic error: table outbound_intent already exists (1)",
+      "--- FAIL: TestMigrationLedger_LegacyAckBackfillsWithoutReplay (0.19s)"
+    ],
+    "raw_sha256": "c1917ffec364d47d99fba1348fc59b7da8ed38ae6ffb7a9947f775ef69fb41aa",
+    "utc": "2026-11-16T20:22:41.602736+00:00"
+  },
+  {
+    "name": "unsupported_recipient_is_final",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/m8/outbound_recovery.go",
+    "before": "if errors.Is(e, errOutboundTargetUnsupported) {",
+    "after": "if false && errors.Is(e, errOutboundTargetUnsupported) {",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_recovery_test.go:74: non-durable target treated as temporary/accepted map[durable:false no_mirror:true nonce:cccccccccccccccccccccccccccccccc reason:outbound_route_unavailable recovery_version:1 source_message_id:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee state:unknown system:true type:outbound_receipt version:1]",
+      "--- FAIL: TestOutboundRecoveryReplaysOriginalAcceptanceAndRejectsConflict (0.19s)"
+    ],
+    "raw_sha256": "7234b50f6b667299fe58f261bb282535b5d38b3a55069ce4d9d7a9561b3e14c7",
+    "utc": "2026-11-16T20:22:54.311777+00:00"
+  },
+  {
+    "name": "atomic_capacity_fence",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "if own >= 4096 || total >= 65536 {",
+    "after": "if false {",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_intent_test.go:136: capacity overflow accepted sender <nil>",
+      "--- FAIL: TestOutboundIntentCapacityPreservesOldReceiptAndRejectsNewAtomically (0.87s)"
+    ],
+    "raw_sha256": "cd4c9def3d0119ab03a47a729584ac6d77ef1621dddd814cda3e14a2b1a4249f",
+    "utc": "2026-11-16T20:22:58.852297+00:00"
+  },
+  {
+    "name": "known_refusal_not_unknown",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/m8/outbound_recovery.go",
+    "before": "if errors.Is(e, store.ErrOutboundCapacity) {",
+    "after": "if false && errors.Is(e, store.ErrOutboundCapacity) {",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_recovery_test.go:267: known atomic refusal presented as unknown/success map[durable:false no_mirror:true nonce:88888888888888888888888888888888 reason:outbound_route_unavailable recovery_version:1 source_message_id:99999999999999999999999999999999 state:unknown system:true type:outbound_receipt version:1]",
+      "--- FAIL: TestOutboundRecoveryKnownCapacityFailureIsNotAmbiguousAcceptance (0.18s)"
+    ],
+    "raw_sha256": "9c2b1dc735071c6850f8c25cd5ea2591f25da7b7f887009010711e4bc37218a5",
+    "utc": "2026-11-16T20:23:11.314947+00:00"
+  },
+  {
+    "name": "prior_acceptance_uncertainty",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_recovery.py",
+    "before": "if row['attempts'] > 1:",
+    "after": "if False:",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_current_refusal_after_lost_receipt_preserves_original_unknown (test_outbound_queue.RecoveryWorkerTest.test_current_refusal_after_lost_receipt_preserves_original_unknown) (prior=True)",
+      "AssertionError: 'rejected' != 'unknown'"
+    ],
+    "raw_sha256": "e22935bf080d00c2c180994b3a6d71c4cde08339c7cd6e2324bc891f6347fa9a",
+    "utc": "2026-11-16T20:23:11.644517+00:00"
+  },
+  {
+    "name": "offline_expiry",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_recovery.py",
+    "before": "await asyncio.to_thread(self.queue.expire)",
+    "after": "pass",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_offline_unattempted_request_expires (test_outbound_queue.RecoveryWorkerTest.test_offline_unattempted_request_expires)",
+      "AssertionError: 'local_queued' != 'rejected'"
+    ],
+    "raw_sha256": "2e51b150fe45fb05f926e47d1ec51b4e2169bbabd8ad380f4d396c37ccd36900",
+    "utc": "2026-11-16T20:23:11.874826+00:00"
+  },
+  {
+    "name": "capability_deadline",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_recovery.py",
+    "before": "if time.monotonic()-self._cap_wait_started >= self.CAPABILITY_WAIT:",
+    "after": "if False:",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_missing_capability_deadline_is_explicit (test_outbound_queue.RecoveryWorkerTest.test_missing_capability_deadline_is_explicit)",
+      "AssertionError: '' != 'outbound_recovery_unsupported'"
+    ],
+    "raw_sha256": "dd7d163a35d4ce36ac53ad32daf64c1e6279744057ae8770d55713f17c3dee68",
+    "utc": "2026-11-16T20:23:12.072284+00:00"
+  },
+  {
+    "name": "unsupported_unknown_hold",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_queue.py",
+    "before": "AND reason NOT IN ('outbound_recovery_unsupported','sender_identity_changed')",
+    "after": "",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_unsupported_unknown_is_not_automatically_replayed_on_upgrade (test_outbound_queue.RecoveryWorkerTest.test_unsupported_unknown_is_not_automatically_replayed_on_upgrade)",
+      "AssertionError: 2 != 1 : unsupported unknown was blindly replayed after upgrade"
+    ],
+    "raw_sha256": "efd49a1a513717cb686d4e41e2010afef7a45fd3bfb9a580acc24ff98b1b5779",
+    "utc": "2026-11-16T20:23:12.351421+00:00"
+  },
+  {
+    "name": "recipient_not_sender_key",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/send_dingwei.py",
+    "before": "return to.strip()",
+    "after": "return to.strip()+'#'+os.environ.get('SH_KEY_ID','')",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_inherited_sender_key_never_rewrites_recipient (test_ipc_send_addr.DestinationIdentityTest.test_inherited_sender_key_never_rewrites_recipient)",
+      "AssertionError: 'peer.other-owner#sender-owner-key' != 'peer.other-owner'"
+    ],
+    "raw_sha256": "2ef4d19857c674458009dadf9493386d5e7396afe16b34b88bce257a7e35dfc3",
+    "utc": "2026-11-16T20:23:12.530082+00:00"
+  },
+  {
+    "name": "canonical_receipt_scope",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_receipt.py",
+    "before": "name.casefold()",
+    "after": "name",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "AssertionError: canonical authenticated session name lost durable capability"
+    ],
+    "raw_sha256": "d8492348054ae3b9627a58423dd8a9c42e63e70198d1abb7e029c77b50c878ec",
+    "utc": "2026-11-16T20:23:12.708644+00:00"
+  },
+  {
+    "name": "retention_cleanup",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "if err = cleanupOutboundIntentsTx(ctx, tx, cutoff); err != nil {",
+    "after": "if err = nil; err != nil {",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_retention_test.go:48: cleanup must remove exactly one bounded batch of expired fences, remaining=65536",
+      "--- FAIL: TestOutboundIntentRetentionReleasesExpiredCapacityBoundedly (0.95s)"
+    ],
+    "raw_sha256": "d5b75708cd9449a11d140c76743c9464f351e7d27406d3999f6d64f2cfe17809",
+    "utc": "2026-11-16T20:23:17.511749+00:00"
+  },
+  {
+    "name": "retention_only_expired",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "o.created_at < ?",
+    "after": "? <> ''",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_retention_test.go:77: window fence 1 was erased",
+      "--- FAIL: TestOutboundIntentRetentionPreservesWindowAndBoundary (0.14s)"
+    ],
+    "raw_sha256": "cd5e62432cfd40d540310ba46257056e395715d33dee29ec3ff3a0b5487d0216",
+    "utc": "2026-11-16T20:23:21.450873+00:00"
+  },
+  {
+    "name": "retention_sender_window",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "WHERE sender_id=? AND created_at>=?",
+    "after": "WHERE sender_id=? AND ? IS NOT NULL",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_retention_test.go:41: expired fences still blocked a new admission false outbound ledger capacity",
+      "--- FAIL: TestOutboundIntentRetentionReleasesExpiredCapacityBoundedly (0.79s)"
+    ],
+    "raw_sha256": "05a6a9f9ee5b62146bf8dbbe93794570a05f9bfc089bfc829701725d894bcbf0",
+    "utc": "2026-11-16T20:23:25.844782+00:00"
+  },
+  {
+    "name": "retention_global_window",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "SELECT count(*) FROM outbound_intent WHERE created_at>=?",
+    "after": "SELECT count(*) FROM outbound_intent WHERE ? IS NOT NULL",
+    "build_rc": 0,
+    "rc": 0,
+    "failed_assertions": [],
+    "raw_sha256": "58c68d411799efdf9101a99df003d6e55c06f2a4810808efa1847e5530ad9274",
+    "utc": "2026-11-16T20:23:30.436663+00:00"
+  },
+  {
+    "name": "retention_batch_bound",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "cutoff, OutboundIntentCleanupBatch)",
+    "after": "cutoff, 65536)",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_retention_test.go:48: cleanup must remove exactly one bounded batch of expired fences, remaining=0",
+      "--- FAIL: TestOutboundIntentRetentionReleasesExpiredCapacityBoundedly (1.36s)"
+    ],
+    "raw_sha256": "17af958eccf575fcc0f34bb0da7240ab3cfe12bd53110d3f93fece0f596bdbea",
+    "utc": "2026-11-16T20:23:35.727174+00:00"
+  },
+  {
+    "name": "retention_safety_floor",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "retention <= OutboundHelperRecoveryWindow+OutboundRetentionSafetyMargin",
+    "after": "retention <= 0",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_retention_test.go:164: unsafe retention accepted 24h",
+      "--- FAIL: TestOutboundIntentRetentionConfiguration (0.15s)"
+    ],
+    "raw_sha256": "17028a651c5c57af11ab72b2a589066407a424f017092f549ae27984c8865c1f",
+    "utc": "2026-11-16T20:23:39.563757+00:00"
+  },
+  {
+    "name": "retention_original_binding",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "AND NOT EXISTS (SELECT 1 FROM session_delivery d WHERE d.id=o.delivery_id AND d.state NOT IN ('processed','dead','cancelled','legacy_received'))",
+    "after": "",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_retention_test.go:105: GC erased the stable identity of an unfinished delivery",
+      "--- FAIL: TestOutboundIntentRetentionPreservesPendingPhysicalBindings (0.15s)"
+    ],
+    "raw_sha256": "665db2928ad5f25f67f30130b7ff4a9872db3b4e189836ca4d6e6e9c0af1dfdf",
+    "utc": "2026-11-16T20:23:43.407752+00:00"
+  },
+  {
+    "name": "retention_notice_binding",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "AND NOT EXISTS (SELECT 1 FROM session_delivery n WHERE n.source_type='failure_notice' AND n.source_message_id=o.delivery_id AND n.state NOT IN ('processed','dead','cancelled','legacy_received'))",
+    "after": "",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_retention_test.go:116: GC erased the stable sender binding of a pending failure notice",
+      "--- FAIL: TestOutboundIntentRetentionPreservesPendingPhysicalBindings (0.17s)"
+    ],
+    "raw_sha256": "2d0c13425e4ab78ac10235b2ce030683a97fdb3f38e70cb135400aa04a73be46",
+    "utc": "2026-11-16T20:23:47.596392+00:00"
+  },
+  {
+    "name": "retention_acceptance_clock",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "v.CreatedAt = acceptedAt",
+    "after": "v.CreatedAt = d.CreatedAt",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_retention_test.go:132: queue/caller timestamp controls fence age &{sender 1 target aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa dw-dlv_00000000000000000000000000000002 2026-10-25 12:00:00 +0000 UTC} <nil>",
+      "--- FAIL: TestOutboundIntentRetentionUsesServerAcceptanceClock (0.15s)"
+    ],
+    "raw_sha256": "4515558834c3f88ca4423b01a8cb65dff89de1990d4fb9bd572c72956f78876f",
+    "utc": "2026-11-16T20:23:51.635011+00:00"
+  },
+  {
+    "name": "retention_config_effect",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "acceptedAt.Add(-s.OutboundIntentRetention())",
+    "after": "acceptedAt.Add(-DefaultOutboundIntentRetention)",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_retention_test.go:187: configured retention did not govern cleanup",
+      "--- FAIL: TestOutboundIntentRetentionConfiguredWindowControlsGC (0.15s)"
+    ],
+    "raw_sha256": "1af9b81645608f42561955b8f6f3dd8cfa06e72200a2761ace2ede466cc1d40a",
+    "utc": "2026-11-16T20:23:55.525835+00:00"
+  },
+  {
+    "name": "retention_fixed_timestamp",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "internal/store/outbound_intent.go",
+    "before": "v.CreatedAt.UTC().Format(outboundIntentStamp)",
+    "after": "v.CreatedAt.UTC().Format(time.RFC3339Nano)",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    outbound_retention_test.go:143: server-created fence did not expire at nanosecond boundary",
+      "--- FAIL: TestOutboundIntentRetentionUsesServerAcceptanceClock (0.15s)"
+    ],
+    "raw_sha256": "e9b1a4226cd02b1339330e1ddff6237c16f039d4f651ff89b7ac5b881d0fa1a6",
+    "utc": "2026-11-16T20:23:59.364613+00:00"
+  }
+]
