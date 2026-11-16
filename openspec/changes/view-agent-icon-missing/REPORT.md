@@ -24,4 +24,13 @@ The fixture used valid SSE IDs `abcdef0123456789-1`, `abcdef0123456789-2`, and `
 
 ## D. Proposal
 
-The OpenSpec change proposes retaining only the correlated canonical event's already-normalized, Hub-attested provenance while using the admitted echo for body, turn, timestamp, and SSE ordering. It applies at live and replay merge paths, keeps existing fail-closed checks, and makes no Hub changes. Strict validation: `npm exec --yes --package=@fission-ai/openspec@1.16.0 -- openspec validate view-agent-icon-missing --strict` returned `Change 'view-agent-icon-missing' is valid` with exit code 0.
+
+## E. Renderer-only implementation and verification
+
+- Root-cause confirmation: replaying the same three sequenced events at every renderer point found the first icon-count change from 1 to 0 at `b425568ef3e1d4690de8b37327c28835b7eaaa3d`; `3184933e` was not the introducing commit.
+- Implementation: `view-service/renderer-canary-sse.html` stores a normalized provenance snapshot only for a primary canonical input whose existing trust checks passed. Both the live admitted-echo merge and the history/replay merge copy only that snapshot after exact delivery-index matching. The admitted echo continues to supply its text, turn, timestamp, and sequence. No Hub code changed.
+- Regression: `renderer-agent-icon-admission-regression.js`, registered in the full runner, sends Hub-sequenced frames with IDs `abcdef0123456789-1` through `-3`. The 9/9 check groups cover Agent and timer sender names, post-injection and admitted display, replay, absent/untrusted/non-Hub-attested provenance, wrong delivery, admitted body/turn, and preserved timeline sequence.
+- Mutation: temporarily removing the provenance retention helper made the live Agent icon, timer icon, and history/replay icon business assertions fail (rc=2); restoring the implementation returns the new suite to 9/9.
+- Full browser runner at `18b50c1a93b7e92b299eb53c613da497e612838f`: 44/44 suites rc=0, aggregate rc=0. The same full runner at a0 baseline `d2cc47c7e699eb45efb3a07ee197aa8c20a9f07e`: 43/43 suites rc=0. All 43 shared suites remained green, including `renderer_epoch_order`, `renderer_timeline_order`, and the history mutation suite. The new renderer SHA256 is `8cabb3514df3f381aeb84662af3a271216519f143a05cebf10ec1c08d700e85c`.
+- OpenSpec 1.16.0 strict validation after merging this change returned `Change 'view-agent-icon-missing' is valid` (rc=0).
+- Repository build gate: `scripts/run-build-tests.sh` exits 1 before Python/shell tests because helper discovery reports `test_desktop_endpoint`, `test_guide_staging`, `test_ipc_socket_path_isolation`, and `test_sessionhelper` without collected cases. Running the same helper gate at the unchanged d2 baseline reports the same four modules. This task makes no helper changes.
