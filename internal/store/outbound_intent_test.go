@@ -89,3 +89,22 @@ func TestOutboundIntentRecipientFailureRollsBackAcceptance(t *testing.T) {
 		t.Fatalf("same-ID recovery failed: %t %v", created, e)
 	}
 }
+
+func TestOutboundIntentMigrationRejectsPartialOrChangedSchema(t *testing.T) {
+	for _, sql := range []string{`DROP INDEX outbound_intent_sender`, `ALTER TABLE outbound_intent ADD COLUMN unexpected TEXT`} {
+		t.Run(sql, func(t *testing.T) {
+			db := openMigrated(t, filepath.Join(t.TempDir(), "schema.db"))
+			defer db.Close()
+			ctx := context.Background()
+			if _, err := db.db.ExecContext(ctx, `DELETE FROM schema_migrations WHERE version='0077_outbound_intent.sql'`); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := db.db.ExecContext(ctx, sql); err != nil {
+				t.Fatal(err)
+			}
+			if err := db.Migrate(ctx); err == nil || !strings.Contains(err.Error(), "0077_outbound_intent.sql") {
+				t.Fatal("unverified outbound ledger schema accepted", err)
+			}
+		})
+	}
+}

@@ -27,3 +27,5 @@
 - 2026-11-16 coder56solzzc，工作基d2cc47c7。完成：①②③独立工作树已建（集成基110e2c1f）；①原子存储、真实WS原回执恢复、helper持久队列及离线IPC/CLI语义已实现初稿，定向逐步收敛。阻塞：完整门/变异/独立复核未完成，候选容量须终审；下一步：保持产品未冻结，补权限/回执/代际故障回归后跑完整门。②尚未实现；③待外部冻结项及组长复核后按③④①②顺序集成。
 
 - 2026-11-16 coder56solzzc，候选3d9278f40→533ddb25c（尚未交审）。完成：首轮全量helper暴露并修正旧工具计数与回执夹具；533候选两个helper profile各1218/rc0，但canonical随后在旧94文件断言失败，保留rc1；Go全包首轮旧external测试桥仅IPC ok却预期CLI成功，现收紧为unknown且保留PG实到达断言。补齐同名新sender不能查询旧回执、未知查询、目录临时错与有界私有审计；永久身份失败的HUB通知绑定原sender。阻塞：最终固定锚完整canonical/Go/PG strict/变异/独立复核未完成；中途修改的工作态日志不冒称固定源码门。下一步：统一固定新候选后停止修改A产品，跑完整门及逐名SKIP记录，交件后转②实现；③集成仍待他项冻结及组长复核。
+
+- 2026-11-16 coder56solzzc，固定38e0ec430完整门：strict36/0，helper两profile各1221/rc0；canonical后段hosted真实桥仍用旧_run_once/sent契约而红，Go全包仅legacy账本丢失测试红（0077未接入既有exact-DDL补账）。本轮均保留原rc1；磁盘耗尽的更早rc1另留，不混为同次。已补0077 exact-DDL及缺索引/改表拒启测试，hosted改走真实run_forever/责任状态查询并由真实Hub核组内成功/退组拒绝，接收端须协商durable能力；无ACK目标显式unsupported，不无限当暂错。显式owner key只允许认证目录原别名，不静默剥#归属；相关定向已绿。下一步固定新候选再跑完整门/变异，不沿用38的PASS。

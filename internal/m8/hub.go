@@ -4364,6 +4364,9 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 	}
 	if outboundReceiptRequested(env) && !(reliable && (deliveryACK || capabilityPending) && h.Repo != nil) {
 		h.unclaimEnvelope(subAgentClaimKey(env), sig)
+		if recoveryIntent(ctx) != nil {
+			return errOutboundTargetUnsupported
+		}
 		return errors.New("confirmed outbound requires a durable target")
 	}
 	if c == nil && !(reliable && (deliveryACK || capabilityPending) && endpointKnown && h.Repo != nil) {

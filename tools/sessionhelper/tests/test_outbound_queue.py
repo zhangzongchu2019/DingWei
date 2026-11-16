@@ -30,6 +30,12 @@ class DurableQueueTest(unittest.TestCase):
         self.assertEqual(q.status('request')['accepted_by'],'hub')
         self.assertEqual(q.submit('request','target','body',{})['delivery_id'],'dw-dlv_'+'a'*32)
         with q.db() as db:self.assertEqual(db.execute('SELECT body FROM outbound_request').fetchone()[0],'')
+    def test_explicit_owner_key_is_not_silently_discarded(self):
+        with self.assertRaises(QueueRejected):self.q.submit('wrong','target#wrong-owner','body',{})
+        self.q.update_peer('sender',[{'agent_id':'target','full_name':'target.owner','aliases':['target','target#verified-owner']}])
+        accepted=self.q.submit('right','target#verified-owner','body',{})
+        self.assertEqual(accepted['to'],'target.owner')
+        with self.assertRaises(QueueRejected):self.q.submit('still-wrong','target#wrong-owner','body',{})
     def test_capacity_and_expiry_preserve_unknown(self):
         self.q.MAX_PENDING=1;self.q.submit('one','target','secret business body',{})
         with self.assertRaises(QueueRejected):self.q.submit('two','target','body',{})

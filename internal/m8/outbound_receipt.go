@@ -106,7 +106,7 @@ func (h *Hub) writeOutboundCapabilities(c *sessionClient, env model.Envelope) {
 			if e == nil && user.State == "active" {
 				candidates, e := h.Identity.MentionCandidates(ctx, source.ID)
 				if e == nil {
-					targets := []map[string]any{{"agent_id": source.ID, "full_name": source.NameLC() + "." + user.ShortNameLC(), "aliases": []string{c.sessionName}}}
+					targets := []map[string]any{{"agent_id": source.ID, "full_name": source.NameLC() + "." + user.ShortNameLC(), "aliases": []string{c.sessionName, sessionAddress(source.NameLC(), AgentKeyID(source.OwnerLC))}}}
 					for _, candidate := range candidates {
 						if string(candidate.Agent.Origin) == "external" {
 							continue
@@ -114,7 +114,7 @@ func (h *Hub) writeOutboundCapabilities(c *sessionClient, env model.Envelope) {
 						if len(targets) >= 1024 {
 							break
 						}
-						targets = append(targets, map[string]any{"agent_id": candidate.Agent.ID, "full_name": candidate.FullName, "aliases": []string{candidate.Insert}})
+						targets = append(targets, map[string]any{"agent_id": candidate.Agent.ID, "full_name": candidate.FullName, "aliases": []string{candidate.Insert, sessionAddress(candidate.Agent.NameLC(), AgentKeyID(candidate.Agent.OwnerLC))}})
 					}
 					metadata["targets"] = targets
 					metadata["targets_available"] = true

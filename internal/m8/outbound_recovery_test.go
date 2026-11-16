@@ -60,6 +60,22 @@ func TestOutboundRecoveryReplaysOriginalAcceptanceAndRejectsConflict(t *testing.
 	if metaString(rejected.Meta, "state") != "rejected" {
 		t.Fatal("AMR silently accepted", rejected.Meta)
 	}
+	w.send(model.Envelope{ID: "disable-ack", Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": false}})
+	waitFor(t, time.Second, "non-durable target capability", func() bool {
+		e.hub.mu.Lock()
+		c := e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"]
+		e.hub.mu.Unlock()
+		return !e.hub.sessionSupportsDeliveryACK(c)
+	})
+	env.ID = strings.Repeat("e", 32)
+	env.Body = "ordinary unsupported recipient"
+	unsupported := receipt()
+	if metaString(unsupported.Meta, "state") != "rejected" || metaString(unsupported.Meta, "reason") != "outbound_target_unsupported" {
+		t.Fatal("non-durable target treated as temporary/accepted", unsupported.Meta)
+	}
+	if found, err := db.GetOutboundIntent(e.ctx, e.agID, env.ID); err != nil || found != nil {
+		t.Fatal("unsupported target acquired durable acceptance", found, err)
+	}
 }
 
 // A new Hub instance has no envelope claim map or receipt waiter from the first

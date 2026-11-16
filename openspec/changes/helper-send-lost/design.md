@@ -60,3 +60,5 @@ R60查询补充（SL-002/005/006）：request_not_found只表示本地当前快�
 
 
 SL-005永久失败可见性：实际写前的outbound_permission_denied进入既有持久HUB失败通知，通用原因文案不复制业务正文、reply_policy保持no_reply。通知本身以原裁决中的sender稳定ID现核，不向同名新sender投影；原目标已失效不妨碍健康原sender收到这条HUB状态。未知存储读错仍 queued重试，不转永久拒绝。外部席位PG往返长度夹具的旧IPC桥只返回ok，CLI必须unknown退出2；其SQL实到达仍由原用例独立验证，不伪造新协议成功回执。本轮全包初轮rc1为该旧夹具的退出码预期，已补负面判据，未改外部席位产品路径。
+
+0077账本DDL接入现有exact-DDL预检与补账：丢迁移账本但结构完整只补账，不重放/清空幂等fence；缺索引或定义改变拒启。显式target#owner仅按认证目录发布的完整别名匹配，不能丢弃#owner后按同名重定向。旧接收端未协商持久ACK时拒绝outbound_target_unsupported，禁止退回无持久责任的直接写；暂时存储/身份错误仍unknown。hosted/受限MCP的正常运行入口同样是跨WS的run_forever监听，不用旧socket sent布尔充当新回执。

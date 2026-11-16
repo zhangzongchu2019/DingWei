@@ -131,7 +131,7 @@ class OutboundQueue:
                 return self.outcome(old)
             # Names are only lookup inputs. The stable ID is pinned before any
             # body write, including an admission made while the WS is offline.
-            alias = target.split('#', 1)[0].lower()
+            alias = target.lower()
             binding = db.execute('SELECT * FROM outbound_target WHERE alias=?', (alias,)).fetchone()
             if not sender or not binding: raise QueueRejected('target_identity_unavailable', True)
             count, size = db.execute("SELECT count(*),COALESCE(sum(length(CAST(body AS BLOB))+length(CAST(meta AS BLOB))),0) FROM outbound_request WHERE state IN ('local_queued','unknown')").fetchone()
