@@ -16,6 +16,26 @@
 
 新增HKF-009/HKF-S015钉住控制回执观测与持久责任；保留 HKF-S011～S014 分别钉住离线协议、Ping 期间取消、预算／时钟、封口 viewer。此次保留 167 的 helper 分块字节与 terminal-wire 夹具、环境、原始数据不变；没有另跑 PM04 测量。原测量只证明合成突发/限速条件的控制延迟收益，不能解释历史419次或生产SLO；不限速正文吞吐下降的代价仍保留，发布说明须点明。
 
+## eca到3db增量复核入口（组长22:35:18Z更正）
+
+基准`eca016fb2f0ed272bc063f8170b5588dab37ce17`到新产品`3db78e5b244c4663fe67f7dcd44b74991057a7f6`：产品/测试只动internal下7文件，119插入、27删除。组长对eca的构建门与三刀保留增量基准，“冻结于eca”已作废；不将其结论自动延用给新源。
+
+| 产品/测试路径 | 本段变化 |
+|---|---|
+| internal/m8/outbound_receipt.go | 发送回执c.write错误时增加OutboundReceiptWriteFailed；不撤销持久接纳 |
+| internal/m8/delivery_ack_v2.go | 已提交ACK的确认写失败时增加DeliveryACKConfirmWriteFailed；继续按持久状态投影，不撤销ACK |
+| internal/obs/obs.go | 两个nil安全、锁内、固定字段计数及WS快照JSON：outbound_receipt_write_fail / delivery_ack_confirm_write_fail；不扩张标签或混入diagnostic_drop |
+| internal/m8/session_ingress_test.go | 新增真实WS写槽超过两秒的两子格；分别断言计数、提交保留、释放后同source/delivery回执恢复及成功不增失败数 |
+| internal/m8/hub.go | 撤回eca中touch后台登记拒绝时退出的额外Q7改动；按22:00令仅保留观察 |
+| internal/m8/viewer_output_queue.go | 状态通知写失败后仅标gap，继续尝试正常1000关闭；不再提前return跳过正常关闭 |
+| internal/m8/viewer_output_queue_test.go | 慢写槽/状态失败格同时钉住正常关闭码1000，失败状态写仍不拖健康viewer/Agent清理 |
+
+cmd、view-service、tools、scripts、deploy、go.mod、go.sum、VERSION相对eca均零产品差异；helper分块字节未变。spec/design增量另含HKF-009/S015、Q6边界与Q7回撤口径；这些不是额外产品实现。
+
+组长可直接选择`evidence-q6/mutations.json`中`receipt_failure_counter`（session_ingress_test.go:462）或`ack_confirm_failure_counter`（:469）复跑删计数一刀；二者均固定3db、编译rc0、用例rc1，在对应计数未增长的业务断言转红。原始日志分别为`raw/mutation-receipt_failure_counter.log.gz`（解压SHA256 c293fcfafedd41bce68efa60def1119300a7868288ed8fce0d16ce84e6038dd0）与`raw/mutation-ack_confirm_failure_counter.log.gz`（88426abbad54cc6bdf74e9b250757aae0940c4bed13975e7f0b458ef923f8ebc）。精确before/after和命令在JSON/驱动；别在交审工作树直接删保护。
+
+边界：本源的两秒背压格是Hub控制写与原回执恢复，不含①完整helper/outbox的unknown→dw_send_status→原source/delivery故障链，后者仍是正式集成前必须落地且删保护业务红的待办，不计本源PASS/SKIP。当前观测计数可在新锚核，但不冒称完整联合格已进入本源。新源独立复核/组长终审仍待回。
+
 ## 本源作者门
 
 | 固定门 | rc | 顶层 PASS | 含各层子项 PASS | SKIP | FAIL |
