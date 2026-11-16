@@ -27,3 +27,5 @@ Use the same merge contract for live dispatch and history/replay paths. Existing
 - Verify the final DOM contains one input card, carries the admitted turn/body, and retains the canonical Agent icon.
 - Negative controls: absent provenance, non-trusted provenance, non-Hub attestation, and a different delivery must not produce or borrow an icon.
 - Verify the SSE identity/order metadata survives the merge and the result is stable on history replay.
+- Run the same three Hub-sequenced rows through the renderer's fetched `/history` bootstrap path, not only live event dispatch; require the admitted turn to retain one trusted icon while keeping its original Hub cursor sequence.
+- Compare the history path at renderer points 329eb9f9, 2e1e4c9d, c22bb63f, and a0e28049. Current reproduced counts are 1, 1, 0, and 0 respectively; the first 1→0 transition is b425568ef.

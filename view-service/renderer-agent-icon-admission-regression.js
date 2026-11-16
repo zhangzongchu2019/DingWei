@@ -33,17 +33,24 @@ async function sendFrame(page, frame, seq) {
   }, frame);
 }
 
-async function boot(browser, baseUrl) {
+async function boot(browser, baseUrl, setHistoryPage) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   await page.route('**/status', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
     session: 'fixture-agent-icon-2642', state: 'idle', readonly: true, can_write: false,
     owner: 'fixture', model: 'fixture-model', cost_total: 0, cost_last: 0, turns: 0,
   }) }));
   await page.route('**/events', route => route.fulfill({ status: 200, contentType: 'text/event-stream', body: '' }));
+  await page.route('**/history', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify(setHistoryPage.current || { generation: epoch, high_water: 0, events: [], gaps: [], has_older: false }),
+  }));
   await page.addInitScript(() => { window.PROVENANCE_ICONS_V1 = true; });
   await page.goto(`${baseUrl}?mock=1&unlocked=1`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2300); // let startApp finish its initial history bootstrap
-  await page.evaluate(() => { clearInterval(statusTimer); resetConversation(); finishTimelineReplay(false); });
+  await page.evaluate(() => clearInterval(statusTimer));
+  if (setHistoryPage.resetAfterBootstrap !== false) {
+    await page.evaluate(() => { resetConversation(); finishTimelineReplay(false); });
+  }
   return page;
 }
 
@@ -53,7 +60,8 @@ async function boot(browser, baseUrl) {
   try {
     const checks = regressionCollector();
     browser = await launchChromium();
-    const page = await boot(browser, fixture.url);
+    const historyPage = { current: null };
+    const page = await boot(browser, fixture.url, historyPage);
 
     for (const [id, label] of [['agent', 'qwen38mvb4'], ['timer', 'timer']]) {
       await page.evaluate(() => resetConversation());
@@ -79,18 +87,26 @@ async function boot(browser, baseUrl) {
       });
     }
 
-    await page.evaluate(() => resetConversation());
-    await sendFrame(page, trustedCanonical('history', 'qwen38mvb4'), 1);
-    await sendFrame(page, injected('history'), 2);
-    await page.evaluate(event => {
-      historyApplying = true;
-      try { handleIncomingEvent(event); } finally { historyApplying = false; }
-    }, { ...admitted('history'), sse_id: `${epoch}-3`, _hubEpoch: epoch, _hubSeq: 3 });
-    await checks.check('history replay 合并保留 canonical trusted 图标', async () => {
-      assert.strictEqual(await page.locator('.prov-ic').count(), 1,
-        `history SSE id ${epoch}-3: 回放 admitted 后应保留唯一来源图标`);
-      assert.strictEqual(await page.locator('.turn-group[data-turn-key="turn-history"] .event-content').textContent(), 'admitted-history');
+    const historyFrames = [trustedCanonical('history', 'qwen38mvb4'), injected('history'), admitted('history')];
+    historyPage.current = {
+      generation: epoch, high_water: 3, has_older: false, before_seq: 1, gaps: [],
+      events: historyFrames.map((event, index) => ({
+        cursor: { generation: epoch, seq: index + 1 },
+        event_id: `${epoch}-${index + 1}`,
+        received_at: new Date(Date.parse('2026-11-16T07:46:56.841Z') + index * 1000).toISOString(),
+        event,
+      })),
+    };
+    historyPage.resetAfterBootstrap = false;
+    const historyPageView = await boot(browser, fixture.url, historyPage);
+    await checks.check('Hub history API 的三帧回放保留 canonical trusted 图标', async () => {
+      assert.strictEqual(await historyPageView.locator('.prov-ic').count(), 1,
+        `history SSE id ${epoch}-3: API 回放 admitted 后应保留唯一来源图标; DOM=${await historyPageView.locator('#timeline').innerText()}`);
+      assert.strictEqual(await historyPageView.locator('.turn-group[data-turn-key="turn-history"]').getAttribute('data-timeline-seq'), '3',
+        `history SSE id ${epoch}-3: admitted cursor seq 应保留`);
+      assert.strictEqual(await historyPageView.locator('.turn-group[data-turn-key="turn-history"] .event-content').textContent(), 'admitted-history');
     });
+    await historyPageView.close();
 
     await page.evaluate(() => resetConversation());
     await sendFrame(page, trustedCanonical('untrusted', 'not-trusted', { trust_decision: 'untrusted' }), 1);
