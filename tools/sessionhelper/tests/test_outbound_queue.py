@@ -41,8 +41,11 @@ class DurableQueueTest(unittest.TestCase):
         self.q.submit('one','target','body',{})
         self.q.update_peer('new-sender',[{'agent_id':'new-target','full_name':'target.owner','aliases':['target']}])
         self.assertIsNone(self.q.claim('writer','new-sender'))
-        self.assertEqual(self.q.status('one')['reason'],'sender_identity_changed')
-        self.assertEqual(self.q.status('one')['phase'],'rejected')
+        denied=self.q.status('one')
+        self.assertEqual(denied['reason'],'sender_identity_changed')
+        self.assertEqual(denied['phase'],'rejected')
+        self.assertNotIn('source_message_id',denied)
+        self.assertNotIn('delivery_id',denied)
 
 
     def test_absent_status_is_unknown_not_proof_of_non_acceptance(self):
@@ -53,7 +56,9 @@ class DurableQueueTest(unittest.TestCase):
 
     def test_directory_failure_preserves_only_same_sender_cached_binding(self):
         self.q.update_peer('sender',None)
-        self.assertEqual(self.q.submit('one','target','body',{})['phase'],'local_queued')
+        try:result=self.q.submit('one','target','body',{})
+        except QueueRejected:self.fail('temporary directory failure destroyed cached same-sender binding')
+        self.assertEqual(result['phase'],'local_queued')
         self.q.update_peer('different-sender',None)
         with self.assertRaises(QueueRejected) as e:self.q.submit('two','target','body',{})
         self.assertEqual(e.exception.reason,'target_identity_unavailable')
@@ -72,6 +77,21 @@ class DurableQueueTest(unittest.TestCase):
         self.assertNotIn('PRIVATE-BODY-SENTINEL',json.dumps(result))
         self.assertEqual(result['source_message_id'],original['source_message_id'])
         with self.q.db() as db:self.assertEqual(db.execute('SELECT body FROM outbound_request').fetchone()[0],'PRIVATE-BODY-SENTINEL')
+
+
+    def test_replacement_sender_cannot_recover_prior_receipt_before_catalog_tick(self):
+        self.q.submit('one','target','body',{})
+        self.assertNotIn('source_message_id',self.q.status('one',actor_id='new-sender'))
+        with self.assertRaises(QueueRejected):self.q.submit('one','target','body',{},actor_id='new-sender')
+
+
+    def test_byte_budget_is_utf8_and_rejects_new_body_without_evicting_old(self):
+        self.q.MAX_BYTES=8  # 中文 is six UTF-8 bytes, plus two metadata bytes.
+        first=self.q.submit('one','target','中文',{})
+        with self.assertRaises(QueueRejected) as e:self.q.submit('two','target','🙂',{})
+        self.assertEqual(e.exception.reason,'local_queue_full')
+        self.assertEqual(self.q.status('one')['source_message_id'],first['source_message_id'])
+        with self.q.db() as db:self.assertEqual(db.execute('SELECT body FROM outbound_request').fetchone()[0],'中文')
 
 
 class RecoveryWorkerTest(unittest.IsolatedAsyncioTestCase):
@@ -213,3 +233,18 @@ class OfflineListenerLifetimeTest(unittest.IsolatedAsyncioTestCase):
                 try:await task
                 except asyncio.CancelledError:pass
                 layout.cleanup()
+
+
+class ReceiptSchemaTest(unittest.TestCase):
+    def test_accepted_requires_correlated_responsibility_identifiers(self):
+        from sessionhelper.send_dingwei import checked_outcome
+        missing={'outcome':'accepted','phase':'local_queued','accepted_by':'local_helper'}
+        self.assertEqual(checked_outcome(missing,'caller')['outcome'],'unknown')
+        self.assertEqual(checked_outcome({**missing,'request_id':'caller'},'caller')['outcome'],'unknown')
+        local={**missing,'request_id':'caller','source_message_id':'a'*32}
+        self.assertEqual(checked_outcome(local,'caller')['outcome'],'accepted')
+        self.assertEqual(checked_outcome(local,'different-caller')['outcome'],'unknown')
+        hub={**local,'phase':'hub_durable_queued','accepted_by':'hub'}
+        self.assertEqual(checked_outcome(hub,'caller')['outcome'],'unknown')
+        hub['delivery_id']='dw-dlv_'+'b'*32
+        self.assertEqual(checked_outcome(hub,'caller')['outcome'],'accepted')

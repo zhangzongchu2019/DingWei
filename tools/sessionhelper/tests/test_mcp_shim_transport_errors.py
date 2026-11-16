@@ -111,7 +111,7 @@ class Peer:
                     conn.sendall((json.dumps({'ok': False, 'error': SENTINEL,
                                              'reason': SENTINEL}) + '\n').encode())
                 else:
-                    conn.sendall(b'{"ok":true,"outcome":{"sent":true,"outcome":"accepted","phase":"local_queued","accepted_by":"local_helper"},"result":{"fixture":true},"state":"timeout"}\n')
+                    conn.sendall((json.dumps({'ok':True,'outcome':{'outcome':'accepted','phase':'local_queued','accepted_by':'local_helper','request_id':self.requests[-1]['request_id'],'source_message_id':'a'*32},'result':{'fixture':True},'state':'timeout'})+'\n').encode())
         except (OSError, ValueError) as exc:
             self.errors.append(type(exc).__name__)
 

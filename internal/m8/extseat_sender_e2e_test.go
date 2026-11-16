@@ -391,8 +391,15 @@ func sendLengthCLI(t *testing.T, body, to string, route func(string, string) err
 		return &extshared.BodyTooLargeError{ActualBytes: len(body), LimitBytes: extshared.MessageBodyMaxBytes}
 	}
 	e = <-result
-	if e == nil && runErr != nil {
-		t.Fatalf("MCP_LEN_EXACT_UTF8 send.py failed %v %s", runErr, output)
+	if e == nil {
+		// This legacy test bridge reports only IPC ok, deliberately without a
+		// durable outbound receipt. The new CLI must stay unknown even though
+		// the PG round-trip below independently verifies the external row.
+		// Do not fabricate a new-protocol receipt for this external-only path.
+		var exit *exec.ExitError
+		if !errors.As(runErr, &exit) || exit.ExitCode() != 2 || !strings.Contains(string(output), `"outcome": "unknown"`) || strings.Contains(string(output), "sent to=") {
+			t.Fatalf("MCP_LEN_EXACT_UTF8 legacy IPC bridge falsely claimed acceptance: %v %s", runErr, output)
+		}
 	}
 	return e
 }

@@ -169,6 +169,33 @@ func (h *Hub) checkOutboundDelivery(ctx context.Context, c *sessionClient, d *mo
 	if !ok {
 		return nil
 	}
+	if d.SourceType == "failure_notice" && d.Provenance == model.FailureNoticeProvenance {
+		var notice model.Envelope
+		if json.Unmarshal([]byte(d.Envelope), &notice) != nil {
+			return errors.New("invalid durable failure notice")
+		}
+		intent, e := repo.GetOutboundIntentForDelivery(ctx, metaString(notice.Meta, "failed_delivery_id"))
+		if e != nil || intent == nil {
+			return e
+		}
+		// A Hub status may return to the original sender after the target is lost,
+		// but its stable source identity must not be inherited by a reused name.
+		if h.Identity == nil || c.metricsAgentID != intent.SenderID {
+			return errOutboundDenied
+		}
+		source, e := h.Identity.Store.GetAgent(ctx, intent.SenderID)
+		if e != nil {
+			return e
+		}
+		user, e := h.Identity.Store.GetUser(ctx, source.OwnerLC)
+		if e != nil {
+			return e
+		}
+		if source.State != identity.AgentActive || user.State != identity.UserActive || sessionAddress(source.NameLC(), AgentKeyID(source.OwnerLC)) != sessionAddress(c.sessionName, c.keyID) {
+			return errOutboundDenied
+		}
+		return nil
+	}
 	intent, e := repo.GetOutboundIntentForDelivery(ctx, d.ID)
 	if e != nil || intent == nil {
 		return e

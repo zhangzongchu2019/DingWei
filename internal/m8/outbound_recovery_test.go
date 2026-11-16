@@ -2,6 +2,7 @@ package m8
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -193,5 +194,42 @@ func TestOutboundRecoveryUnsupportedCannotFallThroughToOutputOrLegacySend(t *tes
 	defer e.hub.mu.Unlock()
 	if st := e.hub.terminals[terminalKey(AgentKeyID("zzc"), "opus50ts")]; st != nil && strings.Contains(st.buffer, "MUST-NOT-REACH-OUTPUT") {
 		t.Fatal("rejected intent affected terminal output")
+	}
+}
+
+func TestOutboundRecoveryFailureNoticeIsVisibleAndBoundToOriginalSender(t *testing.T) {
+	e := newAgentEnv(t)
+	w := subWire(t, e)
+	w.send(model.Envelope{ID: "notice-caps", Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true, outboundReceiptRequestKey: true, "outbound_receipt_cap_nonce": strings.Repeat("a", 32)}})
+	w.until(func(e model.Envelope) bool { return metaString(e.Meta, "type") == "outbound_capabilities" })
+	db := e.hub.Repo.(*store.SQLite)
+	env := model.Envelope{ID: strings.Repeat("a", 32), From: sessionAddress("opus50ts", AgentKeyID("zzc")), To: sessionAddress("losttarget", AgentKeyID("zzc")), Body: "BUSINESS-BODY-NEVER-IN-NOTICE"}
+	raw, _ := json.Marshal(env)
+	d := model.SessionDelivery{ID: "dw-dlv_" + strings.Repeat("a", 32), KeyID: AgentKeyID("zzc"), SessionName: "losttarget", Envelope: string(raw), SourceMessageID: env.ID, SourceType: "session_inbound"}
+	intent := model.OutboundIntent{SenderID: e.agID, TargetID: "lost-target-id", SourceMessageID: env.ID, Digest: strings.Repeat("a", 64)}
+	if _, _, err := db.CommitOutboundSessionDelivery(e.ctx, intent, d); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpdateSessionDelivery(e.ctx, d.ID, "dead", "outbound_permission_denied", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	notice, err := db.GetSessionDelivery(e.ctx, model.FailureNoticeDeliveryID(d.ID))
+	if err != nil || notice == nil {
+		t.Fatal("permanent failure was invisible", err)
+	}
+	e.hub.mu.Lock()
+	source := e.hub.sessionClients[AgentKeyID("zzc")]["opus50ts"]
+	e.hub.mu.Unlock()
+	if err = e.hub.checkOutboundDelivery(e.ctx, source, notice); err != nil {
+		t.Fatal("lost target stranded Hub status", err)
+	}
+	replacement := &sessionClient{keyID: source.keyID, sessionName: source.sessionName, metricsAgentID: "new-source-id"}
+	if err = e.hub.checkOutboundDelivery(e.ctx, replacement, notice); !errors.Is(err, errOutboundDenied) {
+		t.Fatal("source name replacement inherited old notice", err)
+	}
+	e.hub.drainDurableFailureNotice(e.ctx, d)
+	got := w.until(func(e model.Envelope) bool { return metaString(e.Meta, "reason_code") == "outbound_permission_denied" })
+	if strings.Contains(got.Body, env.Body) || metaString(got.Meta, "reply_policy") != "no_reply" {
+		t.Fatal("failure exposed original business or opened reply loop")
 	}
 }

@@ -31,7 +31,8 @@ class OutboundRecovery:
                     'reason':'request_id_required','retryable':False}
         async def submit(to, body, meta, request_id):
             try:
-                return await asyncio.to_thread(self.queue.submit,request_id,to,body,meta)
+                cap=self.broker.recovery
+                return await asyncio.to_thread(self.queue.submit,request_id,to,body,meta,actor_id=cap['sender_id'] if cap else None)
             except (QueueCommitUnknown,sqlite3.Error,OSError):
                 return {'phase':'unknown','accepted_by':'unknown','outcome':'unknown','reason':'local_queue_unavailable','request_id':request_id,'status_ref':request_id,'retryable':False}
             except QueueRejected as exc:
@@ -42,7 +43,8 @@ class OutboundRecovery:
             if not isinstance(request_id,str) or not 0<len(request_id)<=128:
                 return {'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':'invalid_request_id','retryable':False}
             try:
-                return await asyncio.to_thread(self.queue.status,request_id)
+                cap=self.broker.recovery
+                return await asyncio.to_thread(self.queue.status,request_id,actor_id=cap['sender_id'] if cap else None)
             except (sqlite3.Error,OSError):
                 return {'phase':'unknown','accepted_by':'unknown','outcome':'unknown','request_id':request_id,'status_ref':request_id,'reason':'local_queue_unavailable','retryable':False}
         send.submit_request, send.status = submit, status

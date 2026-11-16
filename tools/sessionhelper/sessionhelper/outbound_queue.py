@@ -97,15 +97,15 @@ class OutboundQueue:
             r = db.execute("SELECT value FROM outbound_peer WHERE key='sender_id'").fetchone()
             return r[0] if r else ''
 
-    def submit(self, request_id, target, body, meta):
+    def submit(self, request_id, target, body, meta, *, actor_id=None):
         try:
-            return self._submit(request_id,target,body,meta)
+            return self._submit(request_id,target,body,meta,actor_id=actor_id)
         except (sqlite3.Error,OSError):
             # _submit promotes a failed COMMIT to QueueCommitUnknown. Earlier
             # failures are rolled back by closing the private transaction.
             raise QueueRejected('local_queue_unavailable',True) from None
 
-    def _submit(self, request_id, target, body, meta):
+    def _submit(self, request_id, target, body, meta, *, actor_id=None):
         if not isinstance(request_id, str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,128}', request_id):
             raise QueueRejected('invalid_request_id')
         if not isinstance(body, str) or not body.strip() or len(body.encode()) > (1 << 20):
@@ -121,11 +121,14 @@ class OutboundQueue:
         now = self.clock()
         with self.db() as db:
             db.execute('BEGIN IMMEDIATE')
+            sender = db.execute("SELECT value FROM outbound_peer WHERE key='sender_id'").fetchone()
+            if actor_id is not None and (not sender or sender[0]!=actor_id):
+                raise QueueRejected('sender_identity_changed',True)
             old = db.execute('SELECT * FROM outbound_request WHERE request_id=?', (request_id,)).fetchone()
             if old:
+                if not sender or old['sender_id']!=sender[0]:raise QueueRejected('sender_identity_changed')
                 if old['digest'] != digest: raise QueueRejected('idempotency_conflict')
                 return self.outcome(old)
-            sender = db.execute("SELECT value FROM outbound_peer WHERE key='sender_id'").fetchone()
             # Names are only lookup inputs. The stable ID is pinned before any
             # body write, including an admission made while the WS is offline.
             alias = target.split('#', 1)[0].lower()
@@ -143,13 +146,17 @@ class OutboundQueue:
             except sqlite3.Error:raise QueueCommitUnknown() from None
             return self.outcome(row)
 
-    def status(self, request_id):
+    def status(self, request_id, *, actor_id=None):
         with self.db() as db:
             r=db.execute('SELECT * FROM outbound_request WHERE request_id=?',(request_id,)).fetchone()
             if r is None:
                 # A concurrent IPC transaction may still be committing. Absence
                 # here is not proof that the original request never took effect.
                 return {'phase':'unknown','accepted_by':'unknown','outcome':'unknown','reason':'request_not_found','request_id':request_id,'status_ref':request_id,'retryable':False}
+            sender=db.execute("SELECT value FROM outbound_peer WHERE key='sender_id'").fetchone()
+            expected=actor_id if actor_id is not None else (sender[0] if sender else '')
+            if r['sender_id']!=expected:
+                return {'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':'sender_identity_changed','request_id':request_id,'retryable':False}
             result=self.outcome(r)
             result['recent_attempts']=[json.loads(e[0]) for e in db.execute('SELECT data FROM outbound_event WHERE source_id=? ORDER BY seq DESC LIMIT 4',(r['source_id'],))]
             oldest=db.execute('SELECT min(seq),min(ts) FROM outbound_event').fetchone()

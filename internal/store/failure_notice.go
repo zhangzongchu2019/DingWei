@@ -111,6 +111,8 @@ func safeFailureNoticeTarget(session string) string {
 
 func failureNoticeReasonText(reason string) string {
 	switch reason {
+	case "outbound_permission_denied":
+		return "发送或接收身份、当前通信权限已变化"
 	case "sub_agent_not_found":
 		return "子 Agent 不存在"
 	case "sub_agent_ended":

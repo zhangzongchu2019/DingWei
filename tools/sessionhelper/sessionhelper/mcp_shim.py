@@ -140,7 +140,7 @@ def _tool_failure(request_id, category: str, caller_request_id=None) -> Response
 
 
 def _ipc_send(payload: dict[str, Any]) -> dict[str, Any]:
-    from sessionhelper.send_dingwei import remember_request
+    from sessionhelper.send_dingwei import remember_request, checked_outcome
     rid=payload.get('request_id') or _uuid.uuid4().hex
     try:
         remember_request(rid,payload['to'],payload['body'],{k:v for k,v in payload.items() if k not in ('to','body','request_id')})
@@ -153,9 +153,7 @@ def _ipc_send(payload: dict[str, Any]) -> dict[str, Any]:
         raise
     if result.get('mode')=='LOCAL_SYNTHETIC_PILOT' and result.get('sent_to_hub') is False:
         return result  # Explicit offline pilot; never a claim of Hub receipt.
-    if result.get('outcome') not in ('accepted','unknown','definitive_failure'):
-        return {'phase':'unknown','accepted_by':'unknown','outcome':'unknown','reason':'unconfirmed_legacy_receipt','request_id':rid,'status_ref':rid,'retryable':False}
-    return result
+    return checked_outcome(result,rid)
 
 
 def _ipc_request(payload: dict[str, Any], *, timeout=None) -> dict[str, Any]:
@@ -290,7 +288,8 @@ def _send_status(args):
     if not isinstance(args,dict) or set(args)!={'request_id'} or not isinstance(args['request_id'],str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,128}',args['request_id']):
         raise ValueError('invalid request ID')
     try:
-        return _ipc_request({'type':'mcp_send_status','request_id':args['request_id']})
+        from sessionhelper.send_dingwei import checked_outcome
+        return checked_outcome(_ipc_request({'type':'mcp_send_status','request_id':args['request_id']}),args['request_id'])
     except _IPCFailure as exc:
         exc.caller_request_id=args['request_id']
         raise

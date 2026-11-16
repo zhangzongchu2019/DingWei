@@ -93,10 +93,27 @@ def ipc_send(to: str, body: str, request_id=None, *, status=False) -> dict:
             if len(buf)>65536:raise ValueError('invalid_response')
         resp=json.loads(buf.split(b'\n',1)[0])
         if not isinstance(resp,dict) or type(resp.get('ok')) is not bool:raise ValueError('invalid_response')
+        resp['_caller_request_id']=rid
         return resp
     except (OSError,ValueError):
         return {'ok':False,'outcome':unknown,'request_id':rid}
     finally:sock.close()
+
+
+def checked_outcome(out, request_id):
+    """Accept only the responsibility protocol, never an IPC or sent boolean."""
+    import re
+    valid=isinstance(out,dict)
+    if valid and out.get('outcome')=='accepted':
+        valid=((out.get('phase'),out.get('accepted_by')) in (('local_queued','local_helper'),('hub_durable_queued','hub'))
+               and isinstance(out.get('request_id'),str) and out['request_id']==request_id
+               and isinstance(out.get('source_message_id'),str) and re.fullmatch(r'[0-9a-f]{32}',out['source_message_id']) is not None)
+        if valid and out['accepted_by']=='hub':
+            valid=isinstance(out.get('delivery_id'),str) and re.fullmatch(r'dw-dlv_[0-9a-f]{32}',out['delivery_id']) is not None
+    elif valid:
+        valid=((out.get('outcome'),out.get('phase'),out.get('accepted_by')) in (('unknown','unknown','unknown'),('definitive_failure','rejected','none')))
+    if valid:return out
+    return {'phase':'unknown','accepted_by':'unknown','outcome':'unknown','request_id':request_id,'status_ref':request_id,'reason':'unconfirmed_legacy_receipt','retryable':False}
 
 
 def main() -> None:
@@ -119,11 +136,11 @@ def main() -> None:
         try:resp=ipc_send(recipient,body,rid)
         except (ValueError,OSError,sqlite3.Error):
             print(json.dumps({'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':'caller_journal_rejected','retryable':False}));sys.exit(1)
+    expected=resp.get('_caller_request_id') or resp.get('request_id') or rid
     out=resp.get('outcome')
     if resp.get('ok') is False and not isinstance(out,dict):
-        out={'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':('helper_unavailable' if isinstance(resp.get('error'),str) and resp['error'].startswith('unavailable:') else 'helper_rejected'),'request_id':resp.get('request_id',rid),'retryable':False}
-    if not isinstance(out,dict) or out.get('outcome') not in ('accepted','unknown','definitive_failure'):
-        out={'phase':'unknown','accepted_by':'unknown','outcome':'unknown','request_id':resp.get('request_id',rid),'reason':'unconfirmed_legacy_receipt','retryable':False}
+        out={'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':('helper_unavailable' if isinstance(resp.get('error'),str) and resp['error'].startswith('unavailable:') else 'helper_rejected'),'request_id':expected,'retryable':False}
+    out=checked_outcome(out,expected)
     print(json.dumps(out,ensure_ascii=False))
     if out['outcome']=='definitive_failure':print('发送失败：'+out.get('reason','rejected'),file=sys.stderr)
     if out['outcome']!='accepted':sys.exit(2 if out['outcome']=='unknown' else 1)
