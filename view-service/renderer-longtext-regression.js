@@ -191,11 +191,12 @@ async function driveLongReply(page, chunks, chunkText) {
       const tl = document.getElementById('timeline');
       const wcount = () => document.querySelectorAll('#waitingList > .waiting-item').length;
       const inject = (id) => {
-        handleIncomingEvent({ kind: 'user_input', text: `排队的外部任务 ${id}`, data: { lifecycle: 'queued' },
-          delivery_id: id, turn_id: '', cursor: `${id}.1` });
+        handleIncomingEvent({ kind: 'input_posted', schema_version: 'delivery.v2', message_id: `msg-${id}`,
+          payload: `排队的外部任务 ${id}`, delivery_id: id, stage: 'hub_received', delivery: { role: 'primary' }, cursor: `${id}.1` });
         const parked = { tl: tl.children.length, waiting: wcount() };
         // stage 必须写在顶层:normalizeEvent 取的是 ev.delivery_stage || ev.stage,不看 data.stage
-        handleIncomingEvent({ kind: 'delivery_update', delivery_id: id, stage: 'cli_injected',
+        handleIncomingEvent({ kind: 'delivery_update', schema_version: 'delivery.v2', message_id: `msg-${id}`,
+          observed_delivery_id: id, delivery: { role: 'primary' }, delivery_stage: 'cli_injected', turn_id: `turn-${id}`,
           data: { lifecycle: 'cli_injected' }, cursor: `${id}.2` });
         return { parked, admitted: { tl: tl.children.length, waiting: wcount() } };
       };

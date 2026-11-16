@@ -22,19 +22,19 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
       resetConversation(); finishTimelineReplay(false);
     });
     const emit = ev => page.evaluate(ev => handleIncomingEvent(ev), ev);
-    const input = (id, extra={}) => emit({schema_version:'delivery.v2',kind:'input_posted',message_id:'msg-'+id,delivery_id:id,text:'body '+id,stage:'helper_queued',...extra});
-    const unknownStatus = (id, extra={}) => emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-'+id,observed_delivery_id:id,delivery_stage:'helper_queued',delivery_status:'unconfirmed_retryable',reason:'unconfirmed_retryable',cancellable:false,ack_protocol:2,processing_mode:'driver',...extra});
+    const input = (id, extra={}) => emit({schema_version:'delivery.v2',kind:'input_posted',message_id:'msg-'+id,delivery_id:id,text:'body '+id,stage:'helper_queued',delivery:{role:'primary'},...extra});
+    const unknownStatus = (id, extra={}) => emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-'+id,observed_delivery_id:id,delivery:{role:'primary'},delivery_stage:'helper_queued',delivery_status:'unconfirmed_retryable',reason:'unconfirmed_retryable',cancellable:false,ack_protocol:2,processing_mode:'driver',...extra});
 
     await input('queued', {cancellable:true});
     await checks.check('CANCELLABLE_PHASE_HAS_DELETE', async()=>assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="queued"] .waiting-cancel-btn').count(),1));
     await input('taken', {cancellable:false});
     await checks.check('TAKEN_PHASE_HAS_NO_DELETE', async()=>assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="taken"] .waiting-cancel-btn').count(),0));
     await page.locator('.waiting-item[data-delivery-id="queued"] .waiting-cancel-btn').click();
-    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-queued',observed_delivery_id:'queued',delivery_stage:'helper_queued',reason:'cancel_not_cancelable',cancellable:false});
+    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-queued',observed_delivery_id:'queued',delivery:{role:'primary'},delivery_stage:'helper_queued',reason:'cancel_not_cancelable',cancellable:false});
     await checks.check('REFUSED_CANCEL_EXPLAINS_WHY', async()=>assert.ok((await page.locator('.waiting-item[data-delivery-id="queued"]').innerText()).includes('已交给 Agent，无法撤回')));
 
     await input('unknown', {queued_at:'2000-01-01T00:00:00Z',text:'target-unknown-body'});
-    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-unknown',observed_delivery_id:'unknown',delivery_stage:'helper_queued',reason:'model_admission_unknown',cancellable:false,ack_protocol:2,processing_mode:'driver',occurred_at:'2026-11-11T00:00:00Z'});
+    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-unknown',observed_delivery_id:'unknown',delivery:{role:'primary'},delivery_stage:'helper_queued',reason:'model_admission_unknown',cancellable:false,ack_protocol:2,processing_mode:'driver',occurred_at:'2026-11-11T00:00:00Z'});
     await page.evaluate(()=>{const e=waitingDeliveries.get('unknown');e.queuedClock={mono:performance.now(),elapsed:600000};r40PaintQueuedWait(e);refreshUnknownDeliveryViews();});
     await page.locator('#inboxUnknownDetails summary').click();
     await checks.check('UNKNOWN_COPY_AND_NO_QUEUE_TIMER', async()=>{
@@ -48,7 +48,7 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
     });
 
     await input('unknown-two');
-    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-unknown-two',observed_delivery_id:'unknown-two',delivery_stage:'helper_queued',reason:'model_admission_unknown',cancellable:false,ack_protocol:2,processing_mode:'driver',occurred_at:'2026-11-11T00:00:00Z'});
+    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-unknown-two',observed_delivery_id:'unknown-two',delivery:{role:'primary'},delivery_stage:'helper_queued',reason:'model_admission_unknown',cancellable:false,ack_protocol:2,processing_mode:'driver',occurred_at:'2026-11-11T00:00:00Z'});
     await page.evaluate(()=>{
       inboxLagState.state='fresh';
       inboxLagState.record={unknown:5,count:0,age:0,received:performance.now(),deadline:Infinity,clockUncertain:false};
@@ -146,20 +146,20 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
     });
 
     await input('late-admitted'); await unknownStatus('late-admitted');
-    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-late-admitted',observed_delivery_id:'late-admitted',delivery_stage:'cli_injected',delivery_status:'injected',turn_id:'turn-late',reason:'',cancellable:false,ack_protocol:2,processing_mode:'driver'});
+    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-late-admitted',observed_delivery_id:'late-admitted',delivery:{role:'primary'},delivery_stage:'cli_injected',delivery_status:'injected',turn_id:'turn-late',reason:'',cancellable:false,ack_protocol:2,processing_mode:'driver'});
     await checks.check('LATE_ADMITTED_RESTORES_NORMAL_PROCESSED', async()=>{
       assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="late-admitted"]').count(),0);
       assert.ok((await page.locator('#timeline').innerText()).includes('body late-admitted'));
     });
     await input('late-processed'); await unknownStatus('late-processed');
-    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-late-processed',observed_delivery_id:'late-processed',delivery_stage:'turn_processed',delivery_status:'processed',reason:'',cancellable:false,ack_protocol:2,processing_mode:'driver'});
+    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-late-processed',observed_delivery_id:'late-processed',delivery:{role:'primary'},delivery_stage:'turn_processed',delivery_status:'processed',reason:'',cancellable:false,ack_protocol:2,processing_mode:'driver'});
     await checks.check('LATE_PROCESSED_RESTORES_NORMAL_PROCESSED', async()=>{
       assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="late-processed"]').count(),0);
       assert.ok((await page.locator('#timeline').innerText()).includes('body late-processed'));
     });
 
     await input('expires', {queued_at:'2000-01-01T00:00:00Z'});
-    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-expires',observed_delivery_id:'expires',delivery_stage:'helper_queued',reason:'model_admission_unknown',cancellable:false,ack_protocol:2,processing_mode:'driver',occurred_at:'2026-11-11T00:00:00Z'});
+    await emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-expires',observed_delivery_id:'expires',delivery:{role:'primary'},delivery_stage:'helper_queued',reason:'model_admission_unknown',cancellable:false,ack_protocol:2,processing_mode:'driver',occurred_at:'2026-11-11T00:00:00Z'});
     await page.evaluate(()=>{window.__viewUnknownUxNow=()=>Date.parse('2026-11-12T00:00:00.001Z');refreshUnknownDeliveryViews();});
     await checks.check('EXPIRED_HIDDEN_FROM_WAITING_RETAINED_IN_UNKNOWN_LIST', async()=>{
       assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="expires"]').isHidden(),true);

@@ -32,7 +32,7 @@ function events(mode, n) {
     delivery_id: delivery, payload: `TIMELINE_USER_${mode}_${n}`, stage: 'helper_queued', updated_at: new Date(BASE + 2000).toISOString(),
     source: { kind: 'agent', trust_decision: 'trusted' }, delivery: { role: 'primary' } };
   const accepted = { kind: 'delivery_update', schema_version: 'delivery.v2', message_id: `timeline-msg-${n}`,
-    observed_delivery_id: delivery, delivery_stage: 'cli_injected', turn_id: turn,
+    observed_delivery_id: delivery, delivery: { role: 'primary' }, delivery_stage: 'cli_injected', turn_id: turn,
     ack_protocol: 2, processing_mode: 'driver', ack_generation: 1,
     queued_at: new Date(BASE + 1500).toISOString(), occurred_at: new Date(BASE + 3500).toISOString(),
     updated_at: new Date(BASE + 4000).toISOString(), reason: '', cancellable: true, interruptible: false };

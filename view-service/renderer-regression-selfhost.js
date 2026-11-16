@@ -44,11 +44,11 @@ async function launchChromium() {
   }
 }
 
-async function startRendererServer() {
+async function startRendererServer(rendererOverride = null) {
   const rendererPath = path.join(__dirname, 'renderer-canary-sse.html');
   let renderer;
   try {
-    renderer = fs.readFileSync(rendererPath);
+    renderer = rendererOverride === null ? fs.readFileSync(rendererPath) : Buffer.from(rendererOverride);
   } catch (err) {
     throw new EnvironmentUnavailable(`renderer fixture unavailable: ${err.message}`);
   }

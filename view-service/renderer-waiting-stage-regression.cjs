@@ -11,7 +11,7 @@ function fixture(stage='hub_received'){
  vm.createContext(c);vm.runInContext(part('    const C1_STAGE_ORDER','    // ── B/C/D:')+part('    function dispatchIncomingEvent','    function admitWaitingDelivery'),c);
  c.ev={schema_version:'delivery.v2',kind:'input_posted',message_id:'synthetic-m',delivery_id:'synthetic-d',stage,cancellable:true,payload:'synthetic-input',source:{kind:'agent',display_name:'synthetic-agent',trust_decision:'trusted'},delivery:{role:'primary'}};
  vm.runInContext('renderWaitingDelivery(normalizeEvent(ev))',c);
- return {waiting,get:()=>({renders,removed,moved}),send:(stage,status='',extra={})=>{now+=1000;c.ev={schema_version:'delivery.v2',kind:'delivery_update',message_id:'synthetic-m',observed_delivery_id:'synthetic-d',delivery_stage:stage,delivery_status:status,...extra};vm.runInContext('dispatchIncomingEvent(ev)',c);}};
+ return {waiting,get:()=>({renders,removed,moved}),send:(stage,status='',extra={})=>{now+=1000;c.ev={schema_version:'delivery.v2',kind:'delivery_update',message_id:'synthetic-m',observed_delivery_id:'synthetic-d',delivery:{role:'primary'},delivery_stage:stage,delivery_status:status,...extra};vm.runInContext('dispatchIncomingEvent(ev)',c);}};
 }
 // Original demonstrated late-update counterexample must become green.
 let f=fixture('helper_received'),before=f.get().renders,touched=f.waiting.get('synthetic-d').touched;

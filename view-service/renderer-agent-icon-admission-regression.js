@@ -14,6 +14,7 @@ const trustedCanonical = (id, label = 'qwen38mvb4', provenance = {}) => ({
 const injected = id => ({
   kind: 'delivery_update', schema_version: 'delivery.v2',
   message_id: `msg-${id}`, observed_delivery_id: `dw-dlv-${id}`,
+  delivery: { role: 'primary' },
   delivery_stage: 'cli_injected', turn_id: `turn-${id}`,
   occurred_at: '2026-11-16T07:46:59.102Z', updated_at: '2026-11-16T07:46:59.905Z',
 });
