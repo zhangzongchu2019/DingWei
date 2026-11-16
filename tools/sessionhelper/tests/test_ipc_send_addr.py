@@ -51,12 +51,12 @@ class TestIPCSendAddressCompletion(unittest.TestCase):
         ipc.assert_called_once_with("agent.user#key", "hello", None)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class DestinationIdentityTest(unittest.TestCase):
     def test_inherited_sender_key_never_rewrites_recipient(self):
         with mock.patch.dict(os.environ,{'SH_KEY_ID':'sender-owner-key'}):
             self.assertEqual(send_dingwei.complete_addr('peer.other-owner'),'peer.other-owner')
             self.assertEqual(send_dingwei.complete_addr('peer#verified-key'),'peer#verified-key')
+
+
+if __name__ == "__main__":
+    unittest.main()
