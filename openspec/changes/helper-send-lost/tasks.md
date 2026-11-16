@@ -31,3 +31,5 @@
 - 2026-11-16 coder56solzzc，固定38e0ec430完整门：strict36/0，helper两profile各1221/rc0；canonical后段hosted真实桥仍用旧_run_once/sent契约而红，Go全包仅legacy账本丢失测试红（0077未接入既有exact-DDL补账）。本轮均保留原rc1；磁盘耗尽的更早rc1另留，不混为同次。已补0077 exact-DDL及缺索引/改表拒启测试，hosted改走真实run_forever/责任状态查询并由真实Hub核组内成功/退组拒绝，接收端须协商durable能力；无ACK目标显式unsupported，不无限当暂错。显式owner key只允许认证目录原别名，不静默剥#归属；相关定向已绿。下一步固定新候选再跑完整门/变异，不沿用38的PASS。
 
 - 2026-11-16 coder56solzzc，9f3e20c00同源完整canonical rc0（两profile各1222、BUILD_TESTS_OK helper_profiles=2 python=27 shell=2）、m8/store全包rc0、focused race/build/strict rc0及17刀业务断言红。交件前补齐Hub4096/65536边界：满容量先恢复旧回执，新接纳无fence/收方残行；已知原子拒绝须rejected/hub_outbound_capacity，不归unknown。新增两项定向绿，固定后重跑最终门，不把9f门冒称覆盖该修正。
+
+- 2026-11-16 coder56solzzc，23a2a7af8完整canonical/Go/strict均rc0、19刀红；封件自查新增反例prior-acceptance-counterexample在23业务断言红：原回执丢失后权限拒绝会误清未知正文。现修为首次明确拒绝/先前未知两格区分，原ID恢复后仍同delivery；反例及新增表驱动已转绿，SL-S011细化并新增SL-S016。此前23门仅历史；下一步再固定源跑完整门，独立评审必须看此边界，不以先前全绿取代新源验证。

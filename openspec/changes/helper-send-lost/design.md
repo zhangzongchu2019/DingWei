@@ -64,3 +64,7 @@ SL-005永久失败可见性：实际写前的outbound_permission_denied进入既
 0077账本DDL接入现有exact-DDL预检与补账：丢迁移账本但结构完整只补账，不重放/清空幂等fence；缺索引或定义改变拒启。显式target#owner仅按认证目录发布的完整别名匹配，不能丢弃#owner后按同名重定向。旧接收端未协商持久ACK时拒绝outbound_target_unsupported，禁止退回无持久责任的直接写；暂时存储/身份错误仍unknown。hosted/受限MCP的正常运行入口同样是跨WS的run_forever监听，不用旧socket sent布尔充当新回执。
 
 Hub容量的已知原子拒绝（ErrOutboundCapacity）返回rejected/hub_outbound_capacity而非unknown。4096/65536达到上界时仍先查原fence并恢复旧回执；新caller不插入fence/收方行。没有自动清库，长期达到上界会拒绝新接纳，这是候选可用性取舍，须终审，不以复用ID或删除未知业务规避。
+
+### 当前拒绝不消除此前未知接纳
+
+交件前反例证明：Hub首次已提交/回执丢失，原ID恢复时恰遇权限撤销，后一次rejected仅拒绝当前操作，不能证明历史未接纳。helper在首次明确拒绝时可记rejected；从第二次写出起收到拒绝则保留unknown/outbound_rejected_after_uncertainty、原ID与正文，仍按同ID的有限恢复窗处理，不许可caller换ID盲重发。Hub仍先核当前权限，拒绝时不泄露原回执/正文。SL-S011据此细化，新增SL-S016；不改变通信权限、不代目标CLI重做。私有outbox/调用号账本不得直接删除或恢复到早于已上送意图的快照；硬件损坏/人工回滚丢失账本不在“持久存储完整”保证内，须受审对账。

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from sessionhelper.outbound_queue import OutboundQueue, QueueRejected
 from sessionhelper.outbound_recovery import OutboundRecovery
-from sessionhelper.outbound_receipt import OutboundReceiptError
+from sessionhelper.outbound_receipt import OutboundReceiptError, OutboundRejected
 
 
 class DurableQueueTest(unittest.TestCase):
@@ -123,6 +123,41 @@ class RecoveryWorkerTest(unittest.IsolatedAsyncioTestCase):
             await w.step();result=await w.handler().status('caller')
             self.assertEqual(result['phase'],'hub_durable_queued')
             self.assertEqual(b.ids,[out['source_message_id']]*2);self.assertEqual(len(b.accepted),1)
+    async def test_current_refusal_after_lost_receipt_preserves_original_unknown(self):
+        class Broker:
+            connection=object();negotiated=True
+            recovery={'sender_id':'sender','targets':[{'agent_id':'target','full_name':'target.owner','aliases':['target']}]}
+            def __init__(self,prior):self.prior=prior;self.ids=[];self.accepted={}
+            async def send(self,ws,to,body,source,meta,**kw):
+                sid=kw['source_id'];self.ids.append(sid)
+                if self.prior and len(self.ids)==1:
+                    self.accepted[sid]='dw-dlv_'+'c'*32
+                    raise OutboundReceiptError('receipt lost after Hub commit')
+                if not self.prior or len(self.ids)==2:
+                    err=OutboundRejected('current permission denied');err.reason='permission_denied';raise err
+                return {'delivery_id':self.accepted[sid]}
+        for prior in (False,True):
+            with self.subTest(prior=prior), tempfile.TemporaryDirectory() as tmp:
+                b=Broker(prior);w=OutboundRecovery(os.path.join(tmp,'queue.db'),b,lambda:'source#owner')
+                await w.step();first=w.queue.submit('caller','target','original pending body',{})
+                await w.step()
+                if not prior:
+                    self.assertEqual(w.queue.status('caller')['phase'],'rejected')
+                    continue
+                with w.queue.db() as db:db.execute('UPDATE outbound_request SET next_attempt=0')
+                await w.step()
+                self.assertEqual(w.queue.status('caller')['phase'],'unknown','current refusal cannot prove prior acceptance absent')
+                self.assertEqual(w.queue.status('caller')['reason'],'outbound_rejected_after_uncertainty')
+                with w.queue.db() as db:
+                    self.assertEqual(db.execute('SELECT body FROM outbound_request').fetchone()[0],'original pending body')
+                    db.execute('UPDATE outbound_request SET next_attempt=0')
+                await w.step()
+                resolved=w.queue.status('caller')
+                self.assertEqual(resolved['phase'],'hub_durable_queued')
+                self.assertEqual(resolved['delivery_id'],'dw-dlv_'+'c'*32)
+                self.assertEqual(b.ids,[first['source_message_id']]*3)
+                self.assertEqual(len(b.accepted),1,'recovery created a second business identity')
+
     async def test_old_or_missing_capability_never_writes(self):
         class Broker:
             connection=object();negotiated=True;recovery=None

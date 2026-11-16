@@ -96,7 +96,14 @@ class OutboundRecovery:
                                      source_id=row['source_id'],recovery=row,timeout=10)
             phase,reason,delivery='hub_durable_queued','',result['delivery_id']
         except OutboundRejected as exc:
-            phase,reason='rejected',getattr(exc,'reason','outbound_rejected')
+            if row['attempts'] > 1:
+                # Current permission/protocol refusal is not proof that a prior
+                # write with a lost receipt never committed. Keep the original
+                # identity and body; only a later authorized same-ID receipt can
+                # resolve that uncertainty. Never invite a new-ID business retry.
+                phase,reason='unknown','outbound_rejected_after_uncertainty'
+            else:
+                phase,reason='rejected',getattr(exc,'reason','outbound_rejected')
         except OutboundReceiptError as exc:
             reason=getattr(exc,'reason','outbound_confirmation_unavailable')
             # Same source ID is recovered on a negotiated generation only.

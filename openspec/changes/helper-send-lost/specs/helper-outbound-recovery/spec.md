@@ -57,7 +57,11 @@ Hub MUST 将认证sender_agent_id与source_message_id的唯一裁决、稳定目
 
 #### Scenario: SL-S011 目标被替换或权限撤销
 - **WHEN** 待恢复意图的目标同名但ID改变，或任一方失去通信权限
-- **THEN** 不改投替代席位、不泄露原裁决或正文，原意图转为受限可见拒绝
+- **THEN** 不改投替代席位、不泄露原裁决或正文；明确未接管的首笔尝试可落rejected，先前写出/接纳已不确定的意图仍保留unknown与原ID/正文，不能把本次权限拒绝推成历史未接管证明
+
+#### Scenario: SL-S016 原回执丢失后权限拒绝
+- **WHEN** 首次Hub可能已提交但回执丢失，原意图随后收到当前权限拒绝
+- **THEN** helper保留unknown及原ID/正文，不伪造历史未接受；权限恢复时仍只能恢复同ID原回执，不创建第二业务意图
 
 ### Requirement: SL-006 调用方失败语义不掩盖
 send.py与MCP MUST 保留结构化phase、accepted_by、request/source/delivery ID及reason；unknown或rejected不得打印无条件sent成功或仅因IPC ok返回成功语义。临时且可证未接管失败SHALL可用原意图重试；已可能提交/IPC未确认时须先查询，不能换通道或生成新ID自动发送。
