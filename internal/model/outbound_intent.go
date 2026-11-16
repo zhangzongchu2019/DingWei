@@ -3,7 +3,7 @@ package model
 import "time"
 
 // OutboundIntent is a retained, body-free acceptance fence. Deleting delivery
-// payloads must never turn its source ID into a new business request.
+// payloads must not reopen its source ID inside the recovery/retention window.
 type OutboundIntent struct {
 	SenderID        string
 	SourceMessageID string

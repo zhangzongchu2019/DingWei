@@ -8,4 +8,5 @@ CREATE TABLE outbound_intent (
  PRIMARY KEY(sender_id,source_message_id)
 );
 -- Intentionally no cascading FK: this small fence outlives delivery payloads.
-CREATE INDEX outbound_intent_sender ON outbound_intent(sender_id);
+CREATE INDEX outbound_intent_sender ON outbound_intent(sender_id,created_at);
+CREATE INDEX outbound_intent_created ON outbound_intent(created_at,sender_id,source_message_id);

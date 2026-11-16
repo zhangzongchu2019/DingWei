@@ -136,6 +136,11 @@ func run(logger *slog.Logger) error {
 			_ = st.Close()
 		}
 	}()
+	if err := configureOutboundIntentRetentionForRun(st); err != nil {
+		return err
+	}
+	logger.Info("outbound acceptance fence retention", "retention", st.OutboundIntentRetention().String(), "helper_window", "24h", "safety_margin", "2h")
+
 	sessionHistoryEnabled := sessionHistoryEnabledFromEnv(os.Getenv("DW_SESSION_HISTORY_PERSIST_ENABLED"))
 	historyStore, err := openSessionHistoryForRun(bs.DataDir, sessionHistoryEnabled, logger, time.Now())
 	if err != nil {

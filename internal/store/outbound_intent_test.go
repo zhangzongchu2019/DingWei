@@ -91,7 +91,7 @@ func TestOutboundIntentRecipientFailureRollsBackAcceptance(t *testing.T) {
 }
 
 func TestOutboundIntentMigrationRejectsPartialOrChangedSchema(t *testing.T) {
-	for _, sql := range []string{`DROP INDEX outbound_intent_sender`, `ALTER TABLE outbound_intent ADD COLUMN unexpected TEXT`} {
+	for _, sql := range []string{`DROP INDEX outbound_intent_sender`, `DROP INDEX outbound_intent_created`, `ALTER TABLE outbound_intent ADD COLUMN unexpected TEXT`} {
 		t.Run(sql, func(t *testing.T) {
 			db := openMigrated(t, filepath.Join(t.TempDir(), "schema.db"))
 			defer db.Close()
@@ -116,7 +116,7 @@ func TestOutboundIntentCapacityPreservesOldReceiptAndRejectsNewAtomically(t *tes
 	// One sender reaches its last slot at the same time as the global last slot.
 	_, err := db.db.ExecContext(ctx, `WITH RECURSIVE n(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM n WHERE i<65535)
  INSERT INTO outbound_intent(sender_id,source_message_id,target_id,digest,delivery_id,created_at)
- SELECT CASE WHEN i<=4095 THEN 'sender' ELSE printf('bulk-%d',i) END,printf('seed-%d',i),'target',?,printf('seed-delivery-%d',i),'2026-11-16T00:00:00Z' FROM n`, strings.Repeat("a", 64))
+ SELECT CASE WHEN i<=4095 THEN 'sender' ELSE printf('bulk-%d',i) END,printf('seed-%d',i),'target',?,printf('seed-delivery-%d',i),? FROM n`, strings.Repeat("a", 64), db.now().UTC().Format(outboundIntentStamp))
 	if err != nil {
 		t.Fatal(err)
 	}

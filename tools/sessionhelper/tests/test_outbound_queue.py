@@ -15,6 +15,11 @@ class DurableQueueTest(unittest.TestCase):
         self.path=os.path.join(self.tmp.name,'out.db');self.now=100000
         self.q=OutboundQueue(self.path,clock=lambda:self.now)
         self.q.update_peer('sender',[{'agent_id':'target','full_name':'target.owner','aliases':['target']}])
+    def test_automatic_replay_window_stays_within_hub_retention_contract(self):
+        # This is a protocol bound, not merely a tunable cache duration. A larger
+        # helper window requires a coordinated Hub retention-floor change.
+        self.assertEqual(OutboundQueue.WINDOW,24*3600)
+
     def test_offline_admission_restart_and_conflict(self):
         a=self.q.submit('request','target','body',{})
         self.assertEqual(a['phase'],'local_queued');self.assertEqual(os.stat(self.path).st_mode&0o777,0o600)

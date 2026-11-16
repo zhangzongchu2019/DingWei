@@ -20,8 +20,8 @@
 
 - 2026-11-16 coder56solzzc，前交件42c4a8b9f；按组长09:13:16Z先决令。完成：本席库只读核71无行/08:20～08:30 qwen零入站，08:58来自2bfa（原id524d）；dc21原ID确认在delivery93a3，补映射并更新其语义证据分级；一行先报0e0b1a616973。阻塞：dc21未知回执的具体WS分支未定，71缺写前日志；下一步：推纯文档补记，待组长审案，不自行补发/查现网。
 
-- [x] T-08 R60①实现CLI/MCP、持久helper队列、Hub原子裁决及回执恢复，完成真实断连/离线IPC/并发/重启/权限边界回归。
-- [x] T-09 SOURCE_COMMIT冻结后跑canonical、相关Go/PG strict、guard-deletion故障断言及OpenSpec strict；记录全部失败/修正/重跑。
+- [ ] T-08 R60①实现CLI/MCP、持久helper队列、Hub原子裁决及回执恢复，完成真实断连/离线IPC/并发/重启/权限边界回归。
+- [ ] T-09 SOURCE_COMMIT冻结后跑canonical、相关Go/PG strict、guard-deletion故障断言及OpenSpec strict；记录全部失败/修正/重跑。
 - [ ] T-10 冻结普通推送并核ls-remote，向qwen只读交审、抄组长；不自验收、不自行集成或部署。
 
 - 2026-11-16 coder56solzzc，工作基d2cc47c7。完成：①②③独立工作树已建（集成基110e2c1f）；①原子存储、真实WS原回执恢复、helper持久队列及离线IPC/CLI语义已实现初稿，定向逐步收敛。阻塞：完整门/变异/独立复核未完成，候选容量须终审；下一步：保持产品未冻结，补权限/回执/代际故障回归后跑完整门。②尚未实现；③待外部冻结项及组长复核后按③④①②顺序集成。
@@ -37,3 +37,5 @@
 - 2026-11-16 coder56solzzc，633d9f218 canonical/全包Go/focused race/build均rc0、20刀红；封件自查补离线期限、无协商上界、旧unsupported未知升级禁盲补及大小写回执/调用方目标键边界。三项旧码业务反例红已留档，修正后定向绿；首次集中定向命令误列不存在的test_app_startup_reconnect，原rc1保留，改正确模块后全组rc0，不算产品失败。SL-S017/018补合同；接下来固定新源跑完整门，旧633门不冒称覆盖本批。
 
 - 2026-11-16T19:40:34Z coder56solzzc，冻结产品源ba7acae7798eda8a6d17f3e03dfa07c8c65835f1。完成：同源canonical/build/Go全包/PG strict/focused race/strict及25项编译成功业务断言红，证据与已留存原失败见docs/reviews/r60-send-lost。阻塞：独立只读评审和组长终审未完成；下一步普通推送核远端并只请求该最终源复核，不自验收/不合入/不部署。
+
+- 2026-11-16 coder56solzzc，收到组长19:52:29Z容量阻塞退回，旧6163/ba交审撤回，已告qwen停止旧锚。当前：默认168h可配>26h/窗内计数/事务内256条仅超期GC/0077索引与未终结绑定保留已实现工作稿；初轮插入atomic import误伤旧字符串及下一轮测试未使用import导致编译失败，原日志保留，修正后重跑增量，不能计删保护红。设计明确helper24h+2h时钟/调度余量与自动重放保证范围。下一步：增量绿后固定新源，完整canonical/Go/PG strict/race/strict与新旧保护变异，交改后tip；不自集成/不部署。

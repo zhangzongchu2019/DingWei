@@ -22,3 +22,7 @@ Node22.23.1，OpenSpec1.16.0，OPENSPEC_TELEMETRY=0。普通uid1001、短独立H
 - helper：outbound_queue.py为私有账本，outbound_recovery.py为单writer，app.py将IPC与WS代际解耦；send_dingwei.py/mcp_shim.py/ipc_listener.py透传并持久固定caller ID和查询结果；outbound_receipt.py协商新恢复能力。
 - 新增测试：outbound_intent_test.go、outbound_recovery_test.go、test_outbound_queue.py（登记helper-test-files.txt）；既有传输/地址/托管夹具改为明确责任回执，不以sent:true伪造受理。
 - ①不提前抬VERSION；集成③④①②后由r60-integration统一抬0.2.3.40。②新分支r60-hub-keepalive基d2；集成分支基110e2c1f，须保留retainCanonicalTrustedProvenance。
+
+
+### 2026-11-16组长容量退回当前状态
+旧6163fbb4/ba7acae7停止交审，累计永存栅栏方案被退回。本轮只修时间窗保留/有界GC及配置/0077索引、物理身份绑定保护和回归；默认168h、启动>26h、容量仅窗内计。新冻结产品锚及完整门尚待生成，旧25刀/旧绿门不得冒称覆盖新实现。最终再给qwen一次新tip；③优先、②产品167不受影响。

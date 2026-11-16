@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -32,11 +33,12 @@ var migrationFS embed.FS
 
 // SQLite 是 Repository 的 SQLite 实现。
 type SQLite struct {
-	legacySpecMu       sync.RWMutex
-	coordinateReviewMu sync.Mutex
-	legacySpecLockPath string
-	db                 *sql.DB
-	clock              clock.Clock // 可注入时钟（测试用 Fake）；默认 clock.Real
+	legacySpecMu        sync.RWMutex
+	coordinateReviewMu  sync.Mutex
+	outboundRetentionNS atomic.Int64
+	legacySpecLockPath  string
+	db                  *sql.DB
+	clock               clock.Clock // 可注入时钟（测试用 Fake）；默认 clock.Real
 }
 
 // SetClock 注入时钟（测试用）。未设置时默认 clock.Real{}。
