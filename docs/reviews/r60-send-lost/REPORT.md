@@ -76,3 +76,7 @@
 | strict-retention-pinned | 0 | 0 | 0 | 0 | 0 |
 
 Canonical 两 profile：claude 1230/1230 rc0；codex 1230/1230 rc0；BUILD_TESTS_OK helper_profiles=2 python=27 shell=2。focused race仅覆盖所列筛选，不是全包race；Go包PASS不与Python/helper子项混计。strict明细见原日志。
+
+## 组长容量复核入账（2026-11-16T20:50:50Z）
+
+组长对冻结产品12f851f2／证据tip c95c4114结论为①接受，容量退回项已解决。其独立canonical带BUILD_TESTS_OK；以④4e421abea依次合②1671a596和①12f851f2的试合无冲突，定向count=2取得162 PASS／0 FAIL／0 SKIP；独立删除“只清超期”和“未终结投递不清”两刀均在相应业务断言红。这些读数归属组长，不与作者门相加，不是本席集成树或部署GO。按非阻塞意见仅补design的W/P/E增长边界、索引重扫与观测口径，不改产品；qwen只读独立复核仍待回。③尚未交件，集成仍保持110e2c1f，待③冻结后按③④①②，不提前合并；VERSION0.2.3.40仅在集成阶段处理。
