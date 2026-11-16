@@ -144,10 +144,6 @@ class TerminalStartTest(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(asyncio.CancelledError): await asyncio.wait_for(task,0.5)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class TerminalBoundedOutputTest(unittest.IsolatedAsyncioTestCase):
     async def test_unicode_chunks_keep_order_and_yield_between_bounded_frames(self):
         text=('中🙂abc\x1b[32m'*15000)
@@ -175,3 +171,7 @@ class TerminalBoundedOutputTest(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(any(0<n<len(frames) for n in control),'control task starved between frames')
         finally:
             reader.cancel();tick.cancel();await asyncio.gather(reader,tick,return_exceptions=True)
+
+
+if __name__ == "__main__":
+    unittest.main()
