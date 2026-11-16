@@ -407,12 +407,18 @@ func subAgentClaimKey(env model.Envelope) string {
 	return env.ID
 }
 func subAgentPermanent(err error) bool {
+	if errors.Is(err, errOutboundDenied) {
+		return true
+	}
 	var e *subagent.Error
 	return errors.As(err, &e) && (e.Code == "sub_agent_ended" || e.Code == "sub_agent_generation_mismatch" || e.Code == "sub_agent_not_found")
 }
 
 // Revalidate persisted routing before every write, including after reconnect.
 func (h *Hub) subAgentDrainCheck(ctx context.Context, c *sessionClient, d *model.SessionDelivery) error {
+	if err := h.checkOutboundDelivery(ctx, c, d); err != nil {
+		return err
+	}
 	repo, ok := h.Repo.(subAgentRepository)
 	if !ok {
 		if scopedSubAgentDelivery(d) {
@@ -447,6 +453,9 @@ func (h *Hub) subAgentDrainCheck(ctx context.Context, c *sessionClient, d *model
 // Serialize a scoped physical write against tree closure and connection replacement.
 // Ordinary root deliveries keep their existing write path.
 func (h *Hub) writeSubAgentDelivery(ctx context.Context, c *sessionClient, d *model.SessionDelivery, env model.Envelope) error {
+	if err := h.checkOutboundDelivery(ctx, c, d); err != nil {
+		return err
+	}
 	repo, ok := h.Repo.(subAgentRepository)
 	if !ok {
 		if scopedSubAgentDelivery(d) {
@@ -495,6 +504,9 @@ func subAgentRouteDeliveryID(base string, route subagent.DeliveryRoute) string {
 }
 
 func subAgentErrorCode(err error) string {
+	if errors.Is(err, errOutboundDenied) {
+		return "outbound_permission_denied"
+	}
 	var e *subagent.Error
 	if errors.As(err, &e) {
 		return e.Code

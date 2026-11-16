@@ -45,9 +45,9 @@ class TestIPCSendAddressCompletion(unittest.TestCase):
 
     def test_root_two_segment_target_stays_supported(self):
         with mock.patch.object(sys, "argv", [str(SEND_SCRIPT), "agent.user#key", "hello"]), \
-             mock.patch.object(send_dingwei, "ipc_send", return_value={"ok": True, "outcome": {"to": "agent.user#key"}}) as ipc:
+             mock.patch.object(send_dingwei, "ipc_send", return_value={"ok": True, "outcome": {"to": "agent.user#key", "outcome":"accepted", "phase":"local_queued", "accepted_by":"local_helper"}}) as ipc:
             send_dingwei.main()
-        ipc.assert_called_once_with("agent.user#key", "hello")
+        ipc.assert_called_once_with("agent.user#key", "hello", None)
 
 
 if __name__ == "__main__":

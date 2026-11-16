@@ -1,0 +1,24 @@
+# S-SEND-LOST上下文
+
+## 输入与边界
+
+- 派单：opus50tc2k.zzc，2026-11-16T09:06:48Z，S-SEND-LOST；期限13:00Z；本次只读、REPORT＋ADDED提案，不实现、不接触现网。
+- 分支：coder56solzzc/send-lost-20261116，基main d2cc47c7e699eb45efb3a07ee197aa8c20a9f07e。S-FLAP停在60e9a80c179432bce15695522d0b6767064927c9，不再追加。
+- helper审计：2e1e4c9db3c42cf7c987a548fa9214aad67a9f0c（0.2.3.39）；线上具体helper文件指纹与Hub二进制SHA未取得，不由版本串代替字节证据。
+- prodops只读原件：91f1b3adcc3ed60ce25ff24fcb8f7c727b909d86/tree b4e4c05da6c878f5342afb7eb4f3530eddb8899a；路径docs/reviews/prodops-flap-two-missing-20261116，原四项SHA已独立核。
+
+## 读取顺序与既有合同
+
+先读openspec/specs/helper-delivery-evidence/context.md与spec.md，保留HCD/HRI/HBA收件未知不重放；再核进行中变更与openspec/config.yaml。主规格没有普通主动发信恢复能力，最小原态在specs/helper-outbound-recovery/context.md；现有Hub生命周期、外部sender和desktop回信并不自动为普通mcp_send提供持久outbox。平台时间线专件未定位到，不补造。
+
+## 验证
+
+Node22.23.1，OpenSpec1.16.0，OPENSPEC_TELEMETRY=0。普通uid1001、短独立HOME/TMPDIR、剥继承SH/DINGWEI/DW/DATAD；仅临时库和loopback，无在线发信测试。canonical在本分支基d2产品字节运行；离线当前行为探针明确调用固定2e代码。raw与元数据见docs/reviews/send-lost-20261116；不是拟议修复通过证据。
+
+## R60①接续（2026-11-16）
+
+- 新分支coder56solzzc/r60-send-lost，基d2cc47c7；冻结提案输入aaa3f893，R60派单16:05:24Z。旧提案与旧门不是本实现通过证据。
+- Hub：internal/model/outbound_intent.go；internal/store/outbound_intent.go与migrations/0077_outbound_intent.sql；internal/m8/outbound_recovery.go及outbound_receipt.go/hub.go/sub_agent.go接线。
+- helper：outbound_queue.py为私有账本，outbound_recovery.py为单writer，app.py将IPC与WS代际解耦；send_dingwei.py/mcp_shim.py/ipc_listener.py透传并持久固定caller ID和查询结果；outbound_receipt.py协商新恢复能力。
+- 新增测试：outbound_intent_test.go、outbound_recovery_test.go、test_outbound_queue.py（登记helper-test-files.txt）；既有传输/地址/托管夹具改为明确责任回执，不以sent:true伪造受理。
+- ①不提前抬VERSION；集成③④①②后由r60-integration统一抬0.2.3.40。②新分支r60-hub-keepalive基d2；集成分支基110e2c1f，须保留retainCanonicalTrustedProvenance。

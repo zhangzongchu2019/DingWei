@@ -91,5 +91,26 @@ func (h *Hub) writeOutboundCapabilities(c *sessionClient, env model.Envelope) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_ = c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress(systemAddressName, c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: time.Now().Unix(), Meta: map[string]any{"type": "outbound_capabilities", "version": 1, "nonce": nonce, "durable_agent_queue": h.Repo != nil, "system": true, "no_mirror": true}})
+	metadata := map[string]any{"type": "outbound_capabilities", "version": 1, "nonce": nonce, "durable_agent_queue": h.Repo != nil, "system": true, "no_mirror": true}
+	if _, ok := h.Repo.(outboundIntentRepository); ok && h.Identity != nil {
+		if sender, full, e := h.subAgentRoot(ctx, c); e == nil {
+			candidates, e := h.Identity.MentionCandidates(ctx, sender)
+			if e == nil {
+				targets := []map[string]any{{"agent_id": sender, "full_name": full, "aliases": []string{c.sessionName}}}
+				for _, candidate := range candidates {
+					if string(candidate.Agent.Origin) == "external" {
+						continue
+					}
+					if len(targets) >= 1024 {
+						break
+					}
+					targets = append(targets, map[string]any{"agent_id": candidate.Agent.ID, "full_name": candidate.FullName, "aliases": []string{candidate.Insert}})
+				}
+				metadata["outbound_recovery_v1"] = true
+				metadata["sender_agent_id"] = sender
+				metadata["targets"] = targets
+			}
+		}
+	}
+	_ = c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress(systemAddressName, c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: time.Now().Unix(), Meta: metadata})
 }

@@ -11,9 +11,8 @@
     这是 2026-09-12 组长误判「消息已送达」整整一轮的直接原因
   · socket 不可用时**失败并明说，绝不回落旧 WS 路径**（回落等于绕过 M2、且留着凭据暴露）
 
-⚠️ 回执语义边界：`ok:true` 表示「已写入 helper 的已认证连接」，
-   **不代表 Hub 最终接受**。Hub 的裁决（如 invalid address / 目标不在线）
-   通过投递失败通知**异步**回来，不在本命令的返回值里。
+回执分 accepted／unknown／definitive_failure；local_queued 只承诺本地持久受理。
+unknown 保留 request_id，使用 --status 查询，不自动重发或换新 ID。
 """
 import json
 import os
@@ -51,73 +50,80 @@ def unsupported_sub_agent_target(to: str) -> bool:
     return bool(name) and len(name.split(".")) >= 3
 
 
-def ipc_send(to: str, body: str) -> dict:
-    actual = len(body.encode("utf-8"))
-    if actual > MESSAGE_BODY_MAX_BYTES:
-        return {"ok": False, "error": "body_too_large", "actual_bytes": actual, "limit_bytes": MESSAGE_BODY_MAX_BYTES}
-    payload = {"type": "mcp_send", "to": to, "body": body,
-               "request_id": uuid.uuid4().hex[:12],
-               # T-089: only send.py opts into Hub-side body AMR parsing.
-               # MCP and other IPC callers keep their existing literal-body semantics.
-               "ipc_body_amr_v1": True}
-    raw = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
-    if len(raw) - 1 > IPC_REQUEST_MAX_BYTES:
-        return {"ok": False, "error": "request_too_large", "actual_bytes": len(raw)-1, "limit_bytes": IPC_REQUEST_MAX_BYTES}
-    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    s.settimeout(TIMEOUT)
+def remember_request(request_id, target, body, meta=None):
+    """Persist the caller identity before the first IPC write; never store body."""
+    import hashlib
+    import sqlite3
+    import re
+    rid=request_id or uuid.uuid4().hex
+    if not isinstance(rid,str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,128}',rid):
+        raise ValueError('invalid_request_id')
+    digest=hashlib.sha256(json.dumps([target,body,meta or {}],ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+    directory=os.path.join(os.path.expanduser('~'),'.dingwei');os.makedirs(directory,mode=0o700,exist_ok=True)
+    path=os.path.join(directory,'outbound-caller.db')
+    fd=os.open(path,os.O_CREAT|os.O_RDWR|os.O_NOFOLLOW,0o600);os.fchmod(fd,0o600);os.close(fd)
+    with sqlite3.connect(path,timeout=2) as db:
+        db.execute('PRAGMA synchronous=FULL')
+        db.execute('CREATE TABLE IF NOT EXISTS request(id TEXT PRIMARY KEY,digest TEXT NOT NULL)')
+        db.execute('BEGIN IMMEDIATE')
+        old=db.execute('SELECT digest FROM request WHERE id=?',(rid,)).fetchone()
+        if old and old[0]!=digest:raise ValueError('idempotency_conflict')
+        if not old:
+            if db.execute('SELECT count(*) FROM request').fetchone()[0]>=65536:raise ValueError('caller_journal_full')
+            db.execute('INSERT INTO request VALUES(?,?)',(rid,digest))
+        db.commit()
+    return rid
+
+
+def ipc_send(to: str, body: str, request_id=None, *, status=False) -> dict:
+    if len(body.encode('utf-8'))>MESSAGE_BODY_MAX_BYTES:
+        return {'ok':False,'error':'body_too_large','outcome':{'outcome':'definitive_failure','accepted_by':'none','phase':'rejected','reason':'body_too_large','retryable':False}}
+    rid=request_id if status else remember_request(request_id,to,body,{'ipc_body_amr_v1':True})
+    payload={'type':'mcp_send_status','request_id':rid} if status else {'type':'mcp_send','to':to,'body':body,'request_id':rid,'ipc_body_amr_v1':True}
+    raw=json.dumps(payload,ensure_ascii=False).encode()+b'\n'
+    unknown={'phase':'unknown','accepted_by':'unknown','outcome':'unknown','request_id':rid,'status_ref':rid,'retryable':False,'reason':'ipc_confirmation_unavailable'}
+    if len(raw)-1>IPC_REQUEST_MAX_BYTES:return {'ok':False,'outcome':dict(unknown,outcome='definitive_failure',accepted_by='none',phase='rejected',reason='request_too_large')}
+    sock=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);sock.settimeout(TIMEOUT)
     try:
-        s.connect(SOCK)
-    except FileNotFoundError:
-        sys.exit(f"发送失败：找不到 IPC socket {SOCK}\n"
-                 f"  ⇒ sessionHelper 可能未运行。**不回落旧 WS 路径**（那会绕过 M2 并暴露凭据）。")
-    except (ConnectionRefusedError, PermissionError) as e:
-        sys.exit(f"发送失败：无法连接 {SOCK}（{type(e).__name__}）\n  ⇒ helper 在跑但未接受连接，检查 socket 权限。")
-    try:
-        s.sendall(raw)
-        buf = b""
-        while b"\n" not in buf:
-            ch = s.recv(4096)
-            if not ch:
-                break
-            buf += ch
-    except socket.timeout:
-        sys.exit(f"发送失败：等待 helper 回执超时（{TIMEOUT}s）⇒ helper 可能卡住。")
-    finally:
-        s.close()
-    txt = buf.decode("utf-8", "replace").strip()
-    if not txt:
-        sys.exit("发送失败：helper 未返回任何回执（连接被关闭）。")
-    try:
-        return json.loads(txt)
-    except json.JSONDecodeError:
-        sys.exit(f"发送失败：回执不是合法 JSON：{txt[:200]}")
+        sock.connect(SOCK);sock.sendall(raw);buf=b''
+        while b'\n' not in buf:
+            ch=sock.recv(4096)
+            if not ch:break
+            buf+=ch
+            if len(buf)>65536:raise ValueError('invalid_response')
+        resp=json.loads(buf.split(b'\n',1)[0])
+        if not isinstance(resp,dict) or type(resp.get('ok')) is not bool:raise ValueError('invalid_response')
+        return resp
+    except (OSError,ValueError):
+        return {'ok':False,'outcome':unknown,'request_id':rid}
+    finally:sock.close()
 
 
 def main() -> None:
-    args = sys.argv[1:]
-    if len(args) < 2:
-        sys.exit("用法: send.py <收件会话名或地址> <正文>   或   send.py <收件> --file <正文文件>")
-    if unsupported_sub_agent_target(args[0]):
-        sys.exit("发送失败：三段及以上子 Agent 目标当前不受支持；未降级为父会话，未发送。")
-    recipient = complete_addr(args[0])
-    if args[1] == "--file":
-        if len(args) < 3:
-            sys.exit("--file 需要跟一个文件路径")
-        body = open(args[2], encoding="utf-8").read()
+    args=sys.argv[1:];rid=None
+    if '--request-id' in args:
+        i=args.index('--request-id')
+        if i+1>=len(args):sys.exit('--request-id requires an ID')
+        rid=args[i+1];del args[i:i+2]
+    if len(args)==2 and args[0]=='--status':
+        resp=ipc_send('','',args[1],status=True)
     else:
-        body = " ".join(args[1:])
-    if not body.strip():
-        sys.exit("正文为空")
+        if len(args)<2:sys.exit('usage: send.py target [--request-id ID] body | --file PATH; send.py --status ID')
+        if unsupported_sub_agent_target(args[0]):sys.exit('发送失败：三段及以上子 Agent 目标当前不受支持；未降级为父会话，未发送。')
+        recipient=complete_addr(args[0])
+        body=open(args[2],encoding='utf-8').read() if args[1]=='--file' and len(args)>2 else ' '.join(args[1:])
+        if not body.strip():sys.exit('empty body')
+        try:resp=ipc_send(recipient,body,rid)
+        except (ValueError,OSError):
+            print(json.dumps({'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':'caller_journal_rejected','retryable':False}));sys.exit(1)
+    out=resp.get('outcome')
+    if resp.get('ok') is False and not isinstance(out,dict):
+        out={'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':('helper_unavailable' if isinstance(resp.get('error'),str) and resp['error'].startswith('unavailable:') else 'helper_rejected'),'request_id':resp.get('request_id',rid),'retryable':False}
+    if not isinstance(out,dict) or out.get('outcome') not in ('accepted','unknown','definitive_failure'):
+        out={'phase':'unknown','accepted_by':'unknown','outcome':'unknown','request_id':resp.get('request_id',rid),'reason':'unconfirmed_legacy_receipt','retryable':False}
+    print(json.dumps(out,ensure_ascii=False))
+    if out['outcome']=='definitive_failure':print('发送失败：'+out.get('reason','rejected'),file=sys.stderr)
+    if out['outcome']!='accepted':sys.exit(2 if out['outcome']=='unknown' else 1)
 
-    resp = ipc_send(recipient, body)
-    # 🔴 回执必须被检查:ok:false ⇒ 非零退出。不得无条件打印成功。
-    if not resp.get("ok"):
-        print(f"发送失败：{resp.get('error') or resp}", file=sys.stderr)
-        sys.exit(1)
-    out = resp.get("outcome") or {}
-    print(f"sent to={out.get('to', recipient)} bytes={len(body.encode('utf-8'))} "
-          f"request_id={resp.get('request_id', '')}")
 
-
-if __name__ == "__main__":
-    main()
+if __name__=='__main__':main()

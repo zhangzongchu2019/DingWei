@@ -26,6 +26,7 @@ def request(request_id, tool='send_message', upload_path=''):
         'project_context': {'scope': 'config'},
         'dw_inbox': {'operation': 'status'},
         'dw_delivery_status': {'delivery_id': 'dw-dlv_'+'a'*32},
+        'dw_send_status': {'request_id':'caller-stable'},
         'dw_spec_review_requests': {'request_id':'specreview_fixture'},
         'dw_coordinate_review': {'action':'get','request_id':'coordreview_'+'a'*64},
         'dw_spec_review_reply': {'request_id':'specreview_fixture','kind':'review','revision':1,'content_sha256':'a'*64,'issues':[]},
@@ -110,7 +111,7 @@ class Peer:
                     conn.sendall((json.dumps({'ok': False, 'error': SENTINEL,
                                              'reason': SENTINEL}) + '\n').encode())
                 else:
-                    conn.sendall(b'{"ok":true,"outcome":{"sent":true},"result":{"fixture":true},"state":"timeout"}\n')
+                    conn.sendall(b'{"ok":true,"outcome":{"sent":true,"outcome":"accepted","phase":"local_queued","accepted_by":"local_helper"},"result":{"fixture":true},"state":"timeout"}\n')
         except (OSError, ValueError) as exc:
             self.errors.append(type(exc).__name__)
 

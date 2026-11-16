@@ -31,7 +31,7 @@ class ReconnectBackoff(unittest.IsolatedAsyncioTestCase):
         namespace = {"asyncio": SimpleNamespace(sleep=sleep), "time": SimpleNamespace(monotonic=lambda: clock[0])}
         tree = ast.parse(APP.read_text())
         cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "SessionHelper")
-        node = next(n for n in cls.body if isinstance(n, ast.AsyncFunctionDef) and n.name == "run_forever")
+        node = next(n for n in cls.body if isinstance(n, ast.AsyncFunctionDef) and n.name == "_reconnect_forever")
         exec(compile(ast.fix_missing_locations(ast.Module(body=[copy.deepcopy(node)], type_ignores=[])), str(APP), "exec"), namespace)
         calls = [0]
         h = SimpleNamespace(cfg=SimpleNamespace(reconnect_min=1.0, reconnect_max=8.0, producer=producer), enroll_credential=None)
@@ -45,10 +45,10 @@ class ReconnectBackoff(unittest.IsolatedAsyncioTestCase):
         h._run_once = run_once
         with patch.dict("sys.modules", {"websockets": SimpleNamespace(InvalidStatus=InvalidStatus, ConnectionClosedError=ConnectionClosedError)}), contextlib.redirect_stdout(io.StringIO()):
             if producer:
-                await asyncio.wait_for(namespace["run_forever"](h), 1.0)
+                await asyncio.wait_for(namespace["_reconnect_forever"](h), 1.0)
             else:
                 with self.assertRaises(StopRun):
-                    await asyncio.wait_for(namespace["run_forever"](h), 1.0)
+                    await asyncio.wait_for(namespace["_reconnect_forever"](h), 1.0)
         return sleeps, calls[0]
 
     async def test_short_clean_closes_back_off_to_cap(self):
