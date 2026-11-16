@@ -1,3 +1,7 @@
+# 已撤回eca/3e5中间锚证据，仅历史
+
+当前入口为 ../evidence-q6/README.md。组长Q6补正后须按新源重审，以下不作最终门。
+
 # qwen复核修订固定源证据
 
 source_commit=eca016fb2f0ed272bc063f8170b5588dab37ce17；当前主入口。gate-summary只选本源clean完整门，gate-history保留原失败/WIP/旧锚历史，绝不拼成单次全绿。raw_file为确定性gzip，解压SHA在JSON；25刀均编译成功业务断言红，两个baseline绿。manifest逐文件对应Git对象及当前字节。独立评审另计，Q6联合格未跑不计PASS/SKIP。

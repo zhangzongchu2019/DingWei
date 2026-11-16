@@ -1,0 +1,460 @@
+[
+  {
+    "name": "reader_independence",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/hub.go",
+    "before": "c.ingress = h.startSessionIngress(ingressCtx, stopIngress, c)",
+    "after": "c.ingress = nil",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:107: session has no independent Reader",
+      "    session_ingress_test.go:94: healthy Pong connection closed while business was blocked",
+      "--- FAIL: TestSessionIngressLongOutputDoesNotStarvePong (1.06s)",
+      "    --- FAIL: TestSessionIngressLongOutputDoesNotStarvePong/healthy (0.37s)",
+      "    --- FAIL: TestSessionIngressLongOutputDoesNotStarvePong/slow_business (0.70s)"
+    ],
+    "raw_sha256": "582c0094780e8636140664c09c13054debe344c4a9debeeade68078ca8c47c1b",
+    "utc": "2026-11-16T22:38:50.008106+00:00",
+    "raw_file": "raw/mutation-reader_independence.log.gz"
+  },
+  {
+    "name": "viewer_total_deadline",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/terminal.go",
+    "before": "ctx, cancel := context.WithTimeout(ctx, viewerWriteLimit)",
+    "after": "ctx, cancel := context.WithCancel(ctx)",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:68: viewer write lock wait was unbounded",
+      "--- FAIL: TestViewerOutputSlowLockIsolatedAndWriteDeadlineIncludesLock (1.91s)"
+    ],
+    "raw_sha256": "4d15ccc09832ee822fa55cc9bc4c18a15c4f66b1e70690eed9e8e1b874eb6d6d",
+    "utc": "2026-11-16T22:39:04.711735+00:00",
+    "raw_file": "raw/mutation-viewer_total_deadline.log.gz"
+  },
+  {
+    "name": "queue_byte_limit",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/session_ingress.go",
+    "before": "q.bytes+n > sessionIngressBytes",
+    "after": "false",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:139: byte budget exceeded",
+      "--- FAIL: TestSessionIngressQueueBudgetAndRelease (0.15s)"
+    ],
+    "raw_sha256": "92f53efc6790b8201ba430f15b0471fc20c44ef9d2c9baf5b2e2887d642777a8",
+    "utc": "2026-11-16T22:39:17.860472+00:00",
+    "raw_file": "raw/mutation-queue_byte_limit.log.gz"
+  },
+  {
+    "name": "global_byte_limit",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/session_ingress.go",
+    "before": "q.h.ingressBudgetBytes+n > sessionIngressGlobalBytes",
+    "after": "false",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:146: global budget exceeded",
+      "--- FAIL: TestSessionIngressQueueBudgetAndRelease (0.14s)"
+    ],
+    "raw_sha256": "381cc7a82b041ce31e50e33dbb7613efaf2a633f0633813ca97af107a746d080",
+    "utc": "2026-11-16T22:39:30.884251+00:00",
+    "raw_file": "raw/mutation-global_byte_limit.log.gz"
+  },
+  {
+    "name": "history_result_wait",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/store/session_history.go",
+    "before": "case <-ctx.Done():\n\t\treturn SessionHistoryCursor{}, ctx.Err()",
+    "after": "case <-make(chan struct{}):\n\t\treturn SessionHistoryCursor{}, ctx.Err()",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_history_test.go:617: caller waited indefinitely for the history writer",
+      "--- FAIL: TestSessionHistoryCancellationBoundsWriterResultWait (0.20s)"
+    ],
+    "raw_sha256": "78eb5a9f03db93a0416822c169cb519981affee42926ac3416667d8fe680cea5",
+    "utc": "2026-11-16T22:39:33.117448+00:00",
+    "raw_file": "raw/mutation-history_result_wait.log.gz"
+  },
+  {
+    "name": "journal_per_failure",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/hub.go",
+    "before": "h.recordKeepaliveFailure(c, interval, timeout, time.Since(pingStart), keepaliveErrorClass(err, pingErr))",
+    "after": "_ = pingErr",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:304: failure journal count 0 1",
+      "--- FAIL: TestSessionKeepaliveTimeoutJournalOnceAndCancellationIsNotFailure (0.39s)",
+      "    --- FAIL: TestSessionKeepaliveTimeoutJournalOnceAndCancellationIsNotFailure/deadline (0.25s)"
+    ],
+    "raw_sha256": "64a476c14af85561418edab915b37aca81ffa2ece2125c28249266a377b3303f",
+    "utc": "2026-11-16T22:39:46.137001+00:00",
+    "raw_file": "raw/mutation-journal_per_failure.log.gz"
+  },
+  {
+    "name": "journal_drop_count",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/keepalive_journal.go",
+    "before": "c.obsConn.DiagnosticDrop()",
+    "after": "",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:189: missing dropped diagnostic count {0 0 0 session 1 1 map[] 0 0 {[0xc000232a18 0xc000232a30 0xc000232a38 0xc000232a40 0xc000232a48 0xc000232a50 0xc000232a58 0xc000232a60 0xc000232a68 0xc000232a70 <nil>] [0 0 0 0 0 0 0 0 0 0 0] 0 0}}",
+      "--- FAIL: TestSessionKeepaliveJournalBoundedAndPrivate (0.49s)"
+    ],
+    "raw_sha256": "619b88a62a0a7b381caa329b2faa9afa9c06150e1be9cf202155e3776a7deb76",
+    "utc": "2026-11-16T22:39:59.115413+00:00",
+    "raw_file": "raw/mutation-journal_drop_count.log.gz"
+  },
+  {
+    "name": "positive_configuration",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/session_keepalive_config.go",
+    "before": "if interval < 10*time.Second || interval > 60*time.Second || timeout < time.Second || timeout > 30*time.Second || interval+timeout >= 75*time.Second {",
+    "after": "if false {",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:170: invalid config accepted [-1s ]",
+      "--- FAIL: TestSessionKeepaliveConfigurationAndFailureClassification (0.17s)"
+    ],
+    "raw_sha256": "85a78fab46a6a83e89f84036ce5b1b1863e037de59e5189854d456a2298dbbb3",
+    "utc": "2026-11-16T22:40:12.090977+00:00",
+    "raw_file": "raw/mutation-positive_configuration.log.gz"
+  },
+  {
+    "name": "terminal_chunk_bound",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "tools/sessionhelper/sessionhelper/app.py",
+    "before": "if part_bytes+n>32768:",
+    "after": "if False:",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_unicode_chunks_keep_order_and_yield_between_bounded_frames (test_terminal_start_observation.TerminalBoundedOutputTest.test_unicode_chunks_keep_order_and_yield_between_bounded_frames)",
+      "AssertionError: 1 not greater than 2"
+    ],
+    "raw_sha256": "9681b872ad7e3587b4380a4a43a084a86d2a1c133701ccd64293613f3615ad28",
+    "utc": "2026-11-16T22:40:12.320735+00:00",
+    "raw_file": "raw/mutation-terminal_chunk_bound.log.gz"
+  },
+  {
+    "name": "transport_error_preserved",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/session_ingress.go",
+    "before": "return q.err",
+    "after": "return fallback",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:422: reader EOF was relabelled as request cancellation context canceled",
+      "--- FAIL: TestSessionIngressReadFailurePreservesTransportCause (0.14s)"
+    ],
+    "raw_sha256": "b2ce45a4bd07f7250a8750bbd5804d5ff0ddbcc6b7f227b9f724f6f19c06bece",
+    "utc": "2026-11-16T22:40:24.783009+00:00",
+    "raw_file": "raw/mutation-transport_error_preserved.log.gz"
+  },
+  {
+    "name": "viewer_gap_marker",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "q.viewer.outputGap.Store(true)",
+    "after": "",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:264: overflow lost visible gap marker",
+      "--- FAIL: TestViewerOutputOverflowIsBoundedAndVirtualWriteIsNoop (0.15s)"
+    ],
+    "raw_sha256": "1a93b5f1ddefd063ba2f1c2267ebadc4157af9a8e65fb5516ff64d50f0a965b8",
+    "utc": "2026-11-16T22:40:37.455608+00:00",
+    "raw_file": "raw/mutation-viewer_gap_marker.log.gz"
+  },
+  {
+    "name": "ack_after_commit",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/delivery_ack_v2.go",
+    "before": "\tresult, _, err := h.Repo.ApplySessionDeliveryACK(ctx, ack, h.now().UTC())\n\tif err != nil {\n\t\treturn true\n\t}\n\t// The confirmation is emitted only after the phase transaction commits.\n\tif err := c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress(\"workpulse\", c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: h.now().Unix(), Meta: map[string]any{\n\t\t\"type\": \"delivery_ack_confirm\", \"delivery_id\": d.ID, \"ack_protocol\": 2,\n\t\t\"processing_mode\": mode, \"ack_generation\": d.AckGeneration, \"state\": phase,\n\t}}); err != nil {\n\t\tc.obsConn.DeliveryACKConfirmWriteFailed()\n\t}\n",
+    "after": "\t// The confirmation is emitted only after the phase transaction commits.\n\tif err := c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress(\"workpulse\", c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: h.now().Unix(), Meta: map[string]any{\n\t\t\"type\": \"delivery_ack_confirm\", \"delivery_id\": d.ID, \"ack_protocol\": 2,\n\t\t\"processing_mode\": mode, \"ack_generation\": d.AckGeneration, \"state\": phase,\n\t}}); err != nil {\n\t\tc.obsConn.DeliveryACKConfirmWriteFailed()\n\t}\n\tresult, _, err := h.Repo.ApplySessionDeliveryACK(ctx, ack, h.now().UTC())\n\tif err != nil {\n\t\treturn true\n\t}\n",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    keepalive_ack_order_test.go:80: ACK was confirmed before DB commit",
+      "    keepalive_ack_order_test.go:80: ACK was confirmed before DB commit",
+      "--- FAIL: TestSessionIngressACKWaitsForCommitDuringBusinessGate (0.35s)",
+      "    --- FAIL: TestSessionIngressACKWaitsForCommitDuringBusinessGate/commit (0.18s)",
+      "    --- FAIL: TestSessionIngressACKWaitsForCommitDuringBusinessGate/transient_failure_then_same_ack (0.17s)"
+    ],
+    "raw_sha256": "a87c7c5d3eb498ebf76d1dc25f48f7600a67d9613c28121ce05fefe08bec01aa",
+    "utc": "2026-11-16T22:40:50.473005+00:00",
+    "raw_file": "raw/mutation-ack_after_commit.log.gz"
+  },
+  {
+    "name": "terminal_fairness_only",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "tools/sessionhelper/sessionhelper/app.py",
+    "before": "    async def terminal_loop(self, ws) -> None:\n        if self.cfg.mode not in (\"cli\", \"driver\") or not hasattr(self.adapter, \"next_terminal_chunk\"):\n            await asyncio.Future()\n        start_task = None\n        if hasattr(self.adapter, \"start\"):\n            # Keep startup output visible while observing this connection's task.\n            start_task = asyncio.create_task(asyncio.to_thread(self.adapter.start))\n        try:\n            while True:\n                if start_task is not None and start_task.done():\n                    start_task.result()  # startup failure stops this connection\n                    start_task = None\n                chunk = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.5)\n                if start_task is not None and start_task.done():\n                    start_task.result()\n                    start_task = None\n                if not chunk:\n                    continue\n                deadline = asyncio.get_running_loop().time() + 0.12\n                chunks = [chunk]\n                batch_chars = len(chunk)\n                while batch_chars < 32768 and asyncio.get_running_loop().time() < deadline:\n                    more = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.01)\n                    if not more:\n                        break\n                    chunks.append(more)\n                    batch_chars += len(more)\n                body = \"\".join(chunks)\n                meta = {\"type\": \"terminal_output\", \"session\": self.cfg.session_name, \"key_id\": self.cfg.key_id, \"no_mirror\": True}\n                # Only display text is split; structured session_event remains\n                # opaque. UTF-8 byte accounting never cuts a code point.\n                part=[];part_bytes=0\n                for char in body:\n                    n=len(char.encode('utf-8',errors='replace'))\n                    if part_bytes+n>32768:\n                        await asyncio.sleep(0)\n                        await ws.send(json.dumps(envelope(session_addr(\"workpulse\", self.cfg.key_id), ''.join(part), self.book.self_addr, meta), ensure_ascii=False))\n                        part=[];part_bytes=0\n                    part.append(char);part_bytes+=n\n                if part:\n                    await asyncio.sleep(0)\n                    await ws.send(json.dumps(envelope(session_addr(\"workpulse\", self.cfg.key_id), ''.join(part), self.book.self_addr, meta), ensure_ascii=False))\n        finally:\n            if start_task is not None:\n                start_task.cancel()\n                await asyncio.gather(start_task, return_exceptions=True)\n            # Cancelling to_thread's awaiter does not stop the underlying thread.\n\n",
+    "after": "    async def terminal_loop(self, ws) -> None:\n        if self.cfg.mode not in (\"cli\", \"driver\") or not hasattr(self.adapter, \"next_terminal_chunk\"):\n            await asyncio.Future()\n        start_task = None\n        if hasattr(self.adapter, \"start\"):\n            # Keep startup output visible while observing this connection's task.\n            start_task = asyncio.create_task(asyncio.to_thread(self.adapter.start))\n        try:\n            while True:\n                if start_task is not None and start_task.done():\n                    start_task.result()  # startup failure stops this connection\n                    start_task = None\n                chunk = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.5)\n                if start_task is not None and start_task.done():\n                    start_task.result()\n                    start_task = None\n                if not chunk:\n                    continue\n                deadline = asyncio.get_running_loop().time() + 0.12\n                chunks = [chunk]\n                batch_chars = len(chunk)\n                while batch_chars < 32768 and asyncio.get_running_loop().time() < deadline:\n                    more = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.01)\n                    if not more:\n                        break\n                    chunks.append(more)\n                    batch_chars += len(more)\n                body = \"\".join(chunks)\n                meta = {\"type\": \"terminal_output\", \"session\": self.cfg.session_name, \"key_id\": self.cfg.key_id, \"no_mirror\": True}\n                # Only display text is split; structured session_event remains\n                # opaque. UTF-8 byte accounting never cuts a code point.\n                part=[];part_bytes=0\n                for char in body:\n                    n=len(char.encode('utf-8',errors='replace'))\n                    if part_bytes+n>32768:\n                        pass\n                        await ws.send(json.dumps(envelope(session_addr(\"workpulse\", self.cfg.key_id), ''.join(part), self.book.self_addr, meta), ensure_ascii=False))\n                        part=[];part_bytes=0\n                    part.append(char);part_bytes+=n\n                if part:\n                    pass\n                    await ws.send(json.dumps(envelope(session_addr(\"workpulse\", self.cfg.key_id), ''.join(part), self.book.self_addr, meta), ensure_ascii=False))\n        finally:\n            if start_task is not None:\n                start_task.cancel()\n                await asyncio.gather(start_task, return_exceptions=True)\n            # Cancelling to_thread's awaiter does not stop the underlying thread.\n\n",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_unicode_chunks_keep_order_and_yield_between_bounded_frames (test_terminal_start_observation.TerminalBoundedOutputTest.test_unicode_chunks_keep_order_and_yield_between_bounded_frames)",
+      "AssertionError: False is not true : control task starved between frames"
+    ],
+    "raw_sha256": "fd428b93a50b6443e20e41b944ab51ea84fdcef7668840c9fad9b55ae2a42163",
+    "utc": "2026-11-16T22:40:50.702166+00:00",
+    "raw_file": "raw/mutation-terminal_fairness_only.log.gz"
+  },
+  {
+    "name": "overload_distinct_reason",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/session_ingress.go",
+    "before": "SetLocalReason(\"business_queue_overflow\")",
+    "after": "SetLocalReason(\"keepalive_failed\")",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:253: overload misclassified as keepalive {0 0 0 session 1 0 map[keepalive_failed:1] 0 0 {[0xc000232760 0xc000232768 0xc000232770 0xc000232778 0xc000232780 0xc000232788 0xc000232790 0xc000232798 0xc0002327a0 0xc0002327a8 <nil>] [0 0 0 0 0 0 0 0 0 0 0] 0 0}}",
+      "--- FAIL: TestSessionIngressOverflowClosesWithoutBlockingOrAck (0.16s)"
+    ],
+    "raw_sha256": "dfab7236ef41cb6df6c02a46ed851dd64aee3377405e98cf5b30f8d19d3692ab",
+    "utc": "2026-11-16T22:41:03.738644+00:00",
+    "raw_file": "raw/mutation-overload_distinct_reason.log.gz"
+  },
+  {
+    "name": "default_session_write_budget",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/hub.go",
+    "before": "ctx, cancel := context.WithTimeout(ctx, sessionWriteLimit)",
+    "after": "ctx, cancel := context.WithCancel(ctx)",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:331: default session write budget excluded lock wait",
+      "--- FAIL: TestSessionWriteDefaultBudgetIncludesContendedSlot (2.76s)"
+    ],
+    "raw_sha256": "7370018e510c1a2da6255a66d468fc8b55084fe534f6112ff97edd02079bb710",
+    "utc": "2026-11-16T22:41:18.964369+00:00",
+    "raw_file": "raw/mutation-default_session_write_budget.log.gz"
+  },
+  {
+    "name": "fail_fast_overload",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/session_ingress.go",
+    "before": "if !q.reserve(0) {\n\t\t\t\tq.overflow()\n\t\t\t\treturn\n\t\t\t}",
+    "after": "if !q.reserve(0) { <-ctx.Done(); return }",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:246: full queue blocked Reader",
+      "--- FAIL: TestSessionIngressOverflowClosesWithoutBlockingOrAck (1.15s)"
+    ],
+    "raw_sha256": "8ce8aa959d4aa99a31a809eef4bbd6bbe646a2f0257e4dbe0090d01c8a87b328",
+    "utc": "2026-11-16T22:41:32.685590+00:00",
+    "raw_file": "raw/mutation-fail_fast_overload.log.gz"
+  },
+  {
+    "name": "failed_ack_not_success",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/delivery_ack_v2.go",
+    "before": "\tresult, _, err := h.Repo.ApplySessionDeliveryACK(ctx, ack, h.now().UTC())\n\tif err != nil {\n\t\treturn true\n\t}\n",
+    "after": "\tresult, _, err := h.Repo.ApplySessionDeliveryACK(ctx, ack, h.now().UTC())\n\tif false && err != nil {\n\t\treturn true\n\t}\n",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    keepalive_ack_order_test.go:91: failed ACK transaction produced success confirmation",
+      "--- FAIL: TestSessionIngressACKWaitsForCommitDuringBusinessGate (0.79s)",
+      "    --- FAIL: TestSessionIngressACKWaitsForCommitDuringBusinessGate/transient_failure_then_same_ack (0.33s)"
+    ],
+    "raw_sha256": "80391440171e3c549159c550c6cf71909e6462b9720136b8fb5250d57fb8ef12",
+    "utc": "2026-11-16T22:41:45.953556+00:00",
+    "raw_file": "raw/mutation-failed_ack_not_success.log.gz"
+  },
+  {
+    "name": "cancel_during_ping",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/hub.go",
+    "before": "cancel()\n\t\t\tif ctx.Err() != nil {\n\t\t\t\treturn\n\t\t\t}",
+    "after": "cancel()",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:366: planned in-flight cancellation wrote failure journal: {\"conn_seq\":9,\"elapsed_ms\":0,\"error_class\":\"cancelled\",\"event\":\"session_keepalive_failed\",\"interval_ms\":20,\"pong_age_ms\":\"unknown\",\"queue_bytes\":0,\"queue_items\":0,\"reader_age_ms\":\"unknown\",\"session\":\"fixture\",\"timeout_ms\":5000,\"utc\":\"2026-11-16T22:41:58.10073937Z\",\"worker_age_ms\":\"unknown\",\"worker_phase\":\"unknown\"}",
+      "--- FAIL: TestSessionKeepaliveCancellationDuringActualPing (0.18s)"
+    ],
+    "raw_sha256": "12fe50ffd6832690ff5dff7b2aa6bf12651334736a2a3253e7f316661d48e24c",
+    "utc": "2026-11-16T22:41:58.177464+00:00",
+    "raw_file": "raw/mutation-cancel_during_ping.log.gz"
+  },
+  {
+    "name": "offline_status_frame",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "\"message\": \"会话已离线\"",
+    "after": "\"message\": \"连接结束\"",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:115: Agent offline lost legacy status frame failed to get reader: received close frame: status = StatusNormalClosure and reason = \"session offline\"",
+      "--- FAIL: TestViewerOutputSessionOfflineKeepsLegacyStatusAndNormalClose (0.14s)"
+    ],
+    "raw_sha256": "01fcd429dda1db71579dda9855bf762ba7dc3054b0a467123e8847d27ba3b9dd",
+    "utc": "2026-11-16T22:42:10.687771+00:00",
+    "raw_file": "raw/mutation-offline_status_frame.log.gz"
+  },
+  {
+    "name": "offline_normal_close",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "conn.Close(websocket.StatusNormalClosure, \"session offline\")",
+    "after": "conn.Close(websocket.StatusGoingAway, \"session offline\")",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:130: Agent offline lost normal close code: failed to get reader: received close frame: status = StatusGoingAway and reason = \"session offline\"",
+      "--- FAIL: TestViewerOutputSessionOfflineKeepsLegacyStatusAndNormalClose (0.15s)"
+    ],
+    "raw_sha256": "8caa4ba6fb065c4f53f1ef484c75e367e0d105119755318874179704d05bf7a9",
+    "utc": "2026-11-16T22:42:22.953934+00:00",
+    "raw_file": "raw/mutation-offline_normal_close.log.gz"
+  },
+  {
+    "name": "offline_slow_isolation",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "h.backgroundWork(\"viewer_offline\", func() {",
+    "after": "func(_ string, fn func()) bool { fn(); return true }(\"viewer_offline\", func() {",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:166: viewer teardown blocked Agent cleanup",
+      "--- FAIL: TestViewerOutputOfflineSlowViewerDoesNotHoldHealthyOrAgent (11.16s)"
+    ],
+    "raw_sha256": "c6d50ca751d78e40a2299d0b9c5f347efad0c532e5adda6868274fcc73c8552b",
+    "utc": "2026-11-16T22:42:46.436870+00:00",
+    "raw_file": "raw/mutation-offline_slow_isolation.log.gz"
+  },
+  {
+    "name": "diagnostic_budget_count",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/keepalive_journal.go",
+    "before": "data[\"queue_items\"] = q.items",
+    "after": "data[\"queue_items\"] = len(q.frames)",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:407: diagnostic queue_items=0, want 1 (active item and one injected clock)",
+      "--- FAIL: TestSessionKeepaliveJournalUsesBudgetCountAndInjectedClock (0.00s)"
+    ],
+    "raw_sha256": "ece7f86059f8dc07e64fc52f1611ef29c1b6ca45695baf4da2e547961275281d",
+    "utc": "2026-11-16T22:42:58.653505+00:00",
+    "raw_file": "raw/mutation-diagnostic_budget_count.log.gz"
+  },
+  {
+    "name": "diagnostic_journal_clock",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/keepalive_journal.go",
+    "before": "now := h.now()",
+    "after": "now := time.Now()",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:407: diagnostic reader_age_ms=2.14166285646e+11, want 300 (active item and one injected clock)",
+      "--- FAIL: TestSessionKeepaliveJournalUsesBudgetCountAndInjectedClock (0.00s)"
+    ],
+    "raw_sha256": "ccb95391bc79706f4fd137a1e0d6a06bd228703bf849e50b90cf1be8888dc79f",
+    "utc": "2026-11-16T22:43:11.366661+00:00",
+    "raw_file": "raw/mutation-diagnostic_journal_clock.log.gz"
+  },
+  {
+    "name": "diagnostic_worker_clock",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/session_ingress.go",
+    "before": "q.workAt = q.h.now()",
+    "after": "q.workAt = time.Now()",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:407: diagnostic worker_age_ms=-2.1416629856e+11, want 0 (active item and one injected clock)",
+      "--- FAIL: TestSessionKeepaliveJournalUsesBudgetCountAndInjectedClock (0.00s)"
+    ],
+    "raw_sha256": "634bf571e52e1ed0580dfaf880546ce4d5a0243bf421c350c8238d97fee661a2",
+    "utc": "2026-11-16T22:43:24.594294+00:00",
+    "raw_file": "raw/mutation-diagnostic_worker_clock.log.gz"
+  },
+  {
+    "name": "sealed_viewer_gap",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "q.mu.Unlock()\n\t\tv.outputGap.Store(true)\n\t\t_ = q.conn.CloseNow()",
+    "after": "q.mu.Unlock()\n\t\t_ = q.conn.CloseNow()",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:211: sealed background group silently discarded display output",
+      "--- FAIL: TestViewerOutputSealedLifecycleClosesWithVisibleGap (0.15s)"
+    ],
+    "raw_sha256": "3a05882bff010dc68d4e46efd11848b5663fd89329629ff0eb53307716037db4",
+    "utc": "2026-11-16T22:43:37.655971+00:00",
+    "raw_file": "raw/mutation-sealed_viewer_gap.log.gz"
+  },
+  {
+    "name": "receipt_failure_counter",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/outbound_receipt.go",
+    "before": "c.obsConn.OutboundReceiptWriteFailed()",
+    "after": "/* omitted receipt failure observation */",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:462: outbound receipt failure not separately observable: before={OutboundReceiptWriteFail:0 DeliveryACKConfirmWriteFail:0 DiagnosticDrop:0 Kind:session Opened:1 Active:1 Closed:map[] PingOK:0 PingFail:0 PingRTT:{LE:[0xc0002ff550 0xc0002ff558 0xc0002ff560 0xc0002ff568 0xc0002ff570 0xc0002ff578 0xc0002ff580 0xc0002ff588 0xc0002ff590 0xc0002ff598 <nil>] Counts:[0 0 0 0 0 0 0 0 0 0 0] Count:0 Sum:0}} after={OutboundReceiptWriteFail:0 DeliveryACKConfirmWriteFail:0 DiagnosticDrop:0 Kind:session Opened:1 Active:1 Closed:map[] PingOK:0 PingFail:0 PingRTT:{LE:[0xc000388120 0xc000388128 0xc000388130 0xc000388138 0xc000388140 0xc000388148 0xc000388150 0xc000388158 0xc000388160 0xc000388168 <nil>] Counts:[0 0 0 0 0 0 0 0 0 0 0] Count:0 Sum:0}}",
+      "--- FAIL: TestSessionWriteDefaultControlFailuresAreObservableAndPreserveCommit (4.33s)",
+      "    --- FAIL: TestSessionWriteDefaultControlFailuresAreObservableAndPreserveCommit/outbound_receipt (2.17s)"
+    ],
+    "raw_sha256": "c293fcfafedd41bce68efa60def1119300a7868288ed8fce0d16ce84e6038dd0",
+    "utc": "2026-11-16T22:43:54.779065+00:00",
+    "raw_file": "raw/mutation-receipt_failure_counter.log.gz"
+  },
+  {
+    "name": "ack_confirm_failure_counter",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/delivery_ack_v2.go",
+    "before": "c.obsConn.DeliveryACKConfirmWriteFailed()",
+    "after": "/* omitted confirmation failure observation */",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:469: ACK confirm failure not separately observable: before={OutboundReceiptWriteFail:1 DeliveryACKConfirmWriteFail:0 DiagnosticDrop:0 Kind:session Opened:2 Active:1 Closed:map[network_eof:1] PingOK:0 PingFail:0 PingRTT:{LE:[0xc0002ff670 0xc0002ff678 0xc0002ff680 0xc0002ff688 0xc0002ff690 0xc0002ff698 0xc0002ff6a0 0xc0002ff6a8 0xc0002ff6b0 0xc0002ff6b8 <nil>] Counts:[0 0 0 0 0 0 0 0 0 0 0] Count:0 Sum:0}} after={OutboundReceiptWriteFail:1 DeliveryACKConfirmWriteFail:0 DiagnosticDrop:0 Kind:session Opened:2 Active:1 Closed:map[network_eof:1] PingOK:0 PingFail:0 PingRTT:{LE:[0xc0003ac708 0xc0003ac710 0xc0003ac718 0xc0003ac720 0xc0003ac728 0xc0003ac730 0xc0003ac738 0xc0003ac740 0xc0003ac748 0xc0003ac750 <nil>] Counts:[0 0 0 0 0 0 0 0 0 0 0] Count:0 Sum:0}}",
+      "--- FAIL: TestSessionWriteDefaultControlFailuresAreObservableAndPreserveCommit (4.32s)",
+      "    --- FAIL: TestSessionWriteDefaultControlFailuresAreObservableAndPreserveCommit/delivery_ack_confirm (2.16s)"
+    ],
+    "raw_sha256": "88426abbad54cc6bdf74e9b250757aae0940c4bed13975e7f0b458ef923f8ebc",
+    "utc": "2026-11-16T22:44:12.005383+00:00",
+    "raw_file": "raw/mutation-ack_confirm_failure_counter.log.gz"
+  },
+  {
+    "name": "offline_status_failure_keeps_normal_close",
+    "source_commit": "3db78e5b244c4663fe67f7dcd44b74991057a7f6",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "\t\t\tif err := terminalWrite(context.Background(), writer, map[string]any{\"type\": \"status\", \"readonly\": true, \"message\": \"会话已离线\"}); err != nil {\n\t\t\t\tv.outputGap.Store(true)\n\t\t\t}",
+    "after": "\t\t\tif err := terminalWrite(context.Background(), writer, map[string]any{\"type\": \"status\", \"readonly\": true, \"message\": \"会话已离线\"}); err != nil {\n\t\t\t\tv.outputGap.Store(true)\n\t\t\t\treturn\n\t\t\t}",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:181: failed offline notification skipped normal close failed to get reader: failed to read frame header: EOF",
+      "--- FAIL: TestViewerOutputOfflineSlowViewerDoesNotHoldHealthyOrAgent (1.15s)"
+    ],
+    "raw_sha256": "14b559b582426ddfd3b0193f89a4e12e2c53c11901bf4f68105815664036059a",
+    "utc": "2026-11-16T22:44:25.876757+00:00",
+    "raw_file": "raw/mutation-offline_status_failure_keeps_normal_close.log.gz"
+  }
+]

@@ -14,3 +14,5 @@
 - 环境：本机overlay耗尽影响①校验（原rc1保留）；已将本席旧Go缓存与运行产物迁数据盘，保留原路径软链接，未动他席数据。②临时件在本席local-run-artifacts目录，不进入源码。
 
 2026-11-16 qwen独立复核d747a5145dd8ed608e22b66814211bda3f4fe46f对167/d4eae为NEEDS_CHANGE：Ping在飞取消缺回归、legacy离线通知回退。当前追加新源修订，不以旧作者门/组长Hub侧接受替代。代码位置见viewer_output_queue.go的closeOfflineTerminalViewers、session_ingress_test.go新增实际Ping/诊断、viewer_output_queue_test.go实际离线/慢viewer/封口格；未触helper分块与terminal-wire夹具。①②两秒回执unknown联合格待正式集成，未计PASS/SKIP。
+
+2026-11-16T22:48Z当前交件：冻结产品/测试3db78e5b244c4663fe67f7dcd44b74991057a7f6（tree c181cb6fd0df8148c8ebc2544ae6d1930588e70e，parent9849eef26ced6a378ecbaa026ad59bcf0dee055f）。167仅历史且原接受/冻结已撤销；eca/3e5正式复核请求已撤回，984门仅中间历史。Q1/Q2含通知失败仍正常关闭、Q3/4/5、Q6两处obs计数已修，Q7依组长令只观察。最终同源完整门和28刀见evidence-q6；独立复验与组长终审待回，完整①②helper unknown/原ID状态查询链仍待集成，不计PASS/SKIP。不部署、不抬单项VERSION。
