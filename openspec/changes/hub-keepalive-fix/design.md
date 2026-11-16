@@ -64,7 +64,7 @@ helper仅terminal_output按UTF-8正文32768字节分块，每块前sleep(0)让�
 
 ## qwen独立复核Q-1～Q-7修订（旧167源结论不外推）
 
-Q-1补对端真实收到Ping并禁止Pong后再取消的竞态，不用先cancel或固定sleep假装覆盖。保护删除须红在journal/PingFail/关闭分类。Q-2恢复legacy离线状态和正常Close：先停止接受该viewer的新输出，再由每既有viewer至多一个Hub登记的viewer_offline清理工作写readonly“会话已离线”，状态写仍共用1秒取槽+I/O预算；成功后用库正常关闭码1000与session offline原因。库Close本身写关闭帧最多5秒、等回应最多5秒（还含库自身goroutine退出等待），不冒称总握手1秒；不把这些等待放回Agent清理循环。已有output worker保持连接绑定，清理在结束后cancel；丢失显示内容或状态失败标gap。Hub封口拒绝清理时不建游离goroutine，明确gap并CloseNow。生命周期总关停预算/超时原样报告，不把尚未完成握手说成清理成功；不新增每输出帧goroutine。closeTerminalLocked不再为马上关闭的旧viewer白起output worker。
+Q-1补对端真实收到Ping并禁止Pong后再取消的竞态，不用先cancel或固定sleep假装覆盖。保护删除须红在journal/PingFail/关闭分类。Q-2恢复legacy离线状态和正常Close：先停止接受该viewer的新输出，再由每既有viewer至多一个Hub登记的viewer_offline清理工作写readonly“会话已离线”，状态写仍共用1秒取槽+I/O预算；无论状态写成功与否，都继续尝试库正常关闭码1000与session offline原因；状态写失败仅标gap，不能提前跳过正常关闭。库Close本身写关闭帧最多5秒、等回应最多5秒（还含库自身goroutine退出等待），不冒称总握手1秒；不把这些等待放回Agent清理循环。已有output worker保持连接绑定，清理在结束后cancel；丢失显示内容或状态失败标gap。Hub封口拒绝清理时不建游离goroutine，明确gap并CloseNow。生命周期总关停预算/超时原样报告，不把尚未完成握手说成清理成功；不新增每输出帧goroutine。closeTerminalLocked不再为马上关闭的旧viewer白起output worker。
 
 Q-3诊断queue_items改为预算q.items，含在读/处理中，和字节口径一致。Q-4 reader/Pong/worker/journal的年龄钟统一h.now，UTC与注入时钟一致；elapsed仍用真实Stopwatch，不混为配置预算。Q-5后台组拒绝启动输出时stopped按q.mu保护并可见gap/关闭；Q-7按组长22:00:43Z令只记关停期观察，不改touch后台登记行为。
 

@@ -125,7 +125,6 @@ func (h *Hub) closeOfflineTerminalViewers(viewers []*terminalViewer) {
 			}
 			if err := terminalWrite(context.Background(), writer, map[string]any{"type": "status", "readonly": true, "message": "会话已离线"}); err != nil {
 				v.outputGap.Store(true)
-				return
 			}
 			_ = conn.Close(websocket.StatusNormalClosure, "session offline")
 		}) {

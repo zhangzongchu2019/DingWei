@@ -177,8 +177,8 @@ func TestViewerOutputOfflineSlowViewerDoesNotHoldHealthyOrAgent(t *testing.T) {
 	}
 	slowCtx, stop := context.WithTimeout(ctx, 2*time.Second)
 	defer stop()
-	if _, _, err = slow.Read(slowCtx); err == nil {
-		t.Fatal("held-slot slow viewer was not disconnected")
+	if _, _, err = slow.Read(slowCtx); websocket.CloseStatus(err) != websocket.StatusNormalClosure {
+		t.Fatal("failed offline notification skipped normal close", err)
 	}
 	if !sv.outputGap.Load() {
 		t.Fatal("failed offline notification lacks visible gap")
