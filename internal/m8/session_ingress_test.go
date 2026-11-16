@@ -317,6 +317,101 @@ func TestSessionKeepaliveTimeoutJournalOnceAndCancellationIsNotFailure(t *testin
 	}
 }
 
+func TestSessionKeepaliveCancellationDuringActualPing(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	useTestSessionKeepalive(t, h, 20*time.Millisecond, 5*time.Second)
+	reg := obs.New(nil)
+	logs := make(chan []byte, 4)
+	h.keepaliveJournal = func(b []byte) bool { logs <- append([]byte(nil), b...); return true }
+	call, cancel := context.WithCancel(ctx)
+	defer cancel()
+	done, pingSeen := make(chan struct{}), make(chan struct{})
+	var once sync.Once
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.CloseNow()
+		c := &sessionClient{conn: conn, obsConn: reg.OpenWS("session"), sessionName: "fixture", connSeq: 9}
+		defer c.obsConn.Closed(nil)
+		h.watchSessionKeepalive(call, c)
+		close(done)
+	}))
+	defer srv.Close()
+	peer, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http"), &websocket.DialOptions{
+		OnPingReceived: func(context.Context, []byte) bool {
+			once.Do(func() { close(pingSeen) })
+			return false // Deliberately withhold Pong: Ping is really in flight.
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer peer.CloseNow()
+	readDone := make(chan struct{})
+	go func() { defer close(readDone); _, _, _ = peer.Read(ctx) }()
+	select {
+	case <-pingSeen:
+	case <-time.After(2 * time.Second):
+		t.Fatal("peer never observed an actual Ping")
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("in-flight Ping ignored planned cancellation")
+	}
+	if len(logs) != 0 {
+		t.Fatalf("planned in-flight cancellation wrote failure journal: %s", <-logs)
+	}
+	for _, v := range reg.Snapshot().WS {
+		if v.Kind == "session" && (v.PingFail != 0 || v.Closed["keepalive_failed"] != 0) {
+			t.Fatalf("planned in-flight cancellation was classified as keepalive failure: %+v", v)
+		}
+	}
+	_ = peer.CloseNow()
+	select {
+	case <-readDone:
+	case <-time.After(time.Second):
+		t.Fatal("peer Reader did not stop")
+	}
+}
+
+func TestSessionKeepaliveJournalUsesBudgetCountAndInjectedClock(t *testing.T) {
+	now := time.Date(2020, 2, 3, 4, 5, 6, 0, time.UTC)
+	h := &Hub{NowFunc: func() time.Time { return now }}
+	ctx := context.Background()
+	c := &sessionClient{sessionName: "fixture", lastReadAt: now.Add(-300 * time.Millisecond), lastPongAt: now.Add(-200 * time.Millisecond)}
+	done := make(chan struct{})
+	close(done)
+	q := &sessionIngress{h: h, c: c, frames: make(chan sessionFrame, 1), done: done}
+	c.ingress = q
+	if !q.reserve(3) {
+		t.Fatal("could not reserve fixture")
+	}
+	q.frames <- sessionFrame{typ: websocket.MessageText, data: []byte("abc"), receivedAt: now}
+	if _, _, err := q.next(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer q.joinAndRelease()
+	var raw []byte
+	h.keepaliveJournal = func(b []byte) bool { raw = append([]byte(nil), b...); return true }
+	h.recordKeepaliveFailure(c, time.Second, time.Second, 13*time.Millisecond, "deadline")
+	var event map[string]any
+	if err := json.Unmarshal(raw, &event); err != nil {
+		t.Fatal(err)
+	}
+	for field, want := range map[string]float64{"queue_items": 1, "queue_bytes": 3, "reader_age_ms": 300, "pong_age_ms": 200, "worker_age_ms": 0, "elapsed_ms": 13} {
+		if event[field] != want {
+			t.Fatalf("diagnostic %s=%v, want %v (active item and one injected clock)", field, event[field], want)
+		}
+	}
+	if event["utc"] != now.Format(time.RFC3339Nano) {
+		t.Fatal("journal ignored injected clock", event["utc"])
+	}
+}
+
 func TestSessionIngressReadFailurePreservesTransportCause(t *testing.T) {
 	h, _, _ := newTestHub(t)
 	q := &sessionIngress{h: h, frames: make(chan sessionFrame, 1)}

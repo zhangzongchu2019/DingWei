@@ -150,7 +150,7 @@ func (q *sessionIngress) next(ctx context.Context) (websocket.MessageType, []byt
 		q.hasActive = true
 		q.activeAt = f.receivedAt
 		q.mu.Lock()
-		q.workAt = time.Now()
+		q.workAt = q.h.now()
 		q.mu.Unlock()
 		return f.typ, f.data, nil
 	}

@@ -25,6 +25,10 @@ Hub MUST 对worker队列限制条数、字节与全局预算，满队列不得�
 - **WHEN** 一个viewer不读或持有写槽超过预算
 - **THEN** 该viewer在预算内被移除，Agent继续Pong、其它viewer继续，队列和goroutine不无界增长
 
+#### Scenario: HKF-S011 Agent离线保留legacy通知
+- **WHEN** Agent会话离线且Hub仍接纳清理工作，另有正常读取与慢写viewer
+- **THEN** 健康legacy viewer在有界状态写后收到readonly的“会话已离线”与正常关闭码，慢viewer不阻塞Agent清理或其它viewer；失败通知保留gap，清理工作归属Hub生命周期
+
 ### Requirement: HKF-004 存储与会话写有整次预算
 活动刷新、历史持久和会话写 MUST 不阻塞Reader；各worker调用须覆盖排队、锁、结果等待与I/O的取消预算，不能只限制SQL事务或只限制取得写锁之后。历史写失败保留既有gap/原ID，暂时错误不得变成永久撤权或已完成，连接换代后旧worker不得继续提交新副作用。
 
@@ -46,6 +50,14 @@ Hub MUST 对每次实际保活失败保留一条可关联session/connSeq的journ
 - **WHEN** 分别注入等Pong超时、底层关闭及计划取消
 - **THEN** 错误类别和关闭原因可区分，每失败连接至多一条对应日志；计划关停不伪报网络超时，日志不泄露正文或凭据
 
+#### Scenario: HKF-S012 Ping在飞时计划取消
+- **WHEN** 对端已实际收到Ping且不回Pong，此时触发计划取消
+- **THEN** watcher退出且不增加PingFail、不记keepalive_failed关闭原因或失败journal；删除Ping返回后的取消保护时本格必须在相应断言红
+
+#### Scenario: HKF-S013 预算诊断与年龄同口径
+- **WHEN** 队列唯一项目正在处理且使用可注入时钟产生诊断
+- **THEN** queue_items仍含该项目并与queue_bytes同口径，Reader/Pong/worker年龄使用同一时钟，真实elapsed仍独立按实耗时记录
+
 ### Requirement: HKF-007 保活配置明确且受限
 若实现配置入口，Hub SHALL 从显式WP_SESSION_KEEPALIVE_INTERVAL/TIMEOUT取正值并启动记录有效值；未配置保留审定默认，非法/负数/溢出MUST 启动拒绝，不静默关闭保活。合法范围须校验与idle预算一致；配置和重启不构成I/O隔离修复，库内控制写上限必须单独披露。
 
@@ -63,3 +75,7 @@ Hub MUST 对每次实际保活失败保留一条可关联session/connSeq的journ
 #### Scenario: HKF-S010 活跃连接关停
 - **WHEN** 有慢viewer和在途业务时触发既有Hub关停
 - **THEN** Reader/worker均按生命周期退出且未确认业务仍如实待定，不留失管goroutine、不超既有预算或借关停补造业务成功
+
+#### Scenario: HKF-S014 关停后拒绝新viewer输出工作
+- **WHEN** Hub后台组已封口却试图建立真实viewer输出责任
+- **THEN** 连接关闭并标记可见gap，不保留假活跃worker或静默丢输出

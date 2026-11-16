@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/zhangzongchu2019/dingwei/internal/model"
 )
 
 func TestViewerOutputSlowLockIsolatedAndWriteDeadlineIncludesLock(t *testing.T) {
@@ -83,6 +84,144 @@ func TestViewerOutputSlowLockIsolatedAndWriteDeadlineIncludesLock(t *testing.T) 
 		t.Fatal("slow viewer closed healthy viewer", err)
 	}
 }
+
+func TestViewerOutputSessionOfflineKeepsLegacyStatusAndNormalClose(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	if err := h.UpsertService(ctx, model.RegisteredService{ID: "offline", Name: "offline", DeliveryType: "ws", Enabled: true}); err != nil {
+		t.Fatal(err)
+	}
+	secret, key, err := h.IssueAPIKey(ctx, "offline", "person")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /ws/session/{sessionName}", h.HandleSessionWS)
+	mux.HandleFunc("GET /ws/view/{sessionName}", h.HandleTerminalViewWS)
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	session := dialSession(t, ctx, srv.URL, "home", key.ID, secret)
+	defer session.CloseNow()
+	waitSessionOnline(t, h, key.ID, "home")
+	view := dialTerminalView(t, ctx, srv.URL, "home")
+	defer view.CloseNow()
+	// A real registered legacy viewer, not merely a teardown-helper fixture.
+	_ = readTerminalViewMessage(t, ctx, view)
+	_ = session.CloseNow()
+	deadline, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	for {
+		_, raw, err := view.Read(deadline)
+		if err != nil {
+			t.Fatal("Agent offline lost legacy status frame", err)
+		}
+		var frame map[string]any
+		if json.Unmarshal(raw, &frame) != nil {
+			t.Fatal("invalid terminal frame")
+		}
+		if frame["type"] == "status" && frame["message"] == "会话已离线" {
+			if frame["readonly"] != true {
+				t.Fatal("offline terminal remained writable")
+			}
+			break
+		}
+	}
+	_, _, err = view.Read(deadline)
+	if websocket.CloseStatus(err) != websocket.StatusNormalClosure {
+		t.Fatalf("Agent offline lost normal close code: %v", err)
+	}
+}
+
+func TestViewerOutputOfflineSlowViewerDoesNotHoldHealthyOrAgent(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	ready := make(chan *terminalViewer, 2)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.CloseNow()
+		v := &terminalViewer{conn: conn, mu: make(chan struct{}, 1)}
+		if r.URL.Path != "/slow" {
+			v.mu <- struct{}{}
+		}
+		ready <- v
+		_, _, _ = conn.Read(r.Context())
+	}))
+	defer srv.Close()
+	slow, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http")+"/slow", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer slow.CloseNow()
+	sv := <-ready
+	fast, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http")+"/fast", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fast.CloseNow()
+	fv := <-ready
+	start := time.Now()
+	h.closeOfflineTerminalViewers([]*terminalViewer{sv, fv})
+	if time.Since(start) > 200*time.Millisecond {
+		t.Fatal("viewer teardown blocked Agent cleanup")
+	}
+	readCtx, cancel := context.WithTimeout(ctx, 700*time.Millisecond)
+	defer cancel()
+	frame := readTerminalViewMessage(t, readCtx, fast)
+	if frame["message"] != "会话已离线" {
+		t.Fatal("slow viewer swallowed healthy offline status", frame)
+	}
+	_, _, err = fast.Read(readCtx)
+	if websocket.CloseStatus(err) != websocket.StatusNormalClosure {
+		t.Fatal("healthy viewer did not close normally", err)
+	}
+	slowCtx, stop := context.WithTimeout(ctx, 2*time.Second)
+	defer stop()
+	if _, _, err = slow.Read(slowCtx); err == nil {
+		t.Fatal("held-slot slow viewer was not disconnected")
+	}
+	if !sv.outputGap.Load() {
+		t.Fatal("failed offline notification lacks visible gap")
+	}
+}
+func TestViewerOutputSealedLifecycleClosesWithVisibleGap(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	h.lifetime().background.Seal()
+	ready := make(chan *terminalViewer, 1)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.CloseNow()
+		v := &terminalViewer{conn: conn, mu: make(chan struct{}, 1)}
+		v.mu <- struct{}{}
+		h.startViewerOutput(r.Context(), v)
+		ready <- v
+	}))
+	defer srv.Close()
+	peer, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer peer.CloseNow()
+	v := <-ready
+	v.output.enqueue("must not disappear without a gap")
+	if !v.outputGap.Load() {
+		t.Fatal("sealed background group silently discarded display output")
+	}
+	select {
+	case <-v.output.done:
+	default:
+		t.Fatal("sealed lifecycle left a viewer worker running")
+	}
+	deadline, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	if _, _, err = peer.Read(deadline); err == nil {
+		t.Fatal("sealed lifecycle left terminal connected")
+	}
+}
+
 func TestViewerOutputOverflowIsBoundedAndVirtualWriteIsNoop(t *testing.T) {
 	if terminalWrite(context.Background(), &terminalViewer{}, map[string]any{"data": "virtual"}) != nil {
 		t.Fatal("virtual viewer attempted network write")

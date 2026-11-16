@@ -188,9 +188,6 @@ func (h *Hub) closeTerminalLocked(keyID, sessionName string) []*terminalViewer {
 	}
 	viewers := make([]*terminalViewer, 0, len(st.viewers))
 	for _, v := range st.viewers {
-		if v.conn != nil && v.output == nil {
-			h.startViewerOutput(h.backgroundContext(), v)
-		}
 		viewers = append(viewers, v)
 	}
 	h.adoptRingLocked(st)

@@ -28,7 +28,7 @@ func ageMillis(now, then time.Time) any {
 	return now.Sub(then).Milliseconds()
 }
 func (h *Hub) recordKeepaliveFailure(c *sessionClient, interval, timeout, elapsed time.Duration, class string) {
-	now := time.Now()
+	now := h.now()
 	c.stateMu.Lock()
 	read, pong := c.lastReadAt, c.lastPongAt
 	c.stateMu.Unlock()
@@ -36,7 +36,7 @@ func (h *Hub) recordKeepaliveFailure(c *sessionClient, interval, timeout, elapse
 	if q := c.ingress; q != nil {
 		q.mu.Lock()
 		data["queue_bytes"] = q.bytes
-		data["queue_items"] = len(q.frames)
+		data["queue_items"] = q.items
 		data["worker_age_ms"] = ageMillis(now, q.workAt)
 		data["worker_phase"] = "processing"
 		if q.workAt.IsZero() {

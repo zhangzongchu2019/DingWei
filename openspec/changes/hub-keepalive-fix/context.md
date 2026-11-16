@@ -12,3 +12,5 @@
 - 冻结提案9eeea527，实施候选尚未固定/推送；唯一Reader、有界顺序队列/全Hub字节预算、合并touch、viewer独立输出责任、总写截止、历史等待取消、保活失败journal、helper文本分块已落初稿。真实慢业务6.1秒/健康输出对照、viewer锁等待、ACK提交顺序/关停与超载初测通过；不冒称固定源码完整门或独立PASS。
 - 非目标：不部署/改生产配置，不修故障接管/上下文共享，不顺手修既存ACK测试flaky。独立复核交qwen，终审交组长；本席不自验收。
 - 环境：本机overlay耗尽影响①校验（原rc1保留）；已将本席旧Go缓存与运行产物迁数据盘，保留原路径软链接，未动他席数据。②临时件在本席local-run-artifacts目录，不进入源码。
+
+2026-11-16 qwen独立复核d747a5145dd8ed608e22b66814211bda3f4fe46f对167/d4eae为NEEDS_CHANGE：Ping在飞取消缺回归、legacy离线通知回退。当前追加新源修订，不以旧作者门/组长Hub侧接受替代。代码位置见viewer_output_queue.go的closeOfflineTerminalViewers、session_ingress_test.go新增实际Ping/诊断、viewer_output_queue_test.go实际离线/慢viewer/封口格；未触helper分块与terminal-wire夹具。①②两秒回执unknown联合格待正式集成，未计PASS/SKIP。

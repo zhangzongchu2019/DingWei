@@ -1231,7 +1231,11 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			c.ingress.joinAndRelease()
 		}
 	}()
-	h.backgroundWork("session_touch", func() { h.runSessionTouch(ingressCtx, c) })
+	if !h.backgroundWork("session_touch", func() { h.runSessionTouch(ingressCtx, c) }) {
+		stopIngress()
+		_ = conn.CloseNow()
+		return
+	}
 	idleWatchdogCtx, stopIdleWatchdog := context.WithCancel(context.Background())
 	h.backgroundWork("owned", func() { h.watchSessionIdle(idleWatchdogCtx, c) })
 	h.backgroundWork("owned", func() { h.watchSessionKeepalive(ingressCtx, c) })
@@ -1330,16 +1334,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		if current && h.sessionSupportsDeliveryACK(c) {
 			h.releaseSessionDeliveryLeases(c, "session_disconnected")
 		}
-		for _, viewer := range terminalViewers {
-			if viewer != nil {
-				if viewer.output != nil {
-					viewer.output.cancel()
-					_ = viewer.output.conn.CloseNow()
-				} else if viewer.conn != nil {
-					_ = viewer.conn.CloseNow()
-				}
-			}
-		}
+		h.closeOfflineTerminalViewers(terminalViewers)
 		if conn != nil {
 			_ = conn.Close(websocket.StatusNormalClosure, "bye")
 		}
