@@ -484,7 +484,9 @@ class DeliveryInbox(DeliveryLifecycle):
                 raise ValueError('invalid message id')
             row = db.execute("SELECT d.*,r.read_at " + base + " AND d.delivery_id=?",(self.session_name,key)).fetchone()
             if row is None:
-                return {'ok':False,'error':'not_found'}
+                # Definite answer, no write happened: the shim may surface it
+                # instead of reporting an unknown outcome (R60-③).
+                return {'ok':False,'error':'not_found','outcome':'none'}
             if op == 'read':
                 item=dict(row);env=json.loads(item.pop('envelope_json'));item['id']=item.pop('delivery_id');item['body']=str(env.get('body') or '')[:65536];item['body_truncated']=len(str(env.get('body') or ''))>65536
                 return {'ok':True,'message':item,'mode':'driver'}

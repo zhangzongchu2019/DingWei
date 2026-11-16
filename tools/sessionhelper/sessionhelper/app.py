@@ -259,6 +259,9 @@ class SessionHelper(SubAgentConnection):
         self.file_ticket_waiters: dict[str, asyncio.Future] = {}
         from .outbound_receipt import OutboundReceiptBroker
         self.outbound_receipts = OutboundReceiptBroker((cfg.session_name, cfg.session_full_name, cfg.registered_session_name))
+        # R60-③ heartbeat_report: same control-plane discipline, own nonce map.
+        from .session_heartbeat import SessionHeartbeatReporter
+        self.session_heartbeat = SessionHeartbeatReporter((cfg.session_name, cfg.session_full_name, cfg.registered_session_name))
         # Direct messages containing file refs are processed off recv_loop so
         # that the same loop remains free to receive the ticket response.
         self.file_inbound_queue: asyncio.Queue[dict] = asyncio.Queue(maxsize=max(1, cfg.busy_buffer_max))
@@ -893,6 +896,7 @@ class SessionHelper(SubAgentConnection):
                     self._connection_agent_id = ""
                     self._connection_delivery_ack_source = ""
                     self.outbound_receipts.abort(ws)
+                    self.session_heartbeat.abort(ws)
                     hb.cancel()
                     if ipc_task is not None:
                         ipc_task.cancel()
@@ -935,6 +939,8 @@ class SessionHelper(SubAgentConnection):
                         await asyncio.to_thread(ack_inbox.confirm_delivery_ack, env['meta'])
                 continue
             if self.outbound_receipts.receive(ws, env):
+                continue
+            if self.session_heartbeat.receive(ws, env):
                 continue
             if self.is_file_capability_response(env):
                 self.handle_file_capability_response(env)
@@ -1669,7 +1675,8 @@ class SessionHelper(SubAgentConnection):
                             bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only,
                             send_body_only=getattr(self.cfg, "ipc_send_body_only", False),
                             inbox_handler=self._make_desktop_inbox_handler(ws), spec_handler=self._make_spec_write_handler(ws), task_handler=self._make_task_flow_handler(), project_context_handler=self._make_project_context_handler(),
-                            delivery_status_handler=self._make_delivery_status_handler(ws))
+                            delivery_status_handler=self._make_delivery_status_handler(ws),
+                            heartbeat_handler=self._make_heartbeat_handler(ws))
         except IPCSocketPathError:
             self._ipc_rejected_socket_path = self.cfg.mcp_ipc_sock
             # The listener already logged only the byte counts and cleared
@@ -2096,6 +2103,24 @@ class SessionHelper(SubAgentConnection):
             self.outbound_receipts.source_address = self.book.self_addr
             return await self.outbound_receipts.query_status(ws, args['delivery_id'])
         return status
+
+    def _make_heartbeat_handler(self, ws):
+        """Self-report over the live Hub connection; datad is not deployed here.
+
+        Always returns a definite outcome dict so the shim never has to fold a
+        known answer into helper_rejected: unsupported (Hub did not advertise the
+        subtype), invalid (arguments), unknown (no reply: the Hub may or may not
+        have recorded it), or the Hub's own result.
+        """
+        from .session_heartbeat import heartbeat_wire_payload
+
+        async def heartbeat(args):
+            try:
+                payload = heartbeat_wire_payload(args)
+            except (TypeError, ValueError):
+                return {'ok': False, 'status': 'invalid'}
+            return await self.session_heartbeat.report(ws, self.book.self_addr, self.cfg.key_id, payload)
+        return heartbeat
 
     async def inbox_progress_loop(self, ws):
         headers = getattr(getattr(ws, 'response', None), 'headers', {})

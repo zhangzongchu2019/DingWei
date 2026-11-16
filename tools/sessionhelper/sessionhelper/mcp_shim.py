@@ -93,6 +93,18 @@ _IPC_TIMEOUT = 5.0
 # Agent HTTP15 within helper aggregate30; shim35 receives explicit deadline result.
 # Leave a further5 seconds for the helper's explicit result to reach the shim.
 _SPEC_IPC_TIMEOUT = 35.0
+_HEARTBEAT_IPC_TIMEOUT = 8.0  # listener waits up to 5s for the Hub reply
+
+# A definite "no such row" answer, not a transport failure. Only these codes,
+# only when the helper explicitly marks the result as having had no effect, and
+# only the fixed keys below ever reach a caller (R60-③: folding not_found into
+# helper_rejected reported an unknown outcome for a question that was answered).
+_LOOKUP_MISS_ERRORS = frozenset({"not_found"})
+_LOOKUP_MISS_FIELDS = frozenset({"error", "outcome", "mode"})
+
+
+def _lookup_miss(response: dict[str, Any]) -> bool:
+    return response.get("error") in _LOOKUP_MISS_ERRORS and response.get("outcome") == "none"
 
 
 class _IPCFailure(RuntimeError):
@@ -120,6 +132,11 @@ def _decode_ipc_response(data: bytes) -> dict[str, Any]:
         if response.get("error") == "request_too_large" and response.get("outcome") == "rejected":
             return {"ok": False, "result": {
                 key: value for key, value in response.items() if key not in {"ok", "error", "request_id"}
+            }}
+        if _lookup_miss(response):
+            return {"ok": False, "result": {
+                key: value for key, value in response.items()
+                if key in _LOOKUP_MISS_FIELDS and isinstance(value, (str, bool, int))
             }}
         raise _IPCFailure("helper_rejected")
     return response
@@ -311,7 +328,7 @@ def _send_message(args: dict[str, Any]) -> dict[str, Any]:
     return _ipc_send(payload)
 
 
-@register("dw_inbox", "查询本席收件箱；driver只读与本地已读，desktop另支持暂停。接收不等于AI已执行。", {
+@register("dw_inbox", "查询本席收件箱；driver只读与本地已读，desktop另支持暂停。接收不等于AI已执行。read/ack 的 message_id 取 delivery_id（即该件 request_id）；查无此件返回 error=not_found，是确定答案而非传输故障。", {
     "type": "object",
     "properties": {
         "operation": {"type": "string", "enum": ["status", "list", "read", "ack", "pause", "resume"]},
@@ -384,7 +401,7 @@ def _desktop_reply(args):
 
 # ── T18 MCP tool: heartbeat_report ────────────────────────────────────
 
-@register("heartbeat_report", "向 datad 自报心跳(状态+任务+卡点)", {
+@register("heartbeat_report", "向 Hub 自报心跳(状态+任务+卡点)；Hub 只保留本连接最新一份供业主侧只读，不写历史。", {
     "type": "object",
     "properties": {
         "status": {"type": "string", "enum": ["active", "busy", "blocked", "idle"]},
@@ -395,15 +412,14 @@ def _desktop_reply(args):
     "required": ["status"],
 })
 def _heartbeat_report(args: dict[str, Any]) -> dict[str, Any]:
-    status = (args.get("status") or "").strip()
-    if status not in ("active", "busy", "blocked", "idle"):
-        raise ValueError("status must be active/busy/blocked/idle")
-    body: dict[str, Any] = {"status": status}
-    for field in ("task", "eta", "blocker"):
-        val = (args.get(field) or "").strip()
-        if val:
-            body[field] = val
-    return _ipc_vsapi("POST", "/v1/sessions/me/heartbeat", body)
+    from .session_heartbeat import TEXT_FIELDS, heartbeat_payload
+
+    payload = heartbeat_payload(args)
+    request: dict[str, Any] = {"type": "heartbeat_v1", "status": payload["status"]}
+    for field in TEXT_FIELDS:
+        if field in payload:
+            request[field] = payload[field]
+    return _ipc_request(request, timeout=_HEARTBEAT_IPC_TIMEOUT)
 
 
 # ── T18 MCP tool: project_context ─────────────────────────────────────

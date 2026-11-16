@@ -103,7 +103,9 @@ class DesktopAdapter:
         with self._lock, self._connect() as db:
             row = db.execute("SELECT * FROM desktop_message WHERE id=?", (message_id,)).fetchone()
             if row is None:
-                return {"ok": False, "error": "not_found"}
+                # Definite answer, no write happened: the shim may surface it
+                # instead of reporting an unknown outcome (R60-③).
+                return {"ok": False, "error": "not_found", "outcome": "none"}
             if op == "read":
                 return {"ok": True, "message": dict(row), "paused": self.paused}
             if op == "ack":

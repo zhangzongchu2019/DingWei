@@ -160,7 +160,7 @@ func (h *Hub) HandleInternalAgentDiskResources(w http.ResponseWriter, r *http.Re
 		http.Error(w, "subject mismatch", 403)
 		return
 	}
-	body, err := json.Marshal(map[string]any{"agent_id": req.Agent, "full_name": session, "agent_disk": h.currentAgentDisk(r.Context(), session, req.Agent), "inbox_lag": h.currentInboxLag(r.Context(), session, req.Agent)})
+	body, err := json.Marshal(map[string]any{"agent_id": req.Agent, "full_name": session, "agent_disk": h.currentAgentDisk(r.Context(), session, req.Agent), "inbox_lag": h.currentInboxLag(r.Context(), session, req.Agent), "session_heartbeat": h.currentSessionHeartbeat(r.Context(), session, req.Agent)})
 	if err != nil || len(body) > 4096 {
 		http.Error(w, "resources unavailable", 503)
 		return
