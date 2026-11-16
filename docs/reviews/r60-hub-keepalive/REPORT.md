@@ -1,6 +1,12 @@
 # R60② qwen 复核修订交件（当前入口，含组长Q6补正）
 
-冻结产品／测试源 `3db78e5b244c4663fe67f7dcd44b74991057a7f6`，tree `c181cb6fd0df8148c8ebc2544ae6d1930588e70e`，parent `9849eef26ced6a378ecbaa026ad59bcf0dee055f`；基 main `d2cc47c7e699eb45efb3a07ee197aa8c20a9f07e`。分支 `coder56solzzc/r60-hub-keepalive`。本源在984的Q6双计数之上追加Q2状态写失败仍正常关闭，4文件／5插入／4删除；984相对3e5为8文件／136插入／30删除。保留eca的Q1/Q2修订。当前证据入口是 [evidence-q6](evidence-q6/README.md)，原evidence属于167、evidence-qwen属于已撤回中间eca/3e5；984完整门/27刀亦保留为中间历史，均不延用。交件 tip 为后续纯文档提交，以 Git 三值与交审回信为准。本文是作者门，等待 qwen 增量独立复验与组长终审，不是 PASS 签收或部署 GO。
+固定受测产品／测试源 `3db78e5b244c4663fe67f7dcd44b74991057a7f6`（作者停止变更，尚待qwen通过后由组长条件冻结），tree `c181cb6fd0df8148c8ebc2544ae6d1930588e70e`，parent `9849eef26ced6a378ecbaa026ad59bcf0dee055f`；基 main `d2cc47c7e699eb45efb3a07ee197aa8c20a9f07e`。分支 `coder56solzzc/r60-hub-keepalive`。本源在984的Q6双计数之上追加Q2状态写失败仍正常关闭，4文件／5插入／4删除；984相对3e5为8文件／136插入／30删除。保留eca的Q1/Q2修订。当前证据入口是 [evidence-q6](evidence-q6/README.md)，原evidence属于167、evidence-qwen属于已撤回中间eca/3e5；984完整门/27刀亦保留为中间历史，均不延用。交件 tip 为后续纯文档提交，以 Git 三值与交审回信为准。本文作者门与独立门分记：组长23:02:43Z对3db复核通过，qwen增量复核待回；整体冻结条件尚未满足，不是部署GO。
+
+## 组长对3db的独立复核通过（2026-11-16T23:02:43Z）
+
+组长复核对象为cfb5交件／3db产品源，隔离env-i、16核、detached树，结束已删；报告结构核对一致，构建门BUILD_TESTS_OK helper_profiles=2 python=27 shell=2。以下为组长给出的独立结果，不冒称作者代跑，也不与作者28刀合计：删出站回执写失败计数在session_ingress_test.go:462红；删ACK确认写失败计数在:469红（二刀以TestSessionWriteDefaultControlFailuresAreObservableAndPreserveCommit筛选，组长原计数口径基线3PASS）；去离线状态帧在viewer_output_queue_test.go:115红；正常关闭改CloseNow在:130红；去Ping中取消早返在session_ingress_test.go:366红。
+
+组长结论仅为②对3db本席通过，待qwen对该源Q1/Q2/Q6增量复核通过后冻结3db，不自动延用到更早锚或后续产品。当前qwen请求仍为dw-dlv_e8efe51c74cc74f68fe0d3d341bbdc92（eca旧087已撤回）；未收到新源独立PASS，不勾复核完成。①②helper outbox unknown→status→原source/delivery恢复联合格须在正式集成提交落地并带删保护业务红，当前仍待办，不计PASS/SKIP，不被本次组长通过替代。没有合入main、发布、部署或VERSION提升。
 
 ## 评审逐项处置
 
