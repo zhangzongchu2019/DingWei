@@ -1,0 +1,16 @@
+[
+  {
+    "name": "baseline-python",
+    "rc": 0,
+    "raw_sha256": "73e88b38e1c77e8eb7178ba4fbfdca4375d442fd15d9b0b62706a6ecb0d43fe1",
+    "source_commit": "eca016fb2f0ed272bc063f8170b5588dab37ce17",
+    "raw_file": "raw/mutations-qwen-baseline-python.log.gz"
+  },
+  {
+    "name": "baseline-go",
+    "rc": 0,
+    "raw_sha256": "c99ea9ca7062c91cd389d85720fcde93176b4e3cb0e7882c543b8f76d5153277",
+    "source_commit": "eca016fb2f0ed272bc063f8170b5588dab37ce17",
+    "raw_file": "raw/mutations-qwen-baseline-go.log.gz"
+  }
+]

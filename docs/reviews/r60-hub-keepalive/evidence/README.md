@@ -1,3 +1,7 @@
+# 历史167源证据：不作为eca修订门
+
+当前入口为 ../evidence-qwen/README.md。以下原记录不改写，不能延用于新产品锚。
+
 # 固定源作者证据
 
 source_commit=1671a59667c544ff3a3e0270ac2a293e15560d20；基main d2cc47c7。各 gate 均保存起止工作树状态及 UTC，raw_file 是原始日志 gzip（解压 SHA 在 JSON）。

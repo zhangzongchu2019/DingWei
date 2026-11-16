@@ -15,10 +15,10 @@
 
 ## R60实施（2026-11-16T16:05:24Z授权）
 
-- [ ] I-01 完成单Reader/顺序有界worker与全局预算/连接清理。
-- [ ] I-02 viewer独立有界输出/总截止、touch合并/存储等待取消、session总写截止。
-- [ ] I-03 journal有限分类与drop计数、正值配置、helper文本UTF8分块。
-- [ ] I-04 固定候选后完整canonical/Go/PG strict/focused race/OpenSpec与逐保护删改须红，保留每轮原失败。
+- [x] I-01 完成单Reader/顺序有界worker与全局预算/连接清理。
+- [x] I-02 viewer独立有界输出/总截止、touch合并/存储等待取消、session总写截止。
+- [x] I-03 journal有限分类与drop计数、正值配置、helper文本UTF8分块。
+- [x] I-04 固定候选后完整canonical/Go/PG strict/focused race/OpenSpec与逐保护删改须红，保留每轮原失败。
 - [ ] I-05 普通推送核远端，qwen独立只读复核/组长终审；不自集成/不部署。
 
 - 2026-11-16 coder56solzzc，工作基d2cc47c7。完成：Reader/队列按流式8KiB增量预留预算，含处理/读取中的64项、32MiB及全Hub256MiB；慢viewer总截止/独立输出与重连gap、合并touch/历史结果等待取消、journal脱敏非阻塞/drop计数/正值配置、helper UTF8分块。真实WS慢业务6.1s对照/ACK提交前无确认/满队列/关停/慢viewer与日志pipe+socket背压均定向通过；工作态focused race已绿但非固定锚门。曾有测试助手命名/字段编译错，保留原失败；未改既有flaky去涂绿。阻塞：固定锚全包/canonical/变异和独立复核未完成。下一步：固定候选，冻结产品期间跑门/删保护；不自验收/不部署。
@@ -30,3 +30,5 @@
 - 2026-11-16T19:55Z coder56solzzc，承接组长19:33:23Z复核：Hub侧接受167冻结源，helper分块按HKF-PM04补真实WS对照证据。完成：同连接8MiB合成Unicode突发、实际frame/Pong读数、默认与受限缓冲/校准限速/不限速各两轮，正文SHA相等；默认10Mbps baseline6.78/6.77秒、chunked1.99/1.77秒，源/命令/UTC/原SHA与吞吐代价见docs/reviews/r60-hub-keepalive/terminal-wire。本次仅docs/任务记录追加，产品及spec/design不改，不把试验计入原17刀或自签收条件。阻塞：组长确认补证及qwen独立复核；下一步：普通推送核远端，集成四树Go逐条列SQLite首次FAIL对应测试，不能以单跑抵消。
 
 - 2026-11-16 coder56solzzc，qwen对167/d4eae NEEDS_CHANGE已收，报告d747a5145dd8ed608e22b66814211bda3f4fe46f只读fetch。完成：工作态Q1实际Ping取消/Q2真实Agent离线状态和正常close/慢viewer隔离增量绿，Q3/4/5/7口径/封口修订；旧17刀/作者门仅旧源，组长Hub侧接受不抵消新发现。阻塞：新源冻结/完整canonical四树Go/PGstrict/focusedrace/变异/独立复验未齐；Q6文档明确且联合格待集成不冒称已跑。下一步固定新源后完整重跑与新旧保护刀，普通FF交新锚，不沿用167预读数作正式集成。
+
+- 2026-11-16T22:22:21Z coder56solzzc，冻结修订源eca016fb2f0ed272bc063f8170b5588dab37ce17。完成：Q1/Q2回归与Q3/4/5/7修订，同源canonical/完整四树Go PGstrict/较宽focusedrace/build/strict全部rc0，25编译成功业务红、2baseline绿；原167失败与独立NEEDS_CHANGE保留，PM04只复用未变helper字节。阻塞：新源独立复验/组长终审、Q6联合慢控制写unknown同ID恢复格待正式集成前完成，不计PASS/SKIP。下一步只推纯文档证据并核远端，请qwen只审新源增量，不把旧167并入正式集成，不自验收/部署。

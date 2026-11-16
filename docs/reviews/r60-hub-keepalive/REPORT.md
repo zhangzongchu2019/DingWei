@@ -1,3 +1,45 @@
+# R60② qwen 复核修订交件（当前入口）
+
+冻结产品／测试源 `eca016fb2f0ed272bc063f8170b5588dab37ce17`，tree `8f7490011aa3190622330cbae08023bc11a79ed9`，parent `d4eae2d9b0392dfdd643fe7d9a219a4b7e3c8e84`；基 main `d2cc47c7e699eb45efb3a07ee197aa8c20a9f07e`。分支 `coder56solzzc/r60-hub-keepalive`。本次产品与测试 7 件加 openspec 4 件，共 11 文件／337 插入／21 删除。当前证据入口是 [evidence-qwen](evidence-qwen/README.md)，原 evidence 只属于 167 历史，不延用到本源。交件 tip 为后续纯文档提交，以 Git 三值与交审回信为准。本文是作者门，等待 qwen 增量独立复验与组长终审，不是 PASS 签收或部署 GO。
+
+## 评审逐项处置
+
+独立只读报告 `review/qwen38mvb4/r60-hub-keepalive-20261116@d747a5145dd8ed608e22b66814211bda3f4fe46f` 已从 Git 取回；旧 167/d4eae 的结论保留 NEEDS_CHANGE，不被组长原 Hub 侧接受抵消。评审自选 6 刀／独立跑门与作者 25 刀分开，绝不合并计数。
+
+- Q-1：新增 `TestSessionKeepaliveCancellationDuringActualPing`，真实 WS 对端在 OnPingReceived 明确收到 Ping 且禁止 Pong 后才取消；断言无失败 journal、PingFail 或 keepalive_failed，并回收 Reader。不是先 cancel，也不靠固定 sleep。删除 Ping 返回后 ctx 取消保护，编译成功、业务断言红在 planned in-flight cancellation wrote failure journal；原 planned_cancel 格保留作前置取消对照。
+- Q-2：恢复 legacy viewer 的 readonly／“会话已离线”状态与 1000/session offline 关闭协议。每既有 viewer 至多一个 Hub 管理的清理任务，Agent teardown 不串行等待慢 viewer；状态写仍含取槽＋I/O 共 1 秒。正常 Close 是库自己的最多 5 秒关闭帧＋5 秒等回应及内部退出等待，不能叫总握手 1 秒；生命周期超时如实报告。封口不能接清理工作时 gap＋CloseNow，不建游离 goroutine。删除 closeTerminalLocked 临关停白起 output worker 的代码。真实 Hub Agent＋viewer 回归同时断言状态帧和正常关闭码；双 viewer 格确认慢写槽不拖 Agent／健康 viewer。删除状态、改变关闭码、改同步清理各有编译成功业务红。
+- Q-3：journal queue_items 改成预算实际 q.items（含正在读取／处理），与 bytes 同口径。
+- Q-4：Reader／Pong／worker／journal 年龄统一 h.now()；实际 Ping 耗时仍用单调真实时钟。注入固定时钟回归钉住 UTC 与三个年龄；独立删除 journal/worker 时钟统一各红。
+- Q-5：后台封口拒绝启动 viewer worker 时 stopped 在 q.mu 下写，标可见 gap 并关闭连接；专门封口回归与删 gap 刀已覆盖。
+- Q-6：**正式集成前必做，当前未通过亦不计 SKIP**。2 秒会话写截止覆盖仍忽略错误的 outbound receipt 与 delivery_ack_confirm；可能提高“已提交但回执写失败”的 unknown，不能用旧现网样本估计新增发生率。未加新计数器，diagnostic_drop 不冒充回执失败计数。①②联合格须实际注入慢读／写背压超 2 秒，证实可观测 unknown／未确认、已提交责任保留、故障消失以原 sender/source ID 与原 delivery 恢复。①的 outbox＋dw_send_status／delivery_status 是兜底，绝非许可换新 ID 重发。本②单源不含①，不能声称已联合验证；该格必须写进正式集成说明和发版限制。
+- Q-7：touch worker 后台登记失败时结束 ingress 并关 socket，不再保留没有消费者的通知槽；只影响关停封口期。
+
+新增 HKF-S011～S014 分别钉住离线协议、Ping 期间取消、预算／时钟、封口 viewer。此次保留 167 的 helper 分块字节与 terminal-wire 夹具、环境、原始数据不变；没有另跑 PM04 测量。原测量只证明合成突发/限速条件的控制延迟收益，不能解释历史419次或生产SLO；不限速正文吞吐下降的代价仍保留，发布说明须点明。
+
+## 本源作者门
+
+| 固定门 | rc | 顶层 PASS | 含各层子项 PASS | SKIP | FAIL |
+|---|---:|---:|---:|---:|---:|
+| canonical-qwen | 0 | 6 | 21 | 0 | 0 |
+| go-qwen | 0 | 1558 | 2580 | 49 | 0 |
+| race-qwen-complete | 0 | 38 | 54 | 0 | 0 |
+| build-qwen | 0 | 0 | 0 | 0 | 0 |
+| strict-qwen | 0 | 0 | 0 | 0 | 0 |
+
+canonical 两 profile：claude 1204/1204 rc0；codex 1204/1204 rc0；BUILD_TESTS_OK helper_profiles=2 python=27 shell=2。focused race 包含 m8/store/obs/cmd 与原较宽筛选，非全包 race。strict 明细见原日志。
+
+SQLite interrupted(9) 首轮对应测试，本源完整四树 Go 内逐条读数：`--- PASS: TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent (0.44s)`。这不是其历史失败根因已定，也不用单跑抵消历史完整 rc1。
+
+25 刀＝17 项既有保护在新源重跑＋8 项本轮新增；每刀编译 rc0、测试 rc非0 且非空业务失败断言，两个还原 baseline rc0。不是把旧源17项读数搬来；也不加上 qwen 自己的6刀。每刀 before/after、UTC、原日志SHA、编译原日志在 evidence-qwen。WIP/较窄 race 等历史仍在 gate-history，最终只选 race-qwen-complete。
+
+环境 env-i、普通 uid1001、短 TMPDIR、固定本源且起止 clean，PG strict 走临时库；只复用 PG 工具缓存，没有复用在线 DB。各 gate／mutations 位于不同固定工作树，避免删保护与门相互污染。未连现网、未向在线席位发探针、未取他席正文。完整四树 Go 的逐名 SKIP 有原上下文，不混 PASS。未声称整包 race、identity 整包或浏览器全量通过；正式集成仍须全浏览器 runner 且 PATH 有 go。
+
+## 集成与冻结边界
+
+本次只追加②修订，①仍为已接受 12f851f2；正式集成等各项冻结复核，按③④①②基110e2c1f重做，保留 retainCanonicalTrustedProvenance 及其回归，VERSION只在正式集成抬0.2.3.40。旧④①②预读数与冲突演练含旧167，不外推成本源门。不推 main、不构建发布件、不部署，不自签T-10。
+
+## 历史记录（以下只属于167及更早锚，当前门以前文为准）
+
 # R60② Hub 保活：作者实现与验证交件
 
 本件为作者实现与门证据，不是独立验收或部署 GO。冻结产品与测试源 `1671a59667c544ff3a3e0270ac2a293e15560d20`，tree `b0de1365371deed45c831b5ba8f53514858d1c68`，parent `fd44d8c730d949907abe842aeab8cb6496138d38`；基 main `d2cc47c7e699eb45efb3a07ee197aa8c20a9f07e`。分支 `coder56solzzc/r60-hub-keepalive`。交件证据另成纯文档追加提交，当前 tip 坐标以 Git/交审回信为准。
