@@ -33,3 +33,5 @@
 - 2026-11-16 coder56solzzc，9f3e20c00同源完整canonical rc0（两profile各1222、BUILD_TESTS_OK helper_profiles=2 python=27 shell=2）、m8/store全包rc0、focused race/build/strict rc0及17刀业务断言红。交件前补齐Hub4096/65536边界：满容量先恢复旧回执，新接纳无fence/收方残行；已知原子拒绝须rejected/hub_outbound_capacity，不归unknown。新增两项定向绿，固定后重跑最终门，不把9f门冒称覆盖该修正。
 
 - 2026-11-16 coder56solzzc，23a2a7af8完整canonical/Go/strict均rc0、19刀红；封件自查新增反例prior-acceptance-counterexample在23业务断言红：原回执丢失后权限拒绝会误清未知正文。现修为首次明确拒绝/先前未知两格区分，原ID恢复后仍同delivery；反例及新增表驱动已转绿，SL-S011细化并新增SL-S016。此前23门仅历史；下一步再固定源跑完整门，独立评审必须看此边界，不以先前全绿取代新源验证。
+
+- 2026-11-16 coder56solzzc，633d9f218 canonical/全包Go/focused race/build均rc0、20刀红；封件自查补离线期限、无协商上界、旧unsupported未知升级禁盲补及大小写回执/调用方目标键边界。三项旧码业务反例红已留档，修正后定向绿；首次集中定向命令误列不存在的test_app_startup_reconnect，原rc1保留，改正确模块后全组rc0，不算产品失败。SL-S017/018补合同；接下来固定新源跑完整门，旧633门不冒称覆盖本批。

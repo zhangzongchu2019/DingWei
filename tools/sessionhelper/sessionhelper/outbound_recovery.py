@@ -12,6 +12,7 @@ from .outbound_receipt import OutboundRejected, OutboundReceiptError
 
 
 class OutboundRecovery:
+    CAPABILITY_WAIT = 10.0
     def __init__(self, path, broker, source_address, refresh=None):
         self.queue = OutboundQueue(path)
         self.broker, self.source_address = broker, source_address
@@ -20,6 +21,9 @@ class OutboundRecovery:
         self._needs_catalog_refresh=False
         self.owner = uuid.uuid4().hex
         self._catalog_generation = None
+        self._cap_ws=None
+        self._cap_wait_started=0.0
+        self._unsupported_ws=None
         self._last_storage_error = 0.0
         self.storage_error = False
 
@@ -32,7 +36,7 @@ class OutboundRecovery:
         async def submit(to, body, meta, request_id):
             try:
                 cap=self.broker.recovery
-                return await asyncio.to_thread(self.queue.submit,request_id,to,body,meta,actor_id=cap['sender_id'] if cap else None)
+                return await asyncio.to_thread(self.queue.submit,request_id,to,body,meta,actor_id=cap['sender_id'] if cap else None,accept_new=not (self.broker.connection is not None and self._unsupported_ws is self.broker.connection and not cap))
             except (QueueCommitUnknown,sqlite3.Error,OSError):
                 return {'phase':'unknown','accepted_by':'unknown','outcome':'unknown','reason':'local_queue_unavailable','request_id':request_id,'status_ref':request_id,'retryable':False}
             except QueueRejected as exc:
@@ -72,10 +76,22 @@ class OutboundRecovery:
     async def step(self):
         broker=self.broker
         ws,cap=broker.connection,broker.recovery
-        if ws is None or not broker.negotiated: return
+        await asyncio.to_thread(self.queue.expire)
+        if ws is None:
+            self._cap_ws=None;self._unsupported_ws=None
+            return
+        if self._cap_ws is not ws:
+            self._cap_ws=ws;self._cap_wait_started=time.monotonic();self._unsupported_ws=None
+        if not broker.negotiated:
+            if time.monotonic()-self._cap_wait_started >= self.CAPABILITY_WAIT:
+                self._unsupported_ws=ws
+                await asyncio.to_thread(self.queue.unsupported_peer)
+            return
         if not cap:
+            self._unsupported_ws=ws
             await asyncio.to_thread(self.queue.unsupported_peer)
             return  # Old Hub: no body write and an explicit local result.
+        self._unsupported_ws=None
         if self.refresh is not None and (self._needs_catalog_refresh or time.monotonic()-self._last_catalog_refresh>=60):
             self._needs_catalog_refresh=False
             self._last_catalog_refresh=time.monotonic()

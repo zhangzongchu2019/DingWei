@@ -97,15 +97,15 @@ class OutboundQueue:
             r = db.execute("SELECT value FROM outbound_peer WHERE key='sender_id'").fetchone()
             return r[0] if r else ''
 
-    def submit(self, request_id, target, body, meta, *, actor_id=None):
+    def submit(self, request_id, target, body, meta, *, actor_id=None, accept_new=True):
         try:
-            return self._submit(request_id,target,body,meta,actor_id=actor_id)
+            return self._submit(request_id,target,body,meta,actor_id=actor_id,accept_new=accept_new)
         except (sqlite3.Error,OSError):
             # _submit promotes a failed COMMIT to QueueCommitUnknown. Earlier
             # failures are rolled back by closing the private transaction.
             raise QueueRejected('local_queue_unavailable',True) from None
 
-    def _submit(self, request_id, target, body, meta, *, actor_id=None):
+    def _submit(self, request_id, target, body, meta, *, actor_id=None, accept_new=True):
         if not isinstance(request_id, str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,128}', request_id):
             raise QueueRejected('invalid_request_id')
         if not isinstance(body, str) or not body.strip() or len(body.encode()) > (1 << 20):
@@ -129,6 +129,7 @@ class OutboundQueue:
                 if not sender or old['sender_id']!=sender[0]:raise QueueRejected('sender_identity_changed')
                 if old['digest'] != digest: raise QueueRejected('idempotency_conflict')
                 return self.outcome(old)
+            if not accept_new: raise QueueRejected('outbound_recovery_unsupported')
             # Names are only lookup inputs. The stable ID is pinned before any
             # body write, including an admission made while the WS is offline.
             alias = target.lower()
@@ -182,14 +183,26 @@ class OutboundQueue:
         if phase == 'unknown': result['accepted_by'] = 'unknown'
         return result
 
+    def expire(self):
+        now=self.clock()
+        with self.db() as db:
+            db.execute('BEGIN IMMEDIATE')
+            rows=db.execute("SELECT request_id,source_id,sender_id,target_id,attempts,ever_attempted FROM outbound_request WHERE state IN ('local_queued','unknown') AND created<=? AND reason!='outbound_recovery_expired' AND lease_until<=? ORDER BY created,request_id LIMIT ?",(now-self.WINDOW,now,self.MAX_PENDING)).fetchall()
+            for row in rows:
+                phase='unknown' if row['ever_attempted'] else 'rejected'
+                db.execute("UPDATE outbound_request SET body=CASE WHEN ever_attempted=0 THEN '' ELSE body END,meta=CASE WHEN ever_attempted=0 THEN '{}' ELSE meta END,state=?,reason='outbound_recovery_expired',lease_owner='',lease_until=0 WHERE request_id=?",(phase,row['request_id']))
+                self.record(db,row,phase,'outbound_recovery_expired')
+            db.commit()
+            return len(rows)
+
     def claim(self, owner, sender_id):
+        self.expire()
         now = self.clock()
         with self.db() as db:
             db.execute('BEGIN IMMEDIATE')
             # Never convert an attempted-but-unconfirmed intent into proof that
             # Hub didn't accept it. Keep its body and make the stop visible.
-            db.execute("UPDATE outbound_request SET body=CASE WHEN ever_attempted=0 THEN '' ELSE body END,meta=CASE WHEN ever_attempted=0 THEN '{}' ELSE meta END,reason='outbound_recovery_expired',state=CASE WHEN ever_attempted=1 THEN 'unknown' ELSE 'rejected' END,lease_owner='',lease_until=0 WHERE state IN ('local_queued','unknown') AND created<=? AND reason!='outbound_recovery_expired' AND lease_until<=?", (now - self.WINDOW,now))
-            row = db.execute("SELECT * FROM outbound_request WHERE sender_id=? AND state IN ('local_queued','unknown') AND created>? AND attempts<? AND next_attempt<=? AND lease_until<=? ORDER BY created,request_id LIMIT 1", (sender_id, now - self.WINDOW, self.MAX_ATTEMPTS, now, now)).fetchone()
+            row = db.execute("SELECT * FROM outbound_request WHERE sender_id=? AND state IN ('local_queued','unknown') AND created>? AND attempts<? AND next_attempt<=? AND lease_until<=? AND reason NOT IN ('outbound_recovery_unsupported','sender_identity_changed') ORDER BY created,request_id LIMIT 1", (sender_id, now - self.WINDOW, self.MAX_ATTEMPTS, now, now)).fetchone()
             if not row: db.commit(); return None
             db.execute("UPDATE outbound_request SET state='unknown',ever_attempted=1,attempts=attempts+1,lease_owner=?,lease_until=? WHERE request_id=?", (owner, now + 30, row['request_id']))
             result = dict(db.execute('SELECT * FROM outbound_request WHERE request_id=?', (row['request_id'],)).fetchone())
@@ -211,4 +224,10 @@ class OutboundQueue:
 
     def unsupported_peer(self):
         with self.db() as db:
-            db.execute("UPDATE outbound_request SET body=CASE WHEN ever_attempted=0 THEN '' ELSE body END,meta=CASE WHEN ever_attempted=0 THEN '{}' ELSE meta END,state=CASE WHEN ever_attempted=1 THEN 'unknown' ELSE 'rejected' END,reason='outbound_recovery_unsupported' WHERE state IN ('local_queued','unknown') AND reason!='outbound_recovery_unsupported' AND lease_until<=?",(self.clock(),))
+            db.execute('BEGIN IMMEDIATE')
+            rows=db.execute("SELECT request_id,source_id,sender_id,target_id,attempts,ever_attempted FROM outbound_request WHERE state IN ('local_queued','unknown') AND reason!='outbound_recovery_unsupported' AND lease_until<=? ORDER BY created,request_id LIMIT ?",(self.clock(),self.MAX_PENDING)).fetchall()
+            for row in rows:
+                phase='unknown' if row['ever_attempted'] else 'rejected'
+                db.execute("UPDATE outbound_request SET body=CASE WHEN ever_attempted=0 THEN '' ELSE body END,meta=CASE WHEN ever_attempted=0 THEN '{}' ELSE meta END,state=?,reason='outbound_recovery_unsupported' WHERE request_id=?",(phase,row['request_id']))
+                self.record(db,row,phase,'outbound_recovery_unsupported')
+            db.commit()

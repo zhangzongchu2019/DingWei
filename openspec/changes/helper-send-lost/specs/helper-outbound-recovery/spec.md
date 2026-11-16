@@ -66,6 +66,10 @@ Hub MUST 将认证sender_agent_id与source_message_id的唯一裁决、稳定目
 ### Requirement: SL-006 调用方失败语义不掩盖
 send.py与MCP MUST 保留结构化phase、accepted_by、request/source/delivery ID及reason；unknown或rejected不得打印无条件sent成功或仅因IPC ok返回成功语义。临时且可证未接管失败SHALL可用原意图重试；已可能提交/IPC未确认时须先查询，不能换通道或生成新ID自动发送。
 
+#### Scenario: SL-S018 协商超时与旧未知保持
+- **WHEN** 当前WS十秒内未给出持久恢复能力或明确不支持，随后升级为支持的新代际
+- **THEN** 不向未协商连接写业务，未尝试项明确拒绝，先前未知项保留原ID/正文且不自动补送；既有成功裁决仍可本地查询，不因当前能力拒绝改写历史
+
 #### Scenario: SL-S012 helper返回unknown或拒绝
 - **WHEN** IPC传输成功但业务结果为unknown或rejected
 - **THEN** CLI/MCP明确显示对应非成功结果和查询键，不能仅打印sent并隐藏回执字段
@@ -76,6 +80,10 @@ outbox MUST 有单writer/租约、受限退避与容量/期限，可查询每次
 #### Scenario: SL-S013 收件已准入后重复回执恢复
 - **WHEN** 原收件项已injected/processed而发送方仍等Hub确认
 - **THEN** 只恢复原发送确认，不新建delivery或turn，不改变收件HCD/HRI unknown语义
+
+#### Scenario: SL-S017 全离线期间期限收口
+- **WHEN** 已接管意图始终离线且达到24小时恢复期限
+- **THEN** 即使没有WS也更新可见原因；明确未写出者rejected，曾尝试者unknown并保留原正文与ID，不无限停留local_queued
 
 #### Scenario: SL-S014 重放窗到期或账本归档
 - **WHEN** 意图超期或Hub清理原完整delivery正文

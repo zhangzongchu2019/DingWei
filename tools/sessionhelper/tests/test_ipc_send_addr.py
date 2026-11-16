@@ -1,5 +1,6 @@
-"""T-092:ipc_send 必须把裸会话名补全为 <名>#<key_id>,否则 Hub 判 invalid address。"""
+"""Legacy helper address completion and R60 directory-bound caller addresses."""
 import unittest
+import os
 import importlib.util
 from pathlib import Path
 from unittest import mock
@@ -52,3 +53,10 @@ class TestIPCSendAddressCompletion(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DestinationIdentityTest(unittest.TestCase):
+    def test_inherited_sender_key_never_rewrites_recipient(self):
+        with mock.patch.dict(os.environ,{'SH_KEY_ID':'sender-owner-key'}):
+            self.assertEqual(send_dingwei.complete_addr('peer.other-owner'),'peer.other-owner')
+            self.assertEqual(send_dingwei.complete_addr('peer#verified-key'),'peer#verified-key')

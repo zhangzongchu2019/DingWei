@@ -22,7 +22,7 @@ class OutboundRejected(OutboundReceiptError):
 
 class OutboundReceiptBroker:
     def __init__(self, session_names):
-        self.session_names = frozenset(name for name in session_names if name)
+        self.session_names = frozenset(name.casefold() for name in session_names if name)
         self.source_address = next((name for name in session_names if name), "") + "#enrolled"
         self.pending = {}
         self.status_pending = {}
@@ -43,7 +43,7 @@ class OutboundReceiptBroker:
         source = str(env.get('from') or '').split('#')
         target = str(env.get('to') or '').split('#')
         return (len(source)==2 and len(target)==2 and source[0]=='workpulse' and
-                target[0] in self.session_names and bool(source[1]) and source[1]==target[1])
+                target[0].casefold() in self.session_names and bool(source[1]) and source[1]==target[1])
 
     async def send(self, ws, to, body, from_addr, meta=None, *, timeout=10, observational=False, source_id=None, recovery=None):
         if self.connection is not ws or not self.negotiated:
@@ -115,7 +115,7 @@ class OutboundReceiptBroker:
         target = str(env.get('to') or '').split('#')
         if (connection is not ws or future.done() or meta.get('nonce') != nonce or
                 len(source)!=2 or len(target)!=2 or source[0]!='workpulse' or
-                target[0] not in self.session_names or not source[1] or source[1]!=target[1] or
+                target[0].casefold() not in self.session_names or not source[1] or source[1]!=target[1] or
                 type(meta.get('version')) is not int or meta['version']!=1):
             return True
         if (meta.get('state')=='queued' and meta.get('durable') is True and

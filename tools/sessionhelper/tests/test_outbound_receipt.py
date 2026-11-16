@@ -34,6 +34,14 @@ class ReceiptTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(ws.frames[0]['meta']['in_reply_to'],'fixture')
         self.assertEqual(self.broker.pending,{})
         self.assertNotIn('nonce',result)
+    async def test_canonical_session_name_is_casefolded_without_relaxing_nonce(self):
+        self.broker=OutboundReceiptBroker(['Desktop.ZZC'])
+        def respond(ws,env):
+            response=self.response(env);response['to']='DESKTOP.ZZC#u_fixture'
+            self.broker.receive(ws,response)
+        ws=self.ws(respond)
+        result=await self.broker.send(ws,'peer#u_fixture','body','Desktop.ZZC#enrolled')
+        self.assertEqual(result['stage'],'hub_durable_queued')
     async def test_rejected_not_accepted(self):
         ws=self.ws(lambda conn,env:self.broker.receive(conn,self.response(env,state='rejected',durable=False,delivery_id='')))
         with self.assertRaisesRegex(OutboundReceiptError,'Hub rejected'):

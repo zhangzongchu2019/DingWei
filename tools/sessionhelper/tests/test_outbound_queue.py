@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import tempfile
+import time
 import unittest
 from sessionhelper.outbound_queue import OutboundQueue, QueueRejected
 from sessionhelper.outbound_recovery import OutboundRecovery
@@ -100,7 +101,51 @@ class DurableQueueTest(unittest.TestCase):
         with self.q.db() as db:self.assertEqual(db.execute('SELECT body FROM outbound_request').fetchone()[0],'中文')
 
 
+TEST_RECOVERY_CAP={'sender_id':'sender','targets':[{'agent_id':'target','full_name':'target.owner','aliases':['target']}]}
+
 class RecoveryWorkerTest(unittest.IsolatedAsyncioTestCase):
+    async def test_offline_unattempted_request_expires(self):
+        class Broker:connection=None;negotiated=False;recovery=None
+        with tempfile.TemporaryDirectory() as tmp:
+            w=OutboundRecovery(os.path.join(tmp,'q'),Broker(),lambda:'source');now=[100000];w.queue.clock=lambda:now[0]
+            w.queue.update_peer('sender',TEST_RECOVERY_CAP['targets']);w.queue.submit('caller','target','body',{})
+            now[0]+=w.queue.WINDOW+31;await w.step()
+            self.assertEqual(w.queue.status('caller')['phase'],'rejected','offline queue did not enforce lifetime')
+    async def test_missing_capability_deadline_is_explicit(self):
+        class Broker:connection=object();negotiated=False;recovery=None
+        with tempfile.TemporaryDirectory() as tmp:
+            w=OutboundRecovery(os.path.join(tmp,'q'),Broker(),lambda:'source');w.queue.update_peer('sender',TEST_RECOVERY_CAP['targets']);w.queue.submit('caller','target','body',{})
+            await w.step();w._cap_wait_started=time.monotonic()-11;await w.step()
+            self.assertEqual(w.queue.status('caller')['reason'],'outbound_recovery_unsupported','old Hub kept local acceptance pending forever')
+    async def test_unsupported_unknown_is_not_automatically_replayed_on_upgrade(self):
+        class Broker:
+            connection=object();negotiated=True;recovery=TEST_RECOVERY_CAP
+            def __init__(self):self.calls=0
+            async def send(self,*args,**kwargs):
+                self.calls+=1
+                if self.calls==1:raise OutboundReceiptError('unknown after prior write')
+                return {'delivery_id':'dw-dlv_'+'b'*32}
+        with tempfile.TemporaryDirectory() as tmp:
+            b=Broker();w=OutboundRecovery(os.path.join(tmp,'q'),b,lambda:'source');await w.step();w.queue.submit('caller','target','body',{});await w.step()
+            b.recovery=None;await w.step()
+            with w.queue.db() as db:db.execute('UPDATE outbound_request SET next_attempt=0')
+            b.connection=object();b.recovery=TEST_RECOVERY_CAP;await w.step()
+            self.assertEqual(b.calls,1,'unsupported unknown was blindly replayed after upgrade')
+
+    async def test_unsupported_generation_does_not_overwrite_prior_receipt(self):
+        class Broker:connection=object();negotiated=True;recovery=TEST_RECOVERY_CAP
+        with tempfile.TemporaryDirectory() as tmp:
+            b=Broker();w=OutboundRecovery(os.path.join(tmp,'q'),b,lambda:'source');await w.step()
+            original=w.queue.submit('caller','target','body',{});w.queue.claim('writer','sender')
+            w.queue.finish('caller','writer',phase='hub_durable_queued',delivery_id='dw-dlv_'+'d'*32)
+            b.recovery=None;await w.step()
+            result=await w.handler().submit_request('target','body',{},'caller')
+            self.assertEqual(result['phase'],'hub_durable_queued')
+            self.assertEqual(result['source_message_id'],original['source_message_id'])
+            refused=await w.handler().submit_request('target','body',{},'new-caller')
+            self.assertEqual(refused['reason'],'outbound_recovery_unsupported')
+            self.assertEqual(refused['outcome'],'definitive_failure')
+
     async def test_disconnect_then_same_id_and_lost_receipt_recovery(self):
         class Broker:
             connection=object();negotiated=True

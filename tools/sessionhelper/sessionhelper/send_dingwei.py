@@ -32,17 +32,13 @@ except ImportError:
 
 
 def complete_addr(to: str) -> str:
-    """裸会话名补成 <名>#<key_id>。
+    """Preserve the caller destination; the authenticated directory binds its ID.
 
-    helper 侧本应补全，但 defb424f 误删了该逻辑（T-092，修复未部署）⇒ 此处自补，
-    使本脚本在修复上线前后都正确。SH_KEY_ID 是标识符不是密钥，读它不构成凭据暴露；
-    **SH_SECRET 全程不读**。
+    A sender's inherited SH_KEY_ID is not the recipient's owner. The old
+    implicit-suffix workaround is superseded by the durable helper protocol.
+    Explicit verified legacy addresses remain literal inputs.
     """
-    to = to.strip()
-    if "#" in to or not to:
-        return to
-    key = os.environ.get("SH_KEY_ID", "").strip()
-    return f"{to}#{key}" if key else to
+    return to.strip()
 
 
 def unsupported_sub_agent_target(to: str) -> bool:
