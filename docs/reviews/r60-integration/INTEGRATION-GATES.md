@@ -39,3 +39,18 @@ Z2仅观察：全局obs.Default精确+1差值若在集成门出现不符再处�
 ## Z3后续归属与产品边界
 
 01:37:18Z裁定将定因转r61 S-SQLITE-INTERRUPT后续，本席不另做二分或实现store/驱动修法。togpt报告未定位根因，也未证明②增量导致；不再沿用先前“排队取消跨调用误伤已证”的推断。若另有产品补丁，仍按组长新锚/复核与版本范围令执行，不顺手并入r60。旧00:58:41Z先定因修法再继续的相关停门描述以IG-02当前版本为准。①冻结条件已满足，正式合并记录见CONFLICT-RESOLUTION.md。
+
+## dw123正式构建的解释器与逐名门前提（组长04:01:15Z）
+
+`DW_DESKTOP_INTEGRATION_PYTHON` 必须显式指向 dw123 上经校验、依赖锁定的隔离 Python 解释器绝对路径。构建执行面提供实际路径，不照搬作者本机路径；沿用剥继承环境、独立 HOME/TMPDIR 与临时 PG strict 的测试纪律。该变量须进入 `SOURCE_COMMIT=<批准的完整锚> ./build.sh` 的净环境，但仅有 `BUILD_TESTS_OK` 不能证明以下两格执行：构建脚本不自行设置该变量，也不能代替逐名 Go 门。
+
+在同一批准源码锚与隔离环境下显式执行（解释器路径先由构建执行面校验；下列命令假定该变量已设置并导出）：
+
+```sh
+ test -n "$DW_DESKTOP_INTEGRATION_PYTHON" && test -x "$DW_DESKTOP_INTEGRATION_PYTHON" || exit 1
+ HUB_TEST_PG_STRICT=1 go test ./internal/m8 -run '^(TestR60OutboundControlBackpressureRecoversWithSendStatus|TestHostedBodySendSameRequestIDAcrossCLIProcesses)$' -count=1 -p 1 -v -timeout 5m
+```
+
+逐名核对 `TestR60OutboundControlBackpressureRecoversWithSendStatus` 与 `TestHostedBodySendSameRequestIDAcrossCLIProcesses` 均为 PASS：两项顶层 PASS、0 FAIL、0 SKIP，保存命令、源码锚、UTC、原始日志与 SHA。未设解释器导致的 SKIP 即不满足此门；rc=0、canonical 总绿或旧锚读数不能替代。作者 a311 原始证据已显式设置该变量；组长首次复跑 SKIP 后补设解释器才实跑，此记录不改写为首次全绿。
+
+此处仅记录未来正式构建前提，不是构建、上传、预发或现网授权。正式发布件仍待 togpt60 独立复核及组长另令。

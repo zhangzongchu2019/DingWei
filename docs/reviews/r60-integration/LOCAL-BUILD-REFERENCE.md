@@ -26,3 +26,5 @@ helper由本仓package_release.py显式--commit a311从Git对象白名单导出�
 ## 边界
 
 本机helper包不安装、不启动、不交他席；不执行现网helper，不用其HOME/env/私有state作输入。所有产物留本机，Git只含可复核元数据。原集成受测产品仍a311；此补记不将门读数升级为正式发布验收。正式件和上线时机继续等待组长/togpt60复核与业主/组长另令。
+
+正式 dw123 构建还须满足 [INTEGRATION-GATES.md](INTEGRATION-GATES.md) 文末的隔离解释器与两格逐名 PASS／0 SKIP 前提，不能只核 build.sh 总结果。

@@ -11,3 +11,5 @@
 组长03:19:05Z要求0077回退只读实测，结论/代码坐标见docs/reviews/r60-integration/ROLLBACK-0077.md；旧库兼容启动但新协议未终结队列不可直接给旧Hub，依helper-send-lost design:59，不新增产品/迁移。
 
 组长03:21:07Z澄清：本机构建只作门/SHA参考，不上传或交prodops。三对象SHA、go version -m和同SOURCE_COMMIT比对前提见docs/reviews/r60-integration/LOCAL-BUILD-REFERENCE.md；正式dw123 dwbuild/go1.22.2构建待终审与另令。
+
+组长2026-11-17T04:01:15Z通过cecde/a311集成复核，待togpt60独立复核。正式dw123构建须显式设置DW_DESKTOP_INTEGRATION_PYTHON，并按INTEGRATION-GATES.md逐名核联合格与同ID双CLI格均PASS、0SKIP；构建脚本总绿不替代。
