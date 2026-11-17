@@ -53,6 +53,7 @@ SUITES = (
     ("terminal_storage_denied", "node", ROOT / "view-service/terminal-storage-denied-regression.js"),
     ("renderer_t086_empty_ring_e2e", "node", ROOT / "view-service/renderer-t086-empty-ring-e2e-regression.js"),
     ("renderer_replay_seq", "node", ROOT / "view-service/renderer-replay-seq-regression.js"),
+    ("renderer_offturn_fold", "node", ROOT / "view-service/renderer-offturn-fold-regression.js"),
     ("renderer_upload_ticket_timeout", "node", ROOT / "view-service/renderer-upload-ticket-timeout-regression.js"),
     ("renderer_flood_stress", "node", ROOT / "view-service/renderer-flood-stress-regression.js"),
     ("renderer_c2", "node", ROOT / "view-service/renderer-c2-regression.js"),

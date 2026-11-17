@@ -1,0 +1,15 @@
+  PASS G1 W2 回合结束后连续回合外输出合并为一条、默认折叠、展开即全量拼接
+  PASS G9 折叠条不带重发按钮、不带来源图标
+  PASS G10 折叠条不吞正文（展开长度＝逐条之和）
+  PASS G2 W1 首段投递前窗口折叠，标题逐字「回合外输出（Claude）」
+  PASS G3 边界断开：turn
+  PASS G3 边界断开：input
+  PASS G3 边界断开：mention
+  PASS G3 边界断开：error
+  PASS G3 不断开：hidden
+  PASS G3 不断开：update
+  PASS G3 边界断开：历史缺口提示
+page.waitForFunction: Timeout 15000ms exceeded.
+    at withPage.renderer.renderer (/tmp/wt-r61-n2/view-service/renderer-offturn-fold-regression.js:172:16)
+    at withPage (/tmp/wt-r61-n2/view-service/renderer-offturn-fold-regression.js:98:18)
+    at async /tmp/wt-r61-n2/view-service/renderer-offturn-fold-regression.js:350:19
