@@ -109,6 +109,7 @@ class DisconnectClearsPinnedSender(unittest.IsolatedAsyncioTestCase):
         helper._connection = lambda: ('ws://127.0.0.1:9/ws', {})
         helper.provisioner = types.SimpleNamespace(confirm_update_connected=lambda: None)
         helper.outbound_receipts = types.SimpleNamespace(abort=lambda ws: None)
+        helper.session_heartbeat = types.SimpleNamespace(abort=lambda ws: None)
         helper.session_capabilities_envelope = lambda _: {}
         return helper
 

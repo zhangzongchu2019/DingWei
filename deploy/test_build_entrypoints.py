@@ -203,7 +203,7 @@ exit 1
         gate = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(gate)
         files = gate.inventory(ROOT)
-        self.assertEqual(len(files), 94)  # r58: 93 -> 94 files; 1168 -> 1181 cases (1172 + 9), see helper-count-pins.json.
+        self.assertEqual(len(files), 96)  # r58: 93 -> 94; R60-③: 94 -> 96 (test_session_heartbeat, test_inbox_lookup_miss).
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             (root / "scripts").mkdir()

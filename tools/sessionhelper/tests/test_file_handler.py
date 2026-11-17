@@ -67,6 +67,8 @@ class FileHandlerBridgeTest(unittest.TestCase):
         helper.file_ticket_waiters = {}
         from sessionhelper.outbound_receipt import OutboundReceiptBroker
         helper.outbound_receipts = OutboundReceiptBroker(("agent",))
+        from sessionhelper.session_heartbeat import SessionHeartbeatReporter
+        helper.session_heartbeat = SessionHeartbeatReporter(("agent",))
         return helper
 
     def test_capability_response_is_consumed_before_cli_path(self):

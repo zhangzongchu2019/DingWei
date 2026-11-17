@@ -38,10 +38,12 @@ class IPCStartupIsolationTests(unittest.IsolatedAsyncioTestCase):
                     book=SimpleNamespace(self_addr="synthetic-helper", key_id="fixture"),
                     provisioner=SimpleNamespace(confirm_update_connected=lambda: None),
                     outbound_receipts=SimpleNamespace(abort=lambda ws: None),
+                    session_heartbeat=SimpleNamespace(abort=lambda ws: None),
                     upload_policy=SimpleNamespace(enabled=False), ipc_bound=asyncio.Event(),
                     _connection=lambda: (f"ws://127.0.0.1:{port}", {}),
                     session_capabilities_envelope=lambda _: {"type": "synthetic-capabilities"},
                     _make_vsapi_handler=lambda: None,
+                    _make_heartbeat_handler=lambda ws: None,
                 )
                 for name in ("_make_send_handler", "_make_file_handler", "_make_desktop_inbox_handler", "_make_spec_write_handler", "_make_delivery_status_handler"):
                     setattr(helper, name, lambda ws: None)

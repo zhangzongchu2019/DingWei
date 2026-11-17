@@ -59,7 +59,8 @@ class BufferedWS:
 
 
 def helper():
-    h = SimpleNamespace(processed=[], rosters=[], outbound_receipts=SimpleNamespace(receive=lambda _ws, _env: False))
+    h = SimpleNamespace(processed=[], rosters=[], outbound_receipts=SimpleNamespace(receive=lambda _ws, _env: False),
+                        session_heartbeat=SimpleNamespace(receive=lambda _ws, _env: False))
     for name in ("is_file_capability_response", "is_terminal_interrupt", "is_terminal_input",
                  "is_terminal_resize", "is_terminal_refresh", "is_delivery", "is_delivery_cancel",
                  "is_agent_network_skill"):

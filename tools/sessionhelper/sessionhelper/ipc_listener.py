@@ -52,6 +52,7 @@ def validate_socket_path(socket_path: str) -> None:
 IPC_SEND = "mcp_send"           # request: {type, to, body? , file? , request_id,
                                 #           reply_to?, in_reply_to?, reply_policy?, kind?}
 IPC_VSAPI = "vsapi_v1"         # request: {type, method, path, body?, request_id}
+IPC_HEARTBEAT = "heartbeat_v1"  # request: {type, status, task?, eta?, blocker?, request_id}
 IPC_FILE = "file_access_v1"    # request: {type, file_ref, method=HEAD|GET, range?}
 IPC_UPLOAD = "file_upload_v1"  # request: {type, request_id, name?, media_type?} + exactly one fd (SCM_RIGHTS)
                                # R-V2-AGENT-FILE-UPLOAD：helper 不接受、不解析路径；文件由 Agent 进程自己打开后交 fd。
@@ -144,6 +145,7 @@ async def _handle_connection(
     task_handler: _SpecHandler | None = None,
     project_context_handler: _SpecHandler | None = None,
     delivery_status_handler: _SpecHandler | None = None,
+    heartbeat_handler: _SpecHandler | None = None,
 ) -> None:
     """Serve a single Unix-socket connection: read one request, dispatch by type, ack.
 
@@ -187,6 +189,21 @@ async def _handle_connection(
             result = await asyncio.wait_for(delivery_status_handler(msg), 3)
         except (TimeoutError, OSError):
             result = {'ok': False, 'status': 'unknown'}
+        return await _write_one(writer, {'ok': True, 'outcome': result})
+    if msg_type == IPC_HEARTBEAT:
+        if set(msg) - {'type', 'request_id', 'status', 'task', 'eta', 'blocker'}:
+            return await _write_one(writer, {'ok': False, 'error': 'invalid_heartbeat_request'})
+        # The handler always answers with a definite outcome; wrapping keeps a
+        # deterministic negative (unsupported/invalid/throttled) from being
+        # folded into helper_rejected by the shim (R60-③).
+        result = {'ok': False, 'status': 'unsupported'}
+        if heartbeat_handler is not None:
+            try:
+                result = await asyncio.wait_for(heartbeat_handler(msg), 5)
+            except (TimeoutError, OSError):
+                result = {'ok': False, 'status': 'unknown'}
+            except (ValueError, TypeError):
+                result = {'ok': False, 'status': 'invalid'}
         return await _write_one(writer, {'ok': True, 'outcome': result})
     if msg_type == "project_context_v1":
         if project_context_handler is None:
@@ -605,6 +622,7 @@ async def serve_ipc(
     task_handler: _SpecHandler | None = None,
     project_context_handler: _SpecHandler | None = None,
     delivery_status_handler: _SpecHandler | None = None,
+    heartbeat_handler: _SpecHandler | None = None,
     replace_existing: bool = True,
 ) -> None:
     """Start a Unix-domain socket server.
@@ -645,7 +663,8 @@ async def serve_ipc(
         await _handle_connection(reader, writer, send_handler, vsapi_handler, file_handler,
                                  allowed_socket_dir=allowed_socket_dir,
                                  upload_handler=upload_handler, passed_fds=fds, upload_only=upload_only, send_body_only=send_body_only, inbox_handler=inbox_handler,
-                                 spec_handler=spec_handler, task_handler=task_handler, project_context_handler=project_context_handler, delivery_status_handler=delivery_status_handler)
+                                 spec_handler=spec_handler, task_handler=task_handler, project_context_handler=project_context_handler, delivery_status_handler=delivery_status_handler,
+                                 heartbeat_handler=heartbeat_handler)
 
     loop = asyncio.get_running_loop()
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

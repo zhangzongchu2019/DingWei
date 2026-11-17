@@ -42,6 +42,7 @@ tools/sessionhelper/tests/test_hosted_mcp_send.py
 tools/sessionhelper/tests/test_hub_notice_no_inject.py
 tools/sessionhelper/tests/test_inbound_predicates_single_home.py
 tools/sessionhelper/tests/test_inbox_lifecycle.py
+tools/sessionhelper/tests/test_inbox_lookup_miss.py
 tools/sessionhelper/tests/test_inbox_progress.py
 tools/sessionhelper/tests/test_ipc_send_addr.py
 tools/sessionhelper/tests/test_ipc_socket_path.py
@@ -70,6 +71,7 @@ tools/sessionhelper/tests/test_route_mention_golden_replay.py
 tools/sessionhelper/tests/test_route_regex_single_home.py
 tools/sessionhelper/tests/test_self_update_offer.py
 tools/sessionhelper/tests/test_send_body_amr_marker.py
+tools/sessionhelper/tests/test_session_heartbeat.py
 tools/sessionhelper/tests/test_sessionhelper.py
 tools/sessionhelper/tests/test_setup.py
 tools/sessionhelper/tests/test_sigterm_exit.py

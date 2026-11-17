@@ -265,6 +265,9 @@ type sessionClient struct {
 	lastInboxAttempt time.Time
 	lastInboxQuery   time.Time
 
+	heartbeat            *sessionHeartbeatCache // Observational self-report, bound to this authenticated connection.
+	lastHeartbeatAttempt time.Time              // Read/written under h.mu; rejected attempts do not renew the cache.
+
 	metricsAgentID     string // Set only by dedicated credential admission, never helper JSON.
 	metricsGeneration  string
 	diskMetrics        *agentmetrics.Cache // Access to the pointer is under h.mu.
@@ -1410,6 +1413,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			continue
 		}
 		if h.handleAgentDiskMetrics(r.Context(), c, env) {
+			continue
+		}
+		if h.handleSessionHeartbeat(r.Context(), c, env) {
 			continue
 		}
 		if h.handleFileCapabilityRequest(r.Context(), c, env) {
