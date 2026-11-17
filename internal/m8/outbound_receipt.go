@@ -62,7 +62,9 @@ func (h *Hub) writeOutboundReceipt(ctx context.Context, c *sessionClient, source
 	}
 	// Failed receipt write does not undo a committed queue item. The sender must
 	// retain an uncertain outcome and must not blindly resubmit the envelope.
-	_ = c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress(systemAddressName, c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: time.Now().Unix(), Meta: meta})
+	if err := c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress(systemAddressName, c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: time.Now().Unix(), Meta: meta}); err != nil {
+		c.obsConn.OutboundReceiptWriteFailed()
+	}
 }
 
 func (h *Hub) writeQueuedReceiptToSource(ctx context.Context, env model.Envelope, nonce, deliveryID string) {

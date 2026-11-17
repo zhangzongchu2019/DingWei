@@ -310,8 +310,12 @@ func (h *SessionHistory) Append(ctx context.Context, owner, agent, session, even
 		h.appendMu.RUnlock()
 		return SessionHistoryCursor{}, ctx.Err()
 	}
-	result := <-request.result
-	return result.cursor, result.err
+	select {
+	case result := <-request.result:
+		return result.cursor, result.err
+	case <-ctx.Done():
+		return SessionHistoryCursor{}, ctx.Err()
+	}
 }
 
 func (h *SessionHistory) runAppendWriter() {

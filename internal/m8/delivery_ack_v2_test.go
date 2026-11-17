@@ -22,8 +22,14 @@ func newACKV2Fixture(t *testing.T, v2 bool) *ackV2Fixture {
 }
 
 func newACKV2FixtureWithKind(t *testing.T, v2 bool, kind string, automatic bool) *ackV2Fixture {
+	return newACKV2FixtureWithKindHook(t, v2, kind, automatic, nil)
+}
+func newACKV2FixtureWithKindHook(t *testing.T, v2 bool, kind string, automatic bool, before func(*agentEnv)) *ackV2Fixture {
 	t.Helper()
 	e := newAgentEnv(t)
+	if before != nil {
+		before(e)
+	}
 	conn, status, raw := e.dial(e.cred, "version=0.2.3.14&os=linux")
 	if conn == nil {
 		t.Fatalf("local helper-peer WS status=%d body=%s", status, raw)

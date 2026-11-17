@@ -193,6 +193,10 @@ func run(logger *slog.Logger) error {
 	inbound := bus.NewBestEffortDBQueue(queueCtx, st, model.DirectionIn, writeQueueConfig)
 	outbound := bus.NewBestEffortDBQueue(queueCtx, st, model.DirectionOut, writeQueueConfig)
 	prefixHub := m8.New(st, consoleAuthMode)
+	if err := configureSessionKeepaliveForRun(prefixHub, logger); err != nil {
+		prefixHub.Close()
+		return err
+	}
 	prefixHub.SessionHistory = historyStore
 	prefixHub.SessionHistoryEnabled = sessionHistoryEnabled
 	if historyStore != nil {
@@ -1415,4 +1419,12 @@ func stringField(m map[string]any, key string) string {
 		return strings.TrimSpace(v)
 	}
 	return ""
+}
+
+func configureSessionKeepaliveForRun(hub *m8.Hub, logger *slog.Logger) error {
+	if err := hub.ConfigureSessionKeepalive(os.Getenv("WP_SESSION_KEEPALIVE_INTERVAL"), os.Getenv("WP_SESSION_KEEPALIVE_TIMEOUT")); err != nil {
+		return err
+	}
+	logger.Info("session keepalive", "interval", hub.SessionKeepaliveInterval(), "timeout", hub.SessionKeepaliveTimeout())
+	return nil
 }
