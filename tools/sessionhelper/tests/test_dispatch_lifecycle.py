@@ -331,7 +331,11 @@ class AdmissionDeadlineTest(unittest.TestCase):
                             abort_transport=stopped.set,stop=lambda:None)
         new=SimpleNamespace(start=lambda:callbacks.append('restart'),deliver=lambda did,body:calls.append(('new',did)) or DeliveryReceipt(did,'done','fixture','turn=new-turn'))
         adapter=self.adapter(old,'claude');adapter._build_driver=lambda which:new
-        adapter._admission_timeout=.1;adapter._terminal_timeout=90
+        # The deadline is measured from persisted dispatch intent, which is
+        # intentionally before the worker thread is scheduled. Start with a
+        # generous deadline and arm the short test window only after deliver
+        # proves the worker crossed the transport boundary.
+        adapter._admission_timeout=60;adapter._terminal_timeout=90
         adapter.handle_delivery(self.env,on_admitted=lambda:callbacks.append('admitted'))
         adapter._commands.enqueue(next_env)
         command=adapter._commands.start_next();finished=threading.Event();errors=[]
@@ -340,7 +344,9 @@ class AdmissionDeadlineTest(unittest.TestCase):
             except Exception as exc:errors.append(exc)
             finally:finished.set()
         task=threading.Thread(target=run,daemon=True);task.start()
-        on_time=finished.wait(1)
+        self.assertTrue(entered.wait(2),'test worker must enter deliver before arming the deadline')
+        adapter._admission_timeout=.1
+        on_time=finished.wait(3)
         if not on_time:
             # Bound negative-control cleanup; a missing deadline must fail an
             # assertion instead of hanging the test process for 90 seconds.
@@ -451,9 +457,9 @@ class AdmissionDeadlineRaceTest(unittest.TestCase):
 
     def exercise_order(self,mode):
         import time,threading
-        did=self.env['meta']['delivery_id'];count=0;stop=threading.Event();calls=[]
+        did=self.env['meta']['delivery_id'];count=0;stop=threading.Event();deliver_entered=threading.Event();calls=[]
         def deliver(ident,body):
-            calls.append(ident);stop.wait(.30)
+            calls.append(ident);deliver_entered.set();stop.wait(.30)
             return DeliveryReceipt(ident,'accepted','fixture','isReplay ack, turn=original')
         def poll(ident):
             nonlocal count
@@ -466,7 +472,26 @@ class AdmissionDeadlineRaceTest(unittest.TestCase):
         old=SimpleNamespace(deliver=deliver,poll_receipt=poll,abort_transport=stop.set,stop=lambda:None)
         new=SimpleNamespace(start=lambda:None)
         adapter=self.adapter(old,'claude');adapter._admission_timeout=.10;adapter._terminal_timeout=2;adapter._build_driver=lambda which:new
-        adapter._commands.enqueue(self.env);adapter._deliver_regular_command(adapter._commands.start_next())
+        adapter._commands.enqueue(self.env)
+        command=adapter._commands.start_next()
+        if mode=='late_deliver':
+            # The deadline starts at persisted intent, so a delayed scheduler
+            # may expire it before the background deliver worker gets CPU.
+            # Make this case observe the transport entry first; then preserve
+            # the intended late-receipt condition and all ACK/state asserts.
+            adapter._admission_timeout=60
+            finished=threading.Event();errors=[]
+            def run():
+                try:adapter._deliver_regular_command(command)
+                except Exception as exc:errors.append(exc)
+                finally:finished.set()
+            task=threading.Thread(target=run,daemon=True);task.start()
+            self.assertTrue(deliver_entered.wait(2),'late-delivery fixture must enter before arming its cutoff')
+            adapter._admission_timeout=.10
+            self.assertTrue(finished.wait(3),'late-delivery worker must settle after deadline')
+            self.assertEqual(errors,[])
+        else:
+            adapter._deliver_regular_command(command)
         row=self.inbox.lifecycle(did);phases=[x['phase'] for x in self.inbox.delivery_ack_chain() if x['delivery_id']==did]
         if mode=='early_admitted':
             self.assertEqual(phases,['queued','injected','processed'],'截止前admitted不得再产生admission unknown')
