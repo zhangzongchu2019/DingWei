@@ -331,11 +331,12 @@ class AdmissionDeadlineTest(unittest.TestCase):
                             abort_transport=stopped.set,stop=lambda:None)
         new=SimpleNamespace(start=lambda:callbacks.append('restart'),deliver=lambda did,body:calls.append(('new',did)) or DeliveryReceipt(did,'done','fixture','turn=new-turn'))
         adapter=self.adapter(old,'claude');adapter._build_driver=lambda which:new
-        # The deadline is measured from persisted dispatch intent, which is
-        # intentionally before the worker thread is scheduled. Start with a
-        # generous deadline and arm the short test window only after deliver
-        # proves the worker crossed the transport boundary.
-        adapter._admission_timeout=60;adapter._terminal_timeout=90
+        # Keep the production cutoff at 100 ms, but advance this test's logical
+        # elapsed clock only after the worker visibly enters deliver. The real
+        # deadline starts before the worker is scheduled, so wall-clock startup
+        # delay must not decide which branch this test exercises.
+        elapsed=[0.0];adapter._admission_timeout=.1;adapter._terminal_timeout=90
+        adapter._admission_elapsed=lambda _command:elapsed[0]
         adapter.handle_delivery(self.env,on_admitted=lambda:callbacks.append('admitted'))
         adapter._commands.enqueue(next_env)
         command=adapter._commands.start_next();finished=threading.Event();errors=[]
@@ -345,7 +346,7 @@ class AdmissionDeadlineTest(unittest.TestCase):
             finally:finished.set()
         task=threading.Thread(target=run,daemon=True);task.start()
         self.assertTrue(entered.wait(2),'test worker must enter deliver before arming the deadline')
-        adapter._admission_timeout=.1
+        elapsed[0]=.11
         on_time=finished.wait(3)
         if not on_time:
             # Bound negative-control cleanup; a missing deadline must fail an
@@ -361,6 +362,7 @@ class AdmissionDeadlineTest(unittest.TestCase):
         self.assertTrue(adapter._transport_recovery.wait(1),'下一件派发前必须恢复CLI')
         self.assertNotIn('admitted',callbacks)
         self.inbox.claim_next()
+        elapsed[0]=0.0  # each delivery has its own persisted-intent clock
         adapter._deliver_regular_command(adapter._commands.start_next())
         self.assertEqual(calls,[('old',first),('new',second)],'恢复后推进下一件且不得重派原件')
         self.assertEqual(self.inbox.lifecycle(second)['state'],'processed')
@@ -457,37 +459,49 @@ class AdmissionDeadlineRaceTest(unittest.TestCase):
 
     def exercise_order(self,mode):
         import time,threading
-        did=self.env['meta']['delivery_id'];count=0;stop=threading.Event();deliver_entered=threading.Event();calls=[]
+        did=self.env['meta']['delivery_id'];count=0;stop=threading.Event();deliver_entered=threading.Event();poll_entered=threading.Event();poll_release=threading.Event();calls=[];elapsed=[0.0]
         def deliver(ident,body):
             calls.append(ident);deliver_entered.set();stop.wait(.30)
             return DeliveryReceipt(ident,'accepted','fixture','isReplay ack, turn=original')
         def poll(ident):
             nonlocal count
             count+=1
-            if mode=='late_poll':time.sleep(.12)
+            if mode=='late_poll':
+                poll_entered.set()
+                if not poll_release.wait(2):raise TimeoutError('test did not release late poll')
             if mode=='late_deliver':return DeliveryReceipt(ident,'processing','fixture','submitted')
-            if mode=='early_admitted' and count==2:time.sleep(.12)
+            if mode=='early_admitted' and count==2:elapsed[0]=.12
             state='done' if mode=='early_admitted' and count>2 else 'accepted'
             return DeliveryReceipt(ident,state,'fixture','isReplay ack, turn=original')
         old=SimpleNamespace(deliver=deliver,poll_receipt=poll,abort_transport=stop.set,stop=lambda:None)
         new=SimpleNamespace(start=lambda:None)
-        adapter=self.adapter(old,'claude');adapter._admission_timeout=.10;adapter._terminal_timeout=2;adapter._build_driver=lambda which:new
+        adapter=self.adapter(old,'claude');adapter._admission_timeout=60 if mode=='late_poll' else .10;adapter._terminal_timeout=2;adapter._build_driver=lambda which:new
+        if mode!='late_poll':adapter._admission_elapsed=lambda _command:elapsed[0]
         adapter._commands.enqueue(self.env)
         command=adapter._commands.start_next()
-        if mode=='late_deliver':
-            # The deadline starts at persisted intent, so a delayed scheduler
-            # may expire it before the background deliver worker gets CPU.
-            # Make this case observe the transport entry first; then preserve
-            # the intended late-receipt condition and all ACK/state asserts.
-            adapter._admission_timeout=60
+        if mode in ('late_deliver','late_poll'):
+            # Advance the logical cutoff only after the relevant transport
+            # operation visibly enters, independent of host thread scheduling.
             finished=threading.Event();errors=[]
             def run():
                 try:adapter._deliver_regular_command(command)
                 except Exception as exc:errors.append(exc)
                 finally:finished.set()
             task=threading.Thread(target=run,daemon=True);task.start()
-            self.assertTrue(deliver_entered.wait(2),'late-delivery fixture must enter before arming its cutoff')
-            adapter._admission_timeout=.10
+            entered=deliver_entered if mode=='late_deliver' else poll_entered
+            self.assertTrue(entered.wait(2),'late-result fixture must enter before arming its cutoff')
+            if mode=='late_poll':
+                # Keep the real dispatch-intent clock. The blocked poll has
+                # already entered, so arming a short deadline and waiting for
+                # its observable elapsed condition makes the late response
+                # deterministic without sleeping for an assumed 100 ms.
+                adapter._admission_timeout=.10
+                cutoff=time.monotonic()+2
+                while adapter._admission_elapsed(command)<adapter._admission_timeout and time.monotonic()<cutoff:
+                    time.sleep(.001)
+                self.assertGreaterEqual(adapter._admission_elapsed(command),adapter._admission_timeout,'late poll must be released only after the persisted-intent deadline')
+                poll_release.set()
+            else:elapsed[0]=.12
             self.assertTrue(finished.wait(3),'late-delivery worker must settle after deadline')
             self.assertEqual(errors,[])
         else:
