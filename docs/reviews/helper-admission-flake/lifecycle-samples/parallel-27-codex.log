@@ -1,0 +1,110 @@
+HELPER_SUITE python=/tmp/lockvenv/bin/python3 version=3.12.3 driver=codex pattern=test_dispatch_lifecycle.py
+HELPER_SUITE_PROFILE selected=codex actual_SH_DRIVER=codex
+test_admission_committed_before_deadline_wins (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_admission_committed_before_deadline_wins) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> accepted (isReplay ack, turn=original)
+[delivery] done id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa source=fixture (isReplay ack, turn=original)
+ok
+test_blocked_deliver_accepted_after_deadline_is_not_admission (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_blocked_deliver_accepted_after_deadline_is_not_admission) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+ok
+test_slow_poll_accepted_after_deadline_is_not_admission (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_slow_poll_accepted_after_deadline_is_not_admission) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+ok
+test_unknown_requires_complete_native_evidence_to_reconcile_atomically (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_unknown_requires_complete_native_evidence_to_reconcile_atomically) ... [delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+ok
+test_unknown_terminal_without_original_times_is_evidence_only (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_unknown_terminal_without_original_times_is_evidence_only) ... [delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa turn=original; missing original native times, no ACK advancement
+[delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa turn=original; missing original native times, no ACK advancement
+[delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa turn=original; missing original native times, no ACK advancement
+ok
+test_blocked_deliver_is_aborted_before_next_dispatch (test_dispatch_lifecycle.AdmissionDeadlineTest.test_blocked_deliver_is_aborted_before_next_dispatch) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_deadline-next -> done (turn=new-turn)
+[delivery] done id=dw-dlv_deadline-next source=fixture (turn=new-turn)
+ok
+test_clock_includes_time_since_persisted_dispatch_intent (test_dispatch_lifecycle.AdmissionDeadlineTest.test_clock_includes_time_since_persisted_dispatch_intent) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+ok
+test_default_and_independent_environment_configuration (test_dispatch_lifecycle.AdmissionDeadlineTest.test_default_and_independent_environment_configuration) ... ok
+test_failed_recovery_quarantines_following_pipe_writes (test_dispatch_lifecycle.AdmissionDeadlineTest.test_failed_recovery_quarantines_following_pipe_writes) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (submitted)
+[delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: RuntimeError: driver has no safe transport abort
+ok
+test_missing_accepted_uses_admission_deadline_and_recovers (test_dispatch_lifecycle.AdmissionDeadlineTest.test_missing_accepted_uses_admission_deadline_and_recovers) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (submitted, awaiting ack, turn=old-turn)
+[delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_deadline-next -> done (turn=new-turn)
+[delivery] done id=dw-dlv_deadline-next source=fixture (turn=new-turn)
+ok
+test_prior_nonterminal_wait_is_aborted_before_replacement_dispatch (test_dispatch_lifecycle.AdmissionDeadlineTest.test_prior_nonterminal_wait_is_aborted_before_replacement_dispatch) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+ok
+test_real_blocked_stdin_killed_before_buffered_close_and_next_dispatch (test_dispatch_lifecycle.AdmissionDeadlineTest.test_real_blocked_stdin_killed_before_buffered_close_and_next_dispatch) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-next -> done (turn=next)
+[delivery] done id=dw-next source=fixture (turn=next)
+ok
+test_busy_configuration_default_and_override (test_dispatch_lifecycle.BusyAdmissionTest.test_busy_configuration_default_and_override) ... ok
+test_cancelled_waiter_cannot_cross_submission_boundary (test_dispatch_lifecycle.BusyAdmissionTest.test_cancelled_waiter_cannot_cross_submission_boundary) ... ok
+test_claude_bad_transport_old_handling (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_bad_transport_old_handling) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb admission_timeout; admission/terminal not assumed; no automatic replay
+ok
+test_claude_busy90_once (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_busy90_once) ... ok
+test_claude_limit_cancels_late_submission (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_limit_cancels_late_submission) ... ok
+test_claude_stuck_writer_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_stuck_writer_has_no_busy_exemption) ... ok
+test_codex_bad_transport_old_handling (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_bad_transport_old_handling) ... ok
+test_codex_busy90_once (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_busy90_once) ... ok
+test_codex_limit_cancels_late_submission (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_limit_cancels_late_submission) ... ok
+test_codex_stuck_writer_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_stuck_writer_has_no_busy_exemption) ... ok
+test_disconnected_transport_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_disconnected_transport_has_no_busy_exemption) ... ok
+test_possible_submission_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_possible_submission_has_no_busy_exemption) ... ok
+test_submission_boundary_cannot_be_cancelled (test_dispatch_lifecycle.BusyAdmissionTest.test_submission_boundary_cannot_be_cancelled) ... ok
+test_absent_blocker_journal_is_not_reopened_on_each_idle_tick (test_dispatch_lifecycle.DispatchLifecycleTest.test_absent_blocker_journal_is_not_reopened_on_each_idle_tick) ... ok
+test_cancel_and_dispatch_have_single_atomic_winner (test_dispatch_lifecycle.DispatchLifecycleTest.test_cancel_and_dispatch_have_single_atomic_winner) ... ok
+test_claude_error_result_cannot_be_persisted_as_successful_done (test_dispatch_lifecycle.DispatchLifecycleTest.test_claude_error_result_cannot_be_persisted_as_successful_done) ... ok
+test_claude_partial_stream_only_refreshes_progress_without_admission_or_output (test_dispatch_lifecycle.DispatchLifecycleTest.test_claude_partial_stream_only_refreshes_progress_without_admission_or_output) ... ok
+test_claude_submitted_local_uuid_is_not_admission (test_dispatch_lifecycle.DispatchLifecycleTest.test_claude_submitted_local_uuid_is_not_admission) ... ok
+test_enqueue_and_duplicate_never_fire_admission_callback (test_dispatch_lifecycle.DispatchLifecycleTest.test_enqueue_and_duplicate_never_fire_admission_callback) ... ok
+test_failure_receipt_without_original_times_cannot_reopen_unknown (test_dispatch_lifecycle.DispatchLifecycleTest.test_failure_receipt_without_original_times_cannot_reopen_unknown) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> failed (result failed: error_max_turns)
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery] failed id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa source=pipe (result failed: error_max_turns)
+ok
+test_intent_precedes_rpc_and_exception_never_replays (test_dispatch_lifecycle.DispatchLifecycleTest.test_intent_precedes_rpc_and_exception_never_replays) ... [driver-adapter][FAILED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa deliver raised: connection lost after request
+[driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> unknown (no evidence)
+ok
+test_lost_claude_pipe_recovery_isolates_without_blocking_fifo (test_dispatch_lifecycle.DispatchLifecycleTest.test_lost_claude_pipe_recovery_isolates_without_blocking_fifo) ... ok
+test_native_terminal_preserves_turn_and_original_times (test_dispatch_lifecycle.DispatchLifecycleTest.test_native_terminal_preserves_turn_and_original_times) ... ok
+test_non_durable_human_command_does_not_require_hub_ledger (test_dispatch_lifecycle.DispatchLifecycleTest.test_non_durable_human_command_does_not_require_hub_ledger) ... [driver-adapter] deliver id=dw-human -> done (turn=human-turn)
+[delivery] done id=dw-human source=protocol (turn=human-turn)
+ok
+test_recovery_query_does_not_dispatch_admitted_or_uncertain_rows (test_dispatch_lifecycle.DispatchLifecycleTest.test_recovery_query_does_not_dispatch_admitted_or_uncertain_rows) ... ok
+test_restore_only_queries_bound_request_and_never_calls_deliver (test_dispatch_lifecycle.DispatchLifecycleTest.test_restore_only_queries_bound_request_and_never_calls_deliver) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> unknown (no remote proof)
+ok
+test_watchdog_event_does_not_fabricate_turn_terminal (test_dispatch_lifecycle.DispatchLifecycleTest.test_watchdog_event_does_not_fabricate_turn_terminal) ... ok
+test_compare_serialized_wire_time_not_unrounded_float (test_dispatch_lifecycle.MixedPrecisionGuardTest.test_compare_serialized_wire_time_not_unrounded_float) ... ok
+test_consistent_original_terminal_can_close_pending (test_dispatch_lifecycle.MixedPrecisionGuardTest.test_consistent_original_terminal_can_close_pending) ... ok
+test_mixed_precision_blocks_pending_and_confirmed_injected_ack (test_dispatch_lifecycle.MixedPrecisionGuardTest.test_mixed_precision_blocks_pending_and_confirmed_injected_ack) ... ok
+test_pending_survives_restart_and_identical_evidence_without_new_ack (test_dispatch_lifecycle.MixedPrecisionGuardTest.test_pending_survives_restart_and_identical_evidence_without_new_ack) ... ok
+test_pending_wire_timestamp_is_authoritative_over_inbox_value (test_dispatch_lifecycle.MixedPrecisionGuardTest.test_pending_wire_timestamp_is_authoritative_over_inbox_value) ... ok
+test_claude_times_are_first_native_receipt_and_result_observations (test_dispatch_lifecycle.NativeEvidenceTimeTest.test_claude_times_are_first_native_receipt_and_result_observations) ... ok
+test_codex_times_require_original_started_observation (test_dispatch_lifecycle.NativeEvidenceTimeTest.test_codex_times_require_original_started_observation) ... ok
+test_admitted_turn_times_out_without_model_terminal_and_advances (test_dispatch_lifecycle.WatchdogQueueReleaseTest.test_admitted_turn_times_out_without_model_terminal_and_advances) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (turn=turn-first)
+[delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa terminal_timeout; admission/terminal not assumed; no automatic replay
+[driver-adapter] deliver id=dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb -> done (turn=turn-second)
+ok
+test_historical_processed_is_not_native_terminal_evidence (test_dispatch_lifecycle.WatchdogQueueReleaseTest.test_historical_processed_is_not_native_terminal_evidence) ... [delivery][ALERT][TIMEOUT] id=dw-legacy-processed admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: RuntimeError: driver has no safe transport abort
+ok
+test_persisted_native_terminal_advances_despite_stale_poll (test_dispatch_lifecycle.WatchdogQueueReleaseTest.test_persisted_native_terminal_advances_despite_stale_poll) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (turn=native-turn)
+ok
+test_persisted_terminal_consumes_admission_callback_before_release (test_dispatch_lifecycle.WatchdogQueueReleaseTest.test_persisted_terminal_consumes_admission_callback_before_release) ... ok
+test_unproven_claude_admission_times_out_and_advances (test_dispatch_lifecycle.WatchdogQueueReleaseTest.test_unproven_claude_admission_times_out_and_advances) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (turn=turn-first)
+[delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb -> done (turn=turn-second)
+[delivery] done id=dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb source=fixture (turn=turn-second)
+ok
+
+----------------------------------------------------------------------
+Ran 51 tests in 25.690s
+
+OK

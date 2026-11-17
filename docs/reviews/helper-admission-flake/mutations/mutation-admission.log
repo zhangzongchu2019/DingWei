@@ -1,0 +1,76 @@
+test_missing_accepted_uses_admission_deadline_and_recovers (test_dispatch_lifecycle.AdmissionDeadlineTest.test_missing_accepted_uses_admission_deadline_and_recovers) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (submitted, awaiting ack, turn=old-turn)
+FAIL
+test_blocked_deliver_accepted_after_deadline_is_not_admission (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_blocked_deliver_accepted_after_deadline_is_not_admission) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (submitted)
+FAIL
+test_slow_poll_accepted_after_deadline_is_not_admission (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_slow_poll_accepted_after_deadline_is_not_admission) ... [delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> accepted (isReplay ack, turn=original)
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+FAIL
+test_aa010_feature_off_drains_without_native_or_capability (test_sub_agent_helper.StoreTests.test_aa010_feature_off_drains_without_native_or_capability) ... ok
+
+======================================================================
+FAIL: test_missing_accepted_uses_admission_deadline_and_recovers (test_dispatch_lifecycle.AdmissionDeadlineTest.test_missing_accepted_uses_admission_deadline_and_recovers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/helper-admission-fixed/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 370, in test_missing_accepted_uses_admission_deadline_and_recovers
+    def test_missing_accepted_uses_admission_deadline_and_recovers(self):self.exercise(False)
+                                                                         ^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/helper-admission-fixed/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 356, in exercise
+    self.assertTrue(on_time,'独立admission截止必须越过阻塞deliver')
+AssertionError: False is not true : 独立admission截止必须越过阻塞deliver
+
+======================================================================
+FAIL: test_blocked_deliver_accepted_after_deadline_is_not_admission (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_blocked_deliver_accepted_after_deadline_is_not_admission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/helper-admission-fixed/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 527, in test_blocked_deliver_accepted_after_deadline_is_not_admission
+    def test_blocked_deliver_accepted_after_deadline_is_not_admission(self):self.exercise_order('late_deliver')
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/helper-admission-fixed/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 505, in exercise_order
+    self.assertTrue(finished.wait(3),'late-delivery worker must settle after deadline')
+AssertionError: False is not true : late-delivery worker must settle after deadline
+
+======================================================================
+FAIL: test_slow_poll_accepted_after_deadline_is_not_admission (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_slow_poll_accepted_after_deadline_is_not_admission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/helper-admission-fixed/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 526, in test_slow_poll_accepted_after_deadline_is_not_admission
+    def test_slow_poll_accepted_after_deadline_is_not_admission(self):self.exercise_order('late_poll')
+                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/helper-admission-fixed/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 505, in exercise_order
+    self.assertTrue(finished.wait(3),'late-delivery worker must settle after deadline')
+AssertionError: False is not true : late-delivery worker must settle after deadline
+
+----------------------------------------------------------------------
+Ran 4 tests in 10.314s
+
+FAILED (failures=3)
