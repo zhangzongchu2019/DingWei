@@ -14,6 +14,8 @@ LIFECYCLE_COLUMNS = """
     processing_mode TEXT,
     ack_generation INTEGER CHECK(ack_generation > 0),
     dispatch_intent_at REAL,
+    busy_wait_started_at REAL,
+    submission_may_have_started_at REAL,
     request_id TEXT,
     turn_id TEXT,
     admitted_at REAL,
@@ -79,8 +81,12 @@ class DeliveryLifecycle(DeliveryACKOutbox):
     def recoverable_lifecycles(self):
         with self._lock, self._connect() as db:
             return [dict(row) for row in db.execute("""SELECT * FROM delivery_inbox
-                WHERE session_name=? AND state IN ('admitted','admission_unknown')
-                AND dispatch_intent_at IS NOT NULL ORDER BY received_at,delivery_id""", (self.session_name,))]
+                WHERE session_name=? AND (
+                    (state IN ('admitted','admission_unknown') AND dispatch_intent_at IS NOT NULL)
+                    OR (state IN ('received','processing') AND busy_wait_started_at IS NOT NULL
+                        AND submission_may_have_started_at IS NULL AND admitted_at IS NULL)
+                    OR (state='received' AND ack_protocol=2 AND dispatch_intent_at IS NULL)
+                ) ORDER BY received_at,delivery_id""", (self.session_name,))]
 
     def begin_dispatch(self, delivery_id):
         import time
@@ -89,6 +95,56 @@ class DeliveryLifecycle(DeliveryACKOutbox):
                 WHERE session_name=? AND delivery_id=? AND state='processing' AND dispatch_intent_at IS NULL""",
                 (time.time(), time.time(), self.session_name, delivery_id)).rowcount
             return changed == 1
+
+    def claim_recovered(self, delivery_id):
+        """Rebuild the adapter FIFO from durable rows after a helper restart."""
+        import time
+        with self._lock, self._connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute("SELECT state,ack_protocol,dispatch_intent_at,admitted_at,busy_wait_started_at,submission_may_have_started_at FROM delivery_inbox WHERE session_name=? AND delivery_id=?",
+                             (self.session_name, delivery_id)).fetchone()
+            if row is None:
+                db.rollback()
+                return False
+            if row['state'] == 'received' and row['ack_protocol'] == 2:
+                db.execute("UPDATE delivery_inbox SET state='processing',attempts=attempts+1,updated_at=? WHERE session_name=? AND delivery_id=? AND state='received'",
+                           (time.time(), self.session_name, delivery_id))
+                row = db.execute("SELECT state,ack_protocol,dispatch_intent_at,admitted_at,busy_wait_started_at,submission_may_have_started_at FROM delivery_inbox WHERE session_name=? AND delivery_id=?",
+                                 (self.session_name, delivery_id)).fetchone()
+            db.commit()
+            return bool(row and row['state'] in ('processing','admitted','admission_unknown'))
+
+    def mark_busy_waiting(self, delivery_id):
+        """Persist positive pre-submit busy evidence for restart recovery."""
+        import time
+        with self._lock, self._connect() as db:
+            changed = db.execute("""UPDATE delivery_inbox SET
+                busy_wait_started_at=COALESCE(busy_wait_started_at,?),updated_at=?
+                WHERE session_name=? AND delivery_id=? AND state='processing'
+                AND dispatch_intent_at IS NOT NULL AND submission_may_have_started_at IS NULL
+                AND admitted_at IS NULL AND busy_wait_started_at IS NULL""",
+                (time.time(), time.time(), self.session_name, delivery_id)).rowcount
+            return changed == 1 or bool(db.execute("""SELECT 1 FROM delivery_inbox
+                WHERE session_name=? AND delivery_id=? AND state='processing'
+                AND busy_wait_started_at IS NOT NULL AND submission_may_have_started_at IS NULL""",
+                (self.session_name, delivery_id)).fetchone())
+
+    def mark_submission_may_have_started(self, delivery_id):
+        """Atomic one-way boundary called under the driver's admission gate."""
+        import time
+        now = time.time()
+        with self._lock, self._connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute("SELECT state,dispatch_intent_at,admitted_at,submission_may_have_started_at FROM delivery_inbox WHERE session_name=? AND delivery_id=?",
+                             (self.session_name, delivery_id)).fetchone()
+            if row is None or row['dispatch_intent_at'] is None or row['state'] != 'processing' or row['admitted_at'] is not None:
+                db.rollback()
+                return False
+            if row['submission_may_have_started_at'] is None:
+                db.execute("UPDATE delivery_inbox SET submission_may_have_started_at=?,updated_at=? WHERE session_name=? AND delivery_id=? AND state='processing' AND submission_may_have_started_at IS NULL",
+                           (now, now, self.session_name, delivery_id))
+            db.commit()
+            return True
 
     def record_admitted_before_deadline(self, delivery_id, turn_id, timeout_seconds, occurred_at=None):
         """Accepted-only and expiry have one durable, monotonic winner."""

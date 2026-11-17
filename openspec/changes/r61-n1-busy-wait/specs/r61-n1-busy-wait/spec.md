@@ -29,7 +29,7 @@ The helper SHALL process the earliest received eligible delivery before later de
 - **THEN** B is not dispatched ahead of A
 - **AND** A's original lifecycle and delivery-progress entry continue without a duplicate delivery
 
-### Requirement: Capacity overflow is explicit
+### Requirement: Capacity overflow is explicit (N-1b; blocked in N-1a)
 The helper SHALL enforce the configured durable inbox capacity. If a new delivery cannot be persisted because the inbox is full, it SHALL return a definitive, non-retryable capacity rejection for that delivery and SHALL NOT silently drop it or classify it as an uncertain submission. The sender SHALL receive a visible rejection associated with the original delivery.
 
 #### Scenario: Inbox reaches its configured capacity

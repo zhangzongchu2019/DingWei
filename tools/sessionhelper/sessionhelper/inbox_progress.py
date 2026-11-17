@@ -33,6 +33,15 @@ class InboxProgress:
             # Only uncertainty observed/recovered by this instance contributes
             # to its live counter. Prior uncertainty remains available per ID.
             db.execute("UPDATE delivery_progress SET stage='unknown',unknown_instance=? WHERE session_name=? AND stage IN ('adapter_queued','dispatching')", (self.instance, session))
+            # A durable busy-wait marker with no submission boundary is
+            # positive evidence that the pre-submit FIFO item is recoverable.
+            # Reproject it as queued; progress remains observational only.
+            db.execute("""UPDATE delivery_progress SET stage='adapter_queued',unknown_instance=NULL
+                WHERE session_name=? AND delivery_id IN (
+                    SELECT delivery_id FROM delivery_inbox WHERE session_name=?
+                    AND state='received' AND busy_wait_started_at IS NOT NULL
+                    AND submission_may_have_started_at IS NULL AND admitted_at IS NULL)""",
+                (session, session))
             db.execute('''INSERT OR IGNORE INTO delivery_progress
                 (session_name,delivery_id,stage,received_at,updated_at)
                 SELECT session_name,delivery_id,'unknown',received_at,updated_at

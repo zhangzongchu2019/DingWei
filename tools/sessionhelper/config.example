@@ -41,4 +41,5 @@ SH_PROXY=off                          # off=强制直连(忽略容器HTTPS_PROXY
 # SH_CODEX_BOUND_THREAD_ID=完整目标thread-id # 根Codex显式绑定；停helper后改，private冲突拒启
 
 # 健康传输等待 Agent 旧回合空闲的上限（秒）；超限 unknown，不自动重放。
+# Deadline after a proven busy wait crosses the submission boundary; also the non-terminating wait alert threshold.
 SH_BUSY_ADMISSION_MAX_SECONDS=1800

@@ -17,7 +17,10 @@ R60 的 `DeliveryInbox` 已按 `(received_at, delivery_id)` 取最早 `received`
 
 实际提交前以事务/锁把 `busy_waiting` 转为 `submission_may_have_started`，并保留同一 ACK generation/outbox。Driver 产生权威 admitted/terminal 证据后，按 R60 状态机推进。`delivery_progress` 可在 busy wait期间更新为 `adapter_queued` 并发非权威等待提示，恢复时重新投影；不得用 progress 的 `unknown`/`failed` 来重放。ACK 重连仍先 drain 原持久 outbox，再接纳/处理新工作。
 
-## 3. 超容量拒收与可见通知
+## 3. 超容量拒收与可见通知（N-1b；N-1a 保持现状）
+
+N-1a 不修改容量满处理路径，不新增拒收协议，也不改变已有忙/容量回退语义；本节需求与验收格只供 N-1b 设计承接。
+
 
 收件箱在事务内检查容量并仅对成功插入项创建 durable queued ACK。满时不得创建部分行、推进 progress 或写入 adapter 队列。需要对原 delivery_id 返回一次可幂等确认的 `queue_full` 终态拒收，并让 Hub 把原消息置为终态并向原发件方发送“收件箱已满，未提交，请稍后重新发送”的可见状态；不能使用当前 `busy`/`retryable`，因为 Hub 会延迟后再次投递，也不能用 admission_unknown。
 
@@ -33,7 +36,7 @@ R60 的 `DeliveryInbox` 已按 `(received_at, delivery_id)` 取最早 `received`
 
 ## 5. `SH_BUSY_ADMISSION_MAX_SECONDS`
 
-建议保留环境变量、配置字段和现有部署值，避免升级即产生未知配置/启动失败；调整语义：它只约束已经越过提交边界后的 admission/transport deadline（原有未知隔离），不再是 proven busy-wait 的自动取消期限。忙等待可另有非终止告警阈值（默认 1800 秒，日志/UI 每隔限频提示），它只提醒而不改变状态。旧环境变量若只用于 busy wait，应在发行说明中标注废弃语义并提供迁移窗口；不在 N-1 中重命名或删除。
+保留环境变量、配置字段和现有部署值，避免升级即产生未知配置/启动失败；调整语义：它只约束已经越过提交边界后的 admission deadline，不再是 proven busy-wait 的自动取消期限。忙等待达到该值时以限频日志/UI 告警，但不改变状态。旧环境变量若只用于 busy wait，应在发行说明中标注废弃语义并提供迁移窗口；不在 N-1 中重命名或删除。
 
 兼容矩阵：旧 helper + Hub 不变；新 helper 保持现有 ACK 字段并在普通 waiting 期间不发终态 ACK；新 helper 与新 Hub 才启用 queue_full 受限终态；新 helper 遇到不支持拒收 phase 的 Hub 时不可假装拒收成功，应保留可见本地错误/告警并停止该项自动尝试，协议握手/能力协商由 Hub 协调项决定。不得把 queue_full 当 busy 自动循环重投。
 
@@ -46,6 +49,6 @@ R60 的 `DeliveryInbox` 已按 `(received_at, delivery_id)` 取最早 `received`
 3. FIFO：A 等待时 B 不得开始；A 结束后 A→B；更改队列顺序或让后项绕行须红。
 4. outbox/progress：重复 ACK/重启不重复投递；progress waiting 不产生 ACK/重放；删 ACK 唯一键或误用 progress 作调度须红。
 5. helper 重启：marker 前后各注入 crash。marker 前/已知未提交恢复原项；提交边界之后恢复 unknown 且 writer 调用数不增加。删恢复区分须红。
-6. 容量：容量 1 满时第二项 0 次 driver 调用、无 inbox 行/进度伪记录、得到一次可见拒收；Hub 通知路径断言原 sender、delivery_id、明确“未提交”。删拒收/通知映射须红。协议未协调前该格标记 blocked，不得假造绿。
+6. **N-1b blocked**：容量满的可见拒收待 Hub ACK v2 扩展单独实现；N-1a 保持当前行为并验证没有引入新的拒收/回归。
 7. 真不确定：越过提交边界后迟到/丢失 ACK，状态 unknown/manual，自动 writer 次数仍 1；删隔离须红。
 8. 配置兼容：默认、显式旧值和极小值均可解析；proven wait 不过期，post-boundary deadline 仍按策略工作。删“max 仅后置用途”保护须红。
