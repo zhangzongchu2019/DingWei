@@ -1,0 +1,22 @@
+{
+  "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+  "authority_utc": "2026-11-17T21:00:33Z",
+  "whole_rounds": 5,
+  "whole_green": 5,
+  "utc": "2026-11-17T21:30:28.641889+00:00",
+  "prior_four_reused": false,
+  "policy": {
+    "authority_utc": "2026-11-17T21:00:33Z",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "allowed": [
+      "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+      "TestViewMentionRoute/a_peer_without_delivery_ack_v1_is_not_sent_to",
+      "TestSessionNameReconnectKeepsNameAndReleaseReuses"
+    ],
+    "required_rounds": 5,
+    "required_whole_green": 3,
+    "previous_four_not_reused": true,
+    "no_product_change": true,
+    "evidence_reference": "togpt60 S-Z3-NEW-SITE 43ec0a67 (leader ruling; not independently rederived here)"
+  }
+}

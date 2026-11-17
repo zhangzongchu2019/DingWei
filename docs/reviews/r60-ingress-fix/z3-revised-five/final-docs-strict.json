@@ -1,0 +1,25 @@
+{
+  "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+  "scope": "final documentation working tree; product source unchanged",
+  "documentation_parent": "5fa77cff0807e1a4ffc95132aaa0aa2de95e6904",
+  "argv": [
+    "node",
+    "/home/dev/.npm/_npx/2e6f94dbd680ce26/node_modules/@fission-ai/openspec/bin/openspec.js",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "env": {
+    "HOME": "/tmp/rif-home",
+    "TMPDIR": "/tmp/rif-final",
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "OPENSPEC_TELEMETRY": "0"
+  },
+  "uid": 1001,
+  "utc_start": "2026-11-17T21:31:10.074431+00:00",
+  "rc": 0,
+  "utc_end": "2026-11-17T21:31:10.421673+00:00",
+  "raw_sha256": "64c93cb3476120d5b5e5ed8b20beb1949f5bd7e896af6c0e60a70914c9594fea"
+}

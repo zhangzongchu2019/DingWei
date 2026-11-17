@@ -1,0 +1,127 @@
+{
+  "repository": "wego-ai/dingwei",
+  "branch": "togpt60lunazzc/z3-new-site",
+  "commit": "43ec0a67f0ef7862139d4831b69c2a511a90b4ee",
+  "tree": "bbd87fb7eef9e53fc5f51c8d2eeb749d4e5b38e9",
+  "report_path": "docs/reviews/z3-new-site/REPORT.md",
+  "report_sha256": "ad17ddbe0425d0ef36846c755e123cfa0d9fdb59ab1d3c38bb6a1a30b3fa1fa9",
+  "raw_manifest_verified": [
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-m8-1.log",
+      "sha256": "2273edb81294bc452878f71e43e0696990dbc0b88b1ac8b9f471b32bc88c3120",
+      "bytes": 826456
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-m8-2.log",
+      "sha256": "cfe24adb6dde37c6236c40a2e9b64ae3e7fa4122487ed116f68066e375660674",
+      "bytes": 826879
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-m8-3.log",
+      "sha256": "acab09174ce5bfacfa47f82094b752cb25405f9a8f30a4b7a93a313e7c033de2",
+      "bytes": 827346
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-m8-4.log",
+      "sha256": "aafcc5ee1b3360181f74b8f1d33b63707e063423a8f6ef6de1bc4c0922f19e25",
+      "bytes": 826753
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-m8-5.log",
+      "sha256": "9e864a1b9fbbd792ad3119c5f3c9b0f92695890cc5d1450ed919c414f5bbd259",
+      "bytes": 826415
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-m8-summary.txt",
+      "sha256": "6f8cc9e733b1d19b0f896716990303b16f5c998c81e7a9831ed313b68ca6dc13",
+      "bytes": 182
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-single-200-supplementary.log",
+      "sha256": "d1152f13f1cf770af00c4aa9de8fc414ab85b6beacd6530f185d03198e762968",
+      "bytes": 274274
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-single-50-1.log",
+      "sha256": "89b80538aeda0ca78586e04c123a75be13fd722070e8919a71e2a7d43c884afd",
+      "bytes": 74553
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-single-50-2.log",
+      "sha256": "1d8bb6be96c6df74c40a9edfe41c1a80216a19833dd408dbf6fbc3fe5b04b43b",
+      "bytes": 75218
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-single-50-3.log",
+      "sha256": "7c86929799e5a2cc9d0f9d6ec772b915a617ba3c76738f7e50d00044e3dddf1a",
+      "bytes": 74890
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-single-50-4.log",
+      "sha256": "d1f3283ef547c2aa37be33af7109d6ea3b25e67d4ff56310d4ccfee9fd2b2c9d",
+      "bytes": 75218
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/9818-single-50-summary.txt",
+      "sha256": "b9f9ea003cff1537826fd1cb85b6faeb2e7a30ad23456fe4a79175e5caad83a9",
+      "bytes": 364
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/a24-m8-1.log",
+      "sha256": "f5dddc084f0d5aebd972c564849eb593c580af9f613b495b149839eeb43f0aa8",
+      "bytes": 1218896
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/a24-m8-2.log",
+      "sha256": "6d6d3e841a3d32e276f1ca0bbac2d9c7310c7e1b8ab92506f03516218b94d672",
+      "bytes": 1219857
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/a24-m8-3.log",
+      "sha256": "3fca23a643ed24c086d4b0004d39de29572bcd04d2ac1bd1aed8e9163909954e",
+      "bytes": 1219174
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/a24-m8-4.log",
+      "sha256": "2ffcf64e4da2a263e195c13529fa64d2125f0ca6602214ac49dddd81a186f81a",
+      "bytes": 1218170
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/a24-m8-5.log",
+      "sha256": "01481bc97b77c20228fa037f1280029656eaf98acfba14721f84ee099c016be1",
+      "bytes": 1218559
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/a24-m8-summary.txt",
+      "sha256": "c096f049e8429c2f0b6965921a52cfbf5895918c007dae7eebca1ab03fc61c2d",
+      "bytes": 450
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/a24-single-50-1.log",
+      "sha256": "fa17a7c6bffa9418558d56454f4d33d3a67f951ba89a4b48d6baebe470c62ac9",
+      "bytes": 154631
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/a24-single-50-2.log",
+      "sha256": "f38a755e6bd72784fe47f2017783b4f706bc2eff38c010ea83c6df43a407a559",
+      "bytes": 155521
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/a24-single-50-3.log",
+      "sha256": "fc28d761b0a13c99f7a9254148f2fcaa7d5711d82aa9a6ae2d36a2f0a962d02e",
+      "bytes": 157285
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/a24-single-50-4.log",
+      "sha256": "62799e80c4585a1ad742f57eea4de882042d94eec328e7d3bb834e746958f6d3",
+      "bytes": 155515
+    },
+    {
+      "path": "docs/reviews/z3-new-site/raw/a24-single-50-summary.txt",
+      "sha256": "2b840e2be89bfc55efbcf11cbd68562baecdf27f8f1d446eb16e25883b3cff40",
+      "bytes": 360
+    }
+  ],
+  "verified_at": "2026-11-17T21:03:16.342395+00:00",
+  "scope": "independent Git object/SHA verification and reading only; did not replay causation/frequency tests; gate authority is leader21:00:33Z"
+}

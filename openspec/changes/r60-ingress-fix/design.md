@@ -10,6 +10,6 @@ sessionClient.write将等槽/序列化预算2秒与物理写预算分开；服�
 
 年龄和限流均走h.now()；生产默认time.Now，测试可固定时钟验证年龄与速率边界，不混用两套年龄。session_ingress发布client.ingress一次后才启动Reader，避免诊断并发读到正在写入的指针。原touch关停期返回值仅观察，不顺手修改。
 
-完整新锚门及删除保护遵循派单，Z-3只用01:37:18Z版本；五轮允许名单只两格且至少三轮整包绿。预发现有24不代替39；需另令业主Console点升stagingtest到已批准39，再做事件突发/停读/慢viewer/保活/40独立恢复，不自行执行。
+完整新锚门及删除保护遵循派单。Z-3以组长2026-11-17T21:00:33Z重跑令为当前口径（取代01:37:18Z仅两格限制）：固定a24bb163，全新连续串行五轮、不沿用旧四轮，至少三轮整包rc0/0 FAIL。允许名单仅为TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent、TestViewMentionRoute/a_peer_without_delivery_ack_v1_is_not_sent_to、TestSessionNameReconnectKeepsNameAndReleaseReuses三格，且仅同机制interrupted(9)；名单外FAIL、非interrupted FAIL或五轮绿少于三轮均停报。以后新增须凭基线锚同机制复现记录由组长另裁，不能自动扩。预发现有24不代替39；需另令业主Console点升stagingtest到已批准39，再做事件突发/停读/慢viewer/保活/40独立恢复，不自行执行。
 
 规格优先级：本次RIF-001/RIF-002依据18:04裁定替代进行中HKF-002的64项初值及HKF-004的整次2秒初值；原历史变更保留取证，最终当前值以RIF的2048/65536及等槽2s/物理5s或20s为准，不撤销其唯一Reader/ACK提交后确认/有界写/取消责任。

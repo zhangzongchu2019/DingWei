@@ -38,7 +38,7 @@ Hub MUST 每连接一次session_end，overflow与物理写失败各至多一次�
 - **THEN** Reader/写者不等待日志、丢弃可观测、内存/日志责任有界，不借阻塞日志重建保活故障
 
 ### Requirement: RIF-004 保留隔离与新锚完整门
-修订 MUST 保留慢viewer独立隔离、离线readonly/正常关闭、Z-1 gap与停写防线、健康Pong不被慢业务饿死和真实保活失败检测；保活仍30s/5s。SHALL 在新锚完整门及独立复核，不把旧PASS、允许两格的历史SQLite中断或预发24结果冒称为新兼容结论；不实施生产动作。
+修订 MUST 保留慢viewer独立隔离、离线readonly/正常关闭、Z-1 gap与停写防线、健康Pong不被慢业务饿死和真实保活失败检测；保活仍30s/5s。SHALL 在新锚完整门及独立复核，不把旧PASS、按组长当前裁定处理的历史SQLite中断或预发24结果冒称为新兼容结论；不实施生产动作。
 
 #### Scenario: RIF-S008 原门与新源证据
 - **WHEN** 修订提交固定为新SOURCE_COMMIT

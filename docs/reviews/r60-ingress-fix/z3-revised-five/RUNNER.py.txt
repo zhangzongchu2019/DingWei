@@ -1,0 +1,38 @@
+from pathlib import Path
+import os,subprocess,json,datetime,hashlib,re
+base=Path('/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-ingress-fix')
+s=(base/'run-non-z3-gates.py').read_text();exec(s.split("r=run('go-other-trees'")[0])
+out=base/'z3-revised-five-20261117T2100Z';assert not out.exists(),'fresh five must never overwrite/reuse';out.mkdir()
+env['NODE_PATH']='/tmp/rif-home/.node_modules'
+allowed=['TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent','TestViewMentionRoute/a_peer_without_delivery_ack_v1_is_not_sent_to','TestSessionNameReconnectKeepsNameAndReleaseReuses']
+policy={'authority_utc':'2026-11-17T21:00:33Z','source_commit':source,'allowed':allowed,'required_rounds':5,'required_whole_green':3,'previous_four_not_reused':True,'no_product_change':True,'evidence_reference':'togpt60 S-Z3-NEW-SITE 43ec0a67 (leader ruling; not independently rederived here)'}
+(out/'POLICY.json').write_text(json.dumps(policy,ensure_ascii=False,indent=2)+'\n')
+for n in range(1,6):
+ r=run('m8-'+str(n),['go','test','-json','./internal/m8/','-count=1','-p','1','-timeout','60m'])
+ events=[]
+ for line in (out/(r['name']+'.log')).read_text().splitlines():
+  try:e=json.loads(line)
+  except ValueError:continue
+  if isinstance(e,dict) and 'Action'in e:events.append(e)
+ failures=r.get('failed_tests',[]);leaf=[t for t in failures if not any(o.startswith(t+'/') for o in failures)]
+ reasons=[]
+ for t in leaf:
+  if t not in allowed:reasons.append({'test':t,'reason':'not in leader-authorized three-test list'});continue
+  output=''.join(e.get('Output','') for e in events if e.get('Test')==t)
+  diagnostics=[l for l in output.splitlines() if re.search(r'\b[\w./-]+_test\.go:\d+:',l)]
+  if not diagnostics or any('interrupted (9)'not in l for l in diagnostics):reasons.append({'test':t,'reason':'failure not solely evidenced by interrupted (9)','diagnostics':diagnostics})
+ for t in failures:
+  if t not in leaf and t!='TestViewMentionRoute':reasons.append({'test':t,'reason':'unexpected failed parent'})
+ for e in r.get('interrupted',[]):
+  if e['test']not in allowed:reasons.append({'test':e['test'],'reason':'interrupted outside allowed context','output':e['output']})
+ if r['rc']not in [0,1] or (r['rc']!=0 and not failures) or (r['rc']==0 and failures) or r['data_race']:
+  reasons.append({'reason':'unclassified package/process/race failure','rc':r['rc']})
+ green=sum(x.get('rc')==0 and not x.get('failed_tests') for x in records)
+ assessment={'round':n,'leaf_failures':leaf,'whole_green_so_far':green,'stop_reasons':reasons}
+ (out/(r['name']+'-assessment.json')).write_text(json.dumps(assessment,ensure_ascii=False,indent=2)+'\n')
+ if reasons:
+  (out/'STOP.json').write_text(json.dumps(assessment,ensure_ascii=False,indent=2)+'\n');raise SystemExit('Z3_REVISED_STOP')
+ if n==5 and green<3:
+  (out/'STOP.json').write_text(json.dumps({'reason':'fewer than three green complete rounds','whole_green':green})+'\n');raise SystemExit('Z3_REVISED_STOP')
+ print('ROUND',n,'GREEN_TOTAL',green,'INTERRUPTED',len(r.get('interrupted',[])),flush=True)
+(out/'COMPLETE.json').write_text(json.dumps({'source_commit':source,'authority_utc':policy['authority_utc'],'whole_rounds':5,'whole_green':green,'utc':now(),'prior_four_reused':False,'policy':policy},ensure_ascii=False,indent=2)+'\n');print('Z3_REVISED_FIVE_COMPLETE',flush=True)

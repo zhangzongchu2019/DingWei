@@ -76,5 +76,51 @@ if (HERE/'non-z3').exists():
  for r in doc('non-z3/integration-cuts/baselines.json'):
   check(r['source_commit']==SOURCE and r['rc']==0,'integration restored baseline')
   check(sha(raw('non-z3/integration-cuts/'+r['name']+'.log.gz'))==r['raw_sha256'],'integration restored raw')
- print('VERIFY_OK_NON_Z3 gates5 integration_cuts2; Z3_REMAINS_STOPPED')
-print('VERIFY_OK_STOP source',SOURCE,'products',len(manifest['files']),'new_knives28 retained_replays28 whole_m8_rounds4 fourth_outside_allowlist; NOT_FULL_PASS')
+ print('VERIFY_OK_NON_Z3 gates5 integration_cuts2; historical_STOP_boundary_preserved')
+# The historical stop above remains verified, but the leader authorized a fresh gate.
+revised=HERE/'z3-revised-five'
+if revised.exists():
+ policy=doc('z3-revised-five/POLICY.json');complete=doc('z3-revised-five/COMPLETE.json')
+ expected=['TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent','TestViewMentionRoute/a_peer_without_delivery_ack_v1_is_not_sent_to','TestSessionNameReconnectKeepsNameAndReleaseReuses']
+ check(policy['authority_utc']=='2026-11-17T21:00:33Z' and policy['allowed']==expected,'leader revised gate list')
+ check(complete['source_commit']==SOURCE and complete['whole_rounds']==5 and complete['prior_four_reused'] is False,'fresh five completion')
+ rows=doc('z3-revised-five/progress.json')
+ check([r['name'] for r in rows]==['m8-'+str(i) for i in range(1,6)],'exactly five fresh serial rounds')
+ previous=policy['authority_utc'];green=0
+ for i,r in enumerate(rows,1):
+  check(r['source_commit']==SOURCE and r['uid']!=0,'fresh source/user')
+  check(r['utc_start']>=previous and r['utc_end']>=r['utc_start'],'serial chronology')
+  previous=r['utc_end']
+  b=raw('z3-revised-five/'+r['name']+'.log.gz');check(sha(b)==r['raw_sha256'],'fresh raw '+r['name'])
+  check(r['env']['HUB_TEST_PG_STRICT']=='1' and r['env'].get('DW_DESKTOP_INTEGRATION_PYTHON'),'fresh PG/CLI environment')
+  check(not any(k.startswith(('SH_','DINGWEI_','DATAD_')) for k in r['env']),'fresh inherited environment')
+  import re
+  events=[]
+  for l in b.decode().splitlines():
+   try:e=json.loads(l)
+   except ValueError:continue
+   if isinstance(e,dict) and 'Action' in e:events.append(e)
+  failures=[e['Test'] for e in events if e.get('Action')=='fail' and e.get('Test')]
+  leaf=[t for t in failures if not any(o.startswith(t+'/') for o in failures)]
+  check(failures==r['failed_tests'],'fresh raw failure tally')
+  check(sum(e.get('Action')=='pass' and bool(e.get('Test')) for e in events)==r['all_pass'],'fresh raw PASS tally')
+  check([e['Test'] for e in events if e.get('Action')=='skip' and e.get('Test')]==r['skipped_tests'],'fresh raw SKIP tally')
+  for t in leaf:
+   check(t in expected,'fresh failure outside authorized list')
+   output=''.join(e.get('Output','') for e in events if e.get('Test')==t)
+   diagnostics=[l for l in output.splitlines() if re.search(r'\b[\w./-]+_test\.go:\d+:',l)]
+   check(diagnostics and all('interrupted (9)' in l for l in diagnostics),'fresh failure is not solely interrupted')
+  for e in r['interrupted']:check(e['test'] in expected,'fresh interrupted outside context')
+  assessment=doc('z3-revised-five/'+r['name']+'-assessment.json');check(not assessment['stop_reasons'],'fresh assessed STOP')
+  check(r['rc'] in (0,1) and (r['rc']==0 or failures),'fresh package/process failure')
+  if r['rc']==0 and not failures:green+=1
+ check(green>=3 and green==complete['whole_green'],'at least three fully green rounds')
+ r=doc('z3-revised-five/final-docs-strict.json');check(r['source_commit']==SOURCE and r['rc']==0,'final documentation strict')
+ check(sha(raw('z3-revised-five/final-docs-strict.log.gz'))==r['raw_sha256'],'final strict raw')
+ reference=doc('z3-revised-five/causation-reference.json')
+ check(reference['commit']=='43ec0a67f0ef7862139d4831b69c2a511a90b4ee','causation reference anchor')
+ check(sha(git('show',reference['commit']+':'+reference['report_path']))==reference['report_sha256'],'causation Git report')
+ for r in reference['raw_manifest_verified']:check(sha(git('show',reference['commit']+':'+r['path']))==r['sha256'],'causation reference raw')
+ print('VERIFY_OK_REVISED_Z3 source',SOURCE,'fresh_rounds5 whole_green',green,'historical_four_retained; AUTHOR_GATES_COMPLETE_REVIEW_REQUIRED_NO_GO')
+else:
+ print('VERIFY_OK_STOP source',SOURCE,'products',len(manifest['files']),'new_knives28 retained_replays28 whole_m8_rounds4 fourth_outside_allowlist; NOT_FULL_PASS')
