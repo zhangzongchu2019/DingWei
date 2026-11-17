@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/obs"
 	"github.com/zhangzongchu2019/dingwei/internal/store"
 	"io"
 	"net"
@@ -524,5 +525,70 @@ func TestLegacyIngressLimitedWirePongCompetition(t *testing.T) {
 	if logs.has("session_keepalive_failed") {
 		t.Fatal("healthy limited-wire helper failed keepalive")
 	}
+	child.stop(t)
+}
+
+type ingressDefaultBusyRepo struct {
+	store.Repository
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (r *ingressDefaultBusyRepo) GetControlTask(ctx context.Context, id string) (*model.ControlTask, error) {
+	if id == "rif-default-work" {
+		close(r.entered)
+		select {
+		case <-r.release:
+			return nil, nil
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	return r.Repository.GetControlTask(ctx, id)
+}
+func TestLegacyIngressDefaultCycleLongBusinessKeepsPong(t *testing.T) {
+	e := newAgentEnv(t)
+	secret, _ := e.enroll("rif-default-work", "Legacy")
+	if err := e.hub.ConfigureSessionKeepalive("", ""); err != nil {
+		t.Fatal(err)
+	}
+	if e.hub.SessionKeepaliveInterval() != 30*time.Second || e.hub.SessionKeepaliveTimeout() != 5*time.Second {
+		t.Fatal("production defaults changed")
+	}
+	repo := &ingressDefaultBusyRepo{Repository: e.hub.Repo, entered: make(chan struct{}), release: make(chan struct{})}
+	e.hub.Repo = repo
+	logs := &sessionDiagRecorder{}
+	e.hub.sessionJournal = logs.write
+	e.hub.keepaliveJournal = logs.write
+	child := startLegacyIngress(t, e, secret)
+	defer close(repo.release)
+	pings := func() uint64 {
+		for _, v := range obs.Default.Snapshot().WS {
+			if v.Kind == "session" {
+				return v.PingOK
+			}
+		}
+		return 0
+	}
+	before := pings()
+	started := time.Now()
+	child.send(t, map[string]any{"op": "work"})
+	child.want(t, "RIF_WORK_SENT", time.Second)
+	select {
+	case <-repo.entered:
+	case <-time.After(time.Second):
+		t.Fatal("default-cycle business gate not entered")
+	}
+	waitFor(t, 34*time.Second, "actual default-cycle successful Pong while worker is blocked", func() bool { return pings() > before })
+	elapsed := time.Since(started)
+	if elapsed < 29*time.Second {
+		t.Fatal("default period was not exercised", elapsed)
+	}
+	child.send(t, map[string]any{"op": "state"})
+	child.want(t, `RIF_STATE {"alive": true}`, time.Second)
+	if logs.has("session_keepalive_failed") || logs.has("session_end") {
+		t.Fatal("healthy legacy worker incorrectly disconnected")
+	}
+	t.Logf("real old39: business blocked during default30s/5s; successful Pong at %s", elapsed)
 	child.stop(t)
 }

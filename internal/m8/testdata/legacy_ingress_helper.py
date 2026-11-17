@@ -57,6 +57,8 @@ async def main():
                     print('RIF_ACK_CONFIRM',flush=True)
                 if meta.get('rif_fixture'):
                     body=env.get('body') or ''
+                    expected=('rif-wire' if '界' in body else 'rif-large') if body else ('rif-control','rif-small-paused')
+                    assert env.get('id') == expected if isinstance(expected,str) else env.get('id') in expected, 'logical envelope ID changed'
                     print('RIF_LARGE '+hashlib.sha256(body.encode()).hexdigest() if body else 'RIF_SMALL',flush=True)
                 return raw
         await original_recv(Proxy())
@@ -81,6 +83,9 @@ async def main():
                 # Real body/handler sentinel between events500 and501, same socket/order.
                 await ws.send(json.dumps({'id':'rif-body-barrier','body':'rif body barrier','meta':{'control_task_id':'rif-order-barrier'}}))
                 print('RIF_ACK_SENT',flush=True);adapter.release.set()
+            elif op=='work':
+                await ws.send(json.dumps({'id':'rif-default-work','body':'long business gate','meta':{'control_task_id':'rif-default-work'}}))
+                print('RIF_WORK_SENT',flush=True)
             elif op=='pause':
                 ws.transport.pause_reading()
                 async def resume():await asyncio.sleep(3);ws.transport.resume_reading()
