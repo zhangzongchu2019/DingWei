@@ -345,7 +345,9 @@ func TestLegacyIngressReadPauseResumesWithoutDisconnect(t *testing.T) {
 	child.want(t, "RIF_PAUSED", time.Second)
 	body := strings.Repeat("W", 8<<20)
 	started := time.Now()
-	err := c.write(e.ctx, model.Envelope{ID: "rif-large", From: sessionAddress("workpulse", c.keyID), Body: body, Meta: map[string]any{"type": "terminal_resize", "rif_fixture": true}})
+	call, cancel := context.WithTimeout(e.ctx, 5*time.Second) // Preserve an actual caller budget; do not widen it to 20s.
+	defer cancel()
+	err := e.hub.routeToSession(call, c.keyID, c.sessionName, model.Envelope{ID: "rif-large", From: sessionAddress("workpulse", c.keyID), To: sessionAddress(c.sessionName, c.keyID), Body: body, Meta: map[string]any{"type": "terminal_resize", "rif_fixture": true}}, false)
 	if err != nil {
 		t.Fatalf("3s legacy read pause killed large write: %v", err)
 	}
@@ -385,7 +387,9 @@ func TestLegacyIngressSmallControlReadPause(t *testing.T) {
 	child.send(t, map[string]any{"op": "pause"})
 	child.want(t, "RIF_PAUSED", time.Second)
 	started := time.Now()
-	if err := c.write(e.ctx, model.Envelope{ID: "rif-small-paused", Meta: map[string]any{"type": "terminal_resize", "rif_fixture": true}}); err != nil {
+	call, cancel := context.WithTimeout(e.ctx, 5*time.Second)
+	defer cancel()
+	if err := e.hub.routeToSession(call, c.keyID, c.sessionName, model.Envelope{ID: "rif-small-paused", From: sessionAddress("workpulse", c.keyID), To: sessionAddress(c.sessionName, c.keyID), Meta: map[string]any{"type": "terminal_resize", "rif_fixture": true}}, false); err != nil {
 		t.Fatal("small control pause disconnected helper", err)
 	}
 	child.want(t, "RIF_SMALL", 5*time.Second)
