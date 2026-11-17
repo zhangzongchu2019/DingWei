@@ -1,0 +1,9 @@
+test_each_forbidden_tracked_file_fails_without_echoing_values (test_update_release_core.PackageTests.test_each_forbidden_tracked_file_fails_without_echoing_values) ... ok
+test_literal_secret_content_rejected (test_update_release_core.PackageTests.test_literal_secret_content_rejected) ... ok
+test_ignored_forbidden_file_must_reject (test_update_core_review_regressions.ReviewRegressionTests.test_ignored_forbidden_file_must_reject) ... ok
+test_all_ignored_private_names_are_rejected (test_update_core_review_regressions.ReviewRegressionTests.test_all_ignored_private_names_are_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.232s
+
+OK

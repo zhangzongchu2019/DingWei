@@ -1,0 +1,42 @@
+{
+  "classification": "LOCAL_GATE_SHA_REFERENCE_ONLY_NOT_RELEASE_NOT_FOR_DISTRIBUTION",
+  "recorded_utc": "2026-11-17T04:09:11.681298+00:00",
+  "uid": 1001,
+  "source_commit": "a311aaf3beea90262c05ca2c316064b8a8856d06",
+  "source_tree": "dfb32347b5156dc1d15d4bfaf0543310dde316d8",
+  "version": "0.2.3.40",
+  "workpulse": {
+    "sha256": "ec24fb171035d018c51b0a636442969e9b2de482d20a296a586e639e288617de",
+    "bytes": 43155608,
+    "local_path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-formal-integration-20261117/bin/workpulse",
+    "build": "SOURCE_COMMIT=a311aaf3beea90262c05ca2c316064b8a8856d06 sh build.sh <outside-worktree-output>; original evidence/canonical-build.json/log"
+  },
+  "renderer": {
+    "path": "view-service/renderer-canary-sse.html",
+    "sha256": "14ffc39ea1ed61c1d230b7e3f3a810564daf05f61a7ec17cefde07ffc98eb6ef",
+    "bytes": 384709
+  },
+  "helper_package": {
+    "sha256": "b7d02175fbf37a371a672a70359a4250117c463c118a8cf764b076314e167b31",
+    "bytes": 296110,
+    "local_path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-local-build-reference/helper-a311-0.2.3.40-local-only.tar.gz",
+    "member_count": 70,
+    "allowlist_manifest_hashes_verified": true,
+    "forbidden_private_state_checked": true
+  },
+  "comparison_rule": "Binary commit injection and helper manifest commit/tree are part of bytes. Compare only exactly same SOURCE_COMMIT/toolchain/packager. Equivalent product trees at different documentation commits do NOT imply equal binary/archive SHA. Official source selection/build requires leader final review and separate prodops instruction.",
+  "view_runtime_manifest": {
+    "sha256": "0fc5b356df2cdfa7ec9d8a926889f448d800d8ee320c02dfdab33ee3e11454cf",
+    "files": [
+      "14ffc39ea1ed61c1d230b7e3f3a810564daf05f61a7ec17cefde07ffc98eb6ef  view-service/renderer-canary-sse.html",
+      "2c777673e79514a30b25962bea8c06e7864bd3c6f0a54bd94c4047962256366c  view-service/view_service.py",
+      "5cc8e2b6ce98fc057b3583ff5f8bd429ceb1e3450304606408996a5b5c89778c  view-service/view_page_store.py"
+    ],
+    "provenance": {
+      "commit": "a311aaf3beea90262c05ca2c316064b8a8856d06",
+      "tree": "dfb32347b5156dc1d15d4bfaf0543310dde316d8",
+      "manifest_sha256": "0fc5b356df2cdfa7ec9d8a926889f448d800d8ee320c02dfdab33ee3e11454cf"
+    },
+    "scope": "three runtime Git files, local reference only; no install/Docker/remote operations"
+  }
+}

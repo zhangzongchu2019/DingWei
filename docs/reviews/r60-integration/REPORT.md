@@ -8,6 +8,10 @@
 
 旧110同源0.2.3.39诊断exe实测可在0077库启动、health200/退出0；未知更高号迁移静默保留。但已入队新协议正文在旧Hub缺稳定Target守卫，同名替代席实测收到，不能只换exe继续业务。默认保留最新升级库，先停writer/流入、排空或可见取消并对账全部未终结责任。再次前滚启动/fence保持和W/P/E真实GC边界已实测；unsupported旧unknown不会自动恢复。四问、代码坐标与预发演练计划详见[ROLLBACK-0077.md](ROLLBACK-0077.md)。只读隔离试验，不触预发/现网、不分发诊断二进制。
 
+## 本机SHA参考口径（组长03:21:07Z）
+
+本机workpulse/renderer/helper包SHA及完整go version -m见[LOCAL-BUILD-REFERENCE.md](LOCAL-BUILD-REFERENCE.md)，仅本机门读数/参考，不称发布件、不上传、不交prodops。参考SOURCE_COMMIT为a311，带commit/tree来源字段的二进制/包必须同完整锚比SHA，不能将文档等价误当产物等价。正式件由组长与togpt60复核后另令dw123 dwbuild/go1.22.2构建。
+
 ## 结果
 
 完整固定源门达到作者交审条件：build.sh内部执行完整run-build-tests两profile及四个二进制构建、其他三包树与m8五轮PGstrict、focused race、浏览器全量、OpenSpec strict均按各自原始记录保留。具体计数从evidence/gate-summary.json与原日志取，不把组件/评审旧门合并成一次全绿。

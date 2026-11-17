@@ -1,0 +1,2 @@
+PACKAGED commit=a311aaf3beea90262c05ca2c316064b8a8856d06 files=3 output=/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-local-build-reference/view-local-only
+VERIFIED files=3 expected_commit=a311aaf3beea90262c05ca2c316064b8a8856d06
