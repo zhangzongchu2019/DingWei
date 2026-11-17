@@ -324,6 +324,28 @@ class SessionHelper(SubAgentConnection):
         return EchoAdapter(self.cfg, self.book)
 
     async def run_forever(self) -> None:
+        if self.cfg.producer or not self.cfg.mcp_ipc_sock:
+            return await self._reconnect_forever()
+        from .outbound_recovery import OutboundRecovery
+        self.outbound_recovery = await asyncio.to_thread(
+            OutboundRecovery, self.cfg.inbox_db + '.outbound.db',
+            self.outbound_receipts, lambda: self.book.self_addr,
+            lambda: self.session_capabilities_envelope({'outbound_receipt_v1':True,'outbound_receipt_cap_nonce':self.outbound_receipts.cap_nonce}),
+            retention=self.cfg.outbound_caller_retention_seconds)
+        from .send_dingwei import register_caller_outbox
+        await asyncio.to_thread(register_caller_outbox, self.outbound_recovery.queue.path, self.cfg.outbound_caller_retention_seconds)
+        self._persistent_ipc = True
+        async def ipc_lifetime():
+            await self._ipc_server(None, self.outbound_recovery.handler())
+            # Invalid optional socket path stays disabled, without forcing a
+            # transport reconnect or changing the old upload startup contract.
+            await asyncio.Event().wait()
+        try:
+            await supervise_connection_loops([self._reconnect_forever(), ipc_lifetime(), self.outbound_recovery.run()])
+        finally:
+            self._persistent_ipc = False
+
+    async def _reconnect_forever(self) -> None:
         try:
             import websockets
 
@@ -852,7 +874,7 @@ class SessionHelper(SubAgentConnection):
             # M2 protocol admission. This raises the bar above one-shot clients
             # such as send.py, but is not cryptographic helper identity: a
             # holder of the shared API secret can imitate this JSON message.
-            outbound_caps = self.outbound_receipts.prepare(ws) if (self.cfg.mode == "desktop" or bool(getattr(self, 'sub_agents', None)) or bool(getattr(self, 'sub_agent_drainer', None)) or response_headers.get("X-DW-Inbox-Progress") == "inbox-progress/v1") else None
+            outbound_caps = self.outbound_receipts.prepare(ws) if (self.cfg.mode == "desktop" or bool(getattr(self, 'sub_agents', None)) or bool(getattr(self, 'sub_agent_drainer', None)) or getattr(self, "_persistent_ipc", False) or response_headers.get("X-DW-Inbox-Progress") == "inbox-progress/v1") else None
             await ws.send(json.dumps(self.session_capabilities_envelope(outbound_caps), ensure_ascii=False))
             if self.cfg.producer:
                 recv_task = asyncio.create_task(self.recv_control_loop(ws))
@@ -873,7 +895,7 @@ class SessionHelper(SubAgentConnection):
                 # B3: MCP IPC listener — receives send requests from the
                 # MCP shim and forwards them through this existing WSS.
                 ipc_task: asyncio.Task | None = None
-                if self.cfg.mcp_ipc_sock:
+                if self.cfg.mcp_ipc_sock and not getattr(self, "_persistent_ipc", False):
                     ipc_task = asyncio.create_task(self._ipc_server(ws))
 
                 try:
@@ -1666,17 +1688,26 @@ class SessionHelper(SubAgentConnection):
         # 即使 datad_url 未配也装入一个 fail-loud handler。传 None 会让
         # MCP 调用退化成 NoneType/Transport closed,把配置缺失伪装成连接故障。
         vsapi_handler = self._make_vsapi_handler()
+        def current(factory):
+            if not getattr(self, '_persistent_ipc', False):
+                return factory(ws)
+            async def dispatch(*args):
+                connection=self.outbound_receipts.connection
+                if connection is None:
+                    return {"ok":False,"error":"ipc_transport_unavailable","outcome":"unknown","retryable":False}
+                return await factory(connection)(*args)
+            return dispatch
         try:
             await serve_ipc(self.cfg.mcp_ipc_sock, send_handler or self._make_send_handler(ws),
                             vsapi_handler=vsapi_handler,
-                            file_handler=self._make_file_handler(ws),
+                            file_handler=current(self._make_file_handler),
                             allowed_socket_dir=os.path.dirname(self.cfg.mcp_ipc_sock),
-                            upload_handler=self._make_upload_handler(ws) if self.upload_policy.enabled else None,
+                            upload_handler=current(self._make_upload_handler) if self.upload_policy.enabled else None,
                             bound=self.ipc_bound, upload_only=self.cfg.ipc_upload_only,
                             send_body_only=getattr(self.cfg, "ipc_send_body_only", False),
-                            inbox_handler=self._make_desktop_inbox_handler(ws), spec_handler=self._make_spec_write_handler(ws), task_handler=self._make_task_flow_handler(), project_context_handler=self._make_project_context_handler(),
-                            delivery_status_handler=self._make_delivery_status_handler(ws),
-                            heartbeat_handler=self._make_heartbeat_handler(ws))
+                            inbox_handler=(self._make_desktop_inbox_handler(None) if self.cfg.mode != "desktop" else current(self._make_desktop_inbox_handler)), spec_handler=current(self._make_spec_write_handler), task_handler=self._make_task_flow_handler(), project_context_handler=self._make_project_context_handler(),
+                            delivery_status_handler=current(self._make_delivery_status_handler),
+                            heartbeat_handler=current(self._make_heartbeat_handler))
         except IPCSocketPathError:
             self._ipc_rejected_socket_path = self.cfg.mcp_ipc_sock
             # The listener already logged only the byte counts and cleared

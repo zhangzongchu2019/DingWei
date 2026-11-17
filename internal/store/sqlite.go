@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -32,11 +33,12 @@ var migrationFS embed.FS
 
 // SQLite 是 Repository 的 SQLite 实现。
 type SQLite struct {
-	legacySpecMu       sync.RWMutex
-	coordinateReviewMu sync.Mutex
-	legacySpecLockPath string
-	db                 *sql.DB
-	clock              clock.Clock // 可注入时钟（测试用 Fake）；默认 clock.Real
+	legacySpecMu        sync.RWMutex
+	coordinateReviewMu  sync.Mutex
+	outboundRetentionNS atomic.Int64
+	legacySpecLockPath  string
+	db                  *sql.DB
+	clock               clock.Clock // 可注入时钟（测试用 Fake）；默认 clock.Real
 }
 
 // SetClock 注入时钟（测试用）。未设置时默认 clock.Real{}。
@@ -281,7 +283,7 @@ func (s *SQLite) runMigrations(ctx context.Context) error {
 			continue
 		}
 
-		if name == "0069_changeflow_evidence.sql" || name == "0070_openspec_read_binding.sql" || name == "0071_coordinate_review.sql" || name == "0072_feishu_agent_sticky.sql" || name == "0073_task_dispatch_lock.sql" || name == "0074_pm_decision_request.sql" || name == "0075_sub_agent_registry.sql" || name == "0076_sub_agent_rollback.sql" {
+		if name == "0069_changeflow_evidence.sql" || name == "0070_openspec_read_binding.sql" || name == "0071_coordinate_review.sql" || name == "0072_feishu_agent_sticky.sql" || name == "0073_task_dispatch_lock.sql" || name == "0074_pm_decision_request.sql" || name == "0075_sub_agent_registry.sql" || name == "0076_sub_agent_rollback.sql" || name == "0077_outbound_intent.sql" {
 			// Reuse the exact-DDL preflight: a retained aggregate table after
 			// ledger loss must be verified, never replayed or silently accepted.
 			if err := s.migrateOpenSpecConfirmation(ctx, name, string(body), digest); err != nil {

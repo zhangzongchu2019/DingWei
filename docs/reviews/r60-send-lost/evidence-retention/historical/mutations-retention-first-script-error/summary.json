@@ -1,0 +1,77 @@
+[
+  {
+    "name": "source_id_stable",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_recovery.py",
+    "before": "source_id=row['source_id']",
+    "after": "source_id=uuid.uuid4().hex",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_disconnect_then_same_id_and_lost_receipt_recovery (test_outbound_queue.RecoveryWorkerTest.test_disconnect_then_same_id_and_lost_receipt_recovery)",
+      "AssertionError: Lists differ: ['90fcf098e6a444e3a1191a8fb25da06a', 'eece94980dfe4f969f84b618c72429a7'] != ['821cecc6258a45138c5cbb07c454376b', '821cecc6258a45138c5cbb07c454376b']"
+    ],
+    "raw_sha256": "bfdb659422c98ac11419b3ede2477387f51cb4ff2b2b91bd8c76e65004b3bdb4",
+    "utc": "2026-11-16T20:21:20.860947+00:00"
+  },
+  {
+    "name": "unknown_body_retained",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_queue.py",
+    "before": "IN ('hub_durable_queued','rejected')",
+    "after": "IN ('hub_durable_queued','rejected','unknown')",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_offline_admission_restart_and_conflict (test_outbound_queue.DurableQueueTest.test_offline_admission_restart_and_conflict)",
+      "AssertionError: '' != 'body'"
+    ],
+    "raw_sha256": "4f6b05e294cc2483051aa2688f9e6b04d5297c37369aae1ca48202b16953ace0",
+    "utc": "2026-11-16T20:21:21.089856+00:00"
+  },
+  {
+    "name": "local_commit_before_acceptance",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_queue.py",
+    "before": "try:db.commit()",
+    "after": "try:db.rollback()",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_offline_admission_restart_and_conflict (test_outbound_queue.DurableQueueTest.test_offline_admission_restart_and_conflict)",
+      "AssertionError: {'req[38 chars]d': '3ec7ce6cf6b44d079f9b99f9d92433f6', 'to': [163 chars]': 0} != {'req[38 chars]d': '75c0fc26dff74c59a59fa3637503590c', 'to': [163 chars]': 0}"
+    ],
+    "raw_sha256": "669843aa8a02551618a86ba476bee8c6c97103d0b15cc845d453185e8c2f65c2",
+    "utc": "2026-11-16T20:21:21.318650+00:00"
+  },
+  {
+    "name": "one_writer",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/outbound_recovery.py",
+    "before": "try: fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)",
+    "after": "try: pass",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_only_one_process_writer_can_hold_outbox (test_outbound_queue.RecoveryWorkerTest.test_only_one_process_writer_can_hold_outbox)",
+      "AssertionError: second writer was not rejected while the first owned the outbox"
+    ],
+    "raw_sha256": "c67f45f49e0c6fc30394168a8f1e4b617876773fa8da93dae92a951866aa6670",
+    "utc": "2026-11-16T20:21:22.047971+00:00"
+  },
+  {
+    "name": "receipt_responsibility_schema",
+    "source_commit": "b273dbf33dc63e7a99f594edc7a41641c5859da4",
+    "path": "tools/sessionhelper/sessionhelper/send_dingwei.py",
+    "before": "if valid:return out",
+    "after": "if isinstance(out,dict):return out",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "FAIL: test_accepted_requires_correlated_responsibility_identifiers (test_outbound_queue.ReceiptSchemaTest.test_accepted_requires_correlated_responsibility_identifiers)",
+      "AssertionError: 'accepted' != 'unknown'"
+    ],
+    "raw_sha256": "8265d863f3358a0dad88c8e9dd8384b13458a2ea48e3bca11b5a86b960493fa6",
+    "utc": "2026-11-16T20:21:22.226409+00:00"
+  }
+]

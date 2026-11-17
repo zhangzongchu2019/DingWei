@@ -203,7 +203,7 @@ exit 1
         gate = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(gate)
         files = gate.inventory(ROOT)
-        self.assertEqual(len(files), 96)  # r58: 93 -> 94; R60-③: 94 -> 96 (test_session_heartbeat, test_inbox_lookup_miss).
+        self.assertEqual(len(files), 97)  # base94 + R60-III two tool suites + R60-I outbound recovery; retain all deletion checks.
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             (root / "scripts").mkdir()

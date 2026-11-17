@@ -1,0 +1,23 @@
+> 历史证据：本目录仅对旧产品ba7acae7成立；容量退回后的当前权威门见../evidence-retention/。不要在新产品工作树上以本目录manifest冒称当前覆盖。
+
+# 固定源作者证据
+
+source_commit=ba7acae7798eda8a6d17f3e03dfa07c8c65835f1；基main d2cc47c7。各 gate 均保存起止工作树状态及 UTC，raw_file 是原始日志 gzip（解压 SHA 在 JSON）。
+
+`gate-summary.json`仅最终合格固定门；`gate-history.json`保留完整历史（含rc1与工作态source_commit=null），不能拼成虚构单次全绿。`mutations.json`只计合格最终刀，每刀编译rc0且业务断言红；初始脚本失败另存raw，不混PASS/SKIP。`product-manifest.json`按冻结Git对象哈希，含测试/源码及版本/依赖/renderer真值；当前交件文件须同字节。`VERIFY.py`从Git与工作树双核。无私有账本/凭据/env值。
+
+
+
+## 固定源最终门读数
+
+| 门 | rc | 顶层 PASS | 含子项 PASS | 含子项 SKIP | FAIL |
+|---|---:|---:|---:|---:|---:|
+| canonical-approved | 0 | 6 | 21 | 0 | 0 |
+| go-clean-source | 0 | 1361 | 2282 | 42 | 0 |
+| race-approved | 0 | 12 | 14 | 0 | 0 |
+| build-approved | 0 | 0 | 0 | 0 | 0 |
+| strict-approved | 0 | 0 | 0 | 0 | 0 |
+
+Canonical helper 两 profile：claude 1229/1229 rc0；codex 1229/1229 rc0；末尾 BUILD_TESTS_OK helper_profiles=2 python=27 shell=2。表格的 Go PASS 不与 Python/helper 子项混算。focused race 不是全包 race。strict CLI 明细见原日志。
+
+复现：仓库根运行 `python3 docs/reviews/r60-send-lost/evidence/VERIFY.py`、`sha256sum -c docs/reviews/r60-send-lost/SHA256SUMS`；命令精确argv在gate-summary。变异脚本的本机workspace/artifact路径需按独立工作树替换，勿对冻结交审工作树直接删保护。

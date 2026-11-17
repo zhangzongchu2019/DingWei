@@ -155,7 +155,7 @@ class HostedSendTest(unittest.TestCase):
             return call(dict(jsonrpc='2.0', id=ident, method='tools/call', params=dict(name=name, arguments=args)))
         try:
             listing = call(dict(jsonrpc='2.0', id=1, method='tools/list'))['result']['tools']
-            self.assertEqual({t['name'] for t in listing}, {'send_message', 'upload_file'})
+            self.assertEqual({t['name'] for t in listing}, {'send_message', 'upload_file', 'dw_send_status'})
             schema = next(t['inputSchema'] for t in listing if t['name']=='send_message')
             self.assertNotIn('file', schema['properties'])
             self.assertEqual(schema['required'], ['to', 'body'])
@@ -171,7 +171,9 @@ class HostedSendTest(unittest.TestCase):
             self.assertTrue(tool(5, 'send_message', dict(to='peer', body='hi'))['result']['isError'])
             self.assertEqual(len(self.sent), 1)
             self.fail = False
-            self.assertFalse(tool(6, 'send_message', dict(to='peer', body='hi'))['result'].get('isError', False))
+            legacy=tool(6,'send_message',dict(to='peer',body='hi'))['result']
+            self.assertTrue(legacy['isError'])
+            self.assertEqual(json.loads(legacy['content'][0]['text'])['reason'],'unconfirmed_legacy_receipt')
             self.assertEqual(len(self.sent), 2)
             unknown = tool(7, '/private/SYNTHETIC-SECRET', {})['result']
             self.assertTrue(unknown['isError'])

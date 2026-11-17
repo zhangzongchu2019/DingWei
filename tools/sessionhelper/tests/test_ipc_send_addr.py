@@ -1,5 +1,6 @@
-"""T-092:ipc_send 必须把裸会话名补全为 <名>#<key_id>,否则 Hub 判 invalid address。"""
+"""Legacy helper address completion and R60 directory-bound caller addresses."""
 import unittest
+import os
 import importlib.util
 from pathlib import Path
 from unittest import mock
@@ -45,9 +46,18 @@ class TestIPCSendAddressCompletion(unittest.TestCase):
 
     def test_root_two_segment_target_stays_supported(self):
         with mock.patch.object(sys, "argv", [str(SEND_SCRIPT), "agent.user#key", "hello"]), \
-             mock.patch.object(send_dingwei, "ipc_send", return_value={"ok": True, "outcome": {"to": "agent.user#key"}}) as ipc:
+             mock.patch.object(send_dingwei, "ipc_send", return_value={"ok": True, "request_id":"fixture", "outcome": {"to": "agent.user#key", "outcome":"accepted", "phase":"local_queued", "accepted_by":"local_helper","request_id":"fixture","source_message_id":"a"*32}}) as ipc:
             send_dingwei.main()
-        ipc.assert_called_once_with("agent.user#key", "hello")
+        self.assertEqual(ipc.call_count,1)
+        self.assertEqual(ipc.call_args.args[:2],("agent.user#key","hello"))
+        self.assertRegex(ipc.call_args.args[2],r"^[0-9a-f]{32}$")
+
+
+class DestinationIdentityTest(unittest.TestCase):
+    def test_inherited_sender_key_never_rewrites_recipient(self):
+        with mock.patch.dict(os.environ,{'SH_KEY_ID':'sender-owner-key'}):
+            self.assertEqual(send_dingwei.complete_addr('peer.other-owner'),'peer.other-owner')
+            self.assertEqual(send_dingwei.complete_addr('peer#verified-key'),'peer#verified-key')
 
 
 if __name__ == "__main__":

@@ -41,6 +41,13 @@ func TestHostedBodySendAcrossRealHub(t *testing.T) {
 	}
 	defer peer.Close(websocket.StatusNormalClosure, "done")
 	discardInitialAgentNetworkSkill(t, e.ctx, peer)
+	e.sendEnv(peer, model.Envelope{ID: "peer-durable-capabilities", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true}})
+	waitFor(t, time.Second, "peer durable queue negotiation", func() bool {
+		e.hub.mu.Lock()
+		c := e.hub.sessionClients[AgentKeyID("zzc")]["peer"]
+		e.hub.mu.Unlock()
+		return c != nil && e.hub.sessionSupportsDeliveryACK(c)
+	})
 	root, _ := filepath.Abs("../..")
 	home := t.TempDir()
 	ipcSocket := shortIPCSocketPath(t)
@@ -81,7 +88,7 @@ func TestHostedBodySendAcrossRealHub(t *testing.T) {
 	}
 	phase("HOSTED_READY")
 	io.WriteString(input, "send\n")
-	phase("HOSTED_SENT")
+	phase("HOSTED_RESOLVED")
 	for {
 		got := readEnvelope(t, ctx, peer)
 		if got.Body == "DW_HOSTED_SEND_MARKER" {
@@ -95,7 +102,7 @@ func TestHostedBodySendAcrossRealHub(t *testing.T) {
 		t.Fatal(err)
 	}
 	io.WriteString(input, "send\n")
-	phase("HOSTED_SENT")
+	phase("HOSTED_RESOLVED")
 	// Keep the authentic peer connection; removed membership must prevent actual delivery.
 	observe, done := context.WithTimeout(ctx, 300*time.Millisecond)
 	defer done()
@@ -117,5 +124,5 @@ func TestHostedBodySendAcrossRealHub(t *testing.T) {
 	if err := cmd.Wait(); err != nil {
 		t.Fatal("synthetic child exit failed")
 	}
-	t.Log("restricted MCP body uses actual enrolled Hub routing; group removal blocks delivery; socket receipt is not delivery proof")
+	t.Log("restricted MCP body uses actual enrolled Hub routing; group removal blocks delivery; durable acceptance and explicit group rejection are distinct; local responsibility is not delivery proof")
 }

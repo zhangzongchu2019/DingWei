@@ -173,6 +173,12 @@ async def _handle_connection(
         # 托管席（组长 R-V2-IMAGE-R5-UPLOAD-ONLY）：本 socket 只为上传而开；发信／vsapi／读文件不经此提供。
         await _write_one(writer, {"ok": False, "error": "unavailable: this socket accepts file_upload_v1 only"})
         return
+    if msg_type == "mcp_send_status":
+        status = getattr(send_handler, 'status', None)
+        if status is None or set(msg)-{'type','request_id'}:
+            return await _write_one(writer, {"ok":False,"error":"outbound_status_unsupported"})
+        outcome=await status(msg.get('request_id'))
+        return await _write_one(writer, {"ok":True,"outcome":outcome,"request_id":msg.get('request_id')})
     if send_body_only:
         return await _handle_body_send(writer, msg, send_handler, passed_fds or [])
     if passed_fds:
@@ -291,7 +297,8 @@ async def _handle_connection(
     if actual > MESSAGE_BODY_MAX_BYTES:
         return await _write_one(writer, {"ok": False, "error": "body_too_large", "actual_bytes": actual, "limit_bytes": MESSAGE_BODY_MAX_BYTES})
     try:
-        outcome = await send_handler(to, body, meta)
+        submit=getattr(send_handler,'submit_request',None)
+        outcome = await submit(to,body,meta,request_id) if submit else await send_handler(to, body, meta)
     except Exception as exc:
         await _write_one(writer, {"ok": False, "error": f"send failed: {exc}"})
         return
@@ -322,7 +329,8 @@ async def _handle_body_send(writer, msg, send_handler, passed_fds):
         return
     try:
         # Exactly the existing authenticated send handler; Hub retains routing/group authorization.
-        outcome = await send_handler(to.strip(), body.strip(), extract_reply_origin_meta(msg))
+        submit=getattr(send_handler,'submit_request',None)
+        outcome = await submit(to.strip(),body,extract_reply_origin_meta(msg),request_id) if submit else await send_handler(to.strip(), body.strip(), extract_reply_origin_meta(msg))
     except Exception:
         # No exception text, caller path, credential or retry. A failed write may be ambiguous.
         await _write_one(writer, {"ok": False, "error": "send_failed"})

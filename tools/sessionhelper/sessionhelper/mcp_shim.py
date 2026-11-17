@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import re
 import os
+import sqlite3
 import sys
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -142,26 +143,45 @@ def _decode_ipc_response(data: bytes) -> dict[str, Any]:
     return response
 
 
-def _tool_failure(request_id, category: str) -> Response:
+def _tool_failure(request_id, category: str, caller_request_id=None) -> Response:
     # A missing response never proves that a side effect did not occur.
     # Do not echo exceptions, paths or helper error bodies, and never resend.
     return Response(id=request_id, result={
         "isError": True,
         "content": [{"type": "text", "text": json.dumps({
-            "error": category, "outcome": "unknown", "retryable": False,
+            "error": category, "outcome": "unknown", "phase":"unknown", "accepted_by":"unknown", "retryable": False,
+            **({"request_id":caller_request_id,"status_ref":caller_request_id} if caller_request_id else {}),
             "message": "Tool failed; do not automatically resend.",
         })}],
     })
 
 
 def _ipc_send(payload: dict[str, Any]) -> dict[str, Any]:
-    return _ipc_request({"type": "mcp_send", **payload})
+    from sessionhelper.send_dingwei import remember_request, checked_outcome, CallerJournalRejected
+    rid=payload.get('request_id') or _uuid.uuid4().hex
+    try:
+        remember_request(rid,payload['to'],payload['body'],{k:v for k,v in payload.items() if k not in ('to','body','request_id')})
+    except CallerJournalRejected as exc:
+        return exc.outcome()
+    except (OSError,sqlite3.Error):
+        return {'phase':'rejected','accepted_by':'none','outcome':'definitive_failure','reason':'caller_journal_unavailable','request_id':rid,'retryable':True}
+    try:
+        result=_ipc_request({"type":"mcp_send",**payload,"request_id":rid})
+    except _IPCFailure as exc:
+        exc.caller_request_id=rid
+        raise
+    if result.get('mode')=='LOCAL_SYNTHETIC_PILOT' and result.get('sent_to_hub') is False:
+        return result  # Explicit offline pilot; never a claim of Hub receipt.
+    return checked_outcome(result,rid)
 
 
 def _ipc_request(payload: dict[str, Any], *, timeout=None) -> dict[str, Any]:
     """Forward a validated send request to the live sessionHelper via a
     local Unix-domain socket, then return the helperʼs outcome."""
-    payload["request_id"] = _uuid.uuid4().hex[:12]
+    if payload.get("type") in ("mcp_send","mcp_send_status"):
+        payload.setdefault("request_id", _uuid.uuid4().hex[:12])
+    else:
+        payload["request_id"]=_uuid.uuid4().hex[:12]
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
     if payload.get("type") == "spec_write_v1":
         rejection = spec_body_rejection(payload.get("body") or {})
@@ -278,6 +298,22 @@ def _delivery_status(args):
     return _ipc_request({'type': 'delivery_status_v1', 'delivery_id': args['delivery_id']})
 
 
+_SEND_TOOL_SCHEMA["properties"]["request_id"]={"type":"string","pattern":"^[A-Za-z0-9_.:-]{1,128}$","description":"重试或查询使用原请求 ID；unknown 不得换新 ID 重发。"}
+
+
+@register("dw_send_status", "按原 caller request_id 只读查询本地发信受理；不重发正文。", {
+    "type":"object","properties":{"request_id":{"type":"string","pattern":"^[A-Za-z0-9_.:-]{1,128}$"}},"required":["request_id"],"additionalProperties":False})
+def _send_status(args):
+    if not isinstance(args,dict) or set(args)!={'request_id'} or not isinstance(args['request_id'],str) or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,128}',args['request_id']):
+        raise ValueError('invalid request ID')
+    try:
+        from sessionhelper.send_dingwei import checked_outcome
+        return checked_outcome(_ipc_request({'type':'mcp_send_status','request_id':args['request_id']}),args['request_id'])
+    except _IPCFailure as exc:
+        exc.caller_request_id=args['request_id']
+        raise
+
+
 @register("send_message", "经 DingWei hub 向队友发送消息", _SEND_TOOL_SCHEMA)
 def _send_message(args: dict[str, Any]) -> dict[str, Any]:
     """Validate and forward."""
@@ -308,6 +344,7 @@ def _send_message(args: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"{name} must be one of {_SEND_TOOL_SCHEMA['properties'][name]['enum']}")
 
     payload: dict[str, Any] = {"to": to, "body": body}
+    if "request_id" in args:payload["request_id"]=args["request_id"]
     if reply_to:
         payload["reply_to"] = reply_to
     if in_reply_to:
@@ -691,7 +728,7 @@ def _dispatch(req: Request) -> Response:
             for t in _tools.values()
         ]
         if _SEND_BODY_ONLY:
-            tools = [t for t in tools if t["name"] in ("send_message", "upload_file")]
+            tools = [t for t in tools if t["name"] in ("send_message", "upload_file", "dw_send_status")]
             for tool in tools:
                 if tool["name"] == "send_message":
                     schema = dict(tool["inputSchema"])
@@ -704,7 +741,7 @@ def _dispatch(req: Request) -> Response:
     if req.method == "tools/call":
         name = (req.params or {}).get("name", "")
         arguments = (req.params or {}).get("arguments") or {}
-        if _SEND_BODY_ONLY and (not isinstance(name, str) or name not in ("send_message", "upload_file")):
+        if _SEND_BODY_ONLY and (not isinstance(name, str) or name not in ("send_message", "upload_file", "dw_send_status")):
             return _tool_failure(req.id, "operation_not_allowed")
         if not isinstance(name, str) or name not in _handlers:
             return Response(
@@ -713,9 +750,9 @@ def _dispatch(req: Request) -> Response:
             )
         try:
             result = _handlers[name](dict(arguments))
-            return Response(id=req.id, result={"content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}]})
+            return Response(id=req.id, result={**({"isError":True} if name in ("send_message","dw_send_status") and result.get("outcome") in ("unknown","definitive_failure") else {}), "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}]})
         except _IPCFailure as exc:
-            return _tool_failure(req.id, exc.category)
+            return _tool_failure(req.id, exc.category, getattr(exc,"caller_request_id",None))
         except (TypeError, ValueError) as exc:
             return Response(
                 id=req.id,

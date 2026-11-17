@@ -1437,6 +1437,9 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		delete(env.Meta, "source_session_name")
 		delete(env.Meta, hubIngressMetaKey)
 		env.Meta[hubIngressMetaKey] = hubIngressAgent
+		if h.handleRecoverableOutbound(r.Context(), c, env) {
+			continue
+		}
 		if metaString(env.Meta, "type") == "console_spec_pm_assist_result" {
 			h.handlePMSpecAssistResult(r.Context(), metaString(env.Meta, "request_id"), c, env.Body)
 			continue
@@ -4306,9 +4309,13 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 	if handled, err := h.routeExternalSeat(ctx, keyID, sessionName, env); handled {
 		return err
 	}
-	claimed, sig, err := h.claimEnvelope(env)
-	if err != nil || !claimed {
-		return err
+	var sig string
+	if recoveryIntent(ctx) == nil {
+		claimed, signature, err := h.claimEnvelope(env)
+		if err != nil || !claimed {
+			return err
+		}
+		sig = signature
 	}
 	var c *sessionClient
 	var capabilityAdmission *capabilityPendingAdmission
@@ -4324,7 +4331,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		h.unclaimEnvelope(subAgentClaimKey(env), sig)
 		return errors.New("R14 target identity unavailable")
 	}
-	wantReceipt := outboundReceiptRequested(env) || inboxReceiptRequested(env)
+	wantReceipt := outboundReceiptRequested(env) || inboxReceiptRequested(env) || recoveryIntent(ctx) != nil
 	receiptNonce := metaString(env.Meta, outboundReceiptNonceKey)
 	reliable := reliablePrimaryEnvelope(env)
 	deliveryACK := c != nil && h.sessionSupportsDeliveryACK(c)
@@ -4363,6 +4370,9 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 	}
 	if outboundReceiptRequested(env) && !(reliable && (deliveryACK || capabilityPending) && h.Repo != nil) {
 		h.unclaimEnvelope(subAgentClaimKey(env), sig)
+		if recoveryIntent(ctx) != nil {
+			return errOutboundTargetUnsupported
+		}
 		return errors.New("confirmed outbound requires a durable target")
 	}
 	if c == nil && !(reliable && (deliveryACK || capabilityPending) && endpointKnown && h.Repo != nil) {
@@ -4388,6 +4398,10 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		// (sessionhelper/app.py:532),Hub 侧 GetSessionDelivery 为精确匹配、全树不剥前缀。
 		// 存量行仍为 `dlv_` 开头,精确匹配照常命中,不需要迁移。
 		deliveryID := deliveryIDPrefix + randomHex(16)
+		if intent := recoveryIntent(ctx); intent != nil {
+			sum := sha256.Sum256([]byte("outbound-recovery-v1\x00" + intent.SenderID + "\x00" + intent.SourceMessageID))
+			deliveryID = deliveryIDPrefix + hex.EncodeToString(sum[:16])
+		}
 		// A crash after enqueue but before marking the blocker outbox must reuse
 		// the durable ID, even after the in-memory envelope claim map is lost.
 		if coordinateReviewEnvelope(env) {
@@ -4414,7 +4428,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			// Receipt control flag belongs to the sender/Hub only.
 			cleanMeta := make(map[string]any, len(env.Meta))
 			for k, v := range env.Meta {
-				if k != outboundReceiptRequestKey && k != outboundReceiptNonceKey && k != inboxReceiptRequestKey {
+				if k != outboundReceiptRequestKey && k != outboundReceiptNonceKey && k != inboxReceiptRequestKey && k != outboundRecoveryKey && k != "outbound_sender_id" && k != "outbound_target_id" && (k != ipcBodyAMRMetaKey || recoveryIntent(ctx) == nil) {
 					cleanMeta[k] = v
 				}
 			}
@@ -4430,7 +4444,22 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 			delivery.State = capabilityPendingState
 			delivery.Provenance = capabilityPendingProvenance
 		}
-		if err := h.Repo.EnqueueSessionDelivery(ctx, delivery); err != nil {
+		var enqueueErr error
+		if intent := recoveryIntent(ctx); intent != nil {
+			repo, ok := h.Repo.(outboundIntentRepository)
+			if !ok {
+				return errors.New("outbound recovery storage unavailable")
+			}
+			stored, created, e := repo.CommitOutboundSessionDelivery(ctx, *intent, delivery)
+			enqueueErr = e
+			if e == nil && !created {
+				h.writeQueuedReceiptToSource(ctx, env, receiptNonce, stored.DeliveryID)
+				return nil
+			}
+		} else {
+			enqueueErr = h.Repo.EnqueueSessionDelivery(ctx, delivery)
+		}
+		if err := enqueueErr; err != nil {
 			h.unclaimEnvelope(subAgentClaimKey(env), sig)
 			if route != nil {
 				return subAgentStorageError(err)

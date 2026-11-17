@@ -22,31 +22,33 @@ class OutboundRejected(OutboundReceiptError):
 
 class OutboundReceiptBroker:
     def __init__(self, session_names):
-        self.session_names = frozenset(name for name in session_names if name)
+        self.session_names = frozenset(name.casefold() for name in session_names if name)
         self.source_address = next((name for name in session_names if name), "") + "#enrolled"
         self.pending = {}
         self.status_pending = {}
         self.connection = None
         self.cap_nonce = ""
         self.negotiated = False
+        self.recovery = None
 
     def prepare(self, ws):
         if self.connection is not None: self.abort(self.connection)
         self.connection = ws
         self.cap_nonce = secrets.token_hex(16)
         self.negotiated = False
+        self.recovery = None
         return {'outbound_receipt_v1': True, 'outbound_receipt_cap_nonce': self.cap_nonce}
 
     def valid_hub_address(self, env):
         source = str(env.get('from') or '').split('#')
         target = str(env.get('to') or '').split('#')
         return (len(source)==2 and len(target)==2 and source[0]=='workpulse' and
-                target[0] in self.session_names and bool(source[1]) and source[1]==target[1])
+                target[0].casefold() in self.session_names and bool(source[1]) and source[1]==target[1])
 
-    async def send(self, ws, to, body, from_addr, meta=None, *, timeout=10, observational=False):
+    async def send(self, ws, to, body, from_addr, meta=None, *, timeout=10, observational=False, source_id=None, recovery=None):
         if self.connection is not ws or not self.negotiated:
             raise OutboundReceiptError("Hub durable receipt capability not negotiated")
-        if not isinstance(body, str) or len(body.encode('utf-8')) > 65536:
+        if not isinstance(body, str) or len(body.encode('utf-8')) > ((1 << 20) if recovery is not None else 65536):
             raise ValueError('reply too large or invalid')
         if not isinstance(to, str) or not to or len(to)>256 or any(c.isspace() for c in to):
             raise ValueError('invalid explicit target')
@@ -57,8 +59,14 @@ class OutboundReceiptBroker:
         metadata['inbox_receipt_v1' if observational else 'outbound_receipt_v1'] = True
         metadata['outbound_receipt_nonce'] = nonce
         env = envelope(to, body, from_addr, metadata)
+        if recovery is not None:
+            if not self.recovery or not isinstance(source_id,str) or not re.fullmatch(r'[0-9a-f]{32}',source_id):
+                raise OutboundReceiptError('durable recovery not negotiated')
+            env['id']=source_id
+            metadata.update({'outbound_recovery_v1':True,'outbound_sender_id':recovery['sender_id'],'outbound_target_id':recovery['target_id']})
         future = asyncio.get_running_loop().create_future()
-        self.pending[env['id']] = (ws, nonce, future)
+        pending=(ws,nonce,future)
+        self.pending[env['id']] = pending
         try:
             async with asyncio.timeout(timeout):
                 await ws.send(json.dumps(env, ensure_ascii=False))
@@ -69,7 +77,8 @@ class OutboundReceiptBroker:
         except Exception:
             raise OutboundReceiptError('outbound outcome uncertain', source_message_id=env['id']) from None
         finally:
-            self.pending.pop(env['id'], None)
+            if self.pending.get(env['id']) is pending:
+                self.pending.pop(env['id'], None)
             if not future.done():
                 future.cancel()
             elif not future.cancelled():
@@ -83,6 +92,9 @@ class OutboundReceiptBroker:
                     meta.get('nonce') == self.cap_nonce and type(meta.get('version')) is int and
                     meta['version']==1 and meta.get('durable_agent_queue') is True):
                 self.negotiated = True
+                if (meta.get('outbound_recovery_v1') is True and isinstance(meta.get('sender_agent_id'),str) and 0<len(meta['sender_agent_id'])<=256
+                        and isinstance(meta.get('targets'),list) and len(meta['targets'])<=1024):
+                    self.recovery = {'sender_id':meta['sender_agent_id'], 'targets':meta['targets'], 'targets_available':meta.get('targets_available',True) is True}
             return True
         if meta.get('type') == 'delivery_status_result_v1':
             pending = self.status_pending.get(meta.get('nonce')) if isinstance(meta.get('nonce'), str) else None
@@ -103,15 +115,23 @@ class OutboundReceiptBroker:
         target = str(env.get('to') or '').split('#')
         if (connection is not ws or future.done() or meta.get('nonce') != nonce or
                 len(source)!=2 or len(target)!=2 or source[0]!='workpulse' or
-                target[0] not in self.session_names or not source[1] or source[1]!=target[1] or
+                target[0].casefold() not in self.session_names or not source[1] or source[1]!=target[1] or
                 type(meta.get('version')) is not int or meta['version']!=1):
             return True
         if (meta.get('state')=='queued' and meta.get('durable') is True and
                 isinstance(meta.get('delivery_id'), str) and re.fullmatch(r'dw-dlv_[0-9a-f]{32}',meta['delivery_id'])):
             future.set_result({'ok': True, 'stage': 'hub_durable_queued',
                                'source_message_id':meta['source_message_id'], 'delivery_id':meta['delivery_id']})
+        elif meta.get('state')=='unknown' and meta.get('durable') is False:
+            error=OutboundReceiptError('Hub confirmation unavailable')
+            reason=meta.get('reason')
+            error.reason=reason if isinstance(reason,str) and re.fullmatch(r'[a-z_]{1,64}',reason) else 'outbound_confirmation_unavailable'
+            future.set_exception(error)
         elif meta.get('state')=='rejected' and meta.get('durable') is False:
-            future.set_exception(OutboundRejected('Hub rejected outbound request'))
+            reason=meta.get('reason')
+            error=OutboundRejected('Hub rejected outbound request')
+            error.reason=reason if isinstance(reason,str) and re.fullmatch(r'[a-z_]{1,64}',reason) else 'outbound_rejected'
+            future.set_exception(error)
         return True
 
     async def query_status(self, ws, delivery_id, *, timeout=2):
@@ -145,6 +165,7 @@ class OutboundReceiptBroker:
                 future.set_exception(OutboundReceiptError("connection closed"))
         if self.connection is ws:
             self.connection = None
+            self.recovery = None
             self.cap_nonce = ""
             self.negotiated = False
         for connection, _, future in list(self.pending.values()):

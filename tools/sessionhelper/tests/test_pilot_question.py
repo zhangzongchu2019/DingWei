@@ -83,7 +83,7 @@ class PilotQuestionTest(unittest.TestCase):
         from sessionhelper.mcp_shim import Request
         response=mcp_shim._dispatch(Request(id=1,jsonrpc='2.0',method='tools/list',params={}))
         names={x['name'] for x in response.result['tools']}
-        self.assertEqual(len(names),26)
+        self.assertEqual(len(names),27)
         self.assertTrue({'dw_task_question_create','dw_task_question_list','dw_task_question_input'}<=names,'QUESTION_MCP_REGISTRATION_MISSING')
         self.assertFalse(any('question_answer' in n or 'question_assign' in n for n in names))
 
