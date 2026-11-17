@@ -1,0 +1,2415 @@
+{
+  "base": "9818b979e9e20f0bcfeffa6b78045dda71b1bd79",
+  "target_cases": 4,
+  "parallel_pairs_requested": 30,
+  "parallel_profiles_each": 30,
+  "serial_profiles_each": 30,
+  "records": [
+    {
+      "mode": "parallel",
+      "iteration": 1,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:38.152407+00:00",
+      "loadavg_before": [
+        2.55615234375,
+        2.8994140625,
+        2.92626953125
+      ],
+      "loadavg_after": [
+        2.55615234375,
+        2.8994140625,
+        2.92626953125
+      ],
+      "elapsed_seconds": 0.763,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-01-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 1,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:38.152757+00:00",
+      "loadavg_before": [
+        2.55615234375,
+        2.8994140625,
+        2.92626953125
+      ],
+      "loadavg_after": [
+        2.55615234375,
+        2.8994140625,
+        2.92626953125
+      ],
+      "elapsed_seconds": 0.768,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-01-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 2,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:38.920904+00:00",
+      "loadavg_before": [
+        2.55615234375,
+        2.8994140625,
+        2.92626953125
+      ],
+      "loadavg_after": [
+        2.55615234375,
+        2.8994140625,
+        2.92626953125
+      ],
+      "elapsed_seconds": 0.798,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-02-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 2,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:38.921296+00:00",
+      "loadavg_before": [
+        2.55615234375,
+        2.8994140625,
+        2.92626953125
+      ],
+      "loadavg_after": [
+        2.55615234375,
+        2.8994140625,
+        2.92626953125
+      ],
+      "elapsed_seconds": 0.798,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-02-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 3,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:39.719360+00:00",
+      "loadavg_before": [
+        2.55615234375,
+        2.8994140625,
+        2.92626953125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.808,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-03-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 3,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:39.719693+00:00",
+      "loadavg_before": [
+        2.55615234375,
+        2.8994140625,
+        2.92626953125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.808,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-03-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 4,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:40.527814+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.826,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-04-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 4,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:40.528133+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.84,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-04-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 5,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:41.368385+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.774,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-05-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 5,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:41.368718+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.78,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-05-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 6,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:42.149404+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.768,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-06-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 6,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:42.149737+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.774,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-06-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 7,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:42.924226+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.775,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-07-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 7,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:42.924564+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.776,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-07-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 8,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:43.701291+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.779,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-08-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 8,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:43.701623+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.779,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-08-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 9,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:44.480986+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.767,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-09-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 9,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:44.481341+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "elapsed_seconds": 0.769,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-09-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 10,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:45.250800+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.756,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-10-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 10,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:45.251134+00:00",
+      "loadavg_before": [
+        2.591796875,
+        2.9013671875,
+        2.9267578125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.771,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-10-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 11,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:46.022884+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.767,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-11-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 11,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:46.023217+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.767,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-11-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 12,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:46.790497+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.778,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-12-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 12,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:46.790811+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.778,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-12-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 13,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:47.569166+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.775,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-13-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 13,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:47.569530+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.775,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-13-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 14,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:48.344681+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.774,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-14-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 14,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:48.344992+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.774,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-14-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 15,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:49.119324+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.763,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-15-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 15,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:49.119640+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "elapsed_seconds": 0.763,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-15-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 16,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:49.883657+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.783,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-16-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 16,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:49.884000+00:00",
+      "loadavg_before": [
+        2.78466796875,
+        2.9365234375,
+        2.93798828125
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.783,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-16-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 17,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:50.667593+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.766,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-17-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 17,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:50.667910+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.765,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-17-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 18,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:51.434099+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.809,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-18-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 18,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:51.434433+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.809,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-18-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 19,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:52.244562+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.786,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-19-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 19,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:52.244880+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.786,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-19-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 20,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:53.031332+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.763,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-20-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 20,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:53.031657+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.766,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-20-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 21,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:53.798526+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.78,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-21-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 21,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:53.798841+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "elapsed_seconds": 0.78,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-21-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 22,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:54.579466+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.788,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-22-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 22,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:54.579786+00:00",
+      "loadavg_before": [
+        2.80224609375,
+        2.93798828125,
+        2.9384765625
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.803,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-22-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 23,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:55.383993+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.82,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-23-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 23,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:55.384334+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.82,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-23-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 24,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:56.205335+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.816,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-24-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 24,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:56.205653+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.816,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-24-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 25,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:57.022807+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.788,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-25-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 25,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:57.023134+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.791,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-25-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 26,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:57.814690+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.771,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-26-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 26,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:57.815007+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.771,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-26-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 27,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:58.587099+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.763,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-27-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 27,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:58.587435+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.763,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-27-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 28,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:55:59.351865+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.761,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-28-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 28,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:55:59.352241+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "elapsed_seconds": 0.761,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-28-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 29,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:00.114413+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "elapsed_seconds": 0.789,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-29-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 29,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:00.114728+00:00",
+      "loadavg_before": [
+        2.978515625,
+        2.97265625,
+        2.94970703125
+      ],
+      "loadavg_after": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "elapsed_seconds": 0.789,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-29-codex.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 30,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:00.904319+00:00",
+      "loadavg_before": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "loadavg_after": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "elapsed_seconds": 0.798,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-30-claude.log"
+    },
+    {
+      "mode": "parallel",
+      "iteration": 30,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:00.904626+00:00",
+      "loadavg_before": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "loadavg_after": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "elapsed_seconds": 0.798,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/parallel-30-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 1,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:01.703287+00:00",
+      "loadavg_before": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "loadavg_after": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "elapsed_seconds": 0.704,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-01-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 1,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:02.408169+00:00",
+      "loadavg_before": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "loadavg_after": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "elapsed_seconds": 0.691,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-01-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 2,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:03.100226+00:00",
+      "loadavg_before": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "loadavg_after": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "elapsed_seconds": 0.711,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-02-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 2,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:03.812341+00:00",
+      "loadavg_before": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "loadavg_after": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "elapsed_seconds": 0.701,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-02-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 3,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:04.514192+00:00",
+      "loadavg_before": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "loadavg_after": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "elapsed_seconds": 0.693,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-03-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 3,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:05.208620+00:00",
+      "loadavg_before": [
+        2.81982421875,
+        2.939453125,
+        2.93896484375
+      ],
+      "loadavg_after": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "elapsed_seconds": 0.704,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-03-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 4,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:05.913890+00:00",
+      "loadavg_before": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "loadavg_after": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "elapsed_seconds": 0.696,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-04-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 4,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:06.611542+00:00",
+      "loadavg_before": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "loadavg_after": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "elapsed_seconds": 0.763,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-04-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 5,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:07.375813+00:00",
+      "loadavg_before": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "loadavg_after": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "elapsed_seconds": 0.707,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-05-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 5,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:08.084187+00:00",
+      "loadavg_before": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "loadavg_after": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "elapsed_seconds": 0.691,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-05-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 6,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:08.776874+00:00",
+      "loadavg_before": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "loadavg_after": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "elapsed_seconds": 0.693,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-06-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 6,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:09.471215+00:00",
+      "loadavg_before": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "loadavg_after": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "elapsed_seconds": 0.73,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-06-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 7,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:10.202060+00:00",
+      "loadavg_before": [
+        2.75390625,
+        2.923828125,
+        2.93359375
+      ],
+      "loadavg_after": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "elapsed_seconds": 0.741,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-07-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 7,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:10.944758+00:00",
+      "loadavg_before": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "loadavg_after": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "elapsed_seconds": 0.781,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-07-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 8,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:11.727288+00:00",
+      "loadavg_before": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "loadavg_after": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "elapsed_seconds": 0.687,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-08-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 8,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:12.415685+00:00",
+      "loadavg_before": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "loadavg_after": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "elapsed_seconds": 0.691,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-08-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 9,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:13.108000+00:00",
+      "loadavg_before": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "loadavg_after": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "elapsed_seconds": 0.691,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-09-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 9,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:13.799889+00:00",
+      "loadavg_before": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "loadavg_after": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "elapsed_seconds": 0.687,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-09-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 10,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:14.488466+00:00",
+      "loadavg_before": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "loadavg_after": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "elapsed_seconds": 0.692,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-10-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 10,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:15.181894+00:00",
+      "loadavg_before": [
+        2.85400390625,
+        2.94189453125,
+        2.939453125
+      ],
+      "loadavg_after": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "elapsed_seconds": 0.708,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-10-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 11,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:15.891836+00:00",
+      "loadavg_before": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "loadavg_after": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "elapsed_seconds": 0.707,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-11-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 11,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:16.600502+00:00",
+      "loadavg_before": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "loadavg_after": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "elapsed_seconds": 0.696,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-11-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 12,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:17.297728+00:00",
+      "loadavg_before": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "loadavg_after": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "elapsed_seconds": 0.706,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-12-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 12,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:18.005680+00:00",
+      "loadavg_before": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "loadavg_after": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "elapsed_seconds": 0.697,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-12-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 13,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:18.704246+00:00",
+      "loadavg_before": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "loadavg_after": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "elapsed_seconds": 0.693,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-13-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 13,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:19.398298+00:00",
+      "loadavg_before": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "loadavg_after": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "elapsed_seconds": 0.704,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-13-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 14,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:20.103589+00:00",
+      "loadavg_before": [
+        3.02587890625,
+        2.97607421875,
+        2.95068359375
+      ],
+      "loadavg_after": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "elapsed_seconds": 0.684,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-14-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 14,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:20.789018+00:00",
+      "loadavg_before": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "loadavg_after": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "elapsed_seconds": 0.701,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-14-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 15,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:21.492271+00:00",
+      "loadavg_before": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "loadavg_after": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "elapsed_seconds": 0.745,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-15-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 15,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:22.239377+00:00",
+      "loadavg_before": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "loadavg_after": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "elapsed_seconds": 0.73,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-15-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 16,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:22.971313+00:00",
+      "loadavg_before": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "loadavg_after": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "elapsed_seconds": 0.69,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-16-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 16,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:23.662870+00:00",
+      "loadavg_before": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "loadavg_after": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "elapsed_seconds": 0.69,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-16-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 17,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:24.354437+00:00",
+      "loadavg_before": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "loadavg_after": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "elapsed_seconds": 0.68,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-17-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 17,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:25.036116+00:00",
+      "loadavg_before": [
+        2.943359375,
+        2.95947265625,
+        2.9453125
+      ],
+      "loadavg_after": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "elapsed_seconds": 0.725,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-17-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 18,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:25.762952+00:00",
+      "loadavg_before": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "loadavg_after": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "elapsed_seconds": 0.721,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-18-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 18,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:26.485920+00:00",
+      "loadavg_before": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "loadavg_after": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "elapsed_seconds": 0.755,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-18-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 19,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:27.243593+00:00",
+      "loadavg_before": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "loadavg_after": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "elapsed_seconds": 0.7,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-19-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 19,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:27.945554+00:00",
+      "loadavg_before": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "loadavg_after": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "elapsed_seconds": 0.689,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-19-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 20,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:28.636344+00:00",
+      "loadavg_before": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "loadavg_after": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "elapsed_seconds": 0.695,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-20-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 20,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:29.332735+00:00",
+      "loadavg_before": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "loadavg_after": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "elapsed_seconds": 0.68,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-20-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 21,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:30.014620+00:00",
+      "loadavg_before": [
+        2.86767578125,
+        2.943359375,
+        2.93994140625
+      ],
+      "loadavg_after": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "elapsed_seconds": 0.684,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-21-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 21,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:30.700653+00:00",
+      "loadavg_before": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "loadavg_after": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "elapsed_seconds": 0.692,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-21-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 22,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:31.394349+00:00",
+      "loadavg_before": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "loadavg_after": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "elapsed_seconds": 0.691,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-22-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 22,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:32.087133+00:00",
+      "loadavg_before": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "loadavg_after": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "elapsed_seconds": 0.692,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-22-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 23,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:32.780450+00:00",
+      "loadavg_before": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "loadavg_after": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "elapsed_seconds": 0.686,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-23-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 23,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:33.468028+00:00",
+      "loadavg_before": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "loadavg_after": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "elapsed_seconds": 0.683,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-23-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 24,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:34.152609+00:00",
+      "loadavg_before": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "loadavg_after": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "elapsed_seconds": 0.706,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-24-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 24,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:34.861803+00:00",
+      "loadavg_before": [
+        2.7978515625,
+        2.92724609375,
+        2.9345703125
+      ],
+      "loadavg_after": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "elapsed_seconds": 0.679,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-24-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 25,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:35.542074+00:00",
+      "loadavg_before": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "loadavg_after": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "elapsed_seconds": 0.69,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-25-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 25,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:36.233542+00:00",
+      "loadavg_before": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "loadavg_after": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "elapsed_seconds": 0.696,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-25-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 26,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:36.931309+00:00",
+      "loadavg_before": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "loadavg_after": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "elapsed_seconds": 0.782,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-26-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 26,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:37.715875+00:00",
+      "loadavg_before": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "loadavg_after": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "elapsed_seconds": 0.705,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-26-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 27,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:38.422694+00:00",
+      "loadavg_before": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "loadavg_after": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "elapsed_seconds": 0.685,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-27-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 27,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:39.109420+00:00",
+      "loadavg_before": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "loadavg_after": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "elapsed_seconds": 0.685,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-27-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 28,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:39.796105+00:00",
+      "loadavg_before": [
+        2.89453125,
+        2.9453125,
+        2.9404296875
+      ],
+      "loadavg_after": [
+        2.74267578125,
+        2.91259765625,
+        2.9296875
+      ],
+      "elapsed_seconds": 0.689,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-28-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 28,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:40.486768+00:00",
+      "loadavg_before": [
+        2.74267578125,
+        2.91259765625,
+        2.9296875
+      ],
+      "loadavg_after": [
+        2.74267578125,
+        2.91259765625,
+        2.9296875
+      ],
+      "elapsed_seconds": 0.73,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-28-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 29,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:41.218668+00:00",
+      "loadavg_before": [
+        2.74267578125,
+        2.91259765625,
+        2.9296875
+      ],
+      "loadavg_after": [
+        2.74267578125,
+        2.91259765625,
+        2.9296875
+      ],
+      "elapsed_seconds": 0.756,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-29-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 29,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:41.977330+00:00",
+      "loadavg_before": [
+        2.74267578125,
+        2.91259765625,
+        2.9296875
+      ],
+      "loadavg_after": [
+        2.74267578125,
+        2.91259765625,
+        2.9296875
+      ],
+      "elapsed_seconds": 0.741,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-29-codex.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 30,
+      "profile": "claude",
+      "started_utc": "2026-11-17T22:56:42.719831+00:00",
+      "loadavg_before": [
+        2.74267578125,
+        2.91259765625,
+        2.9296875
+      ],
+      "loadavg_after": [
+        2.74267578125,
+        2.91259765625,
+        2.9296875
+      ],
+      "elapsed_seconds": 0.694,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-30-claude.log"
+    },
+    {
+      "mode": "serial",
+      "iteration": 30,
+      "profile": "codex",
+      "started_utc": "2026-11-17T22:56:43.415187+00:00",
+      "loadavg_before": [
+        2.74267578125,
+        2.91259765625,
+        2.9296875
+      ],
+      "loadavg_after": [
+        2.74267578125,
+        2.91259765625,
+        2.9296875
+      ],
+      "elapsed_seconds": 0.686,
+      "rc": 0,
+      "failure_lines": [],
+      "log": "fixed-final/serial-30-codex.log"
+    }
+  ],
+  "failed_by_mode_profile": {
+    "parallel/claude": [],
+    "parallel/codex": [],
+    "serial/claude": [],
+    "serial/codex": []
+  }
+}
