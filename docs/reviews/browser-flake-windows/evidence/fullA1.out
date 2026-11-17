@@ -1,0 +1,52 @@
+  PASS loads the real console document
+  PASS keeps platform workspaces interactive after a full Agent refresh interval
+  PASS resets the created name while preserving the selected short-name Agent
+  PASS offers owned active offline Agents as group membership candidates
+  FAIL distinguishes platform and Agent load failures from true empty states: Expected values to be strictly equal:
++ actual - expected
+
++ '工作台加载失败: 请求超时'
+- '工作台加载中…'
+        ^
+
+  PASS renders online and offline agents from the console API
+  PASS renders no platform entry without an observable action
+  PASS keeps dead action buttons absent after the server role changes
+  PASS lets a human start from zero groups without a hidden-control deadlock
+  FAIL runs the zero-group human workflow without hidden actions or long tasks: Expected values to be strictly deep-equal:
++ actual - expected
+
++ [
++   211,
++   230
++ ]
+- []
+
+  PASS opens Agent groups inside console with the owner-only online Agent selector
+  PASS shows a visible successful retry result
+  PASS ignores an older group snapshot that arrives after the latest response
+  PASS keeps rejected and accepted create results visible beside the name control
+  FAIL shows group load and network action failures beside their controls: page.waitForFunction: Timeout 29606ms exceeded.
+  PASS group name: malformed names are explained locally in the shared sentence; invisible characters are stripped; a JSON error shows its message
+  PASS opens a real console tab and agent iframe
+  PASS explains why an open Agent tab becomes non-interactive when offline
+  PASS opens Specs inside console without destroying live Agent panes
+  PASS shows the server-rendered build version and never swallows a click
+console browser harness: passed=17 failed=3
+distinguishes platform and Agent load failures from true empty states: Expected values to be strictly equal:
++ actual - expected
+
++ '工作台加载失败: 请求超时'
+- '工作台加载中…'
+        ^
+
+runs the zero-group human workflow without hidden actions or long tasks: Expected values to be strictly deep-equal:
++ actual - expected
+
++ [
++   211,
++   230
++ ]
+- []
+
+shows group load and network action failures beside their controls: page.waitForFunction: Timeout 29606ms exceeded.

@@ -1,0 +1,13 @@
+fix1 rc=0
+fix2 rc=0
+fix3 rc=0
+fix4 rc=0
+fix5 rc=0
+fix6 rc=0
+fix7 rc=0
+fix8 rc=0
+fix9 rc=0
+fix10 rc=0
+fix11 rc=0
+fix12 rc=0
+ALLDONE

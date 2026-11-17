@@ -83,16 +83,28 @@ async function main() {
   const browser = await chromium.launch(browserOptions);
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    // 时序窗定因见 docs/reviews/browser-flake-windows/REPORT.md:原前置只等渲染缓冲
+    // 清空,回放收尾 finishTimelineReplay(true) 的补拍(fonts 微任务/双 rAF/250ms)
+    // 会抢先把位置滚回底部,+10 微滚轮随即在底部钳位,timelineAtBottom 永不置假。
+    // 回放窗旋钮是渲染器明示的测试钩子(REPLAY_QUIET_MS/REPLAY_HARD_LIMIT_MS),
+    // 60000ms 远大于本格时长 ⇒ 自然收尾不会与释放手势竞态,手势确定性地走
+    // 「重放窗内用户上翻」逃生口(finishTimelineReplay(false),不武装补拍)。
+    await page.addInitScript(() => { window.REPLAY_QUIET_MS = 60000; window.REPLAY_HARD_LIMIT_MS = 60000; });
     await page.goto(`http://127.0.0.1:${address.port}/view/r15`, { waitUntil: 'domcontentloaded' });
     await page.getByText('R15_HISTORY_SEQ_101').waitFor({ timeout: 7000 });
     await page.getByText('R15_HISTORY_SEQ_200').waitFor({ timeout: 7000 });
     await page.getByText('R15_LIVE_SEQ_201').waitFor({ timeout: 7000 });
     const timeline = page.locator('#timeline');
-    await page.waitForFunction(() => pendingRenders.size === 0 && c1MergeBuf.size === 0, null, { timeout: 7000 });
+    await page.waitForFunction(() => pendingRenders.size === 0 && c1MergeBuf.size === 0 && followScrollFrame === null && document.fonts.status === 'loaded', null, { timeout: 7000 });
+    assert.strictEqual(await page.evaluate(() => replayInProgress), true, 'replay window knob must keep replay open until the release gesture');
     await timeline.evaluate((n) => { n.style.scrollBehavior = 'auto'; n.scrollTop = 300; });
     const box = await timeline.boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.wheel(0, 10);
+    // 大幅上翻真手势:即便有补滚先落底,-600 仍产生 gap>160 的离底位移;重放窗内
+    // 唯一补滚来源 followScrollFrame 是 rAF,帧序上 scroll 步骤先于 rAF,抢不到
+    // 释放判定之前 ⇒ 无竞态。3000ms 上界沿用原值:释放是手势后首个 scroll 事件
+    // 内的同步判定,3s 远大于负载下的帧调度余量。
+    await page.mouse.wheel(0, -600);
     await page.waitForFunction(() => timelineAtBottom === false, null, { timeout: 3000 });
     const originalFirst = await timeline.evaluate((n) => n.firstElementChild.innerText.match(/R15_HISTORY_SEQ_\d+/)?.[0]);
     const anchor = await timeline.evaluateHandle((n) => [...n.children].find(node => node.getBoundingClientRect().bottom > n.getBoundingClientRect().top));
