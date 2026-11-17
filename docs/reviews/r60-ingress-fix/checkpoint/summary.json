@@ -1,0 +1,23 @@
+{
+  "source_commit": "0b1c1dfbaa96aabc6b92cb24bff6fc618b3db8db",
+  "uid": "1001",
+  "written_utc": "2026-11-17T19:02:03.060775+00:00",
+  "checkpoint_only": true,
+  "build_rc": 0,
+  "canonical": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2",
+  "helper_inventory": 97,
+  "new_mutations": 28,
+  "new_mutations_business_killed": 28,
+  "restored_baseline_rc": 0,
+  "focused_race": {
+    "source_commit": "0b1c1dfbaa96aabc6b92cb24bff6fc618b3db8db",
+    "top_pass": 38,
+    "all_pass": 48,
+    "fail": 0,
+    "skip": 0,
+    "data_race": 0,
+    "raw_sha256": "6816e52bf5d10edfa9a293333a971117e9aace95e41f976dcb9cc4df3e77b577",
+    "footer": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t232.257s"
+  },
+  "full_gates_pending": true
+}

@@ -1,0 +1,182 @@
+=== RUN   TestLegacyIngressBurstKeepsFIFOAndCommittedACK
+2026/11/17 18:39:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:39:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 18:39:38 session handshake timing key_id=u_zzc session=legacy total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:38 session capability file_upload_v1=true key_id=u_zzc session=legacy conn_seq=1
+2026/11/17 18:39:38 session delivery lease release decision=requeue key_id=u_zzc session=legacy conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:40 restart window signal event=delivery_failure within_restart_window=true hub_uptime_seconds=1 restart_window_seconds=60
+    ingress_legacy_compat_test.go:320: canonical_history=1000 unique_ids=1000 preserved_text4096 ordered_with_ACK_and_body peak_items=955 peak_bytes=4165958
+2026/11/17 18:39:42 session delivery lease release decision=requeue key_id=u_zzc session=legacy conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestLegacyIngressBurstKeepsFIFOAndCommittedACK (4.09s)
+=== RUN   TestLegacyIngressReadPauseResumesWithoutDisconnect
+2026/11/17 18:39:42 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:39:42 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 18:39:42 session handshake timing key_id=u_zzc session=legacy total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:42 session capability file_upload_v1=true key_id=u_zzc session=legacy conn_seq=1
+2026/11/17 18:39:42 session delivery lease release decision=requeue key_id=u_zzc session=legacy conn_seq=1 reason=session_reconnected released=0
+    ingress_legacy_compat_test.go:366: actual legacy pause/resume 3.001944899s body_sha256=601c9e65235a9a509df13471f4bb10c1ab51da5e79b41a268accc88f87b4ef34
+2026/11/17 18:39:46 session delivery lease release decision=requeue key_id=u_zzc session=legacy conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestLegacyIngressReadPauseResumesWithoutDisconnect (3.92s)
+=== RUN   TestLegacyIngressLimitedWirePongCompetition
+2026/11/17 18:39:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:39:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 18:39:46 session handshake timing key_id=u_zzc session=legacy total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:46 session capability file_upload_v1=true key_id=u_zzc session=legacy conn_seq=1
+2026/11/17 18:39:46 session delivery lease release decision=requeue key_id=u_zzc session=legacy conn_seq=1 reason=session_reconnected released=0
+    ingress_legacy_compat_test.go:484: wire10Mbps pause3s data8MiB elapsed=7.794869698s peak_frame=32768 ping_count=50 body_sha256=3747282bf7b3c3b80101e20175e358a043f026b04ba4898967b3b72a2baafb41
+2026/11/17 18:39:54 session delivery lease release decision=requeue key_id=u_zzc session=legacy conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestLegacyIngressLimitedWirePongCompetition (8.44s)
+=== RUN   TestSessionDiagnosticsFullPipeNeverBlocksReader
+2026/11/17 18:39:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:39:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionDiagnosticsFullPipeNeverBlocksReader (0.14s)
+=== RUN   TestSessionDiagnosticsRealPeerEndAndPrivacy
+2026/11/17 18:39:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:39:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 18:39:55 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestSessionDiagnosticsRealPeerEndAndPrivacy (0.16s)
+=== RUN   TestSessionDiagnosticsOverflowAndPhysicalWriteCauses
+2026/11/17 18:39:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:39:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionDiagnosticsOverflowAndPhysicalWriteCauses (0.15s)
+=== RUN   TestSessionDiagnosticsRateAndLineBounds
+2026/11/17 18:39:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:39:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionDiagnosticsRateAndLineBounds (0.16s)
+=== RUN   TestSessionDiagnosticsRevokeAndShutdownReasons
+=== RUN   TestSessionDiagnosticsRevokeAndShutdownReasons/revoked
+2026/11/17 18:39:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:39:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 18:39:55 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+=== RUN   TestSessionDiagnosticsRevokeAndShutdownReasons/hub_shutdown
+2026/11/17 18:39:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:39:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 18:39:55 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+--- PASS: TestSessionDiagnosticsRevokeAndShutdownReasons (0.31s)
+    --- PASS: TestSessionDiagnosticsRevokeAndShutdownReasons/revoked (0.15s)
+    --- PASS: TestSessionDiagnosticsRevokeAndShutdownReasons/hub_shutdown (0.15s)
+=== RUN   TestSessionIngressTwentyTwoConnectionsBoundedWindow
+2026/11/17 18:39:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:39:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 18:39:55 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load00: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:55 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load00 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:55 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load00 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:55 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load00 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:55 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load01: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:55 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load01 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:55 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load01 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:55 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load01 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:55 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load02: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:55 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load02 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:55 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load02 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:55 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load02 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:55 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load03: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:55 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load03 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:55 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load03 total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:55 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load03 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:55 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load04: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:55 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load04 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:55 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load04 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:55 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load04 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:55 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load05: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:55 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load05 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:55 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load05 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:55 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load05 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:55 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load06: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:55 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load06 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load06 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load06 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load07: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load07 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load07 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load07 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load08: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load08 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load08 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load08 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load09: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load09 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load09 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load09 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load10: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load10 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load10 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load10 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load11: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load11 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load11 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load11 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load12: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load12 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load12 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load12 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load13: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load13 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load13 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load13 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load14: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load14 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load14 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load14 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load15: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load15 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load15 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load15 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load16: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load16 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load16 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load16 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load17: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load17 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load17 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load17 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load18: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load18 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load18 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load18 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load19: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load19 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load19 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load19 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load20: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load20 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load20 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load20 conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:39:56 session name warning key_id=FB-loaduser-20261117-b9881503 owner= session=load21: 无法确认该 key 绑定成员 owner_key
+2026/11/17 18:39:56 session version warning key_id=FB-loaduser-20261117-b9881503 owner= session=load21 version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 18:39:56 session handshake timing key_id=FB-loaduser-20261117-b9881503 session=load21 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load21 conn_seq=1 reason=session_reconnected released=0
+    session_ingress_pressure_test.go:126: 22x1000x4KiB raw_items=22001 raw_bytes=93742151 heap_before=34331992 heap_resident=114910232 heap_sys=122880000 elapsed=306.716402ms (Go clients; not 22 real helpers; raw quota is not RSS)
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load00 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load03 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load08 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load15 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load07 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load14 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load18 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load02 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load01 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load05 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load20 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load06 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load13 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load10 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load11 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load19 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load17 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load04 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load09 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load16 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load21 conn_seq=1 reason=session_disconnected released=0
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=FB-loaduser-20261117-b9881503 session=load12 conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestSessionIngressTwentyTwoConnectionsBoundedWindow (0.50s)
+=== RUN   TestSessionWriteCancelledBeforePhysicalDoesNotCloseConnection
+2026/11/17 18:39:56 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:39:56 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 18:39:56 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"session_capabilities","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":182,"queue_peak_items":1,"reader_age_ms":11,"reader_frame_bytes":182,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-17T18:39:56.492870978Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":0,"write_budget_ms":5000,"write_bytes":95}
+2026/11/17 18:39:56 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestSessionWriteCancelledBeforePhysicalDoesNotCloseConnection (0.16s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	18.076s

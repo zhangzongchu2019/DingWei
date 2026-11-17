@@ -1,0 +1,12 @@
+=== RUN   TestLegacyIngressLimitedWirePongCompetition
+2026/11/17 18:52:46 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 18:52:46 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 18:52:46 session handshake timing key_id=u_zzc session=legacy total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 18:52:46 session capability file_upload_v1=true key_id=u_zzc session=legacy conn_seq=1
+2026/11/17 18:52:46 session delivery lease release decision=requeue key_id=u_zzc session=legacy conn_seq=1 reason=session_reconnected released=0
+2026/11/17 18:52:51 session delivery lease release decision=requeue key_id=u_zzc session=legacy conn_seq=1 reason=session_disconnected released=0
+    ingress_legacy_compat_test.go:501: limited-wire data held frame lock and starved healthy Pong: failed to write msg: failed to write frame: use of closed network connection
+    test_child_process_support_test.go:102: legacy ingress helper stderr tail (last 8192 bytes; credential-bearing lines filtered):
+        (empty)
+--- FAIL: TestLegacyIngressLimitedWirePongCompetition (5.56s)
+FAIL
