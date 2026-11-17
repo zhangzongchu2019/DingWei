@@ -4812,7 +4812,8 @@ func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, delivery
 		metadata["turn_outcome"] = d.TurnOutcome
 	}
 	targetKey, targetSession := h.subViewObservation(d.KeyID, d.SessionName, d.ID, false)
-	h.publishDeliveryUpdateWithMetadata(targetKey, targetSession, d.SourceMessageID, d.ID, deliveryState, stage, status, reason, metadata)
+	primaryMetadata := deliveryUpdateMetadataWithRole(metadata, "primary")
+	h.publishDeliveryUpdateWithMetadata(targetKey, targetSession, d.SourceMessageID, d.ID, deliveryState, stage, status, reason, primaryMetadata)
 	if deliveryState == "dead" {
 		h.mentionMirror.deliveryDead(d, reason) // R-V2-0103：view 提及转来的那封终未处理 ⇒ 发起页一行状态
 	}
@@ -4823,8 +4824,18 @@ func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, delivery
 	from, err := parseAddress(original.From)
 	if err == nil && from.Kind == addressSession && from.SessionName != "" && from.SessionName != "workpulse" {
 		sourceKey, sourceSession := h.subViewObservation(from.KeyID, from.SessionName, d.ID, true)
-		h.publishDeliveryUpdateWithMetadata(sourceKey, sourceSession, d.SourceMessageID, d.ID, deliveryState, stage, status, reason, metadata)
+		copyMetadata := deliveryUpdateMetadataWithRole(metadata, "copy")
+		h.publishDeliveryUpdateWithMetadata(sourceKey, sourceSession, d.SourceMessageID, d.ID, deliveryState, stage, status, reason, copyMetadata)
 	}
+}
+
+func deliveryUpdateMetadataWithRole(metadata map[string]any, role string) map[string]any {
+	withRole := make(map[string]any, len(metadata)+1)
+	for key, value := range metadata {
+		withRole[key] = value
+	}
+	withRole["delivery"] = map[string]any{"role": role}
+	return withRole
 }
 
 func (h *Hub) drainSessionDeliveries(ctx context.Context, c *sessionClient) {

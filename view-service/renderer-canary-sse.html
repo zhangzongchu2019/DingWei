@@ -1312,10 +1312,10 @@
     let renderFlushTimer = null;
     let renderFlushFrame = null;
     const waitingDeliveries = new Map();
+    const roleVerifiedPendingDeliveryUpdates = new Map();
     // ── C2 control 地基(待提交区删除 + 中断确认)──
-    // 传输层:默认真接 VS POST /control(仅 kind=cancel;VS 恒 200 {"ok":bool},ok=false=未受理/已注入/终态);
-    // body 契约(派单②,与 devof5 书面冻结):legacy={kind,message_id,delivery_id} 三字段;
-    // V2(生产)=补 page_id+page_token(VS authorize_page 授权,取自 pageIdentity,与 /input 同一对)+request_id(hub 幂等去重)。
+    // 传输层:默认真接 VS POST /control；cancel 使用 message_id+delivery_id，retry 使用专用 V2 body 且不带 message_id。
+    // V2 凭证来自 pageIdentity；retry request_id 在结果未知时复用，利用 Hub 幂等键安全核对。
     // window.C2_CONTROL_TRANSPORT 可注入覆盖(测试)。
     // 诚实语义(G-HONEST):VS 未受理→明说"未发出";受理 ok=true→"已请求";条目消失只由事件流 cancelled 驱动。
     const C2_ACK_TIMEOUT_MS = (typeof window !== 'undefined' && window.C2_ACK_TIMEOUT_MS) || 10000;  // 测试可经 window.C2_ACK_TIMEOUT_MS 覆盖
@@ -1346,18 +1346,28 @@
         c2TurnCtx.active.rootPinned = true;
       }
     }
-    // 真 transport:renderer→VS POST /control。非 cancel 的 kind(interrupt)不支持→sent:false 让调用方回退 legacy;
-    // 成功时只回 VS 响应体({ok:bool}),由 c2SendControl 统一包装(与注入 mock 同形)。
+    // 真 transport:renderer→VS POST /control。cancel 与 retry 各按接口契约构造 body；其他 kind 不发出。
     const c2VsTransport = {
       async send(msg) {
-        if (msg.kind !== 'cancel') return { sent: false, reason: 'kind_not_supported' };
-        // body 分契:legacy 三字段;V2 补 page_id+page_token+request_id(与 /input V2 同构)
-        let ctlBody = { kind: 'cancel', message_id: msg.message_id || '', delivery_id: msg.delivery_id || '' };
-        if (!ctlBody.message_id || !ctlBody.delivery_id) return { sent: false, reason: 'addr_incomplete' };  // 缺寻址字段本地拦(生产实证 15:13:28:发空串=VS 400,不如诚实早报)
-        if (stats.authMode === 'view_page_v2') {
-          await prepareViewWrite();
-          if (!pageIdentity?.page_id || !pageIdentity?.page_token) return { sent: false, reason: 'no_page_identity' };  // fail-closed:无 V2 凭证不冒充,明说未发出
-          ctlBody = { ...ctlBody, page_id: pageIdentity.page_id, page_token: pageIdentity.page_token, request_id: msg.request_id || '' };
+        if (msg.kind !== 'cancel' && msg.kind !== 'retry') return { sent: false, outcome: 'rejected', reason: 'kind_not_supported' };
+        let ctlBody;
+        if (msg.kind === 'retry') {
+          if (!msg.delivery_id || !msg.request_id) return { sent: false, outcome: 'rejected', reason: 'addr_incomplete' };
+          if (stats.authMode !== 'view_page_v2') return { sent: false, outcome: 'rejected', reason: 'v2_page_required' };
+          try { await prepareViewWrite(); }
+          catch (err) { return { sent: false, outcome: 'rejected', reason: String(err && err.message || err) }; }
+          if (!pageIdentity?.page_id || !pageIdentity?.page_token) return { sent: false, outcome: 'rejected', reason: 'no_page_identity' };
+          ctlBody = { kind: 'retry', delivery_id: msg.delivery_id, page_id: pageIdentity.page_id,
+            page_token: pageIdentity.page_token, request_id: msg.request_id };
+        } else {
+          ctlBody = { kind: 'cancel', message_id: msg.message_id || '', delivery_id: msg.delivery_id || '' };
+          if (!ctlBody.message_id || !ctlBody.delivery_id) return { sent: false, outcome: 'rejected', reason: 'addr_incomplete' };
+          if (stats.authMode === 'view_page_v2') {
+            try { await prepareViewWrite(); }
+            catch (err) { return { sent: false, outcome: 'rejected', reason: String(err && err.message || err) }; }
+            if (!pageIdentity?.page_id || !pageIdentity?.page_token) return { sent: false, outcome: 'rejected', reason: 'no_page_identity' };
+            ctlBody = { ...ctlBody, page_id: pageIdentity.page_id, page_token: pageIdentity.page_token, request_id: msg.request_id || '' };
+          }
         }
         try {
           const res = await fetch(apiEp('control'), {
@@ -1365,11 +1375,15 @@
             headers: { 'Content-Type': 'application/json', ...consoleWriteHeaders() },
             body: JSON.stringify(ctlBody),
           });
-          const body = await res.json().catch(() => ({}));
-          if (!res.ok) return { sent: false, reason: 'http_' + res.status };
+          if (msg.kind === 'retry' && res.status >= 500) return { sent: false, outcome: 'unknown', reason: 'http_' + res.status };
+          if (!res.ok) return { sent: false, outcome: 'rejected', reason: 'http_' + res.status };
+          let body;
+          try { body = await res.json(); }
+          catch (_) { return msg.kind === 'retry' ? { sent: false, outcome: 'unknown', reason: 'invalid_ack' } : { sent: true, ack: {} }; }
+          if (msg.kind === 'retry' && typeof body?.ok !== 'boolean') return { sent: false, outcome: 'unknown', reason: 'invalid_ack' };
           return body;
         } catch (err) {
-          return { sent: false, reason: String(err && err.message || err) };
+          return { sent: false, outcome: msg.kind === 'retry' ? 'unknown' : 'rejected', reason: String(err && err.message || err) };
         }
       },
     };
@@ -1378,13 +1392,13 @@
     }
     async function c2SendControl(msg) {
       const t = c2Transport();
-      if (!t || typeof t.send !== 'function') return { sent: false, reason: 'no_transport' };
+      if (!t || typeof t.send !== 'function') return { sent: false, outcome: 'rejected', reason: 'no_transport' };
       try {
         const r = await t.send(msg);
         if (r && r.sent === false) return r;  // transport 级拒绝(kind 不支持/HTTP 错/网络错)原样上传
         return { sent: true, ack: r };
       } catch (err) {
-        return { sent: false, reason: String(err && err.message || err) };
+        return { sent: false, outcome: 'unknown', reason: String(err && err.message || err) };
       }
     }
     function c2Note(text, cls) { return `<span class="c2-note${cls ? ' ' + cls : ''}">${escapeHtml(text)}</span>`; }
@@ -1419,21 +1433,25 @@
     }
     async function c2RequestRetry(waitKey, entry, btn) {
       if (entry.retryRequested || !btn || btn.disabled || deliveryAlreadyProcessed(waitKey)) return;
+      if (entry.canonicalDeliveryId !== waitKey || entry.event?.kind !== 'input_posted' || entry.event?._norm?.deliveryMode !== 'primary') return;
       if (!await c2ConfirmRetry()) return;
       // During the confirmation dialog an SSE reply or processed update may arrive.
-      if (deliveryAlreadyProcessed(waitKey) || !waitingDeliveries.has(waitKey)) return;
+      if (deliveryAlreadyProcessed(waitKey) || waitingDeliveries.get(waitKey) !== entry || entry.canonicalDeliveryId !== waitKey) return;
       entry.retryRequested = true;
       btn.disabled = true;
       const norm = entry.event?._norm || {};
-      const requestId = newRequestId();
+      if (!entry.retryRequestId) entry.retryRequestId = newRequestId();
+      const requestId = entry.retryRequestId;
       const r = await c2SendControl({ kind: 'retry', delivery_id: deliveryAddrId(norm.deliveryId || waitKey), request_id: requestId });
       const note = entry.node.querySelector('.retry-note');
       if (note) note.remove();
-      const text = !r.sent ? '重发未发出，请稍后重试' : (r.ack && r.ack.ok === false ? '重发未受理' : '已重发');
+      const outcome = !r.sent ? (r.outcome || 'rejected') : (r.ack && r.ack.ok === true ? 'accepted' : (r.ack && r.ack.ok === false ? 'rejected' : 'unknown'));
+      const text = outcome === 'accepted' ? '已重发' : outcome === 'rejected' ? '重发未受理' : '重发结果未知；再次操作将复用同一请求编号';
       entry.node.insertAdjacentHTML('beforeend', `<span class="card-footnote retry-note" role="status">${escapeHtml(text)}</span>`);
-      if (!r.sent || (r.ack && r.ack.ok === false)) {
+      if (outcome === 'rejected' || outcome === 'unknown') {
         entry.retryRequested = false;
         btn.disabled = false;
+        if (outcome === 'rejected') entry.retryRequestId = null;
       } else {
         btn.remove();
         entry.event._norm.status = 'retried';
@@ -2067,6 +2085,7 @@
       historyInputReplayKeys.clear();
       injectionFences.clear();
       waitingDeliveries.clear();
+      roleVerifiedPendingDeliveryUpdates.clear();
       unknownListRenderSignature = null;
       // D:重置会话时一并清渲染队列与输入卡索引,否则这些 Map 指向已被 textContent='' 摘掉的游离节点
       assistantEntries.clear();
@@ -2533,9 +2552,50 @@
         return;
       }
       try {
-        return dispatchIncomingEvent(ev);
+        const result = dispatchIncomingEvent(ev);
+        if (ev?.kind === 'input_posted' && ev.delivery?.role === 'primary') {
+          const deliveryId = ev._norm?.deliveryId || ev.delivery_id;
+          const pending = deliveryId && roleVerifiedPendingDeliveryUpdates.get(deliveryId);
+          if (pending?.length) {
+            roleVerifiedPendingDeliveryUpdates.delete(deliveryId);
+            for (const update of pending) {
+              const replay = update._history ? { ...update, _history: { ...update._history, event_id: `${update._history.event_id}:primary-match` } } : update;
+              dispatchIncomingEvent(replay);
+            }
+          }
+        }
+        return result;
       } finally {
         enforceTimelineCap();
+      }
+    }
+
+    function hasExactPrimaryDeliveryTarget(ev) {
+      if (ev?.kind !== 'delivery_update') return true;
+      const deliveryId = ev.observed_delivery_id;
+      if (ev.delivery?.role !== 'primary' || typeof deliveryId !== 'string' || !deliveryId
+          || ev._norm?.deliveryId !== deliveryId) return false;
+      const waiting = waitingDeliveries.get(deliveryId);
+      if (waiting) return waiting.event?.kind === 'input_posted'
+        && waiting.event.delivery_id === deliveryId && waiting.event.delivery?.role === 'primary';
+      const cardKey = c1DeliveryCards.get(deliveryMergeKey(deliveryId));
+      const cardEntry = cardKey ? c1InputCards.get(cardKey) : null;
+      return !!cardEntry?.canonicalPrimary && cardEntry.canonicalDeliveryId === deliveryId;
+    }
+    function rememberUnmatchedPrimaryDeliveryUpdate(ev) {
+      const deliveryId = ev?.observed_delivery_id;
+      if (ev?.delivery?.role !== 'primary' || typeof deliveryId !== 'string' || !deliveryId
+          || ev._norm?.deliveryId !== deliveryId) return;
+      const waiting = waitingDeliveries.get(deliveryId);
+      const cardKey = c1DeliveryCards.get(deliveryMergeKey(deliveryId));
+      const cardEntry = cardKey ? c1InputCards.get(cardKey) : null;
+      if (waiting || (cardEntry?.canonicalPrimary && cardEntry.canonicalDeliveryId === deliveryId)) return;
+      const pending = roleVerifiedPendingDeliveryUpdates.get(deliveryId) || [];
+      if (pending.length >= 32) pending.shift();
+      pending.push(ev);
+      roleVerifiedPendingDeliveryUpdates.set(deliveryId, pending);
+      while (roleVerifiedPendingDeliveryUpdates.size > 500) {
+        roleVerifiedPendingDeliveryUpdates.delete(roleVerifiedPendingDeliveryUpdates.keys().next().value);
       }
     }
 
@@ -2571,6 +2631,14 @@
         timeline.appendChild(notice);
       }
       ev = normalizeEvent(ev);
+      // Older Hub/history updates have no role: preserve their pre-R60 lifecycle
+      // behavior, but they never authorize retry. A tagged copy or a tagged
+      // primary update without an exact canonical match must not touch a wait.
+      if (ev.kind === 'delivery_update' && ev.delivery?.role
+          && !hasExactPrimaryDeliveryTarget(ev)) {
+        rememberUnmatchedPrimaryDeliveryUpdate(ev);
+        return;
+      }
       const eventDeliveryId=ev._norm.deliveryId||ev._norm.originDlv;
       const repliedDeliveryId=eventDeliveryId;
       if(repliedDeliveryId && ((ev.kind==='delivery_update' && ev._norm.stage==='turn_processed') ||
@@ -2637,6 +2705,12 @@
           const rawVer = ev.schema_version ?? ev.meta?.schema_version;
           const canonicalUpdate = ev.kind === 'delivery_update' && (rawVer === 'delivery.v2' || rawVer === 2 || rawVer === '2');
           if (canonicalUpdate) {
+            // Only an explicitly tagged, exactly matched primary update may
+            // grant retry. Role-less legacy updates still advance lifecycle.
+            if (ev.delivery?.role === 'primary' && hasExactPrimaryDeliveryTarget(ev)) {
+              if (ev.delivery_status === 'unconfirmed_retryable') wEntry.retryRoleVerified = true;
+              else if (typeof ev.delivery_status === 'string' && ev.delivery_status) wEntry.retryRoleVerified = false;
+            }
             if (norm.stageIdx >= currentStageIdx) {
               for (const field of ['ackProtocol','processingMode','occurredAt','turnOutcome']) {
                 if (norm[field] !== null && norm[field] !== '' && current[field] !== norm[field]) {
@@ -2814,10 +2888,12 @@
         node.className = 'waiting-item';
         node.dataset.deliveryId = waitKey;
         waitingList.appendChild(node);
-        entry = { node, event: ev, unknownSince: null };
+        entry = { node, event: ev, unknownSince: null, retryRoleVerified: false,
+          canonicalDeliveryId: ev.kind === 'input_posted' && ev.delivery?.role === 'primary' ? String(ev.delivery_id || '') : '' };
         waitingDeliveries.set(waitKey, entry);
       } else if (ev.text && !busyWait) {
         entry.event = ev;
+        entry.canonicalDeliveryId = ev.kind === 'input_posted' && ev.delivery?.role === 'primary' ? String(ev.delivery_id || '') : '';
       }
       entry.touched = Date.now();  // 看门狗心跳:创建/阶段推进都刷新
       entry.staleNoted = false;    // 推进重渲染清超时标记(innerHTML 已重排)
@@ -2862,12 +2938,16 @@
         btn.addEventListener('click', () => c2RequestCancel(waitKey, entry));
         entry.node.appendChild(btn);
       }
-      if ((norm.status === 'unconfirmed_retryable') && !entry.node.querySelector('.waiting-retry-btn')) {
+      const retryAllowed = norm.status === 'unconfirmed_retryable' && norm.deliveryMode === 'primary'
+        && entry.event?.kind === 'input_posted' && entry.event?.delivery?.role === 'primary'
+        && entry.canonicalDeliveryId === waitKey && entry.retryRoleVerified === true;
+      if (retryAllowed && !entry.node.querySelector('.waiting-retry-btn')) {
         const btn = document.createElement('button');
         btn.type = 'button'; btn.className = 'waiting-retry-btn'; btn.textContent = '重发';
         btn.addEventListener('click', () => c2RequestRetry(waitKey, entry, btn));
         entry.node.appendChild(btn);
       }
+      if (!retryAllowed) entry.node.querySelector('.waiting-retry-btn')?.remove();
       if(isUnknownDelivery(entry)&&!entry.node.querySelector('.unknown-untrack-btn')){
         const btn=document.createElement('button');btn.type='button';btn.className='unknown-untrack-btn';btn.textContent='不再跟踪';
         btn.addEventListener('click',()=>untrackUnknownDelivery(waitKey));entry.node.appendChild(btn);
@@ -4284,6 +4364,7 @@
       if (entry) {
         entry.card = card;
         entry.canonicalPrimary = ev.kind === 'input_posted';
+        entry.canonicalDeliveryId = entry.canonicalPrimary && norm.deliveryMode === 'primary' ? String(ev.delivery_id || '') : '';
         entry.canonicalProvenance = entry.canonicalPrimary && norm.deliveryMode === 'primary' && norm.prov?.trusted === true
           ? { ...norm.prov } : null;
         entry.content = content;

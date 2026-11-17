@@ -24,6 +24,8 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
     const emit = ev => page.evaluate(ev => handleIncomingEvent(ev), ev);
     const input = (id, extra={}) => emit({schema_version:'delivery.v2',kind:'input_posted',message_id:'msg-'+id,delivery_id:id,text:'body '+id,stage:'helper_queued',...extra});
     const unknownStatus = (id, extra={}) => emit({schema_version:'delivery.v2',kind:'delivery_update',message_id:'msg-'+id,observed_delivery_id:id,delivery_stage:'helper_queued',delivery_status:'unconfirmed_retryable',reason:'unconfirmed_retryable',cancellable:false,ack_protocol:2,processing_mode:'driver',...extra});
+    const retryPrimaryInput = id => input(id, {delivery:{role:'primary'}});
+    const retryPrimaryStatus = (id, extra={}) => unknownStatus(id, {delivery:{role:'primary'}, ...extra});
 
     await input('queued', {cancellable:true});
     await checks.check('CANCELLABLE_PHASE_HAS_DELETE', async()=>assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="queued"] .waiting-cancel-btn').count(),1));
@@ -105,8 +107,14 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
       }
     });
 
+    // Keep the legacy-shaped fixture and verify it cannot acquire retry
+    // authority, then use an explicitly tagged primary for the confirmation UX.
     await input('retry-default'); await unknownStatus('retry-default',{reason:'model_admission_unknown'});
-    const retryDefault=page.locator('.waiting-item[data-delivery-id="retry-default"] .waiting-retry-btn');
+    await checks.check('OLD_HUB_RETRY_STATUS_HAS_NO_BUTTON', async()=>
+      assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="retry-default"] .waiting-retry-btn').count(),0));
+    await retryPrimaryInput('retry-default-primary');
+    await retryPrimaryStatus('retry-default-primary',{reason:'model_admission_unknown'});
+    const retryDefault=page.locator('.waiting-item[data-delivery-id="retry-default-primary"] .waiting-retry-btn');
     await retryDefault.click();
     let defaultDialogAppeared=false;
     await checks.check('RETRY_DIALOG_COPY_AND_DEFAULT_NO_RETRY', async()=>{
@@ -121,7 +129,8 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
       assert.strictEqual(await page.evaluate(()=>retryCalls.length),0);
     });
     await input('retry-explicit'); await unknownStatus('retry-explicit');
-    await page.locator('.waiting-item[data-delivery-id="retry-explicit"] .waiting-retry-btn').click();
+    await retryPrimaryInput('retry-explicit-primary'); await retryPrimaryStatus('retry-explicit-primary');
+    await page.locator('.waiting-item[data-delivery-id="retry-explicit-primary"] .waiting-retry-btn').click();
     let explicitDialogAppeared=false;
     await checks.check('RETRY_REQUIRES_EXPLICIT_CONFIRMATION', async()=>{
       explicitDialogAppeared=await page.locator('.retry-confirm-dialog').count()===1;
@@ -130,16 +139,17 @@ const {finishRegression, launchChromium, regressionCollector, startRendererServe
       await page.locator('.retry-confirm-dialog [value="retry"]').click();
       await page.waitForFunction(()=>retryCalls.length===1);
       assert.strictEqual(await page.evaluate(()=>retryCalls.length),1);
-      assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="retry-explicit"] .waiting-retry-btn').count(),0);
-      await page.locator('.waiting-item[data-delivery-id="retry-explicit"] .retry-note').waitFor();
-      assert.ok((await page.locator('.waiting-item[data-delivery-id="retry-explicit"]').innerText()).includes('已重发'));
+      assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="retry-explicit-primary"] .waiting-retry-btn').count(),0);
+      await page.locator('.waiting-item[data-delivery-id="retry-explicit-primary"] .retry-note').waitFor();
+      assert.ok((await page.locator('.waiting-item[data-delivery-id="retry-explicit-primary"]').innerText()).includes('已重发'));
     });
 
     await input('reply-arrived'); await unknownStatus('reply-arrived');
-    await page.locator('.waiting-item[data-delivery-id="reply-arrived"] .waiting-retry-btn').click();
-    await emit({schema_version:'delivery.v2',kind:'assistant_text',message_id:'reply-msg',delivery_id:'reply-arrived',text:'already replied'});
+    await retryPrimaryInput('reply-arrived-primary'); await retryPrimaryStatus('reply-arrived-primary');
+    await page.locator('.waiting-item[data-delivery-id="reply-arrived-primary"] .waiting-retry-btn').click();
+    await emit({schema_version:'delivery.v2',kind:'assistant_text',message_id:'reply-msg',delivery_id:'reply-arrived-primary',text:'already replied'});
     await checks.check('REPLY_REMOVES_RETRY_BEFORE_CONFIRM', async()=>{
-      assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="reply-arrived"] .waiting-retry-btn').count(),0);
+      assert.strictEqual(await page.locator('.waiting-item[data-delivery-id="reply-arrived-primary"] .waiting-retry-btn').count(),0);
       const dialog=page.locator('.retry-confirm-dialog');
       if(await dialog.count()){await dialog.locator('[value="retry"]').click();await dialog.waitFor({state:'detached'});}
       assert.strictEqual(await page.evaluate(()=>retryCalls.length),1);
