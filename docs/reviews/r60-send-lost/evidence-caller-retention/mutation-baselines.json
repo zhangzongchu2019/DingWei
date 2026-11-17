@@ -1,0 +1,50 @@
+[
+  {
+    "name": "baseline-python",
+    "rc": 0,
+    "raw_sha256": "5cff15cadb892fab4255914ab5fd91a697094cb48881b5f37f55923c44b5767e",
+    "source_commit": "08bc4e9f9b5eedc9fd68a9e1ec2e71f15f1cf9fc",
+    "raw_file": "raw/prior-mutation-baseline-python.log.gz",
+    "attempt_label": "prior-"
+  },
+  {
+    "name": "baseline-go",
+    "rc": 0,
+    "raw_sha256": "cd14b0f1c9f91ef833e1c248df3651c586a2a5ae373dd7b8ea1fe279a8668a62",
+    "source_commit": "08bc4e9f9b5eedc9fd68a9e1ec2e71f15f1cf9fc",
+    "raw_file": "raw/prior-mutation-baseline-go.log.gz",
+    "attempt_label": "prior-"
+  },
+  {
+    "name": "baseline-python",
+    "rc": 0,
+    "raw_sha256": "1b89e4462ef7629736e92f4fee87938e58793c0be68cd9eb633b3201390c9a3d",
+    "source_commit": "1d8b03a6d386f359a23398da34649007d53c1aa2",
+    "raw_file": "raw/intermediate-mutation-baseline-python.log.gz",
+    "attempt_label": "intermediate-"
+  },
+  {
+    "name": "baseline-go",
+    "rc": 0,
+    "raw_sha256": "5ff08ebc5698c03e1cdb65ffa3fd89ee2e3962480c7467b8c0b948d83274724b",
+    "source_commit": "1d8b03a6d386f359a23398da34649007d53c1aa2",
+    "raw_file": "raw/intermediate-mutation-baseline-go.log.gz",
+    "attempt_label": "intermediate-"
+  },
+  {
+    "name": "baseline-python",
+    "rc": 0,
+    "raw_sha256": "d474cc097f1d1ea87fc79a07f3fb1cc33e7a2524779ad02f1d536987928a8033",
+    "source_commit": "b48a0818aa121a3f68b921fac489926257ad841d",
+    "raw_file": "raw/mutation-baseline-python.log.gz",
+    "attempt_label": "final"
+  },
+  {
+    "name": "baseline-go",
+    "rc": 0,
+    "raw_sha256": "72176658109deb72864ca4742268aca0f3218b292f2d25fe116c8f2a74f8e1fd",
+    "source_commit": "b48a0818aa121a3f68b921fac489926257ad841d",
+    "raw_file": "raw/mutation-baseline-go.log.gz",
+    "attempt_label": "final"
+  }
+]

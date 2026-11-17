@@ -1,82 +1,55 @@
-# R60① 发信责任恢复：容量退回复交
+# R60①：调用方账本容量退回复交
 
-组长2026-11-16T19:52:29Z指出旧ba产品的累计栅栏确定耗尽，本轮改为有期限保留并补回归。旧交件6163fbb4/产品ba7acae7撤回，不请求旧锚评审；`evidence/`只属旧ba历史，不能对当前产品运行其manifest后声称覆盖新源。当前权威门为`evidence-retention/`，下面只列本轮固定源；没有自验收、合入或部署。
+组长2026-11-16T23:15:43Z撤销旧12f冻结；旧20:50接受及旧门仅历史。本次交审固定产品与测试源为 `b48a0818aa121a3f68b921fac489926257ad841d`，tree `567f180571e352684e06eb3966c150f8e2b48a19`，parent `1d8b03a6d386f359a23398da34649007d53c1aa2`，基main `d2cc47c7e699eb45efb3a07ee197aa8c20a9f07e`；分支 `coder56solzzc/r60-send-lost`。完整作者门已收齐；交件tip为此后纯docs/openspec追加，准确三值组以Git与交审回信为准。新独立复核与组长终审尚未完成，不自验收、不合入main、不部署。
 
-本件为作者证据，不是独立验收、部署 GO 或目标已读/模型执行证明。冻结产品与测试源 `12f851f239e43a3049cb3c366b335e368295f584`，tree `66a07f90edd5280c7cb0a1a6dd3f9deee7a671c1`，parent `b273dbf33dc63e7a99f594edc7a41641c5859da4`；基 main `d2cc47c7e699eb45efb3a07ee197aa8c20a9f07e`。分支 `coder56solzzc/r60-send-lost`。交件文档另成追加提交，具体当前 tip/tree/parent 以 Git 与交审回信为准，不把 tip 与冻结产品源混写。
+授权仍为组长2026-11-16T16:05:24Z的R60①与23:15:43Z容量修订令。范围不加入故障接管、共享上下文或多区域实现。只有本机合成夹具与独立临时PG，不用在线席位做故障探针。
 
-授权为组长2026-11-16T16:05:24Z R60-A，业主16:03:17Z“R60 --- OK，可发”，rulings㊿-补123 `2f5560b7`。依据冻结提案 `aaa3f893626004e0140ef7a67316b692a8506b18` 实现。只覆盖 R60①；不含故障接管、上下文共享或多区域实现。未部署、未升级任何在线 helper、未用真实席位发故障探针。
+## 12f 到新锚的产品增量
 
-## 实际行为与代码地图
+12件产品/测试文件，317插入、32删除：`internal/store/outbound_intent.go`、store/cmd两件retention测试；helper的`send_dingwei.py`、`mcp_shim.py`、`config.py`、`app.py`、`outbound_queue.py`、`outbound_recovery.py`与三件现有测试文件。迁移0077、go.mod/go.sum、VERSION、View与其他产品子树本轮不变。相对main的完整manifest另列，不能仅以这12件代替全源清单。
 
-- `tools/sessionhelper/sessionhelper/outbound_queue.py`、`outbound_recovery.py`：在网络写前原子落私有 outbox，request/source/sender/target/正文摘要不变；IPC 与 writer 由 `SessionHelper.run_forever` 管理，独立于单代 WS。断线后只恢复原发送责任，不驱动收件模型盲重做。单 writer flock、逐行租约、崩溃后同 ID 恢复。
-- `internal/store/outbound_intent.go` / 迁移 `0077_outbound_intent.sql`：认证 sender/source 唯一键与首条收件 delivery 同一 SQLite 事务；回执在提交后。并发、Hub 重启、回执丢失重交只恢复原 delivery，正文/业务 meta 冲突拒绝，原裁决不覆盖。0077 纳入既有 exact-DDL 丢账补账校验，缺索引或改表拒启。
-- `internal/m8/outbound_recovery.go`：恢复标记先于业务分派处理；协商能力、nonce/当前 socket 代际、稳定 sender/target 身份与当前用户/编组均检查。物理发出前再核稳定身份；临时存储/身份读错重试，永久拒绝只生成绑定原 sender 的通用 HUB 失败通知。新同名 sender/target 不继承旧正文/回执。
-- `outbound_receipt.py`：只接受当前 socket、关联 nonce、同认证 Hub 地址范围及持久字段完整的控制回执；控制消息不进入收件模型。会话名按平台大小写规范归一，nonce/socket/ID 校验未放宽。
-- `send_dingwei.py` / `mcp_shim.py`：caller 在首次 IPC 前持久固定 request ID；`--request-id` 同意图续用，`--status` 与 MCP `dw_send_status` 只查不发。structured accepted/unknown/definitive_failure 分层，CLI 分别退出0/2/1。仅 IPC ok/sent 布尔不得冒充入 Hub。MCP 工具数新增为27，既有权限和错误隔离保留。接收地址不从继承 SH_KEY_ID 猜后缀，只按认证目录公布的别名/全名绑定。
+- caller表新增created；旧两列表在BEGIN IMMEDIATE内补列、所有既有行按迁移当前时刻填充，保留ID和摘要，不删除未知历史。创建created/id索引。
+- 默认保留7天；helper配置 `SH_OUTBOUND_CALLER_RETENTION_SECONDS` 为整数秒，必须>93600且≤2592000；Hub `WP_OUTBOUND_INTENT_RETENTION` 的Go duration同样>26h且≤720h。非法配置启动拒绝，回执/日志不回显原始输入。helper策略登记到caller库，独立安装CLI先使用已注册策略；无策略时才读自身配置。
+- quota仅计窗内caller记录；每次新受理至多清256条严格超期且无待确认责任的caller行。同ID先检查旧摘要并恢复原caller ID；不同摘要仍拒绝，不通过GC冲掉窗内原裁决。
+- runtime启动IPC/writer之前登记实际outbox路径，不猜文件名。清理持caller写事务，逐个取得已登记outbox的写保留锁并读local_queued/unknown集合，锁持到caller提交之后；正常outbox写者不取caller锁，无反向锁序。无登记、路径消失、锁忙、损坏或结构不可读均跳过全部caller删除，不把读取失败当作已终结；额外锁获取预算0.25秒，单库等待最多0.05秒，查询本身不宣称硬实时界限。
+- `caller_journal_full` 两入口均返回 `outcome=definitive_failure/phase=rejected/reason=caller_journal_full/request_id/retryable=true`；`idempotency_conflict` 同结构但retryable=false。CLI退出1并stderr给reason，MCP为工具结果isError，不能折叠成JSON-RPC -32602。参数本身非法仍可为参数错误。
+- 同类outbox终结历史原来也按全表累计65536，本轮一并收敛：只清超期hub_durable_queued/rejected、每次≤256，quota只算窗内。local_queued/unknown不删，1024条/32MiB待确认上限、24小时/64次自动恢复窗、稳定source/sender/target与Hub原子幂等均保持。
 
-## 明确范围与上线前必须知悉的取舍
+## 清理的安全边界
 
-1. 首批仅覆盖专属凭据普通根 Agent、单目标可靠会话队列。飞书/外部/子 Agent、未协商持久 ACK 的收方、实际正文 AMR 扇出/语法副作用明确不支持；不删除 AMR 标记把正文当 literal 偷换语义。metadata 控制能力询问不承载业务正文。桌面专用 reply 路径保持独立。
-2. 本地已接管仅 `local_queued`；Hub 提交才 `hub_durable_queued`，两者均不等于收件模型完成。前次接纳未知、后次权限拒绝仍保留原 unknown/ID/正文；不能拿当前拒绝证明历史未接受，不能鼓励 caller 换新 ID 重发。
-3. 本地待确认上限1024条、正文+meta共32MiB，轻量请求栅栏65536条；最多64次/24小时，30秒租约、1～30秒退避。完全离线也执行期限收口：未曾写出者 rejected，曾尝试者 unknown 并保留正文。未知项不作缓存淘汰。审计8192事件、状态最多最近4条，独立于业务/幂等保留，不代表完整7天统计。
-4. Hub 栅栏默认保留7天，`WP_OUTBOUND_INTENT_RETENTION` 可配Go duration、必须严格大于helper24h+2h余量；不合格启动失败。4096/65536仅计窗内栅栏。新受理事务至多删除256条严格过期且已不承担未终结原投递/失败通知身份的栅栏，再原子计数、接纳；窗内真满仍明确拒绝。超期未终结绑定保留、不计窗内容量，其异常历史空间不宣称硬界；原收件delivery/正文/本地unknown不由GC删除。0077尚未上线，按组长要求直接补created_at索引。
-   恢复保证针对合规helper的24h自动恢复窗；默认7天覆盖其期限与时钟余量。最小配置额外2h按两端各UTC±15min、累计时钟变化预留1h、重启调度/在途再1h计算。超过假设须停writer核时钟。此修正不提供任意手工/恶意越窗source ID的永久幂等，不能把保留期缩短包装为全时域保证。
-5. 未知目标、目录截断/临时失败可漏新目标，不猜稳定ID；同 sender 的既有目录可离线缓存，目标/凭据改变仍在网络写前现核。目录最多1024目标，60秒/未知目标触发仅元数据刷新。
-6. 新 WS 十秒没有恢复能力，或明确不支持：不写正文并给可见不支持结果。十秒超时不证明对端软件版本老。此路径下先前 unknown 被持久停发，升级后不自动批量补送；本轮无解除停发的管理工具，需授权人工核验。既有成功本地裁决不因当前能力不足变成历史拒绝。
-7. 本机 IPC/文件锁实现范围为现有 POSIX helper 环境；不新增原生 Windows IPC 支持。账本0600/WAL/FULL，不共享不同 Agent 私有卷，不上传正文、凭据或本地队列文件。
-8. 授权沿用 Identity 当前读校验，不声称 PG/SQLite/网络逐字节写出构成分布式事务或绝对撤权原子性。回滚缺新稳定目标守卫的旧 Hub 前，必须停止新 writer，并由组长核定排空/可见取消新协议待发、保留栅栏；不能单切旧二进制继续发新协议存量。
+未终结项不删，不代表物理磁盘有固定上限。caller关联库不可读会保守累积；旧路径登记没有自动撤销，迁移需保留可读旧库或经核验维护，不能随便删登记绕过unknown保护。窗外待确认P及未扫净E不计窗内容量，但占空间；需分别观察W/P/E、最老年龄、outbox不可读和清理跳过情况。旧全满两列库迁移时全部填当前时刻，可能在完整安全窗内继续拒新；不以删旧未知ID“立即恢复容量”。
 
-## 证据与复现
+默认7天覆盖helper24h恢复窗与2h以上时钟/重启/在途余量；具体假设及Hub超期未终结delivery/失败通知身份保护见design。超过时钟假设先停writer核时钟。保留窗外人为重放不获永久幂等承诺。oldID在其历史行尚未清理时仍先恢复，GC仅作用其他新请求触发的严格超期记录。
 
-最终命令、UTC、普通uid、固定环境白名单、起止 clean/commit、原始日志 SHA、PASS/SKIP计数在 `evidence-retention/gate-summary.json`；全轮历史在 `evidence-retention/gate-history.json`，原日志确定性 gzip 保存在 `evidence-retention/raw/`。`evidence-retention/product-manifest.json` 从冻结 Git 对象逐文件计算，不含私有状态。`evidence-retention/SKIPS.md` 逐名列跳过原因，SKIP 不混入 PASS。
+## 固定源门与反例
 
-真实集成覆盖：实际 Hub WS、Hub 重启/同 source 并发、提交后回执丢失恢复、SQLite 原子回滚、配置目录临时失败、身份替换/撤权实发阻断、HUB 失败通知主体隔离、真实 `run_forever` + hosted MCP 本地接管/Hub 持久状态查询；临时 PG strict 夹具不连现网。已有 PG 工具归档缓存复用，测试库仍为每轮独立临时库。Go -p1，env-i 固定 HOME/TMPDIR，继承 SH_/DINGWEI_/DW_/DATAD_ 不传入。
+同源完整canonical rc0（claude/codex各1241、BUILD_TESTS_OK helper_profiles=2 python=27 shell=2）；四树Go PG strict rc0，1558顶层/2586含子项PASS、49逐名SKIP、0FAIL。build与OpenSpec strict36/0均rc0。focused race rc0，32顶层/46含子项PASS、0SKIP、0FAIL/0DATA RACE，仅所列筛选。最终元数据与原始日志在 `evidence-caller-retention/`。
 
-36项删保护基于同一最终源，`mutations.json` 每项含 before/after、compile rc0、非空业务断言与原始日志 SHA；baseline 均绿，跑完变异工作树还原 clean。不把独立故障注入、历史刀或编译失败并计。最后大小写 scope 以独立 capability 业务断言验证；首次直接用例在被删保护下报 domain ERROR 的记录未算最终合格刀。变异驱动首次两个 anchor 名笔误提前退出也未涂为全通过，最终36项仅从实有编译/断言记录合并。
+`TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent`在本轮完整Go中PASS（0.24s）；`TestNotifySocketStopCannotDeleteNewListenerAtSamePath`与`TestNotifySocketFirstStopPreservesNewListenerAtReboundPath`也均PASS（0.00s）。这不替代②首轮SQLite interrupted(9)原因未定的历史披露，也不是正式集成树的Go门。
 
-## 必须保留的失败与修正历史
+聚焦回归覆盖旧schema保留、窗内同ID、容量释放、pending双状态、未知关联/锁忙保守保留、并发writer不能穿过清理快照、真实run_forever先登记/配置传播、CLI与MCP结构化拒绝、helper/Hub上下界、outbox终结历史回收。新版58项集中Python已绿；它不替代完整canonical。
 
-工作态/旧候选原始 rc 见 gate-history，不冒称同一源全绿：本机 overlay 空间耗尽后只迁本席缓存到 data 并保留路径软链接；早期旧工具数26/文件数94夹具更新为27/95；legacy IPC桥只 ok 导致旧成功退出码断言不成立，现收紧为 unknown 而仍验证原 PG 收件正文；hosted桥改真实 run_forever/责任查询；0077补入 exact-DDL 补账。之后候选完整门绿仍通过新反例发现容量拒绝分类、前次未知后拒绝、全离线期限/能力等待/旧unknown禁盲补等真实边界，追加修正重固定源，旧PASS仅历史。集中回归第一次误列不存在测试模块的 rc1 保留，正确模块重跑63项绿，不当产品错误。旧代码反例须读其自身 source/dirty 字段，工作态不伪标冻结源。
+首次08bc完整canonical rc1：两profile仅环境读取精确白名单未同步。单文件CLI确需独立读取保留策略，在白名单精确登记第二处及理由，未扩大任意环境读取。第一轮变异发现过期边界刀存活：有界清理夹具只检查首批旧行，补“积压清完后边界仍保留”断言；产品逻辑字节未因这两次测试追加改变。早期MCP变异anchor缩进笔误、窗内容量刀只抛业务ERROR等不计合格红，全部原记录保留。最终55项均编译rc0且业务断言红（旧36＋新增19），两组baseline及还原后集中回归均绿；不与历史尝试加总。
 
-## 集成与后续
+## 调用方与集成
 
-需 qwen38mvb4 只读独立复核、组长终审后才可合入 R60 集成；本件不自验收。与②分开实施、联合验证：断连减少不替代持久责任，①也不能代替 Pong 读取隔离；集成应覆盖过载/断开后同 ID 原回执恢复。③④①②顺序、基110e2c1f并保留现网 renderer provenance 热修、VERSION0.2.3.40及全量浏览器由集成阶段执行。本源未跑浏览器全量、identity整包或全包race；cmd/workpulse整包包含在本轮四树Go门，不借历史复用冒称本轮绿。当前 VERSION仍0.2.3.39，无发布件。
+CLI JSON替代旧sent文本，accepted/unknown/definitive_failure退出0/2/1；local_queued不等于入Hub或模型完成。rc2不要换新ID重复正文，使用 `python3 "$HOME/.dingwei/send.py" --status REQUEST_ID` 查询，必要时仅以原ID/原正文/原目标续用 `python3 "$HOME/.dingwei/send.py" TARGET --request-id REQUEST_ID --file BODY_FILE`。原sender身份也必须保持；超窗不承诺手工永久去重。状态与新发均保留结构化责任字段。
 
+正式集成仍须在110e2c1f按③④①②重做，VERSION0.2.3.40仅该阶段；保留现网renderer provenance热修及回归。①②必须在正式提交补真实helper unknown→dw_send_status→同source/delivery恢复联合故障格并删保护红，不能用普通CLI同ID两次或Hub单写槽用例代替。此源不含②，未宣称该联合格已完成；正式新树还须重跑同 --request-id 两个真实CLI进程仅一条Hub投递的回归，旧12f本地预合读数不当本源证据。③独立变更和caller输出契约/板件更新归集成说明。本轮未跑View浏览器全量、identity整包、全包race，不复用旧门当本源新实跑。
 
-历史ba机械门收口：9e固定源完整canonical rc1，两profile均仅报环境读取精确白名单与main-guard-last。删除SH_KEY_ID推断使直接环境读取从2减至1，白名单同步收紧而非放宽；新地址测试类移至unittest入口之前。两件仅测试变动形成ba7acae锚，产品逻辑字节不变，但仍在ba新源完整重跑canonical/Go/race/strict及25刀。名字含approved的原始运行标签仅是本席文件名，不代表独立评审或组长批准。
+## 历史证据
 
-历史保留限度：早期磁盘耗尽后的试验变异有部分同名临时日志在重跑时被覆盖，已留存片段与门记录只按自身SHA/源码状态使用，不补造丢失原件。gate-history只列现存可核原日志，并不保证所有历史试验均有完整原件；这一缺口不计入最终36项合格刀或最终固定源门。
+旧 `evidence/`、`evidence-retention/` 与 `HISTORY-before-caller-retention.md` 按其自身源保留；其中旧接受、冻结、数字和环境失败不能外推。最新证据目录为 `evidence-caller-retention/`，需要独立复核后才能谈冻结。
 
-固定锚证据核验补记：ba的go-approved虽然rc0，但启动瞬间工作树dirty，结束clean，采集器保守把source_commit记null（与并发canonical初始临时文件窗口重合，但未抄具体脏路径，不能据此精确定因）。该读数只列历史，不改写元数据冒称固定源；待其它门结束后在完全clean工作树单独重跑go-clean-source，只有这条合格记录计最终Go门。
+## 最终固定源门明细
 
-
-
-## 容量增量判据与删除保护边界
-
-增量回归覆盖：65536条以上旧全表积累不再拒新、每事务256条有界回收；cutoff-1ns与cutoff/cutoff+1ns分界；窗内同ID原回执；原delivery与失败通知未终结的稳定身份不被删；服务端接受时钟而非caller时间；配置48h实际控制清理；坏配置启动拒绝；队列失败回滚整个GC和接纳。helper WINDOW=24小时合同固定，未改helper恢复时限。
-
-按只计窗内的要求，删GC不应被伪造成必然拒新：删GC的刀红在旧行没清，删仅超期条件红在窗内回执被删；删sender/global时间过滤红在历史积累错误占新配额。第一轮36刀中global过滤刀存活，是过期夹具清一批后剩余刚好低于65536；原始存活记录保留。仅增大测试旧积累至65536+256，产品逻辑字节不变，追加测试源后重新完整跑门和36刀，不抹掉存活结果或改为SKIP。
-
-早期retention增量两次编译错误（误替换与未用import）及一次错误文案的过宽隐私断言失败均原样保留，修正后重新运行；它们不是保护删除的业务红。变异驱动首次扩展列表后case-scope索引错误提前失败也另留原记录，不计最终刀。
-
-第一轮b273完整四树Go rc1仅两条cmd Unix socket测试在listen时报bind invalid argument，其中原始路径111字节超过Unix socket路径界限；保留原日志，后续同目录短路径TMPDIR=/tmp/r60-a重跑完整四树，不改产品修环境。不得把首轮FAIL改成SKIP或用单跑覆盖。
-
-新12f首轮race/build/strict虽rc0，但起跑时工作树dirty，采集器source_commit记null（与canonical起跑窗口重合，未留具体脏路径，不强行归因）。不改原元数据冒称固定源；另在同12f独立clean detached树完整重跑这三门，只有后者列权威门。
-
-当前完整四树Go逐名补记：`TestNotifySocketStopCannotDeleteNewListenerAtSamePath`与`TestNotifySocketFirstStopPreservesNewListenerAtReboundPath`在短TMPDIR下均PASS；`TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent`也在本轮完整运行PASS（0.24s）。此读数仅属①源，不替代②首轮SQLite interrupted(9)披露或将来集成树的完整四树验证。
-
-## 当前固定源最终门读数
-
-| 门 | rc | 顶层 PASS | 含子项 PASS | 含子项 SKIP | FAIL |
+| 门 | rc | 顶层PASS | 含子项PASS | 含子项SKIP | FAIL |
 |---|---:|---:|---:|---:|---:|
-| canonical-retention-final | 0 | 6 | 21 | 0 | 0 |
-| go-retention-final | 0 | 1558 | 2583 | 49 | 0 |
-| race-retention-pinned | 0 | 20 | 31 | 0 | 0 |
-| build-retention-pinned | 0 | 0 | 0 | 0 | 0 |
-| strict-retention-pinned | 0 | 0 | 0 | 0 | 0 |
+| canonical-caller-final | 0 | 6 | 21 | 0 | 0 |
+| go-caller-final | 0 | 1558 | 2586 | 49 | 0 |
+| race-caller-final | 0 | 32 | 46 | 0 | 0 |
+| build-caller-final | 0 | 0 | 0 | 0 | 0 |
+| strict-caller-final | 0 | 0 | 0 | 0 | 0 |
+| python-caller-final | 0 | 0 | 0 | 0 | 0 |
 
-Canonical 两 profile：claude 1230/1230 rc0；codex 1230/1230 rc0；BUILD_TESTS_OK helper_profiles=2 python=27 shell=2。focused race仅覆盖所列筛选，不是全包race；Go包PASS不与Python/helper子项混计。strict明细见原日志。
-
-## 组长容量复核入账（2026-11-16T20:50:50Z）
-
-组长对冻结产品12f851f2／证据tip c95c4114结论为①接受，容量退回项已解决。其独立canonical带BUILD_TESTS_OK；以④4e421abea依次合②1671a596和①12f851f2的试合无冲突，定向count=2取得162 PASS／0 FAIL／0 SKIP；独立删除“只清超期”和“未终结投递不清”两刀均在相应业务断言红。这些读数归属组长，不与作者门相加，不是本席集成树或部署GO。按非阻塞意见仅补design的W/P/E增长边界、索引重扫与观测口径，不改产品；qwen只读独立复核仍待回。③尚未交件，集成仍保持110e2c1f，待③冻结后按③④①②，不提前合并；VERSION0.2.3.40仅在集成阶段处理。
+Python unittest数以原日志Ran行计，不与Go的--- PASS计数混加；集中58项、还原后54项不是两个额外产品门总数。OpenSpec全仓36/0，helper inventory95；canonical两个profile均1241/1241。新源author门不替代独立复核。

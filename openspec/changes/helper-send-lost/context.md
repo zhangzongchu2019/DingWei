@@ -1,5 +1,12 @@
 # S-SEND-LOST上下文
 
+## 当前状态覆盖（2026-11-17T00:17:15.129861+00:00）
+
+本次交审产品/测试固定 b48a0818aa121a3f68b921fac489926257ad841d，tree567f180571e352684e06eb3966c150f8e2b48a19，parent1d8b03a6d386f359a23398da34649007d53c1aa2；main基d2cc47c7。组长23:15:43Z已撤12f冻结，以下旧12f接受及167保活输入都只属历史，不能指导当前集成。①新源独立复核和组长终审待回，②以3db78e5b另待qwen增量，正式集成仍110e2c1f/.39，未合入。
+
+新caller维护在send_dingwei.py；Config启动解析保留期，runtime先登记实际outbox再启IPC/writer；MCP两类caller拒绝不再变-32602。新源证据docs/reviews/r60-send-lost/evidence-caller-retention；VERIFY同时核Git对象/当前产品/压缩原日志。旧evidence/evidence-retention与HISTORY按旧锚保留。最终canonical/完整四树Go/focused race/build/strict及55业务变异已跑，详细计数与命令见REPORT/summary；没有本源浏览器或整包race声明。集成必须另补完整①②联合故障格及两真实CLI幂等，不能复用旧预合当本源验收。
+
+
 ## 输入与边界
 
 - 派单：opus50tc2k.zzc，2026-11-16T09:06:48Z，S-SEND-LOST；期限13:00Z；本次只读、REPORT＋ADDED提案，不实现、不接触现网。
