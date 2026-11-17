@@ -1,0 +1,4 @@
+# github.com/zhangzongchu2019/dingwei/internal/m8 [github.com/zhangzongchu2019/dingwei/internal/m8.test]
+internal/m8/r60_outbound_joint_test.go:15:2: "github.com/coder/websocket" imported and not used
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8 [build failed]
+FAIL

@@ -1,0 +1,81 @@
+{
+  "tip": "65713e6483672cdf75739537bd69e78fcd9fedcc",
+  "tree": "45e45e17cfcfc4e1c49296d1c2ac51f5881bb16e",
+  "files": 12,
+  "all_match": true,
+  "method": "Git blob bytes SHA256, independent fetch; not independent rerun of qwen gates",
+  "records": [
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/KNIVES.md",
+      "expected": "125200846af2f38ea35a16dde6f3647280c0396067a8aab84b1db93b063a9107",
+      "actual": "125200846af2f38ea35a16dde6f3647280c0396067a8aab84b1db93b063a9107",
+      "match": true
+    },
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/REPORT.md",
+      "expected": "b82862e7b2536863726594a34b482a186ee92b065d16245ab17c160f9978f0f9",
+      "actual": "b82862e7b2536863726594a34b482a186ee92b065d16245ab17c160f9978f0f9",
+      "match": true
+    },
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/logs/build-gate-clean.log",
+      "expected": "9f2520560548a2ae970385821a3291923e6a3013abfc43a973c1e3fed5336710",
+      "actual": "9f2520560548a2ae970385821a3291923e6a3013abfc43a973c1e3fed5336710",
+      "match": true
+    },
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/logs/build-gate-clean2.log",
+      "expected": "3b09d671a2a9e809de2fdb95ab717ebbbd567f7b893edfc542d8a2219496567c",
+      "actual": "3b09d671a2a9e809de2fdb95ab717ebbbd567f7b893edfc542d8a2219496567c",
+      "match": true
+    },
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/logs/deviceclaim-pg-rerun.log",
+      "expected": "20bfc2e8629fbdb28ef8d58e1cb49a00a948e3117a3dd737fa3a413e2f9bb290",
+      "actual": "20bfc2e8629fbdb28ef8d58e1cb49a00a948e3117a3dd737fa3a413e2f9bb290",
+      "match": true
+    },
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/logs/go-store-retention.log",
+      "expected": "40b73bb96c7f3303a64d0aef842ebbeb854b6d6f09dc5cde2c448762a78d2066",
+      "actual": "40b73bb96c7f3303a64d0aef842ebbeb854b6d6f09dc5cde2c448762a78d2066",
+      "match": true
+    },
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/logs/go-workpulse-retention.log",
+      "expected": "d7e7c4b25a5c6fd330c71b0ce35865b68c6b65f5cdfcabea10387f68347062f0",
+      "actual": "d7e7c4b25a5c6fd330c71b0ce35865b68c6b65f5cdfcabea10387f68347062f0",
+      "match": true
+    },
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/logs/helper-caller-retention-baseline.log",
+      "expected": "edddeaaf9f6267d11e272c8fad2552536523f45edf6c0224bd108a56135daea4",
+      "actual": "edddeaaf9f6267d11e272c8fad2552536523f45edf6c0224bd108a56135daea4",
+      "match": true
+    },
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/logs/knives-fix.json",
+      "expected": "2307f44039825a6437e71d12b734d0c8ed05d99dfc138c716cc107a48efa416e",
+      "actual": "2307f44039825a6437e71d12b734d0c8ed05d99dfc138c716cc107a48efa416e",
+      "match": true
+    },
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/logs/knives-run.log",
+      "expected": "807bdd307298aed84c0dbb451d9cc434444d61ca364c2923d16657477ed80e60",
+      "actual": "807bdd307298aed84c0dbb451d9cc434444d61ca364c2923d16657477ed80e60",
+      "match": true
+    },
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/logs/knives.json",
+      "expected": "b3712b384182bd24b744a1ed3e745e2a41849eaa5b1e6fe5d717dc220f32c113",
+      "actual": "b3712b384182bd24b744a1ed3e745e2a41849eaa5b1e6fe5d717dc220f32c113",
+      "match": true
+    },
+    {
+      "path": "docs/reviews/r60-send-lost-qwen/logs/shell-roundtrip-rerun.log",
+      "expected": "8404754d3a6bdd07ae2659f3664753ffc786bb61b86880d0665fc18756e97d0e",
+      "actual": "8404754d3a6bdd07ae2659f3664753ffc786bb61b86880d0665fc18756e97d0e",
+      "match": true
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+=== RUN   TestSessionIngressACKWaitsForCommitDuringBusinessGate
+=== RUN   TestSessionIngressACKWaitsForCommitDuringBusinessGate/commit
+2026/11/17 03:30:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:30:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:30:55 session handshake timing key_id=u_zzc session=opus50ts total=12ms register=8ms accept=0s conn_seq=1ms onboard=2ms register_lock=0s
+2026/11/17 03:30:55 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+2026/11/17 03:30:55 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+=== RUN   TestSessionIngressACKWaitsForCommitDuringBusinessGate/transient_failure_then_same_ack
+2026/11/17 03:30:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:30:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:30:59 session handshake timing key_id=u_zzc session=opus50ts total=10ms register=6ms accept=0s conn_seq=1ms onboard=2ms register_lock=0s
+2026/11/17 03:30:59 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+2026/11/17 03:30:59 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestSessionIngressACKWaitsForCommitDuringBusinessGate (8.25s)
+    --- PASS: TestSessionIngressACKWaitsForCommitDuringBusinessGate/commit (4.10s)
+    --- PASS: TestSessionIngressACKWaitsForCommitDuringBusinessGate/transient_failure_then_same_ack (4.15s)
+=== RUN   TestOutboundRecoveryReplaysOriginalAcceptanceAndRejectsConflict
+2026/11/17 03:31:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:31:03 session handshake timing key_id=u_zzc session=opus50ts total=10ms register=7ms accept=0s conn_seq=1ms onboard=1ms register_lock=0s
+2026/11/17 03:31:03 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+2026/11/17 03:31:03 session route decision=durable_queued key_id=u_zzc session=opus50ts client_present=true conn_seq=1 delivery_id=dw-dlv_c99ea7ed5cb61b26091008ecb7d2b99e source_message_id=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+--- PASS: TestOutboundRecoveryReplaysOriginalAcceptanceAndRejectsConflict (3.90s)
+=== RUN   TestOutboundRecoveryNewHubRestoresReceiptWithoutSecondDelivery
+2026/11/17 03:31:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:31:07 session handshake timing key_id=u_zzc session=opus50ts total=10ms register=7ms accept=0s conn_seq=1ms onboard=1ms register_lock=0s
+2026/11/17 03:31:07 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+2026/11/17 03:31:07 session route decision=durable_queued key_id=u_zzc session=opus50ts client_present=true conn_seq=1 delivery_id=dw-dlv_fbedf713db07e7c45b0acde928f517ab source_message_id=22222222222222222222222222222222
+2026/11/17 03:31:07 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+2026/11/17 03:31:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:31:07 session handshake timing key_id=u_zzc session=opus50ts total=13ms register=10ms accept=0s conn_seq=2ms onboard=1ms register_lock=0s
+--- PASS: TestOutboundRecoveryNewHubRestoresReceiptWithoutSecondDelivery (4.14s)
+=== RUN   TestOutboundRecoveryPhysicalGuardPreservesTemporaryError
+2026/11/17 03:31:11 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:11 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestOutboundRecoveryPhysicalGuardPreservesTemporaryError (3.84s)
+=== RUN   TestOutboundRecoveryStableTargetAndRevocationCheckedAtPhysicalWrite
+2026/11/17 03:31:15 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:15 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestOutboundRecoveryStableTargetAndRevocationCheckedAtPhysicalWrite (3.82s)
+=== RUN   TestOutboundRecoveryDirectoryFailureIsNotUnsupportedProtocol
+2026/11/17 03:31:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:31:19 session handshake timing key_id=u_zzc session=opus50ts total=10ms register=7ms accept=0s conn_seq=1ms onboard=1ms register_lock=0s
+--- PASS: TestOutboundRecoveryDirectoryFailureIsNotUnsupportedProtocol (3.84s)
+=== RUN   TestOutboundRecoveryUnsupportedCannotFallThroughToOutputOrLegacySend
+2026/11/17 03:31:22 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:22 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:31:22 session handshake timing key_id=u_zzc session=opus50ts total=13ms register=10ms accept=0s conn_seq=1ms onboard=2ms register_lock=0s
+2026/11/17 03:31:23 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+2026/11/17 03:31:23 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestOutboundRecoveryUnsupportedCannotFallThroughToOutputOrLegacySend (3.88s)
+=== RUN   TestOutboundRecoveryFailureNoticeIsVisibleAndBoundToOriginalSender
+2026/11/17 03:31:27 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:31:27 session handshake timing key_id=u_zzc session=opus50ts total=11ms register=7ms accept=0s conn_seq=1ms onboard=2ms register_lock=0s
+2026/11/17 03:31:27 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+2026/11/17 03:31:27 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestOutboundRecoveryFailureNoticeIsVisibleAndBoundToOriginalSender (4.12s)
+=== RUN   TestOutboundRecoveryKnownCapacityFailureIsNotAmbiguousAcceptance
+2026/11/17 03:31:30 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:30 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:31:30 session handshake timing key_id=u_zzc session=opus50ts total=10ms register=7ms accept=0s conn_seq=1ms onboard=1ms register_lock=0s
+2026/11/17 03:31:31 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+2026/11/17 03:31:31 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestOutboundRecoveryKnownCapacityFailureIsNotAmbiguousAcceptance (3.87s)
+=== RUN   TestR60OutboundControlBackpressureRecoversWithSendStatus
+2026/11/17 03:31:34 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:34 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:31:34 session handshake timing key_id=u_zzc session=peer total=10ms register=7ms accept=0s conn_seq=1ms onboard=1ms register_lock=0s
+2026/11/17 03:31:34 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/11/17 03:31:35 session handshake timing key_id=u_zzc session=desktop total=7ms register=6ms accept=0s conn_seq=1ms onboard=0s register_lock=0s
+2026/11/17 03:31:35 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/11/17 03:31:35 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/11/17 03:31:37 session route decision=durable_queued key_id=u_zzc session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_90a62d46b93dce6f7664a763909fa32d source_message_id=febfb0a3ba8b4bee87a8879a5ad1840d
+2026/11/17 03:31:46 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    r60_outbound_joint_test.go:173: actual Hub write slot held >2s; committed receipt write failed; real helper durable unknown observed through MCP dw_send_status; automatic same-source retry restored the original delivery; one Hub creation; no new caller ID/model retry
+2026/11/17 03:31:46 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestR60OutboundControlBackpressureRecoversWithSendStatus (15.94s)
+=== RUN   TestSessionIngressLongOutputDoesNotStarvePong
+=== RUN   TestSessionIngressLongOutputDoesNotStarvePong/healthy
+2026/11/17 03:31:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:31:50 session name warning key_id=FB-person-20261117-0747caa7 owner= session=developer: 无法确认该 key 绑定成员 owner_key
+2026/11/17 03:31:50 session version warning key_id=FB-person-20261117-0747caa7 owner= session=developer version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 03:31:50 session handshake timing key_id=FB-person-20261117-0747caa7 session=developer total=10ms auth=1ms accounts=0s owner=1ms register=5ms accept=0s conn_seq=1ms onboard=1ms register_lock=0s
+=== RUN   TestSessionIngressLongOutputDoesNotStarvePong/slow_business
+2026/11/17 03:31:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:31:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 03:31:54 session name warning key_id=FB-person-20261117-cd90116a owner= session=developer: 无法确认该 key 绑定成员 owner_key
+2026/11/17 03:31:54 session version warning key_id=FB-person-20261117-cd90116a owner= session=developer version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/17 03:31:54 session handshake timing key_id=FB-person-20261117-cd90116a session=developer total=9ms auth=1ms accounts=0s owner=1ms register=5ms accept=0s conn_seq=1ms onboard=1ms register_lock=0s
+--- PASS: TestSessionIngressLongOutputDoesNotStarvePong (14.07s)
+    --- PASS: TestSessionIngressLongOutputDoesNotStarvePong/healthy (4.06s)
+    --- PASS: TestSessionIngressLongOutputDoesNotStarvePong/slow_business (10.01s)
+=== RUN   TestSessionIngressQueueBudgetAndRelease
+2026/11/17 03:32:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:32:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionIngressQueueBudgetAndRelease (3.82s)
+=== RUN   TestSessionKeepaliveConfigurationAndFailureClassification
+2026/11/17 03:32:08 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:32:08 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionKeepaliveConfigurationAndFailureClassification (3.81s)
+=== RUN   TestSessionKeepaliveJournalBoundedAndPrivate
+2026/11/17 03:32:12 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:32:12 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionKeepaliveJournalBoundedAndPrivate (3.93s)
+=== RUN   TestSessionIngressOverflowClosesWithoutBlockingOrAck
+2026/11/17 03:32:16 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:32:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionIngressOverflowClosesWithoutBlockingOrAck (3.91s)
+=== RUN   TestSessionKeepaliveTimeoutJournalOnceAndCancellationIsNotFailure
+=== RUN   TestSessionKeepaliveTimeoutJournalOnceAndCancellationIsNotFailure/deadline
+2026/11/17 03:32:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:32:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestSessionKeepaliveTimeoutJournalOnceAndCancellationIsNotFailure/planned_cancel
+2026/11/17 03:32:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:32:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionKeepaliveTimeoutJournalOnceAndCancellationIsNotFailure (7.95s)
+    --- PASS: TestSessionKeepaliveTimeoutJournalOnceAndCancellationIsNotFailure/deadline (4.05s)
+    --- PASS: TestSessionKeepaliveTimeoutJournalOnceAndCancellationIsNotFailure/planned_cancel (3.89s)
+=== RUN   TestSessionKeepaliveCancellationDuringActualPing
+2026/11/17 03:32:28 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:32:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionKeepaliveCancellationDuringActualPing (3.98s)
+=== RUN   TestSessionKeepaliveJournalUsesBudgetCountAndInjectedClock
+--- PASS: TestSessionKeepaliveJournalUsesBudgetCountAndInjectedClock (0.00s)
+=== RUN   TestSessionIngressReadFailurePreservesTransportCause
+2026/11/17 03:32:32 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:32:32 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionIngressReadFailurePreservesTransportCause (3.88s)
+=== RUN   TestViewerOfflineSealedExistingConnectionMarksGapAndCloses
+2026/11/17 03:32:36 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:32:36 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestViewerOfflineSealedExistingConnectionMarksGapAndCloses (3.84s)
+=== RUN   TestViewerOfflinePendingQueueRejectsNewDisplayAndMarksGap
+2026/11/17 03:32:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 03:32:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestViewerOfflinePendingQueueRejectsNewDisplayAndMarksGap (3.91s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	109.885s
+=== RUN   TestOutboundIntentAtomicConcurrentRestartAndRetention
+--- PASS: TestOutboundIntentAtomicConcurrentRestartAndRetention (3.92s)
+=== RUN   TestOutboundIntentRecipientFailureRollsBackAcceptance
+--- PASS: TestOutboundIntentRecipientFailureRollsBackAcceptance (3.82s)
+=== RUN   TestOutboundIntentMigrationRejectsPartialOrChangedSchema
+=== RUN   TestOutboundIntentMigrationRejectsPartialOrChangedSchema/DROP_INDEX_outbound_intent_sender
+=== RUN   TestOutboundIntentMigrationRejectsPartialOrChangedSchema/DROP_INDEX_outbound_intent_created
+=== RUN   TestOutboundIntentMigrationRejectsPartialOrChangedSchema/ALTER_TABLE_outbound_intent_ADD_COLUMN_unexpected_TEXT
+--- PASS: TestOutboundIntentMigrationRejectsPartialOrChangedSchema (11.33s)
+    --- PASS: TestOutboundIntentMigrationRejectsPartialOrChangedSchema/DROP_INDEX_outbound_intent_sender (3.83s)
+    --- PASS: TestOutboundIntentMigrationRejectsPartialOrChangedSchema/DROP_INDEX_outbound_intent_created (3.72s)
+    --- PASS: TestOutboundIntentMigrationRejectsPartialOrChangedSchema/ALTER_TABLE_outbound_intent_ADD_COLUMN_unexpected_TEXT (3.78s)
+=== RUN   TestOutboundIntentCapacityPreservesOldReceiptAndRejectsNewAtomically
+--- PASS: TestOutboundIntentCapacityPreservesOldReceiptAndRejectsNewAtomically (25.78s)
+=== RUN   TestOutboundIntentRetentionReleasesExpiredCapacityBoundedly
+--- PASS: TestOutboundIntentRetentionReleasesExpiredCapacityBoundedly (25.82s)
+=== RUN   TestOutboundIntentRetentionPreservesWindowAndBoundary
+--- PASS: TestOutboundIntentRetentionPreservesWindowAndBoundary (3.76s)
+=== RUN   TestOutboundIntentRetentionPreservesPendingPhysicalBindings
+--- PASS: TestOutboundIntentRetentionPreservesPendingPhysicalBindings (3.70s)
+=== RUN   TestOutboundIntentRetentionUsesServerAcceptanceClock
+--- PASS: TestOutboundIntentRetentionUsesServerAcceptanceClock (3.68s)
+=== RUN   TestOutboundIntentRetentionConfiguration
+--- PASS: TestOutboundIntentRetentionConfiguration (3.74s)
+=== RUN   TestOutboundIntentRetentionConfiguredWindowControlsGC
+--- PASS: TestOutboundIntentRetentionConfiguredWindowControlsGC (3.81s)
+=== RUN   TestOutboundIntentRetentionCleanupRollsBackWithQueueFailure
+--- PASS: TestOutboundIntentRetentionCleanupRollsBackWithQueueFailure (3.70s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	94.166s

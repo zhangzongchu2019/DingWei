@@ -1,0 +1,34 @@
+[ipc_listener] listening on /tmp/r60-i/hb-live-gjeoc5xg/ipc.sock
+F
+======================================================================
+FAIL: test_persistent_ipc_heartbeat_follows_current_ws_and_capability (test_session_heartbeat.PersistentHeartbeatReconnectTest.test_persistent_ipc_heartbeat_follows_current_ws_and_capability)
+Real IPC and loopback WS; synthetic Hub replies, no business send.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/data/ai-dev-data/r60-integration-mutation/tools/sessionhelper/tests/test_session_heartbeat.py", line 320, in test_persistent_ipc_heartbeat_follows_current_ws_and_capability
+    self.assertEqual(send_counts, [1, 1],
+AssertionError: Lists differ: [2, 0] != [1, 1]
+
+First differing element 0:
+2
+1
+
+- [2, 0]
++ [1, 1] : heartbeat reused the old WS after reconnect
+
+----------------------------------------------------------------------
+Ran 1 test in 0.041s
+
+FAILED (failures=1)

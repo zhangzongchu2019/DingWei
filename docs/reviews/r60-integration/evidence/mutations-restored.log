@@ -1,0 +1,36 @@
+=== RUN   TestHostedBodySendSameRequestIDAcrossCLIProcesses
+2026/11/17 02:48:54 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 02:48:54 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 02:48:54 session handshake timing key_id=u_zzc session=peer total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 02:48:54 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/11/17 02:48:54 session handshake timing key_id=u_zzc session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 02:48:54 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/11/17 02:48:54 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/11/17 02:48:54 session route decision=durable_queued key_id=u_zzc session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_3e6763b2b416782ccdc5b09aa588b6ea source_message_id=6383cdc4c1594a2ebfc71ff98aa659d1
+2026/11/17 02:48:55 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=1
+2026/11/17 02:48:55 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    hosted_body_send_test.go:160: two installed send.py processes with identical --request-id; real IPC/helper/WS/Hub; exactly one committed Hub delivery and one observed delivery frame; same source/delivery restored
+--- PASS: TestHostedBodySendSameRequestIDAcrossCLIProcesses (1.26s)
+=== RUN   TestR60OutboundControlBackpressureRecoversWithSendStatus
+2026/11/17 02:48:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 02:48:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 02:48:55 session handshake timing key_id=u_zzc session=peer total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 02:48:55 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/11/17 02:48:55 session handshake timing key_id=u_zzc session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 02:48:55 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/11/17 02:48:55 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/11/17 02:48:57 session route decision=durable_queued key_id=u_zzc session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_398fa6ce0f8889113affa7492a9722b0 source_message_id=5b0bb4a1452f42728acbcd78d0fe1baf
+2026/11/17 02:49:07 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    r60_outbound_joint_test.go:173: actual Hub write slot held >2s; committed receipt write failed; real helper durable unknown observed through MCP dw_send_status; automatic same-source retry restored the original delivery; one Hub creation; no new caller ID/model retry
+2026/11/17 02:49:07 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestR60OutboundControlBackpressureRecoversWithSendStatus (12.53s)
+=== RUN   TestViewerOfflineSealedExistingConnectionMarksGapAndCloses
+2026/11/17 02:49:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 02:49:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestViewerOfflineSealedExistingConnectionMarksGapAndCloses (0.15s)
+=== RUN   TestViewerOfflinePendingQueueRejectsNewDisplayAndMarksGap
+2026/11/17 02:49:07 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 02:49:07 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestViewerOfflinePendingQueueRejectsNewDisplayAndMarksGap (0.15s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	14.099s

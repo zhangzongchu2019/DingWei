@@ -1,0 +1,13 @@
+cut-offline_stop-compile 0
+cut-offline_stop 1
+cut-heartbeat_current-compile 0
+cut-heartbeat_current 1
+cut-cli_original_receipt-compile 0
+cut-cli_original_receipt 1
+cut-joint_write_deadline-compile 0
+cut-joint_write_deadline 1
+cut-joint_stable_retry-compile 0
+cut-joint_stable_retry 1
+mutations-restored 0
+heartbeat-restored 0
+8 CUTS BUSINESS RED; RESTORED BASELINES GREEN

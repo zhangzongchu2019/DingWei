@@ -1,0 +1,39 @@
+{
+  "source_commit": null,
+  "base_source": "a311aaf3beea90262c05ca2c316064b8a8856d06",
+  "mutation": false,
+  "dirty_before": true,
+  "argv": [
+    "node",
+    "/home/dev/.npm/_npx/2e6f94dbd680ce26/node_modules/@fission-ai/openspec/bin/openspec.js",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "cwd": "/data/ai-dev-data/r60-integration",
+  "uid": 1001,
+  "env": {
+    "HOME": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-formal-integration-20261117/home",
+    "TMPDIR": "/tmp/r60-i",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "HUB_TEST_PG_STRICT": "1",
+    "GOTOOLCHAIN": "local",
+    "GOCACHE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/go-cache",
+    "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+    "GOFLAGS": "-p=1",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "OPENSPEC_TELEMETRY": "0",
+    "SOURCE_COMMIT": "a311aaf3beea90262c05ca2c316064b8a8856d06",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3"
+  },
+  "start_utc": "2026-11-17T03:46:34.789548+00:00",
+  "rc": 0,
+  "end_utc": "2026-11-17T03:46:35.085063+00:00",
+  "raw_sha256": "59822bae741a79084580eafa333096a938f6d35c8b4049b44c12f99f03f31229",
+  "dirty_after": true,
+  "head_after": "a311aaf3beea90262c05ca2c316064b8a8856d06"
+}

@@ -1,0 +1,18 @@
+=== RUN   TestR60OutboundControlBackpressureRecoversWithSendStatus
+2026/11/17 02:48:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/17 02:48:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/17 02:48:31 session handshake timing key_id=u_zzc session=peer total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 02:48:31 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/11/17 02:48:31 session handshake timing key_id=u_zzc session=desktop total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/17 02:48:31 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/11/17 02:48:31 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+    r60_outbound_joint_test.go:136: condition not met before timeout (4.5s): bounded control write failure
+2026/11/17 02:48:36 session route decision=durable_queued key_id=u_zzc session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_4fe8736ff2cfc6446e94ba8a3b309325 source_message_id=75c0f5dbb14e4656ab822532981ca8ae
+2026/11/17 02:48:36 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    test_child_process_support_test.go:102: joint helper stderr tail (last 8192 bytes; credential-bearing lines filtered):
+        (empty)
+2026/11/17 02:48:36 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=1
+--- FAIL: TestR60OutboundControlBackpressureRecoversWithSendStatus (5.16s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	5.173s
+FAIL

@@ -1,0 +1,43 @@
+{
+  "source_commit": "a311aaf3beea90262c05ca2c316064b8a8856d06",
+  "base_source": "a311aaf3beea90262c05ca2c316064b8a8856d06",
+  "mutation": false,
+  "dirty_before": false,
+  "argv": [
+    "go",
+    "test",
+    "-json",
+    "./internal/m8",
+    "-count=1",
+    "-p",
+    "1",
+    "-timeout",
+    "60m"
+  ],
+  "cwd": "/data/ai-dev-data/r60-integration",
+  "uid": 1001,
+  "env": {
+    "HOME": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-formal-integration-20261117/home",
+    "TMPDIR": "/tmp/r60-i",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "HUB_TEST_PG_STRICT": "1",
+    "GOTOOLCHAIN": "local",
+    "GOCACHE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/go-cache",
+    "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+    "GOFLAGS": "-p=1",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "OPENSPEC_TELEMETRY": "0",
+    "SOURCE_COMMIT": "a311aaf3beea90262c05ca2c316064b8a8856d06",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3"
+  },
+  "start_utc": "2026-11-17T02:49:32.321527+00:00",
+  "rc": 0,
+  "end_utc": "2026-11-17T02:54:24.299958+00:00",
+  "raw_sha256": "08ec2143e6a6dbc1f2e54f6e4baeb155e49faf584495edc4608fcfd74791e2f8",
+  "dirty_after": false,
+  "head_after": "a311aaf3beea90262c05ca2c316064b8a8856d06"
+}

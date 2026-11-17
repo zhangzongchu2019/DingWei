@@ -1,0 +1,12 @@
+mutations-baseline 0
+cut-sealed_gap-compile 0
+cut-sealed_gap 1
+cut-sealed_close-compile 0
+cut-sealed_close 1
+cut-pending_gap-compile 0
+cut-pending_gap 1
+Traceback (most recent call last):
+  File "/tmp/r60-formal-mutations.py", line 15, in <module>
+    p=w/file;orig=p.read_bytes();s=orig.decode();assert s.count(before)==1,(name,s.count(before))
+                                                        ^^^^^^^^^^^^^^^^^^
+AssertionError: ('offline_stop', 2)
