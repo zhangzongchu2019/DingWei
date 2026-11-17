@@ -4,6 +4,10 @@
 
 固定产品/测试源 a311aaf3beea90262c05ca2c316064b8a8856d06，tree dfb32347b5156dc1d15d4bfaf0543310dde316d8，父 6f7dcad70d1b3aa308f38a73432dce6c8397f045；基110e2c1f，VERSION0.2.3.40。按③④①②合入及冲突解法见CONFLICT-RESOLUTION.md；本报告是作者交审证据，不自签收、不是发布GO，不推main/不接现网。
 
+## 0077回退补充（组长03:19:05Z令）
+
+旧110同源0.2.3.39诊断exe实测可在0077库启动、health200/退出0；未知更高号迁移静默保留。但已入队新协议正文在旧Hub缺稳定Target守卫，同名替代席实测收到，不能只换exe继续业务。默认保留最新升级库，先停writer/流入、排空或可见取消并对账全部未终结责任。再次前滚启动/fence保持和W/P/E真实GC边界已实测；unsupported旧unknown不会自动恢复。四问、代码坐标与预发演练计划详见[ROLLBACK-0077.md](ROLLBACK-0077.md)。只读隔离试验，不触预发/现网、不分发诊断二进制。
+
 ## 结果
 
 完整固定源门达到作者交审条件：build.sh内部执行完整run-build-tests两profile及四个二进制构建、其他三包树与m8五轮PGstrict、focused race、浏览器全量、OpenSpec strict均按各自原始记录保留。具体计数从evidence/gate-summary.json与原日志取，不把组件/评审旧门合并成一次全绿。

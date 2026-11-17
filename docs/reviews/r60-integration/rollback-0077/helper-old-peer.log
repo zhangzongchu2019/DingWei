@@ -1,0 +1,7 @@
+test_old_or_missing_capability_never_writes (test_outbound_queue.RecoveryWorkerTest.test_old_or_missing_capability_never_writes) ... ok
+test_unsupported_unknown_is_not_automatically_replayed_on_upgrade (test_outbound_queue.RecoveryWorkerTest.test_unsupported_unknown_is_not_automatically_replayed_on_upgrade) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.096s
+
+OK

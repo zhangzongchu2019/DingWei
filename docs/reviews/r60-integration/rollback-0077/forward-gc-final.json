@@ -1,0 +1,37 @@
+{
+  "base_source": "a311aaf3beea90262c05ca2c316064b8a8856d06",
+  "overlay": "local diagnostic cmd only, not release source",
+  "argv": [
+    "go",
+    "run",
+    "./cmd/r60rollbackprobe",
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/forward-gc.db"
+  ],
+  "env": {
+    "HOME": "/tmp/r60-i",
+    "TMPDIR": "/tmp/r60-i",
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "GOCACHE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/go-cache",
+    "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "GOTOOLCHAIN": "local",
+    "GOFLAGS": "-p=1"
+  },
+  "uid": 1001,
+  "start_utc": "2026-11-17T04:00:38.759542+00:00",
+  "end_utc": "2026-11-17T04:00:39.224674+00:00",
+  "rc": 0,
+  "raw_sha256": "69565e89492717c1e9e651aaff11b66f3550a39f313b1f408d6aee8ed721f8f4",
+  "probe_sha256": "4781b45129aa0ff5a701cb99cad956146eb0df4eb266ce9c5509daf150a8933c",
+  "before": {
+    "W": 1,
+    "P": 1,
+    "E": 1
+  },
+  "after": {
+    "W": 2,
+    "P": 1,
+    "E": 0
+  }
+}

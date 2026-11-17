@@ -1,0 +1,275 @@
+{
+  "r60_initialize": {
+    "name": "r60-initialize",
+    "binary": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-formal-integration-20261117/bin/workpulse",
+    "binary_sha256": "ec24fb171035d018c51b0a636442969e9b2de482d20a296a586e639e288617de",
+    "health_status": 200,
+    "exit_code": 0,
+    "start_utc": "2026-11-17T03:55:41.026627+00:00",
+    "end_utc": "2026-11-17T03:55:42.461706+00:00",
+    "env": {
+      "PATH": "/usr/local/bin:/usr/bin:/bin",
+      "HOME": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private",
+      "TZ": "UTC",
+      "WP_DATA_DIR": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private",
+      "WP_DB_PATH": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/hub.db",
+      "WP_ADDR": "127.0.0.1:40235",
+      "WP_INTERNAL_ADDR": "127.0.0.1:48231",
+      "FEISHU_TRANSPORT": "fake",
+      "WP_CONSOLE_AUTH_ENABLED": "false",
+      "WP_SCHEDULE_TEAM_FILE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/missing.md",
+      "WP_SCHEDULE_PERSONAL_DIR": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/none"
+    },
+    "uid": 1001,
+    "raw_sha256": "36ec0d3d06d7ef6699a71592f3d39f65fde5af59221c8a3df13a81ae3a3b4baa"
+  },
+  "before_old": {
+    "ledger_0077": [
+      [
+        "0077_outbound_intent.sql",
+        "da82f7b6174ba57375b3997919baacbc863d01c7cb326e87f255dc6e0bcb9291",
+        "2026-11-17 03:55:41.168357035 +0000 UTC m=+0.140452698"
+      ]
+    ],
+    "fences": [
+      [
+        "synthetic-sender",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "synthetic-target",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "2026-11-17T03:55:42.462046000Z"
+      ],
+      [
+        "synthetic-sender",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "synthetic-target",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "2026-11-07T03:55:42.462046000Z"
+      ],
+      [
+        "synthetic-sender",
+        "cccccccccccccccccccccccccccccccc",
+        "synthetic-target",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "dw-dlv_cccccccccccccccccccccccccccccccc",
+        "2026-11-07T03:55:42.462046000Z"
+      ]
+    ],
+    "deliveries": [
+      [
+        "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "processed"
+      ],
+      [
+        "dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "queued"
+      ],
+      [
+        "dw-dlv_cccccccccccccccccccccccccccccccc",
+        "processed"
+      ]
+    ],
+    "indices": [
+      [
+        "outbound_intent_created",
+        "CREATE INDEX outbound_intent_created ON outbound_intent(created_at,sender_id,source_message_id)"
+      ],
+      [
+        "outbound_intent_sender",
+        "CREATE INDEX outbound_intent_sender ON outbound_intent(sender_id,created_at)"
+      ],
+      [
+        "sqlite_autoindex_outbound_intent_1",
+        null
+      ],
+      [
+        "sqlite_autoindex_outbound_intent_2",
+        null
+      ]
+    ]
+  },
+  "old_on_0077": {
+    "name": "old-on-0077",
+    "binary": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/old-workpulse",
+    "binary_sha256": "5c2876b2ed66a570dbec45d5a604c94a3d30bc9ca738f5c095b390e12c0a6578",
+    "health_status": 200,
+    "exit_code": 0,
+    "start_utc": "2026-11-17T03:55:42.472847+00:00",
+    "end_utc": "2026-11-17T03:55:43.806330+00:00",
+    "env": {
+      "PATH": "/usr/local/bin:/usr/bin:/bin",
+      "HOME": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private",
+      "TZ": "UTC",
+      "WP_DATA_DIR": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private",
+      "WP_DB_PATH": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/hub.db",
+      "WP_ADDR": "127.0.0.1:49321",
+      "WP_INTERNAL_ADDR": "127.0.0.1:36819",
+      "FEISHU_TRANSPORT": "fake",
+      "WP_CONSOLE_AUTH_ENABLED": "false",
+      "WP_SCHEDULE_TEAM_FILE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/missing.md",
+      "WP_SCHEDULE_PERSONAL_DIR": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/none"
+    },
+    "uid": 1001,
+    "raw_sha256": "4d9c03da147b07ae0dca965978450df784e1a2bd86ced72c754b50f7b69247bf"
+  },
+  "after_old": {
+    "ledger_0077": [
+      [
+        "0077_outbound_intent.sql",
+        "da82f7b6174ba57375b3997919baacbc863d01c7cb326e87f255dc6e0bcb9291",
+        "2026-11-17 03:55:41.168357035 +0000 UTC m=+0.140452698"
+      ]
+    ],
+    "fences": [
+      [
+        "synthetic-sender",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "synthetic-target",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "2026-11-17T03:55:42.462046000Z"
+      ],
+      [
+        "synthetic-sender",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "synthetic-target",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "2026-11-07T03:55:42.462046000Z"
+      ],
+      [
+        "synthetic-sender",
+        "cccccccccccccccccccccccccccccccc",
+        "synthetic-target",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "dw-dlv_cccccccccccccccccccccccccccccccc",
+        "2026-11-07T03:55:42.462046000Z"
+      ]
+    ],
+    "deliveries": [
+      [
+        "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "processed"
+      ],
+      [
+        "dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "queued"
+      ],
+      [
+        "dw-dlv_cccccccccccccccccccccccccccccccc",
+        "processed"
+      ]
+    ],
+    "indices": [
+      [
+        "outbound_intent_created",
+        "CREATE INDEX outbound_intent_created ON outbound_intent(created_at,sender_id,source_message_id)"
+      ],
+      [
+        "outbound_intent_sender",
+        "CREATE INDEX outbound_intent_sender ON outbound_intent(sender_id,created_at)"
+      ],
+      [
+        "sqlite_autoindex_outbound_intent_1",
+        null
+      ],
+      [
+        "sqlite_autoindex_outbound_intent_2",
+        null
+      ]
+    ]
+  },
+  "r60_restart": {
+    "name": "r60-restart",
+    "binary": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-formal-integration-20261117/bin/workpulse",
+    "binary_sha256": "ec24fb171035d018c51b0a636442969e9b2de482d20a296a586e639e288617de",
+    "health_status": 200,
+    "exit_code": 0,
+    "start_utc": "2026-11-17T03:55:43.809867+00:00",
+    "end_utc": "2026-11-17T03:55:45.124288+00:00",
+    "env": {
+      "PATH": "/usr/local/bin:/usr/bin:/bin",
+      "HOME": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private",
+      "TZ": "UTC",
+      "WP_DATA_DIR": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private",
+      "WP_DB_PATH": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/hub.db",
+      "WP_ADDR": "127.0.0.1:51573",
+      "WP_INTERNAL_ADDR": "127.0.0.1:57855",
+      "FEISHU_TRANSPORT": "fake",
+      "WP_CONSOLE_AUTH_ENABLED": "false",
+      "WP_SCHEDULE_TEAM_FILE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/missing.md",
+      "WP_SCHEDULE_PERSONAL_DIR": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/none"
+    },
+    "uid": 1001,
+    "raw_sha256": "f2288f8f67314f15716182dfdeae3b2a90bd5858644f36c649874c2b07352e15"
+  },
+  "after_forward": {
+    "ledger_0077": [
+      [
+        "0077_outbound_intent.sql",
+        "da82f7b6174ba57375b3997919baacbc863d01c7cb326e87f255dc6e0bcb9291",
+        "2026-11-17 03:55:41.168357035 +0000 UTC m=+0.140452698"
+      ]
+    ],
+    "fences": [
+      [
+        "synthetic-sender",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "synthetic-target",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "2026-11-17T03:55:42.462046000Z"
+      ],
+      [
+        "synthetic-sender",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "synthetic-target",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "2026-11-07T03:55:42.462046000Z"
+      ],
+      [
+        "synthetic-sender",
+        "cccccccccccccccccccccccccccccccc",
+        "synthetic-target",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "dw-dlv_cccccccccccccccccccccccccccccccc",
+        "2026-11-07T03:55:42.462046000Z"
+      ]
+    ],
+    "deliveries": [
+      [
+        "dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "processed"
+      ],
+      [
+        "dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "queued"
+      ],
+      [
+        "dw-dlv_cccccccccccccccccccccccccccccccc",
+        "processed"
+      ]
+    ],
+    "indices": [
+      [
+        "outbound_intent_created",
+        "CREATE INDEX outbound_intent_created ON outbound_intent(created_at,sender_id,source_message_id)"
+      ],
+      [
+        "outbound_intent_sender",
+        "CREATE INDEX outbound_intent_sender ON outbound_intent(sender_id,created_at)"
+      ],
+      [
+        "sqlite_autoindex_outbound_intent_1",
+        null
+      ],
+      [
+        "sqlite_autoindex_outbound_intent_2",
+        null
+      ]
+    ]
+  }
+}

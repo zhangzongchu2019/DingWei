@@ -1,0 +1,70 @@
+[
+  {
+    "name": "old-target-final",
+    "source": "110e2c1f63b1530d1ca05b92cd723312ef16c0f8",
+    "probe_sha256": "097f569428b4e17b74aa2c69943b31ba06f8d833006be55e952f11b71afae6a2",
+    "argv": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestRollback0077OldAndNewTargetFenceProbe$",
+      "-count=1",
+      "-v",
+      "-timeout",
+      "3m"
+    ],
+    "uid": 1001,
+    "env": {
+      "HOME": "/tmp/r60-i",
+      "TMPDIR": "/tmp/r60-i",
+      "PATH": "/usr/local/bin:/usr/bin:/bin",
+      "GOCACHE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/go-cache",
+      "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "GOTOOLCHAIN": "local",
+      "GOFLAGS": "-p=1",
+      "ROLLBACK_DB_TEMPLATE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/hub.db",
+      "ROLLBACK_EXPECT_OLD": "1"
+    },
+    "start_utc": "2026-11-17T04:01:29.932318+00:00",
+    "end_utc": "2026-11-17T04:01:39.668586+00:00",
+    "rc": 0,
+    "raw_sha256": "5a98a52ae78f5fe3376979250152bc736130cb2597d6d5e0a8ef6551c627d81f"
+  },
+  {
+    "name": "new-target-final",
+    "source": "a311aaf3beea90262c05ca2c316064b8a8856d06",
+    "probe_sha256": "097f569428b4e17b74aa2c69943b31ba06f8d833006be55e952f11b71afae6a2",
+    "argv": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestRollback0077OldAndNewTargetFenceProbe$",
+      "-count=1",
+      "-v",
+      "-timeout",
+      "3m"
+    ],
+    "uid": 1001,
+    "env": {
+      "HOME": "/tmp/r60-i",
+      "TMPDIR": "/tmp/r60-i",
+      "PATH": "/usr/local/bin:/usr/bin:/bin",
+      "GOCACHE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/go-cache",
+      "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "GOTOOLCHAIN": "local",
+      "GOFLAGS": "-p=1",
+      "ROLLBACK_DB_TEMPLATE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/hub.db",
+      "ROLLBACK_EXPECT_OLD": "0"
+    },
+    "start_utc": "2026-11-17T04:01:39.668835+00:00",
+    "end_utc": "2026-11-17T04:01:52.614959+00:00",
+    "rc": 0,
+    "raw_sha256": "a38ebaff2300c4bdb67fd2472508a5bb0f73b63c4a8816ddedbf6f5ea83f7510"
+  }
+]

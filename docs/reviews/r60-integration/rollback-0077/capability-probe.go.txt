@@ -1,0 +1,38 @@
+package m8
+import (
+ "context"
+ "database/sql"
+ "encoding/json"
+ "os"
+ "path/filepath"
+ "strings"
+ "testing"
+ "time"
+ "github.com/zhangzongchu2019/dingwei/internal/model"
+ "github.com/zhangzongchu2019/dingwei/internal/store"
+)
+func TestRollback0077OldAndNewTargetFenceProbe(t *testing.T) {
+ e:=newAgentEnv(t)
+ path:=filepath.Join(t.TempDir(),"rollback.db");raw,err:=os.ReadFile(os.Getenv("ROLLBACK_DB_TEMPLATE"));if err!=nil {t.Fatal(err)};if err=os.WriteFile(path,raw,0600);err!=nil{t.Fatal(err)}
+ repo,err:=store.OpenSQLite(path);if err!=nil{t.Fatal(err)};t.Cleanup(func(){e.hub.Close();repo.Close()});if err=repo.Migrate(e.ctx);err!=nil{t.Fatal("old/new migrate0077",err)};e.hub.Repo=repo
+ _,original:=e.enroll("first-peer","Peer");codes,err:=e.svc.Store.ListAgentGroups(e.ctx,e.agID);if err!=nil||len(codes)==0{t.Fatal(err)};if err=e.svc.JoinGroup(e.ctx,"zzc",codes[0],original);err!=nil{t.Fatal(err)}
+ source:=strings.Repeat("d",32);did:="dw-dlv_"+source
+ env:=model.Envelope{ID:source,From:"opus50ts#u_zzc",To:"peer#u_zzc",Body:"ISOLATED_PINNED_TARGET",Meta:map[string]any{"type":"agent_route","outbound_recovery_v1":true,"outbound_sender_id":e.agID,"outbound_target_id":original}}
+ envelope,_:=json.Marshal(env);d:=model.SessionDelivery{ID:did,KeyID:AgentKeyID("zzc"),SessionName:"peer",Envelope:string(envelope),SourceMessageID:source,SourceType:"agent_route",CreatedAt:time.Now().UTC(),NextAttemptAt:time.Now().UTC()};if err=repo.EnqueueSessionDelivery(e.ctx,d);err!=nil{t.Fatal(err)}
+ db,err:=sql.Open("sqlite",path);if err!=nil{t.Fatal(err)};defer db.Close();if _,err=db.Exec(`INSERT INTO outbound_intent VALUES(?,?,?,?,?,?)`,e.agID,source,original,strings.Repeat("0",64),did,time.Now().UTC().Format(time.RFC3339Nano));err!=nil{t.Fatal(err)}
+ if _,err=e.svc.Revoke(e.ctx,"zzc",original);err!=nil{t.Fatal(err)};cred,replacement:=e.enroll("second-peer","Peer");if original==replacement{t.Fatal("identity not replaced")};if err=e.svc.JoinGroup(e.ctx,"zzc",codes[0],replacement);err!=nil{t.Fatal(err)}
+ peer,status,_:=e.dial(cred,"version=0.2.3.39");if peer==nil||status!=101{t.Fatal("handshake failed")};defer peer.CloseNow();discardInitialAgentNetworkSkill(t,e.ctx,peer)
+ e.sendEnv(peer,model.Envelope{ID:"probe-cap",To:"workpulse#enrolled",Meta:map[string]any{"type":"session_capabilities","delivery_ack_v1":true}})
+ ctx,cancel:=context.WithTimeout(context.Background(),2*time.Second);defer cancel();seen:=false
+ for {_,raw,er:=peer.Read(ctx);if er!=nil{break};var got model.Envelope;if json.Unmarshal(raw,&got)==nil&&got.Body==env.Body{seen=true;break}}
+ saved,err:=repo.GetSessionDelivery(e.ctx,did);if err!=nil||saved==nil{t.Fatal(err)}
+ old:=os.Getenv("ROLLBACK_EXPECT_OLD")=="1";if seen!=old{t.Fatalf("stable-target probe seen=%v expected_old=%v state=%s reason=%s",seen,old,saved.State,saved.LastError)};if !old&&saved.State!="dead"{t.Fatalf("new guard did not terminate forbidden delivery: %s %s",saved.State,saved.LastError)}
+ t.Logf("actual WS same-name replacement received=%v state=%s reason=%s; fence retained=true; no model execution",seen,saved.State,saved.LastError)
+}
+func TestRollback0077CapabilityProbe(t *testing.T) {
+ e:=newAgentEnv(t);w:=subWire(t,e)
+ w.send(model.Envelope{ID:"isolated-cap",To:"workpulse#enrolled",Meta:map[string]any{"type":"session_capabilities","delivery_ack_v1":true,outboundReceiptRequestKey:true,"outbound_receipt_cap_nonce":strings.Repeat("a",32)}})
+ cap:=w.until(func(v model.Envelope)bool{return metaString(v.Meta,"type")=="outbound_capabilities"})
+ supported:=metaBool(cap.Meta,"outbound_recovery_v1");old:=os.Getenv("ROLLBACK_EXPECT_OLD")=="1";if supported==old{t.Fatalf("unexpected recovery capability old=%v supported=%v",old,supported)}
+ t.Logf("actual WS outbound_capabilities recovery_v1=%v durable_agent_queue=%v (not equivalent)",supported,metaBool(cap.Meta,"durable_agent_queue"))
+}

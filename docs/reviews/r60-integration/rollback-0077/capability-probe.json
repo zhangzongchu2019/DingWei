@@ -1,0 +1,70 @@
+[
+  {
+    "name": "old-capability",
+    "source": "110e2c1f63b1530d1ca05b92cd723312ef16c0f8",
+    "probe_sha256": "8a6e584ef840fe8d933fb19674d4c4e22f4342e10684b04ab28d1ddade730665",
+    "argv": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestRollback0077CapabilityProbe$",
+      "-count=1",
+      "-v",
+      "-timeout",
+      "3m"
+    ],
+    "uid": 1001,
+    "env": {
+      "HOME": "/tmp/r60-i",
+      "TMPDIR": "/tmp/r60-i",
+      "PATH": "/usr/local/bin:/usr/bin:/bin",
+      "GOCACHE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/go-cache",
+      "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "GOTOOLCHAIN": "local",
+      "GOFLAGS": "-p=1",
+      "ROLLBACK_DB_TEMPLATE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/hub.db",
+      "ROLLBACK_EXPECT_OLD": "1"
+    },
+    "start_utc": "2026-11-17T03:59:31.663693+00:00",
+    "end_utc": "2026-11-17T03:59:41.037330+00:00",
+    "rc": 0,
+    "raw_sha256": "6bffcb5076f8a71c0026566ca632e1e2ff5265df99776c31c7f6d3cf1e5a872b"
+  },
+  {
+    "name": "new-capability",
+    "source": "a311aaf3beea90262c05ca2c316064b8a8856d06",
+    "probe_sha256": "8a6e584ef840fe8d933fb19674d4c4e22f4342e10684b04ab28d1ddade730665",
+    "argv": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestRollback0077CapabilityProbe$",
+      "-count=1",
+      "-v",
+      "-timeout",
+      "3m"
+    ],
+    "uid": 1001,
+    "env": {
+      "HOME": "/tmp/r60-i",
+      "TMPDIR": "/tmp/r60-i",
+      "PATH": "/usr/local/bin:/usr/bin:/bin",
+      "GOCACHE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/go-cache",
+      "GOMODCACHE": "/tmp/busy-cf05/h-normal/go/pkg/mod",
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "GOTOOLCHAIN": "local",
+      "GOFLAGS": "-p=1",
+      "ROLLBACK_DB_TEMPLATE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/hub.db",
+      "ROLLBACK_EXPECT_OLD": "0"
+    },
+    "start_utc": "2026-11-17T03:59:41.037572+00:00",
+    "end_utc": "2026-11-17T03:59:51.280036+00:00",
+    "rc": 0,
+    "raw_sha256": "9858b95b8d6e98b2c9bae96236f267544ebeffce37b08cde109852e0eac1b07e"
+  }
+]

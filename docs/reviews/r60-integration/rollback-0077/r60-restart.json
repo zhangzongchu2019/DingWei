@@ -1,0 +1,24 @@
+{
+  "name": "r60-restart",
+  "binary": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-formal-integration-20261117/bin/workpulse",
+  "binary_sha256": "ec24fb171035d018c51b0a636442969e9b2de482d20a296a586e639e288617de",
+  "health_status": 200,
+  "exit_code": 0,
+  "start_utc": "2026-11-17T03:55:43.809867+00:00",
+  "end_utc": "2026-11-17T03:55:45.124288+00:00",
+  "env": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private",
+    "TZ": "UTC",
+    "WP_DATA_DIR": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private",
+    "WP_DB_PATH": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/hub.db",
+    "WP_ADDR": "127.0.0.1:51573",
+    "WP_INTERNAL_ADDR": "127.0.0.1:57855",
+    "FEISHU_TRANSPORT": "fake",
+    "WP_CONSOLE_AUTH_ENABLED": "false",
+    "WP_SCHEDULE_TEAM_FILE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/missing.md",
+    "WP_SCHEDULE_PERSONAL_DIR": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/private/none"
+  },
+  "uid": 1001,
+  "raw_sha256": "f2288f8f67314f15716182dfdeae3b2a90bd5858644f36c649874c2b07352e15"
+}

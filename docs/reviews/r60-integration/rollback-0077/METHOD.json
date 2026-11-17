@@ -1,0 +1,23 @@
+{
+  "old_source": "110e2c1f63b1530d1ca05b92cd723312ef16c0f8",
+  "old_version": "0.2.3.39",
+  "old_binary_sha256": "5c2876b2ed66a570dbec45d5a604c94a3d30bc9ca738f5c095b390e12c0a6578",
+  "old_binary_mtime_utc": "2026-11-17T03:55:20.934996+00:00",
+  "build_argv": [
+    "go",
+    "build",
+    "-trimpath",
+    "-buildvcs=false",
+    "-ldflags",
+    "-X github.com/zhangzongchu2019/dingwei/internal/version.Commit=110e2c1f63b1530d1ca05b92cd723312ef16c0f8",
+    "-o",
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-rollback-0077/old-workpulse",
+    "./cmd/workpulse"
+  ],
+  "classification": "local diagnostic build, not production artifact, not byte-for-byte verification of deployed executable",
+  "new_source": "a311aaf3beea90262c05ca2c316064b8a8856d06",
+  "new_binary": "existing SOURCE_COMMIT build.sh output, hash in binary-roundtrip.json",
+  "uid": 1001,
+  "go_version": "go version go1.22.2 linux/amd64",
+  "scope": "loopback/privateSQLite/fakeFeishu; no real PG/model/seat/production/staging"
+}
