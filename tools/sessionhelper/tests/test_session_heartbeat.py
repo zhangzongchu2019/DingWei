@@ -228,6 +228,118 @@ class HeartbeatHandlerWiringTest(unittest.IsolatedAsyncioTestCase):
         # Cleanup belongs to the awaiting reporter, not to the receive path.
 
 
+class PersistentHeartbeatReconnectTest(unittest.IsolatedAsyncioTestCase):
+    async def test_persistent_ipc_heartbeat_follows_current_ws_and_capability(self):
+        """Real IPC and loopback WS; synthetic Hub replies, no business send."""
+        import websockets
+        from sessionhelper.outbound_receipt import OutboundReceiptBroker
+
+        helper = SessionHelper.__new__(SessionHelper)
+        helper.book = SimpleNamespace(key_id='fixture', self_addr='seat#fixture')
+        helper.session_heartbeat = SessionHeartbeatReporter(['seat'])
+        helper.outbound_receipts = OutboundReceiptBroker(['seat'])
+        helper._persistent_ipc = True
+        helper.ipc_bound = asyncio.Event()
+        helper.upload_policy = SimpleNamespace(enabled=False)
+
+        async def unused(*args):
+            raise AssertionError('heartbeat reached an unrelated business handler')
+
+        helper._make_vsapi_handler = lambda: None
+        helper._make_task_flow_handler = lambda: unused
+        helper._make_project_context_handler = lambda: unused
+        server_frames, send_counts, clients, readers = [], [], [], []
+        accepted = asyncio.Queue()
+
+        def advertise(connection, request, response):
+            if request.path != '/unsupported':
+                response.headers[CAPABILITY_HEADER] = CAPABILITY_VALUE
+            return response
+
+        async def hub(connection):
+            frames = []
+            server_frames.append(frames)
+            accepted.put_nowait(None)
+            async for raw in connection:
+                env = json.loads(raw)
+                self.assertEqual(env['meta']['type'], REQUEST_TYPE)
+                frames.append(env)
+                await connection.send(json.dumps({
+                    'from': 'workpulse#fixture', 'to': 'seat#fixture',
+                    'meta': {'type': RESULT_TYPE, 'nonce': env['meta']['nonce'],
+                             'result': {'ok': True, 'status': 'recorded',
+                                        'recorded_at_ms': len(server_frames)}}}))
+
+        async def receive(ws):
+            async for raw in ws:
+                self.assertTrue(helper.session_heartbeat.receive(ws, json.loads(raw)))
+
+        async with websockets.serve(hub, '127.0.0.1', 0, process_response=advertise) as server:
+            port = server.sockets[0].getsockname()[1]
+
+            async def connect(path):
+                ws = await websockets.connect(f'ws://127.0.0.1:{port}{path}')
+                clients.append(ws)
+                await asyncio.wait_for(accepted.get(), 2)
+                index = len(send_counts)
+                send_counts.append(0)
+                original_send = ws.send
+
+                async def counted_send(raw):
+                    send_counts[index] += 1
+                    await original_send(raw)
+
+                ws.send = counted_send
+                helper.outbound_receipts.prepare(ws)
+                readers.append(asyncio.create_task(receive(ws)))
+                return ws
+
+            with tempfile.TemporaryDirectory(prefix='hb-live-') as root:
+                sock = str(Path(root) / 'ipc.sock')
+                helper.cfg = SimpleNamespace(key_id='fixture', mode='driver',
+                                             mcp_ipc_sock=sock, ipc_upload_only=False,
+                                             ipc_send_body_only=False)
+                old = await connect('/supported')
+                # Retain the initial WS argument deliberately: removing current()
+                # passes the positive control, then reuses this closed generation.
+                ipc = asyncio.create_task(helper._ipc_server(old, unused))
+                try:
+                    await asyncio.wait_for(helper.ipc_bound.wait(), 2)
+                    with patch.object(mcp_shim, '_IPC_SOCK', sock):
+                        async def report():
+                            return await asyncio.to_thread(mcp_shim._heartbeat_report,
+                                                           {'status': 'active', 'task': 'r60'})
+
+                        self.assertEqual((await report())['status'], 'recorded')
+                        self.assertEqual(send_counts, [1])
+                        helper.outbound_receipts.abort(old)
+                        helper.session_heartbeat.abort(old)
+                        await old.close()
+                        current = await connect('/supported')
+                        got = await report()
+                        self.assertEqual(send_counts, [1, 1],
+                                         'heartbeat reused the old WS after reconnect')
+                        self.assertEqual(got['status'], 'recorded')
+                        self.assertEqual([len(frames) for frames in server_frames], [1, 1])
+                        self.assertFalse(ipc.done(), 'reconnect replaced the persistent IPC')
+
+                        helper.outbound_receipts.abort(current)
+                        helper.session_heartbeat.abort(current)
+                        await current.close()
+                        await connect('/unsupported')
+                        self.assertEqual(await report(), {'ok': False, 'status': 'unsupported'})
+                        self.assertEqual(send_counts, [1, 1, 0],
+                                         'heartbeat ignored the current WS capability header')
+                        self.assertEqual([len(frames) for frames in server_frames], [1, 1, 0])
+                        self.assertEqual(helper.session_heartbeat.pending, {})
+                finally:
+                    ipc.cancel()
+                    await asyncio.gather(ipc, return_exceptions=True)
+                    for ws in clients:
+                        await ws.close()
+                    await asyncio.gather(*readers, return_exceptions=True)
+
+
 class HeartbeatIpcRoundTripTest(unittest.IsolatedAsyncioTestCase):
     async def roundtrip(self, handler, call=None, **serve_kwargs):
         from sessionhelper.ipc_listener import serve_ipc

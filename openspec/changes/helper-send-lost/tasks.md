@@ -51,3 +51,5 @@
 - 2026-11-16 coder56solzzc，23:15:43Z令撤12f冻结；完成：caller created迁移/7天至30天保留/窗内quota/有界且pending保护GC、CLI/MCP结构化full/conflict，helper outbox同类历史配额收敛、Hub/helper启动上界，工作态Python53项及store/cmd retention定向绿；首轮旧测试mock第三参数None预期不符，改为验证预分配稳定ID，原rc1保留。阻塞：新源固定完整门/全部新旧删保护及qwen/组长新源复核未齐。下一步固定候选后重跑；旧12f接受/证据仅历史，新①冻结前不入正式集成，不抬版本/不部署。
 
 - 2026-11-17T00:17:15.129861+00:00 coder56solzzc，固定产品/测试b48a0818aa121a3f68b921fac489926257ad841d（08bc产品修订，1d/b48仅加强测试）。完成：caller旧库迁移/窗内计数/有界pending保护GC、两入口结构化拒绝、helper终态历史清理、Hub/helper保留上界；新源canonical1241×2与sentinel、四树Go1558/2586/49/0、focused race46/0DATA RACE、build/strict36-0、55刀编译成功业务红/两baseline/还原后54项均绿。原08bc环境白名单rc1与过期刀存活保留，不算最终绿。阻塞：新源只读独立复核及组长终审；下一步FF推送核远端后仅请求新锚复核，不入正式集成、不抬VERSION、不部署。
+
+- 2026-11-17 coder56solzzc，正式集成至6f7dcad70：组件最终组长/qwen通过条件已满足，按③④①②合入110基点；本组件原门按原锚保留，完整联合/五轮门在r60-integration变更另记，不推main/不部署。

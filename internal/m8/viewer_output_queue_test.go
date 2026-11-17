@@ -331,3 +331,98 @@ func TestSessionWriteDefaultBudgetIncludesContendedSlot(t *testing.T) {
 		t.Fatal("default session write budget excluded lock wait")
 	}
 }
+
+// An already-established real viewer, rather than startViewerOutput's distinct
+// sealed-admission path. Both the visible gap and transport close are required.
+func TestViewerOfflineSealedExistingConnectionMarksGapAndCloses(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	ready := make(chan *terminalViewer, 1)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.CloseNow()
+		v := &terminalViewer{conn: conn, mu: make(chan struct{}, 1)}
+		v.mu <- struct{}{}
+		ready <- v
+		_, _, _ = conn.Read(r.Context())
+	}))
+	defer srv.Close()
+	peer, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer peer.CloseNow()
+	v := <-ready
+	if v.outputGap.Load() {
+		t.Fatal("fixture gap was already marked")
+	}
+	h.lifetime().background.Seal()
+	h.closeOfflineTerminalViewers([]*terminalViewer{v})
+	if !v.outputGap.Load() {
+		t.Fatal("sealed offline cleanup discarded history without a visible gap")
+	}
+	readCtx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	if _, _, err = peer.Read(readCtx); err == nil || errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("sealed offline cleanup left the actual viewer connected: %v", err)
+	}
+}
+
+// Freeze queued display responsibility before starting an owned offline
+// notification. The real control socket is held by its production write slot;
+// enqueue after offline must refuse new work, not merely set a boolean.
+func TestViewerOfflinePendingQueueRejectsNewDisplayAndMarksGap(t *testing.T) {
+	h, _, ctx := newTestHub(t)
+	ready := make(chan *terminalViewer, 1)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := websocket.Accept(w, r, nil)
+		if err != nil {
+			return
+		}
+		defer conn.CloseNow()
+		v := &terminalViewer{conn: conn, mu: make(chan struct{}, 1)}
+		_, stop := context.WithCancel(ctx)
+		defer stop()
+		q := &viewerOutputQueue{conn: conn, viewer: v, frames: make(chan string, 2), cancel: stop}
+		v.output = q
+		q.enqueue("queued before offline")
+		ready <- v
+		_, _, _ = conn.Read(r.Context())
+	}))
+	defer srv.Close()
+	peer, _, err := websocket.Dial(ctx, "ws"+strings.TrimPrefix(srv.URL, "http"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer peer.CloseNow()
+	v := <-ready
+	q := v.output
+	// No display worker is launched for this controlled pending-queue fixture.
+	// That prevents an independent worker's cleanup from masking either guard.
+	if v.outputGap.Load() || len(q.frames) != 1 {
+		t.Fatal("fixture did not retain pending display work")
+	}
+	h.closeOfflineTerminalViewers([]*terminalViewer{v})
+	q.enqueue("must not be accepted after offline")
+	q.mu.Lock()
+	count, bytes := len(q.frames), q.bytes
+	q.mu.Unlock()
+	if count != 1 || bytes != len("queued before offline") {
+		t.Fatalf("offline queue accepted new display work: items=%d bytes=%d", count, bytes)
+	}
+	if !v.outputGap.Load() {
+		t.Fatal("offline pending bytes disappeared without a visible gap")
+	}
+	v.mu <- struct{}{}
+	readCtx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	got := readTerminalViewMessage(t, readCtx, peer)
+	if got["type"] != "status" || got["message"] != "会话已离线" || got["readonly"] != true {
+		t.Fatal("pending queue changed the legacy offline status", got)
+	}
+	if _, _, err = peer.Read(readCtx); websocket.CloseStatus(err) != websocket.StatusNormalClosure {
+		t.Fatalf("pending queue changed the normal offline close: %v", err)
+	}
+}

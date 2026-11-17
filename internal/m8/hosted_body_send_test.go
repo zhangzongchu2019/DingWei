@@ -9,20 +9,43 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/coder/websocket"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
+	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
 // Synthetic in-memory identity/Hub and real Python helper/socket/shim. No PG/model/host.
-func TestHostedBodySendAcrossRealHub(t *testing.T) {
+func TestHostedBodySendAcrossRealHub(t *testing.T) { runHostedBodySendAcrossRealHub(t, false) }
+func TestHostedBodySendSameRequestIDAcrossCLIProcesses(t *testing.T) {
+	runHostedBodySendAcrossRealHub(t, true)
+}
+
+type cliReplayCreationRepo struct {
+	*store.SQLite
+	created atomic.Int32
+}
+
+func (r *cliReplayCreationRepo) CommitOutboundSessionDelivery(ctx context.Context, v model.OutboundIntent, d model.SessionDelivery) (*model.OutboundIntent, bool, error) {
+	saved, created, err := r.SQLite.CommitOutboundSessionDelivery(ctx, v, d)
+	if err == nil && created {
+		r.created.Add(1)
+	}
+	return saved, created, err
+}
+func runHostedBodySendAcrossRealHub(t *testing.T, cliRepeat bool) {
 	python := os.Getenv("DW_DESKTOP_INTEGRATION_PYTHON")
 	if python == "" {
 		t.Skip("set explicit isolated integration interpreter")
 	}
 	e := newAgentEnv(t)
+	counter := &cliReplayCreationRepo{SQLite: e.hub.Repo.(*store.SQLite)}
+	if cliRepeat {
+		e.hub.Repo = counter
+	}
 	secret, sourceID := e.enroll("hosted-device", "Desktop")
 	peerSecret, peerID := e.enroll("hosted-peer", "Peer")
 	group, err := e.svc.CreateGroup(e.ctx, "zzc", sourceID, "h1group")
@@ -70,13 +93,23 @@ func TestHostedBodySendAcrossRealHub(t *testing.T) {
 			cmd.Wait()
 		}
 	}()
-	if err := json.NewEncoder(input).Encode(map[string]string{"secret": secret, "home": home, "base": "ws" + strings.TrimPrefix(e.srv.URL, "http"), "mcp_ipc_sock": ipcSocket}); err != nil {
+	if err := json.NewEncoder(input).Encode(map[string]any{"secret": secret, "home": home, "base": "ws" + strings.TrimPrefix(e.srv.URL, "http"), "mcp_ipc_sock": ipcSocket, "cli_repeat": cliRepeat}); err != nil {
 		t.Fatal(err)
 	}
 	scan := bufio.NewScanner(output)
+	var repeatResult struct {
+		SourceID   string `json:"source_message_id"`
+		DeliveryID string `json:"delivery_id"`
+		Calls      int    `json:"process_send_calls"`
+	}
 	phase := func(want string) {
 		t.Helper()
 		for scan.Scan() {
+			if strings.HasPrefix(scan.Text(), "CLI_REPEAT_RESULT ") {
+				if json.Unmarshal([]byte(strings.TrimPrefix(scan.Text(), "CLI_REPEAT_RESULT ")), &repeatResult) != nil {
+					t.Fatal("bad CLI repeat result")
+				}
+			}
 			if scan.Text() == "HOSTED_ERROR" {
 				t.Fatal("synthetic child failed; no raw secret output")
 			}
@@ -88,6 +121,45 @@ func TestHostedBodySendAcrossRealHub(t *testing.T) {
 	}
 	phase("HOSTED_READY")
 	io.WriteString(input, "send\n")
+	if cliRepeat {
+		phase("CLI_REPEAT_RESOLVED")
+		if repeatResult.Calls != 2 || repeatResult.SourceID == "" || repeatResult.DeliveryID == "" {
+			t.Fatal("two independent CLI sends did not preserve IDs", repeatResult)
+		}
+		intent, err := counter.GetOutboundIntent(e.ctx, sourceID, repeatResult.SourceID)
+		if err != nil || intent == nil || intent.DeliveryID != repeatResult.DeliveryID || counter.created.Load() != 1 {
+			t.Fatalf("same request ID created more than one Hub delivery: created=%d intent=%+v err=%v", counter.created.Load(), intent, err)
+		}
+		seen := 0
+		observe, done := context.WithTimeout(ctx, 350*time.Millisecond)
+		defer done()
+		for {
+			_, raw, err := peer.Read(observe)
+			if err != nil {
+				if observe.Err() != context.DeadlineExceeded {
+					t.Fatal("peer closed before duplicate observation", err)
+				}
+				break
+			}
+			var got model.Envelope
+			if json.Unmarshal(raw, &got) == nil && got.Body == "DW_HOSTED_SEND_MARKER" {
+				seen++
+				if got.ID != repeatResult.SourceID || metaString(got.Meta, "delivery_id") != repeatResult.DeliveryID {
+					t.Fatal("different physical delivery identity")
+				}
+			}
+		}
+		if seen != 1 || counter.created.Load() != 1 {
+			t.Fatalf("two CLI invocations produced %d wire deliveries / %d committed creations", seen, counter.created.Load())
+		}
+		io.WriteString(input, "stop\n")
+		phase("HOSTED_STOPPED")
+		if err := cmd.Wait(); err != nil {
+			t.Fatal("CLI child failed")
+		}
+		t.Log("two installed send.py processes with identical --request-id; real IPC/helper/WS/Hub; exactly one committed Hub delivery and one observed delivery frame; same source/delivery restored")
+		return
+	}
 	phase("HOSTED_RESOLVED")
 	for {
 		got := readEnvelope(t, ctx, peer)
