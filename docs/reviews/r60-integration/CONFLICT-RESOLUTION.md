@@ -7,7 +7,7 @@
 | ③ MCP两工具 | b4c42adb75c7b9cb1847dcc97fdc856e51b7f42f | 899f4328bc418edff80e06fa49ab3a5471f8a9ef | 7ee4c149433b62f6c8efa2c39d6c8a06571929d5 |
 | ④ 错卡重发 | 4e421abea6399c1de78040e14e4a736d97340671 | 同产品 | 70bf89904388c2b63f0731e6fb9a4628d41b40ff |
 | ① 发信持久责任 | b48a0818aa121a3f68b921fac489926257ad841d | 81a887308688a545cc0edef39559c2e7120e2340 | 9290d63e99177ebdbec5c2fed7cc2cc571fdae70 |
-| ② Hub保活 | 3db78e5b244c4663fe67f7dcd44b74991057a7f6 | b17593fbe8563cf1cff6ee4db1b9d4727b53ced5 | 6f7dcad70d1b3aa308f38a73432dce6c8397f045 |
+| ② Hub保活 | 3db78e5b244c4663fe67f7dcd44b74991057a7f6 | 7590285b31d1276c8907f15c3780bbdcbee7747f | 初合6f7dcad70；补合fd2c99e8d |
 
 ③④及②已由组长冻结；①组长00:29:40Z通过，以qwen对b48复核通过为冻结条件，该独立spec/code PASS于02:2xZ收到。qwen报告aa41c48e的10个日志在初查Git中缺失，已请求报告方追加，不把两篇文档SHA核对冒称原始日志核验。
 
@@ -16,3 +16,7 @@
 合①时app.py保留current分派，heartbeat_handler=current(self._make_heartbeat_handler)，依当前WS能力头判断；保留①desktop当前WS与非desktop本地inbox分支。deploy/test_build_entrypoints.py按实际inventory97（基94＋①1＋③2）。②自动合并，无新增文本冲突。真实持久Unix IPC重连回归验证新连接发送、旧连接不再发送及无能力返回unsupported；删除current包装须业务红。
 
 本地预演0cf80ce0/b7ba6ca5只贡献测试准备，不以其旧①12f/②167的门读数代替本源。正式新增仅版本钉住、冲突回归、真实双CLI同ID、①②联合格、Z1两格及文档；冻结分支不改。正式门与独立读数分别留证。
+
+## ②最终证据坐标补合（组长2026-11-17T02:50:33Z令）
+
+初合b175后，按令以纯文档merge fd2c99e8dea460a24630d570d8c45ac71369266f补合7590285b。仅tasks末尾追加记录发生文本冲突，两条历史均保留，随后本次集成记录优先；无产品冲突。②独立复核记录/REPORT/SHA/context/tasks均纳入，最终四输入按上表③④①②；组件产品仍b4/4e/b48/3db，正式受测产品仍a311。internal/cmd/tools/scripts/deploy/view-service/go.mod/go.sum/VERSION九项Git对象与a311相同，85项manifest仍逐字相符。按令不重跑构建/Go/canonical/race/browser/strict；只做Git等价与既有证据SHA核对。旧门原记录不改锚、不补造重跑。

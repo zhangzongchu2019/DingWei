@@ -1,0 +1,62 @@
+{
+  "instruction_utc": "2026-11-17T02:50:33Z",
+  "recorded_utc": "2026-11-17T03:51:06.628491+00:00",
+  "previous_delivery": "0d7135e46247d556b6ec5999c22f7cb6de6b923a",
+  "document_merge": "fd2c99e8dea460a24630d570d8c45ac71369266f",
+  "final_component_refs": {
+    "③": "899f4328bc418edff80e06fa49ab3a5471f8a9ef",
+    "④": "4e421abea6399c1de78040e14e4a736d97340671",
+    "①": "81a887308688a545cc0edef39559c2e7120e2340",
+    "②": "7590285b31d1276c8907f15c3780bbdcbee7747f"
+  },
+  "products_unchanged": true,
+  "equivalence_to_tested_product": {
+    "internal": {
+      "tested": "c48bce84e57c6b2b46f29bed0f8577da9f488dde",
+      "supplemented": "c48bce84e57c6b2b46f29bed0f8577da9f488dde"
+    },
+    "cmd": {
+      "tested": "8f537c10d956f6ba09b9c9df3221a253351004d7",
+      "supplemented": "8f537c10d956f6ba09b9c9df3221a253351004d7"
+    },
+    "tools": {
+      "tested": "721665457deb94a5f8d373152a445111e40a8c15",
+      "supplemented": "721665457deb94a5f8d373152a445111e40a8c15"
+    },
+    "scripts": {
+      "tested": "33ee8cdb84215613867f5fdacc75074229ac7d20",
+      "supplemented": "33ee8cdb84215613867f5fdacc75074229ac7d20"
+    },
+    "deploy": {
+      "tested": "120e37039bac39a0a24ec964d4d9673d19d11382",
+      "supplemented": "120e37039bac39a0a24ec964d4d9673d19d11382"
+    },
+    "view-service": {
+      "tested": "16956d3b39bf03faa0a61e25b22a0049fc8899af",
+      "supplemented": "16956d3b39bf03faa0a61e25b22a0049fc8899af"
+    },
+    "go.mod": {
+      "tested": "362bb888ef3346356e451a58cd87064e84474317",
+      "supplemented": "362bb888ef3346356e451a58cd87064e84474317"
+    },
+    "go.sum": {
+      "tested": "871e6a788732f19d19a470cc34dfdb8e366b364f",
+      "supplemented": "871e6a788732f19d19a470cc34dfdb8e366b364f"
+    },
+    "VERSION": {
+      "tested": "74a4e0fa764244cb7cdce491aa3ce9e6b49947e0",
+      "supplemented": "74a4e0fa764244cb7cdce491aa3ce9e6b49947e0"
+    }
+  },
+  "changed_paths_in_merge": [
+    "docs/reviews/r60-hub-keepalive/INDEPENDENT-REVIEW-3DB.md",
+    "docs/reviews/r60-hub-keepalive/REPORT.md",
+    "docs/reviews/r60-hub-keepalive/SHA256SUMS",
+    "openspec/changes/hub-keepalive-fix/context.md",
+    "openspec/changes/hub-keepalive-fix/tasks.md"
+  ],
+  "gates_rerun": false,
+  "reason": "leader explicit documentation-only supplement; existing a311 gates remain anchored to a311",
+  "keepalive_checksum_entries": 303,
+  "keepalive_checksum_result": "all OK"
+}

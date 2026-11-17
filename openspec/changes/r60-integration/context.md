@@ -5,3 +5,5 @@
 代码：app.py IPC current装配；deploy/test_build_entrypoints.py inventory；internal/m8/r60_outbound_joint_test.go与hosted_body_send_test.go、viewer_output_queue_test.go；tools/sessionhelper/tests/test_session_heartbeat.py和hosted_body_hub_client.py；版本VERSION/internal/version/helper __init__。
 
 环境：锁定隔离Python解释器、Go1.22.2、Node/OpenSpec1.16.0，PGstrict临时库，无现网、模型、在线席位；真实CLI组合格必须显式解释器以免SKIP。原始证据后续落docs/reviews/r60-integration/evidence。未推main/部署。
+
+②最终证据tip依组长02:50:33Z令补至7590285b31d1276c8907f15c3780bbdcbee7747f，纯文档merge fd2c99e8d；最终四输入见CONFLICT-RESOLUTION。受测a311产品九项Git对象不变，门不重跑。

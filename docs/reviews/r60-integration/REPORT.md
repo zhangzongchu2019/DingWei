@@ -1,5 +1,7 @@
 # R60 正式集成候选交审
 
+当前补合：依组长2026-11-17T02:50:33Z令，②证据坐标已从b175补至7590285b31d1276c8907f15c3780bbdcbee7747f，纯文档merge fd2c99e8d；以下固定a311门保持原样，不重跑、不外推至新产品。最终四输入：③899f4328bc418edff80e06fa49ab3a5471f8a9ef、④4e421abea6399c1de78040e14e4a736d97340671、①81a887308688a545cc0edef39559c2e7120e2340、②7590285b31d1276c8907f15c3780bbdcbee7747f。详见CONFLICT-RESOLUTION及evidence/keepalive-759-equivalence.json。
+
 固定产品/测试源 a311aaf3beea90262c05ca2c316064b8a8856d06，tree dfb32347b5156dc1d15d4bfaf0543310dde316d8，父 6f7dcad70d1b3aa308f38a73432dce6c8397f045；基110e2c1f，VERSION0.2.3.40。按③④①②合入及冲突解法见CONFLICT-RESOLUTION.md；本报告是作者交审证据，不自签收、不是发布GO，不推main/不接现网。
 
 ## 结果
