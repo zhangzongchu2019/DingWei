@@ -1,0 +1,8 @@
+{
+  "pid": 1375364,
+  "utc_pause": "2026-11-17T19:28:48.838014+00:00",
+  "scope": "only own Python gate dispatcher; current child build continues; no product process stopped",
+  "reason": "wait until all own mutation tests finish before five serial whole-m8 rounds; resume same dispatcher with SIGCONT",
+  "utc_resume": "2026-11-17T19:35:38.703545+00:00",
+  "resume_reason": "Both full candidate cut batches and same restored worktree Go/Python baselines passed; now whole-m8 rounds can start without own targeted test load."
+}

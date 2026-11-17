@@ -1,0 +1,82 @@
+{
+  "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+  "note": "These actual named PASS observations do not replace the unrun later independent named gate after STOP.",
+  "rounds": [
+    {
+      "round": 1,
+      "outcomes": [
+        {
+          "Time": "2026-11-17T19:37:51.423056787Z",
+          "Action": "pass",
+          "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+          "Test": "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "Elapsed": 1.28
+        },
+        {
+          "Time": "2026-11-17T19:40:01.642287463Z",
+          "Action": "pass",
+          "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+          "Test": "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "Elapsed": 12.04
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "outcomes": [
+        {
+          "Time": "2026-11-17T19:43:34.097151769Z",
+          "Action": "pass",
+          "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+          "Test": "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "Elapsed": 1.2
+        },
+        {
+          "Time": "2026-11-17T19:45:43.94562751Z",
+          "Action": "pass",
+          "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+          "Test": "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "Elapsed": 12.2
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "outcomes": [
+        {
+          "Time": "2026-11-17T19:49:19.841225864Z",
+          "Action": "pass",
+          "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+          "Test": "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "Elapsed": 1.22
+        },
+        {
+          "Time": "2026-11-17T19:51:31.258803754Z",
+          "Action": "pass",
+          "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+          "Test": "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "Elapsed": 12.45
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "outcomes": [
+        {
+          "Time": "2026-11-17T19:55:08.01766493Z",
+          "Action": "pass",
+          "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+          "Test": "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "Elapsed": 1.21
+        },
+        {
+          "Time": "2026-11-17T19:57:16.981103496Z",
+          "Action": "pass",
+          "Package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+          "Test": "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "Elapsed": 12.62
+        }
+      ]
+    }
+  ]
+}

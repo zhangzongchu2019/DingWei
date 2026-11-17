@@ -1,0 +1,13 @@
+{
+  "stage": "m8-4",
+  "invalid_failures": [
+    "TestSessionNameReconnectKeepsNameAndReleaseReuses"
+  ],
+  "interrupt_outside_allowed_context": [
+    {
+      "test": "TestSessionNameReconnectKeepsNameAndReleaseReuses",
+      "output": "    hub_test.go:3505: interrupted (9)\n"
+    }
+  ],
+  "reason": "Z-3 stop; do not substitute single runs"
+}

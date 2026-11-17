@@ -1,0 +1,76 @@
+[
+  {
+    "name": "go",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "argv": [
+      "go",
+      "test",
+      "./internal/m8",
+      "./internal/store",
+      "./cmd/workpulse",
+      "-run",
+      "LegacyIngress|SessionDiagnostics|SessionIngress|SessionWrite|SessionKeepalive|ViewerOutput|ViewerOffline|SessionHistoryCancellation|Keepalive",
+      "-count=1",
+      "-p",
+      "1",
+      "-v",
+      "-timeout",
+      "3m"
+    ],
+    "utc_start": "2026-11-17T19:34:06.488641+00:00",
+    "env": {
+      "HOME": "/tmp/rif-home",
+      "TMPDIR": "/tmp",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC",
+      "GOTOOLCHAIN": "local",
+      "GOPATH": "/home/dev/go",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "HUB_TEST_PG_STRICT": "1",
+      "PYTHONPATH": "tools/sessionhelper:tools/sessionhelper/tests",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "DW_DESKTOP_INTEGRATION_PYTHON": "/data/ai-dev-data/helper-deps-lock-venv/bin/python3"
+    },
+    "uid": 1001,
+    "rc": 0,
+    "utc_end": "2026-11-17T19:35:38.193990+00:00",
+    "raw_sha256": "6f4c0a269d56bc9e17218ce30174a3be188a32b508b93ef48c9ddb3f4535a079"
+  },
+  {
+    "name": "python",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "test_terminal_start_observation",
+      "-v"
+    ],
+    "utc_start": "2026-11-17T19:35:38.194404+00:00",
+    "env": {
+      "HOME": "/tmp/rif-home",
+      "TMPDIR": "/tmp",
+      "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+      "LANG": "C.UTF-8",
+      "TZ": "UTC",
+      "GOTOOLCHAIN": "local",
+      "GOPATH": "/home/dev/go",
+      "GOMODCACHE": "/home/dev/go/pkg/mod",
+      "GOCACHE": "/home/dev/.cache/go-build",
+      "GOPROXY": "off",
+      "GOSUMDB": "off",
+      "HUB_TEST_PG_STRICT": "1",
+      "PYTHONPATH": "tools/sessionhelper:tools/sessionhelper/tests",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "DW_DESKTOP_INTEGRATION_PYTHON": "/data/ai-dev-data/helper-deps-lock-venv/bin/python3"
+    },
+    "uid": 1001,
+    "rc": 0,
+    "utc_end": "2026-11-17T19:35:38.658886+00:00",
+    "raw_sha256": "2c1c3097e6b079dfd29edf652efa4252f60e11463a5d9433552027a42fd86b51"
+  }
+]

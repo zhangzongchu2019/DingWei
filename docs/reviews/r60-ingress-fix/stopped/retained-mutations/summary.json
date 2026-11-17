@@ -1,0 +1,452 @@
+[
+  {
+    "name": "reader_independence",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/hub.go",
+    "before": "h.startSessionIngress(ingressCtx, stopIngress, c)",
+    "after": "c.ingress = nil",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:107: session has no independent Reader",
+      "    session_ingress_test.go:94: healthy Pong connection closed while business was blocked"
+    ],
+    "raw_sha256": "39286a7d5aa79cd6e5494c91ef701c94eb32a975ef6aef26cf3b33000b43fc8c",
+    "utc": "2026-11-17T19:28:24.575116+00:00",
+    "killed": true
+  },
+  {
+    "name": "viewer_total_deadline",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/terminal.go",
+    "before": "ctx, cancel := context.WithTimeout(ctx, viewerWriteLimit)",
+    "after": "ctx, cancel := context.WithCancel(ctx)",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:68: viewer write lock wait was unbounded"
+    ],
+    "raw_sha256": "974b8a6c09bd77911346e38ca11daece4a91d00e9c1d141a083cb49d1e6b2d36",
+    "utc": "2026-11-17T19:28:39.590883+00:00",
+    "killed": true
+  },
+  {
+    "name": "queue_byte_limit",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "q.bytes+n > sessionIngressBytes",
+    "after": "false",
+    "replacement_count": 2,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:139: byte budget exceeded"
+    ],
+    "raw_sha256": "3afb779c997812ceab206c1c15c038a45e39530cc94ea1985549fef351ba2edf",
+    "utc": "2026-11-17T19:28:53.307737+00:00",
+    "killed": true
+  },
+  {
+    "name": "global_byte_limit",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "q.h.ingressBudgetBytes+n > sessionIngressGlobalBytes",
+    "after": "false",
+    "replacement_count": 2,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:146: global budget exceeded"
+    ],
+    "raw_sha256": "7f5499665dce4e3c46cd9a25c1d9c97260b7512776c4ab562a1e118b6f5ff630",
+    "utc": "2026-11-17T19:29:06.929261+00:00",
+    "killed": true
+  },
+  {
+    "name": "history_result_wait",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/store/session_history.go",
+    "before": "case <-ctx.Done():\n\t\treturn SessionHistoryCursor{}, ctx.Err()",
+    "after": "case <-make(chan struct{}):\n\t\treturn SessionHistoryCursor{}, ctx.Err()",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_history_test.go:617: caller waited indefinitely for the history writer"
+    ],
+    "raw_sha256": "baf6efe716497225ad587eb4c7f9a2f38bd2550a971154210d3f3d9d44cf6333",
+    "utc": "2026-11-17T19:29:08.265002+00:00",
+    "killed": true
+  },
+  {
+    "name": "journal_per_failure",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/hub.go",
+    "before": "h.recordKeepaliveFailure(c, interval, timeout, time.Since(pingStart), keepaliveErrorClass(err, pingErr))",
+    "after": "_ = pingErr",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:304: failure journal count 0 1"
+    ],
+    "raw_sha256": "1d6092c88829d4031eb6c22b2aa07e6b8a5d8dcf81a563593a8ab4bd9647ef22",
+    "utc": "2026-11-17T19:29:22.075192+00:00",
+    "killed": true
+  },
+  {
+    "name": "journal_drop_count",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/keepalive_journal.go",
+    "before": "c.obsConn.DiagnosticDrop()",
+    "after": "",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:189: missing dropped diagnostic count {0 0 0 session 1 1 map[] 0 0 {[0xc0002fc988 0xc0002fc990 0xc0002fc998 0xc0002fc9a0 0xc0002fc9a8 0xc0002fc9b0 0xc0002fc9b8 0xc0002fc9c0 0xc0002fc9c8 0xc0002fc9e0 <nil>] [0 0 0 0 0 0 0 0 0 0 0] 0 0}}"
+    ],
+    "raw_sha256": "f4fb5545acaf5106e5df13a76919dc716d4b7972557a1900d7f5079ec8034aa1",
+    "utc": "2026-11-17T19:29:35.486617+00:00",
+    "killed": true
+  },
+  {
+    "name": "positive_configuration",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_keepalive_config.go",
+    "before": "if interval < 10*time.Second || interval > 60*time.Second || timeout < time.Second || timeout > 30*time.Second || interval+timeout >= 75*time.Second {",
+    "after": "if false {",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:170: invalid config accepted [-1s ]"
+    ],
+    "raw_sha256": "bc582b0d9d5d15b2a973504e38da03a599ca8cbe2790292a20e8150d95905f23",
+    "utc": "2026-11-17T19:29:49.243639+00:00",
+    "killed": true
+  },
+  {
+    "name": "terminal_chunk_bound",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "tools/sessionhelper/sessionhelper/app.py",
+    "before": "if part_bytes+n>32768:",
+    "after": "if False:",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "AssertionError: 1 not greater than 2"
+    ],
+    "raw_sha256": "663a5e61acfe362e82d61bf52a90164a2acce6a1c5def8aee37cb100aa847aaa",
+    "utc": "2026-11-17T19:29:49.473037+00:00",
+    "killed": true
+  },
+  {
+    "name": "transport_error_preserved",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "return q.err",
+    "after": "return fallback",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:422: reader EOF was relabelled as request cancellation context canceled"
+    ],
+    "raw_sha256": "209205d79a381fb42e631f4da740bff65489f1e4782915e50795e0913803906d",
+    "utc": "2026-11-17T19:30:03.329867+00:00",
+    "killed": true
+  },
+  {
+    "name": "viewer_gap_marker",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "q.viewer.outputGap.Store(true)",
+    "after": "",
+    "replacement_count": 3,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:264: overflow lost visible gap marker"
+    ],
+    "raw_sha256": "182b3e80ffb55535590214c16e5e0803dd531ca6bb475fa3d81b61a892744551",
+    "utc": "2026-11-17T19:30:17.247609+00:00",
+    "killed": true
+  },
+  {
+    "name": "ack_after_commit",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/delivery_ack_v2.go",
+    "before": "\tresult, _, err := h.Repo.ApplySessionDeliveryACK(ctx, ack, h.now().UTC())\n\tif err != nil {\n\t\treturn true\n\t}\n\t// The confirmation is emitted only after the phase transaction commits.\n\tif err := c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress(\"workpulse\", c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: h.now().Unix(), Meta: map[string]any{\n\t\t\"type\": \"delivery_ack_confirm\", \"delivery_id\": d.ID, \"ack_protocol\": 2,\n\t\t\"processing_mode\": mode, \"ack_generation\": d.AckGeneration, \"state\": phase,\n\t}}); err != nil {\n\t\tc.obsConn.DeliveryACKConfirmWriteFailed()\n\t}\n",
+    "after": "\t// The confirmation is emitted only after the phase transaction commits.\n\tif err := c.write(ctx, model.Envelope{ID: randomHex(16), From: sessionAddress(\"workpulse\", c.keyID), To: sessionAddress(c.sessionName, c.keyID), TS: h.now().Unix(), Meta: map[string]any{\n\t\t\"type\": \"delivery_ack_confirm\", \"delivery_id\": d.ID, \"ack_protocol\": 2,\n\t\t\"processing_mode\": mode, \"ack_generation\": d.AckGeneration, \"state\": phase,\n\t}}); err != nil {\n\t\tc.obsConn.DeliveryACKConfirmWriteFailed()\n\t}\n\tresult, _, err := h.Repo.ApplySessionDeliveryACK(ctx, ack, h.now().UTC())\n\tif err != nil {\n\t\treturn true\n\t}\n",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    keepalive_ack_order_test.go:80: ACK was confirmed before DB commit",
+      "    keepalive_ack_order_test.go:80: ACK was confirmed before DB commit"
+    ],
+    "raw_sha256": "b61ffca55e2e820a3644c8370836f433285b04f672d37c8ad22828f9dce11b7d",
+    "utc": "2026-11-17T19:30:31.316888+00:00",
+    "killed": true
+  },
+  {
+    "name": "terminal_fairness_only",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "tools/sessionhelper/sessionhelper/app.py",
+    "before": "    async def terminal_loop(self, ws) -> None:\n        if self.cfg.mode not in (\"cli\", \"driver\") or not hasattr(self.adapter, \"next_terminal_chunk\"):\n            await asyncio.Future()\n        start_task = None\n        if hasattr(self.adapter, \"start\"):\n            # Keep startup output visible while observing this connection's task.\n            start_task = asyncio.create_task(asyncio.to_thread(self.adapter.start))\n        try:\n            while True:\n                if start_task is not None and start_task.done():\n                    start_task.result()  # startup failure stops this connection\n                    start_task = None\n                chunk = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.5)\n                if start_task is not None and start_task.done():\n                    start_task.result()\n                    start_task = None\n                if not chunk:\n                    continue\n                deadline = asyncio.get_running_loop().time() + 0.12\n                chunks = [chunk]\n                batch_chars = len(chunk)\n                while batch_chars < 32768 and asyncio.get_running_loop().time() < deadline:\n                    more = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.01)\n                    if not more:\n                        break\n                    chunks.append(more)\n                    batch_chars += len(more)\n                body = \"\".join(chunks)\n                meta = {\"type\": \"terminal_output\", \"session\": self.cfg.session_name, \"key_id\": self.cfg.key_id, \"no_mirror\": True}\n                # Only display text is split; structured session_event remains\n                # opaque. UTF-8 byte accounting never cuts a code point.\n                part=[];part_bytes=0\n                for char in body:\n                    n=len(char.encode('utf-8',errors='replace'))\n                    if part_bytes+n>32768:\n                        await asyncio.sleep(0)\n                        await ws.send(json.dumps(envelope(session_addr(\"workpulse\", self.cfg.key_id), ''.join(part), self.book.self_addr, meta), ensure_ascii=False))\n                        part=[];part_bytes=0\n                    part.append(char);part_bytes+=n\n                if part:\n                    await asyncio.sleep(0)\n                    await ws.send(json.dumps(envelope(session_addr(\"workpulse\", self.cfg.key_id), ''.join(part), self.book.self_addr, meta), ensure_ascii=False))\n        finally:\n            if start_task is not None:\n                start_task.cancel()\n                await asyncio.gather(start_task, return_exceptions=True)\n            # Cancelling to_thread's awaiter does not stop the underlying thread.\n\n",
+    "after": "    async def terminal_loop(self, ws) -> None:\n        if self.cfg.mode not in (\"cli\", \"driver\") or not hasattr(self.adapter, \"next_terminal_chunk\"):\n            await asyncio.Future()\n        start_task = None\n        if hasattr(self.adapter, \"start\"):\n            # Keep startup output visible while observing this connection's task.\n            start_task = asyncio.create_task(asyncio.to_thread(self.adapter.start))\n        try:\n            while True:\n                if start_task is not None and start_task.done():\n                    start_task.result()  # startup failure stops this connection\n                    start_task = None\n                chunk = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.5)\n                if start_task is not None and start_task.done():\n                    start_task.result()\n                    start_task = None\n                if not chunk:\n                    continue\n                deadline = asyncio.get_running_loop().time() + 0.12\n                chunks = [chunk]\n                batch_chars = len(chunk)\n                while batch_chars < 32768 and asyncio.get_running_loop().time() < deadline:\n                    more = await asyncio.to_thread(self.adapter.next_terminal_chunk, 0.01)\n                    if not more:\n                        break\n                    chunks.append(more)\n                    batch_chars += len(more)\n                body = \"\".join(chunks)\n                meta = {\"type\": \"terminal_output\", \"session\": self.cfg.session_name, \"key_id\": self.cfg.key_id, \"no_mirror\": True}\n                # Only display text is split; structured session_event remains\n                # opaque. UTF-8 byte accounting never cuts a code point.\n                part=[];part_bytes=0\n                for char in body:\n                    n=len(char.encode('utf-8',errors='replace'))\n                    if part_bytes+n>32768:\n                        pass\n                        await ws.send(json.dumps(envelope(session_addr(\"workpulse\", self.cfg.key_id), ''.join(part), self.book.self_addr, meta), ensure_ascii=False))\n                        part=[];part_bytes=0\n                    part.append(char);part_bytes+=n\n                if part:\n                    pass\n                    await ws.send(json.dumps(envelope(session_addr(\"workpulse\", self.cfg.key_id), ''.join(part), self.book.self_addr, meta), ensure_ascii=False))\n        finally:\n            if start_task is not None:\n                start_task.cancel()\n                await asyncio.gather(start_task, return_exceptions=True)\n            # Cancelling to_thread's awaiter does not stop the underlying thread.\n\n",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "AssertionError: False is not true : control task starved between frames"
+    ],
+    "raw_sha256": "ccb93bc291e1bb8dd2a920bc4210095f8f244bf0bf6bcc7f081b9ccdf6284351",
+    "utc": "2026-11-17T19:30:31.546463+00:00",
+    "killed": true
+  },
+  {
+    "name": "overload_distinct_reason",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "SetLocalReason(\"business_queue_overflow\")",
+    "after": "SetLocalReason(\"keepalive_failed\")",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:253: overload misclassified as keepalive {0 0 0 session 1 0 map[keepalive_failed:1] 0 0 {[0xc0003ac008 0xc0003ac020 0xc0003ac028 0xc0003ac030 0xc0003ac038 0xc0003ac040 0xc0003ac048 0xc0003ac060 0xc0003ac068 0xc0003ac070 <nil>] [0 0 0 0 0 0 0 0 0 0 0] 0 0}}"
+    ],
+    "raw_sha256": "b67284550853466c921db1dc43d3ba678f85222ffb80f3679ff5879f82a6dbc9",
+    "utc": "2026-11-17T19:30:45.213051+00:00",
+    "killed": true
+  },
+  {
+    "name": "default_session_write_budget",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/hub.go",
+    "before": "waitCtx, waitCancel := context.WithTimeout(ctx, sessionWriteLimit)",
+    "after": "waitCtx, waitCancel := context.WithCancel(ctx)",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:331: default session write budget excluded lock wait"
+    ],
+    "raw_sha256": "5b4f8223d2f994d87502b176f96721229204caf6f55e85beceff030ef0e47590",
+    "utc": "2026-11-17T19:31:01.183191+00:00",
+    "killed": true
+  },
+  {
+    "name": "fail_fast_overload",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "if !q.reserve(0) {\n\t\t\t\tq.overflow()\n\t\t\t\treturn\n\t\t\t}",
+    "after": "if !q.reserve(0) { <-ctx.Done(); return }",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:246: full queue blocked Reader"
+    ],
+    "raw_sha256": "a71345499ffc3917a99797536085b8f679c7d7ffe7507bb5ef327eb7b7ef0946",
+    "utc": "2026-11-17T19:31:16.110007+00:00",
+    "killed": true
+  },
+  {
+    "name": "failed_ack_not_success",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/delivery_ack_v2.go",
+    "before": "result, _, err := h.Repo.ApplySessionDeliveryACK(ctx, ack, h.now().UTC())\n\tif err != nil {\n\t\treturn true\n\t}",
+    "after": "result, _, err := h.Repo.ApplySessionDeliveryACK(ctx, ack, h.now().UTC())\n\tif err != nil {\n\t\t_ = c.write(ctx, model.Envelope{ID: randomHex(16), Meta:map[string]any{\"type\":\"delivery_ack_confirm\", \"delivery_id\":d.ID, \"ack_protocol\":2,\"processing_mode\":mode,\"ack_generation\":d.AckGeneration,\"state\":phase}})\n\t\treturn true\n\t}",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    keepalive_ack_order_test.go:91: failed ACK transaction produced success confirmation"
+    ],
+    "raw_sha256": "847d98376d99eb5cb86c3fe75e04e76090aa9c8225267d52bc0122979755e198",
+    "utc": "2026-11-17T19:31:30.237984+00:00",
+    "killed": true
+  },
+  {
+    "name": "cancel_during_ping",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/hub.go",
+    "before": "cancel()\n\t\t\tif ctx.Err() != nil {\n\t\t\t\treturn\n\t\t\t}",
+    "after": "cancel()",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:366: planned in-flight cancellation wrote failure journal: {\"conn_seq\":9,\"elapsed_ms\":0,\"error_class\":\"cancelled\",\"event\":\"session_keepalive_failed\",\"interval_ms\":20,\"pong_age_ms\":\"unknown\",\"queue_bytes\":0,\"queue_items\":0,\"reader_age_ms\":\"unknown\",\"session\":\"fixture\",\"timeout_ms\":5000,\"utc\":\"2026-11-17T19:31:33.276314814Z\",\"worker_age_ms\":\"unknown\",\"worker_phase\":\"unknown\"}"
+    ],
+    "raw_sha256": "0aad7841c6e3602ad9aa1bbb5c5fd878ff89eb113f288c6710b6506c840a9513",
+    "utc": "2026-11-17T19:31:33.325869+00:00",
+    "killed": true
+  },
+  {
+    "name": "offline_status_frame",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "\"message\": \"会话已离线\"",
+    "after": "\"message\": \"连接结束\"",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:115: Agent offline lost legacy status frame failed to get reader: received close frame: status = StatusNormalClosure and reason = \"session offline\""
+    ],
+    "raw_sha256": "7f23488dc065127da13e85b6be9242770a344b80cdb2f506811522e6d9688ab8",
+    "utc": "2026-11-17T19:31:46.838636+00:00",
+    "killed": true
+  },
+  {
+    "name": "offline_normal_close",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "conn.Close(websocket.StatusNormalClosure, \"session offline\")",
+    "after": "conn.Close(websocket.StatusGoingAway, \"session offline\")",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:130: Agent offline lost normal close code: failed to get reader: received close frame: status = StatusGoingAway and reason = \"session offline\""
+    ],
+    "raw_sha256": "c10cfc16b6e3488cc76f5bc571325f6ac43835554ba34d64e81e20206d846257",
+    "utc": "2026-11-17T19:32:00.249465+00:00",
+    "killed": true
+  },
+  {
+    "name": "offline_slow_isolation",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "h.backgroundWork(\"viewer_offline\", func() {",
+    "after": "func(_ string, fn func()) bool { fn(); return true }(\"viewer_offline\", func() {",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:166: viewer teardown blocked Agent cleanup"
+    ],
+    "raw_sha256": "2159153613a27c78b87184b87dc763347f89442a3edf03b70aa45200d5686d11",
+    "utc": "2026-11-17T19:32:24.580882+00:00",
+    "killed": true
+  },
+  {
+    "name": "diagnostic_budget_count",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/keepalive_journal.go",
+    "before": "data[\"queue_items\"] = q.items",
+    "after": "data[\"queue_items\"] = len(q.frames)",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:407: diagnostic queue_items=0, want 1 (active item and one injected clock)"
+    ],
+    "raw_sha256": "6c16872d048c10a98b6c351abf840a77bdd259200b8b94a955ca38e365f2a287",
+    "utc": "2026-11-17T19:32:37.588054+00:00",
+    "killed": true
+  },
+  {
+    "name": "diagnostic_journal_clock",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/keepalive_journal.go",
+    "before": "now := h.now()",
+    "after": "now := time.Now()",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:407: diagnostic reader_age_ms=2.14241264733e+11, want 300 (active item and one injected clock)"
+    ],
+    "raw_sha256": "68dce2073b4cc7ca9b603a6f2df5e6a60d3cbd57b62069c3c6b8c9a06510c943",
+    "utc": "2026-11-17T19:32:50.495041+00:00",
+    "killed": true
+  },
+  {
+    "name": "diagnostic_worker_clock",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "q.workAt = q.h.now()",
+    "after": "q.workAt = time.Now()",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:407: diagnostic worker_age_ms=-2.14241277528e+11, want 0 (active item and one injected clock)"
+    ],
+    "raw_sha256": "0586425bb36e02097a4bbe1814575a7cd59ab9ddc2438ac3e2d70e7d99da60b1",
+    "utc": "2026-11-17T19:33:03.555431+00:00",
+    "killed": true
+  },
+  {
+    "name": "sealed_viewer_gap",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "q.mu.Unlock()\n\t\tv.outputGap.Store(true)\n\t\t_ = q.conn.CloseNow()",
+    "after": "q.mu.Unlock()\n\t\t_ = q.conn.CloseNow()",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:211: sealed background group silently discarded display output"
+    ],
+    "raw_sha256": "78ccabcb2be9e0e6e7e97aee27706d24dff3ffd12655bc54119752427fe60181",
+    "utc": "2026-11-17T19:33:16.713941+00:00",
+    "killed": true
+  },
+  {
+    "name": "receipt_failure_counter",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/outbound_receipt.go",
+    "before": "c.obsConn.OutboundReceiptWriteFailed()",
+    "after": "/* omitted receipt failure observation */",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:462: outbound receipt failure not separately observable: before={OutboundReceiptWriteFail:0 DeliveryACKConfirmWriteFail:0 DiagnosticDrop:0 Kind:session Opened:1 Active:1 Closed:map[] PingOK:0 PingFail:0 PingRTT:{LE:[0xc0002f5640 0xc0002f5648 0xc0002f5650 0xc0002f5658 0xc0002f5660 0xc0002f5668 0xc0002f5670 0xc0002f5678 0xc0002f5680 0xc0002f5688 <nil>] Counts:[0 0 0 0 0 0 0 0 0 0 0] Count:0 Sum:0}} after={OutboundReceiptWriteFail:0 DeliveryACKConfirmWriteFail:0 DiagnosticDrop:0 Kind:session Opened:1 Active:1 Closed:map[] PingOK:0 PingFail:0 PingRTT:{LE:[0xc000331f08 0xc000331f10 0xc000331f18 0xc000331f20 0xc000331f28 0xc000331f30 0xc000331f38 0xc000331f40 0xc000331f48 0xc000331f50 <nil>] Counts:[0 0 0 0 0 0 0 0 0 0 0] Count:0 Sum:0}}"
+    ],
+    "raw_sha256": "695875a8e22d6d78683132b6ff27d1746aecd20c71ac118a5ed118c2186ada3a",
+    "utc": "2026-11-17T19:33:33.933674+00:00",
+    "killed": true
+  },
+  {
+    "name": "ack_confirm_failure_counter",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/delivery_ack_v2.go",
+    "before": "c.obsConn.DeliveryACKConfirmWriteFailed()",
+    "after": "/* omitted confirmation failure observation */",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:469: ACK confirm failure not separately observable: before={OutboundReceiptWriteFail:1 DeliveryACKConfirmWriteFail:0 DiagnosticDrop:0 Kind:session Opened:2 Active:1 Closed:map[network_eof:1] PingOK:0 PingFail:0 PingRTT:{LE:[0xc0003d4520 0xc0003d4528 0xc0003d4530 0xc0003d4538 0xc0003d4540 0xc0003d4548 0xc0003d4550 0xc0003d4558 0xc0003d4560 0xc0003d4568 <nil>] Counts:[0 0 0 0 0 0 0 0 0 0 0] Count:0 Sum:0}} after={OutboundReceiptWriteFail:1 DeliveryACKConfirmWriteFail:0 DiagnosticDrop:0 Kind:session Opened:2 Active:1 Closed:map[network_eof:1] PingOK:0 PingFail:0 PingRTT:{LE:[0xc0001f8908 0xc0001f8960 0xc0001f8968 0xc0001f8990 0xc0001f8998 0xc0001f89a0 0xc0001f89a8 0xc0001f89b0 0xc0001f89b8 0xc0001f89e0 <nil>] Counts:[0 0 0 0 0 0 0 0 0 0 0] Count:0 Sum:0}}"
+    ],
+    "raw_sha256": "d1d09b88da62b104dd746a736bdd1942a064eff194baae67ddc5c5ecc7ddb237",
+    "utc": "2026-11-17T19:33:51.355112+00:00",
+    "killed": true
+  },
+  {
+    "name": "offline_status_failure_keeps_normal_close",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "\t\t\tif err := terminalWrite(context.Background(), writer, map[string]any{\"type\": \"status\", \"readonly\": true, \"message\": \"会话已离线\"}); err != nil {\n\t\t\t\tv.outputGap.Store(true)\n\t\t\t}",
+    "after": "\t\t\tif err := terminalWrite(context.Background(), writer, map[string]any{\"type\": \"status\", \"readonly\": true, \"message\": \"会话已离线\"}); err != nil {\n\t\t\t\tv.outputGap.Store(true)\n\t\t\t\treturn\n\t\t\t}",
+    "replacement_count": 1,
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:181: failed offline notification skipped normal close failed to get reader: failed to read frame header: EOF"
+    ],
+    "raw_sha256": "504872fa484559f116fa0faede91843e928ab636c5e3e93dc2c19bfecf129a76",
+    "utc": "2026-11-17T19:34:05.568371+00:00",
+    "killed": true
+  }
+]

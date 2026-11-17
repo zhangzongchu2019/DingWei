@@ -1,0 +1,35 @@
+{
+  "name": "build",
+  "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+  "argv": [
+    "./build.sh",
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-ingress-fix/final-candidate/build"
+  ],
+  "env": {
+    "HOME": "/tmp/rif-home",
+    "TMPDIR": "/tmp/rif-final",
+    "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+    "LANG": "C.UTF-8",
+    "TZ": "UTC",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "HUB_TEST_PG_STRICT": "1",
+    "GOTOOLCHAIN": "local",
+    "GOPATH": "/home/dev/go",
+    "GOCACHE": "/home/dev/.cache/go-build",
+    "GOMODCACHE": "/home/dev/go/pkg/mod",
+    "GOFLAGS": "-p=1",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "OPENSPEC_TELEMETRY": "0",
+    "DW_DESKTOP_INTEGRATION_PYTHON": "/data/ai-dev-data/helper-deps-lock-venv/bin/python3",
+    "SOURCE_COMMIT": "a24bb16335040ae06486f1c76be69ee542958214"
+  },
+  "uid": 1001,
+  "cwd": "/data/ai-dev-data/r60-ingress-fix",
+  "utc_start": "2026-11-17T19:10:51.587591+00:00",
+  "rc": 1,
+  "utc_end": "2026-11-17T19:19:21.526704+00:00",
+  "raw_sha256": "d31231122ab6675689fe8a26740907a9bd47803cf915e3b571e53a391ae22a82",
+  "bytes": 990706,
+  "data_race": 0
+}

@@ -1,0 +1,24 @@
+{
+  "scope": "private isolated HOME only; no source or shared/global configuration changes",
+  "home": "/tmp/rif-home",
+  "modules": [
+    {
+      "module": "playwright",
+      "installed_path": "/tmp/rif-home/.node_modules/playwright",
+      "resolved_path": "/tmp/coder-a3-playwright/node_modules/playwright",
+      "version": "1.56.1",
+      "package_json_sha256": "388159d9169e9aa04bd24a92fb102321e7aca1af8c5ce9fc130f354af148587a"
+    },
+    {
+      "module": "playwright-core",
+      "installed_path": "/tmp/rif-home/.node_modules/playwright-core",
+      "resolved_path": "/tmp/coder-a3-playwright/node_modules/playwright-core",
+      "version": "1.56.1",
+      "package_json_sha256": "428ba2490bb4eec3a9bf62838207d35318ecfb6677801ae770445bfa52007c27"
+    }
+  ],
+  "browser_cache": {
+    "path": "/tmp/rif-home/.cache/ms-playwright",
+    "resolved": "/home/dev/.cache/ms-playwright"
+  }
+}

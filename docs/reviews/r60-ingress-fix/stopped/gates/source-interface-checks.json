@@ -1,0 +1,10 @@
+{
+  "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+  "heartbeat_current": true,
+  "inventory_lines": 97,
+  "provenance": true,
+  "versions": {
+    "VERSION": "0.2.3.40",
+    "tools/sessionhelper/sessionhelper/__init__.py": "\"\"\"sessionHelper package.\"\"\"\n\n__version__ = \"0.2.3.40\""
+  }
+}

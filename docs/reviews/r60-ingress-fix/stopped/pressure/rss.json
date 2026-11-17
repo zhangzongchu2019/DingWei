@@ -1,0 +1,22 @@
+{
+  "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+  "argv": [
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-ingress-fix/pressure-final/pressure.test",
+    "-test.run=^TestSessionIngressTwentyTwoConnectionsBoundedWindow$",
+    "-test.count=1",
+    "-test.v",
+    "-test.timeout=1m"
+  ],
+  "uid": 1001,
+  "pid": 1353205,
+  "measurement": "os.wait4 exact child PID, excludes compiler and prior child processes",
+  "utc_start": "2026-11-17T19:13:42.998532+00:00",
+  "utc_end": "2026-11-17T19:13:43.588482+00:00",
+  "rc": 0,
+  "wall_seconds": 0.5899504972621799,
+  "maximum_rss_kib": 325252,
+  "user_seconds": 3.808249,
+  "system_seconds": 0.445993,
+  "raw_sha256": "07108570109a6661afaa64dfcb56bb37c91ffc74bf27e3042a2b24913d80640a",
+  "scope": "22 Go WS generators in one test process; no models; measured RSS, not a bound or production SLO."
+}

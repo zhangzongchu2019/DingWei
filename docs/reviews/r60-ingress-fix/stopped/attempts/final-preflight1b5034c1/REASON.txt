@@ -1,0 +1,1 @@
+Stopped own preflight to strengthen R-D02 through real Hub routeToSession with preserved 5s parent, before full-source gate freeze. No product failure inferred, no result counted. New source will rerun all gates.

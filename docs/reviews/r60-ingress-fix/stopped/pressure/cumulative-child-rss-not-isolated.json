@@ -1,0 +1,20 @@
+{
+  "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+  "argv": [
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r60-ingress-fix/pressure-final/pressure.test",
+    "-test.run=^TestSessionIngressTwentyTwoConnectionsBoundedWindow$",
+    "-test.count=1",
+    "-test.v",
+    "-test.timeout=1m"
+  ],
+  "uid": 1001,
+  "utc_start": "2026-11-17T19:12:52.444649+00:00",
+  "utc_end": "2026-11-17T19:12:53.042544+00:00",
+  "rc": 0,
+  "wall_seconds": 0.5978906620293856,
+  "maximum_rss_kib": 322484,
+  "user_seconds": 3.804738,
+  "system_seconds": 0.408864,
+  "raw_sha256": "80a99190284d158647aec859bf01c0df320623a0dfccd77bd3275db3ff329b22",
+  "scope": "One process with 22 Go WS generators; no real models; maxRSS is measured only, not a bound or production SLO."
+}

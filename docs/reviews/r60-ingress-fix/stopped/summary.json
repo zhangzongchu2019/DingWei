@@ -1,0 +1,40 @@
+{
+  "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+  "state": "STOP_REQUIRED_BY_Z3; not full delivery or release GO",
+  "utc_written": "2026-11-17T20:03:50.797490+00:00",
+  "canonical_history": [
+    {
+      "attempt": "first",
+      "rc": 1,
+      "reason": "unchanged helper BusyAdmissionTest temp-directory cleanup ENOTEMPTY; no root cause/flake rate asserted"
+    },
+    {
+      "attempt": "complete same-source rerun",
+      "rc": 0,
+      "directory_changed_only_for_evidence": true
+    }
+  ],
+  "new_mutations": 28,
+  "new_business_killed": 28,
+  "retained_mutations_replays": 28,
+  "retained_business_killed": 28,
+  "m8_rounds_completed": 4,
+  "m8_round5_not_run": true,
+  "later_gates_not_run": [
+    "go-other-trees",
+    "candidate-focused-race",
+    "independent-named-joint-and-dual-cli",
+    "browser-full",
+    "final-strict"
+  ],
+  "failure_test": "TestSessionNameReconnectKeepsNameAndReleaseReuses",
+  "failure_location": "internal/m8/hub_test.go:3505 -> waitEndpointInactive:6551",
+  "failure": "interrupted (9)",
+  "allowed_Z3_cases": [
+    "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+    "TestViewMentionRoute/a_peer_without_delivery_ack_v1_is_not_sent_to"
+  ],
+  "no_test_single_rerun": true,
+  "no_bisection": true,
+  "no_product_change_after_STOP": true
+}

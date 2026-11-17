@@ -1,0 +1,188 @@
+{
+  "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+  "tree": "6e1f91be7b7ef084af07746981f52c7cb53f84fe",
+  "parent": "1b5034c13c5cce917e3159dfcbf985f2918721ea",
+  "base": "9818b979e9e20f0bcfeffa6b78045dda71b1bd79",
+  "files": [
+    {
+      "path": "VERSION",
+      "sha256": "4273fc01a198662d820129fe743701c836479457260203f5c57945be655d1ee2",
+      "bytes": 9
+    },
+    {
+      "path": "deploy/test_build_entrypoints.py",
+      "sha256": "cc1ac67d4942f79fbee4303e1d867ddd97359b1fbade8e89b225fdd607022563",
+      "bytes": 14496
+    },
+    {
+      "path": "go.mod",
+      "sha256": "40e2ea16c0b8fcd72990174b0eed8eac51a6d305ffe0634898d847e184d43510",
+      "bytes": 1684
+    },
+    {
+      "path": "go.sum",
+      "sha256": "bf70c12f906c5501f71fea73fda264e30d64d463de5b4ce04989d36698512822",
+      "bytes": 11210
+    },
+    {
+      "path": "internal/m8/agent_ws.go",
+      "sha256": "817e5f1b4a6b7f8b6e220a2748238a84b5c71798c4acd436adc1651406ad1fd4",
+      "bytes": 9803
+    },
+    {
+      "path": "internal/m8/delivery_ack_v2.go",
+      "sha256": "bc4417b858406eed5f90eec20ff132d382ab51be85af659ea228dbce3138c219",
+      "bytes": 3548
+    },
+    {
+      "path": "internal/m8/hub.go",
+      "sha256": "5d68fcb718073e070e778ca35c0fce044ee85ea68fe4fa1a0e9acb7b4d269601",
+      "bytes": 264986
+    },
+    {
+      "path": "internal/m8/inbox_lag.go",
+      "sha256": "c6957b42d165b5af9c9418a9280d6bac6d21861e6862bcec8117c9ab980da7a0",
+      "bytes": 7933
+    },
+    {
+      "path": "internal/m8/ingress_legacy_compat_test.go",
+      "sha256": "f9d87e79a9b1077a3fab20dc10b0a256e6949b6bdc17f516e95a79a65dbd4912",
+      "bytes": 19691
+    },
+    {
+      "path": "internal/m8/keepalive_journal.go",
+      "sha256": "0dd5126a288d2654b5fa9677894328049f3778e0ed82ccb106a158878c21814b",
+      "bytes": 1777
+    },
+    {
+      "path": "internal/m8/keepalive_journal_linux.go",
+      "sha256": "72195da45ea7bf529d3b21ebf7009aa5b595b0e81c42fd60242c6c79cda71035",
+      "bytes": 1201
+    },
+    {
+      "path": "internal/m8/outbound_receipt.go",
+      "sha256": "1624bcf02a0e03a396c731b13ded7d6a57c9ec63527e014c9ee9b8aff0007c52",
+      "bytes": 5768
+    },
+    {
+      "path": "internal/m8/r60_outbound_joint_test.go",
+      "sha256": "260225f0fc4251ace7545cbdd7e530ecd8295ad26355c24a5a662ae999f0734e",
+      "bytes": 6057
+    },
+    {
+      "path": "internal/m8/session_diag.go",
+      "sha256": "cc8e869f31e2fd11c9916a546e46bede2ece8797e25effab77fef439672aa53e",
+      "bytes": 7841
+    },
+    {
+      "path": "internal/m8/session_diag_linux_test.go",
+      "sha256": "d3c2493fc391f8c603bdfba14347cee4f84add500c895241cc3cba5acebcdfe8",
+      "bytes": 1162
+    },
+    {
+      "path": "internal/m8/session_diag_test.go",
+      "sha256": "bd0c49c891e54daa339ececd73579be845b7edc04695f96b6e133f2497434419",
+      "bytes": 8700
+    },
+    {
+      "path": "internal/m8/session_heartbeat.go",
+      "sha256": "b78b05291e3a1a824a11d502c93a072353fba0df14ed2c31de0f0b781655a489",
+      "bytes": 7029
+    },
+    {
+      "path": "internal/m8/session_ingress.go",
+      "sha256": "7bfc1afe4c5c5c7d52531dfbbda7b4666aa90aed78dc969c6b9a27a28b5488d4",
+      "bytes": 5684
+    },
+    {
+      "path": "internal/m8/session_ingress_pressure_test.go",
+      "sha256": "66907534e396a1942bb2e9ff1b3da8c44002935ae3f125050c31952f7efce67e",
+      "bytes": 4841
+    },
+    {
+      "path": "internal/m8/session_ingress_test.go",
+      "sha256": "81759bac0b1fe380fefd6802a2c0f6bc7382a86200490e88988c831bb10fd301",
+      "bytes": 17167
+    },
+    {
+      "path": "internal/m8/session_keepalive_config.go",
+      "sha256": "7034221402466758e182207cb8ac78a7a68cc911c2260fc9a618e4fcb58f6fb9",
+      "bytes": 1310
+    },
+    {
+      "path": "internal/m8/session_write_policy.go",
+      "sha256": "17923e82a9e0b9621fd398b17d331b5588986058ec3eef8202a502c43125efc0",
+      "bytes": 1744
+    },
+    {
+      "path": "internal/m8/terminal.go",
+      "sha256": "0a2b0e898b04e3f59ccb2bb16335587e4a184a7c90b3ac8f73f6dee9c77b2fdb",
+      "bytes": 93523
+    },
+    {
+      "path": "internal/m8/testdata/legacy_ingress_helper.py",
+      "sha256": "5b2b4d64300dda63fc0bd4685df79bcac1cc3d30b8cec797193bb0278f543dd8",
+      "bytes": 5521
+    },
+    {
+      "path": "internal/m8/viewer_output_queue.go",
+      "sha256": "ddbca0b7e3149652bd35df897dce25bfabeaeb403600151d257659483dd26f0f",
+      "bytes": 3900
+    },
+    {
+      "path": "internal/m8/viewer_output_queue_test.go",
+      "sha256": "14230fa24b99d6845d4fbc90119549337fa7b733ce9afbf3886b41b23780468d",
+      "bytes": 13408
+    },
+    {
+      "path": "internal/store/session_history.go",
+      "sha256": "dbd6d6ba30110215c09693e1b40e4bca2e633ff6dd316a2ad0886b28e5670f49",
+      "bytes": 32840
+    },
+    {
+      "path": "internal/version/version.go",
+      "sha256": "00b4b26eb398987577ccc5d99c6edef33f25a3a270650ac708a8e908fb3a699b",
+      "bytes": 4320
+    },
+    {
+      "path": "scripts/helper-test-files.txt",
+      "sha256": "27c32741909f75ed60eb5b72dc0afdc4f122aa4a73b0f8023c48ea347e06b88f",
+      "bytes": 5038
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/__init__.py",
+      "sha256": "7913b2cbbed1a9c8868ef1629fb025c5f4826e72d864e8a3348d29f1a83dd169",
+      "bytes": 55
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/app.py",
+      "sha256": "2c931fccaa4ffa2416c587c264d2c108f89d705320f96c896a3a445493d5a481",
+      "bytes": 123234
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/mcp_shim.py",
+      "sha256": "51af9198a75008773df02d8a7fe28b740456b66e01dd443f723323f0bbbf06bd",
+      "bytes": 53278
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/outbound_queue.py",
+      "sha256": "0202cc964290c617098e2e5f2e00075fd1b66b02a4451d04ca6b60cdc32e0b09",
+      "bytes": 16419
+    },
+    {
+      "path": "tools/sessionhelper/sessionhelper/send_dingwei.py",
+      "sha256": "81941e8bd168fc297632d47393c6730ec49504d461abd3c064e383ccfbb31bd4",
+      "bytes": 13444
+    },
+    {
+      "path": "tools/sessionhelper/tests/test_session_heartbeat.py",
+      "sha256": "c924752de6bf5fdbb29a723b7dad24c2a2a733e82766dff932a9fb6f4cbdd52e",
+      "bytes": 21972
+    },
+    {
+      "path": "view-service/renderer-canary-sse.html",
+      "sha256": "14ffc39ea1ed61c1d230b7e3f3a810564daf05f61a7ec17cefde07ffc98eb6ef",
+      "bytes": 384709
+    }
+  ]
+}

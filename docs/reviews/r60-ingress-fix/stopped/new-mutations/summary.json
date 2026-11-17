@@ -1,0 +1,483 @@
+[
+  {
+    "name": "window_64",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "sessionIngressItems       = 2048",
+    "after": "sessionIngressItems       = 64",
+    "run": "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+    "utc_start": "2026-11-17T19:20:36.842405+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    ingress_legacy_compat_test.go:254: 1000-event legacy compatibility window overflowed",
+      "    test_child_process_support_test.go:102: legacy ingress helper stderr tail (last 8192 bytes; credential-bearing lines filtered):"
+    ],
+    "panic": false,
+    "raw_sha256": "aafae7b5e234767147081700ddf8e962ed809a408fcbd0b175d140012cfeb016",
+    "killed": true
+  },
+  {
+    "name": "physical_two_seconds",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_write_policy.go",
+    "before": "sessionDataWriteLimit    = 20 * time.Second",
+    "after": "sessionDataWriteLimit    = 2 * time.Second",
+    "run": "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+    "utc_start": "2026-11-17T19:20:49.705176+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    ingress_legacy_compat_test.go:352: 3s legacy read pause killed large write: failed to write: failed to write data frame: failed to write frame: context deadline exceeded",
+      "    test_child_process_support_test.go:102: legacy ingress helper stderr tail (last 8192 bytes; credential-bearing lines filtered):"
+    ],
+    "panic": false,
+    "raw_sha256": "8fd04ce1a2db0bb9b051b79fb63078810ff85ac7f6ba2d459bbb41f6c8ac2be6",
+    "killed": true
+  },
+  {
+    "name": "fifo_reordered",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "case f := <-q.frames:\n\t\tif ctx.Err()",
+    "after": "case f := <-q.frames:\n\t\tselect { case next := <-q.frames: q.frames <- f; f = next; default: }\n\t\tif ctx.Err()",
+    "run": "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+    "utc_start": "2026-11-17T19:21:04.668533+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    ingress_legacy_compat_test.go:264: FIFO barrier history=908 want=500 err=<nil>",
+      "    test_child_process_support_test.go:102: legacy ingress helper stderr tail (last 8192 bytes; credential-bearing lines filtered):"
+    ],
+    "panic": false,
+    "raw_sha256": "a8cd53deb6dddd306df071cee1abee6faddc9c855991401f35f5301e4a58545f",
+    "killed": true
+  },
+  {
+    "name": "ack_before_commit",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/delivery_ack_v2.go",
+    "before": "\tresult, _, err := h.Repo.ApplySessionDeliveryACK",
+    "after": "\t_ = c.write(ctx, model.Envelope{ID: randomHex(16), Meta: map[string]any{\"type\":\"delivery_ack_confirm\", \"delivery_id\":d.ID, \"ack_protocol\":2, \"processing_mode\":mode, \"ack_generation\":d.AckGeneration, \"state\":phase}})\n\tresult, _, err := h.Repo.ApplySessionDeliveryACK",
+    "run": "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+    "utc_start": "2026-11-17T19:21:20.294934+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    ingress_legacy_compat_test.go:268: ACK confirmed before commit RIF_ACK_CONFIRM",
+      "    test_child_process_support_test.go:102: legacy ingress helper stderr tail (last 8192 bytes; credential-bearing lines filtered):"
+    ],
+    "panic": false,
+    "raw_sha256": "efa7d84cd3b560e0cd95f773a64582294e49a092197dfda0275101fbe4841aec",
+    "killed": true
+  },
+  {
+    "name": "no_fragment",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_write_policy.go",
+    "before": "if len(payload) <= sessionControlMaxBytes {",
+    "after": "if true {",
+    "run": "TestLegacyIngressLimitedWirePongCompetition",
+    "utc_start": "2026-11-17T19:21:34.706192+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    ingress_legacy_compat_test.go:506: limited-wire data held frame lock and starved healthy Pong: failed to write msg: failed to write frame: use of closed network connection",
+      "    test_child_process_support_test.go:102: legacy ingress helper stderr tail (last 8192 bytes; credential-bearing lines filtered):"
+    ],
+    "panic": false,
+    "raw_sha256": "7f88b4919eead0f6152ee583cad6117b68f4bc014a54727624dea320fedb7f26",
+    "killed": true
+  },
+  {
+    "name": "connection_items",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "case q.items >= sessionIngressItems:",
+    "after": "case false:",
+    "run": "TestSessionIngressGlobalDescriptorBudgetAndRelease",
+    "utc_start": "2026-11-17T19:21:52.771345+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:145: per-connection item budget unbounded"
+    ],
+    "panic": false,
+    "raw_sha256": "4479e436267d292711de38eb8d7d3e7135e3551f85db86263a61f78fbcfa0b64",
+    "killed": true
+  },
+  {
+    "name": "global_items",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "case q.h.ingressBudgetItems >= sessionIngressGlobalItems:",
+    "after": "case false:",
+    "run": "TestSessionIngressGlobalDescriptorBudgetAndRelease",
+    "utc_start": "2026-11-17T19:22:05.684426+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:150: global descriptor budget unbounded"
+    ],
+    "panic": false,
+    "raw_sha256": "ae70605a35bcd7fbe027a105684d80f98cffe03dc33e2d83e5120ed31121508d",
+    "killed": true
+  },
+  {
+    "name": "reserve_connection_bytes",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "case q.bytes+n > sessionIngressBytes:",
+    "after": "case false:",
+    "run": "TestSessionIngressQueueBudgetAndRelease",
+    "utc_start": "2026-11-17T19:22:18.455338+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:139: byte budget exceeded"
+    ],
+    "panic": false,
+    "raw_sha256": "bdec968b615238c88de789861049bcb940c5407e789753a38875871824f93b0f",
+    "killed": true
+  },
+  {
+    "name": "reserve_global_bytes",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "case q.h.ingressBudgetBytes+n > sessionIngressGlobalBytes:",
+    "after": "case false:",
+    "run": "TestSessionIngressQueueBudgetAndRelease",
+    "utc_start": "2026-11-17T19:22:31.114783+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:146: global budget exceeded"
+    ],
+    "panic": false,
+    "raw_sha256": "c1cb19a56d0d9ac40cd097f594e8d1f4b12f0b8abc80567086425a7f6b45a0db",
+    "killed": true
+  },
+  {
+    "name": "read_connection_bytes",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "if q.bytes+n > sessionIngressBytes {",
+    "after": "if false {",
+    "run": "TestSessionIngressReadByteBoundsAndCancelledDrain",
+    "utc_start": "2026-11-17T19:22:43.721085+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:253: read path bypassed connection byte limit"
+    ],
+    "panic": false,
+    "raw_sha256": "c47e4eb37424ae2a7f2dfc160594f12f018e92cf9958f888848221c493642557",
+    "killed": true
+  },
+  {
+    "name": "read_global_bytes",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "if q.h.ingressBudgetBytes+n > sessionIngressGlobalBytes {",
+    "after": "if false {",
+    "run": "TestSessionIngressReadByteBoundsAndCancelledDrain",
+    "utc_start": "2026-11-17T19:22:56.427757+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:261: read path bypassed global byte limit"
+    ],
+    "panic": false,
+    "raw_sha256": "c923e81614201932da6decaadc6877b5d40423a626d51dde05a10abab6655853",
+    "killed": true
+  },
+  {
+    "name": "release_global_item",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "q.h.ingressBudgetItems--",
+    "after": "// removed global item release",
+    "run": "TestSessionIngressGlobalDescriptorBudgetAndRelease",
+    "utc_start": "2026-11-17T19:23:09.034285+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:158: global descriptor budget leaked"
+    ],
+    "panic": false,
+    "raw_sha256": "84f8f65fc49a5cbf299918f1a5cfd529c38a441c5a73c9f7d12dc211639a318c",
+    "killed": true
+  },
+  {
+    "name": "release_bytes",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "q.h.ingressBudgetBytes -= n",
+    "after": "// removed global byte release",
+    "run": "TestSessionIngressReadByteBoundsAndCancelledDrain",
+    "utc_start": "2026-11-17T19:23:21.592589+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:284: active/pending cancellation leaked budget or references"
+    ],
+    "panic": false,
+    "raw_sha256": "12e2f3c7e1a3b056f90b656f9ded5da4e920818b28ce17793a4c2e9d3d7618d8",
+    "killed": true
+  },
+  {
+    "name": "cancel_release_active",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "\tif q.hasActive {\n\t\tq.release(q.active)\n\t\tq.active = 0\n\t\tq.hasActive = false\n\t}\n\tq.mu.Lock()",
+    "after": "\tif q.hasActive { q.active = 0; q.hasActive = false }\n\tq.mu.Lock()",
+    "run": "TestSessionIngressReadByteBoundsAndCancelledDrain",
+    "utc_start": "2026-11-17T19:23:34.297770+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:284: active/pending cancellation leaked budget or references"
+    ],
+    "panic": false,
+    "raw_sha256": "e6d4f9748d56ac4f35da98cddacadf6262e4e1b01406c3a78a8dda1fb745c5b6",
+    "killed": true
+  },
+  {
+    "name": "cancel_release_pending",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_ingress.go",
+    "before": "case f := <-q.frames:\n\t\t\tq.release(len(f.data))",
+    "after": "case <-q.frames:\n\t\t\t// pending release removed",
+    "run": "TestSessionIngressReadByteBoundsAndCancelledDrain",
+    "utc_start": "2026-11-17T19:23:46.965525+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:284: active/pending cancellation leaked budget or references"
+    ],
+    "panic": false,
+    "raw_sha256": "2e0c306c41b3b347ebd6b69df2529d24ed2a06052e0c17a073c2b8c4bebf086c",
+    "killed": true
+  },
+  {
+    "name": "end_reason",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_diag.go",
+    "before": "\"reason\": reason, \"phase\":",
+    "after": "\"omitted_reason\": reason, \"phase\":",
+    "run": "TestSessionDiagnosticsRealPeerEndAndPrivacy",
+    "utc_start": "2026-11-17T19:23:59.579373+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:77: peer end cause lost: map[conn_seq:1 event:session_end last_worker_type:unknown limit:none omitted_reason:peer_normal peer_close_code:1000 phase:online physical_write_active:false physical_write_reason:none pong_age_ms:unknown queue_bytes:0 queue_items:0 queue_peak_bytes:0 queue_peak_items:0 reader_age_ms:unknown reader_frame_bytes:0 reader_frame_type:unknown session:opus50ts utc:2026-11-17T19:24:12.428061195Z waiting_writers:0 worker_age_ms:unknown write_age_ms:0 write_budget_ms:5000 write_bytes:4293]"
+    ],
+    "panic": false,
+    "raw_sha256": "ae1f03920c927f47b5fa38053e2aa74dc0ae8202a394f761bb3a0e12201ba7e9",
+    "killed": true
+  },
+  {
+    "name": "end_event",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_diag.go",
+    "before": "d.endOnce.Do(func() { d.emit(d.snapshot(\"session_end\")) })",
+    "after": "d.endOnce.Do(func() {})",
+    "run": "TestSessionDiagnosticsOverflowAndPhysicalWriteCauses",
+    "utc_start": "2026-11-17T19:24:12.486468+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:100: diagnostic missing session_end"
+    ],
+    "panic": false,
+    "raw_sha256": "db9e88cfbb83b8ccd72e0bf8ad0d8f5fbf0f869fe1a4c5f2ec91f67850bf963f",
+    "killed": true
+  },
+  {
+    "name": "overflow_reason",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_diag.go",
+    "before": "d.reason(\"business_queue_overflow\")",
+    "after": "d.reason(\"reader_error\")",
+    "run": "TestSessionDiagnosticsOverflowAndPhysicalWriteCauses",
+    "utc_start": "2026-11-17T19:24:24.992126+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:98: overflow cause/occupancy lost: map[conn_seq:0 event:session_ingress_overflow last_worker_type:unknown limit:global_items peer_close_code:unknown phase:registration physical_write_active:false physical_write_reason:none pong_age_ms:unknown queue_bytes:7 queue_items:3 queue_peak_bytes:19 queue_peak_items:9 reader_age_ms:unknown reader_frame_bytes:0 reader_frame_type:unknown reason:reader_error session:fixture utc:2026-11-17T19:24:37.73075679Z waiting_writers:0 worker_age_ms:unknown write_age_ms:unknown write_budget_ms:0 write_bytes:0]"
+    ],
+    "panic": false,
+    "raw_sha256": "6a5c6488ecd66c90835a00a0dcc908b0a549e7369dc6f7e158a23eca56a75d88",
+    "killed": true
+  },
+  {
+    "name": "overflow_limit",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_diag.go",
+    "before": "data[\"limit\"] = q.limitReason",
+    "after": "data[\"limit\"] = \"none\"",
+    "run": "TestSessionDiagnosticsOverflowAndPhysicalWriteCauses",
+    "utc_start": "2026-11-17T19:24:37.754405+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:98: overflow cause/occupancy lost: map[conn_seq:0 event:session_ingress_overflow last_worker_type:unknown limit:none peer_close_code:unknown phase:registration physical_write_active:false physical_write_reason:none pong_age_ms:unknown queue_bytes:7 queue_items:3 queue_peak_bytes:19 queue_peak_items:9 reader_age_ms:unknown reader_frame_bytes:0 reader_frame_type:unknown reason:business_queue_overflow session:fixture utc:2026-11-17T19:24:50.439129475Z waiting_writers:0 worker_age_ms:unknown write_age_ms:unknown write_budget_ms:0 write_bytes:0]"
+    ],
+    "panic": false,
+    "raw_sha256": "16f360a6d9ffbf75b7491ee8fb24bd4abdd967ae2922674f301d1e18524af037",
+    "killed": true
+  },
+  {
+    "name": "physical_reason",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_diag.go",
+    "before": "data[\"reason\"] = reason",
+    "after": "data[\"reason\"] = \"physical_write_error\"",
+    "run": "TestSessionDiagnosticsOverflowAndPhysicalWriteCauses",
+    "utc_start": "2026-11-17T19:24:50.461532+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:112: physical write cause lost: map[conn_seq:0 error_class:deadline event:session_physical_write_failed first_observed_reason:physical_write_timeout last_worker_type:unknown limit:none peer_close_code:unknown phase:registration physical_write_active:true physical_write_reason:physical_write_timeout pong_age_ms:unknown queue_bytes:0 queue_items:0 queue_peak_bytes:0 queue_peak_items:0 reader_age_ms:unknown reader_frame_bytes:0 reader_frame_type:unknown reason:physical_write_error session:writer utc:2026-11-17T19:25:03.067023904Z waiting_writers:0 worker_age_ms:unknown write_age_ms:0 write_budget_ms:20000 write_bytes:123]"
+    ],
+    "panic": false,
+    "raw_sha256": "1702f5141eea293ccef9d95b76b448024e01ddce322ca4b7bc5699ea48dcf5cb",
+    "killed": true
+  },
+  {
+    "name": "physical_error_class",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_diag.go",
+    "before": "data[\"error_class\"] = class",
+    "after": "data[\"omitted_error_class\"] = class",
+    "run": "TestSessionDiagnosticsOverflowAndPhysicalWriteCauses",
+    "utc_start": "2026-11-17T19:25:03.124473+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:112: physical write cause lost: map[conn_seq:0 event:session_physical_write_failed first_observed_reason:physical_write_timeout last_worker_type:unknown limit:none omitted_error_class:deadline peer_close_code:unknown phase:registration physical_write_active:true physical_write_reason:physical_write_timeout pong_age_ms:unknown queue_bytes:0 queue_items:0 queue_peak_bytes:0 queue_peak_items:0 reader_age_ms:unknown reader_frame_bytes:0 reader_frame_type:unknown reason:physical_write_timeout session:writer utc:2026-11-17T19:25:15.613836025Z waiting_writers:0 worker_age_ms:unknown write_age_ms:0 write_budget_ms:20000 write_bytes:123]"
+    ],
+    "panic": false,
+    "raw_sha256": "232a004df94381ebbdd5b0bb82b94dae756e6f099f099e859a8636f91169874e",
+    "killed": true
+  },
+  {
+    "name": "diag_rate",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_diag.go",
+    "before": "if h.sessionJournalCount >= sessionJournalPerSecond {",
+    "after": "if false {",
+    "run": "TestSessionDiagnosticsRateAndLineBounds",
+    "utc_start": "2026-11-17T19:25:15.636698+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:186: journal rate not bounded 201"
+    ],
+    "panic": false,
+    "raw_sha256": "335344fc67f34682f3e95b9dd9af3bb2d1dc34ff1f00dcf16acecc7a73ceeaa3",
+    "killed": true
+  },
+  {
+    "name": "diag_line_bound",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/session_diag.go",
+    "before": "if len(raw) > 4096 || !write(raw) {",
+    "after": "if !write(raw) {",
+    "run": "TestSessionDiagnosticsRateAndLineBounds",
+    "utc_start": "2026-11-17T19:25:28.396091+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_diag_test.go:174: oversize diagnostic reached sink"
+    ],
+    "panic": false,
+    "raw_sha256": "78b2cd7e682caf53fffed7a6f41c5442a08842e3ebef69557e185369ff07d815",
+    "killed": true
+  },
+  {
+    "name": "offline_sealed_gap",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "// Shutdown already sealed admission: never start unowned cleanup.\n\t\t\tv.outputGap.Store(true)",
+    "after": "// Shutdown sealed; gap guard removed.",
+    "run": "TestViewerOfflineSealedExistingConnectionMarksGapAndCloses",
+    "utc_start": "2026-11-17T19:25:40.900565+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:364: sealed offline cleanup discarded history without a visible gap"
+    ],
+    "panic": false,
+    "raw_sha256": "5b13aa6c2e192685fd0c44b8a0fb1adf7dd02dbd3c9eca3575daf79f3f0ae68d",
+    "killed": true
+  },
+  {
+    "name": "offline_sealed_close",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "\t\t\t_ = conn.CloseNow()\n\t\t}\n\t}\n}\nfunc (q *viewerOutputQueue) enqueue",
+    "after": "\t\t\t// sealed close removed\n\t\t}\n\t}\n}\nfunc (q *viewerOutputQueue) enqueue",
+    "run": "TestViewerOfflineSealedExistingConnectionMarksGapAndCloses",
+    "utc_start": "2026-11-17T19:25:53.414734+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:369: sealed offline cleanup left the actual viewer connected: failed to get reader: context deadline exceeded"
+    ],
+    "panic": false,
+    "raw_sha256": "424d46a3bb4b8beaae41309ef205b72e18544faf55690a3fde65d64c79f2d8ee",
+    "killed": true
+  },
+  {
+    "name": "offline_pending_gap",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "if q.bytes != 0 {\n\t\t\t\tv.outputGap.Store(true)\n\t\t\t}",
+    "after": "if q.bytes != 0 { /* removed gap */ }",
+    "run": "TestViewerOfflinePendingQueueRejectsNewDisplayAndMarksGap",
+    "utc_start": "2026-11-17T19:26:06.772181+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:416: offline pending bytes disappeared without a visible gap"
+    ],
+    "panic": false,
+    "raw_sha256": "1925a00324428b83f3071cf1ade95e3571aa6ecd7abf65c25894999865d12423",
+    "killed": true
+  },
+  {
+    "name": "offline_stopped",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/viewer_output_queue.go",
+    "before": "\t\t\tq.stopped = true\n\t\t\tif q.bytes != 0",
+    "after": "\t\t\t// removed stopped\n\t\t\tif q.bytes != 0",
+    "run": "TestViewerOfflinePendingQueueRejectsNewDisplayAndMarksGap",
+    "utc_start": "2026-11-17T19:26:20.031004+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    viewer_output_queue_test.go:413: offline queue accepted new display work: items=2 bytes=55"
+    ],
+    "panic": false,
+    "raw_sha256": "936a7145d6c55b6f2af4fc59b605248f3440ffd2689c95da4061766677b21755",
+    "killed": true
+  },
+  {
+    "name": "ping_cancel",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/hub.go",
+    "before": "\t\t\tif ctx.Err() != nil {\n\t\t\t\treturn\n\t\t\t}\n\t\t\tif err != nil {\n\t\t\t\th.recordKeepaliveFailure",
+    "after": "\t\t\tif err != nil {\n\t\t\t\th.recordKeepaliveFailure",
+    "run": "TestSessionKeepaliveCancellationDuringActualPing",
+    "utc_start": "2026-11-17T19:26:33.626433+00:00",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    session_ingress_test.go:366: planned in-flight cancellation wrote failure journal: {\"conn_seq\":9,\"elapsed_ms\":0,\"error_class\":\"cancelled\",\"event\":\"session_keepalive_failed\",\"interval_ms\":20,\"pong_age_ms\":\"unknown\",\"queue_bytes\":0,\"queue_items\":0,\"reader_age_ms\":\"unknown\",\"session\":\"fixture\",\"timeout_ms\":5000,\"utc\":\"2026-11-17T19:26:46.305308452Z\",\"worker_age_ms\":\"unknown\",\"worker_phase\":\"unknown\"}"
+    ],
+    "panic": false,
+    "raw_sha256": "5cf3b4333ce0c5d5b46f0476e4621a3234634f3530bd1b287eb01affe6fcd656",
+    "killed": true
+  }
+]
