@@ -59,6 +59,7 @@ async def main():
                     body=env.get('body') or ''
                     expected=('rif-wire' if '界' in body else 'rif-large') if body else ('rif-control','rif-small-paused')
                     assert env.get('id') == expected if isinstance(expected,str) else env.get('id') in expected, 'logical envelope ID changed'
+                    if 'padding' in meta: assert meta['padding']=='C'*(60<<10), 'control payload changed'
                     print('RIF_LARGE '+hashlib.sha256(body.encode()).hexdigest() if body else 'RIF_SMALL',flush=True)
                 return raw
         await original_recv(Proxy())
@@ -90,6 +91,16 @@ async def main():
                 ws.transport.pause_reading()
                 async def resume():await asyncio.sleep(3);ws.transport.resume_reading()
                 asyncio.create_task(resume());print('RIF_PAUSED',flush=True)
+            elif op=='pause_control_buffer':
+                import socket
+                ws.transport.get_extra_info('socket').setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,64<<10)
+                ws.transport.pause_reading()
+                print('RIF_PAUSED',flush=True)
+            elif op=='resume_control_buffer':
+                import socket
+                ws.transport.get_extra_info('socket').setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,1<<20)
+                ws.transport.resume_reading()
+                print('RIF_RESUMED',flush=True)
             elif op=='frames':
                 print('RIF_FRAMES '+json.dumps(frame_stats),flush=True)
             elif op=='state':
