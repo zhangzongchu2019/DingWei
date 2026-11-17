@@ -1,6 +1,6 @@
 # S-R60-INGRESS-FIX：已实现，Z-3门触发STOP（不是完整交件）
 
-**状态：不得集成或发布。** 依据组长2026-11-17T01:37:18Z有效Z-3门，以及2026-11-17T18:04:11Z实现令第4项，第四轮m8整包在允许名单之外出现`interrupted (9)`，已停止第五轮及后续门；没有单跑补绿、二分、扩大白名单或修改store。待组长裁定。本文不出spec/code整体PASS，不构成预发/现网GO。
+**状态：不得集成或发布。** 依据组长2026-11-17T01:37:18Z有效Z-3门，以及2026-11-17T18:04:11Z实现令第4项，第四轮m8整包在允许名单之外出现`interrupted (9)`，已停止第五轮；没有单跑补绿、二分、扩大白名单或修改store。组长20:01:27Z裁定由togpt60单流定因，允许继续非Z-3门；Z-3仍停、待定因。本文不出spec/code整体PASS，不构成预发/现网GO。
 
 ## 坐标与产品边界
 
@@ -36,7 +36,7 @@
 | 3 | 2026-11-17T19:47:05.887174+00:00 ～ 2026-11-17T19:52:54.576196+00:00 | 0 | 985 | 1654 | 29 | 0 | 0 |
 | 4 | 2026-11-17T19:52:54.663495+00:00 ～ 2026-11-17T19:58:38.223390+00:00 | 1 | 984 | 1653 | 29 | 1 | 1 |
 
-原始四轮完整JSON日志以gzip无损存于stopped/gates，metadata中的raw_sha256校验解压后的原始字节。第五轮、其它Go包树整包、候选focused race、独立逐名联合/双CLI门、浏览器全量、最终全仓strict均未继续执行，不记绿。没有挑选最好五轮，也没有对新增失败做定向重跑或产品二分。原两例允许名单保持不变。
+原始四轮完整JSON日志以gzip无损存于stopped/gates，metadata中的raw_sha256校验解压后的原始字节。本段为20:07Z停门快照：当时第五轮、其它Go包树整包、候选focused race、独立逐名联合/双CLI门、浏览器全量、最终全仓strict均未继续执行，不记绿。20:01Z裁定所允许的非Z-3后续读数另节追加；本段四轮原始记录不改。没有挑选最好五轮，也没有对新增失败做定向重跑或产品二分。原两例允许名单保持不变。
 
 ## 已取得的本源局部证据（不替代完整门）
 
@@ -60,6 +60,32 @@ a24首轮canonical rc1：仅Claude profile的BusyAdmissionTest.test_claude_bad_t
 
 ## 后续与预发边界
 
-组长已收到停门初报；请裁定是否由togpt60单流核新增落点或另定处置。本席不自行扩名单、不另做二分、不动store/驱动，不做风险接受。T-04/T-05保持未完成。
+组长20:01:27Z已裁定新增落点交togpt60单流只读定因及9818/a24频率对照（S-Z3-NEW-SITE，11-18T06Z），本席只继续获准的非Z-3门。本席不自行扩名单、不另做二分、不动store/驱动，不做风险接受。T-04/T-05保持未完成。
 
 STAGING-PLAN.md附现有stagingtest先经业主预发Console升39的方案、包期限及负载/回退安全闸；未执行。0077回退约束不变。当前只交代码和停门证据，未请求也未获得集成/构建发布件/预发/现网GO。
+
+## 20:01Z裁定后的非Z-3续跑（Z-3仍STOP）
+
+依据组长2026-11-17T20:01:27Z裁定，产品/测试候选仍为a24bb163，不修改产品；以下是获准续跑的独立门，不能替代Z-3五轮门，不构成整体PASS。togpt60负责S-Z3-NEW-SITE，本席未二分、未改store、未扩名单、未跑第五轮。
+
+| 门 | UTC开始～结束 | rc | 读数 |
+|---|---|---:|---|
+| go-other-trees | 2026-11-17T20:12:59.174140+00:00 ～ 2026-11-17T20:19:38.339044+00:00 | 0 | 顶层631 / 含子项1033 PASS，12 SKIP，0 FAIL，interrupted=0 |
+| focused-race | 2026-11-17T20:19:38.423106+00:00 ～ 2026-11-17T20:27:32.093397+00:00 | 0 | 顶层66 / 含子项79 PASS，0 SKIP，0 FAIL，interrupted=0，DATA RACE=0（focused，非整包race） |
+| joint-and-dual-cli | 2026-11-17T20:27:32.137098+00:00 ～ 2026-11-17T20:27:56.046722+00:00 | 0 | 顶层2 / 含子项2 PASS，0 SKIP，0 FAIL，interrupted=0；两格逐名执行、0 SKIP |
+| browser | 2026-11-17T20:38:38.889196+00:00 ～ 2026-11-17T20:48:53.435260+00:00 | 0 | 45/45 suite rc0，aggregate_rc=0 |
+| strict | 2026-11-17T20:48:53.486379+00:00 ～ 2026-11-17T20:48:53.951387+00:00 | 0 | 全仓strict 41 passed / 0 failed |
+
+Go其它树范围：internal/store/...、internal/obs/...、cmd/workpulse/...，普通用户、env白名单、PG strict、-p 1；m8整包仅原四轮，不补第五轮。12条SKIP逐名保存在go-other-trees.json，不混入PASS。focused race筛选式和所有命令/环境在对应metadata，明确不是全包race。
+
+联合格 TestR60OutboundControlBackpressureRecoversWithSendStatus 与 TestHostedBodySendSameRequestIDAcrossCLIProcesses 均在显式DW_DESKTOP_INTEGRATION_PYTHON下逐名PASS/0 SKIP。浏览器PATH含go，NODE_PATH仅指向隔离HOME中的已装Playwright1.56.1；无共享或源码配置修改。
+
+### 浏览器首轮失败与同源完整重跑
+
+首轮完整45套件aggregate_rc=2：44套件rc0，mcp_zero_consent因显式要求NODE_PATH而当前未设置，报ENVIRONMENT_UNAVAILABLE/rc3。不是产品断言红，也不把它改SKIP或抹去；non-z3-browser-first保存全量原日志、metadata及receipt。补显式NODE_PATH=/tmp/rif-home/.node_modules后，同源完整runner重跑45/45、aggregate_rc=0，未以单套件补跑替代完整门。
+
+### 两把集成删保护及还原基线
+
+完整续跑结束后才在独立a24工作树执行，避免与门并发：去OutboundReceiptWriteFailed计数，联合恢复格业务断言红；heartbeat_handler去current包装，真实重连Python格业务断言红。两刀build_rc=0，原日志/断言在non-z3/integration-cuts，各还原后Go联合格与Python重连基线rc0，工作树clean。两刀与已有28+28证据分开，不合并宣称互不重叠的新保护。
+
+VERIFY.py同时核原四轮STOP、候选产品字节、非Z-3五门原日志SHA、首轮浏览器失败、完整重跑回执、两刀及还原基线；成功输出仍为NOT_FULL_PASS。T-04/T-05保持未完成，等Z-3定因/组长另令；不请求集成、发布构建、预发或现网动作。

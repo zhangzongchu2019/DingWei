@@ -1,0 +1,33 @@
+[
+  {
+    "name": "joint_receipt_failure_observable",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "internal/m8/outbound_receipt.go",
+    "before": "c.obsConn.OutboundReceiptWriteFailed()",
+    "after": "// removed receipt observation",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "    r60_outbound_joint_test.go:136: condition not met before timeout (4.5s): bounded control write failure",
+      "    test_child_process_support_test.go:102: joint helper stderr tail (last 8192 bytes; credential-bearing lines filtered):"
+    ],
+    "raw_sha256": "2cacc42fd8f857580b616d9adbc3170a23f6a108073f5f7164f4a613d7f10da8",
+    "utc": "2026-11-17T20:49:13.515572+00:00",
+    "killed": true
+  },
+  {
+    "name": "heartbeat_current",
+    "source_commit": "a24bb16335040ae06486f1c76be69ee542958214",
+    "path": "tools/sessionhelper/sessionhelper/app.py",
+    "before": "heartbeat_handler=current(self._make_heartbeat_handler)",
+    "after": "heartbeat_handler=self._make_heartbeat_handler(ws)",
+    "build_rc": 0,
+    "rc": 1,
+    "failed_assertions": [
+      "AssertionError: Lists differ: [2, 0] != [1, 1]"
+    ],
+    "raw_sha256": "2420965c426222c94ee75664767e876e04502d62a883d1ad94e4a626b98e406e",
+    "utc": "2026-11-17T20:49:13.845234+00:00",
+    "killed": true
+  }
+]

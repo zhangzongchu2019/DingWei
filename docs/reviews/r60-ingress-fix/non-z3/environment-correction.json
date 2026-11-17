@@ -1,0 +1,7 @@
+{
+  "first_browser_rc": 2,
+  "reason": "mcp_zero_consent explicitly requires NODE_PATH; remaining 44 suites rc0",
+  "NODE_PATH": "/tmp/rif-home/.node_modules",
+  "original_receipt_sha256": "4899d69c88d0bcee4f5895c8232613cddd0cbdc2b29d59dd3aaef41ec58f56a3",
+  "policy": "preserve full first run; rerun full browser runner, not one suite"
+}

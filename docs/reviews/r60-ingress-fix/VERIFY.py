@@ -47,4 +47,34 @@ cli=doc('stopped/named-cli-within-four-whole-rounds.json')
 for r in cli['rounds']:
  check(len(r['outcomes'])==2 and all(e['Action']=='pass'for e in r['outcomes']),'named CLI outcomes inside round'+str(r['round']))
 summary=doc('stopped/summary.json');check(summary['m8_round5_not_run'] and summary['failure_test']==FAILED,'stop summary')
+# Non-Z3 gates are a separate append-only continuation under the 20:01Z ruling.
+# They never authorize a fifth whole-m8 sample or turn STOP into full PASS.
+if (HERE/'non-z3').exists():
+ first_browser=doc('non-z3-browser-first/browser.json')
+ check(first_browser['source_commit']==SOURCE and first_browser['rc']==2,'first browser failure preserved')
+ check(sha(raw('non-z3-browser-first/browser.log.gz'))==first_browser['raw_sha256'],'first browser raw')
+ first_receipt=(HERE/'non-z3-browser-first/browser-receipt.json').read_text()
+ check('suite.mcp_zero_consent.rc=3' in first_receipt and 'aggregate_rc=2' in first_receipt,'first browser environment failure')
+ complete=doc('non-z3/COMPLETE-NON-Z3.json')
+ check(complete['source_commit']==SOURCE and 'STOP' in complete['Z3'],'non-Z3 authority boundary')
+ rows=doc('non-z3/progress.json'); by_non={r['name']:r for r in rows}
+ check(set(by_non)=={'go-other-trees','focused-race','joint-and-dual-cli','browser','strict'},'non-Z3 stages')
+ for r in rows:
+  check(r['source_commit']==SOURCE and r['uid']!=0 and r['rc']==0,'non-Z3 source/user/result '+r['name'])
+  check(sha(raw('non-z3/'+r['name']+'.log.gz'))==r['raw_sha256'],'non-Z3 raw '+r['name'])
+  check(r['env']['HUB_TEST_PG_STRICT']=='1' and r['env'].get('DW_DESKTOP_INTEGRATION_PYTHON'),'non-Z3 explicit environment')
+  check(not any(k.startswith(('SH_','DINGWEI_','DATAD_')) for k in r['env']),'non-Z3 inherited environment')
+ check(not by_non['focused-race']['data_race'] and not by_non['focused-race']['skipped_tests'],'focused race')
+ r=by_non['joint-and-dual-cli'];check(r['top_pass']==2 and not r['skipped_tests'],'named gates really ran')
+ receipt=(HERE/'non-z3/browser-receipt.json').read_text()
+ suites=[l for l in receipt.splitlines() if l.startswith('suite.')]
+ check('commit_sha='+SOURCE in receipt and 'aggregate_rc=0' in receipt and len(suites)==45 and all(l.endswith('.rc=0') for l in suites),'full browser receipt')
+ for r in doc('non-z3/integration-cuts/summary.json'):
+  check(r['source_commit']==SOURCE and r['build_rc']==0 and r['rc']!=0 and r['killed'] and r['failed_assertions'],'integration guard knife')
+  check(sha(raw('non-z3/integration-cuts/'+r['name']+'.log.gz'))==r['raw_sha256'],'integration guard raw')
+ check(len(doc('non-z3/integration-cuts/summary.json'))==2,'two integration guard cuts')
+ for r in doc('non-z3/integration-cuts/baselines.json'):
+  check(r['source_commit']==SOURCE and r['rc']==0,'integration restored baseline')
+  check(sha(raw('non-z3/integration-cuts/'+r['name']+'.log.gz'))==r['raw_sha256'],'integration restored raw')
+ print('VERIFY_OK_NON_Z3 gates5 integration_cuts2; Z3_REMAINS_STOPPED')
 print('VERIFY_OK_STOP source',SOURCE,'products',len(manifest['files']),'new_knives28 retained_replays28 whole_m8_rounds4 fourth_outside_allowlist; NOT_FULL_PASS')
