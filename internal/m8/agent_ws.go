@@ -176,6 +176,7 @@ func (h *Hub) disconnectAgentSession(keyID, sessionName, reason string) {
 	h.backgroundWork("owned", func() {
 		func() {
 			defer close(done)
+			c.diag.reason("revoked")
 			c.obsConn.SetLocalReason("revoked")
 			_ = c.conn.Close(StatusCredentialRevoked, reason)
 		}()

@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	sessionIngressItems       = 64
+	sessionIngressItems       = 2048
+	sessionIngressGlobalItems = 65536
 	sessionIngressBytes       = 32 << 20
 	sessionIngressGlobalBytes = 256 << 20
 	sessionWriteLimit         = 2 * time.Second
@@ -25,20 +26,23 @@ type sessionFrame struct {
 	receivedAt time.Time
 }
 type sessionIngress struct {
-	h         *Hub
-	c         *sessionClient
-	frames    chan sessionFrame
-	done      chan struct{}
-	cancel    context.CancelFunc
-	mu        sync.Mutex
-	err       error
-	bytes     int
-	items     int
-	hasActive bool
-	activeAt  time.Time
-	active    int
-	readAt    time.Time
-	workAt    time.Time
+	h           *Hub
+	c           *sessionClient
+	frames      chan sessionFrame
+	done        chan struct{}
+	cancel      context.CancelFunc
+	mu          sync.Mutex
+	err         error
+	bytes       int
+	items       int
+	hasActive   bool
+	activeAt    time.Time
+	active      int
+	readAt      time.Time
+	workAt      time.Time
+	peakItems   int
+	peakBytes   int
+	limitReason string
 }
 
 // This is the connection's only protocol Reader. It never waits for business,
@@ -46,6 +50,7 @@ type sessionIngress struct {
 // current business item, not just buffered channel entries.
 func (h *Hub) startSessionIngress(ctx context.Context, cancel context.CancelFunc, c *sessionClient) *sessionIngress {
 	q := &sessionIngress{h: h, c: c, frames: make(chan sessionFrame, sessionIngressItems), done: make(chan struct{}), cancel: cancel}
+	c.ingress = q // Publish once before the Reader can emit diagnostics.
 	if !h.backgroundWork("session_reader", func() {
 		defer close(q.done)
 		defer cancel()
@@ -80,6 +85,7 @@ func (h *Hub) startSessionIngress(ctx context.Context, cancel context.CancelFunc
 					return
 				}
 			}
+			c.diag.readFrame(typ, len(data))
 			now := h.now().UTC()
 			c.recordActivity(now)
 			c.stateMu.Lock()
@@ -90,9 +96,7 @@ func (h *Hub) startSessionIngress(ctx context.Context, cancel context.CancelFunc
 			case q.frames <- sessionFrame{typ: typ, data: data, receivedAt: now}:
 			default:
 				q.release(len(data))
-				q.fail(errSessionQueueOverflow)
-				c.obsConn.SetLocalReason("business_queue_overflow")
-				_ = c.conn.CloseNow()
+				q.overflow()
 				return
 			}
 		}
@@ -108,12 +112,31 @@ func (q *sessionIngress) reserve(n int) bool {
 	defer q.h.ingressBudgetMu.Unlock()
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	if q.items >= sessionIngressItems || q.bytes+n > sessionIngressBytes || q.h.ingressBudgetBytes+n > sessionIngressGlobalBytes {
+	switch {
+	case q.items >= sessionIngressItems:
+		q.limitReason = "connection_items"
+	case q.h.ingressBudgetItems >= sessionIngressGlobalItems:
+		q.limitReason = "global_items"
+	case q.bytes+n > sessionIngressBytes:
+		q.limitReason = "connection_bytes"
+	case q.h.ingressBudgetBytes+n > sessionIngressGlobalBytes:
+		q.limitReason = "global_bytes"
+	default:
+		q.limitReason = ""
+	}
+	if q.limitReason != "" {
 		return false
 	}
 	q.bytes += n
 	q.items++
+	q.h.ingressBudgetItems++
+	if q.items > q.peakItems {
+		q.peakItems = q.items
+	}
 	q.h.ingressBudgetBytes += n
+	if q.bytes > q.peakBytes {
+		q.peakBytes = q.bytes
+	}
 	return true
 }
 func (q *sessionIngress) release(n int) {
@@ -122,6 +145,7 @@ func (q *sessionIngress) release(n int) {
 	q.mu.Lock()
 	q.bytes -= n
 	q.items--
+	q.h.ingressBudgetItems--
 	q.h.ingressBudgetBytes -= n
 	q.mu.Unlock()
 }
@@ -202,15 +226,24 @@ func (q *sessionIngress) addBytes(n int) bool {
 	defer q.h.ingressBudgetMu.Unlock()
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	if q.bytes+n > sessionIngressBytes || q.h.ingressBudgetBytes+n > sessionIngressGlobalBytes {
+	if q.bytes+n > sessionIngressBytes {
+		q.limitReason = "connection_bytes"
+		return false
+	}
+	if q.h.ingressBudgetBytes+n > sessionIngressGlobalBytes {
+		q.limitReason = "global_bytes"
 		return false
 	}
 	q.bytes += n
 	q.h.ingressBudgetBytes += n
+	if q.bytes > q.peakBytes {
+		q.peakBytes = q.bytes
+	}
 	return true
 }
 func (q *sessionIngress) overflow() {
 	q.fail(errSessionQueueOverflow)
+	q.c.diag.overflow()
 	q.c.obsConn.SetLocalReason("business_queue_overflow")
 	_ = q.c.conn.CloseNow()
 }

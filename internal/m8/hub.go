@@ -71,12 +71,17 @@ type ViewPageUnlockRequest struct {
 }
 
 type Hub struct {
-	keepaliveJournal    func([]byte) bool
-	ingressBudgetMu     sync.Mutex
-	ingressBudgetBytes  int
-	ExternalSeats       ExternalSeats
-	ExternalCopyReplies ExternalCopyReplyLookup
-	TempGroups          *tempgroup.Service
+	keepaliveJournal     func([]byte) bool
+	sessionJournal       func([]byte) bool
+	sessionJournalMu     sync.Mutex
+	sessionJournalWindow time.Time
+	sessionJournalCount  int
+	ingressBudgetMu      sync.Mutex
+	ingressBudgetBytes   int
+	ingressBudgetItems   int
+	ExternalSeats        ExternalSeats
+	ExternalCopyReplies  ExternalCopyReplyLookup
+	TempGroups           *tempgroup.Service
 
 	stickyLanes         stickyLanes
 	stickyCleanupMu     sync.Mutex
@@ -314,6 +319,7 @@ type sessionClient struct {
 
 	lastTouchWritten time.Time // R-V2-0105 件三：上次把 last_seen 落库的时刻（touchSessionEndpoint 节流）
 
+	diag    *sessionDiagnostics
 	obsConn *obs.WSConn // DW123-PER-RELEASE-OBSERVABILITY：生命周期计数；nil 安全
 }
 
@@ -1202,6 +1208,8 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	obsConn := obs.Default.OpenWS("session")
 	var obsReadErr error
 	defer func() { obsConn.Closed(obsReadErr) }()
+	diag := newSessionDiagnostics(h, sessionName)
+	defer diag.end()
 	if !endpointPreviouslyKnown {
 		admission := h.beginCapabilityPendingAdmission(keyID, sessionName)
 		defer h.endCapabilityPendingAdmission(keyID, sessionName, admission)
@@ -1210,6 +1218,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	connSeq, err := h.Repo.IncrementSessionEndpointConnSeq(r.Context(), keyID, sessionName)
 	if err != nil {
 		obsConn.SetLocalReason("rejected")
+		diag.reason("registration_failed")
 		if conn != nil {
 			_ = conn.Close(websocket.StatusInternalError, "save session endpoint failed")
 		}
@@ -1220,12 +1229,15 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	c.metricsAgentID = a.metricsAgentID
 	c.metricsGeneration = randomHex(16)
 	c.obsConn = obsConn
+	c.diag = diag
+	diag.client = c
+	diag.seq = connSeq
 	connectionRequestCtx := r.Context()
 	ingressCtx, stopIngress := context.WithCancel(connectionRequestCtx)
 	stopHubIngress := context.AfterFunc(h.lifetime().ctx, stopIngress)
 	r = r.WithContext(ingressCtx)
 	c.touchNotify = make(chan struct{}, 1)
-	c.ingress = h.startSessionIngress(ingressCtx, stopIngress, c)
+	h.startSessionIngress(ingressCtx, stopIngress, c)
 	defer func() {
 		stopHubIngress()
 		stopIngress()
@@ -1251,6 +1263,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 	lockStart := time.Now()
 	var oldConn *websocket.Conn
 	var oldObs *obs.WSConn
+	var oldDiag *sessionDiagnostics
 	var rejectDevice bool
 	var reSize [2]int
 	h.mu.Lock()
@@ -1265,6 +1278,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			} else {
 				oldConn = old.conn
 				oldObs = old.obsConn
+				oldDiag = old.diag
 			}
 		}
 		if !rejectDevice && c != nil && c.conn != nil {
@@ -1277,10 +1291,12 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		stopIdleWatchdog()
 		skillCancel()
 		obsConn.SetLocalReason("rejected")
+		diag.reason("device_rejected")
 		_ = conn.Close(websocket.StatusPolicyViolation, "session held by another device")
 		return
 	}
 	if oldConn != nil {
+		oldDiag.reason("replaced")
 		oldObs.SetLocalReason("replaced")
 		_ = oldConn.Close(websocket.StatusPolicyViolation, "replaced")
 	}
@@ -1352,10 +1368,13 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			h.scheduleOnlineBroadcastForSession(context.Background(), keyID, sessionName)
 		}
 	}()
+	diag.online()
+	defer diag.end() // Capture before network/DB teardown; early exits use the outer fallback.
 	r = r.WithContext(context.WithValue(r.Context(), subAgentClientKey{}, c))
 	for {
 		_, data, err := h.readSessionMessage(r.Context(), c)
 		if err != nil {
+			diag.readFailure(connectionRequestCtx, err)
 			obsReadErr = obsWSReadErr(connectionRequestCtx, err)
 			return
 		}
@@ -1365,6 +1384,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 			_ = c.write(r.Context(), errorEnvelope(keyID, sessionName, "", "信封解析失败："+err.Error()))
 			continue
 		}
+		diag.worker(metaString(env.Meta, "type"))
 		if h.handleSessionCapability(c, env) || h.handleSubAgentControl(r.Context(), c, env) {
 			continue
 		}
@@ -6249,6 +6269,7 @@ func (h *Hub) watchSessionIdle(ctx context.Context, c *sessionClient) {
 			return
 		case now := <-tick:
 			if now.Sub(c.lastSeen()) > idleTimeout {
+				c.diag.reason("idle_timeout")
 				c.obsConn.SetLocalReason("idle_timeout")
 				_ = c.conn.Close(websocket.StatusGoingAway, "idle timeout")
 				return
@@ -6321,6 +6342,7 @@ func (h *Hub) watchSessionKeepalive(ctx context.Context, c *sessionClient) {
 			}
 			if err != nil {
 				h.recordKeepaliveFailure(c, interval, timeout, time.Since(pingStart), keepaliveErrorClass(err, pingErr))
+				c.diag.reason("keepalive_failed")
 				c.obsConn.SetLocalReason("keepalive_failed")
 				_ = c.conn.CloseNow()
 				return
@@ -6376,20 +6398,42 @@ func sessionConnSeqName(sessionName string, seq int) string {
 }
 
 func (c *sessionClient) write(ctx context.Context, env model.Envelope) error {
-	ctx, cancel := context.WithTimeout(ctx, sessionWriteLimit)
-	defer cancel()
+	waitCtx, waitCancel := context.WithTimeout(ctx, sessionWriteLimit)
+	defer waitCancel()
 	payload, err := json.Marshal(env)
 	if err != nil {
 		return err
 	}
+	if err := waitCtx.Err(); err != nil {
+		return err
+	}
 	c.writeGateOnce.Do(func() { c.writeGate = make(chan struct{}, 1); c.writeGate <- struct{}{} })
+	c.diag.waiting(1)
 	select {
-	case <-ctx.Done():
-		return ctx.Err()
+	case <-waitCtx.Done():
+		c.diag.waiting(-1)
+		return waitCtx.Err()
 	case <-c.writeGate:
+		c.diag.waiting(-1)
 	}
 	defer func() { c.writeGate <- struct{}{} }()
-	return c.conn.Write(ctx, websocket.MessageText, payload)
+	if err := waitCtx.Err(); err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	limit := sessionPhysicalWriteBudget(env, len(payload))
+	writeCtx, cancel := context.WithTimeout(ctx, limit)
+	defer cancel()
+	c.diag.physicalStart(len(payload), limit)
+	err = c.writeSessionPayload(writeCtx, payload)
+	if err != nil {
+		c.diag.writeFailure(ctx, writeCtx, err)
+		_ = c.conn.CloseNow() // Never reuse a connection after a possibly partial message.
+	}
+	c.diag.physicalEnd()
+	return err
 }
 
 func renderFeishuText(env model.Envelope, chatType model.ChatType) string {
