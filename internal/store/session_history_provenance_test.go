@@ -236,6 +236,18 @@ func TestHistoryProvenanceAppendRollbackAndOversize(t *testing.T) {
 				t.Fatal("failed append wrote duplicate event")
 			}
 			assertHistoryAccounting(t, h)
+			if which == "oversize" {
+				if e := h.flushOneGap(ctx, historyKey{"o", "a", "s"}); e != nil {
+					t.Fatal(e)
+				}
+				page, e := h.Page(ctx, "o", "a", "s", "", nil)
+				if e != nil {
+					t.Fatal(e)
+				}
+				if len(page.Gaps) != 1 || page.Gaps[0].Reason != "oversize" {
+					t.Fatalf("enhanced oversize lost existing gap semantics: %+v", page.Gaps)
+				}
+			}
 			if which == "insert_failure" {
 				_, _ = h.db.Exec(`DROP TRIGGER fail_history`)
 			}
@@ -314,6 +326,13 @@ func TestHistoryProvenanceLifecycleAndEviction(t *testing.T) {
 			}
 			if proofCount(t, h) != 0 {
 				t.Fatalf("%s left orphan sidecar", which)
+			}
+			var gaps int
+			if e := h.db.QueryRow(`SELECT count(*) FROM session_history_gap`).Scan(&gaps); e != nil {
+				t.Fatal(e)
+			}
+			if gaps != 0 {
+				t.Fatalf("sidecar-only %s invented a body gap", which)
 			}
 			assertHistoryAccounting(t, h)
 		})
