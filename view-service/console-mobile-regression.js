@@ -7,6 +7,9 @@
 // M1 追加（S-R62-MOBILE 小活）：抽屉开合改为「语义断言＋有界等待」——开抽屉前先断言
 // 按钮可见且 aria-expanded 初值 false，开／合等待上界 3000ms（CSS 过渡 .2s 的 15 倍余量），
 // 超时落到判据文案上，mobile-no-drawer 刀不再以 page.waitForFunction 10000ms 超时红。
+// M1 基线验证另暴露 waitSessionFrame 既有竞态：iframe 已 attached 但 frame 尚未注册进
+// page.frames() 时 find 返回 undefined 直接崩；改为有界轮询（5s 上界，本地导航注册
+// 通常 <100ms）＋语义断言，不改 15000ms 时间线等待与任何判据。
 // 截图：MOBILE_SHOT_DIR=<目录> 时输出两视口＋1440 PC 各页 PNG（交件证据用）。
 const assert = require('assert');
 const fs = require('fs');
@@ -114,7 +117,13 @@ async function waitDrawerClosed(page, why) {
 }
 async function waitSessionFrame(page, session) {
   await page.locator(`iframe[src*="/view/${session}"]`).waitFor({ state: 'attached' });
-  const frame = page.frames().find((f) => f.url().includes(`/view/${session}`));
+  let frame = page.frames().find((f) => f.url().includes(`/view/${session}`));
+  const deadline = Date.now() + 5000;
+  while (!frame && Date.now() < deadline) {
+    await page.waitForTimeout(50);
+    frame = page.frames().find((f) => f.url().includes(`/view/${session}`));
+  }
+  assert.ok(frame, `会话 iframe 必须已注册进 frame 树（5s 上界内）: ${session}`);
   await frame.waitForFunction(() => document.getElementById('timeline') && document.getElementById('timeline').children.length >= 100, null, { timeout: 15000 });
   return frame;
 }
