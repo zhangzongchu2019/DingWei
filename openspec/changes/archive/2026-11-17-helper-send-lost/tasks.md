@@ -9,8 +9,8 @@
 - [x] T-07 后续实现时执行逐判据故障注入/变异：写前异常、发送中断、Hub已提交回执丢失、IPC回执丢失、并发重放、Hub重启、旧WS代际、旧Hub、权限撤销、容量/超期与CLI/MCP非成功展示；覆盖范围与原始读数见本轮固定源证据，不代表独立验收。
 
 - [x] T-08 23:15容量退回后按b48新固定源重跑完整canonical/四树Go PG strict/focused race/build/strict与55项业务变异，保留原失败与存活记录。
-- [ ] T-09 qwen按新产品锚只读独立复核，组长增量终审；旧12f接受不延用。
-- [ ] T-10 正式③④①②集成新树重跑两CLI同request ID一条Hub投递及①②慢读回执unknown→status同source/delivery恢复联合格，附删保护红；不在单项源自称已覆盖。
+- [x] T-09 qwen按新产品锚只读独立复核，组长增量终审；旧12f接受不延用。 〔结项 2026-11-18：qwen PASS aa41c48e27c7546c8a18732e47f02bd49b14089b（产品 b48a0818），组长 2026-11-17T00:29Z 终审通过；见 docs/reviews/r60-closeout/RECEIPTS.md〕
+- [x] T-10 正式③④①②集成新树重跑两CLI同request ID一条Hub投递及①②慢读回执unknown→status同source/delivery恢复联合格，附删保护红；不在单项源自称已覆盖。 〔结项 2026-11-18：集成锚 cecde0640ff3947f4017922385a133938c2375f4 联合格与双 CLI 同 ID 格（docs/reviews/r60-integration/INTEGRATION-GATES.md），togpt60 独立复核 PASS；见 docs/reviews/r60-closeout/RECEIPTS.md〕
 
 ## 交接记录
 
@@ -24,9 +24,9 @@
 
 - 2026-11-16 coder56solzzc，前交件42c4a8b9f；按组长09:13:16Z先决令。完成：本席库只读核71无行/08:20～08:30 qwen零入站，08:58来自2bfa（原id524d）；dc21原ID确认在delivery93a3，补映射并更新其语义证据分级；一行先报0e0b1a616973。阻塞：dc21未知回执的具体WS分支未定，71缺写前日志；下一步：推纯文档补记，待组长审案，不自行补发/查现网。
 
-- [ ] T-08 R60①实现CLI/MCP、持久helper队列、Hub原子裁决及回执恢复，完成真实断连/离线IPC/并发/重启/权限边界回归。
-- [ ] T-09 SOURCE_COMMIT冻结后跑canonical、相关Go/PG strict、guard-deletion故障断言及OpenSpec strict；记录全部失败/修正/重跑。
-- [ ] T-10 冻结普通推送并核ls-remote，向qwen只读交审、抄组长；不自验收、不自行集成或部署。
+- [x] T-08 R60①实现CLI/MCP、持久helper队列、Hub原子裁决及回执恢复，完成真实断连/离线IPC/并发/重启/权限边界回归。 〔结项 2026-11-18：实现冻结 b48a0818aa121a3f68b921fac489926257ad841d，证据 81a887308688a545cc0edef39559c2e7120e2340〕
+- [x] T-09 SOURCE_COMMIT冻结后跑canonical、相关Go/PG strict、guard-deletion故障断言及OpenSpec strict；记录全部失败/修正/重跑。 〔结项 2026-11-18：同源门见证据 81a887308688a545cc0edef39559c2e7120e2340（docs/reviews/r60-send-lost/）〕
+- [x] T-10 冻结普通推送并核ls-remote，向qwen只读交审、抄组长；不自验收、不自行集成或部署。 〔结项 2026-11-18：冻结 b48a0818 已推送并经 qwen 只读复核 aa41c48e27c7546c8a18732e47f02bd49b14089b〕
 
 - 2026-11-16 coder56solzzc，工作基d2cc47c7。完成：①②③独立工作树已建（集成基110e2c1f）；①原子存储、真实WS原回执恢复、helper持久队列及离线IPC/CLI语义已实现初稿，定向逐步收敛。阻塞：完整门/变异/独立复核未完成，候选容量须终审；下一步：保持产品未冻结，补权限/回执/代际故障回归后跑完整门。②尚未实现；③待外部冻结项及组长复核后按③④①②顺序集成。
 
