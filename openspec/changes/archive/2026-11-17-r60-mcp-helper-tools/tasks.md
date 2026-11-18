@@ -21,7 +21,7 @@
 - [x] T-09 既有夹具修复：新增的连接清理挂点要求 4 个既有部分构造夹具补 `session_heartbeat`／`_make_heartbeat_handler`（`test_connection_receive_quiescence.py`、`test_file_handler.py`、`test_spec_review_enrolled_r43.py`、`test_ipc_socket_path_isolation.py`），沿用既有 `outbound_receipts` 的做法，未放宽任何断言。
 - [x] T-10 全量门 `scripts/run-build-tests.sh` rc=0 与 OpenSpec `validate --all --strict` rc=0，读数写入 REPORT。逐轮 rc≠0 的定性、既有时序抖动的 base-vs-本单对照实验、`internal/m8` 的 37 个 SKIP 逐名逐原因、`go vet` 的 7 条既有告警，全部见 REPORT 第 5 节；未新增 SKIP、未把失败改成 SKIP、未修无关既有用例。
 - [x] T-11 交件：快进推送、`git ls-remote` 与本地 tip 一致、只报 Git 坐标。
-- [ ] T-12 独立复核（togpt60lunazzc）与组长终审。【乙；不由本席勾选，不以本席门读数代替】
+- [x] T-12 独立复核（togpt60lunazzc）与组长终审。【乙；不由本席勾选，不以本席门读数代替】 〔结项 2026-11-18：togpt60 PASS（899f4328bc418edff80e06fa49ab3a5471f8a9ef，delivery dw-dlv_3885f377d44748815d54bc56865c27e9）＋组长终审，由组长勾选；见 docs/reviews/r60-closeout/RECEIPTS.md〕
 - [x] T-13 改单（组长 2026-11-16T21:59:28Z，delivery `dw-dlv_df3396e083741c8a6f4de1e5ef9a3aea`；取代 21:58:47Z 那封的要求 a／b）。同分支快进追加，只改测试与文档，产品逻辑逐字节未动：
   - 一 规格写明「计费前的三道闸门」：`specs/session-heartbeat/spec.md` 的 SHB-003／SHB-004 需求正文＋`design.md` 决定 4，并新增 SHB-S022／S023／S024（Scenario 21→24）。三类＝超过 4096 字节的正文（`internal/m8/session_heartbeat.go:85`）、非法 nonce、非当前连接（`:94`）；均常数成本、不查身份、不应答、不计费。「尝试先计费」的范围限定为通过这三道之后的语义校验与身份查询。
   - 二 三格用例（`internal/m8/session_heartbeat_test.go`，测试数 6→9）：**a** 被顶替连接对合法／语义不合法／超界三类正文零应答＋不写样本＋不计费（旧连接与替代连接两条真实套接字都断言静默）；**b** 当前连接 1 秒内先不合法再合法⇒第二次 `throttled`；**c** 当前连接先超界再合法⇒第二帧 `recorded`。

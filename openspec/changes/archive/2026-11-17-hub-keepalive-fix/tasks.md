@@ -5,7 +5,7 @@
 - [x] T-03 完成ADDED提案与D独立实施/联合验证建议，PM预算待定，不改产品。
 - [x] T-04 保留离线viewer与长输出探针、首轮overlay-vet错误、无修复基线的目标断言红；跑strict及canonical，不把现状probe通过当修复PASS。
 - [x] T-05 推指定分支、核ls-remote，回tip/tree及A～D摘要。
-- [ ] T-06 组长/独立评审定设计、负载与预算，另派实现/删保护变异；本单不实施、不接现网。
+- [x] T-06 组长/独立评审定设计、负载与预算，另派实现/删保护变异；本单不实施、不接现网。 〔结项 2026-11-18：设计与预算经 R60 实施授权（2026-11-16T16:05:24Z）定，实现见本文件 I-01～I-05〕
 
 ## 交接记录
 
@@ -19,7 +19,7 @@
 - [x] I-02 viewer独立有界输出/总截止、touch合并/存储等待取消、session总写截止。
 - [x] I-03 journal有限分类与drop计数、正值配置、helper文本UTF8分块。
 - [x] I-04 固定候选后完整canonical/Go/PG strict/focused race/OpenSpec与逐保护删改须红，保留每轮原失败。
-- [ ] I-05 普通推送核远端，qwen独立只读复核/组长终审；不自集成/不部署。
+- [x] I-05 普通推送核远端，qwen独立只读复核/组长终审；不自集成/不部署。 〔结项 2026-11-18：冻结 3db78e5b244c4663fe67f7dcd44b74991057a7f6，qwen PASS adcb1d649e8f709f030f9e2c603f99a6427a4785，组长终审通过；见 docs/reviews/r60-closeout/RECEIPTS.md〕
 
 - 2026-11-16 coder56solzzc，工作基d2cc47c7。完成：Reader/队列按流式8KiB增量预留预算，含处理/读取中的64项、32MiB及全Hub256MiB；慢viewer总截止/独立输出与重连gap、合并touch/历史结果等待取消、journal脱敏非阻塞/drop计数/正值配置、helper UTF8分块。真实WS慢业务6.1s对照/ACK提交前无确认/满队列/关停/慢viewer与日志pipe+socket背压均定向通过；工作态focused race已绿但非固定锚门。曾有测试助手命名/字段编译错，保留原失败；未改既有flaky去涂绿。阻塞：固定锚全包/canonical/变异和独立复核未完成。下一步：固定候选，冻结产品期间跑门/删保护；不自验收/不部署。
 

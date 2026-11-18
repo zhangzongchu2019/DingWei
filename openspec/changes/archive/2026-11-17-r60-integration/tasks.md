@@ -3,7 +3,7 @@
 - [x] T-01 按冻结输入③④①②合并，处理current heartbeat/inventory97，版本统一40。
 - [x] T-02 新增双CLI同ID、完整helper未知恢复、viewer封口/待显队列两格，工作态定向绿。
 - [x] T-03 固定源后各删保护业务红，完整canonical/build/四树Go/五轮m8/浏览器/strict。
-- [ ] T-04 证据归档、普通推送核远端、组长独立终审；不代替上线授权。
+- [x] T-04 证据归档、普通推送核远端、组长独立终审；不代替上线授权。 〔结项 2026-11-18：证据 docs/reviews/r60-integration/ 于 cecde0640ff3947f4017922385a133938c2375f4，togpt60 PASS（dw-dlv_692141e192dcb0ec7eafeb2a9b6b2ded），组长终审 2026-11-17T04:01Z；现网 SWITCH_PASS 2026-11-18T04:14:09Z；见 docs/reviews/r60-closeout/RECEIPTS.md〕
 
 ## 交接记录
 
