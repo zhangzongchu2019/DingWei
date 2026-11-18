@@ -241,6 +241,11 @@ func (h *SessionHistory) setEnabled(ctx context.Context, enabled bool, now time.
 	if err != nil {
 		return err
 	}
+	if !enabled {
+		if _, err = tx.ExecContext(ctx, `DELETE FROM session_history_provenance`); err != nil {
+			return err
+		}
+	}
 	err = tx.Commit()
 	if err == nil {
 		h.enabled.Store(enabled)
@@ -373,7 +378,11 @@ func (h *SessionHistory) commitAppendBatch(batch []*historyAppendRequest) {
 		if oneErr == nil {
 			cursor = cursors[0]
 		} else {
-			h.rememberGap(request.key, "persist_error", request.now.UnixMilli())
+			reason := "persist_error"
+			if errors.Is(oneErr, ErrSessionHistoryOversize) {
+				reason = "oversize"
+			}
+			h.rememberGap(request.key, reason, request.now.UnixMilli())
 		}
 		request.result <- historyAppendResult{cursor: cursor, err: oneErr}
 	}
@@ -427,16 +436,20 @@ func (h *SessionHistory) appendBatchTx(batch []*historyAppendRequest) ([]Session
 			states[key] = state
 			keys = append(keys, key)
 		}
+		payload, recordBytes, enrichErr := enrichHistoryInput(ctx, tx, request, state.generation.value)
+		if enrichErr != nil {
+			return nil, enrichErr
+		}
 		seq := state.generation.next
 		if _, err = tx.ExecContext(ctx, `UPDATE session_history_gap SET before_seq=?,ended_at_ms=? WHERE owner_key=? AND agent_key_id=? AND session_name=? AND generation=? AND before_seq IS NULL AND after_seq<?`, seq, request.now.UnixMilli(), key.owner, key.agent, key.session, state.generation.value, seq); err != nil {
 			return nil, err
 		}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO session_history_event(owner_key,agent_key_id,session_name,generation,seq,event_id,received_at_ms,event_type,payload_json,record_bytes) VALUES(?,?,?,?,?,?,?,?,?,?)`, key.owner, key.agent, key.session, state.generation.value, seq, request.eventID, request.now.UnixMilli(), request.eventType, request.payload, request.recordBytes); err != nil {
+		if _, err = tx.ExecContext(ctx, `INSERT INTO session_history_event(owner_key,agent_key_id,session_name,generation,seq,event_id,received_at_ms,event_type,payload_json,record_bytes) VALUES(?,?,?,?,?,?,?,?,?,?)`, key.owner, key.agent, key.session, state.generation.value, seq, request.eventID, request.now.UnixMilli(), request.eventType, payload, recordBytes); err != nil {
 			return nil, err
 		}
 		state.generation.next++
-		state.bytes += request.recordBytes
-		totalBytes += request.recordBytes
+		state.bytes += recordBytes
+		totalBytes += recordBytes
 		cursors[i] = SessionHistoryCursor{Generation: state.generation.value, Seq: seq}
 		agents[historyDeleteKey{key.owner, key.agent}] = struct{}{}
 	}
@@ -560,6 +573,7 @@ func (h *SessionHistory) flushPendingTx(ctx context.Context, tx *sql.Tx, k histo
 type historyRowKey struct {
 	owner, agent, session, generation string
 	seq, bytes, at                    int64
+	delivery                          string
 }
 
 func (h *SessionHistory) deleteExpiredTx(ctx context.Context, tx *sql.Tx, cutoff int64, limit int) (int, error) {
@@ -603,6 +617,17 @@ func oldestRowsForEviction(rows []historyRowKey, bytesNeeded int64) []historyRow
 }
 func deleteHistoryRows(ctx context.Context, tx *sql.Tx, rows []historyRowKey, reason string) error {
 	for _, r := range rows {
+		if r.delivery != "" {
+			if _, e := tx.ExecContext(ctx, `DELETE FROM session_history_provenance WHERE owner_key=? AND agent_key_id=? AND session_name=? AND generation=? AND delivery_id=?`, r.owner, r.agent, r.session, r.generation, r.delivery); e != nil {
+				return e
+			}
+			continue
+		}
+		// An unconsumed queued echo can still have evidence. Evicting that
+		// event removes its exact evidence in the same transaction as well.
+		if _, e := tx.ExecContext(ctx, `DELETE FROM session_history_provenance WHERE owner_key=? AND agent_key_id=? AND session_name=? AND generation=? AND delivery_id=(SELECT json_extract(payload_json,'$.delivery_id') FROM session_history_event WHERE owner_key=? AND agent_key_id=? AND session_name=? AND generation=? AND seq=?)`, r.owner, r.agent, r.session, r.generation, r.owner, r.agent, r.session, r.generation, r.seq); e != nil {
+			return e
+		}
 		if _, e := tx.ExecContext(ctx, `DELETE FROM session_history_event WHERE owner_key=? AND agent_key_id=? AND session_name=? AND generation=? AND seq=?`, r.owner, r.agent, r.session, r.generation, r.seq); e != nil {
 			return e
 		}
@@ -616,6 +641,9 @@ func deleteHistoryRows(ctx context.Context, tx *sql.Tx, rows []historyRowKey, re
 	// A deletion batch has one bounded, non-content gap marker per affected session.
 	groups := map[historyKey][]historyRowKey{}
 	for _, r := range rows {
+		if r.delivery != "" {
+			continue
+		}
 		k := historyKey{r.owner, r.agent, r.session}
 		groups[k] = append(groups[k], r)
 	}
@@ -644,11 +672,7 @@ func (h *SessionHistory) enforceAgentLimitTx(ctx context.Context, tx *sql.Tx, ow
 		if n <= SessionHistoryAgentMaxBytes {
 			return nil
 		}
-		rows, e := tx.QueryContext(ctx, `SELECT owner_key,agent_key_id,session_name,generation,seq,record_bytes,received_at_ms FROM session_history_event WHERE owner_key=? AND agent_key_id=? ORDER BY received_at_ms,seq,session_name LIMIT ?`, owner, agent, SessionHistoryBatch)
-		if e != nil {
-			return e
-		}
-		batch, e := scanHistoryRows(rows)
+		batch, e := historyEvictionRows(ctx, tx, owner, agent)
 		if e != nil {
 			return e
 		}
@@ -673,11 +697,7 @@ func (h *SessionHistory) enforceGlobalLimitTx(ctx context.Context, tx *sql.Tx) e
 		if n <= SessionHistoryGlobalMaxBytes {
 			return nil
 		}
-		rows, e := tx.QueryContext(ctx, `SELECT owner_key,agent_key_id,session_name,generation,seq,record_bytes,received_at_ms FROM session_history_event ORDER BY received_at_ms,owner_key,agent_key_id,session_name,seq LIMIT ?`, SessionHistoryBatch)
-		if e != nil {
-			return e
-		}
-		batch, e := scanHistoryRows(rows)
+		batch, e := historyEvictionRows(ctx, tx, "", "")
 		if e != nil {
 			return e
 		}
@@ -853,7 +873,8 @@ func (h *SessionHistory) RequestAgentDeletion(ctx context.Context, owner, agent 
 	return e
 }
 
-// CleanupBatch runs at most 500 TTL deletions and one bounded queued identity purge.
+// CleanupBatch bounds event and sidecar TTL work to 500 rows each, plus one
+// bounded queued identity purge; all evidence/accounting changes share the transaction.
 func (h *SessionHistory) CleanupBatch(ctx context.Context, now time.Time) error {
 	if h == nil {
 		return nil
@@ -901,9 +922,19 @@ func (h *SessionHistory) CleanupBatch(ctx context.Context, now time.Time) error 
 			return cleanupErr
 		}
 	}
+	if e = deleteProvenanceBatch(ctx, tx, "expires_at_ms<=?", now.UnixMilli()); e != nil {
+		return e
+	}
 	var owner, agent string
 	e = tx.QueryRowContext(ctx, `SELECT owner_key,agent_key_id FROM session_history_delete_queue ORDER BY requested_at_ms LIMIT 1`).Scan(&owner, &agent)
 	if e == nil {
+		if e = deleteProvenanceBatch(ctx, tx, "owner_key=? AND agent_key_id=?", owner, agent); e != nil {
+			return e
+		}
+		var sidecars int
+		if e = tx.QueryRowContext(ctx, `SELECT count(*) FROM session_history_provenance WHERE owner_key=? AND agent_key_id=?`, owner, agent).Scan(&sidecars); e != nil {
+			return e
+		}
 		if deleted < SessionHistoryBatch {
 			remaining := SessionHistoryBatch - deleted
 			rows, er := tx.QueryContext(ctx, `SELECT owner_key,agent_key_id,session_name,generation,seq,record_bytes,received_at_ms FROM session_history_event WHERE owner_key=? AND agent_key_id=? ORDER BY received_at_ms,session_name,seq LIMIT ?`, owner, agent, remaining)
@@ -914,12 +945,12 @@ func (h *SessionHistory) CleanupBatch(ctx context.Context, now time.Time) error 
 			if er != nil {
 				return er
 			}
-			if len(batch) == 0 {
+			if len(batch) == 0 && sidecars == 0 {
 				_, er = tx.ExecContext(ctx, `DELETE FROM session_history_delete_queue WHERE owner_key=? AND agent_key_id=?`, owner, agent)
 			} else {
 				er = deleteHistoryRows(ctx, tx, batch, "identity_revoked")
 				if er == nil {
-					if len(batch) < remaining {
+					if len(batch) < remaining && sidecars == 0 {
 						_, er = tx.ExecContext(ctx, `DELETE FROM session_history_delete_queue WHERE owner_key=? AND agent_key_id=?`, owner, agent)
 					} else {
 						_, er = tx.ExecContext(ctx, `UPDATE session_history_delete_queue SET attempts=attempts+1 WHERE owner_key=? AND agent_key_id=?`, owner, agent)

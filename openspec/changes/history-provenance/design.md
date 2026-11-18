@@ -59,3 +59,13 @@ renderer 只对已经通过 `normalizeEvent` 的标准 provenance 画图：`kind
 2. 仅 queued echo 不增 provenance；admitted echo 在完全一致五元组关联时才增。复制 delivery、跨 session、跨 generation、不同 origin ID、copy/control observation、来源缺失/不可信与 duplicate conflict 均为 0 图标。
 3. migration 升级、r60 同时新增 migration 的顺延、history quota 满、4 KiB sidecar 上限、TTL、global/agent eviction、禁用/删除队列和 Append transaction rollback 均有测试。
 4. 变异删除 Hub sidecar 持久化或 user_input 附加字段时，Agent/timer DOM `icon_count==1` 业务断言红；删除 renderer Hub trust 判定时，未 attested fixture 的 `icon_count==0` 业务断言红；删除关联键任一组成或允许 delivery_id 与 origin_delivery_id 不同，精确关联格红；删除 TTL/quota cleanup 时预算/清理断言红。
+
+## 7. N-3 实施定稿（2026-11-18 派单）
+
+- 实施基点main 206d41b26dab646c0e50a111eed5a45ccf7c72f6；首提交c3b3db27c原样带入本设计，不修改历史设计字节。
+- history migrate以fs.Glob、sort.Strings逐文件执行并校验同名digest，没有连续编号检查。采用设计指定的独立0078_history_provenance.sql；不改应用库0077。未来占号须先同步，不重排已发布文件。
+- Sidecar增删通过history DB触发器在同事务更新generation/global counters；Append在原group-commit事务内精确查询、增强、计算实际record_bytes并消费。agent/global eviction选择器合并event和sidecar，queued事件被淘汰也同步删其精确delivery证据；sidecar本身淘汰不生成正文gap。
+- 超限选择已按派单定稿：增强后超过1,000,000 bytes时返回既有oversize错误、回滚整个本次event/消费/counter，保留sidecar至TTL；既有gap路径继续，不追加第二条事件。
+- helper关联字段遵循真实协议：kind/delivery_id/origin_delivery_id/turn_id在顶层，仅data.lifecycle在data；queued、空turn、不同ID、跨五元组或冲突证据均关闭图标。没有有效sidecar的JSON保留原字节，未追溯更新旧事件。
+- 来源记录仅使用当前认证连接的owner/stable Agent ID快照，不在可能持有identity授权锁的route回调内再次借PG连接。无法取得目标稳定身份（例如当时目标未连接）或写sidecar失败时记录固定原因并fail-closed，无图标；不影响已经durable enqueue的投递，也不在后续echo里从正文/地址/临近卡片重建来源。
+- SQLite事件和sidecar的事务原子性不延伸到应用库投递，二者仍独立；原可靠投递回执时序不变。history关闭时清sidecar，删除队列及TTL每批分别有界处理sidecar；恢复/迁移测试覆盖已有0001 ledger升级及digest拒绝。

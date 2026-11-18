@@ -19,3 +19,7 @@
 ## 实施待定
 
 该提案推荐紧凑 sidecar，避免重复正文；具体表、唯一索引、与 Append 的事务/重试边界、过期清理和配额核算需要实现设计确认。`attested_by=hub` 是现存字段契约中的 Hub 信任标记，不宣称为密码学签名。
+
+## 2026-11-18 实施现场
+
+基main206d41b2，当前实现位于internal/store/session_history_provenance.go、history_migrations/0078_history_provenance.sql和internal/m8/history_provenance.go。原Append group-commit与Page envelope保持；真实Agent/timer WebSocket及HTTP历史输出由TestHistoryProvenanceRealHubAgentTimerReplay生成，view-service/history-provenance-browser-regression.js启动该隔离fixture后只加载历史页验证刷新，已登记全量runner。fixture为无模型合成协议事件，不使用现网身份/凭据/数据库。

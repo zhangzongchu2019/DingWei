@@ -23,6 +23,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITES = (
+    ("history_provenance", "node", ROOT / "view-service/history-provenance-browser-regression.js"),
     ("renderer_model_admission", "node", ROOT / "view-service/renderer-model-admission-regression.js"),
     ("mcp_zero_consent", "python3", ROOT / "docs/reviews/mcp-zero-consent/browser_regression.py"),
     ("sub_agent_tree", "node", ROOT / "view-service/sub-agent-tree-browser-regression.js"),

@@ -52,3 +52,8 @@ Hub MUST 令来源凭据与对应历史保留期及容量配额一致，且不�
 
 - **WHEN** 回归运行于移除 renderer Hub attestation/trusted 判定的变异版本，并输入未证明 provenance
 - **THEN** 未证明事件错误显示图标，且“不得显示未经 Hub 证明的图标”业务断言失败
+
+#### Scenario: 增强后单事件超限
+
+- **WHEN** 精确关联的 admitted user_input 附加来源后超过既有1 MB单事件上限
+- **THEN** Hub回滚本次事件写入、sidecar消费与计费，保留sidecar至TTL并按既有oversize/gap处理，不重复写入事件
