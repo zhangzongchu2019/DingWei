@@ -67,11 +67,16 @@ function consoleHTMLFromProductionSource() {
     mutate("status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=true;", "status.textContent=document.getElementById('platform-items').childElementCount?'':'没有可用工作台入口';retry.hidden=document.getElementById('platform-items').childElementCount>0;");
     mutate("status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=true;", "status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=agents.length>0;");
   }
-  if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
-  // S-BROWSER-FOLLOWUP：格2（零组审计流程）判别力刀。既有 unhandled-group-action 的锚
-  // （status.textContent='编组操作失败: …'）已随产品 groupAction 重构为 groupFeedback 而漂移
-  // （基锚实测 --mutate=unhandled-group-action 全绿＝假绿，见 REPORT §四披露）。
-  // 本刀静默 groupAction 错误反馈：审计流程的「该编组已关闭添加」与格3 的失败文案均永不出现。
+  // S-BROWSER-MUTANT-REVIVE：unhandled-group-action 复活。旧锚（status.textContent='编组操作失败: …'）
+  // 已随产品 groupAction 重构为 groupFeedback（console_auth.go:797）而漂移，静默 replace 假绿
+  // （S-BROWSER-FOLLOWUP REPORT §四披露）。重定锚到现行 catch 路径：网络失败时不再写
+  // 「请求失败: 」反馈而是抛出未处理异常；格3 expectText('#groupNameFeedback','请求失败:')
+  // 的业务断言红（条件等待超时被吞、断言本身不改）。mutate 锚缺失即 throw，与其它刀同口径。
+  if (MUTATION === 'unhandled-group-action') {
+    mutate("groupFeedback(feedback||'group-status','请求失败: '+String(e&&e.message||e));return false;", "throw e;");
+  }
+  // S-BROWSER-FOLLOWUP：格2（零组审计流程）判别力刀。静默 groupAction 的 HTTP 错误反馈：
+  // 审计流程的「该编组已关闭添加」与格3 的失败文案均永不出现（与上一把 catch 路径刀互补）。
   if (MUTATION === 'silent-group-action-feedback') {
     mutate("groupFeedback(feedback||'group-status',msg||('HTTP '+r.status));return false;", "return false;");
   }

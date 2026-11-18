@@ -248,7 +248,15 @@ def commit_sha() -> str:
     return result.stdout.strip()
 
 
-def receipt(timestamp: str, sha: str, overrides: tuple[str, ...], results: dict[str, int], aggregate: int) -> str:
+def read_loadavg() -> str:
+    """First three /proc/loadavg values; 'unavailable' where the file cannot be read."""
+    try:
+        return " ".join(Path("/proc/loadavg").read_text(encoding="utf-8").split()[:3])
+    except OSError:
+        return "unavailable"
+
+
+def receipt(timestamp: str, sha: str, overrides: tuple[str, ...], results: dict[str, int], aggregate: int, flood_loadavg: dict[str, str] | None = None) -> str:
     lines = [
         "DW_BROWSER_RECEIPT_V1_BEGIN",
         f"generated_at_utc={timestamp}",
@@ -256,6 +264,9 @@ def receipt(timestamp: str, sha: str, overrides: tuple[str, ...], results: dict[
         "overrides=" + (",".join(overrides) if overrides else "none"),
     ]
     lines.extend(f"suite.{name}.rc={results.get(name, 3)}" for name, _, _ in SUITES)
+    if flood_loadavg is not None:
+        lines.append(f"suite.renderer_flood_stress.loadavg_start={flood_loadavg.get('start', 'unavailable')}")
+        lines.append(f"suite.renderer_flood_stress.loadavg_end={flood_loadavg.get('end', 'unavailable')}")
     lines.extend((f"aggregate_rc={aggregate}", "DW_BROWSER_RECEIPT_V1_END"))
     return "\n".join(lines) + "\n"
 
@@ -272,6 +283,7 @@ def main() -> int:
     env = os.environ.copy()
     overrides = tuple(name for name in OVERRIDE_ENV_NAMES if env.get(name))
     results: dict[str, int] = {}
+    flood_loadavg: dict[str, str] | None = None
     aggregate = 3
     mock: subprocess.Popen[str] | None = None
     try:
@@ -296,8 +308,12 @@ def main() -> int:
             }
             for name, interpreter, path in SUITES:
                 print(f"\n=== browser suite: {name} ===", flush=True)
+                if name == "renderer_flood_stress":
+                    flood_loadavg = {"start": read_loadavg()}
                 completed = run([interpreter, str(path)], env=suite_env)
                 results[name] = completed.returncode
+                if name == "renderer_flood_stress" and flood_loadavg is not None:
+                    flood_loadavg["end"] = read_loadavg()
             if len(results) != len(SUITES):
                 raise EnvironmentUnavailable(
                     f"only ran {len(results)}/{len(SUITES)} browser suites; an incomplete run cannot pass"
@@ -316,7 +332,7 @@ def main() -> int:
                 mock.wait()
 
     try:
-        rendered = receipt(utc_now(), commit_sha(), overrides, results, aggregate)
+        rendered = receipt(utc_now(), commit_sha(), overrides, results, aggregate, flood_loadavg)
     except EnvironmentUnavailable as error:
         print(f"ENVIRONMENT_UNAVAILABLE: {error}", file=sys.stderr)
         return 3
