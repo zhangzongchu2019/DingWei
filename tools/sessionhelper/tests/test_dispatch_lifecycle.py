@@ -454,6 +454,44 @@ class PresubmitRecoveryStartRetryTest(unittest.TestCase):
         adapter._event_bridge()
         self.assertEqual(calls, [('subscribed', True)], 'N1C_EVENT_BRIDGE_SUBSCRIBED_BEFORE_RECOVERY')
 
+    def test_set_recovery_event_does_not_mask_unhealthy_driver_reconnect(self):
+        recovery = threading.Event()
+        recovery.set()
+        driver_state = {'healthy': False, 'starts': 0, 'events': 0}
+        sleeps = []
+        adapter = None
+
+        def events():
+            driver_state['events'] += 1
+            if driver_state['healthy']:
+                adapter._lane_stop.set()
+            return ()
+
+        def start():
+            driver_state['starts'] += 1
+            driver_state['healthy'] = True
+
+        driver = SimpleNamespace(events=events, healthy=lambda: driver_state['healthy'],
+                                 start=start, on_activity=None)
+        adapter = self.adapter(driver, 'codex')
+        adapter._transport_recovery = recovery  # Set, but intentionally not cleared.
+
+        def bridge_sleep(_seconds):
+            sleeps.append(None)
+            # Bound a regressed loop that only checks recovery-object presence.
+            if len(sleeps) >= 3:
+                adapter._lane_stop.set()
+
+        adapter._bridge_sleep = bridge_sleep
+        adapter._bridge_clock = lambda: float(len(sleeps) + 1)
+        adapter._event_bridge()
+
+        self.assertEqual(driver_state['starts'], 1,
+                         'N1C_SET_RECOVERY_MASKED_UNHEALTHY_DRIVER_RECONNECT')
+        self.assertTrue(driver_state['healthy'], 'N1C_SET_RECOVERY_DID_NOT_RESTORE_DRIVER')
+        self.assertGreaterEqual(driver_state['events'], 2,
+                                'N1C_SET_RECOVERY_EVENT_BRIDGE_DID_NOT_RESUBSCRIBE')
+
 
 class AdmissionDeadlineTest(unittest.TestCase):
     setUp = DispatchLifecycleTest.setUp

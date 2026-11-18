@@ -1,0 +1,14 @@
+test_set_recovery_event_does_not_mask_unhealthy_driver_reconnect (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_set_recovery_event_does_not_mask_unhealthy_driver_reconnect) ... FAIL
+
+======================================================================
+FAIL: test_set_recovery_event_does_not_mask_unhealthy_driver_reconnect (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_set_recovery_event_does_not_mask_unhealthy_driver_reconnect)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/dev/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 489, in test_set_recovery_event_does_not_mask_unhealthy_driver_reconnect
+    self.assertEqual(driver_state['starts'], 1,
+AssertionError: 0 != 1 : N1C_SET_RECOVERY_MASKED_UNHEALTHY_DRIVER_RECONNECT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.031s
+
+FAILED (failures=1)
