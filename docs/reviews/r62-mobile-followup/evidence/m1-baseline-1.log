@@ -1,0 +1,17 @@
+viewport 390x844:
+  PASS old login readable without horizontal overflow (390x844)
+  PASS new-platform login targets >=40px and no overflow (390x844)
+  PASS workbench drawer opens and closes (390x844)
+  PASS open an Agent session from drawer and scroll to read (390x844)
+  PASS tabs scroll horizontally without document overflow (390x844)
+  PASS click targets >=40px (390x844)
+viewport 360x780:
+  PASS old login readable without horizontal overflow (360x780)
+  PASS new-platform login targets >=40px and no overflow (360x780)
+  PASS workbench drawer opens and closes (360x780)
+  PASS open an Agent session from drawer and scroll to read (360x780)
+  PASS tabs scroll horizontally without document overflow (360x780)
+  PASS click targets >=40px (360x780)
+viewport 1440x900 (PC):
+  PASS PC layout unchanged: sidebar in flow, drawer controls hidden, tabs wrap
+console mobile: passed=13 failed=0 mutation=none

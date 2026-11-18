@@ -1,0 +1,89 @@
+viewport 390x844:
+  PASS old login readable without horizontal overflow (390x844)
+  PASS new-platform login targets >=40px and no overflow (390x844)
+  PASS workbench drawer opens and closes (390x844)
+  FAIL open an Agent session from drawer and scroll to read (390x844): 会话阅读页可见点击目标必须≥40px: [{"id":"historyOlder","w":370,"h":34},{"id":"themeBtn","w":40,"h":24},{"id":"clockStatus","w":191,"h":24},{"id":"shotBtn","w":53,"h":24},{"id":"interruptBtn","w":40,"h":34},{"id":"sendBtn","w":50,"h":34}]
++ actual - expected
+
++ [
++   {
++     h: 34,
++     id: 'historyOlder',
++     w: 370
++   },
++   {
++     h: 24,
++     id: 'themeBtn',
++     w: 40
++   },
++   {
++     h: 24,
++     id: 'clockStatus',
++     w: 191
++   },
++   {
++     h: 24,
++     id: 'shotBtn',
++     w: 53
++   },
++   {
++     h: 34,
++     id: 'interruptBtn',
++     w: 40
++   },
++   {
++     h: 34,
++     id: 'sendBtn',
++     w: 50
++   }
++ ]
+- []
+
+  PASS tabs scroll horizontally without document overflow (390x844)
+  PASS click targets >=40px (390x844)
+viewport 360x780:
+  PASS old login readable without horizontal overflow (360x780)
+  PASS new-platform login targets >=40px and no overflow (360x780)
+  PASS workbench drawer opens and closes (360x780)
+  FAIL open an Agent session from drawer and scroll to read (360x780): 会话阅读页可见点击目标必须≥40px: [{"id":"historyOlder","w":340,"h":34},{"id":"themeBtn","w":40,"h":24},{"id":"clockStatus","w":191,"h":24},{"id":"shotBtn","w":53,"h":24},{"id":"interruptBtn","w":40,"h":34},{"id":"sendBtn","w":50,"h":34}]
++ actual - expected
+
++ [
++   {
++     h: 34,
++     id: 'historyOlder',
++     w: 340
++   },
++   {
++     h: 24,
++     id: 'themeBtn',
++     w: 40
++   },
++   {
++     h: 24,
++     id: 'clockStatus',
++     w: 191
++   },
++   {
++     h: 24,
++     id: 'shotBtn',
++     w: 53
++   },
++   {
++     h: 34,
++     id: 'interruptBtn',
++     w: 40
++   },
++   {
++     h: 34,
++     id: 'sendBtn',
++     w: 50
++   }
++ ]
+- []
+
+  PASS tabs scroll horizontally without document overflow (360x780)
+  PASS click targets >=40px (360x780)
+viewport 1440x900 (PC):
+  PASS PC layout unchanged: sidebar in flow, drawer controls hidden, tabs wrap
+console mobile: passed=11 failed=2 mutation=mobile-session-small-targets
