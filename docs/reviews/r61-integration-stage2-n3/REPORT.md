@@ -58,3 +58,5 @@ PG启动调用链与源码blob SHA见postgres-startup-path.json，运行时版�
 go version -m原输出mod行末尾tab原样保留，与导入原日志的尾空白同属原始证据；不为格式检查改写原字节。本段正文/规格与产品范围whitespace检查无错误。
 
 首份不可变证据提交：`5ccfc46bb3f2da227b31c7c0a87cf7024400457f`，tasks/context已附可git cat-file的证据坐标；本段当前候选取代c430作为N1b＋N3合后锚，旧阶段读数与原锚保留。
+
+最终文档strict固定`def17ef7ff6df6f83a34f831aa62e38e315473c1`，45/0、rc0；UTC/原SHA见evidence/final-document-strict.json及同名txt。后续仅封存docs，不再修改openspec。
