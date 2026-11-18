@@ -115,7 +115,7 @@ class DurableAgentDeliveryInjectsCLI(unittest.TestCase):
         return [f.get("meta", {}).get("state") for f in self.frames
                 if f.get("meta", {}).get("type") == "delivery_ack" and f.get("meta", {}).get("delivery_id") == delivery_id]
 
-    def test_durable_delivery_from_another_agent_is_injected_and_not_replied(self):
+    def test_durable_delivery_without_user_turn_fails_without_reply(self):
         self.assertTrue(self.connected.wait(20), "helper never connected")
         body = "TASK-durable-from-agent hello"
         env = {
@@ -130,8 +130,9 @@ class DurableAgentDeliveryInjectsCLI(unittest.TestCase):
         asyncio.run_coroutine_threadsafe(self.ws.send(json.dumps(env)), self.loop).result(5)
         self._wait(lambda: os.path.exists(self.cli_log) and body in open(self.cli_log).read(), 20,
                    "fake CLI received the injected body")
-        self._wait(lambda: "injected" in self._acks("dw-dlv_t1"), 10, "injected ACK")
         self._wait(lambda: "failed" in self._acks("dw-dlv_t1"), 60, "failed ACK (no session file)")
+        self.assertNotIn("injected", self._acks("dw-dlv_t1"),
+                         "a typed prompt without its matching persisted user turn is not an injected ACK")
         final = [f["meta"] for f in self.frames if f.get("meta", {}).get("type") == "delivery_ack"
                  and f["meta"].get("delivery_id") == "dw-dlv_t1" and f["meta"].get("state") == "failed"][0]
         self.assertEqual((final.get("reason"), final.get("retryable")), ("cli_injection_not_received", False))
