@@ -4,7 +4,7 @@
 
 ### Requirement: Transient pre-submit validation failures remain queued
 
-The Codex helper MUST classify only transient transport or server failures from supported read-only pre-submit validation as retryable. It MUST persist the busy-wait marker before retaining the delivery as the FIFO head, retry validation with capped backoff, and MUST NOT record `failed/session_unavailable` for that transient failure. Identity, thread, cwd, direct-input, authentication, and daemon identity mismatches MUST fail closed, remain at the FIFO head with an explicit operator alert, and MUST NOT change the bound thread.
+The Codex helper MUST retain pre-submit validation failures as a durable FIFO-head wait or fail-closed operator hold. It MUST avoid terminal failure and thread rotation before the submission boundary.
 
 #### Scenario: Validation transport recovers before submission
 
@@ -12,9 +12,14 @@ The Codex helper MUST classify only transient transport or server failures from 
 - **THEN** the same delivery remains durably queued at the head until success
 - **AND** the submission boundary is persisted before exactly one turn/start request
 
+#### Scenario: Transient read-only validation retries
+
+- **WHEN** supported read-only validation has a transient transport or server failure
+- **THEN** the helper retries with capped backoff and does not record `failed/session_unavailable`
+
 #### Scenario: Binding mismatch is not retried or rotated
 
-- **WHEN** validation proves a thread identity, cwd, direct-input, or daemon identity mismatch
+- **WHEN** validation proves a thread identity, cwd, direct-input, authentication, or daemon identity mismatch
 - **THEN** the delivery fails closed without creating or selecting another thread
 - **AND** no turn/start request is sent
 
