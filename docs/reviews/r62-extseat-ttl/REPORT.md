@@ -23,9 +23,9 @@
 ## 正式门
 命令、UTC、rc、原始SHA逐项见evidence/runs.json；白名单环境见evidence/env.json，Go1.22.2、锁定Python3.12.3、普通用户、数据盘独立HOME/TMPDIR，无继承在线SH_/DINGWEI_。HUB_TEST_PG_STRICT=1，真实临时PG；从本次runner后代postmaster实读版本PostgreSQL18.3，见evidence/pg-runtime.json（不接现网）。
 
-- canonical：SOURCE_COMMIT=2fd6aebacbb3dae3ac3fa82d84968367552151ca ./build.sh --test-only，rc0；helper两profile、Python和shell计数以gate-summary原回执为准。
+- canonical：SOURCE_COMMIT=2fd6aebacbb3dae3ac3fa82d84968367552151ca ./build.sh --test-only，rc0；BUILD_TESTS_OK helper_profiles=2 python=27 shell=2；Claude/Codex各1270/1270，inventory97。
 - extshared/extseat/tempgroup/m8整包：-count=3 -p1 -timeout90m -v，rc0；顶层PASS 3081，含各层PASS 5250，FAIL 0，顶层SKIP 30、含各层SKIP 84，interrupted(9) 0行。逐名跳过及条件见SKIPS.md，未把SKIP记为绿。
-- OpenSpec1.16.0 validate --all --strict：rc0，原文见日志；最终纯文档补记后另留strict记录。
+- OpenSpec1.16.0 validate --all --strict：42 passed/0 failed、rc0；最终纯文档补记后另留strict记录。
 
 ## 删保护两刀
 GroupTTL单独退3天、MessageTTL单独退24h，分别compile_rc0/test_rc1，TestTTLConstants及对应真实PG到期业务断言红；无编译失败/panic。修改前后文本、日志SHA、原始/变异/恢复SHA见evidence/mutations.json；恢复后基线rc0，工作树clean。仅计最终源两刀，不与前驱样本累计。未宣称其覆盖其它不变授权逻辑。

@@ -5,3 +5,5 @@
 本片只改常量；真实PG回归复用internal/tempgroup/service_pg_test.go的生产tempgroup+extseat+identity服务fixture，避免以stub组服务代替AG到期。边界固定时钟，不等现实七天；以一微秒前后测试PG精度。还运行extshared/extseat/m8整包三遍PG strict，并额外运行tempgroup三遍，因为新增真实组边界测试在此包。环境白名单，Go1.22.2，锁定Python3.12.3，数据盘独立HOME/TMPDIR，禁止继承在线SH_/DINGWEI_配置。
 
 补充既有测试影响：internal/extseat/core_pg_test.go的MessageExpiryAndRevokedWait改用合法发送先续组，避免AG与消息恰好同时过期；保留原消息过期和token撤权所有断言。9576前驱的canonical rc0、旧夹具rc1、修复夹具单格rc0与中止full-go3原日志均保留；正式门在追加的新冻结源重跑。
+
+最终冻结产品/测试2fd6aeba（完整40位见REPORT），证据b5e6e590102dedfa19c234fd726ea341fb23685e；四包三遍3081顶层/5250含子项PASS、84逐名SKIP、0FAIL/0中断；canonical两profile各1270、Python27/shell2，strict42/0。报告与VERIFY位于docs/reviews/r62-extseat-ttl。独立复核与组长验收待回。
