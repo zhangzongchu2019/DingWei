@@ -33,6 +33,7 @@ SUITES = (
     ("renderer_0206_file_render", "node", ROOT / "view-service/renderer-0206-file-render-regression.js"),
     ("trusted_origins_file_flow", "node", ROOT / "view-service/trusted-origins-file-flow-regression.js"),
     ("console_browser", "node", ROOT / "view-service/console-browser-regression.js"),
+    ("console_mobile", "node", ROOT / "view-service/console-mobile-regression.js"),
     ("console_temp_groups_offstate", "node", ROOT / "view-service/console-temp-groups-offstate-regression.js"),
     ("console_temp_groups", "node", ROOT / "view-service/console-temp-groups-regression.js"),
     ("renderer_in_console_iframe", "node", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
@@ -79,6 +80,7 @@ OVERRIDE_ENV_NAMES = (
     "HUB_V2_GOLDEN_FILE", "NODE_PATH", "PLAYWRIGHT_BROWSERS_PATH", "PW_CHANNEL",
     "RENDERER_FILE", "RENDERER_OVERRIDE", "TIMELINE_DEBUG",
     "STALE_SCREENSHOT",  # model admission suite: optional screenshot output path
+    "MOBILE_SHOT_DIR",  # console_mobile: optional screenshot output dir (S-R62-MOBILE delivery evidence)
     "MUTATE_HISTORY_EVENT_OBJECT",  # history_event_object: one-cut negative control
     "MUTATE_HISTORY_SSE_INPUT_BUFFER",  # history_event_object: remove initial SSE buffering for the replay regression
     "MUTATE_HISTORY_INPUT_RECEIVED_AT",  # history_event_object: remove the received_at fallback for history inputs without ts
