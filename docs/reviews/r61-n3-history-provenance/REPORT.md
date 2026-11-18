@@ -72,3 +72,5 @@ TTL、agent/global eviction、queued事件淘汰、generation变化、关闭及�
 本单没有修改modernc驱动或声明修复N-4；最终完整重跑通过也不是N-4已消失的证据。
 
 作者原始证据提交：`9a145fd138c7d15bf1ec027b773b960919e69056`（源码与六门/40刀/首轮失败均可git cat-file）；tasks.md已附此不可变坐标。完成实现与作者验证，无实现阻塞；独立复核及组长终审仍待办。
+
+最终文档strict：`b3d84844bcff0e8bea4ba4573a2d8018dd02fd06` 上完整 `validate --all --strict` 为42/0、rc0；命令/UTC/原日志SHA见evidence/final-strict.json，后续证据提交不再修改openspec目录。
