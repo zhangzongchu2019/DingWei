@@ -375,7 +375,9 @@ func TestNewPlatformConsolePlatform(t *testing.T) {
 		return res.StatusCode, strings.TrimSpace(string(b))
 	}
 	// R-V2-SPEC-TASK-SHIM-IMPL G4（翻转原「不下发 specs／task-board」）：人人下发 Specs、任务管理、Agent 管理（与旧平台同形同序），
-	// 管理角色另加平台管理。按出现顺序比 id 序列，撤掉任一项或换序都红。
+	// S-R62-CONSOLE-SLIM：菜单恰为「Agent 管理」（人人）＋「平台管理」（管理角色）。
+	// 按出现顺序比 id 序列，多回任何被摘项（specs/task-board/pilot-questions/
+	// coordinate-reviews/openspec-confirmations）或换序都红。
 	ids := func(body string) string {
 		var resp struct {
 			Items []struct {
@@ -390,14 +392,17 @@ func TestNewPlatformConsolePlatform(t *testing.T) {
 		return strings.Join(out, ",")
 	}
 	if st, body := call("GET", "/api/console/platform", "tok-mgr"); st != 200 || !strings.Contains(body, `"role":"management"`) ||
-		ids(body) != "specs,task-board,agent-groups,pilot-questions,platform-admin" {
+		ids(body) != "agent-groups,platform-admin" {
 		t.Errorf("manager platform: %d %s", st, body)
 	}
 	st, body := call("GET", "/api/console/platform", "tok-mem")
-	if st != 200 || !strings.Contains(body, `"role":"owner"`) || ids(body) != "specs,task-board,agent-groups,pilot-questions" ||
-		!strings.Contains(body, `{"id":"specs","kind":"spec","title":"Specs","href":"#specs","status":"approved","active":true,`) ||
-		!strings.Contains(body, `{"id":"task-board","kind":"task-board","title":"任务管理","href":"#task-board","status":"approved","active":true,`) {
+	if st != 200 || !strings.Contains(body, `"role":"owner"`) || ids(body) != "agent-groups" {
 		t.Errorf("member platform: %d %s", st, body)
+	}
+	for _, gone := range []string{"specs", "task-board", "pilot-questions", "coordinate-reviews", "openspec-confirmations"} {
+		if strings.Contains(body, `"id":"`+gone+`"`) {
+			t.Errorf("member platform must not emit slimmed entry %q: %s", gone, body)
+		}
 	}
 	if st, body := call("POST", "/api/console/platform/items", "tok-mem"); st != 403 || body != `{"error":"forbidden"}` {
 		t.Errorf("member add: %d %s", st, body)

@@ -526,8 +526,6 @@ function renderPlatform(platform){
     if(item.target) a.target=item.target;
     if(item.id==='agent-groups') a.onclick=function(ev){ev.preventDefault();openGroupWorkspace();};
     if(item.id==='platform-admin') a.onclick=function(ev){ev.preventDefault();openPlatformAdminWorkspace();};
-    if(item.id==='specs') a.onclick=function(ev){ev.preventDefault();openSpecsWorkspace();};
-    if(item.id==='task-board') a.onclick=function(ev){ev.preventDefault();openTaskBoardWorkspace();};
     if(item.status==='pending') a.dataset.status='pending';
     items.append(a);
   });

@@ -217,7 +217,10 @@ func TestR7OpenSpecConfirmationPageVersionAndMRSeparation(t *testing.T) {
 	}
 }
 
-func TestR7OpenSpecConfirmationNavigationRequiresTrustedAdapter(t *testing.T) {
+// S-R62-CONSOLE-SLIM：委员会版本确认入口按业主裁定摘除（后端路由与数据保留）。
+// 原格断言「就绪适配器必须下发菜单入口」，现翻转为「任何适配器状态下菜单都不得
+// 出现该入口」；「看见入口不等于获得委员会权限」的 POST 403 判据原样保留。
+func TestR7OpenSpecConfirmationSlimMenuNeverExposesEntry(t *testing.T) {
 	h := newConsolePlatformTestHub(t)
 	get := func() string {
 		rr := callConsolePlatform(t, h, "manager", "read", "GET", "/api/console/platform", nil, h.HandleConsolePlatform)
@@ -231,13 +234,13 @@ func TestR7OpenSpecConfirmationNavigationRequiresTrustedAdapter(t *testing.T) {
 	}
 	h.SpecConfirmations = &sc.Service{Store: h.Repo.(sc.Store)}
 	if strings.Contains(get(), "/console/openspec-confirmations") {
-		t.Fatal("missing authority entry exposed")
+		t.Fatal("slimmed entry exposed without authority")
 	}
 	h.SpecConfirmations.Authority = &r7Authority{read: true, committee: false}
-	if !strings.Contains(get(), "/console/openspec-confirmations") {
-		t.Fatal("ready adapter has no entry")
+	if strings.Contains(get(), "/console/openspec-confirmations") {
+		t.Fatal("slimmed entry exposed with ready adapter")
 	}
-	// Seeing the entry doesn't turn a platform manager into a committee member.
+	// 直连旧 URL 不 404 化，但平台管理员仍不因此获得委员会权限。
 	body, _ := json.Marshal(r7Request())
 	if rr := r7Call(h, "POST", "/api/console/openspec-confirmations", string(body)); rr.Code != 403 {
 		t.Fatal("navigation granted committee authority")

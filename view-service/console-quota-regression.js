@@ -92,7 +92,8 @@ const server = http.createServer(async (req, res) => {
   if (p === '/api/console/agents') return json(res, 200, { agents: [] });
   if (p === '/api/console/agent-groups') return json(res, 200, { owned_agents: [], groups: [] });
   if (p === '/api/console/platform') {
-    const items = [{ id: 'specs', kind: 'spec', title: 'Specs', href: '#specs', status: 'approved' }];
+    // S-R62-CONSOLE-SLIM：菜单只留 Agent 管理＋平台管理（与产品新形状同形）。
+    const items = [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 管理', href: '#agent-groups', status: 'approved' }];
     if (role === 'management') items.push({ id: 'platform-admin', kind: 'platform-admin', title: '平台管理', href: '#platform-admin', status: 'approved' });
     return json(res, 200, { role, actions: [], items });
   }
@@ -278,7 +279,9 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
       role = 'owner';
       const owner = await context.newPage(); watch(owner); owner.setDefaultTimeout(2500);
       await owner.goto(`${base}/console`);
-      await owner.locator('#platform-items a[data-item-id="specs"]').waitFor({ state: 'visible' });
+      await owner.locator('#platform-items a[data-item-id="agent-groups"]').waitFor({ state: 'visible' });
+      assert.strictEqual(await owner.locator('#platform-items a[data-item-id="specs"]').count(), 0);
+      assert.strictEqual(await owner.locator('#platform-items a[data-item-id="task-board"]').count(), 0);
       assert.strictEqual(await owner.locator('#platform-items a[data-item-id="platform-admin"]').count(), 0);
       assert.strictEqual(await owner.locator('#adminQuota').count(), 0);
       await owner.close(); role = 'management';
