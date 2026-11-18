@@ -4,6 +4,9 @@
 // 标签页横向可滚；两视口能打开一个 Agent 会话并滚动阅读；点击目标≥40px；PC 布局原样。
 // 删保护刀：mobile-no-drawer／mobile-tabs-wrap／mobile-input-wide／mobile-no-viewport／
 // mobile-session-small-targets。
+// M1 追加（S-R62-MOBILE 小活）：抽屉开合改为「语义断言＋有界等待」——开抽屉前先断言
+// 按钮可见且 aria-expanded 初值 false，开／合等待上界 3000ms（CSS 过渡 .2s 的 15 倍余量），
+// 超时落到判据文案上，mobile-no-drawer 刀不再以 page.waitForFunction 10000ms 超时红。
 // 截图：MOBILE_SHOT_DIR=<目录> 时输出两视口＋1440 PC 各页 PNG（交件证据用）。
 const assert = require('assert');
 const fs = require('fs');
@@ -96,8 +99,18 @@ async function shot(page, name) {
   await page.screenshot({ path: path.join(SHOT_DIR, `${name}.png`) });
 }
 async function openDrawer(page) {
-  await page.locator('#navToggle').click();
-  await page.waitForFunction(() => { const nav = document.querySelector('nav'); return nav.classList.contains('open') && nav.getBoundingClientRect().x >= 0; });
+  const toggle = page.locator('#navToggle');
+  assert.ok(await toggle.isVisible(), '窄屏必须有可见的抽屉按钮 ☰（抽屉入口缺失或被隐藏）');
+  assert.strictEqual(await toggle.getAttribute('aria-expanded'), 'false', '点开前抽屉按钮 aria-expanded 初值必须为 false');
+  await toggle.click();
+  const opened = await page.waitForFunction(() => { const nav = document.querySelector('nav'); return nav.classList.contains('open') && nav.getBoundingClientRect().x >= 0; }, null, { timeout: 3000 }).then(() => true).catch(() => false);
+  assert.ok(opened, '点 ☰ 后抽屉必须展开（nav.open 且移入视口）——抽屉打开接线失效');
+  assert.strictEqual(await toggle.getAttribute('aria-expanded'), 'true', '点开后抽屉按钮 aria-expanded 必须为 true');
+}
+async function waitDrawerClosed(page, why) {
+  const closed = await page.waitForFunction(() => !document.querySelector('nav').classList.contains('open'), null, { timeout: 3000 }).then(() => true).catch(() => false);
+  assert.ok(closed, why);
+  assert.strictEqual(await page.locator('#navToggle').getAttribute('aria-expanded'), 'false', '抽屉收起后按钮 aria-expanded 必须回到 false');
 }
 async function waitSessionFrame(page, session) {
   await page.locator(`iframe[src*="/view/${session}"]`).waitFor({ state: 'attached' });
@@ -157,15 +170,15 @@ async function scrollSession(frame) {
         assert.ok(await page.locator('#navMask').isVisible(), '打开时遮罩必须可见');
         await shot(page, `workbench-drawer-${tag}`);
         await page.locator('#navMask').click({ position: { x: vp.width - 20, y: vp.height - 20 } });
-        await page.waitForFunction(() => !document.querySelector('nav').classList.contains('open'));
+        await waitDrawerClosed(page, '点遮罩空白处后抽屉必须收起——遮罩关闭接线失效');
         await openDrawer(page);
         await page.keyboard.press('Escape');
-        await page.waitForFunction(() => !document.querySelector('nav').classList.contains('open'));
+        await waitDrawerClosed(page, '按 ESC 后抽屉必须收起——ESC 关闭接线失效');
       });
       await grid(`open an Agent session from drawer and scroll to read (${tag})`, async () => {
         await openDrawer(page);
         await page.locator('#a button').first().click();
-        await page.waitForFunction(() => !document.querySelector('nav').classList.contains('open'));
+        await waitDrawerClosed(page, '选中 Agent 后抽屉必须自动收起——选中即关接线失效');
         const frame = await waitSessionFrame(page, SESSIONS[0]);
         assert.strictEqual(await overflow(page), 0, '打开会话后工作台横向溢出必须为 0');
         const inner = await frame.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - document.documentElement.clientWidth);
@@ -183,12 +196,12 @@ async function scrollSession(frame) {
         for (const session of SESSIONS.slice(1)) {
           await openDrawer(page);
           await page.locator('#a button', { hasText: session.split('-')[1] }).click();
-          await page.waitForFunction(() => !document.querySelector('nav').classList.contains('open'));
+          await waitDrawerClosed(page, '选中 Agent 后抽屉必须自动收起——选中即关接线失效');
           await page.locator(`iframe[src*="/view/${session}"]`).waitFor({ state: 'attached' });
         }
         await openDrawer(page);
         await page.locator('#platform-items a[data-item-id="agent-groups"]').click();
-        await page.waitForFunction(() => !document.querySelector('nav').classList.contains('open'));
+        await waitDrawerClosed(page, '选中菜单项后抽屉必须自动收起——选中即关接线失效');
         await page.locator('#panes .group-workspace').waitFor();
         const tabs = await page.evaluate(() => { const el = document.getElementById('tabs'); return { scrollWidth: el.scrollWidth, clientWidth: el.clientWidth, overflowX: getComputedStyle(el).overflowX, count: el.children.length }; });
         assert.ok(tabs.count >= 5, `应已打开≥5 个标签页: ${JSON.stringify(tabs)}`);
