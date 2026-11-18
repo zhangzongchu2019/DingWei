@@ -23,3 +23,7 @@
 ## 2026-11-18 实施现场
 
 基main206d41b2，当前实现位于internal/store/session_history_provenance.go、history_migrations/0078_history_provenance.sql和internal/m8/history_provenance.go。原Append group-commit与Page envelope保持；真实Agent/timer WebSocket及HTTP历史输出由TestHistoryProvenanceRealHubAgentTimerReplay生成，view-service/history-provenance-browser-regression.js启动该隔离fixture后只加载历史页验证刷新，已登记全量runner。fixture为无模型合成协议事件，不使用现网身份/凭据/数据库。
+
+## S-R61-N3-IMPL 作者交件（2026-11-18）
+
+基main 206d41b26dab646c0e50a111eed5a45ccf7c72f6；首提交c3b3db27c9532ab19a80d769da55b98f02e08696原样导入批准6a60a1a6。当前冻结产品/测试源a32c877cf6ef21a909d2806f4b08e3e925d05d98，作者证据9a145fd138c7d15bf1ec027b773b960919e69056。history独立0078，不改应用库0077；五元组同事务增强消费、超限回滚保留sidecar、原有清理边界同步计费均已实现。六门真实rc0，N-4历史失败与最终诊断不抹除，SKIP/变异/DB-HTTP-SSE夹具见docs/reviews/r61-n3-history-provenance。独立复核待togpt60，不代表验收或发布批准。

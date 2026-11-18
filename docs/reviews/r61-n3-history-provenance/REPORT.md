@@ -70,3 +70,5 @@ TTL、agent/global eviction、queued事件淘汰、generation变化、关闭及�
 诊断计数与测试失败分开报告：最终m8即使rc0，也不得据此写“0 interrupted”。逐轮interrupted行号保留在parsed-gates.json；关停阶段lease release日志里的同名字串不自动证明与断言失败同一机制。首轮D181的hub_test.go:3505断言失败仍如实保留，不能以最终完整重跑或单测通过抹除。
 
 本单没有修改modernc驱动或声明修复N-4；最终完整重跑通过也不是N-4已消失的证据。
+
+作者原始证据提交：`9a145fd138c7d15bf1ec027b773b960919e69056`（源码与六门/40刀/首轮失败均可git cat-file）；tasks.md已附此不可变坐标。完成实现与作者验证，无实现阻塞；独立复核及组长终审仍待办。
