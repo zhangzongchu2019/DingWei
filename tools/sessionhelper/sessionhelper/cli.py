@@ -65,6 +65,13 @@ class CLIInjectionNotReceived(CLIDeliveryFailed):
     retryable = False
 
 
+class CLIAnswerTimeout(CLIDeliveryFailed):
+    """已确认 user 轮，但同步等待期内没有取到答复；不可重试以免重复注入。"""
+
+    reason = "cli_answer_timeout"
+    retryable = False
+
+
 def _squash(text: str) -> str:
     """去空白、转小写再比：全屏 TUI 常用光标定位代替空格（抓屏里「Provide your own API key」读出来是 ProvideyourownAPIkey）。"""
     return re.sub(r"\s+", "", text).lower()
@@ -384,7 +391,7 @@ class CLIAdapter:
             if status == "no_user":
                 # 失败不再当正常结果回 processed（B12：142 秒后以这句文字收场、被 control 压掉、日志里什么都没有）
                 raise self._delivery_failed(CLIInjectionNotReceived, "（注入未被 CLI 接收：transcript 未出现对应 user 轮）")
-            return "（答案超时：已确认 user 轮落盘，但未取到 assistant 回答）"
+            raise self._delivery_failed(CLIAnswerTimeout, "（答案超时：已确认 user 轮落盘，但未取到 assistant 回答）")
         if self.profile.output_source == "opencode_db":
             injected_at = time.time()
             self.inject_text(body)
@@ -395,10 +402,10 @@ class CLIAdapter:
             if status == "ok" and reply:
                 return reply
             if status == "no_user":
-                return "（注入未被 CLI 接收：opencode 会话库未出现对应 user 轮）"
+                raise self._delivery_failed(CLIInjectionNotReceived, "（注入未被 CLI 接收：opencode 会话库未出现对应 user 轮）")
             if status == "db_missing":
-                return "（答案超时：未找到 opencode 会话库）"
-            return "（答案超时：已确认 opencode user 轮落库，但未取到 assistant 回答）"
+                raise self._delivery_failed(CLIAnswerTimeout, "（答案超时：未找到 opencode 会话库）")
+            raise self._delivery_failed(CLIAnswerTimeout, "（答案超时：已确认 opencode user 轮落库，但未取到 assistant 回答）")
         self.discard_pending_output()
         self.inject_text(body)
         mark_admitted()
@@ -924,6 +931,13 @@ def parse_codex_event(obj: dict) -> tuple[str, str] | None:
         return None
     if obj.get("type") == "event_msg" and payload.get("type") == "agent_message":
         text = str(payload.get("message") or "").strip()
+        return ("codex", text) if text else None
+    if obj.get("type") == "response_item" and payload.get("type") == "message" and payload.get("role") == "assistant":
+        parts = []
+        for item in payload.get("content", []):
+            if isinstance(item, dict) and item.get("type") in ("output_text", "text") and str(item.get("text", "")).strip():
+                parts.append(str(item["text"]).strip())
+        text = "\n".join(parts).strip()
         return ("codex", text) if text else None
     if obj.get("type") == "response_item" and payload.get("type") == "message" and payload.get("role") == "user":
         parts = []

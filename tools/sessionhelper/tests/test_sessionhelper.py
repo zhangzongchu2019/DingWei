@@ -25,10 +25,12 @@ from sessionhelper.app import (
     is_no_mirror_envelope,
     is_client_onboarding_text,
     is_online_directory_text,
+    delivery_failure_ack_fields,
 )
 from sessionhelper.cli import (
     BRACKETED_PASTE_END,
     BRACKETED_PASTE_START,
+    CLIAnswerTimeout,
     CLIAdapter,
     CLI_PROFILES,
     OpenCodeDBReader,
@@ -1965,6 +1967,59 @@ class SessionHelperTest(unittest.TestCase):
             "payload": {"type": "agent_message", "message": "codex answer"},
         }
         self.assertEqual(parse_codex_event(event), ("codex", "codex answer"))
+
+    def test_codex_transcript_parser_extracts_real_response_item_assistant_fixture(self):
+        fixture = Path(__file__).parent / "fixtures" / "codex-response-item-assistant-real.jsonl"
+        event = json.loads(fixture.read_text(encoding="utf-8"))
+        self.assertEqual(parse_codex_event(event), ("codex", "收到。"))
+
+    def test_codex_sync_reply_from_real_rollout_shape_is_not_timeout_placeholder(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_CLI_REPLY_WAIT="0.1", SH_CLI_USER_ACK_WAIT="0.1"))
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.start = lambda: True
+        adapter._child_gone = lambda: False
+        adapter.inject_text = lambda _prompt: None
+        body = "用当前 rollout 形状回收答案"
+        fixture = Path(__file__).parent / "fixtures" / "codex-response-item-assistant-real.jsonl"
+        assistant_row = fixture.read_text(encoding="utf-8").strip()
+        with tempfile.TemporaryDirectory() as tmp:
+            transcript_path = Path(tmp) / "rollout.jsonl"
+            transcript_path.write_text(
+                json.dumps({"type": "response_item", "payload": {"type": "message", "role": "user",
+                    "content": [{"type": "input_text", "text": body}]}}) + "\n" + assistant_row + "\n",
+                encoding="utf-8",
+            )
+            adapter.transcript = TranscriptTailer("codex", transcript_path, from_end=False)
+            try:
+                reply = adapter.handle_delivery({"body": body})
+            except CLIAnswerTimeout as exc:
+                self.fail(f"真实 assistant 消息被漏读，回合被错误降为答案超时占位：{exc}")
+
+        self.assertEqual(reply, "收到。", "assistant response_item 必须回收为答案，不能退成正常 processed 的超时占位")
+
+    def test_codex_sync_answer_timeout_is_failed_not_processed(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex"))
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.transcript = object()
+        adapter.start = lambda: True
+        adapter._child_gone = lambda: False
+        admitted = []
+        def fake_collect(_prompt, on_injected=None):
+            if on_injected is not None:
+                on_injected()
+            return "no_answer", ""
+
+        adapter.inject_and_collect_transcript_reply = fake_collect
+
+        with self.assertRaises(CLIAnswerTimeout) as raised:
+            adapter.handle_delivery({"body": "已完成的 user 轮"}, on_admitted=lambda: admitted.append(True))
+
+        self.assertEqual(admitted, [True], "user 轮已确认后仍需标记已 admission")
+        self.assertEqual(raised.exception.reason, "cli_answer_timeout")
+        self.assertFalse(raised.exception.retryable, "不得重试已注入的 user 轮")
+        self.assertEqual(delivery_failure_ack_fields(raised.exception), ("cli_answer_timeout", False))
 
     def test_codex_transcript_parser_extracts_user_message(self):
         event = {
