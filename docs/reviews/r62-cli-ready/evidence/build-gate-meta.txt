@@ -1,0 +1,5 @@
+UTC 2026-11-18T21:41:29Z
+SOURCE_COMMIT=6345904128e1acc14982fd1cdccb3d04c2fec0d0
+COMMAND=env -i PATH=/tmp/lockvenv/bin:/usr/local/go/bin:/usr/bin:/bin HOME=/tmp/r62-cli-ready-home TMPDIR=/tmp GOCACHE=/home/dev/.cache/go-build GOMODCACHE=/home/dev/go/pkg/mod bash scripts/run-build-tests.sh
+go version go1.22.2 linux/amd64
+uid=1001(dev) gid=1001(dev) groups=1001(dev)

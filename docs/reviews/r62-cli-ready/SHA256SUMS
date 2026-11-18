@@ -1,0 +1,7 @@
+6bf018d7b05bef905ee78e28a7ef954748d2bc85ffe17a191937b6b745c755da  ./REPORT.md
+1e19e5f4cd0a34fd72c9c37a0aa42a8bfa4dcb6fb340a1d99a7d3c3d406974ac  ./evidence/build-gate-final-meta.txt
+fd801d74b0994cc07788387e0004c5a0c55867d291bc7a15c7282e8f27908bc5  ./evidence/build-gate-meta.txt
+01c9c0b2d30b53b67705891b3142272177ea445b28651d797b231bc0118d3303  ./evidence/focused-regressions-green.log
+3f692b946a2e1ed1d4f40a5c0fc0ada7f6decdb9a5c039462cc3e90364b5d0dd  ./evidence/old-readiness-baseline-red.log
+67ed1bdafbf3f84a182396163984892660228a043c537bbfe160591958d1ad27  ./evidence/run-build-tests-final.log
+c0d0dcb138808d0ac90faa854bb5e353622e9d358182cfe7454313765e8f84c0  ./evidence/run-build-tests-initial-old-ack-expectations.log
