@@ -126,6 +126,15 @@ def _presubmit_validation_is_retryable(exc: Exception) -> bool:
     return False
 
 
+def _presubmit_validation_needs_operator_hold(exc: Exception) -> bool:
+    """Binding/ownership rejections are retained at FIFO head for intervention."""
+    if isinstance(exc, (DaemonIdentityError, ThreadUnavailable, PrivateEndpointError)):
+        return True
+    return isinstance(exc, JsonRpcError) and exc.method in (
+        'initialize', 'thread/read', 'thread/resume'
+    ) and not _presubmit_validation_is_retryable(exc)
+
+
 def _error_class(exc: Exception, thread_id: str = "") -> str:
     if isinstance(exc, DaemonIdentityError):
         return "daemon_identity_" + exc.reason
@@ -816,6 +825,7 @@ class CodexProtocolDriver(Driver):
         self._events_drained: set[str] = set()
         from .busy_admission import BusyAdmission
         self._busy_admission = BusyAdmission()
+        self._presubmit_validation_holds: dict[str, str] = {}
         self._submission_started = {}
         self.reconcile_context = None
         self._reconcile_emitted = set()
@@ -1161,6 +1171,8 @@ class CodexProtocolDriver(Driver):
                         # binding after the bounded worker exits.
                         return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
                                                detail='presubmit validation transport unavailable')
+                    if _presubmit_validation_needs_operator_hold(exc):
+                        return self._hold_presubmit_validation(envelope_id, exc)
                     if not self._required_bound_thread_id and not isinstance(exc, DaemonIdentityError):
                         raise
                     return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
@@ -1181,9 +1193,12 @@ class CodexProtocolDriver(Driver):
                         # retrying delivery. Only the exact captured thread may
                         # cross the later before_submit boundary.
                         self._validate_recovery_thread(allow_rotation=False)
+                        self._presubmit_validation_holds.pop(envelope_id, None)
                         break
                     except Exception as exc:
                         if not _presubmit_validation_is_retryable(exc):
+                            if _presubmit_validation_needs_operator_hold(exc):
+                                return self._hold_presubmit_validation(envelope_id, exc)
                             return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
                         if not self._busy_admission.waiting(envelope_id):
                             print('[delivery][ALERT][PRESUBMIT_WAIT_NOT_PERSISTED] read-only validation retry could not persist FIFO wait', flush=True)
@@ -1241,6 +1256,23 @@ class CodexProtocolDriver(Driver):
                 self._delivery_timestamps[envelope_id] = time.monotonic()
                 self._active_turn_id = turn_id
                 return DeliveryReceipt(id=envelope_id, state=state, source="protocol", detail=detail)
+
+    def _hold_presubmit_validation(self, envelope_id: str, exc: Exception) -> DeliveryReceipt:
+        """Keep a proven-unsubmitted delivery at FIFO head until operator action."""
+        reason = _error_class(exc, self._thread_id)
+        self._presubmit_validation_holds[envelope_id] = reason
+        if not self._busy_admission.waiting(envelope_id):
+            print(f'[delivery][ALERT][PRESUBMIT_WAIT_NOT_PERSISTED] id={envelope_id} '
+                  f'validation={reason}; input retained locally, no submission attempted', flush=True)
+        else:
+            print(f'[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id={envelope_id} '
+                  f'validation={reason}; operator action required, no thread rotation or submission', flush=True)
+        return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                               detail=f'presubmit validation held: {reason}')
+
+    def presubmit_validation_hold(self, envelope_id: str) -> str:
+        """Return the fail-closed FIFO hold reason, if operator action is needed."""
+        return self._presubmit_validation_holds.get(envelope_id, '')
 
     def _admission_failure(self, envelope_id: str, body_hash: str, exc: Exception, *, uncertain: bool) -> DeliveryReceipt:
         self._verified_binding = None

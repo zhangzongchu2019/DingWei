@@ -546,6 +546,12 @@ class DriverAdapter:
         return time.monotonic() - self._dispatch_clock(command)
 
     def _busy_admission_status(self, command, driver):
+        held = getattr(driver, 'presubmit_validation_hold', None)
+        if callable(held) and held(command.delivery_id):
+            # A verified binding/ownership mismatch is fail-closed. Keep this
+            # item as the durable FIFO head and do not let the admission
+            # watchdog turn an operator hold into a terminal rejection.
+            return 'waiting'
         gate = getattr(driver, '_busy_admission', None)
         if gate is None or not gate.is_waiting(command.delivery_id):
             return None

@@ -815,8 +815,12 @@ class RecoveryRootLaneTests(unittest.TestCase):
         adapter.driver=replacement
         with patch('sys.stdout'):
             refused=replacement.deliver('root-next','root input')
-        self.assertEqual(refused.state,'failed','N1C_ROOT_MISMATCH_NOT_FAIL_CLOSED')
+        self.assertEqual(refused.state,'queued','N1C_ROOT_MISMATCH_DROPPED_FIFO_HEAD')
         self.assertIn('invalid_thread_binding',refused.detail,'N1C_ROOT_MISMATCH_REASON_MISSING')
+        self.assertTrue(replacement._busy_admission.is_waiting('root-next'),
+                        'N1C_ROOT_MISMATCH_NOT_PARKED_AT_FIFO_HEAD')
+        self.assertEqual(replacement.presubmit_validation_hold('root-next'),'invalid_thread_binding',
+                         'N1C_ROOT_MISMATCH_OPERATOR_HOLD_MISSING')
         latest=replacement._thread_id
         self.assertEqual(latest,'existing-root','N1C_ROOT_MISMATCH_ROTATED_THREAD')
         self.assertEqual(saved,[],'N1C_ROOT_MISMATCH_REBOUND_PRIVATE_ENDPOINT')

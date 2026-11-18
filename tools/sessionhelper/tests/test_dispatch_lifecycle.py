@@ -86,6 +86,15 @@ class DispatchLifecycleTest(unittest.TestCase):
         self.assertEqual(requested,[did],'N1C_BUSY_ACK_NOT_ONCE')
         self.assertEqual(row['state'],'processing','N1C_BUSY_ACK_TERMINALIZED_LOCAL_INBOX')
 
+    def test_presubmit_binding_mismatch_stays_fifo_head_even_when_driver_unhealthy(self):
+        driver=SimpleNamespace(presubmit_validation_hold=lambda did:'invalid_thread_binding',
+                               health=lambda:False,
+                               _busy_admission=BusyAdmission())
+        adapter=self.adapter(driver)
+        command=SimpleNamespace(delivery_id='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        self.assertEqual(adapter._busy_admission_status(command,driver),'waiting',
+                         'N1C_BINDING_MISMATCH_WATCHDOG_DROPPED_FIFO_HEAD')
+
     def test_claude_submitted_local_uuid_is_not_admission(self):
         driver=SimpleNamespace()
         adapter=self.adapter(driver,'claude')
