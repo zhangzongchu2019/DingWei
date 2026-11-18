@@ -1,0 +1,32 @@
+  PASS G1 W2 回合结束后连续回合外输出合并为一条、默认折叠、展开即全量拼接
+  PASS G9 折叠条不带重发按钮、不带来源图标
+  PASS G10 折叠条不吞正文（展开长度＝逐条之和）
+  PASS G2 W1 首段投递前窗口折叠，标题逐字「回合外输出（Claude）」
+  PASS G3 边界断开：turn
+  PASS G3 边界断开：input
+  PASS G3 边界断开：mention
+  PASS G3 边界断开：error
+  PASS G3 不断开：hidden
+  PASS G3 不断开：update
+  PASS G3 边界断开：历史缺口提示
+  PASS G4 闸 A：带 Codex 数据标记的无归属输出不折叠
+  PASS G4 闸 B：会话出现 Codex 标记即整体回落现状
+  PASS G5 有序号重连（整份重放）不叠加、after 正确
+  PASS G6 旧 Hub 重连清空重建后字节一致
+  PASS G6 旧 Hub 重连换 ring 后无残留折叠状态
+  PASS G7 补缺回合卡落在折叠段内则拆分该段
+  PASS G7 历史分页确定性合并＋bootstrap 不重复
+  PASS G8 逐出整节点移除、索引与渲染队列无泄漏
+  PASS M1 删 Codex 标记检测器（闸 A 形状闸核心）⇒ G4 闸 A 红
+  PASS M2 删闸 B 会话扫描 ⇒ G4 闸 B 红
+  PASS M3 删边界判定 ⇒ G3 错误边界红
+  PASS M4 删合并封口检查 ⇒ G3 错误边界红
+  PASS M5 删合并 pass ⇒ G7 分页合并红
+  PASS M6 删拆分 pass ⇒ G7 缺口拆分红
+  PASS M7 删逐出索引回收 ⇒ G8 泄漏红
+  PASS M8 删重置时折叠状态清空 ⇒ G6 换 ring 残留红
+  PASS M9 默认展开 ⇒ G1 默认折叠红
+  PASS M10 吞正文 ⇒ G10 长度红
+  PASS M11 改标题 ⇒ G2 逐字红
+  PASS M12 删折叠路由 ⇒ G9 折叠存在性红
+offturn fold regression: all grids green, all knives red

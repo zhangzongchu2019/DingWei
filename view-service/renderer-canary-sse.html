@@ -605,6 +605,36 @@
       overflow: hidden;
     }
     .turn-group.external { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+    .offturn-fold {
+      flex: 0 0 auto;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      background: #f3f4f6;
+      overflow: hidden;
+    }
+    .offturn-fold > summary {
+      cursor: pointer;
+      padding: 8px 14px;
+      font-size: 13px;
+      color: #6b7280;
+      user-select: none;
+      list-style: none;
+    }
+    .offturn-fold > summary::-webkit-details-marker { display: none; }
+    .offturn-fold > summary::before { content: '▸ '; }
+    .offturn-fold[open] > summary::before { content: '▾ '; }
+    .offturn-fold-meta { margin-left: 8px; font-size: 12px; color: #9ca3af; }
+    .offturn-fold-body {
+      padding: 8px 14px 12px;
+      border-top: 1px solid #e5e7eb;
+      color: #374151;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
     .turn-section { min-width: 0; padding: 12px 14px; overflow-wrap: anywhere; word-break: break-word; }
     .turn-section + .turn-section { border-top: 1px solid var(--line); }
     .turn-user { background: color-mix(in srgb, var(--accent) 8%, var(--panel)); white-space: pre-wrap; font-size: 15px; }
@@ -1309,6 +1339,12 @@
     const RENDER_THROTTLE_MS = 80;       // A:重渲合并窗口(要求区间 50~100ms)
     const assistantEntries = new Map();  // messageKey -> 渲染记录(非 turn 分组的流式助手卡)
     const pendingRenders = new Set();    // 待重渲的 turn group / assistant 记录
+    // S-R61-N2:回合外输出折叠条(设计见 docs/reviews/r61-n2-offturn-fold/DESIGN.md)
+    const offturnGroups = new Map();
+    let openOffturnGroup = null;
+    let offturnCodexSeen = false;
+    let offturnSessionCli = null;
+    let offturnRecomputeTimer = null;
     let renderFlushTimer = null;
     let renderFlushFrame = null;
     const waitingDeliveries = new Map();
@@ -2098,6 +2134,11 @@
       // 的反向索引,键不是 messageId,上面两句清不到它 => 重置后仍留着指向已清空卡片的悬挂键。
       // 实测重置前 dlv=5/cards=5,重置后 dlv=5/cards=0。与 releaseTimelineNode 处同源,一并清。
       c1DeliveryCards.clear();
+      offturnGroups.clear();
+      openOffturnGroup = null;
+      offturnCodexSeen = false;
+      offturnSessionCli = null;
+      if (offturnRecomputeTimer !== null) { clearTimeout(offturnRecomputeTimer); offturnRecomputeTimer = null; }
       timelineSequencedNodes.length = 0;
       timelineEpochRanks.clear();
       nextTimelineEpochRank = 1;
@@ -2506,6 +2547,15 @@
         messageNodes.delete(ds.messageKey);
         messageBuffers.delete(ds.messageKey);
       }
+      if (ds.offturnKey) {
+        const group = offturnGroups.get(ds.offturnKey);
+        if (group) {
+          group.detached = true;
+          pendingRenders.delete(group);
+          if (openOffturnGroup === group) openOffturnGroup = null;
+        }
+        offturnGroups.delete(ds.offturnKey);
+      }
       if (ds.messageId) {
         c1InputCards.delete(ds.messageId);
         c1PendingUpdates.delete(ds.messageId);
@@ -2567,6 +2617,7 @@
         return result;
       } finally {
         enforceTimelineCap();
+        scheduleOffturnRecompute();
       }
     }
 
@@ -2631,6 +2682,8 @@
         timeline.appendChild(notice);
       }
       ev = normalizeEvent(ev);
+      scanOffturnCodexMarkers(ev);
+      if (offturnBreaksRun(ev)) closeOffturnRun();
       // Older Hub/history updates have no role: preserve their pre-R60 lifecycle
       // behavior, but they never authorize retry. A tagged copy or a tagged
       // primary update without an exact canonical match must not touch a wait.
@@ -3848,7 +3901,10 @@
         return;
       }
       if (ev.kind === 'user_input') return renderUser(ev);
-      if (ev.kind === 'assistant_text') return renderAssistant(ev);
+      if (ev.kind === 'assistant_text') {
+        if (!offturnCodexSeen && isOffturnCandidate(ev)) return renderOffturn(ev);
+        return renderAssistant(ev);
+      }
       if (ev.kind === 'error') return renderError(ev);
       renderUnknown(ev);
     }
@@ -4100,6 +4156,7 @@
       entry.dirty = false;
       entry.lastRender = Date.now();
       if (entry.kind === 'assistant') renderAssistantBody(entry);
+      else if (entry.kind === 'offturn') renderOffturnBody(entry);
       else rebuildTurn(entry);
     }
 
@@ -4409,6 +4466,210 @@
       else content.innerHTML = renderMarkdown(text);
       placeTimelineNode(card);
       return true;
+    }
+
+    // ── S-R61-N2:回合外输出折叠条 ─────────────────────────────
+    const OFFTURN_TITLE = '回合外输出（Claude）';
+    const OFFTURN_CODEX_DATA_MARKERS = ['item_id', 'thread_id', 'params', 'raw_method', 'item', 'model', 'usage'];
+    let offturnGroupSerial = 0;
+
+    function offturnCodexMarkers(data) {
+      if (!data || typeof data !== 'object') return false;
+      return OFFTURN_CODEX_DATA_MARKERS.some(name => {
+        const value = data[name];
+        if (value === null || value === undefined) return false;
+        if (typeof value === 'string') return value !== '';
+        if (typeof value === 'object') return Object.keys(value).length > 0;
+        return true;
+      });
+    }
+    function isOffturnCandidate(ev) {
+      return ev?.kind === 'assistant_text' && turnKeyFor(ev) === ''
+        && !offturnCodexMarkers(ev.data)
+        && (offturnSessionCli === null || offturnSessionCli === 'claude');
+    }
+    function setOffturnSessionCli(cli) {
+      const next = typeof cli === 'string' && cli ? cli : null;
+      if (next === offturnSessionCli) return;
+      offturnSessionCli = next;
+      if (next && next !== 'claude') unfoldAllOffturn();
+    }
+    function scanOffturnCodexMarkers(ev) {
+      if (offturnCodexSeen || !offturnCodexMarkers(ev?.data)) return;
+      offturnCodexSeen = true;
+      unfoldAllOffturn();
+    }
+    function closeOffturnRun() {
+      if (openOffturnGroup) openOffturnGroup.sealed = true;
+      openOffturnGroup = null;
+    }
+    function offturnBreaksRun(ev) {
+      if (ev?._history_gap) return true;
+      const kind = ev?.kind;
+      if (kind === 'delivery_update') return false;
+      const copyKind = ev?._norm?.copyKind;
+      if (copyKind === 'feishu_sync') return false;
+      if (copyKind === 'route_observation' && (ev.observed_delivery_id || ev.data?.observed_delivery_id)) return false;
+      if (kind === 'assistant_text') return offturnCodexSeen || !isOffturnCandidate(ev);
+      if (HIDDEN_TIMELINE_CARD_KINDS.has(kind) && !turnKeyFor(ev)) return false;
+      return true;
+    }
+    function unfoldAllOffturn() {
+      const groups = [...offturnGroups.values()];
+      openOffturnGroup = null;
+      for (const group of groups) {
+        const events = group.events.slice();
+        releaseTimelineNode(group.node);
+        group.node.remove();
+        for (const ev of events) renderAssistant(ev);
+      }
+    }
+    function updateOffturnSummary(group) {
+      const meta = group.node.querySelector('.offturn-fold-meta');
+      if (!meta) return;
+      let timeText = '';
+      const times = group.events.map(ev => Number(ev.ts)).filter(ts => Number.isFinite(ts) && ts > 0);
+      if (times.length) {
+        const first = new Date(Math.min(...times));
+        if (!Number.isNaN(first.getTime())) timeText = first.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      }
+      meta.textContent = `${group.events.length} 条${timeText ? ' · ' + timeText : ''}`;
+    }
+    function appendOffturnEvent(group, ev) {
+      group.events.push(ev);
+      group.buffer += ev.text || '';
+      group.dirty = true;
+      updateOffturnSummary(group);
+      if (group.node.open) scheduleRender(group);
+    }
+    function stampOffturnGroupKey(group) {
+      const minKey = timelineEventsMinKey(group.events);
+      if (minKey) setNodeTimelineKey(group.node, minKey.rank, minKey.seq);
+      const times = group.events.map(ev => Number(ev.ts)).filter(ts => Number.isFinite(ts) && ts > 0);
+      if (times.length) group.node.dataset.timelineTs = String(Math.min(...times));
+    }
+    function buildOffturnGroup(events, open = false) {
+      const first = events[0];
+      const key = `offturn-cursor-${first.cursor || `r${offturnGroupSerial++}`}`;
+      const node = document.createElement('details');
+      node.className = 'offturn-fold';
+      node.dataset.offturnKey = key;
+      const summary = document.createElement('summary');
+      const title = document.createElement('span');
+      title.className = 'offturn-fold-title';
+      title.textContent = OFFTURN_TITLE;
+      const meta = document.createElement('span');
+      meta.className = 'offturn-fold-meta';
+      summary.append(title, meta);
+      const bodyEl = document.createElement('div');
+      bodyEl.className = 'offturn-fold-body';
+      node.append(summary, bodyEl);
+      const group = { kind: 'offturn', key, node, body: bodyEl, events: [], buffer: '',
+        dirty: false, lastRender: 0, detached: false, sealed: false };
+      node.addEventListener('toggle', () => {
+        if (node.open && group.dirty && !group.detached) renderPendingEntry(group);
+      });
+      node.open = open;
+      offturnGroups.set(key, group);
+      for (const ev of events) appendOffturnEvent(group, ev);
+      stampOffturnGroupKey(group);
+      placeTimelineNode(node);
+      return group;
+    }
+    function renderOffturn(ev) {
+      const trailing = openOffturnGroup;
+      if (trailing && !trailing.detached && !historyApplying
+          && trailing.node === timeline.lastElementChild
+          && timelineEventRank(ev) === timelineEventRank(trailing.events[0])) {
+        appendOffturnEvent(trailing, ev);
+        return;
+      }
+      const group = buildOffturnGroup([ev]);
+      openOffturnGroup = group;
+      scheduleOffturnRecompute();
+    }
+    function renderOffturnBody(group) {
+      if (group.detached || !group.node.isConnected) return;
+      group.body.innerHTML = renderMarkdown(group.buffer);
+      wireCopyButtons(group.body);
+      attachFileRenders(group.node, group.buffer, { streaming: false });
+      wireMarkdownImages(group.body, group.node);
+    }
+    function offturnCompareEventNode(ev, node) {
+      const eventSeq = Number(ev?._hubSeq);
+      const eventSeqOk = Number.isSafeInteger(eventSeq) && eventSeq > 0;
+      const eventRank = timelineEventRank(ev);
+      const eventTs = Number(ev?.ts);
+      const nodeSeq = timelineSequence(node);
+      const nodeRank = Number(node?.dataset?.timelineEpochOrder) || 0;
+      const nodeTs = timelineTimestamp(node);
+      if (eventSeqOk && Number.isFinite(nodeSeq) && eventRank === nodeRank) return eventSeq - nodeSeq;
+      if (Number.isFinite(eventTs) && eventTs > 0 && Number.isFinite(nodeTs) && eventTs !== nodeTs) return eventTs - nodeTs;
+      if (eventSeqOk && Number.isFinite(nodeSeq)) return compareTimelineKey(eventRank, eventSeq, nodeRank, nodeSeq);
+      if (eventSeqOk !== Number.isFinite(nodeSeq)) return eventSeqOk ? -1 : 1;
+      return 0;
+    }
+    function splitOffturnGroupAt(group, intruder, keepBefore) {
+      const before = [], after = [];
+      for (const ev of group.events) (offturnCompareEventNode(ev, intruder) < 0 ? before : after).push(ev);
+      if (!before.length || !after.length) return false;
+      const wasOpen = group.node.open;
+      const kept = keepBefore ? before : after;
+      const moved = keepBefore ? after : before;
+      group.events = [];
+      group.buffer = '';
+      for (const ev of kept) appendOffturnEvent(group, ev);
+      stampOffturnGroupKey(group);
+      placeTimelineNode(group.node);
+      const fresh = buildOffturnGroup(moved, wasOpen);
+      fresh.sealed = group.sealed;
+      return true;
+    }
+    function offturnSplitPass() {
+      let splitAny = false;
+      for (const group of [...offturnGroups.values()]) {
+        if (group.detached || group.events.length < 2 || group.node.parentNode !== timeline) continue;
+        for (const [neighbor, keepBefore] of [[group.node.nextElementSibling, true], [group.node.previousElementSibling, false]]) {
+          if (!neighbor || neighbor.dataset.offturnKey) continue;
+          const comparisons = group.events.map(ev => offturnCompareEventNode(ev, neighbor));
+          if (comparisons.some(value => value < 0) && comparisons.some(value => value > 0)) {
+            if (splitOffturnGroupAt(group, neighbor, keepBefore)) { splitAny = true; break; }
+          }
+        }
+      }
+      return splitAny;
+    }
+    function offturnMergePass() {
+      let node = timeline.firstElementChild;
+      while (node) {
+        const next = node.nextElementSibling;
+        if (!next || !node.dataset.offturnKey || !next.dataset.offturnKey) { node = next; continue; }
+        const left = offturnGroups.get(node.dataset.offturnKey);
+        const right = offturnGroups.get(next.dataset.offturnKey);
+        if (!left || !right || left.sealed) { node = next; continue; }
+        const open = left.node.open || right.node.open;
+        releaseTimelineNode(right.node);
+        right.node.remove();
+        left.node.open = open;
+        for (const ev of right.events) appendOffturnEvent(left, ev);
+        left.sealed = right.sealed;
+        stampOffturnGroupKey(left);
+        placeTimelineNode(left.node);
+      }
+    }
+    function recomputeOffturnFolds() {
+      if (historyApplying || !offturnGroups.size) return;
+      let guard = 0;
+      while (offturnSplitPass() && guard < 32) guard += 1;
+      offturnMergePass();
+      const last = timeline.lastElementChild;
+      const trailing = last && last.dataset.offturnKey ? offturnGroups.get(last.dataset.offturnKey) : null;
+      openOffturnGroup = trailing && !trailing.sealed ? trailing : null;
+    }
+    function scheduleOffturnRecompute() {
+      if (!offturnGroups.size || historyApplying) return;
+      if (offturnRecomputeTimer !== null) clearTimeout(offturnRecomputeTimer);
+      offturnRecomputeTimer = setTimeout(() => { offturnRecomputeTimer = null; recomputeOffturnFolds(); }, 60);
     }
 
     function renderAssistant(ev) {
@@ -4882,6 +5143,7 @@
         const anchorTop = anchor?.getBoundingClientRect().top;
         const prior = new Set(timeline.children);
         historyApplying = true;
+        openOffturnGroup = null;
         let invalidHistoryEventRows = 0;
         for (const row of (page.events || [])) {
           const ev = parseHistoryEvent(row?.event);
@@ -4920,6 +5182,7 @@
           notice.textContent = '这段历史未保存';
           timeline.prepend(notice);
         }
+        recomputeOffturnFolds();
         if (before && page.events?.length) historyWindowExpanded = true;
         historyBefore = page.before_seq || (page.events?.length ? page.events[0].cursor.seq : null);
       } catch (_) {
@@ -4937,6 +5200,7 @@
             if (replayKey && historyInputReplayKeys.has(replayKey)) continue;
             handleIncomingEvent(ev);
           }
+          recomputeOffturnFolds();
         }
       }
     }
@@ -5578,6 +5842,7 @@
             if (!(body.session_id || body.session)) throw new Error('missing session identity');
             applyStatusData(body); statusInitialized = true;
             stats.agentID = typeof body.agent_id === 'string' ? body.agent_id : '';
+            setOffturnSessionCli(typeof body.session_cli === 'string' ? body.session_cli : '');
           }
           if (body.agent_id !== stats.agentID) agentDiskState.clear();
           applyResourceData(body.agent_id === stats.agentID ? body : {...body,agent_disk:null}, requestStartedAt);
