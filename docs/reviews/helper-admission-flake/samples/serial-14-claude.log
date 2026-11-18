@@ -1,0 +1,20 @@
+test_missing_accepted_uses_admission_deadline_and_recovers (test_dispatch_lifecycle.AdmissionDeadlineTest.test_missing_accepted_uses_admission_deadline_and_recovers) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (submitted, awaiting ack, turn=old-turn)
+[delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_deadline-next -> done (turn=new-turn)
+[delivery] done id=dw-dlv_deadline-next source=fixture (turn=new-turn)
+ok
+test_blocked_deliver_accepted_after_deadline_is_not_admission (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_blocked_deliver_accepted_after_deadline_is_not_admission) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+ok
+test_slow_poll_accepted_after_deadline_is_not_admission (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_slow_poll_accepted_after_deadline_is_not_admission) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+ok
+test_aa010_feature_off_drains_without_native_or_capability (test_sub_agent_helper.StoreTests.test_aa010_feature_off_drains_without_native_or_capability) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.640s
+
+OK

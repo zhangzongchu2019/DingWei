@@ -123,7 +123,16 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(store.nodes()[0]['state'],'draining','AA010_FEATURE_OFF_SEAL')
         helper=SubAgentConnection();helper.sub_agents=None;helper.sub_agent_drainer=store
         helper.enroll_credential=object();helper.book=types.SimpleNamespace(key_id='key',self_addr='root.owner#key')
-        calls=[]
+        calls=[];settled=threading.Event();settled_ids=set();settled_lock=threading.Lock()
+        original_return_result=store.return_result
+        def observe_durable_return(delivery_id,outcome,state,**identity):
+            result=original_return_result(delivery_id,outcome,state,**identity)
+            if state=='returned':
+                with settled_lock:
+                    settled_ids.add(delivery_id)
+                    if len(settled_ids)==2:settled.set()
+            return result
+        store.return_result=observe_durable_return
         async def send(ws,target,body,source,meta):
             calls.append(meta['original_delivery_id']);return dict(ok=True,stage='hub_durable_queued')
         helper.outbound_receipts=types.SimpleNamespace(send=send)
@@ -131,9 +140,7 @@ class StoreTests(unittest.TestCase):
         async def run():
             task=asyncio.create_task(helper.sub_agent_loop(object()))
             try:
-                for _ in range(100):
-                    if len(calls)==2:break
-                    await asyncio.sleep(.01)
+                self.assertTrue(await asyncio.to_thread(settled.wait,1),'AA010_FEATURE_OFF_DURABLE_RETURNS_SETTLED')
                 self.assertEqual(sorted(calls),['off-a','off-b'],'AA010_FEATURE_OFF_PER_MAIL_RETURN')
                 self.assertTrue(store.prepare_rollback()['downgrade_ready'],'AA010_FEATURE_OFF_RETURN_CONFIRMED')
             finally:
