@@ -1,6 +1,6 @@
-5f81f39e38c5a098b54afcf99db69133d661ee14bd796a588d293e09ebfaaa6e  docs/reviews/r62-extseat-ttl/REPORT.md
+e3074dd453611125b90d1eea0a93f1c76857ef90df24487b141277ff1bdae195  docs/reviews/r62-extseat-ttl/REPORT.md
 222efee603a60f1920a40149acfc86e4e20a72118ad83c3bf652663708a3ec44  docs/reviews/r62-extseat-ttl/SKIPS.md
-e487aefe1448bd87eb2f62ac356d459bb786ea10adbbc658761547adff54e085  docs/reviews/r62-extseat-ttl/VERIFY.py
+33cfcea613bf4917b0401b3a1b1e5d769e5d79f507bf5612ea67da7325a94bdc  docs/reviews/r62-extseat-ttl/VERIFY.py
 e75681ee7d75de25845d038297a6139d4c77a4de71cb1946cf89a4db7e0712d5  docs/reviews/r62-extseat-ttl/evidence/attempt-9576/canonical.log.gz
 6301a7221c3aa56ae93212baa7ae64f19312a226a125aee73d4827700a5e27b1  docs/reviews/r62-extseat-ttl/evidence/attempt-9576/env.json
 602df54f25405aafd30876fab686bbd310b4ea159d08263b844ac9a1b1faf7cb  docs/reviews/r62-extseat-ttl/evidence/attempt-9576/full-go3.log.gz
@@ -40,7 +40,7 @@ d4790acfcd00c4e97a4192b22bae4a4eccd0d52b1bd19b1e9eba455e0746fc3c  docs/reviews/r
 1fd3e5f57bae52224748b78faeb8e36300b22f7682ffa8b54c0c25186ee7634e  docs/reviews/r62-extseat-ttl/evidence/strict.log.gz
 52b4422e1ad76572211e69826a216094e6ba662b5351e22fae8c1a471c1b6a17  docs/reviews/r62-extseat-ttl/evidence/summarize.py
 80e2bbc962f08de2e902f4c7f8f975603f8d0a40b0e2be193fa8f78e33f774fe  docs/reviews/r62-extseat-ttl/gate-summary.json
-34925345bc57764d38747c9974de0d2979b500624a3543cc74d8fb6990b75fb6  docs/reviews/r62-extseat-ttl/group-expiry-followup/REPORT.md
+dfea54e3295ffe01abf227f4f6265e624ce4eab1b20ef23a1e096f91b15c5d42  docs/reviews/r62-extseat-ttl/group-expiry-followup/REPORT.md
 b6015aea346dd5c2de5bf9a1c7407916de06c44877397487ad6e9621492072e6  docs/reviews/r62-extseat-ttl/group-expiry-followup/evidence/canonical-followup.json
 d565748d3f7480c2bf6bdb06d42b6d16717373e55a410fb41bc01d0c83a00c6e  docs/reviews/r62-extseat-ttl/group-expiry-followup/evidence/canonical-followup.log.gz
 db40e16895cd5bec3ca3090514a88006b6af48b653fd78ffeea7deb0995540da  docs/reviews/r62-extseat-ttl/group-expiry-followup/evidence/expired-group-outbox-reason-compile.log.gz
@@ -65,9 +65,11 @@ e329ba62b4c16647259702dc7fe190c426a6cf3526acf43e5c92afa67ba499df  docs/reviews/r
 dfe15ec804f172adf21751a8b17fcf9459805d9fe2842655feda89e493a1a3f8  docs/reviews/r62-extseat-ttl/group-expiry-followup/evidence/projected-probe.json
 76208f7a9957774b00174bd0d1dbe920a5d20c4291423670ec7cf2c6133a7798  docs/reviews/r62-extseat-ttl/group-expiry-followup/evidence/projected-probe.log.gz
 f4b8466b9746b1e77dc042bb9d4b4335d1d331a55a3ab5a4c3dac8382e1d3b05  docs/reviews/r62-extseat-ttl/group-expiry-followup/evidence/projected-probe_test.go.txt
+6fcbba85f32a2fb7a187eed97f1372cb6d82f631b9ad5e8c40b39266663295f0  docs/reviews/r62-extseat-ttl/group-expiry-followup/evidence/ruling-strict.json
+1fd3e5f57bae52224748b78faeb8e36300b22f7682ffa8b54c0c25186ee7634e  docs/reviews/r62-extseat-ttl/group-expiry-followup/evidence/ruling-strict.log.gz
 cc8cf5861a89a89c181cd15fe8039672494fb2c64ae2f2a09feab3f91012a64d  docs/reviews/r62-extseat-ttl/group-expiry-followup/evidence/run_group_mutations.py
-fa5a5aef9c32bf8c19d0dcc2b612c3ca85a6fd7ef9f29d106c8cdc060f535dd5  docs/reviews/r62-extseat-ttl/group-expiry-followup/summary.json
+d5c08ec990562cd8befd14a1cf824fba70005cfa61d6b629cf9072213cd2e09e  docs/reviews/r62-extseat-ttl/group-expiry-followup/summary.json
 1f8459f5cad6bc1b294f29e9e54c03ec83e4148704ddcad7799abc755b7b5aa3  docs/reviews/r62-extseat-ttl/group-expiry-followup/test-manifest.json
 e8f90ced9119ff9a3fb4b6e4e1d4a018eac86a5e5ec73b7b6481a937bac7b143  docs/reviews/r62-extseat-ttl/product-manifest.json
-c06d4aff13e8fc5bc12127ee264a6b35dff6be50084f46b115fbf65d6f44f01d  docs/reviews/r62-extseat-ttl/raw-log-manifest.json
+18a39f90c1af48692441b931e3f6568e0ef468543f581673bcdbbd93d4b66eb3  docs/reviews/r62-extseat-ttl/raw-log-manifest.json
 3fc66ef66a720958aa52f4519b0afa0f5cea3d5a26c95a1bf2033e1b25a9a60e  docs/reviews/r62-extseat-ttl/structure.json
