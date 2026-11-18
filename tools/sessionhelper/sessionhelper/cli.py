@@ -378,12 +378,16 @@ class CLIAdapter:
             )
         if self.profile.output_source == "transcript":
             if self.cfg.async_reply:
-                confirmer = getattr(self, "inject_and_confirm_transcript_user", None)
-                if callable(confirmer):
-                    confirmer(body)
+                if self.cli_name == "codex":
+                    status = self.inject_and_confirm_transcript_user(body, mark_admitted)
+                    if status != "ok":
+                        raise self._delivery_failed(
+                            CLIInjectionNotReceived,
+                            "（注入未被 CLI 接收：transcript 未出现对应 user 轮）",
+                        )
                 else:
                     self.inject_text(body)
-                mark_admitted()
+                    mark_admitted()
                 return ""
             status, reply = self.inject_and_collect_transcript_reply(body, mark_admitted)
             if status == "ok" and reply:
@@ -544,24 +548,61 @@ class CLIAdapter:
         return configured in BRACKETED_PASTE_CLIS or self.cli_name in BRACKETED_PASTE_CLIS
 
     def inject_and_collect_transcript_reply(self, prompt: str, on_injected=None) -> tuple[str, str]:
-        # Full-screen TUIs can report ready before the first input box is truly
-        # able to accept send-keys. Validate the user turn in transcript; if it
-        # does not land, resend the full prompt a few times instead of asking the
-        # user to manually retry the first cold-start message.
-        attempts = 3
-        for attempt in range(attempts):
-            self.inject_text(prompt)
-            if on_injected is not None:
-                on_injected()
-            status, reply = self.collect_transcript_reply(prompt, self.cfg.cli_reply_wait)
-            if status != "no_user":
-                return status, reply
-            if attempt + 1 < attempts:
-                time.sleep(self.transcript_retry_delay(attempt))
-        return "no_user", ""
+        if self.cli_name != "codex":
+            # Preserve the existing Claude transcript behavior; this readiness
+            # hardening is specific to the Codex 0.170.0 d2 race.
+            attempts = 3
+            for attempt in range(attempts):
+                self.inject_text(prompt)
+                if on_injected is not None:
+                    on_injected()
+                status, reply = self.collect_transcript_reply(prompt, self.cfg.cli_reply_wait)
+                if status != "no_user":
+                    return status, reply
+                if attempt + 1 < attempts:
+                    time.sleep(self.transcript_retry_delay(attempt))
+            return "no_user", ""
+
+        # A prompt glyph and a quiet PTY are not proof that Codex has started
+        # accepting turns. Inject the body once, then use its matching persisted
+        # user event as the admission boundary. The collector may submit Enter
+        # once more while the body remains in the input box, but never retypes it.
+        self.inject_text(prompt)
+        return self.collect_transcript_reply(
+            prompt,
+            self.cfg.cli_reply_wait,
+            on_user_confirmed=on_injected,
+        )
 
     def transcript_retry_delay(self, attempt: int) -> float:
         return 3.0 + attempt
+
+    def inject_and_confirm_transcript_user(self, prompt: str, on_injected=None) -> str:
+        """Inject a transcript-backed CLI task and confirm its user turn before ACK."""
+        self.inject_text(prompt)
+        status, _ = self.collect_transcript_reply(
+            prompt,
+            0,
+            on_user_confirmed=on_injected,
+            wait_for_answer=False,
+        )
+        return status
+
+    def read_transcript_events(self) -> list[tuple[str, str]]:
+        # Codex may not create its rollout file until the first accepted turn.
+        # Discover it without blocking the ACK poll, so a lost early CR can be
+        # resubmitted after initialization and then observed in the new file.
+        if self.transcript is None:
+            override = Path(self.cfg.cli_transcript).expanduser() if self.cfg.cli_transcript else None
+            if override is not None and override.exists():
+                self.transcript = TranscriptTailer(self.cli_name, override, from_end=False)
+            else:
+                candidates = transcript_candidates(self.cli_name, self.cwd, self.started_at)
+                if candidates:
+                    self.transcript = TranscriptTailer(self.cli_name, candidates[0], from_end=False)
+        if self.transcript is None:
+            return []
+        return self.transcript.read_events()
 
     def capture_tmux(self) -> str:
         try:
@@ -592,25 +633,23 @@ class CLIAdapter:
                     deadline = time.time() + quiet_window
         return chunks
 
-    def collect_transcript_reply(self, prompt: str, wait_seconds: float) -> tuple[str, str]:
-        if self.transcript is None:
-            self.transcript = locate_transcript(
-                self.cli_name,
-                self.cwd,
-                self.started_at,
-                max(wait_seconds, self.cfg.cli_user_ack_wait),
-                self.cfg.cli_transcript,
-                from_end=False,
-            )
-        if self.transcript is None:
-            return "no_user", ""
+    def collect_transcript_reply(
+        self,
+        prompt: str,
+        wait_seconds: float,
+        on_user_confirmed=None,
+        *,
+        wait_for_answer: bool = True,
+    ) -> tuple[str, str]:
         saw_user = False
         for attempt in range(2):
             user_deadline = time.time() + max(0.1, self.cfg.cli_user_ack_wait)
             while time.time() < user_deadline:
-                for role, text in self.transcript.read_events():
+                for role, text in self.read_transcript_events():
                     self.mirror_q.put((role, text))
                     if role == "user" and user_text_matches(prompt, text):
+                        if not saw_user and on_user_confirmed is not None:
+                            on_user_confirmed()
                         saw_user = True
                         continue
                     if saw_user and role in ("claude", "codex"):
@@ -624,9 +663,11 @@ class CLIAdapter:
                 self.submit_enter()
         if not saw_user:
             return "no_user", ""
+        if not wait_for_answer:
+            return "ok", ""
         answer_deadline = time.time() + max(0.1, wait_seconds)
         while time.time() < answer_deadline:
-            for role, text in self.transcript.read_events():
+            for role, text in self.read_transcript_events():
                 self.mirror_q.put((role, text))
                 if role in ("claude", "codex"):
                     return "ok", text

@@ -1,0 +1,5 @@
+# Extracted minimal prompt fixture from qwen38mvb4 review tip b910f980:
+# docs/reviews/cli-a-tui-rootcause-20261118/logs/d2-0170-race/ready-2.txt
+# The 0.170.0 prompt is visible while the initialization delay is still active.
+› Ask Codex to do anything
+? for shortcuts
