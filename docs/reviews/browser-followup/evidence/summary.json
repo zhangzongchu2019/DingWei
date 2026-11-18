@@ -1,0 +1,1420 @@
+{
+  "phaseC_fixed_console": {
+    "g1": {
+      "green": 12,
+      "red": 0,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "C-console-01.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-02.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-03.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-04.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-05.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-06.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-07.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-08.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-09.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-10.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-11.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-12.log",
+          "result": "green"
+        }
+      ]
+    },
+    "g2": {
+      "green": 12,
+      "red": 0,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "C-console-01.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-02.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-03.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-04.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-05.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-06.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-07.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-08.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-09.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-10.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-11.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-12.log",
+          "result": "green"
+        }
+      ]
+    },
+    "g3": {
+      "green": 12,
+      "red": 0,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "C-console-01.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-02.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-03.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-04.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-05.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-06.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-07.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-08.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-09.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-10.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-11.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-12.log",
+          "result": "green"
+        }
+      ]
+    },
+    "zero_group_frozen_scope": {
+      "green": 12,
+      "red": 0,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "C-console-01.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-02.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-03.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-04.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-05.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-06.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-07.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-08.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-09.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-10.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-11.log",
+          "result": "green"
+        },
+        {
+          "log": "C-console-12.log",
+          "result": "green"
+        }
+      ]
+    }
+  },
+  "phaseC_fixed_specs_S7": {
+    "green": 22,
+    "red_after_reach": 0,
+    "blocked_before_s7": 6,
+    "runs": [
+      {
+        "log": "C-specs-01.log",
+        "rc": 1,
+        "s7_green": false,
+        "s7_reached": false,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": true,
+        "error": "AssertionError [ERR_ASSERTION]: 没有自己的 Agent 时空态必须说话"
+      },
+      {
+        "log": "C-specs-02.log",
+        "rc": 1,
+        "s7_green": false,
+        "s7_reached": false,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": true,
+        "error": "AssertionError [ERR_ASSERTION]: 选择第二个协助 Agent 时请求必须携带第二个 id"
+      },
+      {
+        "log": "C-specs-03.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-04.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-05.log",
+        "rc": 1,
+        "s7_green": false,
+        "s7_reached": false,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": true,
+        "error": "AssertionError [ERR_ASSERTION]: reload must retain the first owned-spec page"
+      },
+      {
+        "log": "C-specs-06.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-07.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-08.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-09.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-10.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-11.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-12.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-13.log",
+        "rc": 1,
+        "s7_green": false,
+        "s7_reached": false,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": true,
+        "error": "AssertionError [ERR_ASSERTION]: 选择第二个协助 Agent 时请求必须携带第二个 id"
+      },
+      {
+        "log": "C-specs-14.log",
+        "rc": 1,
+        "s7_green": false,
+        "s7_reached": false,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": true,
+        "error": "AssertionError [ERR_ASSERTION]: 选择第二个协助 Agent 时请求必须携带第二个 id"
+      },
+      {
+        "log": "C-specs-15.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-16.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-17.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-18.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-19.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-20.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-21.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-22.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-23.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-24.log",
+        "rc": 1,
+        "s7_green": false,
+        "s7_reached": false,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": true,
+        "error": "AssertionError [ERR_ASSERTION]: 选择第二个协助 Agent 时请求必须携带第二个 id"
+      },
+      {
+        "log": "C-specs-25.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-26.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-27.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-specs-28.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      }
+    ]
+  },
+  "phaseC_r15new": {
+    "green": 12,
+    "red": 0,
+    "runs": [
+      {
+        "log": "C-r15new-01.log",
+        "rc": 0,
+        "green": true
+      },
+      {
+        "log": "C-r15new-02.log",
+        "rc": 0,
+        "green": true
+      },
+      {
+        "log": "C-r15new-03.log",
+        "rc": 0,
+        "green": true
+      },
+      {
+        "log": "C-r15new-04.log",
+        "rc": 0,
+        "green": true
+      },
+      {
+        "log": "C-r15new-05.log",
+        "rc": 0,
+        "green": true
+      },
+      {
+        "log": "C-r15new-06.log",
+        "rc": 0,
+        "green": true
+      },
+      {
+        "log": "C-r15new-07.log",
+        "rc": 0,
+        "green": true
+      },
+      {
+        "log": "C-r15new-08.log",
+        "rc": 0,
+        "green": true
+      },
+      {
+        "log": "C-r15new-09.log",
+        "rc": 0,
+        "green": true
+      },
+      {
+        "log": "C-r15new-10.log",
+        "rc": 0,
+        "green": true
+      },
+      {
+        "log": "C-r15new-11.log",
+        "rc": 0,
+        "green": true
+      },
+      {
+        "log": "C-r15new-12.log",
+        "rc": 0,
+        "green": true
+      }
+    ]
+  },
+  "phaseC_anchor_console": {
+    "g1": {
+      "green": 4,
+      "red": 0,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "C-anchor-console-1.log",
+          "result": "green"
+        },
+        {
+          "log": "C-anchor-console-2.log",
+          "result": "green"
+        },
+        {
+          "log": "C-anchor-console-3.log",
+          "result": "green"
+        },
+        {
+          "log": "C-anchor-console-4.log",
+          "result": "green"
+        }
+      ]
+    },
+    "g2": {
+      "green": 4,
+      "red": 0,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "C-anchor-console-1.log",
+          "result": "green"
+        },
+        {
+          "log": "C-anchor-console-2.log",
+          "result": "green"
+        },
+        {
+          "log": "C-anchor-console-3.log",
+          "result": "green"
+        },
+        {
+          "log": "C-anchor-console-4.log",
+          "result": "green"
+        }
+      ]
+    },
+    "g3": {
+      "green": 2,
+      "red": 2,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "C-anchor-console-1.log",
+          "result": "red",
+          "error": "page.waitForFunction: Timeout 29136ms exceeded."
+        },
+        {
+          "log": "C-anchor-console-2.log",
+          "result": "green"
+        },
+        {
+          "log": "C-anchor-console-3.log",
+          "result": "red",
+          "error": "没有自己的 Agent"
+        },
+        {
+          "log": "C-anchor-console-4.log",
+          "result": "green"
+        }
+      ]
+    },
+    "zero_group_frozen_scope": {
+      "green": 4,
+      "red": 0,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "C-anchor-console-1.log",
+          "result": "green"
+        },
+        {
+          "log": "C-anchor-console-2.log",
+          "result": "green"
+        },
+        {
+          "log": "C-anchor-console-3.log",
+          "result": "green"
+        },
+        {
+          "log": "C-anchor-console-4.log",
+          "result": "green"
+        }
+      ]
+    }
+  },
+  "phaseC_anchor_specs_S7": {
+    "green": 4,
+    "red_after_reach": 0,
+    "blocked_before_s7": 0,
+    "runs": [
+      {
+        "log": "C-anchor-specs-1.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-anchor-specs-2.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-anchor-specs-3.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "C-anchor-specs-4.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      }
+    ]
+  },
+  "phaseA_base_console": {
+    "g1": {
+      "green": 8,
+      "red": 0,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "A-r1-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r1-c2.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r2-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r2-c2.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r3-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r3-c2.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r4-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r4-c2.log",
+          "result": "green"
+        }
+      ]
+    },
+    "g2": {
+      "green": 8,
+      "red": 0,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "A-r1-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r1-c2.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r2-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r2-c2.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r3-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r3-c2.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r4-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r4-c2.log",
+          "result": "green"
+        }
+      ]
+    },
+    "g3": {
+      "green": 2,
+      "red": 6,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "A-r1-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r1-c2.log",
+          "result": "red",
+          "error": "page.waitForFunction: Timeout 29475ms exceeded."
+        },
+        {
+          "log": "A-r2-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r2-c2.log",
+          "result": "red",
+          "error": "page.waitForFunction: Timeout 29658ms exceeded."
+        },
+        {
+          "log": "A-r3-c1.log",
+          "result": "red",
+          "error": "没有自己的 Agent"
+        },
+        {
+          "log": "A-r3-c2.log",
+          "result": "red",
+          "error": "page.waitForFunction: Timeout 29666ms exceeded."
+        },
+        {
+          "log": "A-r4-c1.log",
+          "result": "red",
+          "error": "page.waitForFunction: Timeout 29622ms exceeded."
+        },
+        {
+          "log": "A-r4-c2.log",
+          "result": "red",
+          "error": "没有自己的 Agent"
+        }
+      ]
+    },
+    "zero_group_frozen_scope": {
+      "green": 7,
+      "red": 1,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "A-r1-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r1-c2.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r2-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r2-c2.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r3-c1.log",
+          "result": "red",
+          "error": "Expected values to be strictly equal:"
+        },
+        {
+          "log": "A-r3-c2.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r4-c1.log",
+          "result": "green"
+        },
+        {
+          "log": "A-r4-c2.log",
+          "result": "green"
+        }
+      ]
+    }
+  },
+  "phaseA2_base_g1": {
+    "g1": {
+      "green": 11,
+      "red": 1,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "A2-g1-01.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g1-02.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g1-03.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g1-04.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g1-05.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g1-06.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g1-07.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g1-08.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g1-09.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g1-10.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g1-11.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g1-12.log",
+          "result": "red",
+          "error": "Expected values to be strictly equal:"
+        }
+      ]
+    },
+    "g2": {
+      "green": 0,
+      "red": 0,
+      "not_reached": 12,
+      "runs": [
+        {
+          "log": "A2-g1-01.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-02.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-03.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-04.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-05.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-06.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-07.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-08.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-09.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-10.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-11.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-12.log",
+          "result": "not_reached"
+        }
+      ]
+    },
+    "g3": {
+      "green": 0,
+      "red": 0,
+      "not_reached": 12,
+      "runs": [
+        {
+          "log": "A2-g1-01.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-02.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-03.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-04.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-05.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-06.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-07.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-08.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-09.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-10.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-11.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-12.log",
+          "result": "not_reached"
+        }
+      ]
+    },
+    "zero_group_frozen_scope": {
+      "green": 0,
+      "red": 0,
+      "not_reached": 12,
+      "runs": [
+        {
+          "log": "A2-g1-01.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-02.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-03.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-04.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-05.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-06.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-07.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-08.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-09.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-10.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-11.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g1-12.log",
+          "result": "not_reached"
+        }
+      ]
+    }
+  },
+  "phaseA2_base_g2": {
+    "g1": {
+      "green": 0,
+      "red": 0,
+      "not_reached": 12,
+      "runs": [
+        {
+          "log": "A2-g2-01.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-02.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-03.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-04.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-05.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-06.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-07.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-08.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-09.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-10.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-11.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-12.log",
+          "result": "not_reached"
+        }
+      ]
+    },
+    "g2": {
+      "green": 12,
+      "red": 0,
+      "not_reached": 0,
+      "runs": [
+        {
+          "log": "A2-g2-01.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g2-02.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g2-03.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g2-04.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g2-05.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g2-06.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g2-07.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g2-08.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g2-09.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g2-10.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g2-11.log",
+          "result": "green"
+        },
+        {
+          "log": "A2-g2-12.log",
+          "result": "green"
+        }
+      ]
+    },
+    "g3": {
+      "green": 0,
+      "red": 0,
+      "not_reached": 12,
+      "runs": [
+        {
+          "log": "A2-g2-01.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-02.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-03.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-04.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-05.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-06.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-07.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-08.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-09.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-10.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-11.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-12.log",
+          "result": "not_reached"
+        }
+      ]
+    },
+    "zero_group_frozen_scope": {
+      "green": 0,
+      "red": 0,
+      "not_reached": 12,
+      "runs": [
+        {
+          "log": "A2-g2-01.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-02.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-03.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-04.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-05.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-06.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-07.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-08.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-09.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-10.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-11.log",
+          "result": "not_reached"
+        },
+        {
+          "log": "A2-g2-12.log",
+          "result": "not_reached"
+        }
+      ]
+    }
+  },
+  "phaseA_base_specs_S7": {
+    "green": 4,
+    "red_after_reach": 0,
+    "blocked_before_s7": 0,
+    "runs": [
+      {
+        "log": "A-r1-s1.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "A-r2-s1.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "A-r3-s1.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "A-r4-s1.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      }
+    ]
+  },
+  "phaseA2_base_specs_S7": {
+    "green": 7,
+    "red_after_reach": 0,
+    "blocked_before_s7": 1,
+    "runs": [
+      {
+        "log": "A2-s2-1.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "A2-s2-2.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "A2-s2-3.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "A2-s2-4.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "A2-s2-5.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "A2-s2-6.log",
+        "rc": 1,
+        "s7_green": false,
+        "s7_reached": false,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": true,
+        "error": ""
+      },
+      {
+        "log": "A2-s2-7.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      },
+      {
+        "log": "A2-s2-8.log",
+        "rc": 0,
+        "s7_green": true,
+        "s7_reached": true,
+        "s7_red_after_reach": false,
+        "blocked_before_s7": false,
+        "error": ""
+      }
+    ]
+  }
+}

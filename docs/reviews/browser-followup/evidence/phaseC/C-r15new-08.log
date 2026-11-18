@@ -1,0 +1,1 @@
+PASS channel=bundled-chromium mutation=none natural_finish=true settled_gap_px=0 released_gap_px=600 released_top_px=4951 post_live_gap_px=661 post_live_top_px=4951 follow_released=true live_no_refollow=true

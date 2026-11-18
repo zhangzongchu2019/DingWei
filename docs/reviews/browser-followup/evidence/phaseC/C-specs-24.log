@@ -1,0 +1,22 @@
+AssertionError [ERR_ASSERTION]: 选择第二个协助 Agent 时请求必须携带第二个 id
++ actual - expected
+
++ []
+- [
+-   {
+-     body: {
+-       agent_id: 'assist-b'
+-     },
+-     specID: 'spec-2'
+-   }
+- ]
+
+    at Proxy.<anonymous> (/tmp/wt-followup/view-service/console-specs-browser-regression.js:14:91)
+    at main (/tmp/wt-followup/view-service/console-specs-browser-regression.js:392:12) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [Array],
+  expected: [Array],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}

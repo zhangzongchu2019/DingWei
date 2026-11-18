@@ -30,6 +30,10 @@ const RENDERER = path.join(__dirname, 'renderer-canary-sse.html');
 const START = 'const consoleSpecsPageHTML = `';
 const END = '`\n\nfunc (h *Hub) HandleConsoleSpecsPage';
 const MUTATION = process.argv.find((arg) => arg.startsWith('--mutate='))?.slice('--mutate='.length) || '';
+// 条件等待上界（S-BROWSER-FOLLOWUP）：产品复制反馈是点击任务内微任务、冒泡隐藏是
+// 5000ms 定时器（console_specs_page.go:124）；30000ms ≫ 产品时限＋4x 负载调度余量，
+// 与 console harness CONDITION_WAIT_MS 同值。断言不改。
+const CONDITION_WAIT_MS = 30000;
 
 function productionHTML() {
   const source = fs.readFileSync(GO_SOURCE, 'utf8');
@@ -972,13 +976,24 @@ async function main() {
     //    它对【已存在】的 spec 同样有效(`GET /console/specs/{id}` 本就公开可读),
     //    不依赖创建时那枚只出现一次的 edit 令牌。
     // 🔴 判据落在**被写入的文本**上,不落在 clipboard 权限上 —— 无头环境里权限判据容易假绿。
-    await page.click('#show-spec-list');
+    // 定因（S-BROWSER-FOLLOWUP）：show-spec-list 的 onclick 触发 fire-and-forget
+    // refreshSpecs（console_specs_page.go:235），其 fetch 晚归时 replaceChildren 会把
+    // 已落复制反馈的旧行整行 detach（负载下 rowStatus '' 瞬态的根因，转储见
+    // docs/reviews/browser-followup/REPORT.md）。refreshSpecs 无 generation 守卫、
+    // 本页无周期刷新 ⇒ 先等点击触发的那次响应归位，再 await 一轮完整 refreshSpecs，
+    // 其行重建是最后一次 ⇒ 行稳定后再点复制。
+    const listRefreshResponse = page.waitForResponse((resp) => resp.request().method() === 'GET' && resp.url().includes('/api/console/specs'), { timeout: CONDITION_WAIT_MS });
+    await page.click('#show-spec-list', { timeout: CONDITION_WAIT_MS });
+    await listRefreshResponse;
+    await page.evaluate(() => refreshSpecs());
     await page.waitForSelector('.spec-row .copy-spec-link');
     await page.evaluate(() => { globalThis.__copiedCode = ''; });
     const firstRowSpecID = await page.evaluate(() => (document.querySelector('.spec-row') || {}).dataset.specId);
     assert.ok(firstRowSpecID, 'S-7 前置:列表行必须带 data-spec-id');
-    await page.locator('.spec-row .copy-spec-link').first().click();
-    await page.waitForTimeout(400);
+    await page.locator('.spec-row .copy-spec-link').first().click({ timeout: CONDITION_WAIT_MS });
+    // 等可观察条件：行内反馈节点已有文本（成功/失败都写文本，不预设结果值）；
+    // 随后原断言一字不改。固定 400ms 窗改为条件＋上界。
+    await page.waitForFunction(() => { const node = document.querySelector('.spec-row .spec-action-status'); return node && node.textContent !== ''; }, null, { timeout: CONDITION_WAIT_MS });
     const copyState = await page.evaluate(() => ({
       copied: globalThis.__copiedCode || '',
       rowStatus: (document.querySelector('.spec-row .spec-action-status') || {}).textContent || '',
@@ -988,15 +1003,17 @@ async function main() {
       `复制到剪贴板的文本不是该 spec 的只读链接,实测 ${JSON.stringify(copyState.copied)}`);
     assert.strictEqual(copyState.rowStatus, 'link address copied',
       `复制之后列表行没有可见反馈(实测 ${JSON.stringify(copyState.rowStatus)}) ⇒ 业主又是"点了没反应"`);
-    await page.waitForTimeout(5200);
+    // 冒泡隐藏由产品 5000ms 定时器驱动；固定 5200ms 窗对负载下定时器迟发余量不足。
+    // 改等可观察条件（隐藏）＋上界 5000＋CONDITION_WAIT_MS；断言不改。
+    await page.waitForFunction(() => { const node = document.querySelector('.spec-row .spec-action-status'); return !node || node.hidden === true; }, null, { timeout: 5000 + CONDITION_WAIT_MS });
     assert.strictEqual(await page.locator('.spec-row .spec-action-status').first().isHidden(), true,
       '列表行复制冒泡必须在 5 秒后消失');
     // 详情页同样要有一个,且复制的是当前这份 spec
     await page.evaluate(() => { globalThis.__copiedCode = ''; });
     await page.evaluate((id) => window.openSpec(id, true), firstRowSpecID);
     await page.waitForSelector('#copy-spec-link');
-    await page.click('#copy-spec-link');
-    await page.waitForTimeout(400);
+    await page.click('#copy-spec-link', { timeout: CONDITION_WAIT_MS });
+    await page.waitForFunction(() => { const node = document.getElementById('copy-link-status'); return node && node.textContent !== ''; }, null, { timeout: CONDITION_WAIT_MS });
     const detailCopy = await page.evaluate(() => ({
       copied: globalThis.__copiedCode || '',
       status: (document.getElementById('copy-link-status') || {}).textContent || '',
@@ -1005,7 +1022,7 @@ async function main() {
       `详情页复制到的不是当前 spec 的只读链接,实测 ${JSON.stringify(detailCopy.copied)}`);
     assert.strictEqual(detailCopy.status, 'link address copied',
       `详情页复制之后没有可见反馈(实测 ${JSON.stringify(detailCopy.status)})`);
-    await page.waitForTimeout(5200);
+    await page.waitForFunction(() => { const node = document.getElementById('copy-link-status'); return !node || node.hidden === true; }, null, { timeout: 5000 + CONDITION_WAIT_MS });
     assert.strictEqual(await page.locator('#copy-link-status').isHidden(), true, '详情复制冒泡必须在 5 秒后消失');
     console.log(`S-7: 列表复制=${copyState.copied} 反馈=${JSON.stringify(copyState.rowStatus)} 详情反馈=${JSON.stringify(detailCopy.status)}`);
     const unexpectedConsole = consoleErrors.filter((entry) => {

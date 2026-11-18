@@ -1,0 +1,2 @@
+  PASS distinguishes platform and Agent load failures from true empty states
+console browser harness: passed=1 failed=0

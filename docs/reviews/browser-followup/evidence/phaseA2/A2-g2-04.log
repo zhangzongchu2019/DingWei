@@ -1,0 +1,2 @@
+  PASS runs the zero-group human workflow without hidden actions or long tasks
+console browser harness: passed=1 failed=0

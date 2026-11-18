@@ -1,0 +1,785 @@
+{
+  "grid": "shows group load and network action failures beside their controls",
+  "error": "page.waitForFunction: Timeout 29658ms exceeded.",
+  "states": [
+    {
+      "url": "http://127.0.0.1:44175/console",
+      "state": {
+        "ready": "complete",
+        "platformStatus": {
+          "text": "",
+          "hidden": false
+        },
+        "agentsStatus": {
+          "text": "",
+          "hidden": false
+        },
+        "agentsStale": {
+          "text": "",
+          "hidden": true
+        },
+        "groupStatus": {
+          "text": "编组加载失败: 请求超时",
+          "hidden": false
+        },
+        "groupRetryFeedback": {
+          "text": "编组加载失败: 请求超时",
+          "hidden": false
+        },
+        "groupNameFeedback": {
+          "text": "操作成功",
+          "hidden": false
+        },
+        "groupJoinFeedback": {
+          "text": "",
+          "hidden": false
+        },
+        "groupLeader": {
+          "disabled": true,
+          "value": "",
+          "options": [
+            "没有自己的 Agent"
+          ]
+        },
+        "consoleFetchTimeoutMs": 8000,
+        "groupFetchTimeoutMs": 20,
+        "agentSnapshot": [
+          "owner-alpha-2642",
+          "owner-offline-2642"
+        ],
+        "groupCounts": {
+          "groups": 0,
+          "owned": 0
+        },
+        "longTasks": null,
+        "retryPlatformVisible": false,
+        "retryAgentsVisible": false,
+        "retryGroupsVisible": true
+      }
+    }
+  ],
+  "net": [
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968703925
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968703925
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/platform",
+      "t": 1794968704174
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968704174
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968704174
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/platform",
+      "t": 1794968704223
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968704223
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968704223
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968704404
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/enroll/applications",
+      "t": 1794968704404
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968704404
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968704404
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/enroll/applications",
+      "t": 1794968704404
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968704404
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/agent-groups",
+      "t": 1794968704749
+    },
+    {
+      "k": "res",
+      "s": 201,
+      "u": "/api/console/agent-groups",
+      "t": 1794968704766
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968704766
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968704794
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/agent-groups",
+      "t": 1794968705090
+    },
+    {
+      "k": "res",
+      "s": 409,
+      "u": "/api/console/agent-groups",
+      "t": 1794968705099
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/additions",
+      "t": 1794968705330
+    },
+    {
+      "k": "res",
+      "s": 204,
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/additions",
+      "t": 1794968705339
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968705339
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968705344
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members",
+      "t": 1794968705437
+    },
+    {
+      "k": "res",
+      "s": 409,
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members",
+      "t": 1794968705444
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/additions",
+      "t": 1794968705584
+    },
+    {
+      "k": "res",
+      "s": 204,
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/additions",
+      "t": 1794968705585
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968705585
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968705592
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members",
+      "t": 1794968705707
+    },
+    {
+      "k": "res",
+      "s": 204,
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members",
+      "t": 1794968705713
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968705714
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968705732
+    },
+    {
+      "k": "req",
+      "m": "DELETE",
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members/agent-b",
+      "t": 1794968706079
+    },
+    {
+      "k": "res",
+      "s": 204,
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/members/agent-b",
+      "t": 1794968706091
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968706091
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968706137
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/additions",
+      "t": 1794968706314
+    },
+    {
+      "k": "res",
+      "s": 204,
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/additions",
+      "t": 1794968706321
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968706321
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968706360
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/additions",
+      "t": 1794968706407
+    },
+    {
+      "k": "res",
+      "s": 204,
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA/additions",
+      "t": 1794968706453
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968706453
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968706464
+    },
+    {
+      "k": "req",
+      "m": "DELETE",
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA",
+      "t": 1794968706612
+    },
+    {
+      "k": "res",
+      "s": 204,
+      "u": "/api/console/agent-groups/team-001AAAAAAAAAAAAAAAAAAAAAAAA",
+      "t": 1794968706654
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968706654
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968706680
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968706998
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968706998
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/enroll/applications",
+      "t": 1794968706998
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/enroll/applications",
+      "t": 1794968706998
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968706998
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968706998
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968707006
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968707006
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/enroll/applications",
+      "t": 1794968707006
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/enroll/applications",
+      "t": 1794968707006
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968707510
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968707510
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968707522
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968707522
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968707548
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968707548
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968707807
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968707807
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968707822
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968707822
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968707855
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968707855
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968707876
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968707876
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968707890
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968707890
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708008
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708008
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708426
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708426
+    },
+    {
+      "k": "res",
+      "s": 201,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708457
+    },
+    {
+      "k": "res",
+      "s": 201,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708457
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708457
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708457
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708459
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708459
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708541
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708541
+    },
+    {
+      "k": "res",
+      "s": 500,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708556
+    },
+    {
+      "k": "res",
+      "s": 500,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708556
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708642
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708642
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708650
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708650
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708706
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708706
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708777
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708777
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708787
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708787
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708843
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agent-groups",
+      "t": 1794968708843
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708859
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agent-groups",
+      "t": 1794968708859
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968710641
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968710641
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968710644
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968710644
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968721918
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968721918
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968721925
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968721925
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968725653
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968725653
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968725657
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968725657
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968736918
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/agents",
+      "t": 1794968736918
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968736930
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/agents",
+      "t": 1794968736930
+    }
+  ],
+  "tag": "a2c2",
+  "at": "2026-11-18T02:25:38.521Z"
+}

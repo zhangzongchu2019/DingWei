@@ -1,0 +1,14 @@
+S-6④ 独立用例: 拆解=true 工作流=true 预拆在详情内=true
+AssertionError [ERR_ASSERTION]: reload must retain the first owned-spec page
+
+0 !== 20
+
+    at Proxy.<anonymous> (/tmp/wt-followup/view-service/specs-fixed-instrumented-diag.js:14:91)
+    at main (/tmp/wt-followup/view-service/specs-fixed-instrumented-diag.js:622:12) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 0,
+  expected: 20,
+  operator: 'strictEqual',
+  diff: 'simple'
+}

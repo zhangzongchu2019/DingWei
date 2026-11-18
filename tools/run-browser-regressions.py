@@ -43,6 +43,7 @@ SUITES = (
     ("renderer_timeline_order", "node", ROOT / "view-service/renderer-timeline-order-regression.js"),
     ("renderer_epoch_order", "node", ROOT / "view-service/renderer-epoch-order-regression.js"),
     ("r15_session_history_mutations", "node", ROOT / "view-service/r15-session-history-mutations.js"),
+    ("r15_follow_release_after_replay", "node", ROOT / "view-service/r15-follow-release-after-replay-regression.js"),
     ("renderer_failcard", "node", ROOT / "view-service/renderer-failcard-regression.js"),
     ("renderer_t054_errorboard", "node", ROOT / "view-service/renderer-t054-errorboard-regression.js"),
     ("renderer_t074_delivery_id", "node", ROOT / "view-service/renderer-t074-delivery-id-regression.js"),
