@@ -26,21 +26,28 @@
 
 | 源事件／数据 | CLI 行形态 | 语义保留点 |
 | --- | --- | --- |
-| user_input／input_posted（canonical 输入，含 admitted echo 合卡） | `› <正文>`（用户行，亮色）；行尾阶段缀 `[已注入]`/`[失败:原因]` 等，取自 stageFooterText 同源数据 | T-074 合卡语义：同一投递只一行，echo 就地更新不另起；**失败不另起错误行**（业主 09-11 规则），只更新该用户行阶段缀；来源徽标按 provenanceIconHtml／sourceBadgeHtml 同源输出转文本前缀（如 `[人类]`/`[agent名]`），fail-closed：不可信不挂来源 |
-| assistant_text（delta 拼接／历史全文；回合组内） | 回合正文块（等宽、markdown-lite，§五）；流式追加 | 回合分组键 turnKeyFor 同源；stableAssistantItemKey 去重／backfill 语义继承（rebuildTurnCLI 读同一 group.events，天然继承） |
+| user_input／input_posted（canonical 输入，含 admitted echo 合卡） | `› <正文>`（用户行，亮色；实证 d-0170b/d-0159b 末屏）；行尾阶段缀 `[已注入]`/`[失败:原因]` 等，取自 stageFooterText 同源数据 | T-074 合卡语义：同一投递只一行，echo 就地更新不另起；**失败不另起错误行**（业主 09-11 规则），只更新该用户行阶段缀；来源徽标按 provenanceIconHtml／sourceBadgeHtml 同源输出转文本前缀（如 `[人类]`/`[agent名]`），fail-closed：不可信不挂来源 |
+| assistant_text（delta 拼接／历史全文；回合组内） | `• <正文>`  bullet 行（等宽、markdown-lite，§四；实证：流式 after-3「• 收到」→完成 after-5「• 收到。」）；多段正文续行缩进对齐 | 回合分组键 turnKeyFor 同源；stableAssistantItemKey 去重／backfill 语义继承（rebuildTurnCLI 读同一 group.events，天然继承） |
 | tool_call（commandExecution／fileChange／dynamicToolCall；data.item） | 进行中：`• Running <command>…`；完成：`• Ran <command>`＋`└ exit <code> · <输出首行摘要>`（details 可展开全输出）；fileChange→`• Edited <path>`；dynamicToolCall→`• <name>(<args摘要>)` | 与现时间线差异（有意）：现视图回合完成后隐藏工具，CLI 视图保留工具行在 scrollback（终端语义）；输出字段（aggregated_output／exit_code）原型期以真实 rollout fixture 核实，缺字段时降级为 name＋input 预览（现 renderTurnTool 同源） |
 | 子 Agent | **无独立事件种**（renderer grep 0 命中）：父席操作以 MCP tool_call 行呈现（spawn/wait 等动态工具）；跨席消息以带来源的用户行呈现；Console 树（/api/console/agent-trees）不在本渲染面、不动 | 不新造子 Agent UI；来源绑定走 N-3 既有 attested 语义 |
 | N-2 回合外折叠条（offturn-fold，Claude 席、双闸、极大连续段） | 暗色分隔行 `── 回合外输出（Claude） ──`＋details 折叠全文；标题逐字同 N-2 | **消费 offturnGroups 同一投影**，不另算判定/合并（双闸与断开条件以 N-2 实现为唯一事实源）；本期原型基（7d3035c6）尚无 N-2 代码 ⇒ 该行以「接口契约」形式预留：CLI 投影在 timeline 序上遇到 offturn 组节点即映射，N-2 未合入时该路径不触发；集成者合入 N-2（8ae6b083）后按 §八回归验证 |
 | error（回合内／独立） | `✗ <正文>`（红色行） | 投递失败不在此列（走用户行阶段缀）；独立 error 事件才起错误行 |
-| state_change turn_completed | 回合尾行 `✓ <model> · <tokens> tokens · <耗时>s`（data.model/usage/admitted_at/processed_at 已有） | 完成标志保留（现视图 ✓ footer 同义）；usage 缺字段时省略对应段，不造假数 |
+| state_change turn_completed | 回合尾行 `  Worked for <耗时> • <时钟>`（实证形态）；model/usage 归底状态行（`<model> · <tokens> tokens`，data.model/usage/admitted_at/processed_at 已有） | 完成标志保留（现视图 ✓ footer 同义）；usage 缺字段时省略对应段，不造假数 |
 | state_change 其余／delivery_update／mention_reply | 不产生 CLI 行（与现视图 HIDDEN_TIMELINE_CARD_KINDS／合卡语义一致）；状态栏副作用（成本/待提交区）走现管线、CLI 视图不复制 | 待提交区/状态栏为两视图共用控件，不在 #timeline-cli 内重画 |
 | 文件附件（/f/ 直链、attachFileRenders） | 用户行/正文块下挂 `📎 <文件名>` 行（链接可点） | 附件渲染复用 attachFileRenders 产物语义；CLI 视图不重建上传/下载逻辑 |
 
-## 三、版式参照（Codex CLI 0.170.0 TUI）
+## 三、版式参照（Codex CLI 0.170.0 TUI，已实证校准）
 
-- 结构规格（四区）：① 顶横幅（版本／模型／approval／sandbox／workdir）；② transcript scrollback（用户行 `›`、助手正文块、工具行 `•`、推理暗色行）；③ 输入区（`›` 提示符＋边框，回合进行中显示 Working 转轮与任务标题）；④ 底状态行（token／context 用量、快捷键提示）。
-- 证据来源：勘察 T2 帧（0.170.0 真 provider，129 帧：横幅 v0.170.0、输入区正文、流式推理片段、Working 转轮——**完成态未渲染**，即甲硬伤）；**完成态版式以隔离 mock-provider 直启＋tmux capture-pane 截屏校准**（设计/原型阶段取证，不用真凭据、不碰在线；方法与读数附 evidence/，真 provider 直启对照归 CLI-A-TUI 单，不预判定因）。
-- 保真边界：**参照而非像素级**——等宽字体、四区结构、行首符号（›/•/✗/✓）、暗色推理/工具摘要、回合尾用量行；不复制 Codex 的配色精确值与动画帧率。业主目标是「原生界面观感对比」，不是 TUI 仿真器。
+- **完成态四区（mock-provider 直启截屏实证，evidence/layout/d-0170b、d-0159b）**：
+  ① 横幅：`  >_ OpenAI Codex (v0.170.0)`＋workdir 行；
+  ② transcript：用户行 `› <正文>`；助手行 `• <正文>`（流式增量追加）；回合尾 `  Worked for <时长> • <时钟>`；
+  ③ 输入区：完成后恢复 `› Ask Codex to do anything` 占位；进行中＝Working 转轮＋任务标题（勘察 T2 真 provider 帧为据）；
+  ④ 底状态：`<model> default · <workdir> [· 末条 prompt]`＋`← for agents · ? for shortcuts`＋告警指示。
+- 0.159.2 与 0.170.0 版式同构（差异仅横幅版本号、0.159.2 多一行 onboarding 提示、状态行不回显末条 prompt）；本设计以 0.170.0 为准。
+- **wire 发现（重要，更正勘察表述）**：两版显式 `wire_api="chat"` 均启动即退（「no longer supported」，discussions/7782，错误原文入 evidence/layout/d-*-chat-rejected）；勘察 T1/T2 config 无 wire_api 键 ⇒ 默认 responses，即两版实际以 responses 线对接 token-plan compatible-mode。勘察 REPORT §3.2「chat 兼容端点」表述不准确（端点 OpenAI 兼容、wire 为 responses），勘察分支冻结不改写，更正记 evidence/layout/NOTES.md；CLI-A-TUI 定因以此为准。
+- 中性观察：形状良好的 mock responses 流下两版 TUI 均正常收尾（rollout task_complete＋末屏完成态）；真 provider 直启对照归 CLI-A-TUI，本设计不预定因。
+- 工具行版式（`• Ran <command>`＋`└` 输出摘要）：mock 短答无工具调用，**未实证**，原型期以 mock 工具调用臂或真实 rollout fixture 校准（§十风险②）。
+- 保真边界：**参照而非像素级**——等宽字体、四区结构、行首符号（›/•/✗）、回合尾 Worked for 行；不复制 Codex 配色精确值与动画帧率。推理行不画（driver 直播无 reasoning 事件，§十）。
 - 主题：CLI 视图随现 dw-theme 明暗两套（终端配色各一套 CSS 变量）；明暗切换不重建投影（只换变量）。
 
 ## 四、长文策略
@@ -110,5 +117,5 @@ runner 登记（M2 流程复用）：SUITES 增 `renderer_cli_view`；env 读（
 ## 十、非目标与风险
 
 - 非目标：真原生交互（甲）、driver/Hub/Console 树改动、按会话服务端配置面实现（仅预留位）、N-2 代码本体（另分支冻结）、像素级 TUI 仿真。
-- 风险与对策：① 双投影内存（开态两套 DOM）→ 关态即移除 CLI DOM、flood 节点数有界断言；② 工具输出字段形状未定 → 原型期 fixture 核实、缺字段降级；③ 版式保真主观 → mock 截屏对照＋业主过目节点；④ 与 N-2/时序窗集成叠加 → 契约先行、集成后激活格；⑤ 钩子遗漏致开态漏事件 → G10 纯投影一致性断言兜底（重建即全量）。
+- 风险与对策：① 双投影内存（开态两套 DOM）→ 关态即移除 CLI DOM、flood 节点数有界断言；② 工具行版式与输出字段形状未实证（mock 无工具臂）→ 原型期 mock 工具调用臂＋真实 rollout fixture 核实、缺字段降级为 name＋input 预览；③ 版式保真主观 → mock 截屏对照（已附）＋业主过目节点；④ 与 N-2/时序窗集成叠加 → 契约先行、集成后激活格；⑤ 钩子遗漏致开态漏事件 → G10 纯投影一致性断言兜底（重建即全量）。
 - 未调研项（如实）：Codex TUI 推理行在直播态无数据源（driver 过滤 reasoning，勘察 §3.5 同源事实）⇒ CLI 视图**不画推理行**，避免造假；历史回放中 reasoning 仅 state_change 形状，同样不画。此点与真 TUI 观感有可见差异，交件时向业主明示。
