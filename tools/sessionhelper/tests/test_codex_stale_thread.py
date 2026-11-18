@@ -16,8 +16,11 @@ import types
 import unittest
 from unittest import mock
 
-from sessionhelper.codexDriver import CodexProtocolDriver, JsonRpcError, StdioJsonRpc, UnixWebSocketJsonRpc
+from sessionhelper.codexDriver import (CodexProtocolDriver, JsonRpcError, StdioJsonRpc,
+                                      UnixWebSocketJsonRpc, _presubmit_validation_is_retryable)
 from sessionhelper.driver_adapter import DriverAdapter
+from sessionhelper.inbox import DeliveryInbox
+from sessionhelper.daemon_identity import DaemonIdentityError
 
 
 class RPC:
@@ -37,7 +40,11 @@ class RPC:
     def request(self, method, params, timeout=0):
         self.calls.append((method, params))
         if method in self.errors:
-            raise self.errors[method]
+            error = self.errors[method]
+            if isinstance(error, list):
+                error = error.pop(0) if error else None
+            if error is not None:
+                raise error
         if method == 'initialize':
             return {}
         if method in ('thread/read', 'thread/resume'):
@@ -94,21 +101,30 @@ class CodexStaleThread(unittest.TestCase):
     def test_same_rpc_new_connection_generation_requires_validation(self):
         self.driver._verified_binding = self.driver._binding_key()
         self.driver._initialize()
-        self.rpc.errors['thread/read'] = TimeoutError('private error body')
-        receipt = self.driver.deliver('one', 'input')
-        self.assertEqual(receipt.state, 'failed', 'CONNECTION_GENERATION_NOT_INVALIDATED')
-        self.assertIn('error_class=timeout', receipt.detail)
-        self.assertNotIn('turn/start', self.methods())
+        self.rpc.errors['thread/read'] = [TimeoutError('private error body'), None]
+        waiting = []
+        boundaries = []
+        self.driver._busy_admission.set_callbacks(on_waiting=lambda did: waiting.append(did) or True,
+                                                   before_submit=lambda did: boundaries.append(did) or True)
+        with mock.patch('sessionhelper.codexDriver.PRESUBMIT_VALIDATION_BACKOFF', (0,)):
+            receipt = self.driver.deliver('one', 'input')
+        self.assertEqual(receipt.state, 'processing', 'TRANSIENT_READ_DID_NOT_RESUME')
+        self.assertEqual(waiting, ['one'], 'TRANSIENT_READ_NOT_PERSISTED_AS_BUSY_WAIT')
+        self.assertEqual(boundaries, ['one'], 'TRANSIENT_READ_DID_NOT_CROSS_BOUNDARY_AFTER_VALIDATION')
+        self.assertEqual(self.methods().count('thread/read'), 2)
+        self.assertEqual(self.methods().count('turn/start'), 1)
+        self.assertLess(self.methods().index('thread/read'), self.methods().index('turn/start'))
 
     def test_rpc_replacement_invalidates_same_generation(self):
         self.driver._verified_binding = self.driver._binding_key()
         self.rpc = RPC(self.tmp.name)
-        self.rpc.errors['thread/read'] = ConnectionError('closed')
+        self.rpc.errors['thread/read'] = [ConnectionError('closed'), None]
         self.driver._rpc = self.rpc
-        receipt = self.driver.deliver('one', 'input')
-        self.assertEqual(receipt.state, 'failed', 'REPLACED_CONNECTION_NOT_VALIDATED')
-        self.assertIn('error_class=disconnected', receipt.detail)
-        self.assertNotIn('turn/start', self.methods())
+        with mock.patch('sessionhelper.codexDriver.PRESUBMIT_VALIDATION_BACKOFF', (0,)):
+            receipt = self.driver.deliver('one', 'input')
+        self.assertEqual(receipt.state, 'processing', 'TRANSIENT_REPLACEMENT_READ_DID_NOT_RESUME')
+        self.assertEqual(self.methods().count('thread/read'), 2)
+        self.assertEqual(self.methods().count('turn/start'), 1)
 
     def test_missing_thread_never_creates_or_replays_and_retains_ledger(self):
         self.rpc.loaded = False
@@ -142,7 +158,6 @@ class CodexStaleThread(unittest.TestCase):
 
     def test_validation_errors_are_classified_without_guessing_or_private_text(self):
         for i, (error, category) in enumerate([
-            (TimeoutError('private bearer text'), 'timeout'), (ConnectionError('private closed'), 'disconnected'),
             (JsonRpcError('thread/read', {'code': 401, 'message': 'private token'}), 'authentication'),
             (JsonRpcError('thread/read', {'code': -32600, 'message': 'invalid parameter'}), 'rpc_error'),
         ]):
@@ -360,6 +375,21 @@ class StructuredAdmissionOutput(unittest.IsolatedAsyncioTestCase):
 
 
 class RPCErrorShapes(unittest.TestCase):
+    def test_presubmit_retry_classifier_is_narrow_and_read_only_only(self):
+        self.assertTrue(_presubmit_validation_is_retryable(TimeoutError('synthetic')))
+        self.assertTrue(_presubmit_validation_is_retryable(ConnectionError('synthetic')))
+        self.assertTrue(_presubmit_validation_is_retryable(OSError(104,'reset')))
+        self.assertFalse(_presubmit_validation_is_retryable(FileNotFoundError(2,'missing')))
+        self.assertTrue(_presubmit_validation_is_retryable(
+            JsonRpcError('thread/read',{'code':-32603,'message':'temporary'})))
+        self.assertTrue(_presubmit_validation_is_retryable(
+            JsonRpcError('thread/resume',{'code':-32001,'message':'temporary'})))
+        self.assertFalse(_presubmit_validation_is_retryable(
+            JsonRpcError('turn/start',{'code':-32603,'message':'ambiguous'})))
+        self.assertFalse(_presubmit_validation_is_retryable(
+            JsonRpcError('thread/read',{'code':401,'message':'401 Unauthorized'})))
+        self.assertFalse(_presubmit_validation_is_retryable(DaemonIdentityError('exe_mismatch')))
+
     def test_missing_thread_requires_exact_method_code_and_id(self):
         for method, code, message in [('turn/start', -32600, 'thread not found: bound-thread'), ('thread/resume', -32600, 'no rollout found for thread id bound-thread')]:
             self.assertEqual(JsonRpcError(method, {'code': code, 'message': message}).classify('bound-thread'), 'missing_thread', 'MISSING_ERROR_NOT_RECOGNIZED')
@@ -551,13 +581,15 @@ class ConfiguredRootBinding(unittest.TestCase):
                     self.assertNotIn('thread/start', [method for method, _ in rpc.calls])
                     driver.stop()
 
-    def test_configured_transport_unavailable_is_failed(self):
+    def test_configured_transport_unavailable_waits_without_submission(self):
         self.rpc.live = False
         with mock.patch.object(self.driver, 'start', side_effect=ConnectionError('closed')):
             receipt = self.driver.deliver('offline', 'input')
-        self.assertEqual(receipt.state, 'failed')
-        self.assertIn('bound_thread_unavailable:', receipt.detail)
+        self.assertEqual(receipt.state, 'queued')
+        self.assertIn('presubmit validation transport unavailable', receipt.detail)
         self.assertEqual(self.rpc.calls, [])
+        row = self.driver._store.get('bound-thread', 'offline')
+        self.assertIsNone(row, 'N1C_TRANSIENT_PRESUBMIT_WROTE_TERMINAL_RECEIPT')
 
 
 
@@ -566,6 +598,7 @@ class RecoveryRPC(RPC):
     def __init__(self, cwd, mode='ready'):
         super().__init__(cwd)
         self.mode = mode
+        self.transient_remaining = 1
 
     def request(self, method, params, timeout=0):
         if method in ('thread/read', 'thread/resume'):
@@ -575,11 +608,16 @@ class RecoveryRPC(RPC):
                 raise JsonRpcError(method, {'code': -32600, 'message': 'no rollout found for thread id bound-thread'})
             if old and self.mode == 'auth':
                 raise JsonRpcError(method, {'code': 401, 'message': '401 Unauthorized synthetic'})
-            if old and self.mode == 'rpc':
+            if old and self.mode == 'rpc' and self.transient_remaining:
+                self.transient_remaining -= 1
                 raise JsonRpcError(method, {'code': -32603, 'message': 'synthetic unknown server error'})
-            if old and self.mode == 'disconnected':
+            if old and self.mode == 'resume_rpc' and method == 'thread/resume' and self.transient_remaining:
+                self.transient_remaining -= 1
+                raise JsonRpcError(method, {'code': -32001, 'message': 'synthetic temporary resume error'})
+            if old and self.mode == 'disconnected' and self.transient_remaining:
+                self.transient_remaining -= 1
                 raise ConnectionError('synthetic disconnected')
-            unloaded = old and self.mode in ('missing', 'not_loaded') and method == 'thread/read'
+            unloaded = old and self.mode in ('missing', 'not_loaded', 'resume_rpc') and method == 'thread/read'
             return {'thread': {'id': params['threadId'],
                 'cwd': '/different/synthetic/cwd' if old and self.mode == 'cwd' else self.cwd,
                 'status': {'type': 'notLoaded' if unloaded else 'idle'}, 'canAcceptDirectInput': True}}
@@ -643,26 +681,19 @@ class RecoveryThreadInheritance(unittest.TestCase):
         self.assertNotIn('thread/start', methods)
         self.assertEqual(new._thread_id, 'bound-thread')
 
-    def test_missing_or_wrong_cwd_warns_and_emits_once_before_new_turn(self):
-        for mode,reason in [('missing','missing_thread'),('cwd','thread_unavailable')]:
+    def test_missing_or_wrong_cwd_fails_closed_without_thread_replacement(self):
+        for mode in ('missing','cwd'):
             with self.subTest(mode=mode):
                 _,new,rpc = self.pair(mode)
-                # Independent envelopes avoid durable idempotency between cases.
-                with mock.patch('sys.stdout',new_callable=io.StringIO) as output:
+                with mock.patch('sessionhelper.codexDriver.PRESUBMIT_VALIDATION_BACKOFF', (0,)):
                     receipt = new.deliver('new-'+mode,'input')
-                self.assertEqual(receipt.state,'processing','HRI002_FALLBACK_NOT_ADMITTED')
-                self.assertEqual(new._thread_id,'replacement-thread')
-                self.assertEqual(output.getvalue().strip(),
-                    '[delivery][THREAD_REPLACED] old_thread=bound-thread new_thread=replacement-thread reason='+reason,
-                    'HRI002_FIXED_WARNING_MISSING')
+                self.assertEqual(receipt.state,'failed','HRI002_INVALID_BINDING_ADMITTED')
+                self.assertEqual(new._thread_id,'bound-thread','N1C_MISMATCH_CHANGED_THREAD')
                 events=[e for e in new._event_log if e.data.get('change')=='delivery_thread_replaced']
-                self.assertEqual(len(events),1,'HRI002_STATE_EVENT_MISSING')
-                self.assertEqual(events[0].data,dict(change='delivery_thread_replaced',old_thread_id='bound-thread',
-                    new_thread_id='replacement-thread',reason=reason))
+                self.assertEqual(len(events),0,'N1C_MISMATCH_CHANGED_THREAD')
                 methods=[m for m,_ in rpc.calls]
-                self.assertEqual(methods.count('thread/start'),1)
-                self.assertLess(methods.index('thread/start'),methods.index('turn/start'))
-                self.assertEqual(rpc.calls[-1][1]['threadId'],'replacement-thread')
+                self.assertNotIn('thread/start',methods,'N1C_MISMATCH_CHANGED_THREAD')
+                self.assertNotIn('turn/start',methods,'N1C_MISMATCH_SUBMITTED')
 
     def test_configured_root_and_child_still_refuse_unavailable_thread(self):
         for required,lane in [(True,''),(False,'child-lane')]:
@@ -673,24 +704,69 @@ class RecoveryThreadInheritance(unittest.TestCase):
                 self.assertNotIn('thread/start',[m for m,_ in rpc.calls],'HRI002_BOUND_OR_CHILD_OPENED')
                 self.assertFalse(any(e.data.get('change')=='delivery_thread_replaced' for e in new._event_log))
 
-    def test_auth_transport_and_unknown_rpc_errors_do_not_rotate(self):
-        for mode in ('auth','rpc','disconnected'):
+    def test_auth_stays_fail_closed_and_temporary_read_errors_retry_same_thread(self):
+        for mode in ('auth','rpc','disconnected','resume_rpc'):
             _,new,rpc=self.pair(mode)
-            self.assertEqual(new.deliver('failure-'+mode,'input').state,'failed')
+            with mock.patch('sessionhelper.codexDriver.PRESUBMIT_VALIDATION_BACKOFF', (0,)):
+                receipt = new.deliver('failure-'+mode,'input')
+            self.assertEqual(receipt.state,'failed' if mode == 'auth' else 'processing')
             self.assertNotIn('thread/start',[m for m,_ in rpc.calls],'HRI002_UNKNOWN_ERROR_ROTATED')
+            self.assertEqual([p.get('threadId') for m,p in rpc.calls if m in ('thread/read','thread/resume')],
+                             ['bound-thread'] * sum(1 for m,_ in rpc.calls if m in ('thread/read','thread/resume')),
+                             'N1C_RETRY_CHANGED_THREAD')
 
-    def test_lost_create_response_does_not_retry_on_next_delivery(self):
-        _,new,rpc=self.pair('cwd')
-        request=rpc.request
-        def fail_create(method,params,timeout=0):
-            if method=='thread/start':
+    def test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery(self):
+        _,new,rpc=self.pair('ready')
+        path=str(Path(self.tmp.name)/'inbox.sqlite')
+        inbox=DeliveryInbox(path,session_name='fixture',capacity=5)
+        first='dw-dlv_'+'a'*32;second='dw-dlv_'+'b'*32
+        for did,body in ((first,'original'),(second,'later')):
+            inbox.accept(did,{'from':'source','body':body,'meta':{
+                'delivery_id':did,'delivery_ack_protocol':2,'processing_mode':'driver','ack_generation':1}})
+        self.assertEqual(inbox.claim_next()[0],first)
+        self.assertTrue(inbox.begin_dispatch(first))
+        rpc.mode='ready'
+        original_request=rpc.request
+        retry_entered=threading.Event();release_retry=threading.Event();failed_once={'value':False}
+        def transient_read(method,params,timeout=0):
+            if method=='thread/read' and not failed_once['value']:
+                failed_once['value']=True
                 rpc.calls.append((method,params))
-                raise ConnectionError('synthetic lost create response')
-            return request(method,params,timeout)
-        rpc.request=fail_create
-        self.assertEqual(new.deliver('lost','input').state,'failed')
-        self.assertEqual(new.deliver('later','input').state,'failed')
-        self.assertEqual([m for m,_ in rpc.calls].count('thread/start'),1,'HRI002_UNCERTAIN_CREATE_RETRIED')
+                raise TimeoutError('synthetic pre-submit timeout')
+            if method=='thread/read':
+                retry_entered.set()
+                self.assertTrue(release_retry.wait(3),'N1C_RETRY_TEST_RELEASE_TIMEOUT')
+            return original_request(method,params,timeout)
+        rpc.request=transient_read
+        new._busy_admission.set_callbacks(
+            on_waiting=lambda did: inbox.mark_busy_waiting(did),
+            before_submit=lambda did: inbox.mark_submission_may_have_started(did))
+        result=[]
+        with mock.patch('sessionhelper.codexDriver.PRESUBMIT_VALIDATION_BACKOFF',(0,)):
+            worker=threading.Thread(target=lambda:result.append(new.deliver(first,'original')))
+            worker.start()
+            self.assertTrue(retry_entered.wait(2),'N1C_RETRY_NOT_ENTERED')
+            row=inbox.lifecycle(first)
+            self.assertIsNotNone(row['busy_wait_started_at'],'N1C_WAIT_MARKER_NOT_DURABLE')
+            self.assertIsNone(row['submission_may_have_started_at'],'N1C_WAIT_CROSSED_SUBMISSION_BOUNDARY')
+            self.assertEqual(inbox.lifecycle(second)['state'],'received','N1C_FIFO_LOST_LATER_ITEM')
+            self.assertNotIn('turn/start',[m for m,_ in rpc.calls],'N1C_TURN_STARTED_BEFORE_VALIDATION')
+            release_retry.set()
+            worker.join(2)
+        self.assertFalse(worker.is_alive(),'N1C_RETRY_DID_NOT_FINISH')
+        self.assertEqual(result[0].state,'processing')
+        self.assertIsNotNone(inbox.lifecycle(first)['submission_may_have_started_at'])
+        self.assertEqual([m for m,_ in rpc.calls].count('turn/start'),1,'N1C_TURN_STARTED_MORE_THAN_ONCE')
+        self.assertNotIn('thread/start',[m for m,_ in rpc.calls],'N1C_RETRY_CHANGED_THREAD')
+
+    def test_mismatched_recovery_binding_never_rotates_to_new_thread(self):
+        _,new,rpc=self.pair('cwd')
+        with mock.patch('sessionhelper.codexDriver.PRESUBMIT_VALIDATION_BACKOFF', (0,)):
+            self.assertEqual(new.deliver('mismatch','input').state,'failed')
+            self.assertEqual(new.deliver('later','input').state,'failed')
+        self.assertEqual(new._thread_id,'bound-thread','N1C_MISMATCH_CHANGED_THREAD')
+        self.assertNotIn('thread/start',[m for m,_ in rpc.calls],'N1C_MISMATCH_CHANGED_THREAD')
+        self.assertNotIn('turn/start',[m for m,_ in rpc.calls],'N1C_MISMATCH_SUBMITTED')
 
     def test_lane_identity_mismatch_is_rejected(self):
         old=self.driver(lane='child'); new=self.driver()

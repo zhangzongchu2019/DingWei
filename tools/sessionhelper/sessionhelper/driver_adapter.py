@@ -68,6 +68,12 @@ class DriverAdapter:
         self._admission_timeout = max(0.1, float(getattr(cfg, "admission_timeout_seconds", 60)))
         self._busy_admission_max = max(0.1, float(getattr(cfg, "busy_admission_max_seconds", 1800)))
         self._transport_recovery = None
+        # App installs a thread-safe callback which queues a protocol busy ACK
+        # on the active websocket. It is deliberately separate from terminal
+        # ACK v2 failure handling.
+        self.on_busy_wait = None
+        self._busy_ack_requested: set[str] = set()
+        self._busy_ack_lock = threading.Lock()
         self._terminal_timeout = max(0.1, float(cfg.turn_terminal_timeout_seconds))
         self._input_buf = ""          # view 输入的行缓冲
         self._cost_total = 0.0        # 会话累计成本(状态栏用)
@@ -97,6 +103,19 @@ class DriverAdapter:
                 saved = ledger.mark_busy_waiting(delivery_id)
                 if saved:
                     observe(getattr(self, 'delivery_progress', None), delivery_id, 'adapter_queued')
+                    # Queue Hub's existing busy -> queued signal as soon as
+                    # the durable pre-submit marker exists. This also covers
+                    # an unhealthy RPC transport, where the watchdog cannot
+                    # use `driver.health()` as a reason to suppress the ACK.
+                    with self._busy_ack_lock:
+                        first_request = delivery_id not in self._busy_ack_requested
+                        self._busy_ack_requested.add(delivery_id)
+                    callback = getattr(self, 'on_busy_wait', None)
+                    if first_request and callable(callback):
+                        try:
+                            callback(delivery_id)
+                        except Exception as exc:
+                            print(f'[delivery][WARN][BUSY_ACK_QUEUE_FAILED] id={delivery_id} error={type(exc).__name__}', flush=True)
                 return saved
             def persist_submission_boundary(delivery_id):
                 # Same compatibility rule as above for non-durable callers.
@@ -700,6 +719,8 @@ class DriverAdapter:
             # Native terminal may race the synchronous call's return. Never let
             # the next item reuse a writer which has not actually returned.
             self._recover_transport(command)
+        with self._busy_ack_lock:
+            self._busy_ack_requested.discard(command.delivery_id)
         self._commands.finish(command.delivery_id, outcome)
 
     def _settle_command(self, command: QueuedCommand, receipt) -> None:

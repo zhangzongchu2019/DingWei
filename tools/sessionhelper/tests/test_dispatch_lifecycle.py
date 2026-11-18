@@ -71,6 +71,21 @@ class DispatchLifecycleTest(unittest.TestCase):
         self.assertEqual(seen,[])
         self.assertIsNone(self.inbox.lifecycle('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')['admitted_at'])
 
+    def test_busy_wait_persists_before_one_hub_busy_requeue_request(self):
+        did='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        self.inbox.begin_dispatch(did)
+        driver=SimpleNamespace(_busy_admission=BusyAdmission())
+        adapter=self.adapter(driver)
+        requested=[]
+        adapter.on_busy_wait=requested.append
+        self.assertTrue(driver._busy_admission.waiting(did))
+        self.assertTrue(driver._busy_admission.waiting(did))
+        row=self.inbox.lifecycle(did)
+        self.assertIsNotNone(row['busy_wait_started_at'],'N1C_BUSY_MARKER_NOT_PERSISTED')
+        self.assertIsNone(row['submission_may_have_started_at'],'N1C_BUSY_CROSSED_SUBMIT')
+        self.assertEqual(requested,[did],'N1C_BUSY_ACK_NOT_ONCE')
+        self.assertEqual(row['state'],'processing','N1C_BUSY_ACK_TERMINALIZED_LOCAL_INBOX')
+
     def test_claude_submitted_local_uuid_is_not_admission(self):
         driver=SimpleNamespace()
         adapter=self.adapter(driver,'claude')

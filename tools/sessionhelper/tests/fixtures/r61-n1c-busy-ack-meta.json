@@ -1,0 +1,1 @@
+{"ack_generation": 1, "ack_protocol": 2, "delivery_id": "dw-dlv_cccccccccccccccccccccccccccccccc", "no_mirror": true, "processing_mode": "driver", "reason": "presubmit_validation_wait", "retryable": true, "state": "busy", "type": "delivery_ack"}
