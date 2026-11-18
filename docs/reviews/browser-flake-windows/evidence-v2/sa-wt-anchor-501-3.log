@@ -1,0 +1,6 @@
+[driver-adapter] started, driver=codex
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+----------------------------------------------------------------------
+Ran 1 test in 0.136s
+
+OK

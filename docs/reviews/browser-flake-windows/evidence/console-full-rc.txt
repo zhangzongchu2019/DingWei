@@ -1,0 +1,15 @@
+fullC1 rc=0
+fullB1 rc=1
+fullA1 rc=1
+fullC2 rc=0
+fullB2 rc=1
+fullA2 rc=1
+fullC3 rc=1
+fullB3 rc=1
+fullA3 rc=0
+fullC4 rc=1
+LANECDONE
+fullA4 rc=1
+LANEADONE
+fullB4 rc=1
+LANEBDONE

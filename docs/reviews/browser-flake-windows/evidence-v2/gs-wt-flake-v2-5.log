@@ -1,0 +1,10 @@
+[driver-adapter] started, driver=claude
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-business-1 -> accepted (isReplay ack, turn=90ecabe86cee4650abbeac5c0d16d425)
+[delivery] done id=dw-business-1 source=fixture (turn=90ecabe86cee4650abbeac5c0d16d425)
+[driver-adapter] deliver id=dw-business-2 -> accepted (isReplay ack, turn=6a68f24eab5444468a2491074ba5a0c4)
+[delivery] done id=dw-business-2 source=fixture (turn=6a68f24eab5444468a2491074ba5a0c4)
+----------------------------------------------------------------------
+Ran 1 test in 0.429s
+
+OK

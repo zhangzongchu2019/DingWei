@@ -1,0 +1,124 @@
+{
+  "marks": [
+    {
+      "step": "instrumented",
+      "t": 1794948173578
+    },
+    {
+      "step": "fontsReady",
+      "t": 1794948173578
+    },
+    {
+      "step": "beforeSet300",
+      "t": 1794948173803
+    },
+    {
+      "step": "afterSet300",
+      "t": 1794948173825
+    },
+    {
+      "step": "beforeWheel",
+      "t": 1794948173854
+    },
+    {
+      "step": "afterWheel",
+      "t": 1794948173887
+    }
+  ],
+  "snapLog": [
+    {
+      "t": 1794948173701,
+      "scrollTopBefore": 0,
+      "scrollHeight": 6075,
+      "clientHeight": 549,
+      "atBottomBefore": true,
+      "stack": "    at http://127.0.0.1:41831/view/r15:1974:51"
+    },
+    {
+      "t": 1794948173708,
+      "scrollTopBefore": 5526,
+      "scrollHeight": 6075,
+      "clientHeight": 549,
+      "atBottomBefore": true,
+      "stack": "    at http://127.0.0.1:41831/view/r15:1974:51"
+    },
+    {
+      "t": 1794948173892,
+      "finishReplay": true,
+      "forceBottom": true,
+      "replayBefore": true
+    },
+    {
+      "t": 1794948173892,
+      "scrollTopBefore": 300,
+      "scrollHeight": 6075,
+      "clientHeight": 524,
+      "atBottomBefore": true,
+      "stack": "    at snapIfAllowed (http://127.0.0.1:41831/view/r15:1965:59)"
+    },
+    {
+      "t": 1794948173917,
+      "scrollTopBefore": 5551,
+      "scrollHeight": 6075,
+      "clientHeight": 524,
+      "atBottomBefore": true,
+      "stack": "    at snapIfAllowed (http://127.0.0.1:41831/view/r15:1965:59)"
+    },
+    {
+      "t": 1794948174142,
+      "scrollTopBefore": 5551,
+      "scrollHeight": 6075,
+      "clientHeight": 524,
+      "atBottomBefore": true,
+      "stack": "    at snapIfAllowed (http://127.0.0.1:41831/view/r15:1965:59)"
+    }
+  ],
+  "scrollLog": [
+    {
+      "t": 1794948173708,
+      "scrollTop": 5526,
+      "gap": 0,
+      "nearBottom": true,
+      "atBottom": true,
+      "replay": true,
+      "sinceGesture": 1794948173708,
+      "followFrame": true
+    },
+    {
+      "t": 1794948173834,
+      "scrollTop": 300,
+      "gap": 5251,
+      "nearBottom": false,
+      "atBottom": true,
+      "replay": true,
+      "sinceGesture": 1794948173834,
+      "followFrame": false
+    },
+    {
+      "t": 1794948173901,
+      "wheel": true,
+      "deltaY": 10
+    },
+    {
+      "t": 1794948173902,
+      "scrollTop": 5551,
+      "gap": 0,
+      "nearBottom": true,
+      "atBottom": true,
+      "replay": false,
+      "sinceGesture": 1,
+      "followFrame": false
+    }
+  ],
+  "state": {
+    "atBottom": true,
+    "replay": false,
+    "followFrame": false,
+    "scrollTop": 5551,
+    "scrollHeight": 6075,
+    "clientHeight": 524,
+    "sinceGesture": 2997,
+    "pendingRenders": 0,
+    "c1MergeBuf": 0
+  }
+}

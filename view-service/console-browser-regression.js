@@ -69,7 +69,11 @@ function consoleHTMLFromProductionSource() {
   }
   if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
   if (MUTATION === 'legacy-group-deadlock') {
-    html = html.replace('detail.before(retryArea);', 'detail.append(retryArea);');
+    // 原锚 detail.before(retryArea) 已随产品把重试控件改成静态 markup 而漂移,
+    // 静默 replace 会假绿(2026-11-17 实测 rc=0)。在当前 markup 上复活同形死锁:
+    // 把 groupRetry 从常显的列表区挪进零组态隐藏的 groupDetail;mutate 锚缺失即报错。
+    mutate('<div id=groupRetry><button id=retryGroups type=button>重试加载</button><div id=groupRetryFeedback class=group-feedback></div></div>', '');
+    mutate('<section id=groupDetail class="group-block group-block-detail" hidden>', '<section id=groupDetail class="group-block group-block-detail" hidden><div id=groupRetry><button id=retryGroups type=button>重试加载</button><div id=groupRetryFeedback class=group-feedback></div></div>');
   }
   // 🔴 阴性对照:把角标显示值写死。写死之后页面显示的就不再是服务端喂进来的那一版,
   //    下面那条断言必须红 —— 否则这条判据等于没立。
@@ -530,7 +534,12 @@ async function main() {
     await test('lets a human start from zero groups without a hidden-control deadlock', async () => {
       emptyGroupInventory = true;
       const emptyPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-      emptyPage.setDefaultTimeout(1500);
+      // 时序窗定因见 docs/reviews/browser-flake-windows/REPORT.md:本格各等待都依赖
+      // 页面 fetch 完成,产品自身 fetch 超时为 8000ms(console_auth.go 的
+      // consoleFetchTimeoutMs/groupFetchTimeoutMs);1500ms 上界比产品超时还短,
+      // 负载下会在产品仍在合法等待时先红。改用本 harness 既有的条件等待上界
+      // CONDITION_WAIT_MS(30000ms)≫8000ms＋负载调度余量;断言本身不改。
+      emptyPage.setDefaultTimeout(CONDITION_WAIT_MS);
       const emptyErrors = [];
       emptyPage.on('pageerror', (error) => emptyErrors.push(error.message));
       emptyPage.on('console', (message) => { if (message.type() === 'error') emptyErrors.push(message.text()); });
@@ -559,6 +568,12 @@ async function main() {
       await emptyPage.locator('#retryGroups').click();
       await refreshed;
       assert.strictEqual(groupGETs, getsBeforeRetry + 1, 'visible retry must issue one groups GET');
+      // waitForResponse 只保证网络层收到响应;页面 r.json()→renderGroups→groupStatus
+      // 续体在负载下可能尚未执行,直接读 DOM 会读到 refreshGroups('retry') 开头同步
+      // 写入的「Agent 列表加载中…」(证据 console-red-hload24/38.json)。改等可观察
+      // 条件:加载文案消失=该次 refreshGroups 的 DOM 更新已落地(成功/失败路径都会
+      // 改写该文案,generation 不合则不改写⇒超时红),不预设结果值;随后原断言一字不改。
+      await emptyPage.waitForFunction(() => document.getElementById('group-status').textContent !== 'Agent 列表加载中…', null, { timeout: CONDITION_WAIT_MS });
       assert.strictEqual(await emptyPage.locator('#group-status').textContent(), '没有自己的 Agent，无法建组或加入');
       assert.deepStrictEqual(emptyErrors, []);
       await emptyPage.close();

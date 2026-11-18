@@ -1,0 +1,7 @@
+solo1 rc=2
+solo2 rc=2
+solo3 rc=2
+solo4 rc=2
+solo5 rc=2
+solo6 rc=2
+ALLDONE

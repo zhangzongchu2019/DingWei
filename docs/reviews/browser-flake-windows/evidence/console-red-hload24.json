@@ -1,0 +1,135 @@
+{
+  "steps": [
+    {
+      "s": "cookies",
+      "t": 1794948883289
+    },
+    {
+      "s": "goto",
+      "t": 1794948883299
+    },
+    {
+      "s": "gotoDone",
+      "t": 1794948883397
+    },
+    {
+      "s": "entryWait",
+      "t": 1794948883397
+    },
+    {
+      "s": "entryClick",
+      "t": 1794948883500
+    },
+    {
+      "s": "statusWait",
+      "t": 1794948883620
+    },
+    {
+      "s": "humanHit",
+      "t": 1794948883655
+    },
+    {
+      "s": "retryClick",
+      "t": 1794948883705
+    },
+    {
+      "s": "refreshed",
+      "t": 1794948883750
+    },
+    {
+      "s": "refreshedDone",
+      "t": 1794948883750
+    }
+  ],
+  "net": [
+    {
+      "k": "req",
+      "u": ":34365/api/console/platform",
+      "t": 1794948883390
+    },
+    {
+      "k": "req",
+      "u": ":34365/api/console/agents",
+      "t": 1794948883390
+    },
+    {
+      "k": "req",
+      "u": ":34365/api/console/agent-groups",
+      "t": 1794948883397
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": ":34365/api/console/platform",
+      "t": 1794948883447
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": ":34365/api/console/agents",
+      "t": 1794948883447
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": ":34365/api/console/agent-groups",
+      "t": 1794948883447
+    },
+    {
+      "k": "req",
+      "u": ":34365/api/console/agents",
+      "t": 1794948883570
+    },
+    {
+      "k": "req",
+      "u": ":34365/api/console/enroll/applications",
+      "t": 1794948883573
+    },
+    {
+      "k": "req",
+      "u": ":34365/api/console/agent-groups",
+      "t": 1794948883573
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": ":34365/api/console/agents",
+      "t": 1794948883573
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": ":34365/api/console/enroll/applications",
+      "t": 1794948883587
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": ":34365/api/console/agent-groups",
+      "t": 1794948883590
+    },
+    {
+      "k": "req",
+      "u": ":34365/api/console/agent-groups",
+      "t": 1794948883737
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": ":34365/api/console/agent-groups",
+      "t": 1794948883748
+    }
+  ],
+  "state": {
+    "ready": "complete",
+    "platformStatus": "",
+    "platformItems": 3,
+    "entryCount": 1,
+    "groupStatus": "没有自己的 Agent，无法建组或加入",
+    "groupDetailHidden": true,
+    "retryGroupsHidden": false,
+    "groupMode": true,
+    "owned": 0
+  },
+  "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'Agent 列表加载中…'\n- '没有自己的 Agent，无法建组或加入'\n"
+}

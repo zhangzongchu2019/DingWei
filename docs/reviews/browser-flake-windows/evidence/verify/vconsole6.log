@@ -1,0 +1,2 @@
+  PASS lets a human start from zero groups without a hidden-control deadlock
+console browser harness: passed=1 failed=0
