@@ -442,3 +442,58 @@ func TestHistoryProvenanceEventEvictionAlsoCleansQueuedEvidence(t *testing.T) {
 	}
 	assertHistoryAccounting(t, h)
 }
+
+func TestHistoryProvenanceCleanupAndEvictionWorkIsBounded(t *testing.T) {
+	ctx := context.Background()
+	now := time.Unix(100, 0)
+	for _, mode := range []string{"ttl", "identity"} {
+		t.Run(mode, func(t *testing.T) {
+			h := newHistoryTest(t)
+			for i := 0; i < SessionHistoryBatch+1; i++ {
+				rememberProof(t, h, "o", "a", "s", fmt.Sprintf("d-%04d", i), now)
+			}
+			tx, e := h.db.BeginTx(ctx, nil)
+			if e != nil {
+				t.Fatal(e)
+			}
+			rows, e := historyEvictionRows(ctx, tx, "o", "a")
+			if e != nil {
+				t.Fatal(e)
+			}
+			_ = tx.Rollback()
+			if len(rows) != SessionHistoryBatch {
+				t.Fatalf("eviction materialized %d rows; budget %d", len(rows), SessionHistoryBatch)
+			}
+			at := now.Add(SessionHistoryRetain)
+			if mode == "identity" {
+				at = now
+				if e = h.RequestAgentDeletion(ctx, "o", "a", now); e != nil {
+					t.Fatal(e)
+				}
+			}
+			if e = h.CleanupBatch(ctx, at); e != nil {
+				t.Fatal(e)
+			}
+			if n := proofCount(t, h); n != 1 {
+				t.Fatalf("single cleanup exceeded row budget or made no progress: remaining=%d want 1", n)
+			}
+			if mode == "identity" {
+				var queued int
+				if e = h.db.QueryRow(`SELECT count(*) FROM session_history_delete_queue`).Scan(&queued); e != nil {
+					t.Fatal(e)
+				}
+				if queued != 1 {
+					t.Fatal("unfinished sidecar purge lost its durable queue")
+				}
+			}
+			assertHistoryAccounting(t, h)
+			if e = h.CleanupBatch(ctx, at); e != nil {
+				t.Fatal(e)
+			}
+			if proofCount(t, h) != 0 {
+				t.Fatal("second cleanup did not finish bounded purge")
+			}
+			assertHistoryAccounting(t, h)
+		})
+	}
+}
