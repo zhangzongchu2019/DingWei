@@ -1,0 +1,119 @@
+viewport 390x844:
+  PASS old login readable without horizontal overflow (390x844)
+  PASS new-platform login targets >=40px and no overflow (390x844)
+  FAIL workbench drawer opens and closes (390x844): viewport meta 必须生效（visualViewport.scale≈1，实测 0.3979591727256775）
+  FAIL open an Agent session from drawer and scroll to read (390x844): locator.click: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('#navToggle')[22m
+[2m    - locator resolved to <button type="button" id="navToggle" aria-label="打开菜单" aria-expanded="false">☰ 菜单</button>[22m
+[2m  - attempting click action[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    19 × waiting for element to be visible, enabled and stable[22m
+[2m       - element is not visible[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+  FAIL tabs scroll horizontally without document overflow (390x844): locator.click: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('#navToggle')[22m
+[2m    - locator resolved to <button type="button" id="navToggle" aria-label="打开菜单" aria-expanded="false">☰ 菜单</button>[22m
+[2m  - attempting click action[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    19 × waiting for element to be visible, enabled and stable[22m
+[2m       - element is not visible[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+  FAIL click targets >=40px (390x844): locator.click: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('#navToggle')[22m
+[2m    - locator resolved to <button type="button" id="navToggle" aria-label="打开菜单" aria-expanded="false">☰ 菜单</button>[22m
+[2m  - attempting click action[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    19 × waiting for element to be visible, enabled and stable[22m
+[2m       - element is not visible[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+viewport 360x780:
+  PASS old login readable without horizontal overflow (360x780)
+  PASS new-platform login targets >=40px and no overflow (360x780)
+  FAIL workbench drawer opens and closes (360x780): viewport meta 必须生效（visualViewport.scale≈1，实测 0.36734694242477417）
+  FAIL open an Agent session from drawer and scroll to read (360x780): locator.click: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('#navToggle')[22m
+[2m    - locator resolved to <button type="button" id="navToggle" aria-label="打开菜单" aria-expanded="false">☰ 菜单</button>[22m
+[2m  - attempting click action[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    19 × waiting for element to be visible, enabled and stable[22m
+[2m       - element is not visible[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+  FAIL tabs scroll horizontally without document overflow (360x780): locator.click: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('#navToggle')[22m
+[2m    - locator resolved to <button type="button" id="navToggle" aria-label="打开菜单" aria-expanded="false">☰ 菜单</button>[22m
+[2m  - attempting click action[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    19 × waiting for element to be visible, enabled and stable[22m
+[2m       - element is not visible[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+  FAIL click targets >=40px (360x780): locator.click: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('#navToggle')[22m
+[2m    - locator resolved to <button type="button" id="navToggle" aria-label="打开菜单" aria-expanded="false">☰ 菜单</button>[22m
+[2m  - attempting click action[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    19 × waiting for element to be visible, enabled and stable[22m
+[2m       - element is not visible[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+viewport 1440x900 (PC):
+  PASS PC layout unchanged: sidebar in flow, drawer controls hidden, tabs wrap
+console mobile: passed=5 failed=8 mutation=mobile-no-viewport

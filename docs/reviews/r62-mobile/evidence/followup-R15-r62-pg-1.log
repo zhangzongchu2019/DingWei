@@ -1,0 +1,1 @@
+PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=-0.25 post_live_anchor_delta_px=-0.25 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true

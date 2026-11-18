@@ -1,0 +1,56 @@
+被检字节 renderer-canary-sse.html sha256=c1f299d73fac42b7beb5d08751e9961bcfab37179bc301fa312236a7974b1fc2 385153 字节
+  🔴 换文件跑变体时以这一行为准核对;它与末行 sha 必须相同(不同即装置中途被换过)
+    · 腿一读数:panes 1040x859 · 卡片 2 张 · 角标 2→0
+    · 🔴 以上全部是"存在性"判据:既有那件闸断言的就是这一层,而它对本缺陷【完全无感】
+  PASS 腿一 装置自证:嵌入态下事件到了、卡进了 DOM、角标=2(这一格【不】判可见性)
+    · 腿二实测: [
+ {
+  "tag": "窗口1280(右栏 1040px / iframe 视口 1040px)",
+  "toggle": 45.7,
+  "body": 320,
+  "bodyClientWidth": 318,
+  "cards": [
+   "298x90",
+   "298x90"
+  ]
+ },
+ {
+  "tag": "窗口900(右栏 660px / iframe 视口 660px)",
+  "toggle": 45.7,
+  "body": 320,
+  "bodyClientWidth": 318,
+  "cards": [
+   "298x90",
+   "298x90"
+  ]
+ },
+ {
+  "tag": "窗口600(右栏 600px / iframe 视口 600px)",
+  "toggle": 45.7,
+  "body": 320,
+  "bodyClientWidth": 318,
+  "cards": [
+   "298x90",
+   "298x90"
+  ]
+ },
+ {
+  "tag": "窗口480(右栏 480px / iframe 视口 480px)",
+  "toggle": 45.7,
+  "body": 320,
+  "bodyClientWidth": 318,
+  "cards": [
+   "298x90",
+   "298x90"
+  ]
+ }
+]
+  PASS 腿二 🔴 嵌入态:点开之后【真的看得见】—— 四档窗口宽度各验一次
+    · 腿三实测:独立态 把手 45.7px · 面板 320px(clientWidth=318) · 卡 298x90,298x90
+  PASS 腿三 独立态同一把几何判据(补 renderer-failure-dock-regression.js 的盲区)
+     (变异副本 sha256=a3d714c2c93896fd0125be89d7cf0337fbec2a8ed916f9022db7bf0d5d8a66a4 385172 字节,由被检字节 c1f299d73fac42b7… 在本进程内合成、不落盘)
+    · 腿四实测:变异体 把手 365.7px · 面板 2px(clientWidth=0) · 首卡命中自己=false
+    · 阳性对照成立:同一份字节只塞回一条 width:100% 就被判红 ⇒ 判据咬得住本缺陷
+  PASS 腿四 🔴 阳性对照:变异体(共用规则里塞回 width:100%)必须被腿二的判据判红
+failure-dock-embedded regression: ALL PASS (4/4)
+  · renderer sha256=c1f299d73fac42b7… 385153 字节(与首行同一份)

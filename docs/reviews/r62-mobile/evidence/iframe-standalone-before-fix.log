@@ -1,0 +1,76 @@
+  · console 页取自生产源码 internal/m8/console_auth.go(137411 字节)
+  · renderer  /tmp/wt-r62-mobile/view-service/renderer-canary-sse.html
+    sha256=c1f299d73fac42b7… 385153 字节
+  ✅ iframe-① 真 console 开 Agent tab,iframe 内跑的是【仓内那一份】renderer(不是占位页)
+    · iframe-② 实测: [
+ {
+  "win": "1280x900",
+  "iframeViewport": [
+   1040,
+   859
+  ],
+  "ovTop": 0,
+  "ovH": 859,
+  "cvBottom": 650,
+  "hit": true,
+  "chain": "body",
+  "consoleNavTopElement": "DIV"
+ },
+ {
+  "win": "1280x1600",
+  "iframeViewport": [
+   1040,
+   1559
+  ],
+  "ovTop": 0,
+  "ovH": 1559,
+  "cvBottom": 650,
+  "hit": true,
+  "chain": "body",
+  "consoleNavTopElement": "DIV"
+ },
+ {
+  "win": "420x900",
+  "iframeViewport": [
+   420,
+   787
+  ],
+  "ovTop": 0,
+  "ovH": 787,
+  "cvBottom": 371.28,
+  "hit": true,
+  "chain": "body",
+  "consoleNavTopElement": "none"
+ }
+]
+    · 🔴 如实报(不断言):遮罩开着时 console 自己的 nav 仍是最上层命中元素 —— iframe 盖不到自己外面,这是架构固有边界,不是本次修复能解决的。 不断言它,因为断言等于把缺陷钉成契约、将来真要修就会红。
+  ✅ iframe-② 🔴 遮罩必须铺满【iframe 自己的视口】—— 三档浏览器窗口各验一次
+  🔴 iframe-③ 暗色交叉:console 顶层 ◐ 切暗后,真 iframe 内遮罩仍铺满 iframe 视口,且遮罩文字/按钮仍可读 -> page.click: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('#themeBtn')[22m
+[2m    - locator resolved to <button id="themeBtn" type="button" title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button>[22m
+[2m  - attempting click action[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is visible, enabled and stable[22m
+[2m      - scrolling into view if needed[22m
+[2m      - done scrolling[22m
+[2m      - element is outside of the viewport[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is visible, enabled and stable[22m
+[2m      - scrolling into view if needed[22m
+[2m      - done scrolling[22m
+[2m      - element is outside of the viewport[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    58 × waiting for element to be visible, enabled and stable[22m
+[2m       - element is visible, enabled and stable[22m
+[2m       - scrolling into view if needed[22m
+[2m       - done scrolling[22m
+[2m       - element is outside of the viewport[22m
+[2m     - retrying click action[22m
+[2m       - waiting 500ms[22m
+
+
+通过 2 / 失败 1   (真 console iframe 路径)
