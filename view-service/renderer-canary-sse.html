@@ -1087,6 +1087,48 @@
       .composer-inner { grid-template-columns: 1fr auto auto; }
       .interrupt { grid-column: 2; }
     }
+    /* S-R62-CLI-VIEW-B：终端风格第二投影（Codex CLI 版式）。全部作用域化于
+       body.cli-view-on / #timeline-cli；关态 body 无该 class、容器 display:none＋hidden，
+       现网样式与布局零影响（加性层，G2 关态字节同一）。 */
+    #timeline-cli { display: none; }
+    body.cli-view-on #timeline { display: none; }
+    body.cli-view-on #timeline-cli {
+      display: block; overflow-y: auto; overflow-x: hidden;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 13px; line-height: 1.55; padding: 12px 14px; border-radius: 8px;
+      --cli-bg: #101418; --cli-fg: #d6dde4; --cli-dim: #8b98a5;
+      --cli-user: #7fd1ff; --cli-accent: #9ece6a; --cli-err: #f7768e;
+      background: var(--cli-bg); color: var(--cli-fg);
+    }
+    body.cli-view-on[data-theme="light"] #timeline-cli {
+      --cli-bg: #f5f7fa; --cli-fg: #1f2937; --cli-dim: #6b7280;
+      --cli-user: #0369a1; --cli-accent: #15803d; --cli-err: #b91c1c;
+    }
+    #timeline-cli .cli-line { white-space: pre-wrap; overflow-wrap: anywhere; margin: 2px 0; }
+    #timeline-cli .cli-user { color: var(--cli-user); }
+    #timeline-cli .cli-assistant { color: var(--cli-fg); }
+    #timeline-cli .cli-tool { color: var(--cli-accent); }
+    #timeline-cli .cli-error { color: var(--cli-err); }
+    #timeline-cli .cli-worked, #timeline-cli .cli-pager, #timeline-cli .cli-stage { color: var(--cli-dim); }
+    #timeline-cli .cli-tool-out { margin: 0 0 4px 1.2em; color: var(--cli-dim); }
+    #timeline-cli .cli-tool-out summary { cursor: pointer; white-space: pre-wrap; overflow-wrap: anywhere; }
+    #timeline-cli .cli-tool-out pre, #timeline-cli .cli-code {
+      white-space: pre-wrap; overflow-wrap: anywhere; margin: 4px 0;
+      background: rgba(127, 127, 127, 0.12); border-radius: 4px; padding: 4px 6px;
+    }
+    #timeline-cli .cli-inline-code { background: rgba(127, 127, 127, 0.18); border-radius: 3px; padding: 0 3px; }
+    #timeline-cli .cli-pager button {
+      font: inherit; color: var(--cli-user); background: transparent; border: 1px solid var(--cli-dim);
+      border-radius: 4px; padding: 2px 8px; cursor: pointer; min-height: 24px;
+    }
+    #timeline-cli .cli-statusbar {
+      border-top: 1px solid var(--cli-dim); margin-top: 10px; padding-top: 6px;
+      color: var(--cli-dim); white-space: pre-wrap; overflow-wrap: anywhere;
+    }
+    @media (max-width: 768px) {
+      #cliViewBtn { min-height: 40px; min-width: 40px; }
+      #timeline-cli .cli-pager button { min-height: 40px; }
+    }
   </style>
 </head>
 <body data-theme="light">
@@ -1105,6 +1147,8 @@
       <div class="task-progress" id="taskProgress" hidden aria-hidden="true"></div>
       <button class="text-btn" id="historyOlder" type="button" hidden>向上翻页</button>
       <section class="timeline" id="timeline" aria-live="polite"></section>
+      <!-- S-R62-CLI-VIEW-B：终端风格第二投影容器（与 #timeline 同级、互斥显示；默认 hidden） -->
+      <section class="timeline-cli" id="timeline-cli" aria-live="polite" hidden></section>
       <section class="waiting-area" id="waitingArea" aria-label="等待接纳的消息" aria-live="polite" hidden>
         <div id="waitingList"></div>
       </section>
@@ -1132,6 +1176,8 @@
              给 headerOwner 赋值时又把「归属」两个字拼了一遍 ⇒ 页面上重复显示。
              本批随移除一并消失;将来若要恢复归属显示,**只在一处拼**。 -->
         <button class="icon-btn" id="themeBtn" type="button" title="切换黑夜/白天">◐</button>
+        <!-- S-R62-CLI-VIEW-B：终端视图开关（先按用户 localStorage；会话覆盖位存在时置灰） -->
+        <button class="icon-btn" id="cliViewBtn" type="button" aria-pressed="false" title="终端视图（Codex CLI 版式）">▣</button>
         <!-- 🔴 🕐 兼任连接状态(见 CSS 注释):断线时变红并显示「断线重连中 · 第 N 次」,
              点击 = 立即重试。移除「重连」按钮后,手动退路不能跟着一起消失。 -->
         <button class="status-item status-clock" id="clockStatus" type="button" title="点击立即重连事件流">🕐 <strong id="localTime">--:--:--</strong></button>
@@ -2111,6 +2157,7 @@
       stats.turnCost = 0;
       stats.lastTurnCostTotal = 0;
       timeline.textContent = '';
+      if (cliViewOn()) cliTimeline.replaceChildren();   // S-R62-CLI-VIEW-B：重置同步清空 CLI 容器
       waitingList.textContent = '';
       waitingArea.hidden = true;
       for (const section of dockSections.values()) section.list.textContent = '';
@@ -2477,6 +2524,7 @@
         note.textContent = '已同步飞书';
         entry.footer.appendChild(note);
       }
+      if (cliViewOn() && entry.card) renderUserCLI(entry);   // S-R62-CLI-VIEW-B：阶段更新同步 CLI 行
     }
 
     // ── B/C/D:时间线承载上限 ────────────────────────────────────
@@ -2488,6 +2536,7 @@
     function releaseTimelineNode(node) {
       const ds = (node && node.dataset) || {};
       forgetTimelineSequenceNode(node);
+      if (cliViewOn() && node && node._cliNode) { node._cliNode.remove(); node._cliNode = null; }   // S-R62-CLI-VIEW-B：逐出同步
       if (ds.turnKey) {
         const segments = turnGroupSegments.get(ds.turnKey) || [];
         const kept = segments.filter(group => {
@@ -2808,6 +2857,7 @@
             // its admitted user_input supplies a turn, move that same input into
             // the turn group and discard the provisional standalone card.
             pEntry.card?.remove();
+            if (cliViewOn() && pEntry.card && pEntry.card._cliNode) { pEntry.card._cliNode.remove(); pEntry.card._cliNode = null; }   // S-R62-CLI-VIEW-B：合卡移除同步 CLI
             c1InputCards.delete(pKey);
             for (const [deliveryKey, mappedKey] of c1DeliveryCards) {
               if (mappedKey === pKey) c1DeliveryCards.delete(deliveryKey);
@@ -3835,6 +3885,7 @@
         // The canonical input_posted card is provisional until a turn is known.
         // Move it into this turn exactly once when the admitted echo arrives.
         entry?.card?.remove();
+        if (cliViewOn() && entry && entry.card && entry.card._cliNode) { entry.card._cliNode.remove(); entry.card._cliNode = null; }   // S-R62-CLI-VIEW-B：合卡移除同步 CLI
         c1InputCards.delete(key);
         for (const [deliveryKey, mappedKey] of c1DeliveryCards) {
           if (mappedKey === key) c1DeliveryCards.delete(deliveryKey);
@@ -4180,6 +4231,256 @@
       return evs.map(ev => ev.text || '').join('');
     }
 
+    // ── S-R62-CLI-VIEW-B：终端风格第二投影（Codex CLI 版式，加性层） ──────────────
+    // 只读与现管线同一份 group.events / 输入卡 entry 数据，产出独立 #timeline-cli DOM。
+    // 所有钩子带 cliViewOn() 闸：关态不建 CLI DOM、不改现 DOM 一个字节。
+    // 开关手法逐字仿主题先例（THEME_KEY 段）：localStorage＋BroadcastChannel＋写入方自 apply。
+    const CLI_VIEW_KEY = 'dw-cli-view';
+    let cliViewChannel = null;
+    let cliStatusModel = '';
+    let cliStatusUsage = null;
+    const cliTimeline = document.getElementById('timeline-cli');
+    const cliViewBtn = document.getElementById('cliViewBtn');
+
+    function cliViewOverride() {
+      const value = window.CLI_VIEW_SESSION_OVERRIDE;
+      return typeof value === 'boolean' ? value : null;
+    }
+    function cliViewOn() {
+      const override = cliViewOverride();
+      if (override !== null) return override;   // 优先级：会话覆盖 ＞ 用户偏好 ＞ 默认关
+      return document.body.classList.contains('cli-view-on');
+    }
+    function cliViewLocked() { return cliViewOverride() !== null; }
+
+    function cliMarkdownLite(text) {
+      // 独立轻量格式化：先转义再认三种内联标记（代码块/行内码/粗体）；bypass md-render-core。
+      let html = escapeHtml(String(text || ''));
+      html = html.replace(/```([\s\S]*?)```/g, (_, code) => `<pre class="cli-code">${code.replace(/^\n/, '')}</pre>`);
+      html = html.replace(/`([^`\n]+)`/g, '<code class="cli-inline-code">$1</code>');
+      html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+      return html;
+    }
+
+    function placeCliNode(cliNode, sourceNode) {
+      for (const key of ['timelineTs', 'timelineSeq', 'timelineEpochOrder']) {
+        if (sourceNode.dataset[key] !== undefined) cliNode.dataset[key] = sourceNode.dataset[key];
+      }
+      if (cliNode.parentNode === cliTimeline) cliTimeline.removeChild(cliNode);
+      for (const current of cliTimeline.children) {
+        if (current.classList.contains('cli-statusbar')) continue;
+        if (compareTimelineNodes(cliNode, current) < 0) { cliTimeline.insertBefore(cliNode, current); return; }
+      }
+      const status = cliTimeline.querySelector('.cli-statusbar');
+      if (status) cliTimeline.insertBefore(cliNode, status);
+      else cliTimeline.appendChild(cliNode);
+    }
+
+    function cliToolLine(ev, turnCompleted) {
+      const data = ev.data || {};
+      const item = data.item || {};
+      const name = item.name || data.name || 'Tool';   // dynamicToolCall 的真名在 item.name；data.name 可能是类别
+      const input = data.input || item.input || {};
+      const kind = String(item.type || data.type || name).toLowerCase();
+      const rawCommand = item.command || input.command || input.cmd || '';
+      const command = Array.isArray(rawCommand) ? rawCommand.join(' ') : String(rawCommand || '');   // rollout 实证 command 可为数组
+      const changes = (item.changes && typeof item.changes === 'object') ? Object.keys(item.changes) : [];   // 0.170 实证：fileChange 真形是 changes 映射
+      const path = input.path || item.path || changes[0] || '';
+      const exitCode = item.exitCode ?? item.exit_code ?? data.exit_code ?? data.exitCode;
+      const output = String(item.aggregatedOutput ?? item.aggregated_output ?? item.output ?? data.output ?? item.result ?? data.result ?? '');   // 0.170 live 实证：aggregatedOutput（rollout 序列化 aggregated_output 兼容）
+      const itemDone = item.status === 'completed' || item.status === 'failed' || data.status === 'completed';
+      const running = !turnCompleted && !itemDone;
+      let head;
+      if (kind.includes('filechange')) head = `• Edited ${escapeHtml(changes.length > 1 ? `${changes.length} files` : (path || name))}`;
+      else if (running) head = `• Running ${escapeHtml(command || name)}…`;
+      else head = `• Ran ${escapeHtml(command || name)}`;
+      let html = `<div class="cli-line cli-tool">${head}`;
+      if (!running) {
+        // 工具完成后保留行（与现视图「完成即移除工具」的有意差异，设计 §二）。
+        const firstLine = (output.split('\n').find(line => line.trim()) || '').slice(0, 120);
+        const exitText = exitCode === undefined || exitCode === null ? '' : `exit ${exitCode}`;
+        const preview = Object.entries(input).map(([k, v]) => `${k}: ${String(v).slice(0, 56)}`).join(' · ');
+        let summary = [exitText, firstLine].filter(Boolean).join(' · ');
+        let detail = output || JSON.stringify(input, null, 2);
+        if (!summary && changes.length) {
+          summary = changes.map(file => `${(item.changes[file] || {}).type || 'change'} ${file}`).join(' · ').slice(0, 120);
+          detail = changes.map(file => {
+            const change = item.changes[file] || {};
+            const body = String(change.content || change.unified_diff || '');
+            return `--- ${file} (${change.type || 'change'})\n${body.slice(0, 4000)}${body.length > 4000 ? '\n…(截断)' : ''}`;
+          }).join('\n');
+        }
+        if (!summary) summary = preview;
+        html += `<details class="cli-tool-out"><summary>└ ${escapeHtml(summary)}</summary><pre>${escapeHtml(detail)}</pre></details>`;
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function cliWorkedLine(group, completed) {
+      const times = group.events.map(ev => Number(ev.ts)).filter(ts => Number.isFinite(ts) && ts > 0);
+      const endTs = Number(completed.ts) || (times.length ? Math.max(...times) : 0);
+      const startTs = times.length ? Math.min(...times) : endTs;
+      const seconds = Math.max(0, Math.round((endTs - startTs) / 1000));
+      const clock = endTs ? new Date(endTs).toTimeString().slice(0, 5) : '--:--';
+      if (completed.data?.model) cliStatusModel = String(completed.data.model);
+      if (completed.data?.usage || completed.data?.token_usage) cliStatusUsage = completed.data.usage || completed.data.token_usage;
+      return `<div class="cli-line cli-worked">  Worked for ${seconds}s • ${escapeHtml(clock)}</div>`;
+    }
+
+    function updateCliStatusLine() {
+      let bar = cliTimeline.querySelector('.cli-statusbar');
+      if (!bar) { bar = document.createElement('div'); bar.className = 'cli-statusbar'; cliTimeline.appendChild(bar); }
+      const model = cliStatusModel || stats.model || 'model';
+      const session = stats.sessionName || 'session';
+      let usageText = '';
+      if (cliStatusUsage) {
+        const total = cliStatusUsage.total_tokens ?? ((cliStatusUsage.input_tokens || 0) + (cliStatusUsage.output_tokens || 0));
+        if (total) usageText = ` · tokens ${total}`;
+      }
+      bar.textContent = `${model} default · ${session}${usageText}\n← for agents · ? for shortcuts`;
+    }
+
+    function rebuildTurnCLI(group) {
+      if (group.detached) return;
+      if (!group.sorted) { group.events.sort(compareCursor); group.sorted = true; }
+      const users = group.events.filter(ev => ev.kind === 'user_input');
+      const tools = group.events.filter(ev => ev.kind === 'tool_call');
+      const assistants = group.events.filter(ev => ev.kind === 'assistant_text');
+      const errors = group.events.filter(ev => ev.kind === 'error');
+      const completed = group.events.filter(ev => ev.kind === 'state_change' && ev.data?.change === 'turn_completed').at(-1);
+      let html = '';
+      if (users.length) {
+        const prefix = cliSourcePrefix(users[0]._norm || null);   // S-R62-CLI-VIEW-B：合卡入回合后前缀同源保留
+        html += `<div class="cli-line cli-user">› ${escapeHtml(prefix)}${escapeHtml(users.map(ev => ev.text || '').join(''))}</div>`;
+      }
+      for (const ev of tools) html += cliToolLine(ev, Boolean(completed));
+      if (assistants.length) {
+        const total = eventsTextLength(assistants);
+        if (total > LONGTEXT_THRESHOLD) {
+          const excerpt = eventsTextPrefix(assistants, LONGTEXT_EXCERPT);
+          html += `<div class="cli-line cli-assistant">• ${cliMarkdownLite(excerpt)}</div>`;
+          html += `<div class="cli-line cli-pager">── 全文 ${total.toLocaleString()} 字 · <button type="button" data-cli-open="1">[打开全文]</button> ──</div>`;
+        } else {
+          html += `<div class="cli-line cli-assistant">• ${cliMarkdownLite(eventsTextFull(assistants))}</div>`;
+        }
+      }
+      for (const ev of errors) html += `<div class="cli-line cli-error">✗ ${escapeHtml(ev.text || 'Unknown error')}</div>`;
+      if (completed) html += cliWorkedLine(group, completed);
+      let node = group.node._cliNode;
+      if (!node) { node = document.createElement('article'); node.className = 'cli-turn'; group.node._cliNode = node; }
+      node.dataset.turnKey = group.node.dataset.turnKey || '';
+      node.innerHTML = html;
+      placeCliNode(node, group.node);
+      node.querySelectorAll('[data-cli-open]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          // 全文点击时现拼（仿 wireLongtextBar 懒拼装，流式期不为未点全文付成本）。
+          const fullText = eventsTextFull(group.events.filter(ev => ev.kind === 'assistant_text'));
+          const url = URL.createObjectURL(new Blob([fullText], { type: 'text/markdown;charset=utf-8' }));
+          if (!window.open(url, '_blank', 'noopener')) {
+            const a = document.createElement('a');
+            a.href = url; a.download = 'dingwei-cli-turn.md';
+            document.body.appendChild(a); a.click(); a.remove();
+          }
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        });
+      });
+      if (completed) updateCliStatusLine();
+    }
+
+    // S-R62-CLI-VIEW-B：来源前缀与 provenanceIconHtml／sourceBadgeHtml 同源（同一 norm 可信判定，fail-closed）：
+    // 不可信不挂来源；CLI 层不自判 trust。独立卡与回合内用户行共用，合卡迁移不丢前缀。
+    function cliSourcePrefix(norm) {
+      if (!norm) return '';
+      if (provFlagOn() && norm.prov && norm.prov.trusted) {
+        const label = norm.prov.displayName || { feishu: '飞书', agent: 'Agent', human: '人工', system: '系统' }[norm.prov.kind] || '';
+        return label ? `[${label}] ` : '';
+      }
+      if (norm.sourceTrusted) {
+        const label = { feishu: '飞书', view: '人工', human: '人工', system: '系统', agent: `Agent·${norm.sourceLabel || '未知'}` }[norm.sourceKind] || '';
+        return label ? `[${label}] ` : '';
+      }
+      return '';
+    }
+
+    function renderUserCLI(entry) {
+      const card = entry.card;
+      if (!card || entry.detached) return;
+      const text = entry.content ? entry.content.textContent : '';
+      const stage = entry.stageEl ? entry.stageEl.textContent : '';
+      const prefix = cliSourcePrefix(entry._cliNorm || null);
+      let node = card._cliNode;
+      if (!node) { node = document.createElement('div'); node.className = 'cli-line cli-user cli-input-card'; card._cliNode = node; }
+      node.innerHTML = `› ${escapeHtml(prefix)}${escapeHtml(text)}${stage ? ` <span class="cli-stage">[${escapeHtml(stage)}]</span>` : ''}`;
+      placeCliNode(node, card);
+    }
+
+    function rebuildAllCLI() {
+      cliTimeline.replaceChildren();
+      for (const segments of turnGroupSegments.values()) for (const group of segments) rebuildTurnCLI(group);
+      for (const entry of c1InputCards.values()) if (entry.card) renderUserCLI(entry);
+      updateCliStatusLine();
+    }
+
+    function applyCliView(on) {
+      on = Boolean(on);
+      if (document.body.classList.contains('cli-view-on') === on) return;   // 幂等：挡住来回广播
+      document.body.classList.toggle('cli-view-on', on);
+      cliTimeline.hidden = !on;
+      if (on) rebuildAllCLI();
+      else cliTimeline.replaceChildren();
+      if (cliViewBtn) cliViewBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function cliViewStore() {
+      try { return window.localStorage; } catch { return null; }
+    }
+    function writeStoredCliView(on) {
+      const store = cliViewStore();
+      if (!store) return;
+      try { store.setItem(CLI_VIEW_KEY, on ? 'on' : 'off'); } catch { /* 存不下不影响本次会话 */ }
+    }
+    function setCliView(on, { spread = true } = {}) {
+      applyCliView(on);                 // 写入方自己立刻 apply（频道与 storage 事件不回触写入方）
+      writeStoredCliView(on);
+      if (spread) { try { cliViewChannel?.postMessage({ type: 'cli-view', on: Boolean(on) }); } catch { /* 通道没了也不影响本地 */ } }
+    }
+    function setupCliViewSync() {
+      // 三段各自 try/catch（仿主题先例）：频道与 storage 互为冗余，一条坏不连带另一条。
+      try {
+        const override = cliViewOverride();
+        let stored = null;
+        const store = cliViewStore();
+        if (store) stored = store.getItem(CLI_VIEW_KEY);
+        const effective = override !== null ? override : stored === 'on';
+        if (cliViewBtn && cliViewLocked()) {
+          cliViewBtn.disabled = true;
+          cliViewBtn.title = '终端视图（会话级已锁定）';
+        }
+        applyCliView(effective);
+      } catch { /* 读不到保持默认关 */ }
+      try {
+        if ('BroadcastChannel' in window && !cliViewChannel) {
+          cliViewChannel = new BroadcastChannel(CLI_VIEW_KEY);
+          cliViewChannel.onmessage = (event) => {
+            if (typeof event?.data?.on !== 'boolean') return;
+            setCliView(event.data.on, { spread: false });
+          };
+        }
+      } catch { cliViewChannel = null; }
+      try {
+        window.addEventListener('storage', (event) => {
+          if (event.key !== CLI_VIEW_KEY) return;
+          if (event.newValue === 'on' || event.newValue === 'off') setCliView(event.newValue === 'on', { spread: false });
+        });
+      } catch { /* 挂不上事件时本页按钮仍可用 */ }
+    }
+    setupCliViewSync();
+    cliViewBtn?.addEventListener('click', () => {
+      if (cliViewLocked()) return;
+      setCliView(!cliViewOn());
+    });
+    // ── S-R62-CLI-VIEW-B 投影层结束 ──────────────────────────────────────────
+
     function rebuildTurn(group) {
       // 排序也从「每 chunk 一次」挪到重渲时一次:旧实现 O(N) 次 sort ⇒ O(N² log N)
       if (!group.sorted) { group.events.sort(compareCursor); group.sorted = true; }
@@ -4245,6 +4546,7 @@
       group.node.querySelectorAll('.turn-tool-item').forEach(wireCopyButtons);
       wireLongtextBar(group);
       if (completed) renderState(completed);
+      if (cliViewOn()) rebuildTurnCLI(group);   // S-R62-CLI-VIEW-B：关态零副作用
     }
 
     // G:入口条接线。全文在点击那一刻才从 group.events 现拼 —— 既保证拿到的是最新内容,
@@ -4332,6 +4634,7 @@
           console.warn('[delivery-failed]', norm.deliveryId || '', stageFooterText(norm));
           const st = viaDlv.footer.querySelector('.stage-text');
           if (st) st.textContent = stageFooterText(norm) || '失败:投递失败';
+          if (cliViewOn() && viaDlv.card) renderUserCLI(viaDlv);   // S-R62-CLI-VIEW-B：失败只更新用户行阶段缀
           return;
         }
         // ⚠️ 连已有卡都找不到:仍不新建卡(业主明确不要),只留痕。
@@ -4377,6 +4680,7 @@
         entry.stageEl = footer.querySelector('.stage-text');
         entry.sentEl = card.querySelector('.event-sent');
         entry.stageIdx = norm.stageIdx;
+        entry._cliNorm = norm;   // S-R62-CLI-VIEW-B：来源前缀同源数据（仅加性字段）
         if (norm.deliveryId) c1DeliveryCards.set(deliveryMergeKey(norm.deliveryId), norm.key);
         // 应用建卡前缓冲的乱序更新
         const pending = c1PendingUpdates.get(norm.key) || [];
@@ -4388,6 +4692,10 @@
         for (const rec of mergeNotes) { clearTimeout(rec.timer); c1Footnote(entry, rec.footKey || 'echo_merge', '已回显'); }
         if (!isCopy) c1ApplyToEntry(entry, norm);
         paintModelAdmissionFailure(norm.deliveryId);
+      }
+      if (cliViewOn()) {   // S-R62-CLI-VIEW-B：建卡/更新后同步 CLI 用户行
+        const cliEntry = norm.key ? c1InputCards.get(norm.key) : null;
+        if (cliEntry && cliEntry.card) renderUserCLI(cliEntry);
       }
     }
 
