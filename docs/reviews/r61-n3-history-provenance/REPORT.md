@@ -1,7 +1,5 @@
 # R61 N-3 历史来源保留：实现交件
 
-> 2026-11-18交叉裁定dee06b54a483已补收：m8修订资格门**待完成**。下列原始六门rc0仍是实际执行结果，但不替代新增五轮及main对照；4394f282的“作者六门完成”不表示修订资格已过。产品源A32未变。
-
 基main 206d41b26dab646c0e50a111eed5a45ccf7c72f6。原样设计导入c3b3db27c，对6a60a1a6指定目录逐字节相同；首提交只新增该目录7文件。后续实现在本任务分支，SOURCE_COMMIT=a32c877cf6ef21a909d2806f4b08e3e925d05d98。不推main、不部署，不构建/上传发布件；build.sh --test-only只跑规定构建门。
 
 ## 实现与迁移
@@ -76,11 +74,3 @@ TTL、agent/global eviction、queued事件淘汰、generation变化、关闭及�
 作者原始证据提交：`9a145fd138c7d15bf1ec027b773b960919e69056`（源码与六门/40刀/首轮失败均可git cat-file）；tasks.md已附此不可变坐标。完成实现与作者验证，无实现阻塞；独立复核及组长终审仍待办。
 
 最终文档strict：`b3d84844bcff0e8bea4ba4573a2d8018dd02fd06` 上完整 `validate --all --strict` 为42/0、rc0；命令/UTC/原日志SHA见evidence/final-strict.json，后续证据提交不再修改openspec目录。
-
-## 交叉裁定 dee06b54a483：新增 m8 资格门
-
-本席06:47:28Z收件dw-dlv_ab49f5528f8125d1b2e84480f04fd3f8，之后才在当前回合读到。按裁定，将D181原-count=3、rc1的完整执行单列首轮，SHA256仍为04e8c404db24ada66255c9db43394cefc953af695d1f5211becaf6fa7b7463f9，不以单跑或A32已完成的新三遍替代资格要求。
-
-新增要求：另加五轮完整m8、逐轮串行；至少三轮全包rc0，其余只可有已知TestSessionNameReconnectKeepsNameAndReleaseReuses的interrupted(9)失败。206d41b2另做完整对照。当前保守与原命令同口径，每轮-count=3；已向组长请求确认是否每轮-count=1，未获进一步答复前不缩减。候选固定A32，D181..A32的m8/store及Go测试零差异；main固定206d41b26dab646c0e50a111eed5a45ccf7c72f6，均独立detached工作树、env-i、PG strict、单流串行。原A32三遍结果作为独立观测保留，不选择其中好轮计入新五轮。
-
-状态见evidence/ruling-dee06b54/qualification.json：当前RUNNING；完成五轮、核至少三轮全绿并补main对照后才可记PASS。任一非白名单FAIL/未知非零结果即停报；不改驱动、不改产品、不单跑补绿。当前独立复核可读代码，但本席已通知togpt60不得依据旧交件推定新增资格门完成。

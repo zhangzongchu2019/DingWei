@@ -17,8 +17,8 @@
   },
   "files": {
     "docs/reviews/r61-n3-history-provenance/MUTATIONS.md": "db64715a7c9c100aed6e7f29ef6de2405f604fb7488e391a291dee262a9a8708",
-    "docs/reviews/r61-n3-history-provenance/REPORT.md": "70d48b7d15c3ca49ced9d69d1614c023b47f11dea7434924bb7ef9d60f63596d",
-    "docs/reviews/r61-n3-history-provenance/VERIFY.py": "28a99e0aecb38eced6a161bfd2df862606baa6d10582336a9159a217b3bce658",
+    "docs/reviews/r61-n3-history-provenance/REPORT.md": "7161447b7a3f4e1ec0b63a86afc113b76448c518bfd15a857faf16e53c1be289",
+    "docs/reviews/r61-n3-history-provenance/VERIFY.py": "cea3c225e7f1a9dc690a23bd7e47957e618092e311636f997122b914f22ec56b",
     "docs/reviews/r61-n3-history-provenance/evidence/SKIPS.json": "9625b0bd67e1b053994080bc3462cbdf52156b7f6ad7766f7bb2f3566f297146",
     "docs/reviews/r61-n3-history-provenance/evidence/browser-full.log": "7b6fbc5d84e7947ee2ff9d1dfc80c367bc6db7bf2f2ac9a4d5c5f99a7e8d5da8",
     "docs/reviews/r61-n3-history-provenance/evidence/browser-receipt.txt": "7fecc1fa1926883e2088b30168b12e1a1930403579a14247036f28947dce856f",
@@ -98,7 +98,6 @@
     "docs/reviews/r61-n3-history-provenance/evidence/raw/store-full3.log.gz": "8735590f45b73ac5eac239c7b485a6d24defab48b5583e652de1b85381bdacdb",
     "docs/reviews/r61-n3-history-provenance/evidence/raw/strict.log.gz": "d8a27cfe43b6a71d9d94e36819da8afea43206be10dd6b681e07cf11313f76e1",
     "docs/reviews/r61-n3-history-provenance/evidence/raw-logs.json": "cdce94fd74dd90a1c956d46be833bcdf7145e96fd6892050ac62e60bd01626e4",
-    "docs/reviews/r61-n3-history-provenance/evidence/ruling-dee06b54/qualification.json": "ffc44bc2f2589e42c3bd8fc68dc310f19491342e20e103221e4a377e785fb763",
     "docs/reviews/r61-n3-history-provenance/evidence/store-full3-verdicts.txt": "cd496db7ae1302852b0e69b307aecce9a4244de558ad4ba286bed0eaffbbe9d7",
     "docs/reviews/r61-n3-history-provenance/evidence/strict.log": "8c1ae110739ef564384ea606a94157d7ed4a577b9c7d5aa44be55b1598f38169",
     "openspec/changes/history-provenance/.openspec.yaml": "db997d460a2d6d123d14faf903215b90f63faf4e7e2dadacfdab82c07857e113",
@@ -107,6 +106,6 @@
     "openspec/changes/history-provenance/design.md": "4b118e84a8b8083b6b35c4c45385232d7514b07951d66350b9255a76c8911739",
     "openspec/changes/history-provenance/proposal.md": "358d8269e05bedf620afe3244dd3380f316411e590bef7ed8c30a056e930a3c1",
     "openspec/changes/history-provenance/specs/view-history-provenance/spec.md": "8fd777e916b54db6d2ae00718527d9ec6792adfc4059dee0c911921fdba21452",
-    "openspec/changes/history-provenance/tasks.md": "12f1ba5d32be17e35f58db7cdeeca557d01c88de8df8de68166e651a44833809"
+    "openspec/changes/history-provenance/tasks.md": "fa319a4ecb6f6bd30a450cd911b9047d4b6bf981af3bf53cdb77fd70d7af28a1"
   }
 }
