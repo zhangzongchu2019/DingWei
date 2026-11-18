@@ -76,6 +76,8 @@ SUITES = (
 # its fixtures/mock contract. Runner-generated MOCK_BASE/CERT/KEY values are not
 # overrides, but a caller-supplied value is still reported rather than hidden.
 OVERRIDE_ENV_NAMES = (
+    # history_provenance invokes the actual Go Hub with explicit offline caches.
+    "PATH", "GOPATH", "GOMODCACHE", "GOCACHE",
     "FIXTURES", "MOCK_BASE", "MOCK_CERT", "MOCK_KEY", "MOCK_SESSION",
     "HUB_V2_GOLDEN_FILE", "NODE_PATH", "PLAYWRIGHT_BROWSERS_PATH", "PW_CHANNEL",
     "RENDERER_FILE", "RENDERER_OVERRIDE", "TIMELINE_DEBUG",
