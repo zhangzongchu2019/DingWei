@@ -56,3 +56,5 @@ focused race同时覆盖ACK/queue_full/failure_notice与HistoryProvenance/Sessio
 PG启动调用链与源码blob SHA见postgres-startup-path.json，运行时版本行见postgres-evidence.json；未记录DSN/密码。TestHistoryProvenance前缀的命名回归摘录见history-specific-verdicts.json，legacy重锚在完整三遍通过3次、race通过1次。单项作者42刀等冻结证据不与本段浏览器内建变异或门计数合并，本段没有冒称全部重放。
 
 go version -m原输出mod行末尾tab原样保留，与导入原日志的尾空白同属原始证据；不为格式检查改写原字节。本段正文/规格与产品范围whitespace检查无错误。
+
+首份不可变证据提交：`5ccfc46bb3f2da227b31c7c0a87cf7024400457f`，tasks/context已附可git cat-file的证据坐标；本段当前候选取代c430作为N1b＋N3合后锚，旧阶段读数与原锚保留。

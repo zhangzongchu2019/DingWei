@@ -34,7 +34,7 @@
 - **THEN** 只推集成分支和证据，不推main、不部署、不制作发布件，后续项另待冻结令。
 
 ### Requirement: R61I-005 第二段冻结项追加
-第二段 MUST 从第一段0ab43c63上仅合入已冻结N-1b，保持一个no-ff合并提交；合前 SHALL 核远端为b81737d0或其仅文档后继，且ed7259fa至来件无产品差异。N3/N1c仍待独立冻结令，VERSION保持不变。
+第二段 MUST 从第一段0ab43c63上仅合入已冻结N-1b，保持一个no-ff合并提交；合前 SHALL 核远端为b81737d0或其仅文档后继，且ed7259fa至来件无产品差异。N3/N1c仅可在后续独立冻结令下追加，VERSION保持不变。
 
 #### Scenario: R61I-S005 N-1b共享祖先自动合并
 - **WHEN** N1a638cb324已在第一段链上且N1b远端符合令中边界
@@ -50,3 +50,14 @@
 #### Scenario: R61I-S007 已知中断保留首轮失败
 - **WHEN** 初始三遍仅发生已批准Z-3落点的interrupted(9)
 - **THEN** 首轮rc1原样保留，另列固定五轮、基线对照、每轮中断与判定；名单外FAIL或非该机制失败停止，不自行扩名单。
+
+### Requirement: R61I-007 第二段补令按序追加N3
+收到N3独立冻结补令后，集成者 MUST 保留已交N1b-only历史，在其后no-ff合入冻结N3；合前 SHALL 核1a2a4160与9313197f至tip仅docs/openspec。新合后源 MUST 重跑指定完整门、48套浏览器及真实旧501/39兼容，不以先前单项或阶段门替代。VERSION不变，应用库迁移不改，N1c不得提前合入。
+
+#### Scenario: R61I-S008 补令晚于N1b-only交件
+- **WHEN** N1b-only c430已经交件后才收到包含N3的补充令
+- **THEN** 不改写或重复合N1b，只在其后追加N3，第一父链保留九个顺序merge，并记录合前远端及冲突处置。
+
+#### Scenario: R61I-S009 双项合后固定源重新验证
+- **WHEN** N1b与N3同在合后固定源4581b34a
+- **THEN** 新源canonical、PG strict三遍、ACK/history race、48套浏览器含history provenance、strict及真实501/39协议门均有本次原日志；如适用Z3，初始FAIL与固定五轮、匹配落点main对照分列，不自行扩允许名单。

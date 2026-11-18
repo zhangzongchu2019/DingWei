@@ -10,3 +10,8 @@
 
 ## 第二段追加现场（2026-11-18）
 来源：组长2026-11-18T12:24:42Z令。第一段0ab43c630c37fdf01ce68d5c66c0db0141a682af上no-ff合b81737d0897c7edfea171371dba8ead6c1ef8f28（产品ed7259fa），形成cd01d67a2c126c850b1229fc486ee30cb1ddd3e8/tree9aeff088427e289356f84c022668a15010a12679，无冲突。证据不可变入口 `fcfd0ec38a51621fff25ad1f3d7b5d7269f6301b:docs/reviews/r61-integration-stage2/REPORT.md`。初始完整三遍m8 rc1仅已知中断；追加固定5轮4/5rc0，其余仅同一允许落点，符合既定Z-3；store/...三遍、canonical、focusedrace、浏览器47/47、strict44/0与三向真实进程协议兼容均通过。真实PG18.3版本15行；独立环境、命令、SKIP条件与原SHA见同目录。真实helper协议路径，模型消费fixture暂停，无CLI全回合声明。N3/N1c未纳入；VERSION不变。
+
+## 第二段补齐N3（2026-11-18）
+组长12:57:47Z补令于14:29Z注入；N1b-only已交c430c3c6，故保留其不可变历史，在其上no-ff合N3 1a2a4160208c839c97e1b35039c7eafc6e7216e1（产品9313197f），形成4581b34ac1e4b9973d12c559cf6ac7772107bebf/tree5c73e93df0255e73137428a9376b65321e91279a。当前合后证据入口 `5ccfc46bb3f2da227b31c7c0a87cf7024400457f:docs/reviews/r61-integration-stage2-n3/REPORT.md`，旧N1b-only门不作新合后绿。
+
+canonical两profile各1277/97文件；store/...三遍rc0，初始m8三遍rc1仅NewSessionNameNotifies已知interrupted9；按既定Z3固定5轮全绿、每轮998顶层PASS/0中断，失败原样披露。focusedrace103顶层/175含子项/17SKIP/0Race；浏览器48/48含新增HP8/8，strict45/0。PG180003实际版本15行及Pool/start/SQL调用链齐。真实501/39/new三向运输协议通过，模型消费fixture暂停，无CLI全回合声明。源码/版本不再改，N1c尚未合；待组长复核与后续令。
