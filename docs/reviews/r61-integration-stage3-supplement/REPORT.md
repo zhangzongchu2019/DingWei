@@ -38,3 +38,20 @@
 ## 交接
 
 同源完整门见不可变a85b6c7d2fbe3bc94ab337dda266d8033662cc26:docs/reviews/r61-integration-stage2-n3/REPORT.md及VERIFY；本补件只增加0ab对照与进程重启格、收件审计。作者门不代替组长/独立复核，N1c是否进入r61待组长裁定；不推main、不部署、不出发布件。
+
+## 固定合后源完整门逐项指针
+
+以下都是4581合后源的本次原始读数，已在a85交件；不将其当本补件重新执行，也不与N1b-only cd01读数相混。
+
+| 门 | 结果 |
+|---|---|
+| build.sh --test-only | BUILD_TESTS_OK helper_profiles=2 python=27 shell=2；两profile各1277，inventory97，codex guide格绿 |
+| 真PG strict m8/store... -count=3 | 初始rc1：仅NewSessionName已知interrupted(9)一条FAIL；store各包rc0；原失败保留 |
+| Z-3固定全新5轮 | 5/5整包rc0；每轮998顶层/1690含子项PASS，28逐名SKIP，0FAIL、0interrupted |
+| focused race ACK/queue_full/failure_notice/history | rc0，103顶层/175含子项PASS，17逐名条件SKIP，0DATA RACE |
+| 浏览器全量 | 48/48，aggregate_rc0，history8/8、r15三格绿 |
+| 三向真实Hub/helper进程兼容 | 旧501＋新helper、新新、新Hub＋真实0.2.3.39各rc0，通知/协商与FIFO判据符合 |
+| 合并源strict | 45 passed/0 failed |
+| 本补件文档strict | 9a831a709a45a8c3acad4c7e2570c6344e0daf33上45/0，原日志与UTC见final-document-strict.json/txt |
+
+真实PG证据为180003（18.3）与启动/SELECT链，逐名SKIP和Z3五轮原始日志见a85对应evidence。新补0ab20/0已取代“仅有main对照”的缺口；不改变初始rc1读数。最终文档strict后只补报告与校验清单，spec字节未再改。
