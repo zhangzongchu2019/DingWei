@@ -51,3 +51,5 @@ focused race两包rc0，DATA RACE为0；条件性实际CLI崩溃窗等SKIP逐名
 日志发布副本：raw/*.gz中对测试生成的secret/token样式字段脱敏；每份原SHA、发布字节SHA、压缩SHA与替换次数均在raw-logs.json，不把脱敏件冒称与原日志逐字相同。私有原日志仍保留本机。
 
 首份不可变证据提交：`fcfd0ec38a51621fff25ad1f3d7b5d7269f6301b`，tasks和context据此附可git cat-file的坐标。另：go version -m原输出mod行末尾tab同样保留，未为diff whitespace提示改动原证据；不影响产品范围检查。
+
+最终文档strict固定`7c3fa9b90927f22319686520bdf756549d213244`，44/0、rc0；原日志SHA/UTC见evidence/final-document-strict.json及同名txt。此后只封存docs，不再修改openspec。本段不宣称整包race或未批准第三段门。

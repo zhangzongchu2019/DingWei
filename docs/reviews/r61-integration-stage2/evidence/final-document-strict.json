@@ -1,0 +1,14 @@
+{
+  "source_commit": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+  "document_commit": "7c3fa9b90927f22319686520bdf756549d213244",
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "started_utc": "2026-11-18T14:25:10.424429+00:00",
+  "rc": 0,
+  "ended_utc": "2026-11-18T14:25:10.783908+00:00",
+  "raw_sha256": "588743df266e200faf802c175f3df72828c6fe9026bd36453cd44ad5d09d32a5"
+}
