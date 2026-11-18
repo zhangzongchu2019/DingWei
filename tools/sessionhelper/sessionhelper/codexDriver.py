@@ -1157,6 +1157,10 @@ class CodexProtocolDriver(Driver):
                     source="protocol",
                     detail=existing.detail or f"persistent idempotency hit: turn={existing.turn_id}",
                 )
+            held_reason = self._presubmit_validation_holds.get(envelope_id)
+            if held_reason:
+                return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                       detail=f'presubmit validation held: {held_reason}')
             if not self.health():
                 try:
                     self.start()
@@ -1179,10 +1183,38 @@ class CodexProtocolDriver(Driver):
             # Thread creation remains a single, separately classified operation.
             # Only read-only validation can enter the persistent retry wait.
             with self._start_lock:
-                if not self._thread_id or self._required_bound_thread_id:
+                if self._required_bound_thread_id:
+                    bound_validation_attempt = 0
+                    while True:
+                        try:
+                            # For a configured root this is read-only validation
+                            # only; it cannot create or rotate a thread.
+                            self._ensure_thread()
+                            break
+                        except Exception as exc:
+                            if _presubmit_validation_is_retryable(exc):
+                                if not self._busy_admission.waiting(envelope_id):
+                                    print('[delivery][ALERT][PRESUBMIT_WAIT_NOT_PERSISTED] configured-thread validation unavailable', flush=True)
+                                    return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                                           detail='presubmit wait persistence unavailable')
+                                delay = PRESUBMIT_VALIDATION_BACKOFF[min(bound_validation_attempt, len(PRESUBMIT_VALIDATION_BACKOFF) - 1)]
+                                bound_validation_attempt += 1
+                                if not self.health():
+                                    return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                                           detail='presubmit validation transport unavailable')
+                                if self._stop_event.wait(delay) or self._busy_admission.cancelled(envelope_id):
+                                    return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                                           detail='presubmit validation wait interrupted')
+                                continue
+                            if _presubmit_validation_needs_operator_hold(exc):
+                                return self._hold_presubmit_validation(envelope_id, exc)
+                            return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
+                elif not self._thread_id:
                     try:
                         self._ensure_thread()
                     except Exception as exc:
+                        if _presubmit_validation_needs_operator_hold(exc):
+                            return self._hold_presubmit_validation(envelope_id, exc)
                         if not self._required_bound_thread_id and not isinstance(exc, PrivateEndpointError):
                             raise
                         return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
