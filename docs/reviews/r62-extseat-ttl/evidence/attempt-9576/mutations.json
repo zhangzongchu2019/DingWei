@@ -1,0 +1,54 @@
+[
+  {
+    "name": "group-old-three-days",
+    "file": "internal/extshared/extshared.go",
+    "before": "GroupTTL = 7 * 24 * time.Hour",
+    "after": "GroupTTL = 3 * 24 * time.Hour",
+    "compile_rc": 0,
+    "rc": 1,
+    "log": "mutation-group-old-three-days.log",
+    "sha256": "19b6069c660fb558631e8a1d23f8ab40664c3f78debdd6604c164ed91bf2cbaa",
+    "original_sha256": "7f3332ad69cbf3d3425e7ed7b1da362dea04324e7bf282991ef5078b6d6b6012",
+    "mutated_sha256": "f97966fb18efdb656f780bcb02ec7e71503ebd486a105a3bda8ab81685fe40a0",
+    "failed_tests": [
+      "TestTTLConstants",
+      "TestR62SevenDayGroupBoundaryPG",
+      "TestR62SevenDayGroupBoundaryPG/before",
+      "TestR62SevenDayGroupBoundaryPG/exact",
+      "TestR62SevenDayGroupBoundaryPG/after"
+    ],
+    "assertion_lines": [
+      "    extshared_test.go:78: TTL constants drifted from approved R62 seven-day group/message and fourteen-day token policy",
+      "    lifetime_pg_test.go:81: new seven-day AG expiry=2026-11-10T02:00:00Z want=2026-11-14T02:00:00Z",
+      "    lifetime_pg_test.go:81: new seven-day AG expiry=2026-11-10T02:00:00Z want=2026-11-14T02:00:00Z",
+      "    lifetime_pg_test.go:81: new seven-day AG expiry=2026-11-10T02:00:00Z want=2026-11-14T02:00:00Z"
+    ],
+    "restored_sha256": "7f3332ad69cbf3d3425e7ed7b1da362dea04324e7bf282991ef5078b6d6b6012"
+  },
+  {
+    "name": "message-old-one-day",
+    "file": "internal/extshared/extshared.go",
+    "before": "MessageTTL = 7 * 24 * time.Hour",
+    "after": "MessageTTL = 24 * time.Hour",
+    "compile_rc": 0,
+    "rc": 1,
+    "log": "mutation-message-old-one-day.log",
+    "sha256": "60a1c6ea72241dd7a5becafbb634a4a3da892c85d0f6874a68d2a3e716940aef",
+    "original_sha256": "7f3332ad69cbf3d3425e7ed7b1da362dea04324e7bf282991ef5078b6d6b6012",
+    "mutated_sha256": "4f97ced806d46c034108ad3e8ec569dc413776b8bc3e3f8ae465d7becc059bf6",
+    "failed_tests": [
+      "TestTTLConstants",
+      "TestR62SevenDayMessageBoundaryIndependentOfRenewalsPG",
+      "TestR62SevenDayMessageBoundaryIndependentOfRenewalsPG/before",
+      "TestR62SevenDayMessageBoundaryIndependentOfRenewalsPG/exact",
+      "TestR62SevenDayMessageBoundaryIndependentOfRenewalsPG/after"
+    ],
+    "assertion_lines": [
+      "    extshared_test.go:78: TTL constants drifted from approved R62 seven-day group/message and fourteen-day token policy",
+      "    lifetime_pg_test.go:116: new inbox seven-day message expiry=2026-11-08T02:00:00Z want=2026-11-14T02:00:00Z",
+      "    lifetime_pg_test.go:116: new inbox seven-day message expiry=2026-11-08T02:00:00Z want=2026-11-14T02:00:00Z",
+      "    lifetime_pg_test.go:116: new inbox seven-day message expiry=2026-11-08T02:00:00Z want=2026-11-14T02:00:00Z"
+    ],
+    "restored_sha256": "7f3332ad69cbf3d3425e7ed7b1da362dea04324e7bf282991ef5078b6d6b6012"
+  }
+]

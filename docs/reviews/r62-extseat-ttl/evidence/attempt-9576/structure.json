@@ -1,0 +1,50 @@
+{
+  "recorded_utc": "2026-11-18T17:22:07.712177+00:00",
+  "base": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+  "source": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+  "triples": [
+    "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+    "c12528ad15ffe5ec48d8db2855fa026100bc1975",
+    "cfc6f6bbaefff2644c5150ebdcc08224cdecb430"
+  ],
+  "source_diff_paths": [
+    "internal/extshared/extshared.go",
+    "internal/extshared/extshared_test.go",
+    "internal/tempgroup/lifetime_pg_test.go",
+    "openspec/changes/r62-extseat-ttl/context.md",
+    "openspec/changes/r62-extseat-ttl/design.md",
+    "openspec/changes/r62-extseat-ttl/proposal.md",
+    "openspec/changes/r62-extseat-ttl/specs/extseat-lifetime/spec.md",
+    "openspec/changes/r62-extseat-ttl/tasks.md"
+  ],
+  "non_test_product_diff": "diff --git a/internal/extshared/extshared.go b/internal/extshared/extshared.go\nindex 60ba07c22..4637a82a9 100644\n--- a/internal/extshared/extshared.go\n+++ b/internal/extshared/extshared.go\n@@ -13,14 +13,14 @@ import (\n \t\"time\"\n )\n \n-// 存活期与时限（㊹-补4、㊹-补6、提案 GW-005／GW-006）。\n+// 存活期与时限（R62 第1片将组/消息改为7天；令牌仍沿用14天）。\n const (\n \t// TokenTTL 令牌滑动存活期：每次成功鉴权交互续到 now＋TokenTTL。\n \tTokenTTL = 14 * 24 * time.Hour\n \t// GroupTTL 临时编组滑动存活期：只由受理成功的发送与首次有效 received 确认续期，轮询不续。\n-\tGroupTTL = 3 * 24 * time.Hour\n-\t// MessageTTL 发往外部席位的消息自入队起的存活期；续令牌、续编组都不延长它。\n-\tMessageTTL = 24 * time.Hour\n+\tGroupTTL = 7 * 24 * time.Hour\n+\t// MessageTTL 外部席位双向消息自受理入队起的存活期；续令牌、续编组都不延长它。\n+\tMessageTTL = 7 * 24 * time.Hour\n \t// PresenceTimeout 超过这么久没有成功请求即视为离线。\n \tPresenceTimeout = 90 * time.Second\n \t// WaitMax 收件长轮询的服务端硬上限。\n",
+  "design_source": "124d24ee3818762f977920d5a015e4dfdca80663",
+  "design_files": {
+    "openspec/changes/r62-extseat-design/design.md": "918a071e0e2624145c782691fd636dec824f87f62ff8f2adbfc15a157ca1f573",
+    "docs/design/R62-EXTSEAT-SLICES.md": "b212f52c6eff6fb64832db7309b018e4a2160d2a9d669f7457c15bed5e79c131"
+  },
+  "subtrees": {
+    "internal": "537f257f90b9e41061137feab6c099692acbb9dd",
+    "cmd": "8f537c10d956f6ba09b9c9df3221a253351004d7",
+    "tools": "721665457deb94a5f8d373152a445111e40a8c15",
+    "scripts": "33ee8cdb84215613867f5fdacc75074229ac7d20",
+    "deploy": "120e37039bac39a0a24ec964d4d9673d19d11382",
+    "view-service": "16956d3b39bf03faa0a61e25b22a0049fc8899af",
+    "go.mod": "362bb888ef3346356e451a58cd87064e84474317",
+    "go.sum": "871e6a788732f19d19a470cc34dfdb8e366b364f",
+    "VERSION": "74a4e0fa764244cb7cdce491aa3ce9e6b49947e0"
+  },
+  "unchanged_from_base": {
+    "internal/store/migrations": true,
+    "internal/store/migrate/migrations": true,
+    "internal/store/history_migrations": true,
+    "cmd": true,
+    "tools": true,
+    "scripts": true,
+    "deploy": true,
+    "view-service": true,
+    "go.mod": true,
+    "go.sum": true,
+    "VERSION": true
+  }
+}

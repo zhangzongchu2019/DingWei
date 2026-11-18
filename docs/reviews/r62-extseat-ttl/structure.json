@@ -1,0 +1,67 @@
+{
+  "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+  "base": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+  "changed_files": [
+    "internal/extseat/core_pg_test.go",
+    "internal/extshared/extshared.go",
+    "internal/extshared/extshared_test.go",
+    "internal/tempgroup/lifetime_pg_test.go",
+    "openspec/changes/r62-extseat-ttl/context.md",
+    "openspec/changes/r62-extseat-ttl/design.md",
+    "openspec/changes/r62-extseat-ttl/proposal.md",
+    "openspec/changes/r62-extseat-ttl/specs/extseat-lifetime/spec.md",
+    "openspec/changes/r62-extseat-ttl/tasks.md"
+  ],
+  "product_test_files": [
+    "internal/extseat/core_pg_test.go",
+    "internal/extshared/extshared.go",
+    "internal/extshared/extshared_test.go",
+    "internal/tempgroup/lifetime_pg_test.go"
+  ],
+  "unchanged": [
+    {
+      "path": "cmd",
+      "object": "8f537c10d956f6ba09b9c9df3221a253351004d7"
+    },
+    {
+      "path": "tools",
+      "object": "721665457deb94a5f8d373152a445111e40a8c15"
+    },
+    {
+      "path": "scripts",
+      "object": "33ee8cdb84215613867f5fdacc75074229ac7d20"
+    },
+    {
+      "path": "deploy",
+      "object": "120e37039bac39a0a24ec964d4d9673d19d11382"
+    },
+    {
+      "path": "view-service",
+      "object": "16956d3b39bf03faa0a61e25b22a0049fc8899af"
+    },
+    {
+      "path": "internal/store/migrations",
+      "object": "102c28685cddbf36342cce0148edfd75799f390d"
+    },
+    {
+      "path": "internal/store/migrate/migrations",
+      "object": "e4a49b4266fa798abc6c0530759400a1d3f197b9"
+    },
+    {
+      "path": "internal/store/history_migrations",
+      "object": "52e406536788a06467fef8b329820278bd67dec0"
+    },
+    {
+      "path": "go.mod",
+      "object": "362bb888ef3346356e451a58cd87064e84474317"
+    },
+    {
+      "path": "go.sum",
+      "object": "871e6a788732f19d19a470cc34dfdb8e366b364f"
+    },
+    {
+      "path": "VERSION",
+      "object": "74a4e0fa764244cb7cdce491aa3ce9e6b49947e0"
+    }
+  ]
+}

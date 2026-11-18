@@ -1,0 +1,147 @@
+[
+  {
+    "name": "mutation-baseline",
+    "source": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "TestTTLConstants|TestR62",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "20m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:13:30.426686+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:13:43.359119+00:00",
+    "sha256": "cf2cbf784883625d345e5b703e5c9d0337b7aae9e42616f667e9ad70fbfee665"
+  },
+  {
+    "name": "mutation-group-old-three-days-compile",
+    "source": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "^$",
+      "-count=1",
+      "-p",
+      "1"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:13:43.359575+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:13:44.626787+00:00",
+    "sha256": "d8985f1b09c09be7023783423974d6ac145a73411f80e43cd86ffaf2177a2d65"
+  },
+  {
+    "name": "mutation-group-old-three-days",
+    "source": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "TestTTLConstants|TestR62SevenDayGroupBoundaryPG",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "20m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:13:44.627413+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T17:13:48.528719+00:00",
+    "sha256": "19b6069c660fb558631e8a1d23f8ab40664c3f78debdd6604c164ed91bf2cbaa"
+  },
+  {
+    "name": "mutation-message-old-one-day-compile",
+    "source": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "^$",
+      "-count=1",
+      "-p",
+      "1"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:13:48.529983+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:13:49.740784+00:00",
+    "sha256": "d8985f1b09c09be7023783423974d6ac145a73411f80e43cd86ffaf2177a2d65"
+  },
+  {
+    "name": "mutation-message-old-one-day",
+    "source": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "TestTTLConstants|TestR62SevenDayMessageBoundaryIndependentOfRenewalsPG",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "20m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:13:49.741138+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T17:13:53.179358+00:00",
+    "sha256": "60a1c6ea72241dd7a5becafbb634a4a3da892c85d0f6874a68d2a3e716940aef"
+  },
+  {
+    "name": "mutation-restored-baseline",
+    "source": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "TestTTLConstants|TestR62",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "20m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:13:53.311150+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:14:05.623113+00:00",
+    "sha256": "244bf90a045fb53edf60803c42f82ce9d402d294b92e3054bc3e9c48d332eaa8"
+  },
+  {
+    "name": "canonical",
+    "source": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl",
+    "started_utc": "2026-11-18T17:14:05.685091+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:23:53.314142+00:00",
+    "sha256": "0fd6864311e7527f97f532e08c4893a5c1f0c199a8fd4559bc55d518401a78b7"
+  }
+]

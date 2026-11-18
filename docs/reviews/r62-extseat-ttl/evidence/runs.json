@@ -1,0 +1,185 @@
+[
+  {
+    "name": "mutation-baseline",
+    "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "TestTTLConstants|TestR62",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "20m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:27:12.958183+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:27:24.914918+00:00",
+    "sha256": "cc0792fcbfc7a34d962e7f74955aab71d1c75610379fecb34dfea376695d9b0f"
+  },
+  {
+    "name": "mutation-group-old-three-days-compile",
+    "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "^$",
+      "-count=1",
+      "-p",
+      "1"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:27:24.915389+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:27:25.581698+00:00",
+    "sha256": "1c696994039a2e9cc6bfa2395fb56fce842cc93f8e5a9c9267874d656caaa646"
+  },
+  {
+    "name": "mutation-group-old-three-days",
+    "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "TestTTLConstants|TestR62SevenDayGroupBoundaryPG",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "20m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:27:25.582859+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T17:27:29.161840+00:00",
+    "sha256": "d57a16008caba334257626621320c981011849c02f8bcbe698abe7c3c878679b"
+  },
+  {
+    "name": "mutation-message-old-one-day-compile",
+    "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "^$",
+      "-count=1",
+      "-p",
+      "1"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:27:29.162925+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:27:29.759239+00:00",
+    "sha256": "d8985f1b09c09be7023783423974d6ac145a73411f80e43cd86ffaf2177a2d65"
+  },
+  {
+    "name": "mutation-message-old-one-day",
+    "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "TestTTLConstants|TestR62SevenDayMessageBoundaryIndependentOfRenewalsPG",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "20m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:27:29.759609+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T17:27:33.629798+00:00",
+    "sha256": "cf54217ff62683492a5f7ea7e9ae7bf04586885632e40159fa1258665c6c0f3d"
+  },
+  {
+    "name": "mutation-restored-baseline",
+    "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "TestTTLConstants|TestR62",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "20m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl-knives",
+    "started_utc": "2026-11-18T17:27:33.695681+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:27:46.024969+00:00",
+    "sha256": "5e0030ee4d073a771406c0e08d8c468f4d9b971ec80df929836db8c6d8f61548"
+  },
+  {
+    "name": "canonical",
+    "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl",
+    "started_utc": "2026-11-18T17:27:46.077334+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:37:20.652775+00:00",
+    "sha256": "72ba130afe665a83345a8d501d9523b1ebdeb4b65a68bb04f5a134e0a5d452af"
+  },
+  {
+    "name": "full-go3",
+    "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/extseat",
+      "./internal/tempgroup",
+      "./internal/m8",
+      "-count=3",
+      "-p",
+      "1",
+      "-timeout",
+      "90m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl",
+    "started_utc": "2026-11-18T17:37:20.695179+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:55:42.314575+00:00",
+    "sha256": "0b619009d4e0f39c4eb91bcbdba00ac02ff8b6993b8547cc822a4501bdea4b6b"
+  },
+  {
+    "name": "strict",
+    "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+    "command": [
+      "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+      "validate",
+      "--all",
+      "--strict"
+    ],
+    "cwd": "/data/ai-dev-data/r62-extseat-ttl",
+    "started_utc": "2026-11-18T17:55:42.363156+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:55:42.808777+00:00",
+    "sha256": "85964b1db98f799e65338da7fa1c8cf6765c6dd7d37dfc527d218f9301f79ccb"
+  }
+]

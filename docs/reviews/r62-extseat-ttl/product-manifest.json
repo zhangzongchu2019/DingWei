@@ -1,0 +1,28 @@
+{
+  "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+  "tree": "d0cabfc1cacf98fed570e633084d3298d1549263",
+  "parent": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+  "base": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+  "files": [
+    {
+      "path": "internal/extseat/core_pg_test.go",
+      "blob": "36d3f4800d3f59f343e2c79840ab555c325e342f",
+      "sha256": "ea967ed0c6a86c425d65d14835ab11d7b3f8b568cdf495da3e27353674e6043b"
+    },
+    {
+      "path": "internal/extshared/extshared.go",
+      "blob": "4637a82a96d6f6978ea7c4eca97117598f19d3b6",
+      "sha256": "7f3332ad69cbf3d3425e7ed7b1da362dea04324e7bf282991ef5078b6d6b6012"
+    },
+    {
+      "path": "internal/extshared/extshared_test.go",
+      "blob": "b39e7071715e64d42fbf06a514836a710078cf6a",
+      "sha256": "fc5183c6ce131730147ba5a6f7e8eed7e97b8abb1fc3e1a2c0827395b74fa51d"
+    },
+    {
+      "path": "internal/tempgroup/lifetime_pg_test.go",
+      "blob": "ed64faccd0f8b0ad5da70dee9dd9f434e04d91a8",
+      "sha256": "d013f6992d8da511273b4c871794d0bb1c7c901933065cd422112c45a557a2a7"
+    }
+  ]
+}
