@@ -1,4 +1,3 @@
-b68ca38e42a754b5a4c5286fc6a5856ccd5d900e49e8db08ee64ff25c766781e  docs/reviews/r61-n1c-presubmit-wait/REPORT.md
 7f94a444764efcc50488e36adfe02c63f66a4c5ae32804ce6e742f024ca8c837  docs/reviews/r61-n1c-presubmit-wait/SKIPS.md
 4466b47efb54035b2e3f474d20284eaaa4bad257fe91418637595bc86b628c0f  docs/reviews/r61-n1c-presubmit-wait/evidence/build-test-only-failed-5dd67f96.log
 0a151403d65155cd14e2112c5307bba8907b188bcbbaab9bf13c32c4db1a0275  docs/reviews/r61-n1c-presubmit-wait/evidence/build-test-only-final-rerun.log
@@ -43,3 +42,7 @@ ebf33a79a928939594291f493b92b18be685e57b902764a568f8f4ebd8f5bf0b  docs/reviews/r
 00deedb25054eaeed804dcc843071547cc54a415fbd49e52ffe1de9e006e2ad4  docs/reviews/r61-n1c-presubmit-wait/evidence/r3/openspec-strict-ba699497.log
 b8f042c0c672140c5aa22434060a0aefd5a9bd11d0f0650e97bce7fcb4de09ba  docs/reviews/r61-n1c-presubmit-wait/evidence/r3/run-build-tests-ba699497.log
 f7c956d2923bd942175b1446481394aa36925658221bf92705e587e64a64e377  docs/reviews/r61-n1c-presubmit-wait/evidence/toolchain.txt
+c28c1fff3f76a25d21d3b6bfd2131d37d34386c5f05410e3bfa10d33be67311b  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/recheck-20261118/focused-modules.log
+533871d5ab6ecd23e620c488962e193143aa345f8002f8f4187d7415c55ddbe4  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/recheck-20261118/retry-loop-removed.log
+2c9898c8c822df6d60d926bbf7d1f02eb9356cc12b1c7020e7dc8e330dd9ae66  docs/reviews/r61-n1c-presubmit-wait/REPORT.md
+c4a0e58a11f582483b772537ca7dfa5a1f6ddd68a004dd9593eaf6e53a7dd662  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/recheck-20261118/build-test-gate.log

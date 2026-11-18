@@ -864,9 +864,9 @@ class LiveInitializeRetry(unittest.TestCase):
 class FirstDeliveryInitializeWait(unittest.TestCase):
     def test_real_delivery_worker_persists_initialize_wait_then_submits_once(self):
         class RPC:
-            def __init__(self, workdir, error):
+            def __init__(self, workdir, errors):
                 self.workdir = workdir
-                self.errors = [error]
+                self.errors = list(errors)
                 self.calls = []
 
             def healthy(self):
@@ -900,13 +900,15 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
             async def send(self, payload):
                 self.sent.append(json.loads(payload))
 
-        errors = (
-            TimeoutError('synthetic initialize timeout'),
-            JsonRpcError('initialize', {'code': -32603, 'message': 'synthetic temporary unavailable'}),
+        error_sequences = (
+            (TimeoutError('synthetic initialize timeout'),
+             TimeoutError('synthetic recovery initialize timeout')),
+            (TimeoutError('synthetic initialize timeout'),
+             JsonRpcError('initialize', {'code': -32603, 'message': 'synthetic temporary unavailable'})),
         )
-        for index, error in enumerate(errors):
-            with self.subTest(error=type(error).__name__), tempfile.TemporaryDirectory() as tmp:
-                rpc = RPC(tmp, error)
+        for index, errors in enumerate(error_sequences):
+            with self.subTest(errors=tuple(type(error).__name__ for error in errors)), tempfile.TemporaryDirectory() as tmp:
+                rpc = RPC(tmp, errors)
 
                 def make_driver():
                     driver = CodexProtocolDriver(
@@ -961,6 +963,8 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                                              'N1C_STARTUP_RECOVERY_DROPPED_OR_STALLED_DELIVERY')
                         self.assertEqual([method for method, _ in rpc.calls].count('turn/start'), 1,
                                          'N1C_STARTUP_RECOVERY_SUBMITTED_MORE_THAN_ONCE')
+                        self.assertGreaterEqual([method for method, _ in rpc.calls].count('initialize'), 3,
+                                                'N1C_STARTUP_RECOVERY_DID_NOT_RETRY_SECOND_TRANSIENT')
                         self.assertNotIn('thread/start', [method for method, _ in rpc.calls],
                                          'N1C_STARTUP_RECOVERY_ROTATED_BOUND_THREAD')
                         acks = [item['payload'] for item in helper.delivery_inbox.pending_delivery_acks()]

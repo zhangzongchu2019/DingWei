@@ -1,0 +1,50 @@
+test_real_delivery_worker_persists_initialize_wait_then_submits_once (tests.test_codex_stale_thread.FirstDeliveryInitializeWait.test_real_delivery_worker_persists_initialize_wait_then_submits_once) ... [driver-adapter] started, driver=codex
+[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: TimeoutError: synthetic recovery initialize timeout
+
+  test_real_delivery_worker_persists_initialize_wait_then_submits_once (tests.test_codex_stale_thread.FirstDeliveryInitializeWait.test_real_delivery_worker_persists_initialize_wait_then_submits_once) (errors=('TimeoutError', 'TimeoutError')) ... FAIL
+[driver-adapter] started, driver=codex
+[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: JsonRpcError: initialize failed: error_class=rpc_error rpc_code=-32603
+  test_real_delivery_worker_persists_initialize_wait_then_submits_once (tests.test_codex_stale_thread.FirstDeliveryInitializeWait.test_real_delivery_worker_persists_initialize_wait_then_submits_once) (errors=('TimeoutError', 'JsonRpcError')) ... FAIL
+
+======================================================================
+FAIL: test_real_delivery_worker_persists_initialize_wait_then_submits_once (tests.test_codex_stale_thread.FirstDeliveryInitializeWait.test_real_delivery_worker_persists_initialize_wait_then_submits_once) (errors=('TimeoutError', 'TimeoutError'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/dev/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_codex_stale_thread.py", line 990, in test_real_delivery_worker_persists_initialize_wait_then_submits_once
+    asyncio.run(exercise())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/dev/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_codex_stale_thread.py", line 960, in exercise
+    self.assertIsNotNone(row.get('submission_may_have_started_at'),
+AssertionError: unexpectedly None : N1C_STARTUP_RECOVERY_NEVER_REACHED_SUBMISSION
+
+======================================================================
+FAIL: test_real_delivery_worker_persists_initialize_wait_then_submits_once (tests.test_codex_stale_thread.FirstDeliveryInitializeWait.test_real_delivery_worker_persists_initialize_wait_then_submits_once) (errors=('TimeoutError', 'JsonRpcError'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/dev/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_codex_stale_thread.py", line 990, in test_real_delivery_worker_persists_initialize_wait_then_submits_once
+    asyncio.run(exercise())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/dev/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_codex_stale_thread.py", line 960, in exercise
+    self.assertIsNotNone(row.get('submission_may_have_started_at'),
+AssertionError: unexpectedly None : N1C_STARTUP_RECOVERY_NEVER_REACHED_SUBMISSION
+
+----------------------------------------------------------------------
+Ran 1 test in 21.079s
+
+FAILED (failures=2)
