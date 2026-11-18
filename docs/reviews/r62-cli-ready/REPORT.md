@@ -4,7 +4,7 @@
 
 - 基点：`togpt60lunazzc/r62-cli-a-fix`，`9b32685721c0aa0370d13ffc320635826031305b`。
 - 实现提交：`6345904128e1acc14982fd1cdccb3d04c2fec0d0`；测试合同修订：`5ff24a421`（完整 SHA 以 Git 提交记录为准）。
-- 分支：`togpt60lunazzc/r62-cli-ready`。最终 tip/tree 在门完成后补录。
+- 分支：`togpt60lunazzc/r62-cli-ready`。报告与证据在实现、测试提交之后追加；最终 tip/tree 以交件回执中的 Git 读数为准。
 - 本任务只改 helper CLI 路径及其测试、夹具和本报告；未改 driver 模式。
 
 ## 行为与边界
