@@ -1,0 +1,14 @@
+test_healthy_transport_after_initialize_timeout_still_initializes (__main__.LiveInitializeRetry.test_healthy_transport_after_initialize_timeout_still_initializes) ... FAIL
+
+======================================================================
+FAIL: test_healthy_transport_after_initialize_timeout_still_initializes (__main__.LiveInitializeRetry.test_healthy_transport_after_initialize_timeout_still_initializes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n1c-review-20261118/r1-recheck/probe_initialize_live.py", line 24, in test_healthy_transport_after_initialize_timeout_still_initializes
+    self.assertTrue(d.health(),'N1C_LIVE_TRANSPORT_SKIPPED_INITIALIZE_RETRY')
+AssertionError: False is not true : N1C_LIVE_TRANSPORT_SKIPPED_INITIALIZE_RETRY
+
+----------------------------------------------------------------------
+Ran 1 test in 0.006s
+
+FAILED (failures=1)

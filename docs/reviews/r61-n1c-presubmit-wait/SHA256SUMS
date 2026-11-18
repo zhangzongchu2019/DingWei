@@ -1,3 +1,4 @@
+7b9cbd2eae2a55e6db9ab6f50bc1e3c900a576fab1904b7954439d4a60ac1227  docs/reviews/r61-n1c-presubmit-wait/REPORT.md
 7f94a444764efcc50488e36adfe02c63f66a4c5ae32804ce6e742f024ca8c837  docs/reviews/r61-n1c-presubmit-wait/SKIPS.md
 4466b47efb54035b2e3f474d20284eaaa4bad257fe91418637595bc86b628c0f  docs/reviews/r61-n1c-presubmit-wait/evidence/build-test-only-failed-5dd67f96.log
 0a151403d65155cd14e2112c5307bba8907b188bcbbaab9bf13c32c4db1a0275  docs/reviews/r61-n1c-presubmit-wait/evidence/build-test-only-final-rerun.log
@@ -29,11 +30,19 @@ eb8f3c018118096ef280837c2cb1b6446006469f4155bb12cb00519246a737c6  docs/reviews/r
 e2907e5d369ea2cfb4db24106d16289dbdc393adaa9b7ecac9fbfa4f4d21b73e  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/focused-modules.log
 67634abfd22b5b89d2baa6c70d12b9f3836be31713ac759ad9f480edc47f29d6  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/m8-store-count3-d8711290.log
 b73d64a3f20d879b0a60482c549efa64807ef5d4804e86efc69bf5edfdce251c  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/openspec-strict.log
+c4a0e58a11f582483b772537ca7dfa5a1f6ddd68a004dd9593eaf6e53a7dd662  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/recheck-20261118/build-test-gate.log
+c28c1fff3f76a25d21d3b6bfd2131d37d34386c5f05410e3bfa10d33be67311b  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/recheck-20261118/focused-modules.log
+533871d5ab6ecd23e620c488962e193143aa345f8002f8f4187d7415c55ddbe4  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/recheck-20261118/retry-loop-removed.log
 ffb2e1fe7316fd4f4febebe9dc9b979111889297e7023e9c2866e21c3d4571e5  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/rework-focused-final.log
 35c68e347812ebbbb081bfb84ca73abaf29405e1d288824344aef935d27ea9e1  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/rework-focused.log
 5ee55fdd2ae76deb8f55373d04d61cba7dc7bbb200e7e9a0c39bc6c6f1633095  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/startup-baseline-before-fix.log
 53d7163f0f8d2196d32842a41b07d5b73f7cc11c8d15e63342e464ef588177b9  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/startup-baseline-before-fix.log.gz
 4d600ca4af8cae2f790a7126549756b4028843c32c2e6f3bcde696c1a3860312  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/startup-fixed.log
+d1e7611d2ba73147deb3d394dd2161009190019fc73cb2a529ec1afe25478eaf  docs/reviews/r61-n1c-presubmit-wait/evidence/r3-supplement/S4-live-initialize-earlier-joined.txt
+0781c1ce976c69ab7a6f3707187629e0a806acd554a4e3a5b9a9b652dc1cd720  docs/reviews/r61-n1c-presubmit-wait/evidence/r3-supplement/focused-r3-f1-fifo.log
+be43dd9229cdd3dcfb53fdecce0ee79a1da4799259ee265727c60bb19670afa2  docs/reviews/r61-n1c-presubmit-wait/evidence/r3-supplement/mutation-event-bridge-skip.log
+d9761b6cd6307cdc6dd913240b6f2329fce781c844da7848c20b7d3266388f09  docs/reviews/r61-n1c-presubmit-wait/evidence/r3-supplement/mutation-fifo-append-tail.log
+72deffe0b02acadba65b362955cf027256346706d2be291b6cb2e89996f2607d  docs/reviews/r61-n1c-presubmit-wait/evidence/r3-supplement/run-build-tests-bc235f9.log
 62b428975ab033d00ed73523524ee895999d9675086279308afbce211832e70b  docs/reviews/r61-n1c-presubmit-wait/evidence/r3/focused-r3-f1.log
 7a4565beb1d29a2d711a09a73e7a535380bf060fead8affd5b9a3717f0b79dac  docs/reviews/r61-n1c-presubmit-wait/evidence/r3/m8-store-count3-ba699497.log
 2f024ed8d1331670ffd3ecd9d9359681290059a243ec4be51c9c0cd46ec12582  docs/reviews/r61-n1c-presubmit-wait/evidence/r3/mutation-ignore-submission-marker.log
@@ -42,7 +51,3 @@ ebf33a79a928939594291f493b92b18be685e57b902764a568f8f4ebd8f5bf0b  docs/reviews/r
 00deedb25054eaeed804dcc843071547cc54a415fbd49e52ffe1de9e006e2ad4  docs/reviews/r61-n1c-presubmit-wait/evidence/r3/openspec-strict-ba699497.log
 b8f042c0c672140c5aa22434060a0aefd5a9bd11d0f0650e97bce7fcb4de09ba  docs/reviews/r61-n1c-presubmit-wait/evidence/r3/run-build-tests-ba699497.log
 f7c956d2923bd942175b1446481394aa36925658221bf92705e587e64a64e377  docs/reviews/r61-n1c-presubmit-wait/evidence/toolchain.txt
-c28c1fff3f76a25d21d3b6bfd2131d37d34386c5f05410e3bfa10d33be67311b  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/recheck-20261118/focused-modules.log
-533871d5ab6ecd23e620c488962e193143aa345f8002f8f4187d7415c55ddbe4  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/recheck-20261118/retry-loop-removed.log
-2c9898c8c822df6d60d926bbf7d1f02eb9356cc12b1c7020e7dc8e330dd9ae66  docs/reviews/r61-n1c-presubmit-wait/REPORT.md
-c4a0e58a11f582483b772537ca7dfa5a1f6ddd68a004dd9593eaf6e53a7dd662  docs/reviews/r61-n1c-presubmit-wait/evidence/r1/recheck-20261118/build-test-gate.log
