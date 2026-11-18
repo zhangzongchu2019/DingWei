@@ -34,6 +34,11 @@ SUITES = (
     ("trusted_origins_file_flow", "node", ROOT / "view-service/trusted-origins-file-flow-regression.js"),
     ("console_browser", "node", ROOT / "view-service/console-browser-regression.js"),
     ("console_mobile", "node", ROOT / "view-service/console-mobile-regression.js"),
+    ("console_quota", "node", ROOT / "view-service/console-quota-regression.js"),
+    ("console_platform_admin", "node", ROOT / "view-service/console-platform-admin-regression.js"),
+    ("console_task_board", "node", ROOT / "view-service/console-task-board-regression.js"),
+    ("console_panel_pointerevents", "node", ROOT / "view-service/console-panel-pointerevents-regression.js"),
+    ("console_specs_theme", "node", ROOT / "view-service/console-specs-theme-regression.js"),
     ("console_temp_groups_offstate", "node", ROOT / "view-service/console-temp-groups-offstate-regression.js"),
     ("console_temp_groups", "node", ROOT / "view-service/console-temp-groups-regression.js"),
     ("renderer_in_console_iframe", "node", ROOT / "view-service/renderer-in-console-iframe-regression.js"),
@@ -81,6 +86,7 @@ OVERRIDE_ENV_NAMES = (
     "RENDERER_FILE", "RENDERER_OVERRIDE", "TIMELINE_DEBUG",
     "STALE_SCREENSHOT",  # model admission suite: optional screenshot output path
     "MOBILE_SHOT_DIR",  # console_mobile: optional screenshot output dir (S-R62-MOBILE delivery evidence)
+    "MUTATION",  # console_quota／console_platform_admin：env 形式的删保护刀开关（S-R62-MOBILE M2 登记）
     "MUTATE_HISTORY_EVENT_OBJECT",  # history_event_object: one-cut negative control
     "MUTATE_HISTORY_SSE_INPUT_BUFFER",  # history_event_object: remove initial SSE buffering for the replay regression
     "MUTATE_HISTORY_INPUT_RECEIVED_AT",  # history_event_object: remove the received_at fallback for history inputs without ts
