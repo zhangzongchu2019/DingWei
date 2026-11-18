@@ -812,6 +812,55 @@ class RecoveryThreadInheritance(unittest.TestCase):
         with self.assertRaises(ValueError):new.inherit_recovery_thread(old)
 
 
+class LiveInitializeRetry(unittest.TestCase):
+    def test_healthy_transport_after_initialize_timeout_still_initializes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            class RPC:
+                def __init__(self):
+                    self.calls = []
+
+                def healthy(self):
+                    return True
+
+                def stop(self):
+                    pass
+
+                def notify(self, *args):
+                    pass
+
+                def request(self, method, params, timeout=0):
+                    self.calls.append(method)
+                    if self.calls.count('initialize') == 1:
+                        raise TimeoutError('synthetic first initialize timeout')
+                    return {}
+
+            rpc = RPC()
+            driver = CodexProtocolDriver(
+                workdir=tmp,
+                store_path=str(Path(tmp) / 'driver.db'),
+                bound_thread_id='bound-thread',
+                require_bound_thread=True,
+            )
+
+            def start_locked():
+                driver._rpc = rpc
+                driver._initialize()
+
+            driver._start_locked = start_locked
+            try:
+                with self.assertRaises(TimeoutError):
+                    driver.start()
+                self.assertFalse(driver.health())
+                driver.start()
+                self.assertTrue(driver.health(), 'N1C_LIVE_TRANSPORT_SKIPPED_INITIALIZE_RETRY')
+                self.assertEqual(rpc.calls, ['initialize', 'initialize'])
+                driver.start()
+                self.assertEqual(rpc.calls, ['initialize', 'initialize'])
+            finally:
+                driver.stop()
+
+
+
 class FirstDeliveryInitializeWait(unittest.TestCase):
     def test_real_delivery_worker_persists_initialize_wait_then_submits_once(self):
         class RPC:

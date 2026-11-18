@@ -24,6 +24,7 @@ from .config import env_get
 
 # R-V2-0105 件二：驱动重连退避（秒）与事件桥空转退避上限。
 DRIVER_RECONNECT_BACKOFF = (1.0, 2.0, 5.0, 10.0, 30.0)
+PRESUBMIT_RECOVERY_BACKOFF = (1.0, 2.0, 5.0, 10.0, 30.0)
 DRIVER_FAILURE_LOG_INTERVAL = 600.0  # 持续重连失败期间至多每 10 分钟一行
 DRIVER_HEALTHY_RESET = 60.0          # 持续健康 60 s 复位退避
 
@@ -693,8 +694,32 @@ class DriverAdapter:
                 inherit = getattr(replacement, 'inherit_recovery_thread', None)
                 if callable(inherit):
                     inherit(old)
-                replacement.start()
                 replacement.on_activity = self._bridge_wake.set
+                startup_attempt = 0
+                while True:
+                    try:
+                        replacement.start()
+                        break
+                    except Exception as exc:
+                        # A recovery retry is safe only while this delivery is
+                        # durably before the submission boundary. Unknown or
+                        # submitted deliveries stay quarantined for operator
+                        # resolution; never turn recovery into a replay.
+                        ledger = getattr(self, 'delivery_lifecycle', None)
+                        row = ledger.lifecycle(command.delivery_id) if ledger is not None else None
+                        marker_null = row is not None and row.get('submission_may_have_started_at') is None
+                        if self._which != 'codex' or not marker_null:
+                            raise
+                        from .codexDriver import _presubmit_validation_is_retryable
+                        if not _presubmit_validation_is_retryable(exc):
+                            raise
+                        delay = PRESUBMIT_RECOVERY_BACKOFF[
+                            min(startup_attempt, len(PRESUBMIT_RECOVERY_BACKOFF) - 1)]
+                        startup_attempt += 1
+                        print('[delivery][WARN] transient pre-submit CLI recovery start failed; '
+                              f'keeping FIFO quarantined for retry attempt={startup_attempt}', flush=True)
+                        if self._lane_stop.wait(delay):
+                            raise RuntimeError('CLI recovery stopped before pre-submit retry')
                 self.driver = replacement
                 self._install_busy_admission_callbacks(replacement)
                 self.delivery_lifecycle = self._delivery_lifecycle
@@ -706,7 +731,9 @@ class DriverAdapter:
                 # Remain quarantined. Current item is already durably unknown;
                 # following items stay queued, never write the blocked pipe.
                 print(f'[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: {type(exc).__name__}: {exc}', flush=True)
-        threading.Thread(target=run, daemon=True, name='delivery-transport-recovery').start()
+        recovery_thread = threading.Thread(target=run, daemon=True, name='delivery-transport-recovery')
+        self._transport_recovery_thread = recovery_thread
+        recovery_thread.start()
 
     def _transport_unknown(self, command, reason, *, recover=False):
         ledger = getattr(self, 'delivery_lifecycle', None)
@@ -1102,7 +1129,8 @@ class DriverAdapter:
             if forwarded:
                 reconnect_attempt = 0
             probe = getattr(self.driver, "healthy", None)
-            if self._transport_recovery is not None:
+            recovery = self._transport_recovery
+            if recovery is not None and not recovery.is_set():
                 self._bridge_sleep(0.1)
                 continue
             if callable(probe) and not probe():

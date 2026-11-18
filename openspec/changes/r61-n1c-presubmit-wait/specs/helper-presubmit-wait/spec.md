@@ -17,6 +17,22 @@ The Codex helper MUST retain pre-submit validation failures as a durable FIFO-he
 - **WHEN** supported read-only validation has a transient transport or server failure
 - **THEN** the helper retries with capped backoff and does not record `failed/session_unavailable`
 
+#### Scenario: Recovery startup retries repeated transient initialization failures
+
+- **WHEN** replacement CLI startup fails with a classified transient initialize transport or server error
+- **AND** the current delivery has no durable `submission_may_have_started_at` marker
+- **THEN** recovery retries startup with capped backoff while retaining the current FIFO head
+- **AND** it does not send a terminal failed ACK or submit a later FIFO item before recovery
+- **AND** after recovery the original head and later items retain FIFO order
+
+#### Scenario: Recovery does not retry an unknown submission or definitive refusal
+
+- **WHEN** replacement startup fails with authentication, identity, daemon, binding, or other definitive refusal
+- **OR** the current delivery has a non-null submission marker
+- **THEN** recovery remains quarantined and emits an operator alert
+- **AND** it does not automatically retry startup or send another turn/start
+- **AND** later FIFO items remain blocked
+
 #### Scenario: Binding mismatch is not retried or rotated
 
 - **WHEN** validation proves a thread identity, cwd, direct-input, authentication, or daemon identity mismatch
