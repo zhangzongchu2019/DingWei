@@ -1,0 +1,15 @@
+{
+  "prior_author_evidence_ref": "429cf1dd:docs/reviews/browser-mutant-revive/evidence/G-full.receipt",
+  "prior_author_sha256": "89161519bd4b2183c4aed9022e3bf736335b9f0d644abc8a9fdce640689ab03a",
+  "prior_author_r15_lines": [
+    "suite.r15_session_history_pagination.rc=2",
+    "suite.r15_session_history_mutations.rc=1"
+  ],
+  "current_independent_source": "38b9538dd2b1f1783aee6d7890ea03b83e33184e",
+  "current_r15_rc": {
+    "r15_session_history_pagination": "0",
+    "r15_session_history_mutations": "0"
+  },
+  "r15_pagination_test_identical_to_415b9bf5": true,
+  "note": "旧红为来件作者读数，不冒称本席旧源复跑；本次完整runner新合并源实际执行为权威读数。"
+}

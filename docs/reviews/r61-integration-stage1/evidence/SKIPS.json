@@ -1,0 +1,1022 @@
+[
+  {
+    "gate": "m8-full3",
+    "name": "TestChangeEvidenceConsoleBrowser",
+    "line": 1016,
+    "condition_context": [
+      "    --- PASS: TestR52ChangeEvidenceTrustedOriginMatrix/configured_missing_origin (0.00s)",
+      "=== RUN   TestChangeEvidenceConsoleBrowser",
+      "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestMuxProductHTTP1EightSeats",
+    "line": 1153,
+    "condition_context": [
+      "--- PASS: TestMuxRecoveryExpiryAfterHubShutdownRejectsBackgroundWork (0.17s)",
+      "=== RUN   TestMuxProductHTTP1EightSeats",
+      "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestConsolePlatformPayloadDump",
+    "line": 1314,
+    "condition_context": [
+      "--- PASS: TestConsolePlatformAgentGroupsIDIsReserved (0.14s)",
+      "=== RUN   TestConsolePlatformPayloadDump",
+      "    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+    "line": 1643,
+    "condition_context": [
+      "--- PASS: TestConsoleTaskBoardListsAndOpensOnlyFinalSpecs (0.16s)",
+      "=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+    "line": 1867,
+    "condition_context": [
+      "2026/11/18 10:50:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.46s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+    "line": 1868,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.46s)",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+    "line": 1869,
+    "condition_context": [
+      "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.46s)",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.15s)",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+    "line": 1888,
+    "condition_context": [
+      "2026/11/18 10:50:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.61s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+    "line": 1889,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.61s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.16s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+    "line": 1890,
+    "condition_context": [
+      "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.61s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.16s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+    "line": 1891,
+    "condition_context": [
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.16s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.15s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.16s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+    "line": 1910,
+    "condition_context": [
+      "2026/11/18 10:50:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.63s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+    "line": 1911,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.63s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.17s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+    "line": 1912,
+    "condition_context": [
+      "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.63s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.17s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+    "line": 1913,
+    "condition_context": [
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.17s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.15s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.17s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+    "line": 1924,
+    "condition_context": [
+      "2026/11/18 10:50:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.34s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+    "line": 1925,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.34s)",
+      "    --- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.16s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+    "line": 1936,
+    "condition_context": [
+      "2026/11/18 10:50:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.54s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+    "line": 1937,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.54s)",
+      "    --- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.28s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILateWireTerminal",
+    "line": 1942,
+    "condition_context": [
+      "2026/11/18 10:50:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/18 10:50:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestFailureNoticeDriverTurnEndToEnd",
+    "line": 2245,
+    "condition_context": [
+      "--- PASS: TestFailureDockEventMatchesRendererFixture (0.14s)",
+      "=== RUN   TestFailureNoticeDriverTurnEndToEnd",
+      "    failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestGroupReplyMCP",
+    "line": 3676,
+    "condition_context": [
+      "    --- PASS: TestGroupReplyMembership/leader-only (0.62s)",
+      "=== RUN   TestGroupReplyMCP",
+      "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+    "line": 3893,
+    "condition_context": [
+      "=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+      "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+    "line": 3894,
+    "condition_context": [
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+      "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+    "line": 3895,
+    "condition_context": [
+      "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelper0232MixedVersionEndToEnd",
+    "line": 3898,
+    "condition_context": [
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)",
+      "=== RUN   TestHelper0232MixedVersionEndToEnd",
+      "    helper_update_e2e_test.go:55: explicit immutable release pins required"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+    "line": 5174,
+    "condition_context": [
+      "--- PASS: TestEnvelopeReadTimeoutDerivesFromEnvironment (0.01s)",
+      "=== RUN   TestEnvelopeReadTimeoutEnvironmentChild",
+      "    hub_timeout_contract_test.go:50: subprocess probe only"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestSessionHistoryTwentyAgentPublishP99",
+    "line": 7008,
+    "condition_context": [
+      "--- PASS: TestSessionHistoryConcurrentGroupCursorMatchesLiveEvents (0.02s)",
+      "=== RUN   TestSessionHistoryTwentyAgentPublishP99",
+      "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestSpecMCPEndToEnd",
+    "line": 7375,
+    "condition_context": [
+      "--- PASS: TestSpecGrantLegacyRequestAndPollFailFastWithoutWrites (0.16s)",
+      "=== RUN   TestSpecMCPEndToEnd",
+      "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestChangeEvidenceConsoleBrowser",
+    "line": 9454,
+    "condition_context": [
+      "    --- PASS: TestR52ChangeEvidenceTrustedOriginMatrix/configured_missing_origin (0.00s)",
+      "=== RUN   TestChangeEvidenceConsoleBrowser",
+      "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestMuxProductHTTP1EightSeats",
+    "line": 9591,
+    "condition_context": [
+      "--- PASS: TestMuxRecoveryExpiryAfterHubShutdownRejectsBackgroundWork (0.17s)",
+      "=== RUN   TestMuxProductHTTP1EightSeats",
+      "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestConsolePlatformPayloadDump",
+    "line": 9752,
+    "condition_context": [
+      "--- PASS: TestConsolePlatformAgentGroupsIDIsReserved (0.14s)",
+      "=== RUN   TestConsolePlatformPayloadDump",
+      "    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+    "line": 10081,
+    "condition_context": [
+      "--- PASS: TestConsoleTaskBoardListsAndOpensOnlyFinalSpecs (0.15s)",
+      "=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+    "line": 10305,
+    "condition_context": [
+      "2026/11/18 10:55:26 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.49s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+    "line": 10306,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.49s)",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+    "line": 10307,
+    "condition_context": [
+      "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.49s)",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.15s)",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.16s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+    "line": 10326,
+    "condition_context": [
+      "2026/11/18 10:55:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.61s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+    "line": 10327,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.61s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.16s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+    "line": 10328,
+    "condition_context": [
+      "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.61s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.16s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+    "line": 10329,
+    "condition_context": [
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.16s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.15s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+    "line": 10348,
+    "condition_context": [
+      "2026/11/18 10:55:27 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.59s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+    "line": 10349,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.59s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+    "line": 10350,
+    "condition_context": [
+      "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.59s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.15s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.14s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+    "line": 10351,
+    "condition_context": [
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.15s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.14s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+    "line": 10362,
+    "condition_context": [
+      "2026/11/18 10:55:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.29s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+    "line": 10363,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.29s)",
+      "    --- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+    "line": 10374,
+    "condition_context": [
+      "2026/11/18 10:55:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.48s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+    "line": 10375,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.48s)",
+      "    --- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.24s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILateWireTerminal",
+    "line": 10381,
+    "condition_context": [
+      "2026/11/18 10:55:28 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/18 10:55:28 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestFailureNoticeDriverTurnEndToEnd",
+    "line": 10691,
+    "condition_context": [
+      "--- PASS: TestFailureDockEventMatchesRendererFixture (0.14s)",
+      "=== RUN   TestFailureNoticeDriverTurnEndToEnd",
+      "    failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestGroupReplyMCP",
+    "line": 12120,
+    "condition_context": [
+      "    --- PASS: TestGroupReplyMembership/leader-only (0.61s)",
+      "=== RUN   TestGroupReplyMCP",
+      "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+    "line": 12338,
+    "condition_context": [
+      "=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+      "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+    "line": 12339,
+    "condition_context": [
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+      "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+    "line": 12340,
+    "condition_context": [
+      "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelper0232MixedVersionEndToEnd",
+    "line": 12343,
+    "condition_context": [
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)",
+      "=== RUN   TestHelper0232MixedVersionEndToEnd",
+      "    helper_update_e2e_test.go:55: explicit immutable release pins required"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+    "line": 13627,
+    "condition_context": [
+      "--- PASS: TestEnvelopeReadTimeoutDerivesFromEnvironment (0.01s)",
+      "=== RUN   TestEnvelopeReadTimeoutEnvironmentChild",
+      "    hub_timeout_contract_test.go:50: subprocess probe only"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestSessionHistoryTwentyAgentPublishP99",
+    "line": 15477,
+    "condition_context": [
+      "--- PASS: TestSessionHistoryConcurrentGroupCursorMatchesLiveEvents (0.02s)",
+      "=== RUN   TestSessionHistoryTwentyAgentPublishP99",
+      "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestSpecMCPEndToEnd",
+    "line": 15844,
+    "condition_context": [
+      "--- PASS: TestSpecGrantLegacyRequestAndPollFailFastWithoutWrites (0.16s)",
+      "=== RUN   TestSpecMCPEndToEnd",
+      "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestChangeEvidenceConsoleBrowser",
+    "line": 17934,
+    "condition_context": [
+      "    --- PASS: TestR52ChangeEvidenceTrustedOriginMatrix/configured_missing_origin (0.00s)",
+      "=== RUN   TestChangeEvidenceConsoleBrowser",
+      "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestMuxProductHTTP1EightSeats",
+    "line": 18071,
+    "condition_context": [
+      "--- PASS: TestMuxRecoveryExpiryAfterHubShutdownRejectsBackgroundWork (0.16s)",
+      "=== RUN   TestMuxProductHTTP1EightSeats",
+      "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestConsolePlatformPayloadDump",
+    "line": 18232,
+    "condition_context": [
+      "--- PASS: TestConsolePlatformAgentGroupsIDIsReserved (0.14s)",
+      "=== RUN   TestConsolePlatformPayloadDump",
+      "    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+    "line": 18569,
+    "condition_context": [
+      "--- PASS: TestConsoleTaskBoardListsAndOpensOnlyFinalSpecs (0.15s)",
+      "=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+    "line": 18793,
+    "condition_context": [
+      "2026/11/18 11:00:47 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.44s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+    "line": 18794,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.44s)",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+    "line": 18795,
+    "condition_context": [
+      "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.44s)",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.15s)",
+      "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.14s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+    "line": 18814,
+    "condition_context": [
+      "2026/11/18 11:00:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.57s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+    "line": 18815,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.57s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.14s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+    "line": 18816,
+    "condition_context": [
+      "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.57s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.14s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.14s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+    "line": 18817,
+    "condition_context": [
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.14s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.14s)",
+      "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.14s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+    "line": 18836,
+    "condition_context": [
+      "2026/11/18 11:00:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.58s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+    "line": 18837,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.58s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+    "line": 18838,
+    "condition_context": [
+      "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.58s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.15s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.14s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+    "line": 18839,
+    "condition_context": [
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.15s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.14s)",
+      "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.14s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+    "line": 18850,
+    "condition_context": [
+      "2026/11/18 11:00:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.30s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+    "line": 18851,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.30s)",
+      "    --- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.15s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+    "line": 18862,
+    "condition_context": [
+      "2026/11/18 11:00:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.51s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+    "line": 18863,
+    "condition_context": [
+      "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+      "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.51s)",
+      "    --- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.25s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILateWireTerminal",
+    "line": 18869,
+    "condition_context": [
+      "2026/11/18 11:00:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+      "2026/11/18 11:00:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+      "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestFailureNoticeDriverTurnEndToEnd",
+    "line": 19178,
+    "condition_context": [
+      "--- PASS: TestFailureDockEventMatchesRendererFixture (0.15s)",
+      "=== RUN   TestFailureNoticeDriverTurnEndToEnd",
+      "    failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestGroupReplyMCP",
+    "line": 20609,
+    "condition_context": [
+      "    --- PASS: TestGroupReplyMembership/leader-only (0.62s)",
+      "=== RUN   TestGroupReplyMCP",
+      "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+    "line": 20835,
+    "condition_context": [
+      "=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+      "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+    "line": 20836,
+    "condition_context": [
+      "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+      "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+    "line": 20837,
+    "condition_context": [
+      "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)",
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelper0232MixedVersionEndToEnd",
+    "line": 20840,
+    "condition_context": [
+      "    --- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)",
+      "=== RUN   TestHelper0232MixedVersionEndToEnd",
+      "    helper_update_e2e_test.go:55: explicit immutable release pins required"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+    "line": 22124,
+    "condition_context": [
+      "--- PASS: TestEnvelopeReadTimeoutDerivesFromEnvironment (0.01s)",
+      "=== RUN   TestEnvelopeReadTimeoutEnvironmentChild",
+      "    hub_timeout_contract_test.go:50: subprocess probe only"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestSessionHistoryTwentyAgentPublishP99",
+    "line": 23992,
+    "condition_context": [
+      "--- PASS: TestSessionHistoryConcurrentGroupCursorMatchesLiveEvents (0.02s)",
+      "=== RUN   TestSessionHistoryTwentyAgentPublishP99",
+      "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestSpecMCPEndToEnd",
+    "line": 24368,
+    "condition_context": [
+      "--- PASS: TestSpecGrantLegacyRequestAndPollFailFastWithoutWrites (0.14s)",
+      "=== RUN   TestSpecMCPEndToEnd",
+      "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+    "line": 558,
+    "condition_context": [
+      "--- PASS: TestConsoleTaskAcceptanceLinksCascadeOnTaskDelete (0.15s)",
+      "=== RUN   TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+    "line": 561,
+    "condition_context": [
+      "--- SKIP: TestConsoleTaskLegacyDODMigrationPendingProductionCount (0.00s)",
+      "=== RUN   TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "    console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+    "line": 620,
+    "condition_context": [
+      "--- PASS: TestSingleTenantAmbiguousParentFailsClosed (0.15s)",
+      "=== RUN   TestFeishuStickyOldHubMigrationRollbackCompatibility",
+      "    feishu_sticky_compat_test.go:116: R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+    "line": 1211,
+    "condition_context": [
+      "--- PASS: TestBlockerAddressedWaiterGetsOnlyNeededContext (0.14s)",
+      "=== RUN   TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+      "    task_dispatch_compat_test.go:196: exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestR10RestartChildAuthority",
+    "line": 1278,
+    "condition_context": [
+      "--- PASS: TestR10PGFenceSQLiteFailureDoesNotGrant (1.20s)",
+      "=== RUN   TestR10RestartChildAuthority",
+      "    task_dispatch_restart_test.go:22: subprocess-only probe, exercised by TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+    "line": 1862,
+    "condition_context": [
+      "--- PASS: TestConsoleTaskAcceptanceLinksCascadeOnTaskDelete (0.15s)",
+      "=== RUN   TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+    "line": 1865,
+    "condition_context": [
+      "--- SKIP: TestConsoleTaskLegacyDODMigrationPendingProductionCount (0.00s)",
+      "=== RUN   TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "    console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+    "line": 1924,
+    "condition_context": [
+      "--- PASS: TestSingleTenantAmbiguousParentFailsClosed (0.15s)",
+      "=== RUN   TestFeishuStickyOldHubMigrationRollbackCompatibility",
+      "    feishu_sticky_compat_test.go:116: R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+    "line": 2515,
+    "condition_context": [
+      "--- PASS: TestBlockerAddressedWaiterGetsOnlyNeededContext (0.14s)",
+      "=== RUN   TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+      "    task_dispatch_compat_test.go:196: exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestR10RestartChildAuthority",
+    "line": 2582,
+    "condition_context": [
+      "--- PASS: TestR10PGFenceSQLiteFailureDoesNotGrant (1.19s)",
+      "=== RUN   TestR10RestartChildAuthority",
+      "    task_dispatch_restart_test.go:22: subprocess-only probe, exercised by TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+    "line": 3166,
+    "condition_context": [
+      "--- PASS: TestConsoleTaskAcceptanceLinksCascadeOnTaskDelete (0.14s)",
+      "=== RUN   TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+    "line": 3169,
+    "condition_context": [
+      "--- SKIP: TestConsoleTaskLegacyDODMigrationPendingProductionCount (0.00s)",
+      "=== RUN   TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "    console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+    "line": 3228,
+    "condition_context": [
+      "--- PASS: TestSingleTenantAmbiguousParentFailsClosed (0.14s)",
+      "=== RUN   TestFeishuStickyOldHubMigrationRollbackCompatibility",
+      "    feishu_sticky_compat_test.go:116: R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+    "line": 3819,
+    "condition_context": [
+      "--- PASS: TestBlockerAddressedWaiterGetsOnlyNeededContext (0.14s)",
+      "=== RUN   TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+      "    task_dispatch_compat_test.go:196: exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate"
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestR10RestartChildAuthority",
+    "line": 3886,
+    "condition_context": [
+      "--- PASS: TestR10PGFenceSQLiteFailureDoesNotGrant (1.38s)",
+      "=== RUN   TestR10RestartChildAuthority",
+      "    task_dispatch_restart_test.go:22: subprocess-only probe, exercised by TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice"
+    ]
+  }
+]

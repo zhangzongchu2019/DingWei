@@ -1,0 +1,14 @@
+[
+  {
+    "old_path": "/tmp/coder-h1-go-cache",
+    "new_path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/relocated-test-tools-20261118/coder-h1-go-cache",
+    "verified_files_and_links": 1896,
+    "kind": "own inactive Go compiler cache; original path retained"
+  },
+  {
+    "old_path": "/tmp/coder-h2-go-cache",
+    "new_path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/relocated-test-tools-20261118/coder-h2-go-cache",
+    "verified_files_and_links": 2924,
+    "kind": "own inactive Go compiler cache; original path retained"
+  }
+]

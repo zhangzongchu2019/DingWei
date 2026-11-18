@@ -1,0 +1,13 @@
+{
+  "uid": 1001,
+  "nproc": 16,
+  "observed_utc": "2026-11-18T10:24:02.016056+00:00",
+  "loadavg": [
+    3.56005859375,
+    3.25390625,
+    3.1298828125
+  ],
+  "go_version": "go version go1.22.2 linux/amd64",
+  "inherited_platform_environment": "not inherited: explicit dictionary whitelist",
+  "pg_archive": "existing local18.3archive copied into independentHOME before gates"
+}

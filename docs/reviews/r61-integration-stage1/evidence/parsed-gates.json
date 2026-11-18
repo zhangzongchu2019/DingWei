@@ -1,0 +1,67 @@
+[
+  {
+    "name": "build-canonical",
+    "rc": 0,
+    "top_pass": 6,
+    "all_pass": 21,
+    "skip_lines": 0,
+    "failures": [],
+    "interrupted_line_numbers": []
+  },
+  {
+    "name": "m8-full3",
+    "rc": 0,
+    "top_pass": 2958,
+    "all_pass": 4965,
+    "skip_lines": 87,
+    "failures": [],
+    "interrupted_line_numbers": [],
+    "rounds": [
+      {
+        "round": 1,
+        "top_pass": 986,
+        "failures": [],
+        "interrupted_lines": 0
+      },
+      {
+        "round": 2,
+        "top_pass": 986,
+        "failures": [],
+        "interrupted_lines": 0
+      },
+      {
+        "round": 3,
+        "top_pass": 986,
+        "failures": [],
+        "interrupted_lines": 0
+      }
+    ]
+  },
+  {
+    "name": "store-full3",
+    "rc": 0,
+    "top_pass": 1320,
+    "all_pass": 2214,
+    "skip_lines": 15,
+    "failures": [],
+    "interrupted_line_numbers": []
+  },
+  {
+    "name": "browser-full",
+    "rc": 0,
+    "top_pass": 0,
+    "all_pass": 0,
+    "skip_lines": 0,
+    "failures": [],
+    "interrupted_line_numbers": []
+  },
+  {
+    "name": "strict",
+    "rc": 0,
+    "top_pass": 0,
+    "all_pass": 0,
+    "skip_lines": 0,
+    "failures": [],
+    "interrupted_line_numbers": []
+  }
+]

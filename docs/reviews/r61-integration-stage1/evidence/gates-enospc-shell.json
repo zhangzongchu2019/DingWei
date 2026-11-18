@@ -1,0 +1,14 @@
+[
+  {
+    "name": "build-canonical",
+    "source_commit": "38b9538dd2b1f1783aee6d7890ea03b83e33184e",
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "started_utc": "2026-11-18T10:28:16.589180+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T10:37:21.366383+00:00",
+    "raw_sha256": "7c300fcf070a3ee0cd9e4ea840cd0fd74832c0952742213b500772d6f2356e75"
+  }
+]

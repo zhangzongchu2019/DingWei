@@ -1,0 +1,87 @@
+{
+  "source_commit": "38b9538dd2b1f1783aee6d7890ea03b83e33184e",
+  "source_tree": "8ac5ca18e7e92edc7a88e3182f6090d3135e7e78",
+  "checked_utc": "2026-11-18T10:23:00.378429+00:00",
+  "merges": [
+    {
+      "index": 1,
+      "branch": "togpt60lunazzc/helper-admission-flake",
+      "source": "bfaec0ba27060299fc87b0ad592db9fb5dc75b63",
+      "checked_utc": "2026-11-18T10:21:57.208495+00:00",
+      "ls_remote": "bfaec0ba27060299fc87b0ad592db9fb5dc75b63\trefs/heads/togpt60lunazzc/helper-admission-flake",
+      "head_before": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+      "rc": 0,
+      "merged_sha": "1283116e56a32a55f998e61f4782ab78185dfa56",
+      "tree": "4f7c1ab0544bd6efcb917e45c1d68b9d91bfb5d6"
+    },
+    {
+      "index": 2,
+      "branch": "togpt60lunazzc/helper-flake-2",
+      "source": "f7b32525cd1b99d5188fbc3c8133018b6a8a8a82",
+      "checked_utc": "2026-11-18T10:22:00.960749+00:00",
+      "ls_remote": "f7b32525cd1b99d5188fbc3c8133018b6a8a8a82\trefs/heads/togpt60lunazzc/helper-flake-2",
+      "head_before": "1283116e56a32a55f998e61f4782ab78185dfa56",
+      "rc": 0,
+      "merged_sha": "625f70cf355be943012d40fe73e70e1d014eb67a",
+      "tree": "40af42841e573300278e006421ee8f317dbba026"
+    },
+    {
+      "index": 3,
+      "branch": "togpt60lunazzc/r61-n1-busy-wait-v2",
+      "source": "638cb32477af230bedd2aba0bc547dee82b162ef",
+      "checked_utc": "2026-11-18T10:22:04.015786+00:00",
+      "ls_remote": "638cb32477af230bedd2aba0bc547dee82b162ef\trefs/heads/togpt60lunazzc/r61-n1-busy-wait-v2",
+      "head_before": "625f70cf355be943012d40fe73e70e1d014eb67a",
+      "rc": 0,
+      "merged_sha": "0c3cf7e48d6efa6bebd1861fd7680e9d0255f0c4",
+      "tree": "82ebf0c392666392de7faf63668b0721fb737e39"
+    },
+    {
+      "index": 4,
+      "branch": "qwen38mvb4/r61-n2-offturn-fold-v2",
+      "source": "8ae6b083dc3c3875bc3ddf8cc6ae53fd593ab298",
+      "checked_utc": "2026-11-18T10:22:07.636401+00:00",
+      "ls_remote": "8ae6b083dc3c3875bc3ddf8cc6ae53fd593ab298\trefs/heads/qwen38mvb4/r61-n2-offturn-fold-v2",
+      "head_before": "0c3cf7e48d6efa6bebd1861fd7680e9d0255f0c4",
+      "rc": 0,
+      "merged_sha": "f884c854dcd12af4d48a928d9e018db2ec5a0e66",
+      "tree": "629ddb57afa8758ab16f94a8cc7e37ad57829ab9"
+    },
+    {
+      "index": 5,
+      "branch": "qwen38mvb4/browser-flake-windows-v2",
+      "source": "415b9bf5199e711b5323e21a0a147082a2108498",
+      "checked_utc": "2026-11-18T10:22:10.515883+00:00",
+      "ls_remote": "415b9bf5199e711b5323e21a0a147082a2108498\trefs/heads/qwen38mvb4/browser-flake-windows-v2",
+      "head_before": "f884c854dcd12af4d48a928d9e018db2ec5a0e66",
+      "rc": 0,
+      "merged_sha": "bbf29d8e8de2f2a6faa4de01d8eba01ae486c957",
+      "tree": "c6ad01b276cbbcfb8b1ff5c55934492a534afcbb"
+    },
+    {
+      "index": 6,
+      "branch": "qwen38mvb4/browser-followup",
+      "source": "e26d7ee0046ef008cfa850a240d453869b56daa5",
+      "checked_utc": "2026-11-18T10:22:14.419809+00:00",
+      "ls_remote": "e26d7ee0046ef008cfa850a240d453869b56daa5\trefs/heads/qwen38mvb4/browser-followup",
+      "head_before": "bbf29d8e8de2f2a6faa4de01d8eba01ae486c957",
+      "rc": 0,
+      "merged_sha": "63f5c3d7b6dd12a25d3e01ea00b71f0a5ab2dc75",
+      "tree": "97613ae3148ac1fcd93b4aa7716febd5280016cc"
+    },
+    {
+      "index": 7,
+      "branch": "qwen38mvb4/browser-mutant-revive",
+      "source": "429cf1dd9c0cb59cb82191d5c7cfb0014f2420e0",
+      "checked_utc": "2026-11-18T10:22:17.911609+00:00",
+      "ls_remote": "429cf1dd9c0cb59cb82191d5c7cfb0014f2420e0\trefs/heads/qwen38mvb4/browser-mutant-revive",
+      "head_before": "63f5c3d7b6dd12a25d3e01ea00b71f0a5ab2dc75",
+      "rc": 0,
+      "merged_sha": "38b9538dd2b1f1783aee6d7890ea03b83e33184e",
+      "tree": "8ac5ca18e7e92edc7a88e3182f6090d3135e7e78"
+    }
+  ],
+  "textual_conflicts": [],
+  "logical_resolution": "ort retained both mutation revivals and silent feedback; whitelist exactly matches429cf1dd",
+  "version_unchanged": true
+}

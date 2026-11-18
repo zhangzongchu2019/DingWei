@@ -1,0 +1,80 @@
+[
+  {
+    "name": "build-canonical",
+    "source_commit": "38b9538dd2b1f1783aee6d7890ea03b83e33184e",
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "started_utc": "2026-11-18T10:39:44.426768+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T10:48:59.646932+00:00",
+    "raw_sha256": "7fd77f5a77e73e2324220cd69e1c70f94cc9415a5c48857b946024ee2b1bbc5a"
+  },
+  {
+    "name": "m8-full3",
+    "source_commit": "38b9538dd2b1f1783aee6d7890ea03b83e33184e",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=3",
+      "-p",
+      "1",
+      "-timeout",
+      "90m",
+      "-v"
+    ],
+    "started_utc": "2026-11-18T10:48:59.690244+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T11:05:08.590670+00:00",
+    "raw_sha256": "d724527ccf1381322d30d76f41da90daeb90d52e0209a7fa8389051bf01291a5"
+  },
+  {
+    "name": "store-full3",
+    "source_commit": "38b9538dd2b1f1783aee6d7890ea03b83e33184e",
+    "command": [
+      "go",
+      "test",
+      "./internal/store/...",
+      "-count=3",
+      "-p",
+      "1",
+      "-timeout",
+      "90m",
+      "-v"
+    ],
+    "started_utc": "2026-11-18T11:05:08.638612+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T11:10:39.150225+00:00",
+    "raw_sha256": "73009c3f865d0303cb9534415b19a186570339abb58133f5898a8320ed711f03"
+  },
+  {
+    "name": "browser-full",
+    "source_commit": "38b9538dd2b1f1783aee6d7890ea03b83e33184e",
+    "command": [
+      "python3",
+      "tools/run-browser-regressions.py",
+      "--receipt",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-integration-stage1-20261118/browser-receipt.txt"
+    ],
+    "started_utc": "2026-11-18T11:10:39.191528+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T11:22:58.364432+00:00",
+    "raw_sha256": "dae177ba6f4efa10a465b6dae5b6f522a8108a5c9a558f8a37571eef7e838468"
+  },
+  {
+    "name": "strict",
+    "source_commit": "38b9538dd2b1f1783aee6d7890ea03b83e33184e",
+    "command": [
+      "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+      "validate",
+      "--all",
+      "--strict"
+    ],
+    "started_utc": "2026-11-18T11:22:58.406653+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T11:22:58.842775+00:00",
+    "raw_sha256": "b606502e38f0d8df066a3dec11d14d8ccd3c8a3cd04a68ca74f482ef873cfb7d"
+  }
+]

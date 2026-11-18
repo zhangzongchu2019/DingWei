@@ -1,0 +1,17 @@
+[
+  {
+    "old_path": "/tmp/coder-0232-locked-venv",
+    "new_path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/relocated-test-tools-20261118/coder-0232-locked-venv",
+    "verified_files_and_links": 1198
+  },
+  {
+    "old_path": "/tmp/coder56solzzc-openspec-1.16.0",
+    "new_path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/relocated-test-tools-20261118/coder56solzzc-openspec-1.16.0",
+    "verified_files_and_links": 2103
+  },
+  {
+    "old_path": "/tmp/coder-a3-playwright",
+    "new_path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/relocated-test-tools-20261118/coder-a3-playwright",
+    "verified_files_and_links": 515
+  }
+]
