@@ -1,0 +1,20 @@
+test_queue_full_terminal_ack_requires_negotiated_hub_header (test_sessionhelper.SessionHelperTest.test_queue_full_terminal_ack_requires_negotiated_hub_header) ... 
+  test_queue_full_terminal_ack_requires_negotiated_hub_header (test_sessionhelper.SessionHelperTest.test_queue_full_terminal_ack_requires_negotiated_hub_header) (negotiated=False, v2=True) ... FAIL
+
+======================================================================
+FAIL: test_queue_full_terminal_ack_requires_negotiated_hub_header (test_sessionhelper.SessionHelperTest.test_queue_full_terminal_ack_requires_negotiated_hub_header) (negotiated=False, v2=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r61-n1b-mutations/tools/sessionhelper/tests/test_sessionhelper.py", line 1905, in test_queue_full_terminal_ack_requires_negotiated_hub_header
+    self.assertEqual(meta["state"], expected_state)
+AssertionError: 'failed' != 'busy'
+- failed
++ busy
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.119s
+
+FAILED (failures=1)
+
+MUTATION_RC=1

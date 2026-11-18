@@ -162,6 +162,8 @@ type SessionDeliveryACK struct {
 	ProcessingMode string
 	Generation     int
 	Phase          string
+	FailureReason  string
+	Retryable      bool
 	OccurredAt     time.Time
 	TurnID         string
 	TurnOutcome    string

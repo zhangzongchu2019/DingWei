@@ -1,0 +1,167 @@
+=== RUN   TestAMRFailureNoticeCarriesReplyOriginSuppressionMarker
+2026/11/18 06:25:37 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:37 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:37 restart window signal event=amr_failure within_restart_window=true hub_uptime_seconds=0 restart_window_seconds=60
+--- PASS: TestAMRFailureNoticeCarriesReplyOriginSuppressionMarker (0.16s)
+=== RUN   TestDeliveryACKV2QueueFullRequiresNegotiationAndCreatesDurableNotice
+2026/11/18 06:25:37 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:37 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:37 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:25:37 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":652,"queue_peak_items":2,"reader_age_ms":0,"reader_frame_bytes":326,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T06:25:37.759557256Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":0,"write_budget_ms":5000,"write_bytes":258}
+2026/11/18 06:25:37 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=opus50ts conn_seq=1 client_present=false
+2026/11/18 06:25:37 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestDeliveryACKV2QueueFullRequiresNegotiationAndCreatesDurableNotice (0.20s)
+=== RUN   TestDeliveryACKV2QueueFullIgnoredWithoutHelperCapability
+2026/11/18 06:25:37 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:37 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:37 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:25:37 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":326,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":326,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T06:25:38.025885813Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":100,"write_budget_ms":20000,"write_bytes":244}
+2026/11/18 06:25:38 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestDeliveryACKV2QueueFullIgnoredWithoutHelperCapability (0.26s)
+=== RUN   TestNewHubOldHelperQueueFullKeepsRetryableBusyPath
+2026/11/18 06:25:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:38 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:25:38 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":321,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":321,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T06:25:38.284534082Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":100,"write_budget_ms":20000,"write_bytes":244}
+2026/11/18 06:25:38 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestNewHubOldHelperQueueFullKeepsRetryableBusyPath (0.26s)
+=== RUN   TestDeliveryACKV2QueueFullRequiresExplicitNonretryableShape
+2026/11/18 06:25:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:38 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:25:38 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":325,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":325,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T06:25:38.545110371Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":100,"write_budget_ms":20000,"write_bytes":244}
+2026/11/18 06:25:38 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=1
+2026/11/18 06:25:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:38 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:25:38 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":308,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":308,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T06:25:38.797697422Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":100,"write_budget_ms":20000,"write_bytes":244}
+2026/11/18 06:25:38 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestDeliveryACKV2QueueFullRequiresExplicitNonretryableShape (0.52s)
+=== RUN   TestFailureNoticeDriverTurnEndToEnd
+    failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime
+--- SKIP: TestFailureNoticeDriverTurnEndToEnd (0.00s)
+=== RUN   TestOfflineFailureNoticeStartupAndPeriodicWithoutReconnect
+2026/11/18 06:25:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestOfflineFailureNoticeStartupAndPeriodicWithoutReconnect (0.16s)
+=== RUN   TestOfflineFailureNoticeActualSourceReconnectAndLostACK
+2026/11/18 06:25:39 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:39 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:39 session name warning key_id=FB-owner-20261118-ca22492f owner= session=source: 无法确认该 key 绑定成员 owner_key
+2026/11/18 06:25:39 session version warning key_id=FB-owner-20261118-ca22492f owner= session=source version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/18 06:25:39 session handshake timing key_id=FB-owner-20261118-ca22492f session=source total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:25:39 session delivery lease release decision=requeue key_id=FB-owner-20261118-ca22492f session=source conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"session_capabilities","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":153,"queue_peak_items":1,"reader_age_ms":10,"reader_frame_bytes":153,"reader_frame_type":"text","reason":"peer_normal","session":"source","utc":"2026-11-18T06:25:39.136161442Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":10,"write_budget_ms":5000,"write_bytes":4341}
+2026/11/18 06:25:39 session delivery lease release decision=requeue key_id=FB-owner-20261118-ca22492f session=source conn_seq=1 reason=session_disconnected released=0
+2026/11/18 06:25:39 session name warning key_id=FB-owner-20261118-ca22492f owner= session=source: 无法确认该 key 绑定成员 owner_key
+2026/11/18 06:25:39 session version warning key_id=FB-owner-20261118-ca22492f owner= session=source version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/18 06:25:39 session handshake timing key_id=FB-owner-20261118-ca22492f session=source total=1ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:25:39 session delivery lease release decision=requeue key_id=FB-owner-20261118-ca22492f session=source conn_seq=2 reason=session_reconnected released=0
+{"conn_seq":2,"event":"session_end","last_worker_type":"session_capabilities","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":153,"queue_peak_items":1,"reader_age_ms":10,"reader_frame_bytes":153,"reader_frame_type":"text","reason":"peer_normal","session":"source","utc":"2026-11-18T06:25:39.159282293Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":8,"write_budget_ms":20000,"write_bytes":893}
+2026/11/18 06:25:39 session delivery lease release decision=requeue key_id=FB-owner-20261118-ca22492f session=source conn_seq=2 reason=session_disconnected released=1
+2026/11/18 06:25:39 session name warning key_id=FB-owner-20261118-ca22492f owner= session=source: 无法确认该 key 绑定成员 owner_key
+2026/11/18 06:25:39 session version warning key_id=FB-owner-20261118-ca22492f owner= session=source version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/18 06:25:39 session handshake timing key_id=FB-owner-20261118-ca22492f session=source total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:25:39 session delivery lease release decision=requeue key_id=FB-owner-20261118-ca22492f session=source conn_seq=3 reason=session_reconnected released=0
+{"conn_seq":3,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":243,"queue_peak_items":1,"reader_age_ms":10,"reader_frame_bytes":243,"reader_frame_type":"text","reason":"peer_normal","session":"source","utc":"2026-11-18T06:25:39.191404934Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":19,"write_budget_ms":20000,"write_bytes":893}
+2026/11/18 06:25:39 session delivery lease release decision=requeue key_id=FB-owner-20261118-ca22492f session=source conn_seq=3 reason=session_disconnected released=0
+--- PASS: TestOfflineFailureNoticeActualSourceReconnectAndLostACK (0.22s)
+=== RUN   TestFailureNoticeRetryExhaustionCannotNotifyAgain
+2026/11/18 06:25:39 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:39 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestFailureNoticeRetryExhaustionCannotNotifyAgain (0.20s)
+=== RUN   TestFailureNoticeTrustedContextStopsAgentAndDirectReply
+2026/11/18 06:25:39 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:39 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:39 [reply-origin] lookup session=bee delivery_id=notice-context cost=41.026µs err=<nil> found=true
+--- PASS: TestFailureNoticeTrustedContextStopsAgentAndDirectReply (0.15s)
+=== RUN   TestFailureNoticeTrustedContextStopsRealChannelOutbound
+2026/11/18 06:25:39 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:39 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestFailureNoticeTrustedContextStopsRealChannelOutbound (0.15s)
+=== RUN   TestFailureNoticeClientClaimCannotCreateContextOrSuppressNormalReply
+2026/11/18 06:25:39 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:39 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:39 [reply-origin] lookup session=bee delivery_id=dw-dlv-failure-20e467a7fad774f3db481ab0a93b558f42cfe0e3edf51bf1298a4a8e83468630 cost=42.456µs err=<nil> found=true
+2026/11/18 06:25:39 [reply-origin] R1 已回程 session=bee to=ant#k1 delivery_id=dw-dlv-failure-20e467a7fad774f3db481ab0a93b558f42cfe0e3edf51bf1298a4a8e83468630 in_reply_to=message-dw-dlv-failure-20e467a7fad774f3db481ab0a93b558f42cfe0e3edf51bf1298a4a8e83468630 hop=0
+--- PASS: TestFailureNoticeClientClaimCannotCreateContextOrSuppressNormalReply (0.15s)
+=== RUN   TestFailureNoticeRollbackKindReplyStillStopsAMRAndReturn
+2026/11/18 06:25:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:40 [reply-origin] lookup session=bee delivery_id=rollback-notice cost=36.317µs err=<nil> found=true
+2026/11/18 06:25:40 [reply-origin] R2 跳过 reason=inbound_is_reply session=bee delivery_id=rollback-notice
+--- PASS: TestFailureNoticeRollbackKindReplyStillStopsAMRAndReturn (0.17s)
+=== RUN   TestFailureNoticeIPCBodyStopsBeforeSharedParser
+=== RUN   TestFailureNoticeIPCBodyStopsBeforeSharedParser/source_delivery_id
+2026/11/18 06:25:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:40 amr decision=token_skipped reason=unsupported_name tokens=[张宗楚] source=ipc-source
+2026/11/18 06:25:40 feishu dispatch rejected reason=short_name_not_resolvable open_id="" target="primary" bot_channel=""
+=== RUN   TestFailureNoticeIPCBodyStopsBeforeSharedParser/in_reply_to
+2026/11/18 06:25:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:40 amr decision=token_skipped reason=unsupported_name tokens=[张宗楚] source=ipc-source
+2026/11/18 06:25:40 feishu dispatch rejected reason=short_name_not_resolvable open_id="" target="primary" bot_channel=""
+--- PASS: TestFailureNoticeIPCBodyStopsBeforeSharedParser (0.31s)
+    --- PASS: TestFailureNoticeIPCBodyStopsBeforeSharedParser/source_delivery_id (0.16s)
+    --- PASS: TestFailureNoticeIPCBodyStopsBeforeSharedParser/in_reply_to (0.15s)
+=== RUN   TestOutboundRecoveryFailureNoticeIsVisibleAndBoundToOriginalSender
+2026/11/18 06:25:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:40 session handshake timing key_id=u_zzc session=opus50ts total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:25:40 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"session_capabilities","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":209,"queue_peak_items":1,"reader_age_ms":3,"reader_frame_bytes":209,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T06:25:40.496295478Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":0,"write_budget_ms":20000,"write_bytes":962}
+2026/11/18 06:25:40 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestOutboundRecoveryFailureNoticeIsVisibleAndBoundToOriginalSender (0.18s)
+=== RUN   TestReplyToOriginSystemNotificationTurnStopsWithoutFailureNotice
+2026/11/18 06:25:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:25:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:25:40 [reply-origin] R1 跳过 reason=system_notification session=bee delivery_id=opaque-delivery-coordinate
+--- PASS: TestReplyToOriginSystemNotificationTurnStopsWithoutFailureNotice (0.18s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	3.286s
+=== RUN   TestFailureNoticeAtomicRollbackAndSameIDRetry
+--- PASS: TestFailureNoticeAtomicRollbackAndSameIDRetry (0.16s)
+=== RUN   TestFailureNoticeGlobalSweepEveryNonterminalState
+--- PASS: TestFailureNoticeGlobalSweepEveryNonterminalState (0.16s)
+=== RUN   TestFailureNoticeRecentDeadBackfillAndConcurrentSweep
+--- PASS: TestFailureNoticeRecentDeadBackfillAndConcurrentSweep (0.18s)
+=== RUN   TestFailureNoticeRetryExhaustionIsAtomic
+--- PASS: TestFailureNoticeRetryExhaustionIsAtomic (0.18s)
+=== RUN   TestFailureNoticeOnlyKnownACKSessionSource
+=== RUN   TestFailureNoticeOnlyKnownACKSessionSource/unknown
+=== RUN   TestFailureNoticeOnlyKnownACKSessionSource/no-ack
+=== RUN   TestFailureNoticeOnlyKnownACKSessionSource/feishu
+=== RUN   TestFailureNoticeOnlyKnownACKSessionSource/notice
+--- PASS: TestFailureNoticeOnlyKnownACKSessionSource (0.69s)
+    --- PASS: TestFailureNoticeOnlyKnownACKSessionSource/unknown (0.17s)
+    --- PASS: TestFailureNoticeOnlyKnownACKSessionSource/no-ack (0.16s)
+    --- PASS: TestFailureNoticeOnlyKnownACKSessionSource/feishu (0.18s)
+    --- PASS: TestFailureNoticeOnlyKnownACKSessionSource/notice (0.18s)
+=== RUN   TestFailureNoticeDistinctTargetsSharingOriginalMessageID
+--- PASS: TestFailureNoticeDistinctTargetsSharingOriginalMessageID (0.18s)
+=== RUN   TestFailureNoticeSafeTargetAndChineseReason
+=== RUN   TestFailureNoticeSafeTargetAndChineseReason/delivery_expired
+=== RUN   TestFailureNoticeSafeTargetAndChineseReason/retry_exhausted
+=== RUN   TestFailureNoticeSafeTargetAndChineseReason/delivery_ack_unsupported
+=== RUN   TestFailureNoticeSafeTargetAndChineseReason/delivery_capability_unconfirmed_expired
+--- PASS: TestFailureNoticeSafeTargetAndChineseReason (0.67s)
+    --- PASS: TestFailureNoticeSafeTargetAndChineseReason/delivery_expired (0.19s)
+    --- PASS: TestFailureNoticeSafeTargetAndChineseReason/retry_exhausted (0.17s)
+    --- PASS: TestFailureNoticeSafeTargetAndChineseReason/delivery_ack_unsupported (0.16s)
+    --- PASS: TestFailureNoticeSafeTargetAndChineseReason/delivery_capability_unconfirmed_expired (0.15s)
+=== RUN   TestDeliveryACKV2QueueFullAtomicallyDeadLettersAndCreatesFixedNotice
+--- PASS: TestDeliveryACKV2QueueFullAtomicallyDeadLettersAndCreatesFixedNotice (0.16s)
+=== RUN   TestDeliveryACKV2QueueFullNoticeInsertFailureRollsBackTerminal
+--- PASS: TestDeliveryACKV2QueueFullNoticeInsertFailureRollsBackTerminal (0.16s)
+=== RUN   TestDeliveryACKV2QueueFullFeishuNoticeUsesDurableOutboundQueue
+--- PASS: TestDeliveryACKV2QueueFullFeishuNoticeUsesDurableOutboundQueue (0.18s)
+=== RUN   TestSubAgentFailureNoticeRetainsSourceNode
+--- PASS: TestSubAgentFailureNoticeRetainsSourceNode (0.18s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	2.913s

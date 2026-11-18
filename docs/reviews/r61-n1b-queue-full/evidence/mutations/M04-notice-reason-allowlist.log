@@ -1,0 +1,7 @@
+--- FAIL: TestDeliveryACKV2QueueFullAtomicallyDeadLettersAndCreatesFixedNotice (0.18s)
+    session_delivery_ack_test.go:84: missing durable sender notice: <nil> <nil>
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.182s
+FAIL
+
+MUTATION_RC=1

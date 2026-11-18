@@ -287,35 +287,36 @@ type sessionClient struct {
 	diskMetrics        *agentmetrics.Cache // Access to the pointer is under h.mu.
 	lastMetricsAttempt time.Time           // Read/written under h.mu; rejected attempts do not renew the cache.
 
-	conn               *websocket.Conn
-	mu                 sync.Mutex
-	stateMu            sync.Mutex
-	keyID              string
-	ownerKey           string
-	sessionName        string
-	localName          string // 客户端握手上报的原始名；sessionHelper 用它命名本机在线清单文件
-	connSeq            int
-	lastSeenAt         time.Time
-	targetBot          string
-	webTerminal        bool
-	osName             string
-	tool               string
-	version            string
-	skillInstalled     bool
-	skillCancel        context.CancelFunc
-	deliveryACKV1      bool
-	deliveryACKV2      bool
-	taskFlowV1         bool
-	blockerNoticeV1    bool
-	blockerWakeV1      bool
-	specReviewV1       bool
-	coordinateReviewV1 bool
-	pmSpecFlowV1       bool
-	helperUpdateV1     bool // authenticated helper explicitly supports update_self v1
-	desktopInboxV1     bool
-	helperReady        bool
-	deviceID           string
-	deviceIDV1         bool
+	conn                   *websocket.Conn
+	mu                     sync.Mutex
+	stateMu                sync.Mutex
+	keyID                  string
+	ownerKey               string
+	sessionName            string
+	localName              string // 客户端握手上报的原始名；sessionHelper 用它命名本机在线清单文件
+	connSeq                int
+	lastSeenAt             time.Time
+	targetBot              string
+	webTerminal            bool
+	osName                 string
+	tool                   string
+	version                string
+	skillInstalled         bool
+	skillCancel            context.CancelFunc
+	deliveryACKV1          bool
+	deliveryACKV2          bool
+	deliveryACKQueueFullV1 bool
+	taskFlowV1             bool
+	blockerNoticeV1        bool
+	blockerWakeV1          bool
+	specReviewV1           bool
+	coordinateReviewV1     bool
+	pmSpecFlowV1           bool
+	helperUpdateV1         bool // authenticated helper explicitly supports update_self v1
+	desktopInboxV1         bool
+	helperReady            bool
+	deviceID               string
+	deviceIDV1             bool
 
 	lastTouchWritten time.Time // R-V2-0105 件三：上次把 last_seen 落库的时刻（touchSessionEndpoint 节流）
 
@@ -372,7 +373,9 @@ type ForwardResponse struct {
 const (
 	// systemAddressName 是保留的系统地址名,用于 helper<->Hub 的控制面信封(T-044)。
 	// 它**不是会话名**:任何以它为目标的信封都终止于 Hub,绝不进入会话解析。
-	systemAddressName = "workpulse"
+	systemAddressName            = "workpulse"
+	deliveryACKQueueFullHeader   = "X-DW-Queue-Full-ACK"
+	deliveryACKQueueFullProtocol = "queue-full/v1"
 
 	secOpsOwnerKey             = "systemtaskintl"
 	secOpsMemberName           = "SYSTEM-V-TASK-INTERNAL"
@@ -1182,6 +1185,7 @@ func (h *Hub) serveSession(w http.ResponseWriter, r *http.Request, a sessionAdmi
 		return
 	}
 	markTiming("register")
+	w.Header().Set(deliveryACKQueueFullHeader, deliveryACKQueueFullProtocol)
 	var c *sessionClient
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{
 		InsecureSkipVerify: true,
@@ -4641,6 +4645,7 @@ func (h *Hub) handleSessionCapability(c *sessionClient, env model.Envelope) bool
 	c.helperUpdateV1 = metaBool(env.Meta, "helper_update_v1")
 	c.desktopInboxV1 = metaBool(env.Meta, "desktop_inbox_v1") && metaString(env.Meta, "processed_semantics") == "saved_to_desktop_inbox"
 	c.deliveryACKV2 = metaBool(env.Meta, "delivery_ack_v2") && metaString(env.Meta, "processing_mode") == "driver" && !c.desktopInboxV1
+	c.deliveryACKQueueFullV1 = c.deliveryACKV2 && metaBool(env.Meta, "delivery_ack_queue_full_v1")
 	c.deliveryACKV1 = c.deliveryACKV1 || c.deliveryACKV2
 	c.stateMu.Unlock()
 	h.writeSubAgentCapability(c, env)
@@ -4775,7 +4780,7 @@ func (h *Hub) handleSessionDeliveryAck(ctx context.Context, c *sessionClient, en
 	if err != nil || d == nil {
 		return true
 	}
-	if d.KeyID != c.keyID || d.SessionName != c.sessionName {
+	if d.KeyID != c.keyID || d.SessionName != c.sessionName || (d.State == "dead" && !(state == "failed" && metaString(env.Meta, "reason") == "queue_full")) {
 		return true
 	}
 	if d.AckProtocol == 2 {

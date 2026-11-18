@@ -68,7 +68,11 @@ func (s *SQLite) ApplySessionDeliveryACK(ctx context.Context, a model.SessionDel
 	if d == nil || d.KeyID != a.KeyID || d.SessionName != a.SessionName || d.AckProtocol != a.Protocol || d.ProcessingMode != a.ProcessingMode || d.AckGeneration != a.Generation {
 		return nil, false, ErrDeliveryACKIdentity
 	}
-	if d.State == "cancelled" || d.State == "legacy_received" || (d.State == "dead" && !(a.Phase == "failed" && d.LastError == "session_unavailable")) {
+	replayedFailureReason := a.FailureReason
+	if replayedFailureReason == "" {
+		replayedFailureReason = "session_unavailable"
+	}
+	if d.State == "cancelled" || d.State == "legacy_received" || (d.State == "dead" && !(a.Phase == "failed" && d.LastError == replayedFailureReason)) {
 		return nil, false, ErrDeliveryACKTransition
 	}
 	changed := false
@@ -143,15 +147,44 @@ func (s *SQLite) ApplySessionDeliveryACK(ctx context.Context, a model.SessionDel
 	case "failed":
 		// This is a positively rejected dispatch, never a failed model turn.
 		// A turn failure must follow injected and use processed/outcome=failed.
-		if d.InjectedAt != nil || d.DeliveredAt == nil || a.TurnID != "" || a.TurnOutcome != "" {
+		if d.InjectedAt != nil || a.TurnID != "" || a.TurnOutcome != "" || a.Retryable {
 			return nil, false, ErrDeliveryACKTransition
 		}
-		if d.State == "delivered" {
-			if _, err := tx.ExecContext(ctx, `UPDATE session_delivery SET state='dead',last_error='session_unavailable',lease_until=NULL,updated_at=? WHERE id=?`, stamp, d.ID); err != nil {
+		reason := a.FailureReason
+		if reason == "" { // Historical/internal callers predate explicit failure reason.
+			reason = "session_unavailable"
+		}
+		if reason != "session_unavailable" && reason != "queue_full" {
+			return nil, false, ErrDeliveryACKTransition
+		}
+		if reason == "session_unavailable" && d.DeliveredAt == nil {
+			return nil, false, ErrDeliveryACKTransition
+		}
+		if reason == "queue_full" && d.State != "dead" && d.State != "sent" && d.State != "delivered" {
+			return nil, false, ErrDeliveryACKTransition
+		}
+		// queue_full is a claim that the helper rejected this delivery before
+		// persisting it. Once the Hub has a durable delivery receipt, that claim
+		// cannot terminate the delivery. A replay of the already committed
+		// queue_full terminal remains idempotent below.
+		if reason == "queue_full" && d.State != "dead" && (d.State == "delivered" || d.DeliveredAt != nil || d.InjectedAt != nil) {
+			return nil, false, ErrDeliveryACKTransition
+		}
+		if d.State == "sent" || d.State == "delivered" {
+			if _, err := tx.ExecContext(ctx, `UPDATE session_delivery SET state='dead',last_error=?,lease_until=NULL,updated_at=? WHERE id=?`, reason, stamp, d.ID); err != nil {
 				return nil, false, err
 			}
+			if reason == "queue_full" {
+				dead, err := scanSessionDelivery(tx.QueryRowContext(ctx, sessionDeliverySelect+` WHERE id=?`, d.ID))
+				if err != nil {
+					return nil, false, err
+				}
+				if _, err := enqueueDeliveryFailureNoticeTx(ctx, tx, *dead, reason, now); err != nil {
+					return nil, false, err
+				}
+			}
 			changed = true
-		} else if d.State != "dead" || d.LastError != "session_unavailable" {
+		} else if d.State != "dead" || d.LastError != reason {
 			return nil, false, ErrDeliveryACKTransition
 		}
 	default:

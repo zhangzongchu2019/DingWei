@@ -1890,6 +1890,82 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(env["meta"]["type"], "session_capabilities")
         self.assertEqual(env["meta"]["delivery_ack_v1"], True)
         self.assertEqual(env["meta"]["unified_queue_v1"], True)
+        self.assertEqual(env["meta"]["delivery_ack_queue_full_v1"], True)
+
+    def test_queue_full_terminal_ack_requires_negotiated_hub_header(self):
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        async def run_case(negotiated, v2):
+            with tempfile.TemporaryDirectory() as tmp:
+                helper = SessionHelper(load_config(dict(
+                    BASE_ENV, SH_MODE="driver", SH_BUSY_BUFFER_MAX="1",
+                    SH_INBOX_DB=str(Path(tmp) / "inbox.db"))))
+                helper._connection_queue_full_ack = negotiated
+                helper.delivery_inbox.accept("occupied", {"body": "first", "meta": {}})
+                ws = FakeWS()
+                meta = {"type": "delivery", "delivery_id": "overflow"}
+                if v2:
+                    meta.update({"delivery_ack_protocol": 2, "processing_mode": "driver", "ack_generation": 4})
+                env = {"body": "must not persist", "meta": meta}
+                await helper.accept_delivery(ws, env)
+                self.assertIsNone(helper.delivery_inbox.lifecycle("overflow"))
+                return helper, ws
+
+        for negotiated, v2, expected_state, expected_reason in (
+                (True, True, "failed", "queue_full"),
+                (False, True, "busy", "queue_full"),
+                (False, False, "busy", "queue_full")):
+            with self.subTest(negotiated=negotiated, v2=v2):
+                helper, ws = asyncio.run(run_case(negotiated, v2))
+                self.assertEqual(len(ws.sent), 1)
+                meta = ws.sent[0]["meta"]
+                self.assertEqual(meta["state"], expected_state)
+                self.assertEqual(meta["reason"], expected_reason)
+                self.assertEqual(meta["delivery_id"], "overflow")
+                if negotiated:
+                    self.assertEqual(meta["ack_protocol"], 2)
+                    self.assertEqual(meta["ack_generation"], 4)
+                    self.assertIs(meta["retryable"], False)
+                    self.assertRegex(meta["occurred_at"], r"Z$")
+                else:
+                    self.assertIs(meta["retryable"], True)
+                    if v2:
+                        self.assertEqual(meta["ack_protocol"], 2)
+                    else:
+                        self.assertNotIn("ack_protocol", meta)
+
+    def test_inbox_failure_is_not_misclassified_as_queue_full(self):
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            helper = SessionHelper(load_config(dict(
+                BASE_ENV, SH_MODE="driver", SH_INBOX_DB=str(Path(tmp) / "inbox.db")
+            )))
+            helper._connection_queue_full_ack = True
+            ws = FakeWS()
+            env = {"body": "body", "meta": {
+                "type": "delivery", "delivery_id": "inbox-failure",
+                "delivery_ack_protocol": 2, "processing_mode": "driver", "ack_generation": 1,
+            }}
+            with mock.patch.object(helper.delivery_inbox, "accept", side_effect=OSError("synthetic inbox I/O failure")):
+                asyncio.run(helper.accept_delivery(ws, env))
+
+        self.assertEqual(len(ws.sent), 1)
+        ack = ws.sent[0]["meta"]
+        self.assertEqual(ack["state"], "failed")
+        self.assertEqual(ack["reason"], "inbox_unavailable")
+        self.assertIs(ack["retryable"], True)
+        self.assertNotEqual(ack["reason"], "queue_full")
 
     def test_producer_requires_target_group(self):
         helper = SessionHelper(load_config(dict(BASE_ENV, SH_PRODUCER="1")))

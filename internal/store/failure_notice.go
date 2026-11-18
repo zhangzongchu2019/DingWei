@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 	"unicode"
@@ -17,15 +18,53 @@ import (
 // Only the persisted target session label is rendered, after strict sanitization.
 // Original bodies, raw addresses/keys, arbitrary last_error and credentials are never copied.
 func enqueueDeliveryFailureNoticeTx(ctx context.Context, tx *sql.Tx, d model.SessionDelivery, reason string, now time.Time) (bool, error) {
-	if !model.DeliveryFailureReasonAllowed(reason) || (d.SourceType != "session_inbound" && !strings.HasPrefix(d.SourceType, "session_inbound/subagent/")) || d.Provenance == model.FailureNoticeProvenance {
+	if !model.DeliveryFailureReasonAllowed(reason) || d.Provenance == model.FailureNoticeProvenance {
 		return false, nil
 	}
 	var original model.Envelope
 	if json.Unmarshal([]byte(d.Envelope), &original) != nil {
 		return false, nil
 	}
-	source := strings.Split(strings.TrimSpace(original.From), "#")
+	body := "【系统投递失败通知】\n发往" + safeFailureNoticeTarget(d.SessionName) + "的原消息未能完成投递；原因：" + failureNoticeReasonText(reason) + "（原因码：" + reason + "）。本通知不要求回复。"
+	if reason == "queue_full" {
+		body = "发送未进入目标收件箱：目标 Agent 忙且收件箱已满；本条未提交，请缩短排队或稍后重新发送。"
+	}
+	from := strings.Split(strings.TrimSpace(original.From), "#")
+	if reason == "queue_full" && len(from) == 3 && (strings.HasPrefix(from[0], "ou_") || strings.HasPrefix(from[0], "oc_") || strings.HasPrefix(from[0], "on_")) && from[1] != "" && from[2] != "" {
+		// Feishu senders use the existing durable outbound message queue. Keep
+		// the same deterministic notice ID so a replayed ACK cannot enqueue twice.
+		var botChannelID string
+		if err := tx.QueryRowContext(ctx, `SELECT id FROM bot_channel WHERE name=? AND active=1 AND can_send=1`, from[2]).Scan(&botChannelID); err != nil {
+			return false, err
+		}
+		chatType, entityKind := model.ChatPersonal, "personal"
+		if strings.HasPrefix(from[0], "oc_") {
+			chatType, entityKind = model.ChatGroup, "group"
+		}
+		content, err := json.Marshal(map[string]string{"text": body})
+		if err != nil {
+			return false, err
+		}
+		id := model.FailureNoticeDeliveryID(d.ID)
+		stamp := now.UTC().Format(time.RFC3339)
+		result, err := tx.ExecContext(ctx, `INSERT INTO message
+ (id,chat_entity_id,direction,bot_channel_id,feishu_msg_id,chat_type,sender_open_id,ingress_provenance,feishu_reply_json,content_json,status,attempts,error,created_at,processed_at)
+ VALUES(?,?,?, ?,?,?, '', 'untrusted', '',?,'queued',0,'',?,NULL) ON CONFLICT(id) DO NOTHING`,
+			id, botChannelID+":"+entityKind+":"+from[0], string(model.DirectionOut), botChannelID, id, string(chatType), string(content), stamp)
+		if err != nil {
+			return false, err
+		}
+		n, err := result.RowsAffected()
+		return n > 0, err
+	}
+	if d.SourceType != "session_inbound" && !strings.HasPrefix(d.SourceType, "session_inbound/subagent/") && !(reason == "queue_full" && (d.SourceType == "feishu_inbound" || d.SourceType == "agent_route")) {
+		return false, nil
+	}
+	source := from
 	if len(source) != 2 || source[0] == "" || source[1] == "" || source[0] == "workpulse" {
+		if reason == "queue_full" {
+			return false, errors.New("queue_full sender address is not durably routable")
+		}
 		return false, nil
 	}
 	var route subagent.DeliveryRoute
@@ -48,17 +87,20 @@ func enqueueDeliveryFailureNoticeTx(ctx context.Context, tx *sql.Tx, d model.Ses
 	var ack int
 	err = tx.QueryRowContext(ctx, `SELECT delivery_ack_v1 FROM session_endpoint WHERE key_id=? AND session_name=?`, source[1], source[0]).Scan(&ack)
 	if err == sql.ErrNoRows {
+		if reason == "queue_full" {
+			return false, errors.New("queue_full sender endpoint is missing")
+		}
 		return false, nil
 	}
 	if err != nil {
 		return false, err
 	}
-	if ack != 1 {
+	if ack != 1 && reason != "queue_full" {
 		return false, nil
 	}
 	id := model.FailureNoticeDeliveryID(d.ID)
 	notice := model.Envelope{ID: id, From: "workpulse#" + source[1], To: original.From, TS: now.Unix(),
-		Body: "【系统投递失败通知】\n发往" + safeFailureNoticeTarget(d.SessionName) + "的原消息未能完成投递；原因：" + failureNoticeReasonText(reason) + "（原因码：" + reason + "）。本通知不要求回复。",
+		Body: body,
 		Meta: map[string]any{"type": "delivery", "delivery_id": id, "delivery_version": 1, "ack_required": true,
 			"source_message_id": d.ID, "failed_message_id": original.ID, "failed_delivery_id": d.ID, "reason_code": reason,
 			"kind": "reply", "reply_policy": "no_reply", "conversation_terminal": true, "suppress_reply_origin": true, "no_mirror": true}}
@@ -127,6 +169,8 @@ func failureNoticeReasonText(reason string) string {
 		return "等待目标确认投递能力已超时"
 	case "delivery_expired":
 		return "投递等待已超时"
+	case "queue_full":
+		return "目标收件箱已满，消息未提交"
 	}
 	return "无法确认完成投递"
 }

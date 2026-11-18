@@ -1,0 +1,18 @@
+test_inbox_failure_is_not_misclassified_as_queue_full (test_sessionhelper.SessionHelperTest.test_inbox_failure_is_not_misclassified_as_queue_full) ... [delivery] inbox unavailable: synthetic inbox I/O failure
+FAIL
+
+======================================================================
+FAIL: test_inbox_failure_is_not_misclassified_as_queue_full (test_sessionhelper.SessionHelperTest.test_inbox_failure_is_not_misclassified_as_queue_full)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r61-n1b-mutations/tools/sessionhelper/tests/test_sessionhelper.py", line 1944, in test_inbox_failure_is_not_misclassified_as_queue_full
+    self.assertEqual(ack["reason"], "inbox_unavailable")
+AssertionError: 'queue_full' != 'inbox_unavailable'
+- queue_full
++ inbox_unavailable
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.045s
+
+FAILED (failures=1)
