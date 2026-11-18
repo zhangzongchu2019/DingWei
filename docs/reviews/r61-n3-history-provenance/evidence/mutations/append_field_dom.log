@@ -1,0 +1,27 @@
+  FAIL agent: DB/HTTP history only, refresh icon_count==1: agent: no canonical live memory; persisted provenance must supply exactly one icon
+
+0 !== 1
+
+  PASS agent/unattested: history icon_count==0
+  PASS agent/untrusted: history icon_count==0
+  PASS agent/absent: history icon_count==0
+{"case":"agent","message_id":"hp-message-agent","delivery_id":"dw-dlv_633b45c3925c620c20e6abb39f44d14d","origin_delivery_id":"dw-dlv_633b45c3925c620c20e6abb39f44d14d","turn_id":"turn-agent","history_event_id":"echo-agent","sse_ids":["id: 06ed5de035236f5c-1","id: 06ed5de035236f5c-2","id: 06ed5de035236f5c-3"]}
+  FAIL timer: DB/HTTP history only, refresh icon_count==1: timer: no canonical live memory; persisted provenance must supply exactly one icon
+
+0 !== 1
+
+  PASS timer/unattested: history icon_count==0
+  PASS timer/untrusted: history icon_count==0
+  PASS timer/absent: history icon_count==0
+{"case":"timer","message_id":"hp-message-timer","delivery_id":"dw-dlv_98e2324cbb0b326560eac0c8498f5bba","origin_delivery_id":"dw-dlv_98e2324cbb0b326560eac0c8498f5bba","turn_id":"turn-timer","history_event_id":"echo-timer","sse_ids":["id: 38380a25165f3189-1","id: 38380a25165f3189-2","id: 38380a25165f3189-3"]}
+Error: 2 regression check(s) failed
+agent: DB/HTTP history only, refresh icon_count==1: agent: no canonical live memory; persisted provenance must supply exactly one icon
+
+0 !== 1
+
+timer: DB/HTTP history only, refresh icon_count==1: timer: no canonical live memory; persisted provenance must supply exactly one icon
+
+0 !== 1
+
+    at Object.finish (/tmp/n3-mutations-20261118/view-service/renderer-regression-selfhost.js:20:34)
+    at /tmp/n3-mutations-20261118/view-service/history-provenance-browser-regression.js:57:10

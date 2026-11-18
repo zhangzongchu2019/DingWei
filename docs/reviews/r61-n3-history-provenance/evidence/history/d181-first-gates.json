@@ -1,0 +1,84 @@
+[
+  {
+    "name": "build-canonical",
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "source_commit": "d1812840e7f512dc05caf9b3a0eb80fda8d3c508",
+    "started_utc": "2026-11-18T06:10:10.025173+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T06:19:44.603227+00:00"
+  },
+  {
+    "name": "store-full3",
+    "command": [
+      "go",
+      "test",
+      "./internal/store/...",
+      "-count=3",
+      "-p",
+      "1",
+      "-timeout",
+      "90m",
+      "-v"
+    ],
+    "source_commit": "d1812840e7f512dc05caf9b3a0eb80fda8d3c508",
+    "started_utc": "2026-11-18T06:19:44.604920+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T06:27:24.631177+00:00"
+  },
+  {
+    "name": "m8-full3",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=3",
+      "-p",
+      "1",
+      "-timeout",
+      "90m",
+      "-v"
+    ],
+    "source_commit": "d1812840e7f512dc05caf9b3a0eb80fda8d3c508",
+    "started_utc": "2026-11-18T06:27:24.632906+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T06:44:46.612977+00:00"
+  },
+  {
+    "name": "focused-race",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "./internal/store",
+      "./internal/m8",
+      "-run",
+      "TestHistoryProvenance|TestSessionHistory",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "30m",
+      "-v"
+    ],
+    "source_commit": "d1812840e7f512dc05caf9b3a0eb80fda8d3c508",
+    "started_utc": "2026-11-18T06:46:00.618852+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T06:47:52.022183+00:00"
+  },
+  {
+    "name": "browser-full",
+    "command": [
+      "python3",
+      "tools/run-browser-regressions.py",
+      "--receipt",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/browser-receipt.json"
+    ],
+    "source_commit": "d1812840e7f512dc05caf9b3a0eb80fda8d3c508",
+    "started_utc": "2026-11-18T06:47:52.024451+00:00",
+    "rc": 3,
+    "ended_utc": "2026-11-18T06:47:52.096782+00:00"
+  }
+]

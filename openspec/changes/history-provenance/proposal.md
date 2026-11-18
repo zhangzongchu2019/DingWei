@@ -27,3 +27,7 @@
 ## 待 PM 决策
 
 无。本提案沿用现有 provenance 信任契约；存量无来源时保持不显示。
+
+## 实施授权（2026-11-18）
+
+以上为原设计阶段的基线与范围记录。组长 S-R61-N3-IMPL 已授权在 main `206d41b26dab646c0e50a111eed5a45ccf7c72f6` 上实施本设计；第一提交 `c3b3db27c9532ab19a80d769da55b98f02e08696` 原样导入 `6a60a1a625ba36e8240866d641050ed83aaa64ef` 指定目录。实际实现、独立 history migration 0078、作者门与未完成的独立复核见 `docs/reviews/r61-n3-history-provenance/REPORT.md`。不改变应用库0077、renderer生产逻辑或部署状态。

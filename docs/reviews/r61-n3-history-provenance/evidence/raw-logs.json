@@ -1,0 +1,132 @@
+[
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/08-build-canonical-aborted.log",
+    "bytes": 3690,
+    "sha256": "95cb0a78c1678680ac79f6d862732cd0a9cf4c036d5923ded0007e398fd6b43e",
+    "disposition": "historical/aborted/first attempt, not final PASS"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/3ed-build-canonical-aborted-target-pinning.log",
+    "bytes": 3141,
+    "sha256": "5d48ad5d59a21c9f74ba778edd2df08258291f7f138218607ddeaf1c29c61a3a",
+    "disposition": "historical/aborted/first attempt, not final PASS"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/615-baseline-build-canonical.log",
+    "bytes": 1015657,
+    "sha256": "6f80671e30f713c1b6df8d26ddc9ee44003a8d041cf1cd0e830d6cbf9fcae49f",
+    "disposition": "historical/aborted/first attempt, not final PASS"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/615-baseline-store-full3.log",
+    "bytes": 322408,
+    "sha256": "d86395b370c9eadf87aece33e924f9a8e2a8622f005872e1ce5f5460ffa71a5b",
+    "disposition": "historical/aborted/first attempt, not final PASS"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/browser-full.log",
+    "bytes": 101139,
+    "sha256": "7b6fbc5d84e7947ee2ff9d1dfc80c367bc6db7bf2f2ac9a4d5c5f99a7e8d5da8",
+    "disposition": "see actual gates.json or fixture-export.json; no inferred PASS",
+    "archive_path": "docs/reviews/r61-n3-history-provenance/evidence/raw/browser-full.log.gz",
+    "archive_sha256": "5713e4844b47f73c290135c82ad6a2d9a7ffa04cedb0d125001b56792d05570f"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/build-canonical-python-missing-deps.log",
+    "bytes": 3690,
+    "sha256": "c935ed8c78527276b37a17c52d7295b1582d6098abe071fd96c08a8f4af0d060",
+    "disposition": "historical/aborted/first attempt, not final PASS"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/build-canonical.log",
+    "bytes": 1011558,
+    "sha256": "10118fed88641643b33400a30e3e1ee78f8a8949c46db2ae69823938326327f7",
+    "disposition": "see actual gates.json or fixture-export.json; no inferred PASS",
+    "archive_path": "docs/reviews/r61-n3-history-provenance/evidence/raw/build-canonical.log.gz",
+    "archive_sha256": "e42fffe74de9b63d3f0ec1894aca4877fad9707f32011ff2e002ee6469cb810f"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/d181-first-browser-full.log",
+    "bytes": 1886,
+    "sha256": "5b16388d85eb71c29e76687f1234afbbe1365a914a237e5c778902e331f61c2a",
+    "disposition": "historical/aborted/first attempt, not final PASS"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/d181-first-build-canonical.log",
+    "bytes": 891972,
+    "sha256": "bc20a72a2e1cfa59f6445a2889fd0d34630405ec67ead33765c62f5094573844",
+    "disposition": "historical/aborted/first attempt, not final PASS"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/d181-first-focused-race.log",
+    "bytes": 22769,
+    "sha256": "30f5fec56237539f543afcd02e59780c99f7d546c5b58c3d508e33cdd136c3c4",
+    "disposition": "historical/aborted/first attempt, not final PASS"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/d181-first-m8-full3.log",
+    "bytes": 3907097,
+    "sha256": "04e8c404db24ada66255c9db43394cefc953af695d1f5211becaf6fa7b7463f9",
+    "disposition": "historical/aborted/first attempt, not final PASS",
+    "archive_path": "docs/reviews/r61-n3-history-provenance/evidence/raw/d181-first-m8-full3.log.gz",
+    "archive_sha256": "5b395fd278df47a12861d9b81be5f6d74f15c3d781cc137b4497ae7ce25e256f"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/d181-first-store-full3.log",
+    "bytes": 323714,
+    "sha256": "731fd6a0df4d946129956051758e777bac1c367811edcad204490bfc0fa5e70d",
+    "disposition": "historical/aborted/first attempt, not final PASS"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/e32-build-canonical-aborted.log",
+    "bytes": 3690,
+    "sha256": "fab6cf9a8de1596f9f86a8657094f15f32e4dc04960801373866f85e575c55d0",
+    "disposition": "historical/aborted/first attempt, not final PASS"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/fa2-build-canonical-aborted-strengthening.log",
+    "bytes": 3141,
+    "sha256": "ed5cd0229c96ae5c2c485a14a2eba42812820316e5cad5b0edb8274538fbde21",
+    "disposition": "historical/aborted/first attempt, not final PASS"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/fixture-export.log",
+    "bytes": 4914,
+    "sha256": "2ce77134de2e50e233913b3190dc76b4b8c969fe56d0e5c5586dfd15e8f7bdd3",
+    "disposition": "see actual gates.json or fixture-export.json; no inferred PASS",
+    "archive_path": "docs/reviews/r61-n3-history-provenance/evidence/raw/fixture-export.log.gz",
+    "archive_sha256": "02c822f5e95ac6c3d8ad27708ad14389560f28a218f8e13fb482976c6105a0a6"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/focused-race.log",
+    "bytes": 22767,
+    "sha256": "428f1b7783ffae0b490a32d51ace4178547158ddc4e7684f0d9b18061f02c37c",
+    "disposition": "see actual gates.json or fixture-export.json; no inferred PASS",
+    "archive_path": "docs/reviews/r61-n3-history-provenance/evidence/raw/focused-race.log.gz",
+    "archive_sha256": "c67ef8f20dbb3eea798488535cad5ed72fd69fc5d637016ac3ef26d9cc35b429"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/m8-full3.log",
+    "bytes": 3907621,
+    "sha256": "22d4ab690c05330727b885ffd3f141b9b4a4b434ab57a4e71e7982c8a8ac4a09",
+    "disposition": "see actual gates.json or fixture-export.json; no inferred PASS",
+    "archive_path": "docs/reviews/r61-n3-history-provenance/evidence/raw/m8-full3.log.gz",
+    "archive_sha256": "e8903ab9008ff9a168c4beba2d9c55da8d4e1761a17eb75d92bcf201df826c16"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/store-full3.log",
+    "bytes": 323715,
+    "sha256": "262c9d06f4cd2ab42da712c6406381a477705e22cb0f183af21c1393898f955c",
+    "disposition": "see actual gates.json or fixture-export.json; no inferred PASS",
+    "archive_path": "docs/reviews/r61-n3-history-provenance/evidence/raw/store-full3.log.gz",
+    "archive_sha256": "8735590f45b73ac5eac239c7b485a6d24defab48b5583e652de1b85381bdacdb"
+  },
+  {
+    "path": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/strict.log",
+    "bytes": 1398,
+    "sha256": "8c1ae110739ef564384ea606a94157d7ed4a577b9c7d5aa44be55b1598f38169",
+    "disposition": "see actual gates.json or fixture-export.json; no inferred PASS",
+    "archive_path": "docs/reviews/r61-n3-history-provenance/evidence/raw/strict.log.gz",
+    "archive_sha256": "d8a27cfe43b6a71d9d94e36819da8afea43206be10dd6b681e07cf11313f76e1"
+  }
+]

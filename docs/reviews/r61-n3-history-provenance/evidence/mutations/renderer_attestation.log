@@ -1,0 +1,27 @@
+  PASS agent: DB/HTTP history only, refresh icon_count==1
+  FAIL agent/unattested: history icon_count==0: unproven history must not render a trusted icon
+
+1 !== 0
+
+  PASS agent/untrusted: history icon_count==0
+  PASS agent/absent: history icon_count==0
+{"case":"agent","message_id":"hp-message-agent","delivery_id":"dw-dlv_c6457f517c88d8ea1aed64ccbf408b33","origin_delivery_id":"dw-dlv_c6457f517c88d8ea1aed64ccbf408b33","turn_id":"turn-agent","history_event_id":"echo-agent","sse_ids":["id: 6ac1c7f7682bd290-1","id: 6ac1c7f7682bd290-2","id: 6ac1c7f7682bd290-3"]}
+  PASS timer: DB/HTTP history only, refresh icon_count==1
+  FAIL timer/unattested: history icon_count==0: unproven history must not render a trusted icon
+
+1 !== 0
+
+  PASS timer/untrusted: history icon_count==0
+  PASS timer/absent: history icon_count==0
+{"case":"timer","message_id":"hp-message-timer","delivery_id":"dw-dlv_339992b1319d047f9b0baeb278eea478","origin_delivery_id":"dw-dlv_339992b1319d047f9b0baeb278eea478","turn_id":"turn-timer","history_event_id":"echo-timer","sse_ids":["id: a22c5f3ce34cb637-1","id: a22c5f3ce34cb637-2","id: a22c5f3ce34cb637-3"]}
+Error: 2 regression check(s) failed
+agent/unattested: history icon_count==0: unproven history must not render a trusted icon
+
+1 !== 0
+
+timer/unattested: history icon_count==0: unproven history must not render a trusted icon
+
+1 !== 0
+
+    at Object.finish (/tmp/n3-mutations-20261118/view-service/renderer-regression-selfhost.js:20:34)
+    at /tmp/n3-mutations-20261118/view-service/history-provenance-browser-regression.js:57:10

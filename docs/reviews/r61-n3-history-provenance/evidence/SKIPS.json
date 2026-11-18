@@ -1,0 +1,385 @@
+[
+  {
+    "gate": "store-full3",
+    "name": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+    "condition": "K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      558,
+      1948,
+      3338
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+    "condition": "future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      561,
+      1951,
+      3341
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+    "condition": "R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      620,
+      2010,
+      3400
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+    "condition": "exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1297,
+      2687,
+      4077
+    ]
+  },
+  {
+    "gate": "store-full3",
+    "name": "TestR10RestartChildAuthority",
+    "condition": "subprocess-only probe, exercised by TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1364,
+      2754,
+      4144
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestChangeEvidenceConsoleBrowser",
+    "condition": "set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1016,
+      9526,
+      18083
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestMuxProductHTTP1EightSeats",
+    "condition": "set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1153,
+      9663,
+      18220
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestConsolePlatformPayloadDump",
+    "condition": "\u4ec5\u5728\u6d4f\u89c8\u5668\u95f8\u53d6\u771f\u8f7d\u8377\u65f6\u8fd0\u884c(\u8bbe DW_CONSOLE_PLATFORM_PAYLOAD_OUT)",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1314,
+      9824,
+      18381
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+    "condition": "K13 deferred: task case record model does not exist, so started state cannot be derived mechanically",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1643,
+      10153,
+      18710
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1867,
+      10385,
+      18950
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1868,
+      10386,
+      18951
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1869,
+      10387,
+      18952
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1888,
+      10406,
+      18971
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1889,
+      10407,
+      18972
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1890,
+      10408,
+      18973
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1891,
+      10409,
+      18974
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1910,
+      10428,
+      18993
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1911,
+      10429,
+      18994
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1912,
+      10430,
+      18995
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1913,
+      10431,
+      18996
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1924,
+      10442,
+      19007
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1925,
+      10443,
+      19008
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1936,
+      10454,
+      19019
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1937,
+      10455,
+      19020
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestDeliveryACKActualCLILateWireTerminal",
+    "condition": "INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      1942,
+      10460,
+      19025
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestFailureNoticeDriverTurnEndToEnd",
+    "condition": "set DW_FAILURE_NOTICE_PYTHON to locked helper runtime",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      2244,
+      10761,
+      19327
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestGroupReplyMCP",
+    "condition": "requires locked helper Python; set DW_SPEC_E2E_PYTHON",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      3675,
+      12200,
+      20766
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+    "condition": "set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      3892,
+      12417,
+      20983
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+    "condition": "set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      3893,
+      12418,
+      20984
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+    "condition": "set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      3894,
+      12419,
+      20985
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestHelper0232MixedVersionEndToEnd",
+    "condition": "explicit immutable release pins required",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      3897,
+      12422,
+      20988
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+    "condition": "subprocess probe only",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      5242,
+      13767,
+      22341
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestSessionHistoryTwentyAgentPublishP99",
+    "condition": "set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      7078,
+      15617,
+      24207
+    ]
+  },
+  {
+    "gate": "m8-full3",
+    "name": "TestSpecMCPEndToEnd",
+    "condition": "set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses",
+    "occurrences": 3,
+    "raw_line_numbers": [
+      7445,
+      15992,
+      24590
+    ]
+  },
+  {
+    "gate": "focused-race",
+    "name": "TestSessionHistoryTwentyAgentPublishP99",
+    "condition": "set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate",
+    "occurrences": 1,
+    "raw_line_numbers": [
+      228
+    ]
+  }
+]

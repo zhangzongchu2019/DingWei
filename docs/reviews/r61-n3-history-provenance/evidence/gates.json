@@ -1,0 +1,97 @@
+[
+  {
+    "name": "browser-full",
+    "command": [
+      "python3",
+      "tools/run-browser-regressions.py",
+      "--receipt",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3/browser-receipt.json"
+    ],
+    "source_commit": "a32c877cf6ef21a909d2806f4b08e3e925d05d98",
+    "started_utc": "2026-11-18T06:50:09.661548+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T07:00:49.038597+00:00"
+  },
+  {
+    "name": "strict",
+    "command": [
+      "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+      "validate",
+      "--all",
+      "--strict"
+    ],
+    "source_commit": "a32c877cf6ef21a909d2806f4b08e3e925d05d98",
+    "started_utc": "2026-11-18T07:00:49.040244+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T07:00:49.486383+00:00"
+  },
+  {
+    "name": "build-canonical",
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "source_commit": "a32c877cf6ef21a909d2806f4b08e3e925d05d98",
+    "started_utc": "2026-11-18T07:00:49.488261+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T07:10:23.933351+00:00"
+  },
+  {
+    "name": "store-full3",
+    "command": [
+      "go",
+      "test",
+      "./internal/store/...",
+      "-count=3",
+      "-p",
+      "1",
+      "-timeout",
+      "90m",
+      "-v"
+    ],
+    "source_commit": "a32c877cf6ef21a909d2806f4b08e3e925d05d98",
+    "started_utc": "2026-11-18T07:10:23.935172+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T07:18:21.666167+00:00"
+  },
+  {
+    "name": "m8-full3",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=3",
+      "-p",
+      "1",
+      "-timeout",
+      "90m",
+      "-v"
+    ],
+    "source_commit": "a32c877cf6ef21a909d2806f4b08e3e925d05d98",
+    "started_utc": "2026-11-18T07:18:21.668342+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T07:36:03.271524+00:00"
+  },
+  {
+    "name": "focused-race",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "./internal/store",
+      "./internal/m8",
+      "-run",
+      "TestHistoryProvenance|TestSessionHistory",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "30m",
+      "-v"
+    ],
+    "source_commit": "a32c877cf6ef21a909d2806f4b08e3e925d05d98",
+    "started_utc": "2026-11-18T07:36:03.273356+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T07:37:15.228529+00:00"
+  }
+]

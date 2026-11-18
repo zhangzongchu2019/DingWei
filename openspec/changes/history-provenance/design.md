@@ -41,7 +41,7 @@ N-3 仅保存可信 primary provenance 的最小 sidecar，不另存完整 input
 - sidecar 的 `expires_at_ms` 最长为 `observed_at + SessionHistoryRetain`（当前 30 天）；消费后立即删除。generation 变更、history 禁用清理、过期批次和 agent 数据删除均在相同 history DB transaction 中清理 sidecar。
 - 单 sidecar 记录上限 4 KiB；正文和身份标识不入 sidecar。Sidecar bytes 必须计入现有每 Agent 64 MB 与全局 2 GB history budget，而非作为额外无限预算。写 sidecar 前检查当前 counters；没有预算时不存 sidecar、实时投递继续，后续刷新不显示图标。
 - 写入、消费、删除与 quota eviction 更新 `session_history_generation.retained_bytes` 及 `session_history_runtime_state.retained_bytes`。N-3 实现必须扩展过期、agent/global eviction 选择器：清除 payload event 同步清掉对应 provenance；尚未配对的 sidecar 也可按最早 `received_at_ms` 被淘汰，不生成含来源/正文的历史 gap。清理 sidecar 不得将历史容量统计变负或留下孤儿。
-- event payload 经 provenance 增强后仍受 1 MB 单事件限制。超限时该 event 按既有 oversize/gap 处理，并在同一失败清理路径移除或保留可重试 sidecar 的选择须定稿；推荐回滚本次消费、保留 sidecar 至 TTL，但不得重复写入一条事件。
+- event payload 经 provenance 增强后仍受 1 MB 单事件限制。若增强后的序列化 payload 超限，`appendBatchTx` 返回既有 oversize 错误并回滚当前 Append transaction：不插入 event、不消费 sidecar、不改变 sidecar/history byte counters。调用层按既有 oversize/gap 路径记录一个 gap；同一 event 不自动重试或重复插入。sidecar 可留至 TTL；若 TTL 内有相同 delivery 的合法 admitted event，可再次匹配；TTL 或容量淘汰后继续 fail closed。
 
 ## 5. 存量与分页、renderer 回放
 
@@ -59,6 +59,7 @@ renderer 只对已经通过 `normalizeEvent` 的标准 provenance 画图：`kind
 2. 仅 queued echo 不增 provenance；admitted echo 在完全一致五元组关联时才增。复制 delivery、跨 session、跨 generation、不同 origin ID、copy/control observation、来源缺失/不可信与 duplicate conflict 均为 0 图标。
 3. migration 升级、r60 同时新增 migration 的顺延、history quota 满、4 KiB sidecar 上限、TTL、global/agent eviction、禁用/删除队列和 Append transaction rollback 均有测试。
 4. 变异删除 Hub sidecar 持久化或 user_input 附加字段时，Agent/timer DOM `icon_count==1` 业务断言红；删除 renderer Hub trust 判定时，未 attested fixture 的 `icon_count==0` 业务断言红；删除关联键任一组成或允许 delivery_id 与 origin_delivery_id 不同，精确关联格红；删除 TTL/quota cleanup 时预算/清理断言红。
+5. provenance 增强后序列化事件超过 1 MB 时，断言 Append 返回既有 oversize 错误、事务回滚且 event 行数不增加、仅产生一个 gap、sidecar 未消费且计数不变；重复处理不得重复写 event，TTL/容量淘汰后必须 fail closed。
 
 ## 7. N-3 实施定稿（2026-11-18 派单）
 

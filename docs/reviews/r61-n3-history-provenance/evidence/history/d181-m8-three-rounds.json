@@ -1,0 +1,39 @@
+[
+  {
+    "round": 1,
+    "first_test": "TestAgentDiskCurrentCredentialIngress",
+    "line_start": 1,
+    "line_end": 8499,
+    "top_pass": 990,
+    "all_pass": 1668,
+    "skip": 29,
+    "fail": [],
+    "interrupted_lines": []
+  },
+  {
+    "round": 2,
+    "first_test": "TestAgentDiskCurrentCredentialIngress",
+    "line_start": 8500,
+    "line_end": 17050,
+    "top_pass": 990,
+    "all_pass": 1668,
+    "skip": 29,
+    "fail": [],
+    "interrupted_lines": []
+  },
+  {
+    "round": 3,
+    "first_test": "TestAgentDiskCurrentCredentialIngress",
+    "line_start": 17051,
+    "line_end": 25650,
+    "top_pass": 989,
+    "all_pass": 1667,
+    "skip": 29,
+    "fail": [
+      "--- FAIL: TestSessionNameReconnectKeepsNameAndReleaseReuses (0.14s)"
+    ],
+    "interrupted_lines": [
+      21828
+    ]
+  }
+]

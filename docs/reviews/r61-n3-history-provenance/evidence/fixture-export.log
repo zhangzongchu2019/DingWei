@@ -1,0 +1,28 @@
+=== RUN   TestHistoryProvenanceRealHubAgentTimerReplay
+=== RUN   TestHistoryProvenanceRealHubAgentTimerReplay/agent
+2026/11/18 07:37:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:37:31 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:37:31 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:37:31 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:37:31 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_ef439aa507e3334d17306987af79c1e6 source_message_id=hp-message-agent
+2026/11/18 07:37:31 provenance claim dropped ingress=agent_session session=kimi
+{"conn_seq":1,"event":"session_end","last_worker_type":"session_event","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":424,"queue_peak_items":1,"reader_age_ms":11,"reader_frame_bytes":424,"reader_frame_type":"text","reason":"reader_eof","session":"kimi","utc":"2026-11-18T07:37:31.440777798Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":11,"write_budget_ms":20000,"write_bytes":427}
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":110,"queue_peak_items":1,"reader_age_ms":13,"reader_frame_bytes":110,"reader_frame_type":"text","reason":"reader_error","session":"opus50ts","utc":"2026-11-18T07:37:31.440822994Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":44,"write_budget_ms":5000,"write_bytes":4293}
+2026/11/18 07:37:31 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=1
+=== RUN   TestHistoryProvenanceRealHubAgentTimerReplay/timer
+2026/11/18 07:37:31 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:31 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:37:31 session handshake timing key_id=u_zzc session=timer total=1ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:37:31 session handshake timing key_id=u_zzc session=kimi total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:37:31 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:37:31 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_f3b2d56eb320eb6a5281198ca38ec8c7 source_message_id=hp-message-timer
+2026/11/18 07:37:31 provenance claim dropped ingress=agent_session session=kimi
+{"conn_seq":1,"event":"session_end","last_worker_type":"session_event","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":424,"queue_peak_items":1,"reader_age_ms":11,"reader_frame_bytes":424,"reader_frame_type":"text","reason":"reader_eof","session":"kimi","utc":"2026-11-18T07:37:31.642027365Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":11,"write_budget_ms":20000,"write_bytes":421}
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":107,"queue_peak_items":1,"reader_age_ms":12,"reader_frame_bytes":107,"reader_frame_type":"text","reason":"reader_error","session":"timer","utc":"2026-11-18T07:37:31.642086819Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":43,"write_budget_ms":5000,"write_bytes":4284}
+2026/11/18 07:37:31 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestHistoryProvenanceRealHubAgentTimerReplay (0.42s)
+    --- PASS: TestHistoryProvenanceRealHubAgentTimerReplay/agent (0.22s)
+    --- PASS: TestHistoryProvenanceRealHubAgentTimerReplay/timer (0.20s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	0.432s

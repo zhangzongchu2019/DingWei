@@ -1,0 +1,118 @@
+{
+  "agent": {
+    "db_event": {
+      "data": {
+        "lifecycle": "admitted",
+        "source": "agent"
+      },
+      "delivery_id": "dw-dlv_ef439aa507e3334d17306987af79c1e6",
+      "kind": "user_input",
+      "origin_delivery_id": "dw-dlv_ef439aa507e3334d17306987af79c1e6",
+      "provenance": {
+        "attested_by": "hub",
+        "display_name": "opus50ts",
+        "kind": "agent",
+        "trust_decision": "trusted"
+      },
+      "text": "synthetic history agent",
+      "turn_id": "turn-agent"
+    },
+    "delivery_id": "dw-dlv_ef439aa507e3334d17306987af79c1e6",
+    "history": {
+      "generation": "8311c9f672c824282361dcd1fc634da8",
+      "high_water": 1,
+      "events": [
+        {
+          "cursor": {
+            "generation": "8311c9f672c824282361dcd1fc634da8",
+            "seq": 1
+          },
+          "event_id": "echo-agent",
+          "received_at": "2026-11-18T07:37:31.429Z",
+          "event": {
+            "data": {
+              "lifecycle": "admitted",
+              "source": "agent"
+            },
+            "delivery_id": "dw-dlv_ef439aa507e3334d17306987af79c1e6",
+            "kind": "user_input",
+            "origin_delivery_id": "dw-dlv_ef439aa507e3334d17306987af79c1e6",
+            "provenance": {
+              "attested_by": "hub",
+              "display_name": "opus50ts",
+              "kind": "agent",
+              "trust_decision": "trusted"
+            },
+            "text": "synthetic history agent",
+            "turn_id": "turn-agent"
+          }
+        }
+      ],
+      "gaps": [],
+      "has_older": false,
+      "gap_before": false
+    },
+    "message_id": "hp-message-agent",
+    "origin_delivery_id": "dw-dlv_ef439aa507e3334d17306987af79c1e6",
+    "sse": "id: c5e1d40f788784c7-1\ndata: {\"cancellable\":true,\"copy_kind\":\"\",\"delivery\":{\"role\":\"primary\"},\"delivery_id\":\"dw-dlv_ef439aa507e3334d17306987af79c1e6\",\"kind\":\"input_posted\",\"message_id\":\"hp-message-agent\",\"payload\":\"synthetic history agent\",\"provenance\":{\"kind\":\"agent\",\"display_name\":\"opus50ts\",\"attested_by\":\"hub\",\"trust_decision\":\"trusted\"},\"schema_version\":\"delivery.v2\",\"source\":{\"display_name\":\"opus50ts\",\"kind\":\"agent\",\"trust_decision\":\"trusted\"},\"stage\":\"hub_received\",\"updated_at\":\"2026-11-18T07:37:31.428337634Z\"}\n\nid: c5e1d40f788784c7-2\ndata: {\"ack_generation\":1,\"ack_protocol\":1,\"cancellable\":false,\"delivery\":{\"role\":\"primary\"},\"delivery_stage\":\"hub_received\",\"interruptible\":false,\"kind\":\"delivery_update\",\"message_id\":\"hp-message-agent\",\"observed_delivery_id\":\"dw-dlv_ef439aa507e3334d17306987af79c1e6\",\"processing_mode\":\"legacy\",\"reason\":\"\",\"schema_version\":\"delivery.v2\",\"updated_at\":\"2026-11-18T07:37:31.429359174Z\"}\n\nid: c5e1d40f788784c7-3\ndata: {\"_history\":{\"event_id\":\"echo-agent\",\"generation\":\"8311c9f672c824282361dcd1fc634da8\",\"seq\":1},\"data\":{\"lifecycle\":\"admitted\",\"source\":\"agent\"},\"delivery_id\":\"dw-dlv_ef439aa507e3334d17306987af79c1e6\",\"kind\":\"user_input\",\"origin_delivery_id\":\"dw-dlv_ef439aa507e3334d17306987af79c1e6\",\"text\":\"synthetic history agent\",\"turn_id\":\"turn-agent\"}\n\n",
+    "turn_id": "turn-agent"
+  },
+  "timer": {
+    "db_event": {
+      "data": {
+        "lifecycle": "admitted",
+        "source": "agent"
+      },
+      "delivery_id": "dw-dlv_f3b2d56eb320eb6a5281198ca38ec8c7",
+      "kind": "user_input",
+      "origin_delivery_id": "dw-dlv_f3b2d56eb320eb6a5281198ca38ec8c7",
+      "provenance": {
+        "attested_by": "hub",
+        "display_name": "timer",
+        "kind": "agent",
+        "trust_decision": "trusted"
+      },
+      "text": "synthetic history timer",
+      "turn_id": "turn-timer"
+    },
+    "delivery_id": "dw-dlv_f3b2d56eb320eb6a5281198ca38ec8c7",
+    "history": {
+      "generation": "11ba4b025f9391acdc38359291981142",
+      "high_water": 1,
+      "events": [
+        {
+          "cursor": {
+            "generation": "11ba4b025f9391acdc38359291981142",
+            "seq": 1
+          },
+          "event_id": "echo-timer",
+          "received_at": "2026-11-18T07:37:31.63Z",
+          "event": {
+            "data": {
+              "lifecycle": "admitted",
+              "source": "agent"
+            },
+            "delivery_id": "dw-dlv_f3b2d56eb320eb6a5281198ca38ec8c7",
+            "kind": "user_input",
+            "origin_delivery_id": "dw-dlv_f3b2d56eb320eb6a5281198ca38ec8c7",
+            "provenance": {
+              "attested_by": "hub",
+              "display_name": "timer",
+              "kind": "agent",
+              "trust_decision": "trusted"
+            },
+            "text": "synthetic history timer",
+            "turn_id": "turn-timer"
+          }
+        }
+      ],
+      "gaps": [],
+      "has_older": false,
+      "gap_before": false
+    },
+    "message_id": "hp-message-timer",
+    "origin_delivery_id": "dw-dlv_f3b2d56eb320eb6a5281198ca38ec8c7",
+    "sse": "id: aebea00bf500cf0f-1\ndata: {\"cancellable\":true,\"copy_kind\":\"\",\"delivery\":{\"role\":\"primary\"},\"delivery_id\":\"dw-dlv_f3b2d56eb320eb6a5281198ca38ec8c7\",\"kind\":\"input_posted\",\"message_id\":\"hp-message-timer\",\"payload\":\"synthetic history timer\",\"provenance\":{\"kind\":\"agent\",\"display_name\":\"timer\",\"attested_by\":\"hub\",\"trust_decision\":\"trusted\"},\"schema_version\":\"delivery.v2\",\"source\":{\"display_name\":\"timer\",\"kind\":\"agent\",\"trust_decision\":\"trusted\"},\"stage\":\"hub_received\",\"updated_at\":\"2026-11-18T07:37:31.629984221Z\"}\n\nid: aebea00bf500cf0f-2\ndata: {\"ack_generation\":1,\"ack_protocol\":1,\"cancellable\":false,\"delivery\":{\"role\":\"primary\"},\"delivery_stage\":\"hub_received\",\"interruptible\":false,\"kind\":\"delivery_update\",\"message_id\":\"hp-message-timer\",\"observed_delivery_id\":\"dw-dlv_f3b2d56eb320eb6a5281198ca38ec8c7\",\"processing_mode\":\"legacy\",\"reason\":\"\",\"schema_version\":\"delivery.v2\",\"updated_at\":\"2026-11-18T07:37:31.630773104Z\"}\n\nid: aebea00bf500cf0f-3\ndata: {\"_history\":{\"event_id\":\"echo-timer\",\"generation\":\"11ba4b025f9391acdc38359291981142\",\"seq\":1},\"data\":{\"lifecycle\":\"admitted\",\"source\":\"agent\"},\"delivery_id\":\"dw-dlv_f3b2d56eb320eb6a5281198ca38ec8c7\",\"kind\":\"user_input\",\"origin_delivery_id\":\"dw-dlv_f3b2d56eb320eb6a5281198ca38ec8c7\",\"text\":\"synthetic history timer\",\"turn_id\":\"turn-timer\"}\n\n",
+    "turn_id": "turn-timer"
+  }
+}

@@ -1,0 +1,235 @@
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/match
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/owner
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/agent
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/session
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/generation
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/delivery
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/origin
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/queued
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/turn
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/conflict
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/expired
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/missing
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/client_claim
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/kind
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/stored_trust
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/stored_attestation
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/other_delivery
+--- PASS: TestHistoryProvenanceExactAssociationAndFailClosed (1.14s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/match (0.08s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/owner (0.07s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/agent (0.07s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/session (0.07s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/generation (0.07s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/delivery (0.07s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/origin (0.06s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/queued (0.06s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/turn (0.06s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/conflict (0.07s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/expired (0.07s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/missing (0.06s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/client_claim (0.07s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/kind (0.06s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/stored_trust (0.07s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/stored_attestation (0.07s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/other_delivery (0.07s)
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/trust
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/attested
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/kind
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/display
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/source
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/size
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/quota-false
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/quota-true
+--- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds (0.17s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/trust (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/attested (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/kind (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/display (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/source (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/size (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/quota-false (0.06s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/quota-true (0.06s)
+=== RUN   TestHistoryProvenanceAppendRollbackAndOversize
+=== RUN   TestHistoryProvenanceAppendRollbackAndOversize/insert_failure
+=== RUN   TestHistoryProvenanceAppendRollbackAndOversize/oversize
+--- PASS: TestHistoryProvenanceAppendRollbackAndOversize (0.41s)
+    --- PASS: TestHistoryProvenanceAppendRollbackAndOversize/insert_failure (0.09s)
+    --- PASS: TestHistoryProvenanceAppendRollbackAndOversize/oversize (0.32s)
+=== RUN   TestHistoryProvenanceLifecycleAndEviction
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/ttl
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/disable
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/delete
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/generation
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/agent_capacity
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/global_capacity
+--- PASS: TestHistoryProvenanceLifecycleAndEviction (0.35s)
+    --- PASS: TestHistoryProvenanceLifecycleAndEviction/ttl (0.06s)
+    --- PASS: TestHistoryProvenanceLifecycleAndEviction/disable (0.06s)
+    --- PASS: TestHistoryProvenanceLifecycleAndEviction/delete (0.06s)
+    --- PASS: TestHistoryProvenanceLifecycleAndEviction/generation (0.06s)
+    --- PASS: TestHistoryProvenanceLifecycleAndEviction/agent_capacity (0.06s)
+    --- PASS: TestHistoryProvenanceLifecycleAndEviction/global_capacity (0.06s)
+=== RUN   TestHistoryProvenanceMigrationDigestAndNonconsecutiveNumber
+--- PASS: TestHistoryProvenanceMigrationDigestAndNonconsecutiveNumber (0.06s)
+=== RUN   TestHistoryProvenanceLegacyUpgradeAndUnmatchedBytes
+--- PASS: TestHistoryProvenanceLegacyUpgradeAndUnmatchedBytes (0.10s)
+=== RUN   TestHistoryProvenanceEventEvictionAlsoCleansQueuedEvidence
+--- PASS: TestHistoryProvenanceEventEvictionAlsoCleansQueuedEvidence (0.07s)
+=== RUN   TestHistoryProvenanceCleanupAndEvictionWorkIsBounded
+=== RUN   TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/ttl
+=== RUN   TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/identity
+--- PASS: TestHistoryProvenanceCleanupAndEvictionWorkIsBounded (7.33s)
+    --- PASS: TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/ttl (3.65s)
+    --- PASS: TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/identity (3.68s)
+=== RUN   TestSessionHistoryConcurrentAppendGroupCommitAssignsCursors
+--- PASS: TestSessionHistoryConcurrentAppendGroupCommitAssignsCursors (0.10s)
+=== RUN   TestSessionHistoryGroupCommitFallbackIsolatesDuplicateEvent
+--- PASS: TestSessionHistoryGroupCommitFallbackIsolatesDuplicateEvent (0.08s)
+=== RUN   TestSessionHistoryPersistsStableCursorAndOwnerScopedPage
+--- PASS: TestSessionHistoryPersistsStableCursorAndOwnerScopedPage (0.07s)
+=== RUN   TestSessionHistoryMigrationLedgerIsSeparateFromPrimaryStore
+--- PASS: TestSessionHistoryMigrationLedgerIsSeparateFromPrimaryStore (3.83s)
+=== RUN   TestSessionHistoryDisabledDoesNotWriteAndReturnsSentinel
+--- PASS: TestSessionHistoryDisabledDoesNotWriteAndReturnsSentinel (0.05s)
+=== RUN   TestSessionHistoryOversizeRecordsGapWithoutTruncating
+--- PASS: TestSessionHistoryOversizeRecordsGapWithoutTruncating (0.47s)
+=== RUN   TestSessionHistoryExactRecordByteBoundary
+--- PASS: TestSessionHistoryExactRecordByteBoundary (0.26s)
+=== RUN   TestSessionHistoryAgentQuotaEvictsOldestBeforeNewRow
+--- PASS: TestSessionHistoryAgentQuotaEvictsOldestBeforeNewRow (0.08s)
+=== RUN   TestSessionHistoryGlobalQuotaEvictsOldestAcrossAgents
+--- PASS: TestSessionHistoryGlobalQuotaEvictsOldestAcrossAgents (0.35s)
+=== RUN   TestSessionHistoryRetentionBoundaryUsesVirtualTime
+--- PASS: TestSessionHistoryRetentionBoundaryUsesVirtualTime (0.06s)
+=== RUN   TestSessionHistoryDisabledPausesTTLCleanupUntilReenabled
+--- PASS: TestSessionHistoryDisabledPausesTTLCleanupUntilReenabled (0.07s)
+=== RUN   TestSessionHistoryOffIntervalBecomesGapOnReenable
+--- PASS: TestSessionHistoryOffIntervalBecomesGapOnReenable (0.07s)
+=== RUN   TestSessionHistoryStartupDoesNotInferGapWhenDisableWriteFailed
+--- PASS: TestSessionHistoryStartupDoesNotInferGapWhenDisableWriteFailed (0.07s)
+=== RUN   TestSessionHistoryConsecutiveEnabledStartupDoesNotCreateGap
+--- PASS: TestSessionHistoryConsecutiveEnabledStartupDoesNotCreateGap (0.07s)
+=== RUN   TestSessionHistoryStartupOpenOffOnCreatesExactlyOneGap
+--- PASS: TestSessionHistoryStartupOpenOffOnCreatesExactlyOneGap (0.10s)
+=== RUN   TestSessionHistoryDeletionQueuePurgesAndRetries
+--- PASS: TestSessionHistoryDeletionQueuePurgesAndRetries (0.09s)
+=== RUN   TestSessionHistoryPaginationUsesExclusiveCursorWithoutDuplicates
+--- PASS: TestSessionHistoryPaginationUsesExclusiveCursorWithoutDuplicates (1.54s)
+=== RUN   TestSessionHistoryPageStopsAtFourMiBAndKeepsCursorExclusive
+--- PASS: TestSessionHistoryPageStopsAtFourMiBAndKeepsCursorExclusive (2.50s)
+=== RUN   TestSessionHistoryCancellationBoundsWriterResultWait
+--- PASS: TestSessionHistoryCancellationBoundsWriterResultWait (0.02s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/store	20.555s
+=== RUN   TestHistoryProvenanceRealHubAgentTimerReplay
+=== RUN   TestHistoryProvenanceRealHubAgentTimerReplay/agent
+2026/11/18 07:36:32 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:32 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:36:33 session handshake timing key_id=u_zzc session=opus50ts total=12ms register=7ms accept=0s conn_seq=1ms onboard=4ms register_lock=0s
+2026/11/18 07:36:33 session handshake timing key_id=u_zzc session=kimi total=11ms register=8ms accept=0s conn_seq=3ms onboard=0s register_lock=0s
+2026/11/18 07:36:33 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:36:33 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_5bb58e1cdeacfc2695f202962c64587d source_message_id=hp-message-agent
+2026/11/18 07:36:33 provenance claim dropped ingress=agent_session session=kimi
+{"conn_seq":1,"event":"session_end","last_worker_type":"session_event","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":424,"queue_peak_items":1,"reader_age_ms":17,"reader_frame_bytes":424,"reader_frame_type":"text","reason":"reader_eof","session":"kimi","utc":"2026-11-18T07:36:33.125825425Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":18,"write_budget_ms":20000,"write_bytes":427}
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":110,"queue_peak_items":1,"reader_age_ms":38,"reader_frame_bytes":110,"reader_frame_type":"text","reason":"reader_error","session":"opus50ts","utc":"2026-11-18T07:36:33.125864061Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":76,"write_budget_ms":5000,"write_bytes":4293}
+2026/11/18 07:36:33 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=1
+=== RUN   TestHistoryProvenanceRealHubAgentTimerReplay/timer
+2026/11/18 07:36:36 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:36 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:36:37 session handshake timing key_id=u_zzc session=timer total=12ms register=7ms accept=0s conn_seq=1ms onboard=4ms register_lock=0s
+2026/11/18 07:36:37 session handshake timing key_id=u_zzc session=kimi total=11ms register=8ms accept=0s conn_seq=3ms onboard=0s register_lock=0s
+2026/11/18 07:36:37 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:36:37 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_5e2e00a505199009e94494495ae90c0f source_message_id=hp-message-timer
+2026/11/18 07:36:37 provenance claim dropped ingress=agent_session session=kimi
+{"conn_seq":1,"event":"session_end","last_worker_type":"session_event","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":424,"queue_peak_items":1,"reader_age_ms":17,"reader_frame_bytes":424,"reader_frame_type":"text","reason":"reader_eof","session":"kimi","utc":"2026-11-18T07:36:37.122193343Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":18,"write_budget_ms":20000,"write_bytes":421}
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":107,"queue_peak_items":1,"reader_age_ms":47,"reader_frame_bytes":107,"reader_frame_type":"text","reason":"reader_error","session":"timer","utc":"2026-11-18T07:36:37.122243618Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":83,"write_budget_ms":5000,"write_bytes":4284}
+2026/11/18 07:36:37 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestHistoryProvenanceRealHubAgentTimerReplay (8.05s)
+    --- PASS: TestHistoryProvenanceRealHubAgentTimerReplay/agent (4.05s)
+    --- PASS: TestHistoryProvenanceRealHubAgentTimerReplay/timer (4.00s)
+=== RUN   TestHistoryProvenanceObservationRejectsCopyAndUntrusted
+=== RUN   TestHistoryProvenanceObservationRejectsCopyAndUntrusted/copy
+2026/11/18 07:36:41 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:41 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestHistoryProvenanceObservationRejectsCopyAndUntrusted/control
+2026/11/18 07:36:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestHistoryProvenanceObservationRejectsCopyAndUntrusted/untrusted
+2026/11/18 07:36:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestHistoryProvenanceObservationRejectsCopyAndUntrusted/primary
+2026/11/18 07:36:53 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:53 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestHistoryProvenanceObservationRejectsCopyAndUntrusted (16.14s)
+    --- PASS: TestHistoryProvenanceObservationRejectsCopyAndUntrusted/copy (3.97s)
+    --- PASS: TestHistoryProvenanceObservationRejectsCopyAndUntrusted/control (4.12s)
+    --- PASS: TestHistoryProvenanceObservationRejectsCopyAndUntrusted/untrusted (4.02s)
+    --- PASS: TestHistoryProvenanceObservationRejectsCopyAndUntrusted/primary (4.03s)
+=== RUN   TestHistoryProvenanceUsesCapturedTargetNotReusedName
+=== RUN   TestHistoryProvenanceUsesCapturedTargetNotReusedName/replacement
+2026/11/18 07:36:57 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:57 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+=== RUN   TestHistoryProvenanceUsesCapturedTargetNotReusedName/wrong_key
+2026/11/18 07:37:01 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:01 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:37:01 history_provenance_unavailable reason=identity_mismatch
+=== RUN   TestHistoryProvenanceUsesCapturedTargetNotReusedName/wrong_session
+2026/11/18 07:37:05 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:05 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:37:05 history_provenance_unavailable reason=identity_mismatch
+--- PASS: TestHistoryProvenanceUsesCapturedTargetNotReusedName (12.10s)
+    --- PASS: TestHistoryProvenanceUsesCapturedTargetNotReusedName/replacement (3.97s)
+    --- PASS: TestHistoryProvenanceUsesCapturedTargetNotReusedName/wrong_key (4.08s)
+    --- PASS: TestHistoryProvenanceUsesCapturedTargetNotReusedName/wrong_session (4.05s)
+=== RUN   TestHistoryProvenanceRoutingPinsIdentityBeforeEnqueue
+2026/11/18 07:37:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:37:09 session handshake timing key_id=u_zzc session=kimi total=10ms register=7ms accept=0s conn_seq=1ms onboard=2ms register_lock=0s
+2026/11/18 07:37:09 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_a0ddd933582e9fb2319f529075f98545 source_message_id=identity-snapshot
+2026/11/18 07:37:09 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=kimi conn_seq=1 client_present=true
+{"conn_seq":1,"event":"session_end","last_worker_type":"unknown","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":0,"queue_peak_items":0,"reader_age_ms":"unknown","reader_frame_bytes":0,"reader_frame_type":"unknown","reason":"reader_error","session":"kimi","utc":"2026-11-18T07:37:09.478054315Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":53,"write_budget_ms":5000,"write_bytes":4281}
+2026/11/18 07:37:09 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestHistoryProvenanceRoutingPinsIdentityBeforeEnqueue (4.10s)
+=== RUN   TestSessionHistoryPerformanceGuardsAreLive
+--- PASS: TestSessionHistoryPerformanceGuardsAreLive (0.00s)
+=== RUN   TestSessionHistoryDisabledPageHasStableResponse
+2026/11/18 07:37:09 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:09 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionHistoryDisabledPageHasStableResponse (0.00s)
+=== RUN   TestSessionHistoryRouteRequiresAgentOwner
+2026/11/18 07:37:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionHistoryRouteRequiresAgentOwner (4.11s)
+=== RUN   TestSessionHistoryDisabledKeepsEventRingPayloadAndSkipsWrites
+2026/11/18 07:37:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionHistoryDisabledKeepsEventRingPayloadAndSkipsWrites (0.05s)
+=== RUN   TestSessionHistoryDisabledDirectPublishAndSSEMatchR49Bodies
+2026/11/18 07:37:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionHistoryDisabledDirectPublishAndSSEMatchR49Bodies (0.05s)
+=== RUN   TestSessionHistoryUnavailableDirectPublishAndSSEMatchR49Bodies
+2026/11/18 07:37:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionHistoryUnavailableDirectPublishAndSSEMatchR49Bodies (0.00s)
+=== RUN   TestSessionHistoryEnabledPersistsBeforePublishingCursor
+2026/11/18 07:37:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionHistoryEnabledPersistsBeforePublishingCursor (0.06s)
+=== RUN   TestSessionHistoryConcurrentGroupCursorMatchesLiveEvents
+2026/11/18 07:37:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestSessionHistoryConcurrentGroupCursorMatchesLiveEvents (0.09s)
+=== RUN   TestSessionHistoryTwentyAgentPublishP99
+    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate
+--- SKIP: TestSessionHistoryTwentyAgentPublishP99 (0.00s)
+=== RUN   TestSessionHistoryOversizeStillPublishesAndMarksGap
+2026/11/18 07:37:13 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:37:13 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:37:14 session_history_gap owner="owner" agent="agent" session="work" reason=oversize lost_events=1 error_type=*fmt.wrapError
+--- PASS: TestSessionHistoryOversizeStillPublishesAndMarksGap (0.29s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	46.136s

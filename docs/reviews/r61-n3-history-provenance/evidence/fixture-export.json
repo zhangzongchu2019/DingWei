@@ -1,0 +1,16 @@
+{
+  "source_commit": "a32c877cf6ef21a909d2806f4b08e3e925d05d98",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "^TestHistoryProvenanceRealHubAgentTimerReplay$",
+    "-count=1",
+    "-v"
+  ],
+  "started_utc": "2026-11-18T07:37:29.951597+00:00",
+  "purpose": "Retain synthetic DB/HTTP/SSE fixture; browser DOM assertions independently ran on this same source",
+  "rc": 0,
+  "ended_utc": "2026-11-18T07:37:31.679135+00:00"
+}
