@@ -1,0 +1,87 @@
+HELPER_SUITE python=/tmp/lockvenv/bin/python3 version=3.12.3 driver=claude pattern=test_codex_stale_thread.py
+HELPER_SUITE_PROFILE selected=claude actual_SH_DRIVER=claude
+test_adapter_bound_thread_mismatch_stays_queued_without_terminal_failure (test_codex_stale_thread.CodexStaleThread.test_adapter_bound_thread_mismatch_stays_queued_without_terminal_failure) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=dw-one validation=missing_thread; operator action required, no thread rotation or submission
+ok
+test_adapter_presubmit_mismatch_stays_queued_without_terminal_failure (test_codex_stale_thread.CodexStaleThread.test_adapter_presubmit_mismatch_stays_queued_without_terminal_failure) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=dw-one validation=missing_thread; operator action required, no thread rotation or submission
+ok
+test_adapter_uncertain_admission_is_visible_and_not_a_success (test_codex_stale_thread.CodexStaleThread.test_adapter_uncertain_admission_is_visible_and_not_a_success) ... [driver-adapter] deliver id=dw-one -> failed (model_admission_unknown: error_class=timeout; method=local; )
+[delivery] failed id=dw-one source=protocol (model_admission_unknown: error_class=timeout; method=local; )
+ok
+test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('id', 'other') validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('cwd', '/other') validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('cwd', None) validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('status', {'type': 'systemError'}) validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('canAcceptDirectInput', False) validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('canAcceptDirectInput', 1) validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('canAcceptDirectInput', None) validation=invalid_thread_binding; operator action required, no thread rotation or submission
+ok
+test_historical_interrupt_confirm_reads_same_record_thread (test_codex_stale_thread.CodexStaleThread.test_historical_interrupt_confirm_reads_same_record_thread) ... ok
+test_historical_poll_and_state_update_use_record_thread (test_codex_stale_thread.CodexStaleThread.test_historical_poll_and_state_update_use_record_thread) ... ok
+test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) ... ok
+test_loaded_thread_validated_before_admission (test_codex_stale_thread.CodexStaleThread.test_loaded_thread_validated_before_admission) ... ok
+test_missing_thread_never_creates_or_replays_and_retains_ledger (test_codex_stale_thread.CodexStaleThread.test_missing_thread_never_creates_or_replays_and_retains_ledger) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=one validation=missing_thread; operator action required, no thread rotation or submission
+ok
+test_missing_turn_start_invalidates_binding_without_new_thread (test_codex_stale_thread.CodexStaleThread.test_missing_turn_start_invalidates_binding_without_new_thread) ... ok
+test_new_thread_is_created_only_for_initial_unbound_session (test_codex_stale_thread.CodexStaleThread.test_new_thread_is_created_only_for_initial_unbound_session) ... ok
+test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain (test_codex_stale_thread.CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain) ... ok
+test_read_not_loaded_error_is_resumable_not_missing (test_codex_stale_thread.CodexStaleThread.test_read_not_loaded_error_is_resumable_not_missing) ... ok
+test_reconnect_cannot_replace_rpc_between_validation_and_dispatch (test_codex_stale_thread.CodexStaleThread.test_reconnect_cannot_replace_rpc_between_validation_and_dispatch) ... ok
+test_reconnect_restores_exact_persisted_thread_before_turn (test_codex_stale_thread.CodexStaleThread.test_reconnect_restores_exact_persisted_thread_before_turn) ... ok
+test_rpc_replacement_invalidates_same_generation (test_codex_stale_thread.CodexStaleThread.test_rpc_replacement_invalidates_same_generation) ... ok
+test_same_rpc_new_connection_generation_requires_validation (test_codex_stale_thread.CodexStaleThread.test_same_rpc_new_connection_generation_requires_validation) ... ok
+test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart (test_codex_stale_thread.CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart) ... ok
+test_unclassified_turn_error_is_uncertain_and_never_replayed (test_codex_stale_thread.CodexStaleThread.test_unclassified_turn_error_is_uncertain_and_never_replayed) ... ok
+test_validation_errors_are_classified_without_guessing_or_private_text (test_codex_stale_thread.CodexStaleThread.test_validation_errors_are_classified_without_guessing_or_private_text) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=0 validation=authentication; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=1 validation=rpc_error; operator action required, no thread rotation or submission
+ok
+test_configured_root_read_before_exact_turn (test_codex_stale_thread.ConfiguredRootBinding.test_configured_root_read_before_exact_turn) ... ok
+test_configured_root_resumes_exact_thread (test_codex_stale_thread.ConfiguredRootBinding.test_configured_root_resumes_exact_thread) ... ok
+test_configured_transport_unavailable_waits_without_submission (test_codex_stale_thread.ConfiguredRootBinding.test_configured_transport_unavailable_waits_without_submission) ... ok
+test_invalid_binding_remains_at_fifo_head_without_new_thread (test_codex_stale_thread.ConfiguredRootBinding.test_invalid_binding_remains_at_fifo_head_without_new_thread) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=invalid-id validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=invalid-cwd validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=invalid-status validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=invalid-canAcceptDirectInput validation=invalid_thread_binding; operator action required, no thread rotation or submission
+ok
+test_private_binding_conflict_stops_startup_and_reports_both_ids (test_codex_stale_thread.ConfiguredRootBinding.test_private_binding_conflict_stops_startup_and_reports_both_ids) ... ok
+test_private_matching_or_empty_binding_validates_before_saving (test_codex_stale_thread.ConfiguredRootBinding.test_private_matching_or_empty_binding_validates_before_saving) ... ok
+test_reconnect_revalidates_and_alias_cannot_replace_pin (test_codex_stale_thread.ConfiguredRootBinding.test_reconnect_revalidates_and_alias_cannot_replace_pin) ... ok
+test_unavailable_never_creates_and_retains_operator_held_fifo_head (test_codex_stale_thread.ConfiguredRootBinding.test_unavailable_never_creates_and_retains_operator_held_fifo_head) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=missing validation=missing_thread; operator action required, no thread rotation or submission
+ok
+test_unset_factory_preserves_legacy_constructor_arguments (test_codex_stale_thread.ConfiguredRootBinding.test_unset_factory_preserves_legacy_constructor_arguments) ... ok
+test_both_transports_preserve_rpc_error_without_private_payload_in_string (test_codex_stale_thread.RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string) ... ok
+test_missing_thread_requires_exact_method_code_and_id (test_codex_stale_thread.RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id) ... ok
+test_presubmit_retry_classifier_is_narrow_and_read_only_only (test_codex_stale_thread.RPCErrorShapes.test_presubmit_retry_classifier_is_narrow_and_read_only_only) ... ok
+test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned (test_codex_stale_thread.RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned) ... ok
+test_adapter_recovery_inherits_final_thread_and_never_replays_unknown (test_codex_stale_thread.RecoveryThreadInheritance.test_adapter_recovery_inherits_final_thread_and_never_replays_unknown) ... [delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+ok
+test_auth_stays_fail_closed_and_temporary_read_errors_retry_same_thread (test_codex_stale_thread.RecoveryThreadInheritance.test_auth_stays_fail_closed_and_temporary_read_errors_retry_same_thread) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=failure-auth validation=authentication; operator action required, no thread rotation or submission
+ok
+test_configured_root_and_child_still_refuse_unavailable_thread (test_codex_stale_thread.RecoveryThreadInheritance.test_configured_root_and_child_still_refuse_unavailable_thread) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=rejected-True validation=missing_thread; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=rejected-False validation=missing_thread; operator action required, no thread rotation or submission
+ok
+test_lane_identity_mismatch_is_rejected (test_codex_stale_thread.RecoveryThreadInheritance.test_lane_identity_mismatch_is_rejected) ... ok
+test_loaded_root_is_validated_and_continued_without_create (test_codex_stale_thread.RecoveryThreadInheritance.test_loaded_root_is_validated_and_continued_without_create) ... ok
+test_mismatched_recovery_binding_never_rotates_to_new_thread (test_codex_stale_thread.RecoveryThreadInheritance.test_mismatched_recovery_binding_never_rotates_to_new_thread) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=mismatch validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=later validation=invalid_thread_binding; operator action required, no thread rotation or submission
+ok
+test_missing_or_wrong_cwd_fails_closed_without_thread_replacement (test_codex_stale_thread.RecoveryThreadInheritance.test_missing_or_wrong_cwd_fails_closed_without_thread_replacement) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=new-missing validation=missing_thread; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=new-cwd validation=invalid_thread_binding; operator action required, no thread rotation or submission
+ok
+test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery (test_codex_stale_thread.RecoveryThreadInheritance.test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery) ... FAIL
+test_session_event_loop_forwards_failure_with_delivery_correlation (test_codex_stale_thread.StructuredAdmissionOutput.test_session_event_loop_forwards_failure_with_delivery_correlation) ... ok
+
+======================================================================
+FAIL: test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery (test_codex_stale_thread.RecoveryThreadInheritance.test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_codex_stale_thread.py", line 776, in test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery
+    self.assertIsNotNone(inbox.lifecycle(first)['submission_may_have_started_at'])
+AssertionError: unexpectedly None
+
+----------------------------------------------------------------------
+Ran 42 tests in 0.705s
+
+FAILED (failures=1)
+
+MUTATION_RC=1
+EXPECTED_ASSERTION=test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery

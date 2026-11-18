@@ -1,0 +1,14 @@
+test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery (tests.test_codex_stale_thread.RecoveryThreadInheritance.test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery) ... FAIL
+
+======================================================================
+FAIL: test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery (tests.test_codex_stale_thread.RecoveryThreadInheritance.test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_codex_stale_thread.py", line 758, in test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery
+    self.assertIsNotNone(inbox.lifecycle(first)['submission_may_have_started_at'])
+AssertionError: unexpectedly None
+
+----------------------------------------------------------------------
+Ran 1 test in 0.071s
+
+FAILED (failures=1)
