@@ -1,0 +1,7 @@
+--- FAIL: TestDeliveryACKV2QueueFullFeishuNoticeUsesDurableOutboundQueue (0.16s)
+    session_delivery_ack_test.go:145: durable Feishu sender notice missing: sql: no rows in result set
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.164s
+FAIL
+
+MUTATION_RC=1

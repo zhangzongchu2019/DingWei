@@ -1,0 +1,20 @@
+2026/11/18 07:04:25 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:04:25 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:04:25 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:04:25 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":325,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":325,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T07:04:26.097498742Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":100,"write_budget_ms":20000,"write_bytes":244}
+2026/11/18 07:04:26 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=1
+2026/11/18 07:04:26 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:04:26 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:04:26 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:04:26 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":308,"queue_peak_items":1,"reader_age_ms":0,"reader_frame_bytes":308,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T07:04:26.232483133Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":0,"write_budget_ms":5000,"write_bytes":258}
+2026/11/18 07:04:26 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=opus50ts conn_seq=1 client_present=false
+2026/11/18 07:04:26 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- FAIL: TestDeliveryACKV2QueueFullRequiresExplicitNonretryableShape (0.42s)
+    delivery_ack_v2_test.go:242: malformed queue_full ACK accepted omitRetryable=true: &{ID:db8beb2615b61f4c76898114cf247aff To:opus50ts#u_zzc From:workpulse#u_zzc Body: TS:1794985466 Meta:map[ack_generation:1 ack_protocol:2 delivery_id:ack-wire processing_mode:driver state:failed type:delivery_ack_confirm]}
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.428s
+FAIL
+
+MUTATION_RC=1

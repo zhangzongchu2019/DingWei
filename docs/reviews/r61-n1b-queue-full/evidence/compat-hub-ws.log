@@ -1,0 +1,41 @@
+=== RUN   TestDeliveryACKV2QueueFullRequiresNegotiationAndCreatesDurableNotice
+2026/11/18 06:30:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:30:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:30:02 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:30:02 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":652,"queue_peak_items":2,"reader_age_ms":0,"reader_frame_bytes":326,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T06:30:02.752776127Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":0,"write_budget_ms":5000,"write_bytes":258}
+2026/11/18 06:30:02 session delivery drain skipped decision=stale_or_offline_client key_id=u_zzc session=opus50ts conn_seq=1 client_present=false
+2026/11/18 06:30:02 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestDeliveryACKV2QueueFullRequiresNegotiationAndCreatesDurableNotice (0.17s)
+=== RUN   TestDeliveryACKV2QueueFullIgnoredWithoutHelperCapability
+2026/11/18 06:30:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:30:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:30:02 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:30:02 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":326,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":326,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T06:30:03.010889087Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":101,"write_budget_ms":20000,"write_bytes":244}
+2026/11/18 06:30:03 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestDeliveryACKV2QueueFullIgnoredWithoutHelperCapability (0.26s)
+=== RUN   TestNewHubOldHelperQueueFullKeepsRetryableBusyPath
+2026/11/18 06:30:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:30:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:30:03 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:30:03 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":320,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":320,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T06:30:03.27634905Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":100,"write_budget_ms":20000,"write_bytes":244}
+2026/11/18 06:30:03 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=0
+--- PASS: TestNewHubOldHelperQueueFullKeepsRetryableBusyPath (0.26s)
+=== RUN   TestDeliveryACKV2QueueFullRequiresExplicitNonretryableShape
+2026/11/18 06:30:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:30:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:30:03 session handshake timing key_id=u_zzc session=opus50ts total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 06:30:03 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":324,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":324,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T06:30:03.536874715Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":100,"write_budget_ms":20000,"write_bytes":244}
+2026/11/18 06:30:03 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=1
+2026/11/18 06:30:03 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 06:30:03 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 06:30:03 session handshake timing key_id=u_zzc session=opus50ts total=2ms register=0s accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/11/18 06:30:03 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":308,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":308,"reader_frame_type":"text","reason":"reader_eof","session":"opus50ts","utc":"2026-11-18T06:30:03.785036088Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":100,"write_budget_ms":20000,"write_bytes":244}
+2026/11/18 06:30:03 session delivery lease release decision=requeue key_id=u_zzc session=opus50ts conn_seq=1 reason=session_disconnected released=1
+--- PASS: TestDeliveryACKV2QueueFullRequiresExplicitNonretryableShape (0.52s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	1.225s

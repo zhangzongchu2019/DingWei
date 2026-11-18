@@ -1,0 +1,7 @@
+--- FAIL: TestMessageQueueFailRetriesThenDead (0.15s)
+    sqlite_test.go:960: next after dead = &{ID:m1 ChatEntityID:chat1 Direction:out BotChannelID:bot1 FeishuMsgID: ChatType:personal SenderOpenID: IngressProvenance:untrusted FeishuReply:<nil> Content:{"text":"hello"} SensitiveContent: Status:processing Attempts:4 Err:send failed CreatedAt:2026-11-18 07:04:38 +0000 UTC ProcessedAt:2026-11-18 07:04:38 +0000 UTC}, want nil
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.155s
+FAIL
+
+MUTATION_RC=1
