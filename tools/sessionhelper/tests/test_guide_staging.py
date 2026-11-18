@@ -647,6 +647,7 @@ class GuideRealAdapterBoundaryTest(unittest.TestCase):
             self.assertEqual(first["type"], "user")
             self.assertIn("GUIDE", first["message"]["content"][0]["text"])
             driver._active.terminal_seen.set()
+            self.wait_for(lambda: helper.guide_store.state().get("state") == "consumed")
             asyncio.run(helper.process_inbound_message(FakeWS(), business_env("SECOND", eid="business-2")))
             self.wait_for(lambda: len(driver._proc.stdin.frames) == 2)
             second = driver._proc.stdin.frames[1]

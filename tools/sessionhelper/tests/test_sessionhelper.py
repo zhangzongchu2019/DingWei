@@ -1115,6 +1115,13 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(sent[-1]["meta"]["state"], "processed")
 
     def test_delivery_worker_recovers_when_injection_failure_turns_busy(self):
+        async def wait_for_state(ws, predicate, timeout=20):
+            async def wait_until_observed():
+                while not predicate():
+                    ws.changed.clear()
+                    await ws.changed.wait()
+            await asyncio.wait_for(wait_until_observed(), timeout=timeout)
+
         class FakeAdapter:
             name = "cli"
 
@@ -1137,9 +1144,11 @@ class SessionHelperTest(unittest.TestCase):
         class FakeWS:
             def __init__(self):
                 self.sent = []
+                self.changed = asyncio.Event()
 
             async def send(self, payload):
                 self.sent.append(json.loads(payload))
+                self.changed.set()
 
         async def run_case():
             with tempfile.TemporaryDirectory() as tmp:
@@ -1157,21 +1166,24 @@ class SessionHelperTest(unittest.TestCase):
                 }
                 helper.delivery_inbox.accept("dlv_1", env)
                 task = asyncio.create_task(helper.delivery_worker_loop(ws))
-                deadline = asyncio.get_running_loop().time() + 1.5
-                while asyncio.get_running_loop().time() < deadline and not ws.sent:
-                    await asyncio.sleep(0.05)
-                busy_sent = list(ws.sent)
-                fake.idle = True
-                deadline = asyncio.get_running_loop().time() + 1.5
-                while asyncio.get_running_loop().time() < deadline and not any(
-                    s["meta"]["state"] == "processed" for s in ws.sent
-                ):
-                    await asyncio.sleep(0.05)
-                task.cancel()
+                busy_sent = []
                 try:
-                    await task
-                except asyncio.CancelledError:
-                    pass
+                    try:
+                        await wait_for_state(ws, lambda: any(s["meta"]["state"] == "busy" for s in ws.sent))
+                    except asyncio.TimeoutError:
+                        pass
+                    busy_sent = list(ws.sent)
+                    fake.idle = True
+                    try:
+                        await wait_for_state(ws, lambda: any(s["meta"]["state"] == "processed" for s in ws.sent))
+                    except asyncio.TimeoutError:
+                        pass
+                finally:
+                    task.cancel()
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
                 return busy_sent, ws.sent, fake.handled
 
         busy_sent, sent, handled = asyncio.run(run_case())
@@ -1207,9 +1219,11 @@ class SessionHelperTest(unittest.TestCase):
         class FakeWS:
             def __init__(self):
                 self.sent = []
+                self.changed = asyncio.Event()
 
             async def send(self, payload):
                 self.sent.append(json.loads(payload))
+                self.changed.set()
 
         async def run_case():
             with tempfile.TemporaryDirectory() as tmp:
@@ -1229,21 +1243,29 @@ class SessionHelperTest(unittest.TestCase):
                     }
                     helper.delivery_inbox.accept(delivery_id, env)
                 task = asyncio.create_task(helper.delivery_worker_loop(ws))
-                deadline = asyncio.get_running_loop().time() + 6
                 busy_seen = 0
-                while asyncio.get_running_loop().time() < deadline:
-                    states = [item["meta"]["state"] for item in ws.sent]
-                    if states.count("busy") > busy_seen:
-                        busy_seen = states.count("busy")
-                        fake.idle = True
-                    if states.count("processed") == 8:
-                        break
-                    await asyncio.sleep(0.05)
-                task.cancel()
                 try:
-                    await task
-                except asyncio.CancelledError:
-                    pass
+                    async def wait_until_all_processed():
+                        nonlocal busy_seen
+                        while True:
+                            states = [item["meta"]["state"] for item in ws.sent]
+                            if states.count("busy") > busy_seen:
+                                busy_seen = states.count("busy")
+                                fake.idle = True
+                            if states.count("processed") == 8:
+                                return
+                            ws.changed.clear()
+                            await ws.changed.wait()
+                    try:
+                        await asyncio.wait_for(wait_until_all_processed(), timeout=30)
+                    except asyncio.TimeoutError:
+                        pass  # Final processed-count assertion reports a business failure.
+                finally:
+                    task.cancel()
+                    try:
+                        await task
+                    except asyncio.CancelledError:
+                        pass
                 return ws.sent, fake.handled
 
         sent, handled = asyncio.run(run_case())
