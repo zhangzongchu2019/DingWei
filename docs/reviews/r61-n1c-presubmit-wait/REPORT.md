@@ -46,3 +46,16 @@ Mutation logs are in `evidence/mutations/`; each mutation was applied in place f
 - An earlier run at intermediate source `4af0091a...` was interrupted after review found that definitive identity mismatches needed to remain at the FIFO head. Its partial output is retained as `evidence/build-test-only-interrupted-4af0091a.log`; it is not a gate result.
 - A full helper run at intermediate source `5dd67f96...` completed rc=1 with 17 failures in legacy assertions expecting terminal rejection for known pre-submit mismatches. The corrected fail-closed FIFO behavior and assertions pass the final focused and full helper gates. Raw failing log: `evidence/build-test-only-failed-5dd67f96.log` (SHA256 `4466b47efb54035b2e3f474d20284eaaa4bad257fe91418637595bc86b628c0f`).
 - A `25af4ce1...` build attempt verified both helper profiles (1281/1281 each) but failed in Go integration tests because the isolated temporary filesystem ran out of space. The final rerun used the larger local volume for TMP while retaining isolated HOME; the rerun passed. Raw attempt: `evidence/build-test-only-no-space-25af.log` (SHA256 `6ef57f217e2d16b50ba7c294f3e48bf2ac428740c0daaf22752109be56b0627c`).
+
+
+## Post-merge verification (2026-11-18)
+
+The repaired N-1b source `b81737d0897c7edfea171371dba8ead6c1ef8f28` was merged into the original N-1c branch at `c22c4268016bd0c28e812028f4109613cd462728` (tree `65d669869260fa3c1228d5e0726398e8fddf36a2`). Merge parents are the originally received N-1c tip `6feca61c3055419238f05a01df33c7fa1150727c` and N-1b `b81737d0897c7edfea171371dba8ead6c1ef8f28`; the N-1b remote tip is an ancestor. The run used the merged tree, isolated `env -i`, Go 1.22.2, `/tmp/lockvenv/bin/python3`, separate HOME/TMP/GOCACHE, and no live Hub.
+
+| Check | Result |
+| --- | --- |
+| `SOURCE_COMMIT=c22c4268016bd0c28e812028f4109613cd462728 bash build.sh --test-only` | rc=0; `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`; inventory 97. Claude and Codex each 1281/1281 (groups 1272+9), rc=0. Raw log: `evidence/post-merge-build-c22c426.log`. |
+| m8 + store, PG strict | `go test -p 1 -count=3 -timeout=45m -v ./internal/m8 ./internal/store`, `HUB_TEST_PG_STRICT=1`; overall rc=1. m8 ran 981.951s with one failure in three repetitions: `TestSessionNameReconnectKeepsNameAndReleaseReuses`, `hub_test.go:3505`, `interrupted (9)` (first repetition only; second and third passed). This is on the Z-3 permitted list. No other m8 failure. Store passed all three repetitions, 252.535s. Aggregate top-level counts: m8 2975 PASS / 1 FAIL / 33 SKIP; store 1203 PASS / 0 FAIL / 15 SKIP. The skip set and conditions match `SKIPS.md` (48 top-level, 54 nested skip occurrences total). Raw log: `evidence/post-merge-m8-store-count3-c22c426.log`. |
+| OpenSpec strict | 44 passed / 0 failed; rc=0. Raw log: `evidence/post-merge-openspec-strict-c22c426.log`. |
+
+This is not an all-green m8 gate: the permitted flaky failure occurred once, so the aggregate Go command correctly returned rc=1. No failure outside the named Z-3 set occurred. The repaired N-1b merge does not change the N-1c helper source or the N-1c behavior under test.

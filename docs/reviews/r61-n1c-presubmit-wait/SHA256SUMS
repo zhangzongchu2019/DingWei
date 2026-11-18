@@ -26,3 +26,6 @@ f7c956d2923bd942175b1446481394aa36925658221bf92705e587e64a64e377  docs/reviews/r
 677fec261fd32f025b75d4b4e525c39430e27dc7b7e534a89442fe60fff47ea3  openspec/changes/r61-n1c-presubmit-wait/proposal.md
 d154279dba8a13f568906c472d2f9f8bd015425dd2368c13cda2c15dd98798b5  openspec/changes/r61-n1c-presubmit-wait/specs/helper-presubmit-wait/spec.md
 1636d6714984a24faba5b02e145f6fc2d3b6725743150071495d99a5453839fe  openspec/changes/r61-n1c-presubmit-wait/tasks.md
+b081dd14b404102f206dab93b0d22b215e7a6c9d6ef476c4c0d6b11f354317a6  docs/reviews/r61-n1c-presubmit-wait/evidence/post-merge-build-c22c426.log
+104a1a6eed2f4dc66f8785bab974d85cff085a09adcac431121e8dbf28275197  docs/reviews/r61-n1c-presubmit-wait/evidence/post-merge-m8-store-count3-c22c426.log
+00deedb25054eaeed804dcc843071547cc54a415fbd49e52ffe1de9e006e2ad4  docs/reviews/r61-n1c-presubmit-wait/evidence/post-merge-openspec-strict-c22c426.log
