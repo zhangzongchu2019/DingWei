@@ -2,6 +2,7 @@
 
 - Executor: `togpt60lunazzc.zzc`
 - Base: `main` `206d41b26dab646c0e50a111eed5a45ccf7c72f6`
+- Initial implementation source: `0525ee8c9ee000a1deda7b58b9b99e6eb04a816f`; follow-up paired-rollout/OpenCode test source: `29ecf0e74` (full commit is recorded in branch history).
 - Scope: Codex CLI transcript parsing and timeout ACK correctness; TUI stop diagnosis only. No live seat, Hub, or deployment changes.
 - Survey evidence: `review/qwen38mvb4/native-cli-view-survey-20261118` tip `425e32db`, especially `REPORT.md` §§3.2, 3.5 and `logs/t1-codex-0159` / `logs/t2-codex-0170`.
 
@@ -40,4 +41,12 @@ This checkout cannot complete the requested one-shot direct-TUI control: its ins
 
 ## 4. Change inventory
 
-Expected changed paths are limited to `tools/sessionhelper/sessionhelper/cli.py`, `tools/sessionhelper/tests/test_sessionhelper.py`, the copied transcript fixture, and this report. No Hub or production files outside the helper adapter are modified.
+Expected changed paths are limited to `tools/sessionhelper/sessionhelper/cli.py`, `tools/sessionhelper/tests/test_sessionhelper.py`, the Codex transcript fixtures, and this report/evidence. No Hub or production files outside the helper adapter are modified.
+
+## 5. Follow-up regression checks
+
+- The 0.159.2 and 0.170.0 survey rollouts both contain an `event_msg` `item_completed` with an `AgentMessage` item and a `response_item` assistant row sharing the same message ID. The helper parser intentionally consumes only the assistant `response_item` for this observed shape; `item_completed` is not parsed as text. The legacy `event_msg` / `agent_message` shape remains supported. New paired fixtures were extracted byte-for-byte from the survey's two real rollout records, and the test asserts exactly one parsed assistant text event for each version. This rules out duplicate mirror text for the observed pair without guessing from text equality.
+- Added an OpenCode regression through `CLIAdapter.handle_delivery`: synchronous OpenCode delivery continues through its SQLite message/part reply reader, returns the collected reply, and emits one OpenCode mirror event. Bypassing the OpenCode database branch makes the test fail at the reply business assertion. This protects the separate OpenCode output path from the Codex transcript change.
+- Four focused tests covering the paired rollout records, OpenCode routing, the Codex assistant fixture, and timeout-as-failed ACK passed. Raw log: `evidence/focused-c1-c3.log`. The OpenCode route mutation was killed at `OpenCode must keep using its SQLite message/part reader`; raw log: `evidence/mutation-opencode-db-route.log`.
+- Mutation removing the new Codex assistant `response_item` branch fails at the existing synchronous-reply business assertion `真实 assistant 消息被漏读，回合被错误降为答案超时占位`, not at import/compile; log `evidence/mutation-codex-response-item.log`. A separate mutation that parses `item_completed` AgentMessage text as well produces two mirror events for both real version-paired fixtures; the C3 regression fails on the duplicate list (2 instead of 1), log `evidence/mutation-codex-duplicate-event.log`.
+- Two additional complete helper-suite rounds ran on the final test source with `env -i`, locked Python 3.12.3, separate HOME/TMP, explicit `DW_DESKTOP_INTEGRATION_PYTHON`, and the runner's isolated profile IPC sockets. Round 4: Claude 1266 tests / 495.874s, Codex 1266 / 494.190s, rc=0. Round 5: Claude 1266 / 494.747s, Codex 1266 / 495.123s, rc=0. Raw logs are `evidence/helper-round4.log` and `evidence/helper-round5.log`.

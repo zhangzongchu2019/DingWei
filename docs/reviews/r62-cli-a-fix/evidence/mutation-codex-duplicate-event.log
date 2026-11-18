@@ -1,0 +1,24 @@
+test_codex_supported_rollout_pairs_mirror_one_assistant_reply (tests.test_sessionhelper.SessionHelperTest.test_codex_supported_rollout_pairs_mirror_one_assistant_reply) ... 
+  test_codex_supported_rollout_pairs_mirror_one_assistant_reply (tests.test_sessionhelper.SessionHelperTest.test_codex_supported_rollout_pairs_mirror_one_assistant_reply) (fixture='codex-t159-assistant-pair-real.jsonl') ... FAIL
+  test_codex_supported_rollout_pairs_mirror_one_assistant_reply (tests.test_sessionhelper.SessionHelperTest.test_codex_supported_rollout_pairs_mirror_one_assistant_reply) (fixture='codex-t170-assistant-pair-real.jsonl') ... FAIL
+
+======================================================================
+FAIL: test_codex_supported_rollout_pairs_mirror_one_assistant_reply (tests.test_sessionhelper.SessionHelperTest.test_codex_supported_rollout_pairs_mirror_one_assistant_reply) (fixture='codex-t159-assistant-pair-real.jsonl')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cli-a-fix-duplicate-mut/tools/sessionhelper/tests/test_sessionhelper.py", line 1986, in test_codex_supported_rollout_pairs_mirror_one_assistant_reply
+    self.assertIn(parsed, [[("codex", "收到。")], [("codex", "收到")]])
+AssertionError: [('codex', '收到。'), ('codex', '收到。')] not found in [[('codex', '收到。')], [('codex', '收到')]]
+
+======================================================================
+FAIL: test_codex_supported_rollout_pairs_mirror_one_assistant_reply (tests.test_sessionhelper.SessionHelperTest.test_codex_supported_rollout_pairs_mirror_one_assistant_reply) (fixture='codex-t170-assistant-pair-real.jsonl')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cli-a-fix-duplicate-mut/tools/sessionhelper/tests/test_sessionhelper.py", line 1986, in test_codex_supported_rollout_pairs_mirror_one_assistant_reply
+    self.assertIn(parsed, [[("codex", "收到。")], [("codex", "收到")]])
+AssertionError: [('codex', '收到'), ('codex', '收到')] not found in [[('codex', '收到。')], [('codex', '收到')]]
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=2)
