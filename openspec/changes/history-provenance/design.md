@@ -71,3 +71,11 @@ renderer 只对已经通过 `normalizeEvent` 的标准 provenance 画图：`kind
 - 来源记录仅使用当前认证连接的owner/stable Agent ID快照，不在可能持有identity授权锁的route回调内再次借PG连接。无法取得目标稳定身份（例如当时目标未连接）或写sidecar失败时记录固定原因并fail-closed，无图标；不影响已经durable enqueue的投递，也不在后续echo里从正文/地址/临近卡片重建来源。
 - SQLite事件和sidecar的事务原子性不延伸到应用库投递，二者仍独立；原可靠投递回执时序不变。history关闭时清sidecar，删除队列及TTL每批分别有界处理sidecar；恢复/迁移测试覆盖已有0001 ledger升级及digest拒绝。
 - 路由调用显式传入入队时已经捕获的认证目标连接身份；即使入队后同名Agent替换，sidecar也不能重新绑定到新在线槽。独立回归覆盖旧/新稳定ID及错误key/session快照，错误或空身份仍fail-closed。
+
+
+## 8. legacy_received 重锚的身份边界（2026-11-18 修订）
+
+- legacy injected/processed 回执可能晚于同名 Agent 替换。该回执只带投递地址，不带可再次证明的 enqueue-time 目标身份，不能据当前在线槽重发历史来源证据。
+- publishDeliveryUpdateForDelivery 的 legacy_received 重锚显式传空 history target，沿既有 publishInputObservation 继续发实时 input_posted，但 rememberHistoryInputProvenance 按空身份 fail-closed，不写新 sidecar。不是把原捕获身份改为回执发送者。
+- 原入队时按捕获稳定身份写入的 sidecar 不受影响：替换身份 echo 无来源，原身份 echo 仍可精确消费；原本无有效证据时两侧均无来源。该修订不改主库/历史库迁移、Append事务、quota、分页API、renderer或可靠ACK时序。
+- 回归覆盖 injected/processed × 有/无原捕获sidecar；断言正常legacy_received、实时input_posted保留、替换history无provenance、原身份来源按原证据保留。删显式空目标必须使替换身份断言红；删实时重锚必须使实时事件断言红。

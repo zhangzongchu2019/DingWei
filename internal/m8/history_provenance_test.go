@@ -271,3 +271,84 @@ func TestHistoryProvenanceRoutingPinsIdentityBeforeEnqueue(t *testing.T) {
 		t.Fatalf("route lost original captured identity proof: %+v %v", page, e)
 	}
 }
+
+// An ACK may arrive after the target name has been rebound. Its realtime
+// reanchor must never mint history evidence for the new authenticated identity.
+func TestHistoryProvenanceLegacyReanchorDoesNotFollowReusedName(t *testing.T) {
+	for _, phase := range []string{"injected", "processed"} {
+		for _, seeded := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/captured_%t", phase, seeded), func(t *testing.T) {
+				h, db, ctx := newTestHub(t)
+				history, err := store.OpenSessionHistory(filepath.Join(t.TempDir(), "history.db"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer history.Close()
+				if err = history.SetEnabled(ctx, true, time.Now()); err != nil {
+					t.Fatal(err)
+				}
+				h.SessionHistory, h.SessionHistoryEnabled = history, true
+				old := &sessionClient{keyID: "key", ownerKey: "owner", sessionName: "work", metricsAgentID: "old", deliveryACKV1: true}
+				replacement := &sessionClient{keyID: "key", ownerKey: "owner", sessionName: "work", metricsAgentID: "replacement", deliveryACKV1: true}
+				original := model.Envelope{ID: "legacy-source", From: "timer#key", Body: "synthetic legacy input", Meta: map[string]any{hubIngressMetaKey: hubIngressAgent}}
+				raw, err := json.Marshal(original)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err = db.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: "legacy-delivery", KeyID: "key", SessionName: "work", SourceMessageID: original.ID, SourceType: "session_inbound", Envelope: string(raw), State: "sent", Attempts: 1, CreatedAt: time.Now()}); err != nil {
+					t.Fatal(err)
+				}
+				if _, err = db.BindSessionDeliveryACK(ctx, "legacy-delivery", "key", "work", 1, "legacy"); err != nil {
+					t.Fatal(err)
+				}
+				if seeded {
+					h.publishInputObservation("key", "work", original, "legacy-delivery", "hub_received", "primary", true, old)
+				}
+				h.mu.Lock()
+				h.sessionClients["key"] = map[string]*sessionClient{"work": replacement}
+				h.mu.Unlock()
+				if !h.handleSessionDeliveryAck(ctx, old, model.Envelope{Meta: map[string]any{"type": "delivery_ack", "delivery_id": "legacy-delivery", "state": phase}}) {
+					t.Fatal("legacy ACK was not handled")
+				}
+				row, err := db.GetSessionDelivery(ctx, "legacy-delivery")
+				if err != nil || row == nil || row.State != "legacy_received" {
+					t.Fatalf("legacy receipt changed: %+v %v", row, err)
+				}
+				h.mu.Lock()
+				st := h.terminals[terminalKey("key", "work")]
+				live := false
+				if st != nil {
+					for _, line := range st.eventRing {
+						var event map[string]any
+						_ = json.Unmarshal([]byte(line), &event)
+						if event["kind"] == "input_posted" && event["message_id"] == original.ID {
+							live = true
+						}
+					}
+				}
+				h.mu.Unlock()
+				if !live {
+					t.Fatal("legacy receipt lost realtime input reanchor")
+				}
+				echo := model.Envelope{ID: "replacement-echo", Body: `{"kind":"user_input","delivery_id":"legacy-delivery","origin_delivery_id":"legacy-delivery","turn_id":"turn","data":{"lifecycle":"admitted"}}`, Meta: map[string]any{"type": terminalSessionEventType}}
+				h.handleSessionEventEnvelope(replacement, echo)
+				page, err := history.Page(ctx, "owner", "replacement", "work", "", nil)
+				if err != nil || len(page.Events) != 1 {
+					t.Fatalf("replacement history: %+v %v", page, err)
+				}
+				if strings.Contains(string(page.Events[0].Event), `"provenance"`) {
+					t.Fatal("legacy reanchor minted captured provenance for same-name replacement")
+				}
+				echo.ID = "original-echo"
+				h.handleSessionEventEnvelope(old, echo)
+				page, err = history.Page(ctx, "owner", "old", "work", "", nil)
+				if err != nil || len(page.Events) != 1 {
+					t.Fatalf("original history: %+v %v", page, err)
+				}
+				if found := strings.Contains(string(page.Events[0].Event), `"provenance"`); found != seeded {
+					t.Fatalf("captured original evidence changed: found=%t seeded=%t", found, seeded)
+				}
+			})
+		}
+	}
+}

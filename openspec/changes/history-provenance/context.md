@@ -27,3 +27,8 @@
 ## S-R61-N3-IMPL 作者交件（2026-11-18）
 
 基main 206d41b26dab646c0e50a111eed5a45ccf7c72f6；首提交c3b3db27c9532ab19a80d769da55b98f02e08696原样导入批准6a60a1a6。当前冻结产品/测试源a32c877cf6ef21a909d2806f4b08e3e925d05d98，作者证据9a145fd138c7d15bf1ec027b773b960919e69056。history独立0078，不改应用库0077；五元组同事务增强消费、超限回滚保留sidecar、原有清理边界同步计费均已实现。六门真实rc0，N-4历史失败与最终诊断不抹除，SKIP/变异/DB-HTTP-SSE夹具见docs/reviews/r61-n3-history-provenance。独立复核待togpt60，不代表验收或发布批准。
+
+
+## 2026-11-18 legacy 重锚修订现场
+
+独立复现 legacy ACK 同名重锚缺口，见 internal/m8/history_provenance_test.go 的 TestHistoryProvenanceLegacyReanchorDoesNotFollowReusedName。hub.go 的 legacy_received 实时 observation 显式传空history目标，禁用此晚到路径的新sidecar；已有入队捕获证据按原五元组保留。修订不改迁移/存储schema/renderer。当前正式复核方为qwen38mvb4（组长改派），旧togpt请求已撤回；其具体发现作为技术输入核实，不复用其未跑或不完整的门。

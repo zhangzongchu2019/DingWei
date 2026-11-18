@@ -4866,9 +4866,12 @@ func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, delivery
 		// An old native CLI can reset its View stream after the original input
 		// observation. Re-anchor this receipt to its persisted original input;
 		// no model admission/terminal is inferred or sent to the driver.
+		// This late receipt has no immutable enqueue-time target identity.
+		// An explicit nil keeps the realtime event but cannot mint a sidecar
+		// against whichever Agent now occupies the same session name.
 		var original model.Envelope
 		if json.Unmarshal([]byte(d.Envelope), &original) == nil {
-			h.publishInputObservation(d.KeyID, d.SessionName, original, d.ID, "helper_received", "primary", false)
+			h.publishInputObservation(d.KeyID, d.SessionName, original, d.ID, "helper_received", "primary", false, nil)
 		}
 	}
 	metadata := map[string]any{"ack_protocol": d.AckProtocol, "processing_mode": d.ProcessingMode, "ack_generation": d.AckGeneration}

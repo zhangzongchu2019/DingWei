@@ -16,6 +16,12 @@ Hub MUST 为可信 primary 入站投递持久保存可精确关联的最小来�
 - **WHEN** helper 自带 provenance，或 delivery ID 缺失、匹配不唯一、目标会话不符或凭据过期
 - **THEN** Hub 丢弃 helper 声明且不向历史事件附加 trusted provenance
 
+#### Scenario: legacy 回执重锚不得转移目标身份
+
+- **WHEN** 已入队投递的旧 helper injected 或 processed 回执到达，原 session 名已被不同稳定 Agent ID 使用，或入队时未捕获有效目标身份
+- **THEN** Hub 只重发实时 input_posted，不根据当前同名在线槽新增历史来源 sidecar；替换身份的 admitted history 不得取得原身份 provenance
+- **AND** 原入队身份已保存的 sidecar 不被删除或改绑，仍只能由其精确五元组的合法 admitted event 消费
+
 ### Requirement: HP-002 历史分页回放来源
 
 Hub MUST 通过既有 `/view/{session}/history` 分页 envelope 原样回放已保存 user_input 的 Hub provenance，renderer MUST 只按既有 trusted 且 Hub-attested 规则显示来源图标。
