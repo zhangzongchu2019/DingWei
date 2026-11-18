@@ -1917,6 +1917,34 @@ class SessionHelperTest(unittest.TestCase):
                     else:
                         self.assertNotIn("ack_protocol", meta)
 
+    def test_inbox_failure_is_not_misclassified_as_queue_full(self):
+        class FakeWS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            helper = SessionHelper(load_config(dict(
+                BASE_ENV, SH_MODE="driver", SH_INBOX_DB=str(Path(tmp) / "inbox.db")
+            )))
+            helper._connection_queue_full_ack = True
+            ws = FakeWS()
+            env = {"body": "body", "meta": {
+                "type": "delivery", "delivery_id": "inbox-failure",
+                "delivery_ack_protocol": 2, "processing_mode": "driver", "ack_generation": 1,
+            }}
+            with mock.patch.object(helper.delivery_inbox, "accept", side_effect=OSError("synthetic inbox I/O failure")):
+                asyncio.run(helper.accept_delivery(ws, env))
+
+        self.assertEqual(len(ws.sent), 1)
+        ack = ws.sent[0]["meta"]
+        self.assertEqual(ack["state"], "failed")
+        self.assertEqual(ack["reason"], "inbox_unavailable")
+        self.assertIs(ack["retryable"], True)
+        self.assertNotEqual(ack["reason"], "queue_full")
+
     def test_producer_requires_target_group(self):
         helper = SessionHelper(load_config(dict(BASE_ENV, SH_PRODUCER="1")))
         with self.assertRaises(RuntimeError):
