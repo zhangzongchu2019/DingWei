@@ -145,5 +145,12 @@
     "raw_sha256": "85964b1db98f799e65338da7fa1c8cf6765c6dd7d37dfc527d218f9301f79ccb",
     "stored_sha256": "1fd3e5f57bae52224748b78faeb8e36300b22f7682ffa8b54c0c25186ee7634e",
     "raw_bytes": 1395
+  },
+  {
+    "raw_path": "final-strict.log",
+    "stored_path": "evidence/final-strict.log.gz",
+    "raw_sha256": "85964b1db98f799e65338da7fa1c8cf6765c6dd7d37dfc527d218f9301f79ccb",
+    "stored_sha256": "1fd3e5f57bae52224748b78faeb8e36300b22f7682ffa8b54c0c25186ee7634e",
+    "raw_bytes": 1395
   }
 ]

@@ -1,7 +1,6 @@
-e331efaf70ad02a23234bc908cbd94db9e690bfc96e05048c642f943113b06ec  docs/reviews/r62-extseat-ttl/REPORT.md
+b65cc89f6711f129ca089acd49b386bd2fe5f3e4b9889b168534c0267bd888b8  docs/reviews/r62-extseat-ttl/REPORT.md
 222efee603a60f1920a40149acfc86e4e20a72118ad83c3bf652663708a3ec44  docs/reviews/r62-extseat-ttl/SKIPS.md
 3f281cb0b5b0324e3ea6a812558c940d9f4a405ff564893c48d595e0bbcfaa33  docs/reviews/r62-extseat-ttl/VERIFY.py
-3f281cb0b5b0324e3ea6a812558c940d9f4a405ff564893c48d595e0bbcfaa33  docs/reviews/r62-extseat-ttl/evidence/VERIFY.py
 e75681ee7d75de25845d038297a6139d4c77a4de71cb1946cf89a4db7e0712d5  docs/reviews/r62-extseat-ttl/evidence/attempt-9576/canonical.log.gz
 6301a7221c3aa56ae93212baa7ae64f19312a226a125aee73d4827700a5e27b1  docs/reviews/r62-extseat-ttl/evidence/attempt-9576/env.json
 602df54f25405aafd30876fab686bbd310b4ea159d08263b844ac9a1b1faf7cb  docs/reviews/r62-extseat-ttl/evidence/attempt-9576/full-go3.log.gz
@@ -18,6 +17,8 @@ d739ab644bafcb616e70c3acd6f6f27736bef36dab1004cf0e6b301693443b69  docs/reviews/r
 45a00b912cb643ec3f5f1f6673635203c91bb8a91fb500ec831ed9dbe0b84b3a  docs/reviews/r62-extseat-ttl/evidence/attempt-9576/structure.json
 c69d26565a83ca5bd72eb8bc9008ab75df29d7e683713c90a0226514ea2fbcb8  docs/reviews/r62-extseat-ttl/evidence/canonical.log.gz
 12b598a5c089597f03546cb6d48e983bcebb8aec24e78f39daf3d63d9ea6259e  docs/reviews/r62-extseat-ttl/evidence/env.json
+bd3b661f2d921ca752527d1fb005a8503ca93c8cee696d691f04777c5f4be9d3  docs/reviews/r62-extseat-ttl/evidence/final-strict.json
+1fd3e5f57bae52224748b78faeb8e36300b22f7682ffa8b54c0c25186ee7634e  docs/reviews/r62-extseat-ttl/evidence/final-strict.log.gz
 7c47a42a8c8c01dc710e75ac26b03f6dd7f81e33840bc59975366260932dede8  docs/reviews/r62-extseat-ttl/evidence/focused-pre-freeze.log.gz
 f68b088456cdea5535b39f2f101b8bbee703f2f4a2b2e6f9a8ca554b12ed6b34  docs/reviews/r62-extseat-ttl/evidence/full-go3.log.gz
 f380a86fdfb30cbc0d04f05cd3d8566c45d7cd9fc025bec61db3de47f511165a  docs/reviews/r62-extseat-ttl/evidence/legacy-fixture-after.json
@@ -40,5 +41,5 @@ d4790acfcd00c4e97a4192b22bae4a4eccd0d52b1bd19b1e9eba455e0746fc3c  docs/reviews/r
 52b4422e1ad76572211e69826a216094e6ba662b5351e22fae8c1a471c1b6a17  docs/reviews/r62-extseat-ttl/evidence/summarize.py
 80e2bbc962f08de2e902f4c7f8f975603f8d0a40b0e2be193fa8f78e33f774fe  docs/reviews/r62-extseat-ttl/gate-summary.json
 e8f90ced9119ff9a3fb4b6e4e1d4a018eac86a5e5ec73b7b6481a937bac7b143  docs/reviews/r62-extseat-ttl/product-manifest.json
-07f880437f2bee783958826a8095f2dccdb3fca357dd49ac734e52de4fc2b0c5  docs/reviews/r62-extseat-ttl/raw-log-manifest.json
+07acd368f2d303e4a9ad91bd03cd461e162b29200d942060943962529006272f  docs/reviews/r62-extseat-ttl/raw-log-manifest.json
 3fc66ef66a720958aa52f4519b0afa0f5cea3d5a26c95a1bf2033e1b25a9a60e  docs/reviews/r62-extseat-ttl/structure.json
