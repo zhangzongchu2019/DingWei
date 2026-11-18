@@ -13,14 +13,14 @@ import (
 	"time"
 )
 
-// 存活期与时限（㊹-补4、㊹-补6、提案 GW-005／GW-006）。
+// 存活期与时限（R62 第1片将组/消息改为7天；令牌仍沿用14天）。
 const (
 	// TokenTTL 令牌滑动存活期：每次成功鉴权交互续到 now＋TokenTTL。
 	TokenTTL = 14 * 24 * time.Hour
 	// GroupTTL 临时编组滑动存活期：只由受理成功的发送与首次有效 received 确认续期，轮询不续。
-	GroupTTL = 3 * 24 * time.Hour
-	// MessageTTL 发往外部席位的消息自入队起的存活期；续令牌、续编组都不延长它。
-	MessageTTL = 24 * time.Hour
+	GroupTTL = 7 * 24 * time.Hour
+	// MessageTTL 外部席位双向消息自受理入队起的存活期；续令牌、续编组都不延长它。
+	MessageTTL = 7 * 24 * time.Hour
 	// PresenceTimeout 超过这么久没有成功请求即视为离线。
 	PresenceTimeout = 90 * time.Second
 	// WaitMax 收件长轮询的服务端硬上限。
