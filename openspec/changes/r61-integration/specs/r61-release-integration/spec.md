@@ -32,3 +32,21 @@
 #### Scenario: R61I-S004 第一段交件
 - **WHEN** 七项作者门已完成
 - **THEN** 只推集成分支和证据，不推main、不部署、不制作发布件，后续项另待冻结令。
+
+### Requirement: R61I-005 第二段冻结项追加
+第二段 MUST 从第一段0ab43c63上仅合入已冻结N-1b，保持一个no-ff合并提交；合前 SHALL 核远端为b81737d0或其仅文档后继，且ed7259fa至来件无产品差异。N3/N1c仍待独立冻结令，VERSION保持不变。
+
+#### Scenario: R61I-S005 N-1b共享祖先自动合并
+- **WHEN** N1a638cb324已在第一段链上且N1b远端符合令中边界
+- **THEN** 只新增N1b合并父，记录自动合并与冲突处置；不重复覆盖N1a，不提前纳入N3/N1c。
+
+### Requirement: R61I-006 第二段兼容与窄例外证据
+第二段 SHALL 在固定合并源跑canonical、PG strict m8/store三遍、focusedrace、浏览器全量与strict，留真实PG版本、逐名SKIP与原日志SHA。真实旧Hub501＋合后helper、合后Hub＋真实39helper MUST 各跑一格；初始m8若仅既定Z-3中断，MUST 保留原失败并按固定五轮至少三轮全绿、其余仅允许三格中断判定，不以单跑替代。
+
+#### Scenario: R61I-S006 新旧queue_full协商
+- **WHEN** 隔离的真实Hub/helper进程在容量1已满时接收新投递
+- **THEN** 旧Hub＋新helper和新Hub＋39helper均busy且无failure_notice，新新协商failed/queue_full且恰一条通知；夹具暂停模型消费的边界须披露。
+
+#### Scenario: R61I-S007 已知中断保留首轮失败
+- **WHEN** 初始三遍仅发生已批准Z-3落点的interrupted(9)
+- **THEN** 首轮rc1原样保留，另列固定五轮、基线对照、每轮中断与判定；名单外FAIL或非该机制失败停止，不自行扩名单。

@@ -49,3 +49,5 @@ focused race两包rc0，DATA RACE为0；条件性实际CLI崩溃窗等SKIP逐名
 完成：第二段N1b顺序合并、本段作者门与三向真实进程协议兼容；首轮非绿和Z-3资格分列。下一步：组长复核后待N3/N1c新冻结锚与第三段令。此作者门不替代独立复核、版本定案或上线GO。
 
 日志发布副本：raw/*.gz中对测试生成的secret/token样式字段脱敏；每份原SHA、发布字节SHA、压缩SHA与替换次数均在raw-logs.json，不把脱敏件冒称与原日志逐字相同。私有原日志仍保留本机。
+
+首份不可变证据提交：`fcfd0ec38a51621fff25ad1f3d7b5d7269f6301b`，tasks和context据此附可git cat-file的坐标。另：go version -m原输出mod行末尾tab同样保留，未为diff whitespace提示改动原证据；不影响产品范围检查。
