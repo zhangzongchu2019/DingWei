@@ -1,0 +1,10 @@
+AssertionError [ERR_ASSERTION]: 面板底色必须随主题真实变化: rgb(246, 248, 251) -> rgb(246, 248, 251)
+    at /tmp/wt-r62-slim/view-service/console-specs-theme-regression.js:94:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'rgb(246, 248, 251)',
+  expected: 'rgb(246, 248, 251)',
+  operator: 'notStrictEqual',
+  diff: 'simple'
+}
+rc=1

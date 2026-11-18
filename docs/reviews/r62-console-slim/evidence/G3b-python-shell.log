@@ -1,0 +1,426 @@
+TEST python deploy/image/supervisord/test_verify_supervisor_template.py
+----------------------------------------------------------------------
+Ran 15 tests in 1.795s
+
+OK
+TEST python deploy/ops/hosted-image/test_start.py
+----------------------------------------------------------------------
+Ran 20 tests in 1.774s
+
+OK
+TEST python deploy/ops/hosted-image/test_build_definition.py
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 18 tests in 0.676s
+
+OK
+TEST python deploy/ops/hosted-claude-image/test_claude_start.py
+hosted-claude-start: invalid or missing SH_CRED_FILE
+hosted-claude-start: invalid or missing SH_CLI
+hosted-start: invalid or missing HELPER_UPDATE_STATE
+----------------------------------------------------------------------
+Ran 34 tests in 25.154s
+
+OK
+TEST python deploy/test_build_entrypoints.py
+----------------------------------------------------------------------
+Ran 17 tests in 1.232s
+
+OK
+TEST python deploy/test_file_service_deploy.py
+----------------------------------------------------------------------
+Ran 10 tests in 0.002s
+
+OK
+TEST python deploy/test_generate_console_seed.py
+/tmp/wt-r62-slim/deploy/test_generate_console_seed.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/r62z/tmpapc444qd/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/wt-r62-slim/deploy/test_generate_console_seed.py:116: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/r62z/tmpv67si4xw/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/wt-r62-slim/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/r62z/tmpjcj6vqeh/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/wt-r62-slim/deploy/test_generate_console_seed.py:72: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/r62z/tmpcgwos_ou/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/wt-r62-slim/deploy/test_generate_console_seed.py:64: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/r62z/tmpcgwos_ou/seed.json' mode='r' encoding='UTF-8'>
+  data = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/wt-r62-slim/deploy/test_generate_console_seed.py:100: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/r62z/tmpnjeibvsj/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/wt-r62-slim/deploy/test_generate_console_seed.py:161: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/r62z/tmp23bb28yn/seed.json' mode='r' encoding='UTF-8'>
+  d = json.load(open(self.out))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 14 tests in 1.042s
+
+OK
+TEST python deploy/test_invariants_alert_route.py
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+TEST python deploy/test_invariants_expected_hashes.py
+----------------------------------------------------------------------
+Ran 6 tests in 0.078s
+
+OK
+TEST python deploy/test_preview_console.py
+/tmp/wt-r62-slim/deploy/test_preview_console.py:78: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/wt-r62-slim/internal/store/console_auth.go' mode='r' encoding='utf-8'>
+  go = open(PROD_GO, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/wt-r62-slim/deploy/test_preview_console.py:83: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/wt-r62-slim/deploy/preview_console_for_principal.py' mode='r' encoding='utf-8'>
+  tool = open(TOOL, encoding="utf-8").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+----------------------------------------------------------------------
+Ran 9 tests in 0.586s
+
+OK
+TEST python deploy/test_validate_console_seed.py
+----------------------------------------------------------------------
+Ran 11 tests in 0.508s
+
+OK
+TEST python view-service/test_check_public_view_deploy.py
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK
+TEST python view-service/test_md_render_core.py
+----------------------------------------------------------------------
+Ran 12 tests in 0.578s
+
+OK
+TEST python view-service/test_provenance_flag_injection.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/r62z/tmpm_p9mmmo/view-state.json", "request_path": ""}
+----------------------------------------------------------------------
+Ran 11 tests in 0.631s
+
+OK
+TEST python view-service/test_renderer_iter2.py
+----------------------------------------------------------------------
+Ran 7 tests in 0.023s
+
+OK
+TEST python view-service/test_view_page_store.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+----------------------------------------------------------------------
+Ran 13 tests in 1.910s
+
+OK
+TEST python view-service/test_view_service.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/nonexistent/tasks-xyz.json", "request_path": ""}
+----------------------------------------------------------------------
+Ran 44 tests in 0.040s
+
+OK
+TEST python view-service/test_view_error_logging.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+----------------------------------------------------------------------
+Ran 2 tests in 0.506s
+
+OK
+TEST python view-service/test_health_auth.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "HTTPServerError", "target_path": "", "request_path": "/internal/health/auth", "status": 503}
+{"event": "view_error", "exception": "HTTPServerError", "target_path": "", "request_path": "/internal/health/auth", "status": 503}
+{"event": "view_error", "exception": "HTTPServerError", "target_path": "", "request_path": "/internal/health/auth", "status": 503}
+{"event": "view_error", "exception": "HTTPServerError", "target_path": "", "request_path": "/internal/health/auth", "status": 503}
+{"event": "view_error", "exception": "HTTPServerError", "target_path": "", "request_path": "/internal/health/auth", "status": 503}
+{"event": "view_error", "exception": "HTTPServerError", "target_path": "", "request_path": "/internal/health/auth", "status": 503}
+----------------------------------------------------------------------
+Ran 16 tests in 8.143s
+
+OK
+TEST python view-service/test_agent_disk_resource.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+----------------------------------------------------------------------
+Ran 9 tests in 0.557s
+
+OK
+TEST python view-service/test_inbox_lag_resource.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+----------------------------------------------------------------------
+Ran 8 tests in 0.379s
+
+OK
+TEST python view-service/test_view_refresh.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+----------------------------------------------------------------------
+Ran 5 tests in 0.332s
+
+OK
+TEST python view-service/test_mux_projection.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+----------------------------------------------------------------------
+Ran 6 tests in 0.435s
+
+OK
+TEST python view-service/test_mux_projection_failure.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+{"event": "view_error", "exception": "HTTPServerError", "target_path": "", "request_path": "/status", "status": 503}
+----------------------------------------------------------------------
+Ran 3 tests in 1.639s
+
+OK
+TEST python view-service/test_cost_paused.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+ENTRYPOINT_BOUNDARY {"entry": "unsafe", "actual_rc": 1, "costdir_unchanged": false, "module_cache_in_costdir": true}
+ENTRYPOINT_BOUNDARY {"entry": "flag", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+ENTRYPOINT_BOUNDARY {"entry": "environment", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+ENTRYPOINT_BOUNDARY {"entry": "outside", "actual_rc": 0, "costdir_unchanged": true, "module_cache_in_costdir": false}
+{"event": "view_error", "exception": "HTTPServerError", "target_path": "", "request_path": "/", "status": 503}
+----------------------------------------------------------------------
+Ran 9 tests in 7.896s
+
+OK
+TEST python view-service/test_mux_cost_seed.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+----------------------------------------------------------------------
+Ran 9 tests in 0.392s
+
+OK
+TEST python view-service/test_view_unlock_v2_integration.py
+{"event": "view_error", "exception": "FileNotFoundError", "target_path": "/tmp/wt-r62-slim/view-service/view-state.json", "request_path": ""}
+----------------------------------------------------------------------
+Ran 1 test in 1.121s
+
+OK
+TEST shell deploy/test-view-service-release.sh
+PACKAGED commit=48b22252fbb89da00481d2ecf2ba47a306aa64a3 files=3 output=/tmp/r62z/tmp.CYe3FPxUTf/pkg
+VERIFIED files=3 expected_commit=48b22252fbb89da00481d2ecf2ba47a306aa64a3
+PACKAGED commit=26f394734db146a5d64e9a23c5838c6009f298fe files=3 output=/tmp/r62z/tmp.CYe3FPxUTf/old
+PACKAGED commit=48b22252fbb89da00481d2ecf2ba47a306aa64a3 files=3 output=/tmp/r62z/tmp.CYe3FPxUTf/install-pkg
+PACKAGED commit=982679b031f1892fe09cca0395a3ee9249c838b3 files=3 output=/tmp/r62z/tmp.CYe3FPxUTf/static-pkg
+PACKAGED commit=338474ca9be4814190c6e67f37a86f00eee665ca files=3 output=/tmp/r62z/tmp.CYe3FPxUTf/two-pkg
+PACKAGED commit=81a3dc0dd88955541fe7521b8ff7cde22807d77b files=3 output=/tmp/r62z/tmp.CYe3FPxUTf/all-pkg
+PACKAGED commit=943ff1a7f55a4a03e9a84bbc8ed88803523fad47 files=3 output=/tmp/r62z/tmp.CYe3FPxUTf/fail-pkg
+PACKAGED commit=6d84082d7cc540bac476230c312278f216b5e39b files=3 output=/tmp/r62z/tmp.CYe3FPxUTf/unhealthy-pkg
+PASS view-service release core
+TEST shell scripts/test-desktop-hub-roundtrip.sh
+=== RUN   TestDeviceClaimAcrossActualClientAndHub
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/new
+2026/11/18 07:33:48 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:33:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:33:48 session handshake timing key_id=u_newperson session=desktop total=3ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:33:48 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/11/18 07:33:48 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":856,"queue_peak_items":1,"reader_age_ms":5,"reader_frame_bytes":468,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:33:48.953571616Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":7,"write_budget_ms":20000,"write_bytes":519}
+2026/11/18 07:33:48 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:337: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/reuse
+2026/11/18 07:33:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:33:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:33:49 session handshake timing key_id=u_existing session=desktop total=4ms register=1ms accept=0s conn_seq=0s onboard=2ms register_lock=0s
+2026/11/18 07:33:49 session capability file_upload_v1=true key_id=u_existing session=desktop conn_seq=1
+2026/11/18 07:33:49 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":856,"queue_peak_items":1,"reader_age_ms":4,"reader_frame_bytes":468,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:33:49.457158823Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":5,"write_budget_ms":20000,"write_bytes":516}
+2026/11/18 07:33:49 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:337: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/lost_ack
+2026/11/18 07:33:49 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:33:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:33:50 session handshake timing key_id=u_newperson session=desktop total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:33:50 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/11/18 07:33:50 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":856,"queue_peak_items":1,"reader_age_ms":5,"reader_frame_bytes":468,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:33:50.105455013Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":8,"write_budget_ms":20000,"write_bytes":519}
+2026/11/18 07:33:50 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:337: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/takeover
+2026/11/18 07:33:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:33:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:337: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndHub/cancel_then_new
+2026/11/18 07:33:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:33:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:33:51 session handshake timing key_id=u_newperson session=desktop total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:33:51 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/11/18 07:33:51 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":856,"queue_peak_items":1,"reader_age_ms":4,"reader_frame_bytes":468,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:33:51.047187635Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":7,"write_budget_ms":20000,"write_bytes":519}
+2026/11/18 07:33:51 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:337: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=memory, no real Feishu
+--- PASS: TestDeviceClaimAcrossActualClientAndHub (2.61s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/new (0.51s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/reuse (0.50s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/lost_ack (0.65s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/takeover (0.44s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndHub/cancel_then_new (0.51s)
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/new
+2026/11/18 07:33:51 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:33:51 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/11/18 07:33:54 session handshake timing key_id=u_newperson session=desktop total=4ms register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/11/18 07:33:54 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/11/18 07:33:54 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":1324,"queue_peak_items":2,"reader_age_ms":26,"reader_frame_bytes":468,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:33:54.795207703Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":7,"write_budget_ms":20000,"write_bytes":519}
+2026/11/18 07:33:54 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:337: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/reuse
+2026/11/18 07:33:55 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:33:55 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/11/18 07:33:58 session handshake timing key_id=u_existing session=desktop total=4ms register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/11/18 07:33:58 session capability file_upload_v1=true key_id=u_existing session=desktop conn_seq=1
+2026/11/18 07:33:58 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":1324,"queue_peak_items":2,"reader_age_ms":28,"reader_frame_bytes":468,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:33:58.552030546Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":6,"write_budget_ms":20000,"write_bytes":516}
+2026/11/18 07:33:58 session delivery lease release decision=requeue key_id=u_existing session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:337: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/lost_ack
+2026/11/18 07:34:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:34:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/11/18 07:34:03 session handshake timing key_id=u_newperson session=desktop total=6ms register=1ms accept=0s conn_seq=0s onboard=3ms register_lock=0s
+2026/11/18 07:34:03 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/11/18 07:34:03 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":1324,"queue_peak_items":2,"reader_age_ms":39,"reader_frame_bytes":468,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:34:03.308499265Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":16,"write_budget_ms":20000,"write_bytes":519}
+2026/11/18 07:34:03 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:337: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/takeover
+2026/11/18 07:34:04 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:34:04 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+    claim_client_integration_test.go:337: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+=== RUN   TestDeviceClaimAcrossActualClientAndPostgres/cancel_then_new
+2026/11/18 07:34:11 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:34:11 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003
+2026/11/18 07:34:15 session handshake timing key_id=u_newperson session=desktop total=4ms register=1ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/11/18 07:34:15 session capability file_upload_v1=true key_id=u_newperson session=desktop conn_seq=1
+2026/11/18 07:34:15 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_reconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":1324,"queue_peak_items":2,"reader_age_ms":38,"reader_frame_bytes":468,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:34:15.656156556Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":15,"write_budget_ms":20000,"write_bytes":519}
+2026/11/18 07:34:15 session delivery lease release decision=requeue key_id=u_newperson session=desktop conn_seq=1 reason=session_disconnected released=0
+    claim_client_integration_test.go:337: actual claim HTTP/client + trusted synthetic ingress + private save/ACK + dedicated helper WS: PASS; backend=postgres, no real Feishu
+--- PASS: TestDeviceClaimAcrossActualClientAndPostgres (26.71s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/new (4.68s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/reuse (4.94s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/lost_ack (4.41s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/takeover (7.24s)
+    --- PASS: TestDeviceClaimAcrossActualClientAndPostgres/cancel_then_new (5.44s)
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/legacy
+2026/11/18 07:34:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:34:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:34:17 session name warning key_id=FB-synthetic-only-20261118-8ecc68a6 owner= session=peer: 无法确认该 key 绑定成员 owner_key
+2026/11/18 07:34:17 session version warning key_id=FB-synthetic-only-20261118-8ecc68a6 owner= session=peer version="" required=0.2.3.40: 未上报版本,要求 0.2.3.40
+2026/11/18 07:34:17 session handshake timing key_id=FB-synthetic-only-20261118-8ecc68a6 session=peer total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:34:17 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261118-8ecc68a6 session=peer conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:34:17 session name warning key_id=FB-synthetic-only-20261118-8ecc68a6 owner= session=desktop: 无法确认该 key 绑定成员 owner_key
+2026/11/18 07:34:17 session handshake timing key_id=FB-synthetic-only-20261118-8ecc68a6 session=desktop total=2ms auth=0s accounts=0s owner=0s register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:34:17 session capability file_upload_v1=true key_id=FB-synthetic-only-20261118-8ecc68a6 session=desktop conn_seq=1
+2026/11/18 07:34:17 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261118-8ecc68a6 session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:34:17 session route decision=durable_queued key_id=FB-synthetic-only-20261118-8ecc68a6 session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_3401e731d296e5fad381510d5f0d149e source_message_id=desktop-question
+2026/11/18 07:34:17 session route decision=durable_queued key_id=FB-synthetic-only-20261118-8ecc68a6 session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_0ad8b9cdf1dbba77f2dc5d1df130484f source_message_id=2009a1fa85c04b9da069e0d8623a3aba
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":251,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":251,"reader_frame_type":"text","reason":"reader_eof","session":"peer","utc":"2026-11-18T15:34:17.891831857Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":105,"write_budget_ms":20000,"write_bytes":646}
+2026/11/18 07:34:17 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261118-8ecc68a6 session=peer conn_seq=1 reason=session_disconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":935,"queue_peak_items":1,"reader_age_ms":132,"reader_frame_bytes":408,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:34:17.913526373Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":132,"write_budget_ms":5000,"write_bytes":437}
+2026/11/18 07:34:17 session delivery lease release decision=requeue key_id=FB-synthetic-only-20261118-8ecc68a6 session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:246: real Hub/SQLite + actual helper receive worker + MCP stdio wait/reply: PASS; synthetic identities, no model or desktop UI
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/enrolled_leader_only
+2026/11/18 07:34:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:34:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:34:18 session handshake timing key_id=u_zzc session=peer total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:34:18 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:34:18 session handshake timing key_id=u_zzc session=desktop total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:34:18 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/11/18 07:34:18 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:34:18 session route decision=durable_queued key_id=u_zzc session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_a94bb5b9041fbf518dd85c677e2a6098 source_message_id=desktop-question
+2026/11/18 07:34:18 session route decision=durable_queued key_id=u_zzc session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_d051aa01350749e058340940d9697656 source_message_id=36121e7176e14b71b2877cf800a54c1a
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":191,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":191,"reader_frame_type":"text","reason":"reader_eof","session":"peer","utc":"2026-11-18T15:34:18.729199129Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":108,"write_budget_ms":20000,"write_bytes":556}
+2026/11/18 07:34:18 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":866,"queue_peak_items":1,"reader_age_ms":133,"reader_frame_bytes":348,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:34:18.751165268Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":133,"write_budget_ms":5000,"write_bytes":377}
+2026/11/18 07:34:18 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:246: real Hub/SQLite + actual helper receive worker + MCP stdio wait/reply: PASS; synthetic identities, no model or desktop UI
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/enrolled_group_removed
+2026/11/18 07:34:18 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:34:18 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:34:18 session handshake timing key_id=u_zzc session=peer total=3ms register=0s accept=0s conn_seq=0s onboard=2ms register_lock=0s
+2026/11/18 07:34:18 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:34:19 session handshake timing key_id=u_zzc session=desktop total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:34:19 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/11/18 07:34:19 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:34:19 session route decision=durable_queued key_id=u_zzc session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_62d2c7f9a6448a843dc3b7aebd6aa442 source_message_id=desktop-question
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":160,"queue_peak_items":1,"reader_age_ms":276,"reader_frame_bytes":160,"reader_frame_type":"text","reason":"reader_eof","session":"peer","utc":"2026-11-18T15:34:19.5685331Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":571,"write_budget_ms":5000,"write_bytes":4281}
+2026/11/18 07:34:19 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":866,"queue_peak_items":1,"reader_age_ms":128,"reader_frame_bytes":348,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:34:19.586908057Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":128,"write_budget_ms":5000,"write_bytes":324}
+2026/11/18 07:34:19 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:194: actual enrolled group removal rejects MCP reply, retains unread, refuses resend: PASS
+=== RUN   TestDesktopMCPRoundTripAcrossRealHub/enrolled_stop_hook
+2026/11/18 07:34:19 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:34:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:34:19 session handshake timing key_id=u_zzc session=peer total=1ms register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:34:19 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:34:20 session handshake timing key_id=u_zzc session=desktop total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:34:20 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/11/18 07:34:20 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:34:20 session route decision=durable_queued key_id=u_zzc session=desktop client_present=true conn_seq=1 delivery_id=dw-dlv_25ee00da2334b93f5d67de5254c0e271 source_message_id=desktop-question
+2026/11/18 07:34:20 session route decision=durable_queued key_id=u_zzc session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_6bc2fb23e68db08673eec21acd54fa95 source_message_id=cf04d47c71cd4b34bf3d8867128c0f3e
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":191,"queue_peak_items":1,"reader_age_ms":100,"reader_frame_bytes":191,"reader_frame_type":"text","reason":"reader_eof","session":"peer","utc":"2026-11-18T15:34:20.619813453Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":192,"write_budget_ms":20000,"write_bytes":556}
+2026/11/18 07:34:20 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=0
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":866,"queue_peak_items":1,"reader_age_ms":219,"reader_frame_bytes":348,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:34:20.642953919Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":219,"write_budget_ms":5000,"write_bytes":377}
+2026/11/18 07:34:20 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    desktop_mcp_roundtrip_test.go:246: real Hub/SQLite + actual helper receive worker + MCP stdio wait/reply: PASS; synthetic identities, no model or desktop UI
+--- PASS: TestDesktopMCPRoundTripAcrossRealHub (3.55s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/legacy (0.82s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/enrolled_leader_only (0.84s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/enrolled_group_removed (0.84s)
+    --- PASS: TestDesktopMCPRoundTripAcrossRealHub/enrolled_stop_hook (1.05s)
+=== RUN   TestHostedBodySendAcrossRealHub
+2026/11/18 07:34:20 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:34:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:34:20 session handshake timing key_id=u_zzc session=peer total=3ms register=2ms accept=0s conn_seq=0s onboard=1ms register_lock=0s
+2026/11/18 07:34:20 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:34:21 session handshake timing key_id=u_zzc session=desktop total=2ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:34:21 session capability file_upload_v1=true key_id=u_zzc session=desktop conn_seq=1
+2026/11/18 07:34:21 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:34:21 session route decision=durable_queued key_id=u_zzc session=peer client_present=true conn_seq=1 delivery_id=dw-dlv_0c1fda536e58d0c8903bf9bc6a8a5ebd source_message_id=4a1839b619fa46009dd5dc305880d05e
+{"conn_seq":1,"event":"session_end","last_worker_type":"session_capabilities","limit":"none","peer_close_code":"unknown","phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":149,"queue_peak_items":1,"reader_age_ms":1281,"reader_frame_bytes":149,"reader_frame_type":"text","reason":"reader_eof","session":"peer","utc":"2026-11-18T15:34:22.175012935Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":567,"write_budget_ms":20000,"write_bytes":481}
+2026/11/18 07:34:22 session delivery lease release decision=requeue key_id=u_zzc session=peer conn_seq=1 reason=session_disconnected released=1
+{"conn_seq":1,"event":"session_end","last_worker_type":"other","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":868,"queue_peak_items":1,"reader_age_ms":367,"reader_frame_bytes":449,"reader_frame_type":"text","reason":"peer_normal","session":"desktop","utc":"2026-11-18T15:34:22.200548832Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":366,"write_budget_ms":5000,"write_bytes":374}
+2026/11/18 07:34:22 session delivery lease release decision=requeue key_id=u_zzc session=desktop conn_seq=1 reason=session_disconnected released=0
+    hosted_body_send_test.go:199: restricted MCP body uses actual enrolled Hub routing; group removal blocks delivery; durable acceptance and explicit group rejection are distinct; local responsibility is not delivery proof
+--- PASS: TestHostedBodySendAcrossRealHub (1.55s)
+=== RUN   TestProjectContextAcrossRealHTTPHelperIPCMCP
+2026/11/18 07:34:22 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:34:22 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    project_context_roundtrip_test.go:40: real local Go Hub HTTP, SessionHelper constructor/IPC, actual shim stdio, dedicated credential and bounded projection: PASS; no live Hub or AI
+--- PASS: TestProjectContextAcrossRealHTTPHelperIPCMCP (0.61s)
+=== RUN   TestBlockerAcrossRealHTTPHelperIPCMCP
+2026/11/18 07:34:23 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:34:23 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    task_blocker_roundtrip_test.go:51: five actual MCP calls through helper/HTTP; current task remains planned; no live Hub, CLI, AI or business execution
+=== RUN   TestBlockerAcrossRealHTTPHelperIPCMCP/missing_identity_ack_returns_to_hub
+2026/11/18 07:34:24 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:34:24 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:34:24 session handshake timing key_id=u_zzc session=kimi total=3ms register=1ms accept=0s conn_seq=0s onboard=0s register_lock=0s
+2026/11/18 07:34:24 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_reconnected released=0
+2026/11/18 07:34:24 session route decision=durable_queued key_id=u_zzc session=kimi client_present=true conn_seq=1 delivery_id=dw-dlv_9db8d4a19a3351b059177505a7c2a747129823488477cb15c1ebe15ba83d8dfd source_message_id=blocker:7f41fc354f36de0f48b6158456a9382e3908127a72e42f0d41612452630cdec5
+{"conn_seq":1,"event":"session_end","last_worker_type":"delivery_ack","limit":"none","peer_close_code":1000,"phase":"online","physical_write_active":false,"physical_write_reason":"none","pong_age_ms":"unknown","queue_bytes":0,"queue_items":0,"queue_peak_bytes":399,"queue_peak_items":1,"reader_age_ms":2,"reader_frame_bytes":332,"reader_frame_type":"text","reason":"peer_normal","session":"kimi","utc":"2026-11-18T15:34:24.516950196Z","waiting_writers":0,"worker_age_ms":"unknown","write_age_ms":43,"write_budget_ms":20000,"write_bytes":1145}
+2026/11/18 07:34:24 session delivery lease release decision=requeue key_id=u_zzc session=kimi conn_seq=1 reason=session_disconnected released=0
+    task_blocker_roundtrip_test.go:120: actual helper -> WS -> Hub: reason arrives, legacy receipt only, no model timestamps or extra delivery
+--- PASS: TestBlockerAcrossRealHTTPHelperIPCMCP (1.72s)
+    --- PASS: TestBlockerAcrossRealHTTPHelperIPCMCP/missing_identity_ack_returns_to_hub (0.48s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	36.782s
+PYTHON_SHELL_SEGMENT_DONE
