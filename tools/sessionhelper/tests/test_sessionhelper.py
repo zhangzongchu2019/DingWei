@@ -1973,6 +1973,18 @@ class SessionHelperTest(unittest.TestCase):
         event = json.loads(fixture.read_text(encoding="utf-8"))
         self.assertEqual(parse_codex_event(event), ("codex", "收到。"))
 
+    def test_codex_supported_rollout_pairs_mirror_one_assistant_reply(self):
+        fixture_dir = Path(__file__).parent / "fixtures"
+        for fixture_name in ("codex-t159-assistant-pair-real.jsonl", "codex-t170-assistant-pair-real.jsonl"):
+            with self.subTest(fixture=fixture_name):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp) / fixture_name
+                    path.write_bytes((fixture_dir / fixture_name).read_bytes())
+                    parsed = TranscriptTailer("codex", path, from_end=False).read_events()
+                # These versions store the same message ID in item_completed and response_item.
+                # item_completed is not a text event; only response_item becomes mirror text.
+                self.assertIn(parsed, [[("codex", "收到。")], [("codex", "收到")]])
+
     def test_codex_sync_reply_from_real_rollout_shape_is_not_timeout_placeholder(self):
         cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_CLI_REPLY_WAIT="0.1", SH_CLI_USER_ACK_WAIT="0.1"))
         adapter = CLIAdapter(cfg)
@@ -2118,6 +2130,27 @@ class SessionHelperTest(unittest.TestCase):
             session = reader.find_user_message("请总结", now / 1000 - 0.1)
             self.assertEqual(session, ("sess-1", now / 1000))
             self.assertEqual(reader.find_finished_assistant_reply("sess-1", now / 1000), "干净答案")
+
+    def test_opencode_sync_delivery_stays_on_database_reply_path(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="opencode", SH_CLI_REPLY_WAIT="0.1"))
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.start = lambda: True
+        adapter._child_gone = lambda: False
+        injected = []
+        adapter.inject_text = lambda body: injected.append(body)
+        def collect_opencode(prompt, injected_at, wait):
+            adapter.mirror_q.put(("opencode", "OpenCode answer"))
+            return "ok", "OpenCode answer"
+
+        adapter.collect_opencode_db_reply = collect_opencode
+        adapter.transcript = object()
+
+        reply = adapter.handle_delivery({"body": "OpenCode prompt"})
+
+        self.assertEqual(reply, "OpenCode answer", "OpenCode must keep using its SQLite message/part reader")
+        self.assertEqual(injected, ["OpenCode prompt"])
+        self.assertEqual(adapter.mirror_q.get_nowait(), ("opencode", "OpenCode answer"))
 
     def test_opencode_helpers_parse_time_and_strip_fence(self):
         self.assertEqual(opencode_time(1_783_000_000_000), 1_783_000_000)
