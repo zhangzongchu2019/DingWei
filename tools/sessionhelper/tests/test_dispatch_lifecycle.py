@@ -1,5 +1,7 @@
 """Unit fixtures for persistence windows; these do not replace real CLI E2E."""
 import json
+import threading
+import time
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,6 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from sessionhelper.inbox import DeliveryInbox
+from sessionhelper.busy_admission import BusyAdmission
 from sessionhelper.driver_adapter import DriverAdapter
 from sessionhelper.contract import DeliveryReceipt, SessionEvent
 
@@ -392,7 +395,7 @@ class AdmissionDeadlineTest(unittest.TestCase):
         self.assertEqual(next_calls,['dw-next'])
 
     def test_prior_nonterminal_wait_is_aborted_before_replacement_dispatch(self):
-        import sys,threading
+        import sys,threading,time
         from sessionhelper.claudeDriver import ClaudeProtocolDriver,_TurnState
         driver=ClaudeProtocolDriver(store_path=str(Path(self.tmp.name)/'previous.db'),cwd=self.tmp.name,
             cmd=[sys.executable,'-c','import time;time.sleep(20)'])
@@ -402,12 +405,24 @@ class AdmissionDeadlineTest(unittest.TestCase):
         previous.accepted.set();driver._active=previous
         replacement=SimpleNamespace(start=lambda:None)
         adapter=self.adapter(driver,'claude');adapter._build_driver=lambda which:replacement;adapter._admission_timeout=.15
+        adapter._busy_admission_max=.15
         adapter._commands.enqueue(self.env)
-        command=adapter._commands.start_next();adapter._deliver_regular_command(command)
+        command=adapter._commands.start_next()
+        worker=threading.Thread(target=lambda:adapter._deliver_regular_command(command))
+        worker.start()
+        deadline=time.monotonic()+2
+        while self.inbox.lifecycle(command.delivery_id)['busy_wait_started_at'] is None and time.monotonic()<deadline:
+            time.sleep(.005)
+        self.assertIsNotNone(self.inbox.lifecycle(command.delivery_id)['busy_wait_started_at'],'等待必须持久化')
+        time.sleep(.3)
+        self.assertTrue(worker.is_alive(),'确定未提交的旧回合等待不得由 admission timeout 中止')
+        self.assertIsNone(adapter._transport_recovery,'健康忙等待不得触发传输恢复')
+        self.assertEqual(self.inbox.lifecycle(command.delivery_id)['state'],'processing')
+        previous.terminal_seen.set()
+        worker.join(1)
+        self.assertTrue(adapter._transport_recovery.wait(3),'提交后无 ACK 应进入 unknown 并释放旧写线程')
         self.assertEqual(self.inbox.lifecycle(command.delivery_id)['state'],'admission_unknown')
-        self.assertTrue(adapter._transport_recovery.wait(3),'等待旧回合的deliver也必须响应abort并释放旧写线程')
         self.assertIs(adapter.driver,replacement)
-        self.assertFalse(previous.terminal_seen.is_set(),'abort不得伪造旧回合终态')
 
     def test_clock_includes_time_since_persisted_dispatch_intent(self):
         calls=[]
@@ -794,21 +809,33 @@ class BusyAdmissionTest(unittest.TestCase):
         output=io.StringIO()
         with redirect_stdout(output):
             self.offset=1801
-            self.worker.join(2)
-        self.assertFalse(self.worker.is_alive(),'BA_LIMIT_NOT_ENFORCED')
+            self.real_time.sleep(.06)
+        self.assertTrue(self.worker.is_alive(),'BA_LIMIT_STILL_TERMINATED_WAITER')
         self.assertEqual(self.errors,[])
-        self.assertEqual(self.inbox.lifecycle(self.did)['state'],'admission_unknown','BA_LIMIT_NOT_UNKNOWN')
-        self.assertIn('[delivery][ALERT][BUSY_ADMISSION_TIMEOUT] id='+self.did+' driver='+which+' limit_seconds=1800;',output.getvalue(),'BA_LIMIT_WARNING_MISSING')
-        self.assertTrue(self.command._delivery_worker.wait(2),'BA_CANCEL_WORKER_NOT_STOPPED')
-        self.release();self.driver.deliver(self.did,'synthetic busy input')
-        self.assertEqual(self.writes,[],'BA_CANCELLED_LATE_SUBMISSION')
+        self.assertEqual(self.inbox.lifecycle(self.did)['state'],'processing','BA_LIMIT_BECAME_UNKNOWN')
+        self.assertIsNotNone(self.inbox.lifecycle(self.did)['busy_wait_started_at'],'BA_WAIT_NOT_DURABLE')
+        self.assertIsNone(self.inbox.lifecycle(self.did)['submission_may_have_started_at'],'BA_WAIT_CROSSED_BOUNDARY')
+        self.assertIn('[delivery][ALERT][BUSY_ADMISSION_LONG_WAIT] id='+self.did+' driver='+which,output.getvalue(),'BA_LONG_WAIT_WARNING_MISSING')
+        self.release();self.worker.join(2)
+        self.assertFalse(self.worker.is_alive(),'BA_BUSY_DID_NOT_RESUME')
+        self.assertEqual(len(self.writes),1,'BA_RESUMED_SUBMISSION_MISSING')
         self.assertEqual(self.recoveries,[],'BA_LIMIT_REPLACED_HEALTHY_TRANSPORT')
+
+    def test_restart_recovers_proven_busy_head_before_later_delivery(self):
+        first=self.did;second='dw-dlv_'+'c'*32
+        self.inbox.accept(second,dict(self.env,meta=dict(self.env['meta'],delivery_id=second)))
+        self.inbox.mark_busy_waiting(first)
+        reopened=DeliveryInbox(str(Path(self.tmp.name)/'inbox.db'),session_name='fixture')
+        self.assertEqual(reopened.claim_next()[0],first,'BA_RESTART_SKIPPED_BUSY_HEAD')
+        self.assertEqual(reopened.claim_next()[0],second,'BA_TEST_REQUIRES_ADAPTER_FIFO')
 
     def unhealthy(self,which):
         self.prepare(which);self.healthy=False;self.offset=90
         self.worker.join(2)
         self.assertFalse(self.worker.is_alive(),'BA_UNHEALTHY_WAIT_EXTENDED')
         self.assertEqual(self.writes,[],'BA_UNHEALTHY_SUBMISSION')
+        if which == 'claude' and self.results and self.results[0] is not None:
+            self.adapter._settle_command(self.command, self.results[0])
         if which=='codex':
             self.assertEqual(self.recoveries,[self.did],'BA_BAD_TRANSPORT_NOT_RECOVERED')
             self.assertEqual(self.command.state,'queued','BA_UNSENT_TRANSPORT_NOT_DEFERRED')
@@ -817,8 +844,8 @@ class BusyAdmissionTest(unittest.TestCase):
 
     def test_codex_busy90_once(self):self.busy90('codex')
     def test_claude_busy90_once(self):self.busy90('claude')
-    def test_codex_limit_cancels_late_submission(self):self.cap('codex')
-    def test_claude_limit_cancels_late_submission(self):self.cap('claude')
+    def test_codex_limit_warns_without_cancelling_late_submission(self):self.cap('codex')
+    def test_claude_limit_warns_without_cancelling_late_submission(self):self.cap('claude')
     def test_codex_bad_transport_old_handling(self):self.unhealthy('codex')
     def test_claude_bad_transport_old_handling(self):self.unhealthy('claude')
 
@@ -868,6 +895,145 @@ class BusyAdmissionTest(unittest.TestCase):
         for which in ('codex','claude'):
             with self.subTest(driver=which):
                 self.assertIsNone(self.exemption_probe(which,healthy=False),'BA_DISCONNECTED_EXTENDED')
+
+
+class FakeBusyDriver:
+    def __init__(self):
+        self._busy_admission = BusyAdmission()
+        self.busy = threading.Event()
+        self.busy.set()
+        self.writes = []
+        self._submitted = {}
+        self._lock = threading.Lock()
+        self._health = True
+
+    def health(self):
+        return self._health
+
+    def submission_started(self, delivery_id):
+        return self._submitted.get(delivery_id)
+
+    def transport_recovery_required(self, _timeout):
+        return False
+
+    def poll_receipt(self, delivery_id):
+        return DeliveryReceipt(delivery_id, 'unknown', 'fixture', 'manual reconciliation required')
+
+    def deliver(self, delivery_id, _body):
+        self._busy_admission.waiting(delivery_id)
+        while self.busy.wait(.01):
+            pass
+        if not self._busy_admission.before_submit(delivery_id):
+            return DeliveryReceipt(delivery_id, 'unknown', 'fixture', 'lifecycle CAS refused')
+        with self._lock:
+            self._submitted[delivery_id] = time.monotonic()
+            self.writes.append(delivery_id)
+        return DeliveryReceipt(delivery_id, 'accepted', 'fixture', 'isReplay ack, turn=fixture-turn')
+
+
+class BusyWaitRecoveryTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix='busy-wait-', dir='/tmp')
+        self.addCleanup(self.tmp.cleanup)
+        self.path = str(Path(self.tmp.name) / 'inbox.sqlite')
+        self.session = 'fixture'
+        self.first = 'dw-dlv_' + 'a' * 32
+        self.second = 'dw-dlv_' + 'b' * 32
+        self.env1 = {'from': 'sender', 'body': 'first', 'meta': {
+            'delivery_id': self.first, 'delivery_ack_protocol': 2,
+            'processing_mode': 'driver', 'ack_generation': 1}}
+        self.env2 = {'from': 'sender', 'body': 'second', 'meta': {
+            'delivery_id': self.second, 'delivery_ack_protocol': 2,
+            'processing_mode': 'driver', 'ack_generation': 1}}
+        self.inbox = DeliveryInbox(self.path, session_name=self.session, capacity=5)
+        self.inbox.accept(self.first, self.env1)
+        self.inbox.accept(self.second, self.env2)
+        self.assertEqual(self.inbox.claim_next()[0], self.first)
+        self.assertTrue(self.inbox.begin_dispatch(self.first))
+        self.assertTrue(self.inbox.mark_busy_waiting(self.first))
+
+    def test_restart_restores_busy_head_fifo_and_writer_runs_once_after_release(self):
+        # A fresh inbox instance models helper restart. The marker is sufficient
+        # to restore the same durable head; dispatch_intent alone is not used.
+        inbox = DeliveryInbox(self.path, session_name=self.session, capacity=5)
+        row = inbox.lifecycle(self.first)
+        self.assertEqual(row['state'], 'received')
+        self.assertIsNotNone(row['dispatch_intent_at'])
+        self.assertIsNotNone(row['busy_wait_started_at'])
+        self.assertIsNone(row['submission_may_have_started_at'])
+        self.assertEqual(inbox.lifecycle(self.second)['state'], 'received')
+
+        driver = FakeBusyDriver()
+        adapter = DriverAdapter(SimpleNamespace(busy_buffer_max=5, turn_terminal_timeout_seconds=30,
+                                                 admission_timeout_seconds=.1, busy_admission_max_seconds=.02),
+                                driver=driver)
+        adapter._which = 'claude'
+        adapter.delivery_lifecycle = inbox
+        adapter._restore_delivery_commands()
+        head = adapter._commands.start_next()
+        self.assertEqual(head.delivery_id, self.first)
+        self.assertEqual([item.delivery_id for item in adapter._commands.pending], [self.second],
+                         'BUSY_HEAD_DID_NOT_BLOCK_LATER_DELIVERY')
+        result = []
+        worker = threading.Thread(target=lambda: result.append(adapter._bounded_deliver(head)))
+        worker.start()
+        deadline = time.monotonic() + 2
+        while inbox.lifecycle(self.first)['submission_may_have_started_at'] is not None and time.monotonic() < deadline:
+            time.sleep(.005)
+        time.sleep(.08)  # longer than both admission and legacy busy caps
+        self.assertTrue(worker.is_alive(), 'BUSY_WAIT_TIMEOUT_TERMINATED_PROVEN_WAITER')
+        self.assertEqual(driver.writes, [], 'BUSY_WAIT_WRITER_CALLED_BEFORE_RELEASE')
+        self.assertIsNone(inbox.lifecycle(self.first)['submission_may_have_started_at'])
+        self.assertEqual(inbox.progress.snapshot()['deliveries'][self.first], 'adapter_queued')
+        driver.busy.clear()
+        worker.join(2)
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(driver.writes, [self.first])
+        self.assertIsNotNone(inbox.lifecycle(self.first)['submission_may_have_started_at'])
+        self.assertEqual(inbox.lifecycle(self.second)['state'], 'processing')
+
+    def test_submission_boundary_restart_stays_manual_and_never_calls_writer(self):
+        self.assertTrue(self.inbox.mark_submission_may_have_started(self.first))
+        reopened = DeliveryInbox(self.path, session_name=self.session, capacity=5)
+        row = reopened.lifecycle(self.first)
+        self.assertEqual(row['state'], 'admission_unknown')
+        self.assertIsNotNone(row['submission_may_have_started_at'])
+        driver = FakeBusyDriver()
+        adapter = DriverAdapter(SimpleNamespace(busy_buffer_max=5, turn_terminal_timeout_seconds=30,
+                                                 admission_timeout_seconds=.1, busy_admission_max_seconds=.02),
+                                driver=driver)
+        adapter._which = 'claude'
+        adapter.delivery_lifecycle = reopened
+        adapter._restore_delivery_commands()
+        head = adapter._commands.start_next()
+        self.assertEqual(head.delivery_id, self.first)
+        adapter._deliver_regular_command(head)
+        self.assertEqual(driver.writes, [], 'UNKNOWN_SUBMISSION_WAS_REPLAYED')
+        self.assertEqual(reopened.lifecycle(self.first)['state'], 'admission_unknown')
+        self.assertEqual([item.delivery_id for item in adapter._commands.pending], [self.second])
+
+    def test_busy_timeout_setting_applies_after_boundary_not_during_wait(self):
+        driver = FakeBusyDriver()
+        adapter = DriverAdapter(SimpleNamespace(busy_buffer_max=5, turn_terminal_timeout_seconds=30,
+                                                 admission_timeout_seconds=60, busy_admission_max_seconds=1800),
+                                driver=driver)
+        adapter._which = 'claude'
+        adapter.delivery_lifecycle = self.inbox
+        command = SimpleNamespace(delivery_id=self.first, text='first', queue_seq=1)
+        self.assertEqual(adapter._admission_timeout_for(command), 1800)
+        self.assertEqual(adapter._admission_elapsed(command), 0)
+        self.assertTrue(self.inbox.mark_submission_may_have_started(self.first))
+        self.assertEqual(adapter._admission_timeout_for(command), 1800)
+
+    def test_submission_gate_persistence_failure_refuses_writer(self):
+        gate = BusyAdmission()
+        calls = []
+        gate.set_callbacks(on_waiting=lambda _did: True,
+                           before_submit=lambda _did: False)
+        gate.waiting(self.first)
+        self.assertFalse(gate.before_submit(self.first))
+        self.assertEqual(calls, [])
+        self.assertTrue(gate.is_waiting(self.first))
 
 
 if __name__=='__main__':

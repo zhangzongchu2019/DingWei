@@ -64,7 +64,7 @@ class DeliveryInbox(DeliveryLifecycle):
             self._migrate_state_check(db)
             migrate_lifecycle(db)
             columns={r['name'] for r in db.execute('PRAGMA table_info(delivery_inbox)')}
-            for name,definition in (('lane_id',"TEXT NOT NULL DEFAULT ''"),('lane_generation','INTEGER NOT NULL DEFAULT 1'),('native_dispatch_at','REAL')):
+            for name,definition in (('busy_wait_started_at','REAL'),('submission_may_have_started_at','REAL'),('lane_id',"TEXT NOT NULL DEFAULT ''"),('lane_generation','INTEGER NOT NULL DEFAULT 1'),('native_dispatch_at','REAL')):
                 if name not in columns:db.execute(f'ALTER TABLE delivery_inbox ADD COLUMN {name} {definition}')
             db.execute('CREATE INDEX IF NOT EXISTS idx_inbox_lane_generation ON delivery_inbox(lane_id,lane_generation,delivery_id)')
             db.execute("""CREATE TABLE IF NOT EXISTS delivery_inbox_read (
@@ -75,7 +75,9 @@ class DeliveryInbox(DeliveryLifecycle):
             )
             db.execute(
                 """UPDATE delivery_inbox SET
-                    state=CASE WHEN dispatch_intent_at IS NULL AND ack_protocol IS NOT NULL
+                    state=CASE WHEN busy_wait_started_at IS NOT NULL AND submission_may_have_started_at IS NULL AND admitted_at IS NULL
+                               THEN 'received'
+                               WHEN dispatch_intent_at IS NULL AND ack_protocol IS NOT NULL
                                THEN 'received' ELSE 'admission_unknown' END,
                     updated_at=? WHERE session_name=? AND state='processing'""",
                 (time.time(), self.session_name),

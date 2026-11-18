@@ -70,6 +70,7 @@ class Config:
     agent_route: bool = True
     busy_buffer_max: int = 100
     admission_timeout_seconds: float = 60.0
+    # Post-submit admission deadline after a durable busy wait; pre-submit waiting only alerts.
     busy_admission_max_seconds: float = 1800.0
     turn_terminal_timeout_seconds: float = 1800.0
     inbox_db: str = ""
