@@ -1,0 +1,8 @@
+{
+  "captured_after_success_utc": "2026-11-18T16:20:58.858561+00:00",
+  "product_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "probe_sha256": "90ac506005fa19dd7f2db8e6036aaab71d73f9690df51c788b0e23bf79ddf337",
+  "overlay_sha256": "f7251ab89034b6c0e462791490ea31e339ad362220a570ba613fba3317f78522",
+  "binary_sha256": "df278aa629cc1e88d913626369bc227cd472547b0f4435c300b67a35f85d3faf",
+  "scope": "added external overlay tests only; no production source edits; vet off only for overlay compile; primary full gates remain unchanged"
+}

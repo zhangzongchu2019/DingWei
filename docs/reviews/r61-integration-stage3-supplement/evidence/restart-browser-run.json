@@ -1,0 +1,11 @@
+{
+  "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "command": [
+    "node",
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-stage3-supplement-20261118/restart-browser.js"
+  ],
+  "started_utc": "2026-11-18T16:17:12.180645+00:00",
+  "rc": 0,
+  "ended_utc": "2026-11-18T16:17:18.985514+00:00",
+  "sha256": "086b2a975fc7cdd4b666c9ec6b3b5371f39e34f16b3f90514a7bbb072360f44e"
+}

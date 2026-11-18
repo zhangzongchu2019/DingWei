@@ -1,0 +1,17 @@
+{
+  "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "command": [
+    "go",
+    "test",
+    "-overlay",
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-stage3-supplement-20261118/overlay.json",
+    "-c",
+    "-o",
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-stage3-supplement-20261118/restart.test",
+    "./internal/m8"
+  ],
+  "started_utc": "2026-11-18T16:12:03.816518+00:00",
+  "rc": 1,
+  "ended_utc": "2026-11-18T16:12:20.773595+00:00",
+  "sha256": "3d507d5dbd27ec93b174867aa237fec6b081e501f0f30786a1948f92aa2dab89"
+}

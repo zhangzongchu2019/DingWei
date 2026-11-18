@@ -1,0 +1,13 @@
+{
+  "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "command": [
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-stage3-supplement-20261118/restart.test",
+    "-test.run=^TestStage3HistorySurvivesHubProcessRestart$",
+    "-test.v",
+    "-test.timeout=5m"
+  ],
+  "started_utc": "2026-11-18T16:12:59.653324+00:00",
+  "rc": 1,
+  "ended_utc": "2026-11-18T16:13:03.119476+00:00",
+  "sha256": "1a5a6ecfb1c14375f061eb9355f82dd171a2a23a002441d10fce30412f2c4bd0"
+}

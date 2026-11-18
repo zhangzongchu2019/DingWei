@@ -1,0 +1,31 @@
+{
+  "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "rc": 0,
+  "different_hub_os_processes": true,
+  "full_event_and_provenance_equality": true,
+  "readings": [
+    {
+      "stage": "before",
+      "icons": 2,
+      "turns": 2,
+      "titles": [
+        "opus50ts",
+        "timer"
+      ],
+      "sse_replay": false,
+      "fresh_browser_context": true
+    },
+    {
+      "stage": "after",
+      "icons": 2,
+      "turns": 2,
+      "titles": [
+        "opus50ts",
+        "timer"
+      ],
+      "sse_replay": false,
+      "fresh_browser_context": true
+    }
+  ],
+  "method": "actual Hub authenticated HTTP snapshots rendered by production renderer in separate fresh pages; live SSE blank; synthetic protocol events no CLI"
+}

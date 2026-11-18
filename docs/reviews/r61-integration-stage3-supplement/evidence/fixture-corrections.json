@@ -1,0 +1,9 @@
+{
+  "overlay_vet": "new virtual test file vet open failed; vet disabled only for supplemental compile",
+  "runtime_attempt1": "PG CreateUser rejected missing enum Type, before Hub starts; explicit UserMember +CreatedAt added; new privateoutputdir; product unchanged",
+  "attempt1_probe_sha256": "acf2e5a7d57df6293e64bdddf45c7c32b392b53c75c6d9275255dc5166a936d1",
+  "attempt1_binary_sha256": "f0397ffce96aaf37e4bf71b83a780a270a9f51ef2f01b59810aa9ef47107105e",
+  "runtime_attempt2": "fixture incorrectly required kind=timer for timer-named authenticated Agent; approved N3 realHub fixture expects kind=agent with display_name timer; corrected source-label assertions, no product change, full fresh rerun",
+  "attempt2_probe_sha256": "3c1e6d3bd4ff72b15bc23c5e59cccde6c3a618607916a0ef211c7a81733d8622",
+  "attempt2_binary_sha256": "048104b2355452d3632b994745902b19fdecd7be086e287f65dabfde75d8cfeb"
+}

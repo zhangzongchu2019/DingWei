@@ -1,0 +1,90 @@
+{
+  "observed_utc": "2026-11-18T16:08:16.569405+00:00",
+  "method": "own live SQLite mode=ro, metadata only; no read/ack/pause/retry; no body/envelope/turnvalues exported",
+  "direct_request_id_prefix_matches": {
+    "e3fcb315c472": 0,
+    "647d98666384": 0
+  },
+  "mapping_limit": "caller request IDs not preserved as Hub source/envelope IDs in this schema; cannot individually map them or infer not-delivered from no exact prefix match",
+  "evidence_rows": [
+    {
+      "delivery_id": "dw-dlv_cfbc8273f3344a3f6175422012154eed",
+      "state": "admission_unknown",
+      "attempts": 1,
+      "error": "model_admission_unknown",
+      "received_at": 1795005780.199005,
+      "updated_at": 1795011237.9417992,
+      "dispatch_intent_at": 1795009437.5148163,
+      "admitted_at": null,
+      "processed_at": null,
+      "turn_outcome": null,
+      "turn_id_present": 0,
+      "envelope_id": "d1c0f31874324f0291c99f82e195c376",
+      "source_message_id": "d1c0f31874324f0291c99f82e195c376",
+      "sender": "opus50tc2k#u_zhangzongchu",
+      "body_sha256": "d190a7ea39292524931f972f76e474876ca438a21b74a846a1ec4b73740c44c5",
+      "caller_request_references": {
+        "e3fcb315c472": false,
+        "647d98666384": false
+      },
+      "received_at_utc": "2026-11-18T12:43:00.199005+00:00",
+      "updated_at_utc": "2026-11-18T14:13:57.941799+00:00",
+      "dispatch_intent_at_utc": "2026-11-18T13:43:57.514816+00:00",
+      "admitted_at_utc": null,
+      "processed_at_utc": null
+    },
+    {
+      "delivery_id": "dw-dlv_cba2050a224c85ce764d0a964e65b2bb",
+      "state": "processed",
+      "attempts": 1,
+      "error": null,
+      "received_at": 1795006667.5528831,
+      "updated_at": 1795017655.0,
+      "dispatch_intent_at": 1795011237.9623713,
+      "admitted_at": 1795012134.5485835,
+      "processed_at": 1795017655.0,
+      "turn_outcome": "completed",
+      "turn_id_present": 1,
+      "envelope_id": "b57ff4256c204f9fa4359940afd29b4e",
+      "source_message_id": "b57ff4256c204f9fa4359940afd29b4e",
+      "sender": "opus50tc2k#u_zhangzongchu",
+      "body_sha256": "b259735f3543f84da6dd3bbef68a2d5d270b478f2d613adda2d48aae51f51d3f",
+      "caller_request_references": {
+        "e3fcb315c472": true,
+        "647d98666384": false
+      },
+      "received_at_utc": "2026-11-18T12:57:47.552883+00:00",
+      "updated_at_utc": "2026-11-18T16:00:55+00:00",
+      "dispatch_intent_at_utc": "2026-11-18T14:13:57.962371+00:00",
+      "admitted_at_utc": "2026-11-18T14:28:54.548584+00:00",
+      "processed_at_utc": "2026-11-18T16:00:55+00:00"
+    },
+    {
+      "delivery_id": "dw-dlv_4b1d1ea8280d9cbef3d056640eb095a6",
+      "state": "admission_unknown",
+      "attempts": 1,
+      "error": "model_admission_unknown",
+      "received_at": 1795007921.944676,
+      "updated_at": 1795014834.8794978,
+      "dispatch_intent_at": 1795013034.7702985,
+      "admitted_at": null,
+      "processed_at": null,
+      "turn_outcome": null,
+      "turn_id_present": 0,
+      "envelope_id": "1382411cb37c4675811099646138daed",
+      "source_message_id": "1382411cb37c4675811099646138daed",
+      "sender": "opus50tc2k#u_zhangzongchu",
+      "body_sha256": "35e799578e3865eca61eca6f14a9824bf94460bed6f4e495ed5dc763db1bc8e1",
+      "caller_request_references": {
+        "e3fcb315c472": true,
+        "647d98666384": true
+      },
+      "received_at_utc": "2026-11-18T13:18:41.944676+00:00",
+      "updated_at_utc": "2026-11-18T15:13:54.879498+00:00",
+      "dispatch_intent_at_utc": "2026-11-18T14:43:54.770298+00:00",
+      "admitted_at_utc": null,
+      "processed_at_utc": null
+    }
+  ],
+  "conclusion": "same N3 merge instruction received12:43 and reiterated13:18:41 rows are admission_unknown/model_admission_unknown, no admitted timestamp;12:57 consolidated forward admitted14:28:54.548. Hard per-requestID mapping unavailable."
+}

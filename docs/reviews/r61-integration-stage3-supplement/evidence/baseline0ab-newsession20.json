@@ -1,0 +1,23 @@
+{
+  "source": "0ab43c630c37fdf01ce68d5c66c0db0141a682af",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "^TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent$",
+    "-count=20",
+    "-p",
+    "1",
+    "-timeout",
+    "30m",
+    "-v"
+  ],
+  "started_utc": "2026-11-18T16:09:42.108632+00:00",
+  "rc": 0,
+  "ended_utc": "2026-11-18T16:10:09.047052+00:00",
+  "sha256": "a17c568c4ed0c0e33575fd8eb963b9c42a7b4d246d12d905b440431aea8d4f6a",
+  "top_pass": 20,
+  "failures": [],
+  "interrupted_lines": 0
+}

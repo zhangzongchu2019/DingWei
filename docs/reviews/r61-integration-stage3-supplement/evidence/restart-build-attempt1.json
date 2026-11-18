@@ -1,0 +1,19 @@
+{
+  "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "command": [
+    "go",
+    "test",
+    "-vet=off",
+    "-overlay",
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-stage3-supplement-20261118/overlay.json",
+    "-c",
+    "-o",
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-stage3-supplement-20261118/restart.test",
+    "./internal/m8"
+  ],
+  "started_utc": "2026-11-18T16:12:57.642363+00:00",
+  "vet_scope": "off only supplemental external overlay test compile; primary canonical/fullgo vet unchanged andalreadyrun",
+  "rc": 0,
+  "ended_utc": "2026-11-18T16:12:59.652855+00:00",
+  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

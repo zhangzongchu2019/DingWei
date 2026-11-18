@@ -1,0 +1,98 @@
+[
+  {
+    "name": "baseline0ab-newsession20.log",
+    "original_sha256": "a17c568c4ed0c0e33575fd8eb963b9c42a7b4d246d12d905b440431aea8d4f6a",
+    "published_sha256": "a17c568c4ed0c0e33575fd8eb963b9c42a7b4d246d12d905b440431aea8d4f6a",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/baseline0ab-newsession20.log.gz",
+    "archive_sha256": "d84063ae0078acc69b6ce5de0d3701f7d5c089c17f3cd82e2d6bfb3bc3ccf4ce"
+  },
+  {
+    "name": "restart-browser.log",
+    "original_sha256": "086b2a975fc7cdd4b666c9ec6b3b5371f39e34f16b3f90514a7bbb072360f44e",
+    "published_sha256": "086b2a975fc7cdd4b666c9ec6b3b5371f39e34f16b3f90514a7bbb072360f44e",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/restart-browser.log.gz",
+    "archive_sha256": "ac974ac0f15ff1afb9f3dd3248bad8f0526024f7cead987abd6db8b852aa9e46"
+  },
+  {
+    "name": "restart-build-attempt1.log",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/restart-build-attempt1.log.gz",
+    "archive_sha256": "f61f27bd17de546264aa58f40f3aafaac7021e0ef69c17f6b1b4cd7664a037ec"
+  },
+  {
+    "name": "restart-build-attempt2.log",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/restart-build-attempt2.log.gz",
+    "archive_sha256": "f61f27bd17de546264aa58f40f3aafaac7021e0ef69c17f6b1b4cd7664a037ec"
+  },
+  {
+    "name": "restart-build-overlay-vet-failed.log",
+    "original_sha256": "3d507d5dbd27ec93b174867aa237fec6b081e501f0f30786a1948f92aa2dab89",
+    "published_sha256": "3d507d5dbd27ec93b174867aa237fec6b081e501f0f30786a1948f92aa2dab89",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/restart-build-overlay-vet-failed.log.gz",
+    "archive_sha256": "0722e9d60d0d735853fd056054bec3d8084978e70e33fcb0fc868bbc9a61b5f6"
+  },
+  {
+    "name": "restart-build.log",
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "published_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/restart-build.log.gz",
+    "archive_sha256": "f61f27bd17de546264aa58f40f3aafaac7021e0ef69c17f6b1b4cd7664a037ec"
+  },
+  {
+    "name": "restart-state-2/worker-1.log",
+    "original_sha256": "2be8964bdf381dfc6432a2c3c40387ba971f4167e928244588208aa0dfe90384",
+    "published_sha256": "2be8964bdf381dfc6432a2c3c40387ba971f4167e928244588208aa0dfe90384",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/restart-state-2__worker-1.log.gz",
+    "archive_sha256": "0c9ac56721f8b4df8ac3febda1fdd18080083d9757a7114f5fc9da427da8c6c6"
+  },
+  {
+    "name": "restart-state-3/worker-1.log",
+    "original_sha256": "a9fea9a006ef08fd1849354ecf8d5f1ba96b17f762de048c5136eaa92d2f0aaf",
+    "published_sha256": "a9fea9a006ef08fd1849354ecf8d5f1ba96b17f762de048c5136eaa92d2f0aaf",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/restart-state-3__worker-1.log.gz",
+    "archive_sha256": "550bfd1fdb1faf7d390eb2836e1e02bb97ea19eff7c60d9c911893fe3cc56b8d"
+  },
+  {
+    "name": "restart-state-3/worker-2.log",
+    "original_sha256": "d3c4fe55c74cdf32de5df3f7517efd8263e656ed3653d1e26e122ca4c614e2ba",
+    "published_sha256": "d3c4fe55c74cdf32de5df3f7517efd8263e656ed3653d1e26e122ca4c614e2ba",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/restart-state-3__worker-2.log.gz",
+    "archive_sha256": "5d87ed9803101a744b33840fd3ad1877da2a452f9aa00d71ea406371b2be91c5"
+  },
+  {
+    "name": "restart-test-attempt1.log",
+    "original_sha256": "1a5a6ecfb1c14375f061eb9355f82dd171a2a23a002441d10fce30412f2c4bd0",
+    "published_sha256": "1a5a6ecfb1c14375f061eb9355f82dd171a2a23a002441d10fce30412f2c4bd0",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/restart-test-attempt1.log.gz",
+    "archive_sha256": "fbda39209c7f857f880266a322982eb444a79d6abc677279b45eee40b2aa14f7"
+  },
+  {
+    "name": "restart-test-attempt2.log",
+    "original_sha256": "424ba592f65fe30f1d2725739d0ced15188a9a81a100ad6876b63f11f074e901",
+    "published_sha256": "424ba592f65fe30f1d2725739d0ced15188a9a81a100ad6876b63f11f074e901",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/restart-test-attempt2.log.gz",
+    "archive_sha256": "35562623f1a58e64e6d574c64554418088a3d48b7f8d8109a52ee4bbf1db80d6"
+  },
+  {
+    "name": "restart-test.log",
+    "original_sha256": "5548453dabacdb3048416d071503448086fe0ee6c3b559305d141a1376e3317c",
+    "published_sha256": "5548453dabacdb3048416d071503448086fe0ee6c3b559305d141a1376e3317c",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-integration-stage3-supplement/evidence/raw/restart-test.log.gz",
+    "archive_sha256": "2f5b582779e52f5a7ec0e9415d3ee8d428b654a7c4b985c026d9f2d7d2c66d63"
+  }
+]

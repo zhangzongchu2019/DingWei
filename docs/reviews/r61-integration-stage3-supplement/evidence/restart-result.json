@@ -1,0 +1,130 @@
+{
+  "after": {
+    "generation": "3ec8978d01edc97d817fab7bd22ae30c",
+    "high_water": 2,
+    "events": [
+      {
+        "cursor": {
+          "generation": "3ec8978d01edc97d817fab7bd22ae30c",
+          "seq": 1
+        },
+        "event_id": "restart-echo-agent",
+        "received_at": "2026-11-18T16:16:42.73Z",
+        "event": {
+          "data": {
+            "lifecycle": "admitted",
+            "source": "agent"
+          },
+          "delivery_id": "dw-dlv_d571eddd0f35df8ee53ff60ebcd1c2b5",
+          "kind": "user_input",
+          "origin_delivery_id": "dw-dlv_d571eddd0f35df8ee53ff60ebcd1c2b5",
+          "provenance": {
+            "attested_by": "hub",
+            "display_name": "opus50ts",
+            "kind": "agent",
+            "trust_decision": "trusted"
+          },
+          "text": "synthetic restart history agent",
+          "turn_id": "restart-turn-agent"
+        }
+      },
+      {
+        "cursor": {
+          "generation": "3ec8978d01edc97d817fab7bd22ae30c",
+          "seq": 2
+        },
+        "event_id": "restart-echo-timer",
+        "received_at": "2026-11-18T16:16:43.731Z",
+        "event": {
+          "data": {
+            "lifecycle": "admitted",
+            "source": "agent"
+          },
+          "delivery_id": "dw-dlv_b9c8692bd9c89095d4550d756fee6a37",
+          "kind": "user_input",
+          "origin_delivery_id": "dw-dlv_b9c8692bd9c89095d4550d756fee6a37",
+          "provenance": {
+            "attested_by": "hub",
+            "display_name": "timer",
+            "kind": "agent",
+            "trust_decision": "trusted"
+          },
+          "text": "synthetic restart history timer",
+          "turn_id": "restart-turn-timer"
+        }
+      }
+    ],
+    "gaps": [],
+    "has_older": false,
+    "gap_before": false
+  },
+  "before": {
+    "generation": "3ec8978d01edc97d817fab7bd22ae30c",
+    "high_water": 2,
+    "events": [
+      {
+        "cursor": {
+          "generation": "3ec8978d01edc97d817fab7bd22ae30c",
+          "seq": 1
+        },
+        "event_id": "restart-echo-agent",
+        "received_at": "2026-11-18T16:16:42.73Z",
+        "event": {
+          "data": {
+            "lifecycle": "admitted",
+            "source": "agent"
+          },
+          "delivery_id": "dw-dlv_d571eddd0f35df8ee53ff60ebcd1c2b5",
+          "kind": "user_input",
+          "origin_delivery_id": "dw-dlv_d571eddd0f35df8ee53ff60ebcd1c2b5",
+          "provenance": {
+            "attested_by": "hub",
+            "display_name": "opus50ts",
+            "kind": "agent",
+            "trust_decision": "trusted"
+          },
+          "text": "synthetic restart history agent",
+          "turn_id": "restart-turn-agent"
+        }
+      },
+      {
+        "cursor": {
+          "generation": "3ec8978d01edc97d817fab7bd22ae30c",
+          "seq": 2
+        },
+        "event_id": "restart-echo-timer",
+        "received_at": "2026-11-18T16:16:43.731Z",
+        "event": {
+          "data": {
+            "lifecycle": "admitted",
+            "source": "agent"
+          },
+          "delivery_id": "dw-dlv_b9c8692bd9c89095d4550d756fee6a37",
+          "kind": "user_input",
+          "origin_delivery_id": "dw-dlv_b9c8692bd9c89095d4550d756fee6a37",
+          "provenance": {
+            "attested_by": "hub",
+            "display_name": "timer",
+            "kind": "agent",
+            "trust_decision": "trusted"
+          },
+          "text": "synthetic restart history timer",
+          "turn_id": "restart-turn-timer"
+        }
+      }
+    ],
+    "gaps": [],
+    "has_older": false,
+    "gap_before": false
+  },
+  "different_os_processes": true,
+  "full_event_equality": true,
+  "hub_process_after": 2040782,
+  "hub_process_before": 2040768,
+  "ingress": "real authenticated WS/actual admitted echo; synthetic protocol events, no model/CLI",
+  "persistent_identity": "real isolated PostgreSQL shared across two Hub processes",
+  "same_app_db": true,
+  "same_history_db": true,
+  "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "trusted_agent_and_timer_labels": true
+}
