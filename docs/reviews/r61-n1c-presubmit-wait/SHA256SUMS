@@ -1,4 +1,4 @@
-d8523a1a0f480817a4aa74432387d21daf1a326995240da34cb61171bc32980e  docs/reviews/r61-n1c-presubmit-wait/REPORT.md
+c9227eb4b87440b6090c01df2f343c2fc438aac7f8b789275c48a9f2cf4d4e82  docs/reviews/r61-n1c-presubmit-wait/REPORT.md
 7f94a444764efcc50488e36adfe02c63f66a4c5ae32804ce6e742f024ca8c837  docs/reviews/r61-n1c-presubmit-wait/SKIPS.md
 4466b47efb54035b2e3f474d20284eaaa4bad257fe91418637595bc86b628c0f  docs/reviews/r61-n1c-presubmit-wait/evidence/build-test-only-failed-5dd67f96.log
 0a151403d65155cd14e2112c5307bba8907b188bcbbaab9bf13c32c4db1a0275  docs/reviews/r61-n1c-presubmit-wait/evidence/build-test-only-final-rerun.log
@@ -55,3 +55,9 @@ b8f042c0c672140c5aa22434060a0aefd5a9bd11d0f0650e97bce7fcb4de09ba  docs/reviews/r
 478f05cd5713c30020d5c133cc3924e6b23a0a2301f1989cd3325612747e7705  docs/reviews/r61-n1c-presubmit-wait/evidence/r4-fifo-append-tail-mutation.log
 c0b7b3cf1ef7f06007130f691a6f73a8cb1ee8b1a47f59a771e407e6c392e6ce  docs/reviews/r61-n1c-presubmit-wait/evidence/r4-focused.log
 f7c956d2923bd942175b1446481394aa36925658221bf92705e587e64a64e377  docs/reviews/r61-n1c-presubmit-wait/evidence/toolchain.txt
+8b208b587b83af9b338101afe61e49ac427f5a6880c10854a82781e49fe54085  docs/reviews/r61-n1c-presubmit-wait/evidence/r4-auth/057f1da7-round1.log
+001f28368018de3d97cdac44983594171587abd3e4ad49cc87978bf71d1bc33d  docs/reviews/r61-n1c-presubmit-wait/evidence/r4-auth/057f1da7-round2.log
+def9239da8e1d9df7d5b84dffc9e099e138c4e367067a6d3f43bcdd2696f226b  docs/reviews/r61-n1c-presubmit-wait/evidence/r4-auth/057f1da7-round3.log
+f2f11b2d6acb4ce3e3f08ab3ae2148a29007abd93005ecfd4b79479f7d080197  docs/reviews/r61-n1c-presubmit-wait/evidence/r4-auth/d6e56a8b-round1.log
+aed057503b6499c501676e8833a1e1d2dbf3e6059cc9d1a03fa8659749391e3d  docs/reviews/r61-n1c-presubmit-wait/evidence/r4-auth/d6e56a8b-round2.log
+f3b6d8aeae01cefcad89fbdd9a70c8988301ff4dcb1678bfa22f75e3439bc859  docs/reviews/r61-n1c-presubmit-wait/evidence/r4-auth/d6e56a8b-round3.log

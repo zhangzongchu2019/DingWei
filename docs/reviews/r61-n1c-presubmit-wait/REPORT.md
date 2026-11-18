@@ -125,3 +125,20 @@ The R1/R2 anchor and final gate results are recorded in the follow-up section be
 - The F2 event-bridge case remains in the same focused set. The separate set-Event/unhealthy-driver mutation remains recorded at `evidence/r3-supplement/mutation-event-bridge-set-event-mask.log` and fails at `N1C_SET_RECOVERY_MASKED_UNHEALTHY_DRIVER_RECONNECT`.
 - The reviewer-noted `test_handle_delivery_turn_auth_failure` case passed locally in isolation and in the focused R4 set; this environment did not reproduce that one-off canonical profile failure.
 - R4 adds test/report/evidence only; no product code changed from the already-pushed FIFO repair.
+
+## R4 auth-failure canonical comparison (2026-11-18)
+
+The requested auth-boundary comparison was run with the same full canonical `SOURCE_COMMIT=<sha> bash build.sh --test-only` command on both trees: baseline `d6e56a8b13bcb622eb0610e4a7cd129f834d9ff3` (without N-1c) and R4 source `057f1da733b405e61a285f24813e32df0e8cf09c`. Each tree was run three times, sequentially. Every invocation used `env -i`, Go 1.22.2, `/tmp/lockvenv/bin/python3` (3.12.3), a distinct HOME, explicit `DW_DESKTOP_INTEGRATION_PYTHON`, and the same Go module/build caches. The full build test gate passed all six invocations.
+
+| Source | Round | Claude profile | Codex profile | `test_handle_delivery_turn_auth_failure` | Canonical result |
+| --- | ---: | ---: | ---: | --- | --- |
+| `d6e56a8b` | 1 | 1277/1277 | 1277/1277 | pass in both profiles | rc 0 |
+| `d6e56a8b` | 2 | 1277/1277 | 1277/1277 | pass in both profiles | rc 0 |
+| `d6e56a8b` | 3 | 1277/1277 | 1277/1277 | pass in both profiles | rc 0 |
+| `057f1da7` | 1 | 1288/1288 | 1288/1288 | pass in both profiles | rc 0 |
+| `057f1da7` | 2 | 1288/1288 | 1288/1288 | pass in both profiles | rc 0 |
+| `057f1da7` | 3 | 1288/1288 | 1288/1288 | pass in both profiles | rc 0 |
+
+Thus the reported one-off failure was not reproduced in either source across three canonical runs (six profile executions per source); these samples do not establish its root cause or a source-specific probability change. No repair was made for this auth case. Raw full logs are under `evidence/r4-auth/`.
+
+The evidence checksum manifest was repaired at this delivery source: all existing listed log files were force-added to Git, including the twelve previously present locally but absent from the tracked tree; the six canonical comparison logs were also force-added. The final manifest has 63 entries, all 63 pass `sha256sum -c`, and every referenced path is tracked and available from Git at the delivery tip.
