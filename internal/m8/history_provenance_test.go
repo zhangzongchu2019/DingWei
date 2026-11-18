@@ -94,7 +94,9 @@ func TestHistoryProvenanceRealHubAgentTimerReplay(t *testing.T) {
 				t.Fatal(e)
 			}
 			p, ok := stored["provenance"].(map[string]any)
-			if !ok || p["kind"] != "agent" || p["attested_by"] != "hub" || p["trust_decision"] != "trusted" || !strings.EqualFold(fmt.Sprint(p["display_name"]), sourceName) {
+			// In export mode the browser owns the provenance assertion, so deletion
+			// mutations fail on DOM icon_count rather than aborting fixture export.
+			if os.Getenv("N3_HISTORY_FIXTURE_OUTPUT") == "" && (!ok || p["kind"] != "agent" || p["attested_by"] != "hub" || p["trust_decision"] != "trusted" || !strings.EqualFold(fmt.Sprint(p["display_name"]), sourceName)) {
 				t.Fatalf("canonical history provenance missing or wrong: %s", page.Events[0].Event)
 			}
 			// Exercise the actual SSE handler independently of browser memory.
