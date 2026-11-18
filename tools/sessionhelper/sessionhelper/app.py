@@ -1622,8 +1622,12 @@ class SessionHelper(SubAgentConnection):
             # Proven pre-submit waits use Hub's existing busy -> queued path.
             # This is a transient ACK, not a terminal ACK-outbox phase: the
             # durable helper inbox remains the FIFO owner until admission.
+            # A few older unit fixtures construct SessionHelper via __new__
+            # and exercise only the durable ACK outbox. Keep those fixtures
+            # on the original path when the optional driver bridge is absent.
+            busy_requests = getattr(self, '_driver_busy_ack_requests', None)
             try:
-                busy_id = self._driver_busy_ack_requests.get_nowait()
+                busy_id = busy_requests.get_nowait() if busy_requests is not None else ''
             except queue.Empty:
                 busy_id = ''
             if busy_id:
