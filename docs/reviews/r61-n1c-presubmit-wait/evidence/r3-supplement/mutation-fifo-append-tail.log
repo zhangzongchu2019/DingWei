@@ -1,0 +1,55 @@
+test_real_delivery_worker_persists_initialize_wait_then_submits_once (tests.test_codex_stale_thread.FirstDeliveryInitializeWait.test_real_delivery_worker_persists_initialize_wait_then_submits_once) ... [driver-adapter] started, driver=codex
+[delivery][WARN] transient pre-submit CLI recovery start failed; keeping FIFO quarantined for retry attempt=1
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_33333333333333333333333333333333 -> processing (turn=turn-dw-dlv_33333333333333333333333333333333 status=inP)
+[delivery] done id=dw-dlv_33333333333333333333333333333333 source=protocol (turn status=completed
+reconcile={"queried_at":1795028962.776)
+[driver-adapter] deliver id=dw-dlv_11111111111111111111111111111111 -> processing (turn=turn-dw-dlv_11111111111111111111111111111111 status=inP)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+
+  test_real_delivery_worker_persists_initialize_wait_then_submits_once (tests.test_codex_stale_thread.FirstDeliveryInitializeWait.test_real_delivery_worker_persists_initialize_wait_then_submits_once) (errors=('TimeoutError', 'TimeoutError')) ... FAIL
+[driver-adapter] started, driver=codex
+[delivery][WARN] transient pre-submit CLI recovery start failed; keeping FIFO quarantined for retry attempt=1
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_22222222222222222222222222222222 -> processing (turn=turn-dw-dlv_22222222222222222222222222222222 status=inP)
+[delivery] done id=dw-dlv_22222222222222222222222222222222 source=protocol (turn status=completed
+reconcile={"queried_at":1795028966.176)
+[driver-adapter] deliver id=dw-dlv_44444444444444444444444444444444 -> processing (turn=turn-dw-dlv_44444444444444444444444444444444 status=inP)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+
+======================================================================
+FAIL: test_real_delivery_worker_persists_initialize_wait_then_submits_once (tests.test_codex_stale_thread.FirstDeliveryInitializeWait.test_real_delivery_worker_persists_initialize_wait_then_submits_once) (errors=('TimeoutError', 'TimeoutError'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/dev/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_codex_stale_thread.py", line 1018, in test_real_delivery_worker_persists_initialize_wait_then_submits_once
+    asyncio.run(exercise())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/dev/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_codex_stale_thread.py", line 990, in exercise
+    self.assertEqual(
+AssertionError: Lists differ: ['dw-dlv_33333333333333333333333333333333', 'dw-dl[31 chars]111'] != ['dw-dlv_11111111111111111111111111111111', 'dw-dl[31 chars]333']
+
+First differing element 0:
+'dw-dlv_33333333333333333333333333333333'
+'dw-dlv_11111111111111111111111111111111'
+
+- ['dw-dlv_33333333333333333333333333333333',
+-  'dw-dlv_11111111111111111111111111111111']
+? ^                                         ^
+
++ ['dw-dlv_11111111111111111111111111111111',
+? ^                                         ^
+
++  'dw-dlv_33333333333333333333333333333333'] : N1C_STARTUP_RECOVERY_LATER_FIFO_ORDER_OR_EXACTLY_ONCE_BROKEN
+
+----------------------------------------------------------------------
+Ran 1 test in 6.794s
+
+FAILED (failures=1)
