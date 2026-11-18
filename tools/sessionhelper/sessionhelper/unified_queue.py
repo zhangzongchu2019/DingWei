@@ -113,13 +113,20 @@ class UnifiedCommandQueue:
             self._current.state = "admitting"
             return self._current
 
-    def defer_current(self, delivery_id: str) -> bool:
-        """Retry a not-dispatched current command without a new queue identity."""
+    def defer_current(self, delivery_id: str, *, preserve_fifo_head: bool) -> bool:
+        """Retry a not-dispatched command without changing its queue identity.
+
+        Callers must choose whether this wait owns the FIFO head. Durable
+        pre-submit/recovery waits preserve ordering; a transient blocker
+        authorization read failure rotates behind ordinary deliveries.
+        """
         with self._lock:
             if self._current is None or self._current.delivery_id!=delivery_id or self._current.state!='admitting':return False
-            # A deferred head is still the FIFO head. Putting it at the tail
-            # would let later accepted deliveries overtake a durable busy wait.
-            command=self._current;self._current=None;command.state='queued';self._pending.appendleft(command)
+            command=self._current;self._current=None;command.state='queued'
+            if preserve_fifo_head:
+                self._pending.appendleft(command)
+            else:
+                self._pending.append(command)
             return True
 
     def admit(self, delivery_id: str, turn_id: str) -> dict | None:

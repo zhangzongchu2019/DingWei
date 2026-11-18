@@ -383,7 +383,7 @@ class PresubmitRecoveryStartRetryTest(unittest.TestCase):
         adapter._bridge_sleep = lambda _seconds: None
         adapter._commands.enqueue(self.env)
         current = adapter._commands.start_next()
-        adapter._commands.defer_current(current.delivery_id)
+        adapter._commands.defer_current(current.delivery_id, preserve_fifo_head=True)
         adapter._commands.enqueue(second_env)
         current._delivery_worker = threading.Event()
         current._delivery_worker.set()

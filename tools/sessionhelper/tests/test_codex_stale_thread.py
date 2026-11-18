@@ -26,6 +26,7 @@ from sessionhelper.daemon_identity import DaemonIdentityError
 from sessionhelper.app import SessionHelper
 from sessionhelper.config import load_config
 from sessionhelper.contract import SessionEvent
+from sessionhelper import task_blocker
 try:
     from _home_isolation import HomeIsolation
 except ImportError:
@@ -970,8 +971,8 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                 release_head = threading.Event()
                 original_defer = helper.adapter._commands.defer_current
 
-                def defer_with_interleaving(delivery):
-                    result = original_defer(delivery)
+                def defer_with_interleaving(delivery, *, preserve_fifo_head):
+                    result = original_defer(delivery, preserve_fifo_head=preserve_fifo_head)
                     recovery = helper.adapter._transport_recovery
                     if (result and delivery == delivery_id and recovery is not None
                             and not recovery.is_set() and not deferred_head.is_set()):
@@ -1059,6 +1060,99 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                             first.stop()
 
                 asyncio.run(exercise())
+
+    def test_blocker_authorization_read_failure_rotates_behind_ordinary_delivery(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            class BlockerRPC(RPC):
+                def __init__(self, workdir):
+                    super().__init__(workdir)
+                    self.started = threading.Event()
+
+                def stop(self):
+                    pass
+
+                def request(self, method, params, timeout=0):
+                    result = super().request(method, params, timeout)
+                    if method == 'turn/start':
+                        self.started.set()
+                    return result
+
+            def make_driver(name, rpc):
+                driver = CodexProtocolDriver(
+                    workdir=tmp, store_path=str(Path(tmp) / (name + '.db')),
+                    bound_thread_id='bound-thread', require_bound_thread=True)
+
+                def start_locked():
+                    driver._rpc = rpc
+                    driver._initialize()
+
+                driver._start_locked = start_locked
+                return driver
+
+            rpc = BlockerRPC(tmp)
+            first = make_driver('first', rpc)
+            replacement = make_driver('replacement', rpc)
+            cfg = load_config({
+                'SH_SESSION_NAME': 'seat', 'SH_OWNER': 'review', 'SH_KEY_ID': 'review-0001',
+                'SH_SECRET': 'synthetic-local-only', 'SH_DRIVER': 'codex', 'SH_MODE': 'driver',
+                'SH_INBOX_DB': str(Path(tmp) / 'inbox.db'), 'SH_STATE_DIR': str(Path(tmp) / 'state'),
+                'SH_CLI_CWD': tmp, 'SH_CODEX_HOME': str(Path(tmp) / 'codex'),
+                'SH_PROVISION_STATE_FILE': str(Path(tmp) / 'update.json'),
+                'SH_PROVISION_VERSIONS_FILE': str(Path(tmp) / 'versions.json'),
+                'SH_COLLECT': '0', 'SH_PROXY': 'off',
+            })
+            with mock.patch.dict(os.environ, {'SH_DRIVER': 'codex'}):
+                with mock.patch.object(DriverAdapter, '_build_driver', return_value=first):
+                    helper = SessionHelper(cfg)
+            adapter = helper.adapter
+            adapter.upload_addendum_due = lambda: ''
+            adapter._build_driver = lambda _which: replacement
+            plain = 'dw-dlv_' + 'b' * 32
+            wake = 'dw-dlv_' + 'a' * 32
+            ordinary = {'id': 'ordinary', 'from': 'peer-review', 'to': 'seat-review',
+                        'body': 'ordinary message',
+                        'meta': {'delivery_id': plain, 'delivery_ack_protocol': 2,
+                                 'processing_mode': 'driver', 'ack_generation': 1}}
+            helper.delivery_inbox.accept(plain, ordinary)
+            for ack in helper.delivery_inbox.pending_delivery_acks():
+                helper.delivery_inbox.confirm_delivery_ack(ack['payload'] | {'type': 'delivery_ack_confirm'})
+            env = {'id': 'wake-message', 'from': 'workpulse-review', 'to': 'seat-review',
+                   'body': 'wake recheck only',
+                   'meta': {'delivery_id': wake, 'kind': 'task_blocker_ready',
+                            'task_flow_internal': True, 'signal_id': 'blocker:review',
+                            'task_id': 'task', 'blocker_id': 'blk:review', 'generation': 1,
+                            'input_version': 1, 'assignment_version': 1,
+                            'automatic_recheck': True}}
+            attempts = []
+
+            def prepare(candidate):
+                result = task_blocker.prepare_wake('ws://127.0.0.1', {}, 'dev', candidate)
+                attempts.append(result[1])
+                return result
+
+            adapter.blocker_prepare = prepare
+            try:
+                with mock.patch.object(task_blocker, 'blocker_request',
+                                       return_value={'status': 'error', 'http_status': 503}):
+                    adapter.handle_delivery(env)
+                    self.assertTrue(rpc.started.wait(2),
+                                    'R4_BLOCKER_AUTH_READ_FAILURE_STARVED_ORDINARY_DELIVERY')
+                    calls = [params['clientUserMessageId'] for method, params in rpc.calls
+                             if method == 'turn/start']
+                    self.assertIn(plain, calls,
+                                  'R4_BLOCKER_AUTH_READ_FAILURE_STARVED_ORDINARY_DELIVERY')
+                    self.assertTrue(attempts, 'BLOCKER_AUTHORIZATION_RECHECK_NOT_ATTEMPTED')
+            finally:
+                adapter._lane_stop.set()
+                adapter._lane_closing.set()
+                adapter._work_available.set()
+                adapter._bridge_wake.set()
+                for name in ('_worker_thread', '_bridge_thread', '_transport_recovery_thread'):
+                    thread = getattr(adapter, name, None)
+                    if thread is not None:
+                        thread.join(2)
+                for driver in {first, replacement, adapter.driver}:
+                    driver.stop()
 
 
 if __name__ == '__main__':

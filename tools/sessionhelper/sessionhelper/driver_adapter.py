@@ -361,7 +361,7 @@ class DriverAdapter:
                 continue
             if self._transport_recovery is not None:
                 if not self._transport_recovery.is_set():
-                    self._commands.defer_current(command.delivery_id)
+                    self._commands.defer_current(command.delivery_id, preserve_fifo_head=True)
                     self._bridge_sleep(0.1)
                     continue
                 self._transport_recovery = None
@@ -430,7 +430,7 @@ class DriverAdapter:
                 safe,reason=self.blocker_prepare(command.envelope)
                 if safe is None:
                     if reason=='current_authorization_or_read_failed':
-                        self._commands.defer_current(command.delivery_id);self._bridge_sleep(0.5);return
+                        self._commands.defer_current(command.delivery_id, preserve_fifo_head=False);self._bridge_sleep(0.5);return
                     journal.finish(signal,'cancelled',reason);finish('interrupted');return
                 command.envelope=safe;command.text=safe['body']
             previous=journal.start(signal)
@@ -463,7 +463,7 @@ class DriverAdapter:
     def _deliver_regular_command(self, command: QueuedCommand) -> None:
         if self._transport_recovery is not None:
             if not self._transport_recovery.is_set():
-                self._commands.defer_current(command.delivery_id)
+                self._commands.defer_current(command.delivery_id, preserve_fifo_head=True)
                 return
             self._transport_recovery = None
         observe(getattr(self, "delivery_progress", None), command.delivery_id, "dispatching")
@@ -625,7 +625,7 @@ class DriverAdapter:
                     and old_driver.submission_started(command.delivery_id) is None
                     and required(self._admission_timeout_for(command))):
                 command._delivery_worker = done
-                self._commands.defer_current(command.delivery_id)
+                self._commands.defer_current(command.delivery_id, preserve_fifo_head=True)
                 self._recover_transport(command)
                 return None
             busy = self._busy_admission_status(command, old_driver)
@@ -664,7 +664,7 @@ class DriverAdapter:
             raise result[0]
         if result[0].source == 'local_queue':
             command._delivery_worker = done
-            self._commands.defer_current(command.delivery_id)
+            self._commands.defer_current(command.delivery_id, preserve_fifo_head=True)
             if not old_driver.health():
                 self._recover_transport(command)
             return None
