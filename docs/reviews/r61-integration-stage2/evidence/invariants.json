@@ -1,0 +1,35 @@
+{
+  "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+  "subtrees": {
+    "view-service": {
+      "stage1": "271b2c411cc029583650d6cd4a6dcbc44140398f",
+      "stage2": "271b2c411cc029583650d6cd4a6dcbc44140398f"
+    },
+    "cmd": {
+      "stage1": "8f537c10d956f6ba09b9c9df3221a253351004d7",
+      "stage2": "8f537c10d956f6ba09b9c9df3221a253351004d7"
+    },
+    "scripts": {
+      "stage1": "33ee8cdb84215613867f5fdacc75074229ac7d20",
+      "stage2": "33ee8cdb84215613867f5fdacc75074229ac7d20"
+    },
+    "deploy": {
+      "stage1": "120e37039bac39a0a24ec964d4d9673d19d11382",
+      "stage2": "120e37039bac39a0a24ec964d4d9673d19d11382"
+    },
+    "go.mod": {
+      "stage1": "362bb888ef3346356e451a58cd87064e84474317",
+      "stage2": "362bb888ef3346356e451a58cd87064e84474317"
+    },
+    "go.sum": {
+      "stage1": "871e6a788732f19d19a470cc34dfdb8e366b364f",
+      "stage2": "871e6a788732f19d19a470cc34dfdb8e366b364f"
+    },
+    "VERSION": {
+      "stage1": "74a4e0fa764244cb7cdce491aa3ce9e6b49947e0",
+      "stage2": "74a4e0fa764244cb7cdce491aa3ce9e6b49947e0"
+    }
+  },
+  "diff_stat_product": "internal/m8/delivery_ack_v2.go                  |  26 +++-\n internal/m8/delivery_ack_v2_test.go             | 181 +++++++++++++++++++++++-\n internal/m8/hub.go                              |  67 +++++----\n internal/model/failure_notice.go                |   2 +-\n internal/model/model.go                         |   2 +\n internal/store/failure_notice.go                |  52 ++++++-\n internal/store/session_delivery_ack.go          |  43 +++++-\n internal/store/session_delivery_ack_test.go     | 148 +++++++++++++++++++\n internal/store/sqlite.go                        |   5 +-\n tools/sessionhelper/sessionhelper/app.py        |  18 ++-\n tools/sessionhelper/tests/test_sessionhelper.py |  76 ++++++++++\n 11 files changed, 567 insertions(+), 53 deletions(-)",
+  "merge_parent_count": 2
+}

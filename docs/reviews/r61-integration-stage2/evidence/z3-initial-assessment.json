@@ -1,0 +1,9 @@
+{
+  "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+  "initial_rc": 1,
+  "failures": [
+    "TestSessionNameReconnectKeepsNameAndReleaseReuses"
+  ],
+  "qualification_required": true,
+  "policy": "7e622c94d104; initial full3 preserved, fixed5 m8 count1; baseline targetedcount20; >=3green and only approved interrupted sites; no singlepass substitution"
+}

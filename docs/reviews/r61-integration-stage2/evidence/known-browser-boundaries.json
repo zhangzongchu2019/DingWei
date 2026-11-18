@@ -1,0 +1,22 @@
+[
+  {
+    "line": 1476,
+    "text": "[KNOWN-DEFECT T-166 仍在] C2.2a[legacy] 点中断→立即\"已请求中断\";无 transport 时回退 legacy /interrupt(POST 200≠已发出) — page.waitForFunction: Timeout 5000ms exceeded."
+  },
+  {
+    "line": 1478,
+    "text": "[KNOWN-DEFECT T-166 仍在] C2.2b 流上 control 事件→升级\"中断已发出\"+pending 清空 — page.waitForFunction: Timeout 5000ms exceeded."
+  },
+  {
+    "line": 1479,
+    "text": "[KNOWN-DEFECT T-166 仍在] C2.2c[legacy] 超时无回执→\"中断未确认(无回执)\"(永不谎报已发出) — page.waitForFunction: Timeout 5000ms exceeded."
+  },
+  {
+    "line": 1480,
+    "text": "[KNOWN-DEFECT T-166 仍在] C2.2d 重复点击不重复发起(防重) — 只有一条已请求"
+  },
+  {
+    "line": 1486,
+    "text": "C2 删除+中断确认回归: HARD PASS 25; KNOWN-DEFECT T-166 仍在 4 · 形态变了 0"
+  }
+]

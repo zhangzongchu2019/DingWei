@@ -1,0 +1,195 @@
+[
+  {
+    "name": "focused-race",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "integration_source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "./internal/m8",
+      "./internal/store",
+      "-run",
+      "DeliveryACK|QueueFull|FailureNotice|ReliableSessionDeliveryBusyAck",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "40m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T13:36:04.983373+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T13:42:03.135989+00:00",
+    "sha256": "f9f48b2df6c3d83a6dd49b1b23436e8d3bc332901343b4f9f54cd6c02feadac0"
+  },
+  {
+    "name": "browser-full",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "integration_source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "tools/run-browser-regressions.py",
+      "--receipt",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-integration-stage2-20261118/browser-receipt.txt"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T13:42:03.181134+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T13:54:21.495320+00:00",
+    "sha256": "e9da0b948d127cc891f5149b20140df2ed3b067455b8a445bc271b655b274c19"
+  },
+  {
+    "name": "strict",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "integration_source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+      "validate",
+      "--all",
+      "--strict"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T13:54:21.539985+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T13:54:21.915046+00:00",
+    "sha256": "588743df266e200faf802c175f3df72828c6fe9026bd36453cd44ad5d09d32a5"
+  },
+  {
+    "name": "z3-baseline-target20",
+    "source": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+    "integration_source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestSessionNameReconnectKeepsNameAndReleaseReuses$",
+      "-count=20",
+      "-p",
+      "1",
+      "-timeout",
+      "30m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61i2-baseline",
+    "started_utc": "2026-11-18T13:54:22.280589+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T13:54:40.080162+00:00",
+    "sha256": "0c84f4f4d8326305b2eb957fb72a0cf0043a1f2723caf5589fc4704a444598cc"
+  },
+  {
+    "name": "z3-m8-round1",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "integration_source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T13:54:40.125089+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T14:00:14.002453+00:00",
+    "sha256": "3d8395d23bdc585921d26ceff81556407118ab4f8f4ed814d7fe3e441c27812a",
+    "failures": [],
+    "interrupted_lines": 0
+  },
+  {
+    "name": "z3-m8-round2",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "integration_source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T14:00:14.065482+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T14:05:47.152750+00:00",
+    "sha256": "df3177c2fbe11c34473123af5e58d37a16392863bd933e9307dea491dee4d3ee",
+    "failures": [],
+    "interrupted_lines": 0
+  },
+  {
+    "name": "z3-m8-round3",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "integration_source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T14:05:47.220900+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T14:11:21.220775+00:00",
+    "sha256": "5ebd2adce8997c56a495538fea1ef476878eacffb6373a477778d255e8488f76",
+    "failures": [],
+    "interrupted_lines": 0
+  },
+  {
+    "name": "z3-m8-round4",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "integration_source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T14:11:21.284620+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T14:16:56.725145+00:00",
+    "sha256": "f4fdf942a7634cbcbe21d5e73ab08bef0f4c009bf90a481fb7998fc025622209",
+    "failures": [],
+    "interrupted_lines": 0
+  },
+  {
+    "name": "z3-m8-round5",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "integration_source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T14:16:56.787160+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T14:22:30.601789+00:00",
+    "sha256": "09c2b55c05ee9744396b58bafd0dd7bff6d4e43823d62b8c453b605470d37728"
+  }
+]

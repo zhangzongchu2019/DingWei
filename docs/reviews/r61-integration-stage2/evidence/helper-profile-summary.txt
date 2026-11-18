@@ -1,0 +1,4 @@
+HELPER_INVENTORY_OK files=97
+HELPER_GATE_PROFILE selected=claude actual_SH_DRIVER=claude
+HELPER_GATE_PROFILE selected=codex actual_SH_DRIVER=codex
+BUILD_TESTS_OK helper_profiles=2 python=27 shell=2

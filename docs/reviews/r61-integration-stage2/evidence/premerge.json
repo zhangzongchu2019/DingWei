@@ -1,0 +1,21 @@
+{
+  "base": "0ab43c630c37fdf01ce68d5c66c0db0141a682af",
+  "incoming": "b81737d0897c7edfea171371dba8ead6c1ef8f28",
+  "product_source": "ed7259faf0a37ba334b12288617c51b6b4dfa2f7",
+  "checked_utc": "2026-11-18T13:00:42.609106+00:00",
+  "ls_remote": "0ab43c630c37fdf01ce68d5c66c0db0141a682af\trefs/heads/coder56solzzc/r61-integration\nb81737d0897c7edfea171371dba8ead6c1ef8f28\trefs/heads/togpt60lunazzc/r61-n1b-queue-full",
+  "product_to_incoming_paths": [
+    "docs/reviews/r61-n1b-queue-full/MUTATIONS.md",
+    "docs/reviews/r61-n1b-queue-full/REPORT.md",
+    "docs/reviews/r61-n1b-queue-full/SHA256SUMS",
+    "docs/reviews/r61-n1b-queue-full/evidence/r1-r2-followup/R1-delete-durable-receipt-guard.log",
+    "docs/reviews/r61-n1b-queue-full/evidence/r1-r2-followup/R2-legacy-queuefull-notice-gate.log",
+    "docs/reviews/r61-n1b-queue-full/evidence/r1-r2-followup/build-test-only.log",
+    "docs/reviews/r61-n1b-queue-full/evidence/r1-r2-followup/m8-store-count3-pg-strict.log",
+    "docs/reviews/r61-n1b-queue-full/evidence/r1-r2-followup/openspec-strict.log",
+    "openspec/changes/r61-n1b-queue-full/tasks.md"
+  ],
+  "incoming_meta": "b81737d0897c7edfea171371dba8ead6c1ef8f28 e3ee9ec0d9510fc4f47431023d82221f453c3d18 ed7259faf0a37ba334b12288617c51b6b4dfa2f7",
+  "base_meta": "0ab43c630c37fdf01ce68d5c66c0db0141a682af 346d8c361e5623a1995895eb04d6b4dcc7824655 b92d23a7a9230473819615ed40ae9f9e06c4adf6",
+  "shared_n1a_ancestor": true
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "name": "canonical",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "started_utc": "2026-11-18T13:04:07.841017+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T13:13:32.912109+00:00",
+    "sha256": "fd310b7c400ff5a6daf1379b1e99baae615c0c314805f3892e7fdfb72ac598b9"
+  },
+  {
+    "name": "m8-store-full3",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "./internal/store/...",
+      "-count=3",
+      "-p",
+      "1",
+      "-timeout",
+      "90m",
+      "-v"
+    ],
+    "started_utc": "2026-11-18T13:13:32.954951+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T13:35:26.364833+00:00",
+    "sha256": "438eb61ac943051dd5b210555a3d61ebb59a58463ce21f28f968a1f2ca196435"
+  }
+]

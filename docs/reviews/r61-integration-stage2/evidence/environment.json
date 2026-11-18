@@ -1,0 +1,13 @@
+{
+  "uid": 1001,
+  "utc": "2026-11-18T14:15:01.048503+00:00",
+  "machine": "x86_64",
+  "cpu_count": 16,
+  "runtime": {
+    "go": "go version go1.22.2 linux/amd64",
+    "python": "Python 3.12.3",
+    "node": "v22.23.1",
+    "openspec": "1.16.0"
+  },
+  "isolation": "env whitelist, standalone HOME/TMPDIR, loopback local fixtures, no inherited SH_/DINGWEI_, no production"
+}

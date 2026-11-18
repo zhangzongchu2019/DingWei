@@ -1,0 +1,5 @@
+{
+  "rc": 2,
+  "output": "docs/reviews/r61-n1b-queue-full/evidence/mutations/M01-helper-header-gate.log:1: trailing whitespace.\n+test_queue_full_terminal_ack_requires_negotiated_hub_header (test_sessionhelper.SessionHelperTest.test_queue_full_terminal_ack_requires_negotiated_hub_header) ... \n",
+  "disposition": "Imported raw log has trailing whitespace. Preserve original bytes/checksum; separately validate product/spec differences, no log edit."
+}

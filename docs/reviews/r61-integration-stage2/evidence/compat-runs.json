@@ -1,0 +1,30 @@
+[
+  {
+    "name": "integrated-hub-build",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "go",
+      "build",
+      "-buildvcs=true",
+      "-o",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-integration-stage2-20261118/bin/integrated-hub",
+      "./cmd/workpulse"
+    ],
+    "started_utc": "2026-11-18T14:22:31.666165+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T14:22:34.395856+00:00",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "actual-process-compat",
+    "source": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-integration-stage2-20261118/compat_real.py"
+    ],
+    "started_utc": "2026-11-18T14:22:34.396878+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T14:22:42.932679+00:00",
+    "sha256": "536c7803dad16d58a812dbf54616505594ebc61e001d0ef596cec6767bf2e77d"
+  }
+]
