@@ -29,5 +29,9 @@ def main():
  guide=(evidence/'codex-guide-verdict.txt').read_text();assert 'profile=codex' in guide and 'test_claude_stream_json_user_frame_boundary_counts_zero_one_two' in guide and re.search(r'^ok\s*$',guide,re.M)
  receipt=(evidence/'browser-receipt.txt').read_text();suites=dict(re.findall(r'^suite\.([^.]+)\.rc=(\d+)$',receipt,re.M));assert suites and all(v=='0' for v in suites.values())
  for name in ['r15_session_history_pagination','r15_session_history_mutations']:assert suites[name]=='0'
+ final=json.loads((evidence/'final-document-strict.json').read_text());assert final['rc']==0 and final['source_commit']==SOURCE
+ git('merge-base','--is-ancestor',final['document_commit'],'HEAD')
+ assert not git('diff',final['document_commit'],'HEAD','--','openspec/changes/r61-integration')
+ assert sha((evidence/'final-document-strict.txt').read_bytes())==final['raw_sha256']
  print('VERIFY_OK source='+SOURCE+' merges7 product_unchanged evidence_files='+str(len(m['files']))+' browser_suites='+str(len(suites)))
 if __name__=='__main__':main()
