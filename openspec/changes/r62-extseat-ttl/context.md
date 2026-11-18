@@ -7,3 +7,5 @@
 补充既有测试影响：internal/extseat/core_pg_test.go的MessageExpiryAndRevokedWait改用合法发送先续组，避免AG与消息恰好同时过期；保留原消息过期和token撤权所有断言。9576前驱的canonical rc0、旧夹具rc1、修复夹具单格rc0与中止full-go3原日志均保留；正式门在追加的新冻结源重跑。
 
 最终冻结产品/测试2fd6aeba（完整40位见REPORT），证据b5e6e590102dedfa19c234fd726ea341fb23685e；四包三遍3081顶层/5250含子项PASS、84逐名SKIP、0FAIL/0中断；canonical两profile各1270、Python27/shell2，strict42/0。报告与VERIFY位于docs/reviews/r62-extseat-ttl。独立复核与组长验收待回。
+
+17:33Z追加核项补测源0b9a10f9227a35eaa01117cb767b9c883e6fb9ec，仅新增lifetime_expired_group_pg_test.go；全部TestR62三遍18顶层/45含子项PASS、无跳过。原四包整包仍绑定2fd原锚，新canonical以0b9重跑。已投影旧边界双源红并报组长，不改产品；证据在group-expiry-followup。

@@ -1,0 +1,14 @@
+{
+  "product_test_source": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+  "working_doc_parent": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "started_utc": "2026-11-18T18:18:29.669262+00:00",
+  "rc": 0,
+  "ended_utc": "2026-11-18T18:18:29.960353+00:00",
+  "sha256": "85964b1db98f799e65338da7fa1c8cf6765c6dd7d37dfc527d218f9301f79ccb"
+}

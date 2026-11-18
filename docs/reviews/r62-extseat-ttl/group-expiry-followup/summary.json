@@ -1,0 +1,48 @@
+{
+  "product_behavior_source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+  "test_source": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+  "canonical_rc": 0,
+  "build_receipt": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2",
+  "helper": [
+    {
+      "actual": 1270,
+      "actual_SH_DRIVER": "claude",
+      "expected": 1270,
+      "files": 97,
+      "groups": [
+        1261,
+        9
+      ],
+      "profile": "claude",
+      "rc": 0
+    },
+    {
+      "actual": 1270,
+      "actual_SH_DRIVER": "codex",
+      "expected": 1270,
+      "files": 97,
+      "groups": [
+        1261,
+        9
+      ],
+      "profile": "codex",
+      "rc": 0
+    }
+  ],
+  "targeted_go3": {
+    "top_pass": 18,
+    "all_pass": 45,
+    "fail": 0,
+    "skip": 0
+  },
+  "extra_mutations": {
+    "business_killed": 2,
+    "compile_failed": 0,
+    "restored_baseline_rc": 0
+  },
+  "projected_queue_probe": {
+    "candidate_rc": 1,
+    "main_rc": 1,
+    "classification": "existing boundary; not counted as passing safety gate or killed mutation; leader ruling pending"
+  }
+}

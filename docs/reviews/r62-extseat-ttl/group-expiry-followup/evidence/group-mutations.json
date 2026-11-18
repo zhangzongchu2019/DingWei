@@ -1,0 +1,28 @@
+[
+  {
+    "name": "expired-group-outbox-reason",
+    "file": "internal/extseat/outbox.go",
+    "before": "return dead(\"group_unavailable\")",
+    "after": "return dead(\"message_expired\")",
+    "compile_rc": 0,
+    "rc": 1,
+    "assertion": "unprojected outbox did not terminate group_unavailable",
+    "original_sha256": "52b8ccd88db3ce4ceca4383c229afe3f674a8e0db75bb569d346251b23a0db7f",
+    "mutated_sha256": "b5fc157cc9b67198900be04bee14569772449f22e833e2503a7f8b110a94ccd1",
+    "restored_sha256": "52b8ccd88db3ce4ceca4383c229afe3f674a8e0db75bb569d346251b23a0db7f",
+    "log_sha256": "3f95f8960cd4accbc839ddb80759460bbe2c5334a634d0e5e076b264bac49989"
+  },
+  {
+    "name": "group-finalizer-inbox",
+    "file": "internal/extseat/inbox.go",
+    "before": "WHERE ag_code=$1 AND state IN ('queued','leased')",
+    "after": "WHERE ag_code=$1 AND false AND state IN ('queued','leased')",
+    "compile_rc": 0,
+    "rc": 1,
+    "assertion": "group finalizer did not settle unreachable inbox",
+    "original_sha256": "fef8b85dd0d65e30cefa0bf13be1f02cbdb15fd2fd793966aae73a3ed1d0799a",
+    "mutated_sha256": "ccb372164c6f3e1aef528697f246c93148eca9728b6e72da193b5efe9f3ae623",
+    "restored_sha256": "fef8b85dd0d65e30cefa0bf13be1f02cbdb15fd2fd793966aae73a3ed1d0799a",
+    "log_sha256": "b4a10133c886d6a1791a0a3010cc2d56cee4b02be4537733314a7a1f858610ab"
+  }
+]

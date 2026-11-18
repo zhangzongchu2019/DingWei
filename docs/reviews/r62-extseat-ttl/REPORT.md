@@ -1,6 +1,8 @@
 # S-R62-EXTSEAT-TTL 作者交件
 
-状态：实施与作者门完成，待qwen独立复核及组长验收；不是发布GO。
+状态：原TTL实施与作者门完成；17:33Z追加核项已补常驻PG测试，另发现既有已投影队列边界，先报组长待裁定。不是发布GO。
+
+补件入口：[组到期但消息未到期的分阶段行为](group-expiry-followup/REPORT.md)。产品实现字节仍2fd，新增测试锚0b9；原全门不冒称新源重跑，增量测试及canonical独立记录。
 
 ## 锚与授权
 冻结产品/测试源 `2fd6aebacbb3dae3ac3fa82d84968367552151ca`，tree `d0cabfc1cacf98fed570e633084d3298d1549263`，parent `9576cf5600b4d6a51938376fb75fdb266d50ce27`；基main `206d41b26dab646c0e50a111eed5a45ccf7c72f6`。设计 `124d24ee3818762f977920d5a015e4dfdca80663`、组长2026-11-18T16:17:02Z单独派单第1片。最终文档tip以交审信为准，不与冻结源混称。
@@ -8,7 +10,7 @@
 ## 实施与边界
 生产仅internal/extshared/extshared.go的GroupTTL从72h、MessageTTL从24h改为168h；TokenTTL336h及其它常量不变。既有消费者仍按每行expires_at判断，now>=expiry即到期。不新增迁移、不回填旧expiry、不改VERSION、依赖、Hub协议与鉴权。MessageTTL的既有expiry亦传给FeishuCopyEvent，故既有抄送重试截止随新消息变7天；没有实现摘要、偏好或其它r62切片。
 
-测试共四个产品/测试路径，见product-manifest.json。真实PG回归使用生产tempgroup+extseat+identity服务，不用stub Groups；投影边界使用记录调用的测试Projector。固定时钟以PG精度一微秒检验前/恰/后，不等待现实七天。
+原2fd共四个产品/测试路径，见product-manifest.json；0b9补测另加一个常驻测试文件，见group-expiry-followup/test-manifest.json。真实PG回归使用生产tempgroup+extseat+identity服务，不用stub Groups；投影边界使用记录调用的测试Projector。固定时钟以PG精度一微秒检验前/恰/后，不等待现实七天。
 
 ## Spec与测试映射
 - R62TTL-001/S001：TestR62SevenDayGroupBoundaryPG三格，创建168h、请求即时拒绝与扫描一致；Token仍336h。

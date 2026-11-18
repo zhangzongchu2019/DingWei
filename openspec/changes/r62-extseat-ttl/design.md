@@ -13,3 +13,6 @@ R62TTL-001覆盖真实PG组7天前/恰/后、无扫描请求拒绝及扫描到�
 既有TestCorePG/MessageExpiryAndRevokedWait原先隐含MessageTTL小于GroupTTL；两者同为7天后，Receipt会先被组到期拒绝，掩盖原来的消息到期与撤权断言。仅调整测试：在消息截止前一小时通过合法Send续组，原消息expiry不动，再推进至截止执行原有全部断言；不删断言、不改生产Receipt/Wait授权。新旧夹具单格红绿及中止旧源整包记录分别保留。
 
 既有FeishuCopyEvent沿用受理消息的expires_at，因此新消息的抄送重试截止亦随主消息为7天；保持原关联，无新增抄送、摘要、开关或回收功能。
+
+## 17:33Z追加生命周期交叉核项
+正常新受理同事务续组，GREATEST使组期限不早于该消息期限；不能据同为7天断言自然倒置。隔离独立expiry夹具覆盖组到期但消息仍有效：外部轮询/回执均拒绝、未投影outbox死因为group_unavailable，未确认inbox由组结算收口，不误记message_expired。已投影SQLite队列不回退是另一既有边界，真实PG/WS在main206及2fd都复现仍可送达；已先报组长，是否新增发送前AG围栏待裁定，本片未改语义。详docs/reviews/r62-extseat-ttl/group-expiry-followup/REPORT.md。

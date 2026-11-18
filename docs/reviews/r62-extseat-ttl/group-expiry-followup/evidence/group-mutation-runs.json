@@ -1,0 +1,122 @@
+[
+  {
+    "name": "group-extra-baseline",
+    "source": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+    "command": [
+      "go",
+      "test",
+      "./internal/tempgroup",
+      "-run",
+      "^TestR62ExpiredGroupCannotDeliverUnexpiredQueuedMessagesPG$",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "10m",
+      "-v"
+    ],
+    "started_utc": "2026-11-18T18:08:27.767001+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T18:08:29.359990+00:00",
+    "sha256": "95a55aff9342c186116c14714511ad71b11f56be04135059c14e211956e3fadc"
+  },
+  {
+    "name": "expired-group-outbox-reason-compile",
+    "source": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+    "command": [
+      "go",
+      "test",
+      "./internal/tempgroup",
+      "-run",
+      "^$",
+      "-count=1",
+      "-p",
+      "1"
+    ],
+    "started_utc": "2026-11-18T18:08:29.360446+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T18:08:30.029620+00:00",
+    "sha256": "bd84d0577bab124ef791735b913581385c552570488bde7046079f0557c7b1c0"
+  },
+  {
+    "name": "expired-group-outbox-reason",
+    "source": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+    "command": [
+      "go",
+      "test",
+      "./internal/tempgroup",
+      "-run",
+      "^TestR62ExpiredGroupCannotDeliverUnexpiredQueuedMessagesPG$",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "10m",
+      "-v"
+    ],
+    "started_utc": "2026-11-18T18:08:30.029938+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T18:08:31.388312+00:00",
+    "sha256": "3f95f8960cd4accbc839ddb80759460bbe2c5334a634d0e5e076b264bac49989"
+  },
+  {
+    "name": "group-finalizer-inbox-compile",
+    "source": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+    "command": [
+      "go",
+      "test",
+      "./internal/tempgroup",
+      "-run",
+      "^$",
+      "-count=1",
+      "-p",
+      "1"
+    ],
+    "started_utc": "2026-11-18T18:08:31.388971+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T18:08:32.052021+00:00",
+    "sha256": "20aab17405fd1cce6e6bffcb5224cb664be2ea81cbd6bf2ce86815b58337cb78"
+  },
+  {
+    "name": "group-finalizer-inbox",
+    "source": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+    "command": [
+      "go",
+      "test",
+      "./internal/tempgroup",
+      "-run",
+      "^TestR62ExpiredGroupCannotDeliverUnexpiredQueuedMessagesPG$",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "10m",
+      "-v"
+    ],
+    "started_utc": "2026-11-18T18:08:32.052361+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T18:08:33.415851+00:00",
+    "sha256": "b4a10133c886d6a1791a0a3010cc2d56cee4b02be4537733314a7a1f858610ab"
+  },
+  {
+    "name": "group-extra-restored",
+    "source": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+    "command": [
+      "go",
+      "test",
+      "./internal/tempgroup",
+      "-run",
+      "^TestR62ExpiredGroupCannotDeliverUnexpiredQueuedMessagesPG$",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "10m",
+      "-v"
+    ],
+    "started_utc": "2026-11-18T18:08:33.416438+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T18:08:35.002369+00:00",
+    "sha256": "13f08863cd7490bd7fe3da8572ce57a1be6800e8757bed6f8b286abb541714a3"
+  }
+]

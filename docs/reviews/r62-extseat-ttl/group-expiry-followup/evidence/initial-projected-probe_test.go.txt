@@ -1,0 +1,88 @@
+package m8
+import (
+ "os"
+ "strings"
+ "testing"
+ "time"
+ "github.com/coder/websocket"
+ "github.com/zhangzongchu2019/dingwei/internal/extseat"
+ "github.com/zhangzongchu2019/dingwei/internal/extshared"
+ "github.com/zhangzongchu2019/dingwei/internal/identity"
+ "github.com/zhangzongchu2019/dingwei/internal/model"
+ "github.com/zhangzongchu2019/dingwei/internal/repo"
+ "github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
+ "github.com/zhangzongchu2019/dingwei/internal/tempgroup"
+)
+func TestR62ProbeAlreadyProjectedAfterGroupExpiry(t *testing.T) {
+
+	v := newViewEnv(t)
+	ctx := v.ctx
+	pool := pgtest.Pool(t)
+	access, err := repo.NewAccessCtx("extseat-sender-e2e", "temporary PG sender attribution fixture")
+	if err != nil {
+		t.Fatal(err)
+	}
+	extseatDDL, err := os.ReadFile("../store/migrate/migrations/0105_extseat.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	groupDDL, err := os.ReadFile("../store/migrate/migrations/0106_tempgroup.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	policyDDL, err := os.ReadFile("../store/migrate/migrations/0110_extseat_expect_reply.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	copyDDL, err := os.ReadFile("../store/migrate/migrations/0111_extseat_feishu_copy.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(extseatDDL) + string(policyDDL) + string(copyDDL) + string(groupDDL)
+	if _, err = pool.Exec(ctx, access, ddl); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	target, err := v.svc.Store.FindAgentByName(ctx, "zzc", "kimi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, access, `INSERT INTO np_user(user_id_lc,user_id,short_name,short_name_lc,display_name,type,state,created_at) VALUES('zzc','zzc','zzc','zzc','业主显示名','member','active',$1)`, now); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = pool.Exec(ctx, access, `INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,credential_hash,created_at) VALUES($1,'zzc',$2,$3,'selfhost','active',$4,$5)`, target.ID, target.Name, strings.ToLower(target.Name), target.CredentialHash, now); err != nil {
+		t.Fatal(err)
+	}
+	pgIdentity := identity.NewService(identity.NewPGStore(pool), func() time.Time { return now }, nil)
+	groups := &tempgroup.Service{Pool: pool, Access: access, Now: func() time.Time { return now }}
+	seats := &extseat.Service{Pool: pool, Access: access, Identity: pgIdentity, Groups: groups, TenantKey: "tenant-e2e", Resource: "https://fixture.invalid/mcp", Now: func() time.Time { return now }}
+	principal := extshared.Principal{Provider: "feishu", TenantKey: "tenant-e2e", Issuer: "fixture-app", Subject: "mcp-asist", DisplayName: "MCP 授权人"}
+	targetFullName := v.svc.FullName(ctx, target)
+	_, seat, seatGroup, err := seats.IssueToken(ctx, principal, "asist", targetFullName)
+	if err != nil {
+		t.Fatalf("issue external seat: %v", err)
+	}
+	v.hub.Identity = pgIdentity
+	v.hub.ExternalSeats = seats
+
+ _ = seatGroup
+ receipt,err:=seats.Send(ctx,seat,targetFullName,"synthetic pending external message","group-expiry-probe",false)
+ if err!=nil {t.Fatal(err)}
+ if did,err:=seats.ProjectOne(ctx,HubExtseatProjector{Hub:v.hub}); !did||err!=nil {t.Fatalf("project %t %v",did,err)}
+ queued,err:=v.hub.Repo.GetSessionDelivery(ctx,receipt.DeliveryID)
+ if err!=nil||queued==nil||queued.State!="queued" {t.Fatalf("not queued %v",err)}
+ // Isolated persisted-state fixture: group deadline precedes still-future message.
+ if _,err=pool.Exec(ctx,access,`UPDATE np_temp_group SET expires_at=$1 WHERE code=$2`,now.Add(-time.Second),seat.Group);err!=nil {t.Fatal(err)}
+ if err=groups.Expire(ctx);err!=nil {t.Fatal(err)}
+ if err=seats.SettleDissolvedGroup(ctx,seat.Group);err!=nil {t.Fatal(err)}
+ if _,err=seats.Check(ctx,seat);err==nil {t.Fatal("poll unexpectedly allowed")}
+ receiver,status,response:=v.dial(v.zKimiCred,"")
+ if status!=101 {t.Fatalf("connect %d %s",status,response)}
+ defer receiver.Close(websocket.StatusNormalClosure,"done")
+ receiver.SetReadLimit(16<<20)
+ _=readEnvelopeIncludingSystem(t,ctx,receiver)
+ waitSessionOnline(t,v.hub,"u_zzc","kimi")
+ if err=writeEnvelope(ctx,receiver,model.Envelope{ID:"probe-caps",To:"workpulse#u_zzc",Meta:map[string]any{"type":"session_capabilities","delivery_ack_v1":true}});err!=nil {t.Fatal(err)}
+ got:=readEnvelope(t,ctx,receiver)
+ if got.ID==receipt.DeliveryID {t.Fatal("R62_PROJECTED_MESSAGE_DELIVERED_AFTER_GROUP_EXPIRY")}
+}
