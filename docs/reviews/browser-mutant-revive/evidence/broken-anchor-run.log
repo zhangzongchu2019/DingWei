@@ -1,0 +1,11 @@
+Error: mutation anchor missing: groupFeedback(feedback||'group-status','请求失败漂移: '+String(e&&e.message||e));return false;
+    at mutate (/tmp/wt-mutant-revive/view-service/console-broken-anchor-diag.js:32:30)
+    at consoleHTMLFromProductionSource (/tmp/wt-mutant-revive/view-service/console-broken-anchor-diag.js:76:5)
+    at main (/tmp/wt-mutant-revive/view-service/console-broken-anchor-diag.js:110:16)
+    at Object.<anonymous> (/tmp/wt-mutant-revive/view-service/console-broken-anchor-diag.js:890:1)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)

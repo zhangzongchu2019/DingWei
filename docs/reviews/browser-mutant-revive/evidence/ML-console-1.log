@@ -1,0 +1,21 @@
+  PASS loads the real console document
+  PASS keeps platform workspaces interactive after a full Agent refresh interval
+  PASS resets the created name while preserving the selected short-name Agent
+  PASS offers owned active offline Agents as group membership candidates
+  PASS distinguishes platform and Agent load failures from true empty states
+  PASS renders online and offline agents from the console API
+  PASS renders no platform entry without an observable action
+  PASS keeps dead action buttons absent after the server role changes
+  PASS lets a human start from zero groups without a hidden-control deadlock
+  PASS runs the zero-group human workflow without hidden actions or long tasks
+  PASS opens Agent groups inside console with the owner-only online Agent selector
+  PASS shows a visible successful retry result
+  PASS ignores an older group snapshot that arrives after the latest response
+  PASS keeps rejected and accepted create results visible beside the name control
+  PASS shows group load and network action failures beside their controls
+  PASS group name: malformed names are explained locally in the shared sentence; invisible characters are stripped; a JSON error shows its message
+  PASS opens a real console tab and agent iframe
+  PASS explains why an open Agent tab becomes non-interactive when offline
+  PASS opens Specs inside console without destroying live Agent panes
+  PASS shows the server-rendered build version and never swallows a click
+console browser harness: passed=20 failed=0

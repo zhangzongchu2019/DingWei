@@ -1,0 +1,15 @@
+{
+ "utc": "2026-11-18T09:07:19Z",
+ "helper_pid": 555221,
+ "established": [
+  {
+   "local": "455EFB3A:910E",
+   "remote": "8CE8812B:01BB",
+   "inode": "1212273325"
+  }
+ ],
+ "ipc_connect_ex": 0,
+ "sock_fs_inode": 159811461,
+ "sock_mtime": 1794974946.5704298,
+ "unix_path_entries": 9
+}
