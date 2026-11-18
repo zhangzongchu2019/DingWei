@@ -69,3 +69,17 @@
   - NODE_PATH=<playwright node_modules> node view-service/renderer-offturn-fold-regression.js
   - PATH=<venv>/bin:$PATH NODE_PATH=<playwright node_modules> python3 tools/run-browser-regressions.py --receipt <path>
   - PATH=<venv>/bin:$PATH sh scripts/run-build-tests.sh
+
+## v2 rebase 追记（2026-11-18T00:05Z，r60 定锚 501e5b8a）
+
+- 触发：组长派单 dw-dlv_630d6d8bd6f70b64a04629a7360eaa66（2026-11-17T22:56:24Z）。r60 最终锚＝501e5b8a185b20f5c931c8ebb89c16bfd633a01e（tree 2e160bfe3ac9f5aac5c3fdc8f428133053af6968，VERSION 0.2.3.40，逐字核同）。远端 coder56solzzc/r60-ingress-fix tip 其後前进至 8518403634d7af41548296c85c38ea3ea90c62d3（仅多一条 docs，501e5b8a 为其祖先）⇒ 按派单以 pinned 锚为底。
+- 分支 qwen38mvb4/r61-n2-offturn-fold-v2：cherry-pick 40491a69a→5767aa32f（design）、1a7ac7955→2166645cd（impl），零冲突（锚差 9818b979..501e5b8a 与本单改动零文件重叠）；range-diff 全＝（evidence-v2/n2-range-diff.txt）。冻结件 1a7ac795 未改写。
+- 门（静默串行，NODE_PATH=/home/is3/pwrun/node_modules）：
+  - 靶件 offturn rc=0，全格绿、M1～M12 十二刀全红（evidence-v2/n2-offturn-run1.log）。
+  - 浏览器全量 runner：起 2026-11-17T23:07:36Z、止 23:21:58Z，46 套件 44 绿 2 红，aggregate_rc=2（n2-browser-all.log／.rc／.start／.end）。offturn 套件在全量内亦全绿／刀红。
+  - run-build-tests.sh：起 23:33:57Z、止 23:47:27Z，rc=0，BUILD_TESTS_OK helper_profiles=2 python=27 shell=2，FAIL 计数 0；AdmissionDeadline*／AA010 族本轮无红（n2-build-tests.log）。
+- 两红判前程序（照派单先在 501e5b8a 原锚对照再判；对照工作树 detached 501e5b8a）：
+  - r15_session_history_mutations：原锚 mutations×3＝3/3 红，红点逐字同——子进程 r15-session-history-browser-regression.js:96 既有 3s 窗超时抢先目标断言（wrong assertion failed；ctrl-mut-1..3.log／.rc）；v2 复采×2＝2/2 红同点（v2-mut-1..2）。判：既有时序窗抖、非 N-2 回归；修法在 browser-flake-windows-v2（b1b5aa077），本分支按单不含。
+  - console_specs_browser：原锚×3＝3/3 绿（ctrl-specs-1..3）、v2 单跑复采×3＝3/3 绿（v2-specs-1..3）⇒ 全量内一红（复制链接反馈实测 ''、期望 link address copied，console-specs-browser-regression.js:989）系瞬态、非确定性回归。套件为锚件、本单未改不修，披露候组长裁（是否归后续统筹单）。
+- renderer 同一性：501e5b8a 原 renderer sha256=14ffc39ea1ed61c1d230b7e3f3a810564daf05f61a7ec17cefde07ffc98eb6ef（与 9818b979 原件同，ingress-fix 未改 renderer）；v2 renderer sha256=49df8fe1f2958586708cc35e67873d689ebfa9842bb22d2b3b8df56381646fa8（与冻结 N-2 同）。
+- 边界：产品改动仍仅冻结 N-2 renderer 补丁；VERSION 未动；未推 main；未出发布件；未碰预发／现网；新增仅 evidence-v2 与本追记。

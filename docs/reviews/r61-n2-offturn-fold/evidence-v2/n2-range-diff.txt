@@ -1,0 +1,2 @@
+1:  40491a69a = 1:  5767aa32f docs(r61-n2): design off-turn Claude output fold bar (design-first, docs only)
+2:  1a7ac7955 = 2:  2166645cd feat(r61-n2): fold Claude off-turn output in timeline
