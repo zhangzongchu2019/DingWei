@@ -25,9 +25,11 @@
 - 2026-11-16；执行者：togpt60lunazzc；commit：86c86025。完成：只读调研和提案；下一步：补充实现设计，不改产品码。
 - 2026-11-17；执行者：togpt60lunazzc；commit：待提交。完成：补齐 sidecar/事务/容量/分页/renderer/回归实现设计；阻塞：实现等待 R60 定锚。
 
-- 2026-11-18；执行者：coder56solzzc。完成：S-R61-N3-IMPL，SOURCE_COMMIT `a32c877cf6ef21a909d2806f4b08e3e925d05d98`，六门rc0、40/40有效删保护业务断言红，证据 `9a145fd138c7d15bf1ec027b773b960919e69056`。阻塞：无实现阻塞；独立复核与组长终审未完成。历史D181首轮m8三遍的旧N-4单FAIL、最终A32的4条teardown诊断及所有SKIP逐名保留，不称N-4已修复。下一步：togpt60只读独立复核，组长决定集成；不推main、不部署、不出发布件。
+- 2026-11-18；执行者：coder56solzzc。完成：S-R61-N3-IMPL，SOURCE_COMMIT `a32c877cf6ef21a909d2806f4b08e3e925d05d98`，六门rc0、40/40有效删保护业务断言红，证据 `9a145fd138c7d15bf1ec027b773b960919e69056`。阻塞：无实现阻塞；独立复核与组长终审未完成。历史D181首轮m8三遍的旧N-4单FAIL、最终A32的4条teardown诊断及所有SKIP逐名保留，不称N-4已修复。当时下一步：togpt60只读独立复核（后被组长改派qwen），组长决定集成；不推main、不部署、不出发布件。
 
-- [x] T-15 修正 legacy_received 重锚：同名替换后仅发实时观察，不重新签发 sidecar；四格旧产品红、修后定向绿，保留原身份正对照。冻结代码坐标及原始日志在新一轮交件记录补齐。
-- [ ] T-16 新 SOURCE_COMMIT 全量门及新增两刀，证据独立留存，不沿用 A32 作者门为本次绿。
+- [x] T-15 修正 legacy_received 重锚：同名替换后仅发实时观察，不重新签发 sidecar；四格旧产品红、修后定向绿，保留原身份正对照。冻结代码 `9313197f8ac3e2a585cd399935d5b313084b3b1e:internal/m8/hub.go`；原始日志 `f868fe6a3f725b9f0f242468d864020c9947e788:docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/old-product-red.log`。该旧产品红针对保留私有标记的条件性记录夹具，不冒称正常当前路由或现网污染。
+- [x] T-16 新 SOURCE_COMMIT `9313197f8ac3e2a585cd399935d5b313084b3b1e` 全量门及42刀（原40重跑＋新增2），证据 `f868fe6a3f725b9f0f242468d864020c9947e788:docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/gates.json`、同目录 `mutations/summary.json`、`new-mutations.json` 与 `SKIPS.json`。不沿用 A32 作者门为本次绿。
 
 - 2026-11-18；执行者：coder56solzzc。完成：独立复现 togpt 延迟技术发现，原A32产品叠新回归四格均业务红；本次最小修订五行，定向 TestHistoryProvenance 全绿。阻塞：新冻结源全量门与qwen复核待办。下一步：固定新源后完成门与两刀，追加证据交组长，并按改派口径交qwen；不恢复已撤回的togpt旧派审、不推main、不部署。
+
+- 2026-11-18；执行者：coder56solzzc。完成：新源 `9313197f8ac3e2a585cd399935d5b313084b3b1e` 全量作者门、42刀及真实当前路由A32/931双绿控制，证据 `f868fe6a3f725b9f0f242468d864020c9947e788`。范围：条件性保留标记记录防线；不宣称证明正常路由或现网已有污染。阻塞：无实现阻塞，qwen独立复核及组长终审待办。下一步：交新锚复核；不推main、不部署。

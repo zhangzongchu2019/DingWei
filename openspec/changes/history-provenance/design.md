@@ -79,3 +79,5 @@ renderer 只对已经通过 `normalizeEvent` 的标准 provenance 画图：`kind
 - publishDeliveryUpdateForDelivery 的 legacy_received 重锚显式传空 history target，沿既有 publishInputObservation 继续发实时 input_posted，但 rememberHistoryInputProvenance 按空身份 fail-closed，不写新 sidecar。不是把原捕获身份改为回执发送者。
 - 原入队时按捕获稳定身份写入的 sidecar 不受影响：替换身份 echo 无来源，原身份 echo 仍可精确消费；原本无有效证据时两侧均无来源。该修订不改主库/历史库迁移、Append事务、quota、分页API、renderer或可靠ACK时序。
 - 回归覆盖 injected/processed × 有/无原捕获sidecar；断言正常legacy_received、实时input_posted保留、替换history无provenance、原身份来源按原证据保留。删显式空目标必须使替换身份断言红；删实时重锚必须使实时事件断言红。
+
+验证范围：正常当前路由在存储delivery.Envelope前剥除私有可信入站标记，该链在原A32与修订源的真实入队控制均绿。legacy四格反例特意构造仍保留该标记的服务器记录，证明条件性防线缺口，不证明正常路由或现网已有记录受影响；不确认任何真实旧写入器曾留下这类记录。

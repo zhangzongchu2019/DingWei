@@ -186,10 +186,10 @@
     "docs/reviews/r61-n3-history-provenance/evidence/strict.log": "8c1ae110739ef564384ea606a94157d7ed4a577b9c7d5aa44be55b1598f38169",
     "openspec/changes/history-provenance/.openspec.yaml": "db997d460a2d6d123d14faf903215b90f63faf4e7e2dadacfdab82c07857e113",
     "openspec/changes/history-provenance/REPORT.md": "b6d3a45700d197bdd211cceff74630d85997a54e7a39d2c88b8e255132d0afb0",
-    "openspec/changes/history-provenance/context.md": "e59238ac21a458ca223023c608c89d7faef461992e88c046330495aa6263168b",
-    "openspec/changes/history-provenance/design.md": "29b246875f03be4cea02a801dbe771b619ac60512dafe5e723fa312d226e785a",
+    "openspec/changes/history-provenance/context.md": "3ae30a88998e5ba9dd2bd216d5a94e3a1229ca7dcc6e1db6680a89caeb7b2a26",
+    "openspec/changes/history-provenance/design.md": "21db56988a113e582db9689c43bba8c81367ddc4afb04b32b81064fd933c39f5",
     "openspec/changes/history-provenance/proposal.md": "358d8269e05bedf620afe3244dd3380f316411e590bef7ed8c30a056e930a3c1",
     "openspec/changes/history-provenance/specs/view-history-provenance/spec.md": "12f99d204355b88cb6e2c6cc1213b2a7b892e6a975aa7aab1f2666570bb798e1",
-    "openspec/changes/history-provenance/tasks.md": "44e2f421bfc344ae8da239957071ebf72bc1540e044d4dc9712f87f1ca4d9a36"
+    "openspec/changes/history-provenance/tasks.md": "d5b1561eff20649f9fcf816f52d57be58cae2d3015899a7fa96e7c3842685145"
   }
 }

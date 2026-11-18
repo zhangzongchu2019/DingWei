@@ -32,3 +32,5 @@
 ## 2026-11-18 legacy 重锚修订现场
 
 独立复现 legacy ACK 同名重锚缺口，见 internal/m8/history_provenance_test.go 的 TestHistoryProvenanceLegacyReanchorDoesNotFollowReusedName。hub.go 的 legacy_received 实时 observation 显式传空history目标，禁用此晚到路径的新sidecar；已有入队捕获证据按原五元组保留。修订不改迁移/存储schema/renderer。当前正式复核方为qwen38mvb4（组长改派），旧togpt请求已撤回；其具体发现作为技术输入核实，不复用其未跑或不完整的门。
+
+范围校准与新交件：新源 `9313197f8ac3e2a585cd399935d5b313084b3b1e`，全门与42刀证据 `f868fe6a3f725b9f0f242468d864020c9947e788`。正常route会剥除 `_hub_ingress_channel`；真实入队控制在A32/931均绿。四格旧产品红是人为保留该标记的记录形态，尚无证据确认真实历史记录存在，不声称正常当前路由或现网已遭身份串写。新门完成，正式复核仍待qwen；旧togpt派审不恢复。
