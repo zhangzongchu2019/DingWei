@@ -556,11 +556,14 @@ class RuntimeTests(unittest.TestCase):
             except Exception as exc: outcomes.append(type(exc).__name__)
         creator = threading.Thread(target=create)
         creator.start(); self.assertTrue(entered.wait(2))
-        closer = threading.Thread(target=self.runtime.close_parent)
+        close_finished = threading.Event()
+        def close_parent():
+            try: self.runtime.close_parent()
+            finally: close_finished.set()
+        closer = threading.Thread(target=close_parent)
         closer.start()
         try:
-            closer.join(.2)
-            self.assertFalse(closer.is_alive(), 'NATIVE_CREATE_BLOCKED_LIFECYCLE_SEAL')
+            self.assertTrue(close_finished.wait(2), 'NATIVE_CREATE_BLOCKED_LIFECYCLE_SEAL')
         finally:
             release.set(); creator.join(3); closer.join(3)
         node = self.runtime.store.nodes()[0]
