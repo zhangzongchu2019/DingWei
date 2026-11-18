@@ -18,24 +18,32 @@ type ackV2Fixture struct {
 }
 
 func newACKV2Fixture(t *testing.T, v2 bool) *ackV2Fixture {
-	return newACKV2FixtureWithKind(t, v2, "", false)
+	return newACKV2FixtureWithCapabilities(t, v2, v2, "", false, nil)
 }
 
 func newACKV2FixtureWithKind(t *testing.T, v2 bool, kind string, automatic bool) *ackV2Fixture {
-	return newACKV2FixtureWithKindHook(t, v2, kind, automatic, nil)
+	return newACKV2FixtureWithCapabilities(t, v2, v2, kind, automatic, nil)
 }
 func newACKV2FixtureWithKindHook(t *testing.T, v2 bool, kind string, automatic bool, before func(*agentEnv)) *ackV2Fixture {
+	return newACKV2FixtureWithCapabilities(t, v2, v2, kind, automatic, before)
+}
+
+func newACKV2FixtureWithCapabilities(t *testing.T, v2, queueFullCapability bool, kind string, automatic bool, before func(*agentEnv)) *ackV2Fixture {
 	t.Helper()
 	e := newAgentEnv(t)
 	if before != nil {
 		before(e)
 	}
-	conn, status, raw := e.dial(e.cred, "version=0.2.3.14&os=linux")
-	if conn == nil {
-		t.Fatalf("local helper-peer WS status=%d body=%s", status, raw)
+	conn, headers := e.dialWithHeaders(e.cred, "version=0.2.3.14&os=linux")
+	if headers.Get(deliveryACKQueueFullHeader) != deliveryACKQueueFullProtocol {
+		t.Fatalf("missing queue-full protocol handshake header: %v", headers)
 	}
 	t.Cleanup(func() { _ = conn.CloseNow() })
-	e.sendEnv(conn, model.Envelope{ID: "ack-caps", To: "workpulse#enrolled", Meta: map[string]any{"type": "session_capabilities", "delivery_ack_v1": true, "delivery_ack_v2": v2, "processing_mode": "driver"}})
+	capabilities := map[string]any{"type": "session_capabilities", "delivery_ack_v1": true, "delivery_ack_v2": v2, "processing_mode": "driver"}
+	if queueFullCapability {
+		capabilities["delivery_ack_queue_full_v1"] = true
+	}
+	e.sendEnv(conn, model.Envelope{ID: "ack-caps", To: "workpulse#enrolled", Meta: capabilities})
 	var client *sessionClient
 	waitFor(t, time.Second, "ACK negotiation", func() bool {
 		e.hub.mu.Lock()
@@ -46,7 +54,7 @@ func newACKV2FixtureWithKindHook(t *testing.T, v2 bool, kind string, automatic b
 		}
 		client.stateMu.Lock()
 		defer client.stateMu.Unlock()
-		return client.helperReady && client.deliveryACKV1 && client.deliveryACKV2 == v2
+		return client.helperReady && client.deliveryACKV1 && client.deliveryACKV2 == v2 && client.deliveryACKQueueFullV1 == queueFullCapability
 	})
 	now := time.Now().UTC()
 	original := model.Envelope{ID: "ack-source", From: "source#" + AgentKeyID("zzc"), To: "opus50ts#" + AgentKeyID("zzc"), Body: "local ACK lifecycle probe", Meta: map[string]any{"type": "delivery", "delivery_id": "ack-wire", "delivery_ack_protocol": 99, "generation": 7}}
@@ -126,6 +134,107 @@ func TestDeliveryACKV2NegotiatedWireOverridesUntrustedProtocolWithoutChangingTas
 	}
 	if d := f.record(); d.AckProtocol != 2 || d.AckGeneration != 1 || d.ProcessingMode != "driver" || d.State != "sent" {
 		t.Fatalf("wire was not bound before send: %+v", d)
+	}
+}
+
+func TestDeliveryACKV2QueueFullRequiresNegotiationAndCreatesDurableNotice(t *testing.T) {
+	f := newACKV2Fixture(t, true)
+	if err := f.hub.Repo.UpsertSessionEndpoint(f.ctx, model.SessionEndpoint{KeyID: f.client.keyID, SessionName: "source", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.hub.Repo.SetSessionEndpointDeliveryACK(f.ctx, f.client.keyID, "source", true); err != nil {
+		t.Fatal(err)
+	}
+	ack := f.ack("failed", "", "", f.stamp.Add(time.Second))
+	ack.Meta["reason"] = "queue_full"
+	ack.Meta["retryable"] = false
+	f.sendEnv(f.conn, ack)
+	confirm := f.readEnvUntil(f.conn, time.Second, func(env model.Envelope) bool {
+		return metaString(env.Meta, "type") == "delivery_ack_confirm" && metaString(env.Meta, "state") == "failed"
+	})
+	if confirm == nil || metaString(confirm.Meta, "delivery_id") != "ack-wire" {
+		t.Fatalf("queue_full ACK not confirmed: %+v", confirm)
+	}
+	if got := f.record(); got.State != "dead" || got.LastError != "queue_full" {
+		t.Fatalf("queue_full did not terminalize original: %+v", got)
+	}
+	notice, err := f.hub.Repo.GetSessionDelivery(f.ctx, model.FailureNoticeDeliveryID("ack-wire"))
+	if err != nil || notice == nil || notice.SourceType != "failure_notice" {
+		t.Fatalf("missing durable sender notice: %+v %v", notice, err)
+	}
+	// Replaying the exact ACK confirms idempotently and cannot enqueue a second row.
+	f.sendEnv(f.conn, ack)
+	confirm = f.readEnvUntil(f.conn, time.Second, func(env model.Envelope) bool {
+		return metaString(env.Meta, "type") == "delivery_ack_confirm" && metaString(env.Meta, "state") == "failed"
+	})
+	if confirm == nil {
+		t.Fatal("duplicate queue_full ACK was not confirmed")
+	}
+	duplicate, err := f.hub.Repo.GetSessionDelivery(f.ctx, model.FailureNoticeDeliveryID("ack-wire"))
+	if err != nil || duplicate == nil || duplicate.ID != notice.ID {
+		t.Fatalf("duplicate notice identity changed: %+v err=%v", duplicate, err)
+	}
+}
+
+func TestDeliveryACKV2QueueFullIgnoredWithoutHelperCapability(t *testing.T) {
+	f := newACKV2Fixture(t, true)
+	f.client.stateMu.Lock()
+	f.client.deliveryACKQueueFullV1 = false
+	f.client.stateMu.Unlock()
+	ack := f.ack("failed", "", "", f.stamp.Add(time.Second))
+	ack.Meta["reason"] = "queue_full"
+	ack.Meta["retryable"] = false
+	f.sendEnv(f.conn, ack)
+	if confirm := f.readEnvUntil(f.conn, 100*time.Millisecond, func(env model.Envelope) bool {
+		return metaString(env.Meta, "type") == "delivery_ack_confirm"
+	}); confirm != nil {
+		t.Fatalf("unnegotiated queue_full ACK was accepted: %+v", confirm)
+	}
+	if got := f.record(); got.State != "sent" && got.State != "delivered" {
+		t.Fatalf("unnegotiated ACK changed delivery: %+v", got)
+	}
+}
+
+func TestNewHubOldHelperQueueFullKeepsRetryableBusyPath(t *testing.T) {
+	// Mirrors 0.2.3.40: ACK v2 is present, but the queue-full capability is absent.
+	f := newACKV2FixtureWithCapabilities(t, true, false, "", false, nil)
+	ack := f.ack("busy", "", "", f.stamp.Add(time.Second))
+	ack.Meta["reason"] = "queue_full"
+	ack.Meta["retryable"] = true
+	f.sendEnv(f.conn, ack)
+	if confirm := f.readEnvUntil(f.conn, 100*time.Millisecond, func(env model.Envelope) bool {
+		return metaString(env.Meta, "type") == "delivery_ack_confirm"
+	}); confirm != nil {
+		t.Fatalf("legacy helper busy ACK unexpectedly confirmed: %+v", confirm)
+	}
+	got := f.record()
+	if got.State != "queued" || got.LastError != "helper_busy" {
+		t.Fatalf("new Hub did not preserve old retryable behavior: %+v", got)
+	}
+	if notice, err := f.hub.Repo.GetSessionDelivery(f.ctx, model.FailureNoticeDeliveryID("ack-wire")); err != nil || notice != nil {
+		t.Fatalf("old helper path must not create terminal notice: %+v %v", notice, err)
+	}
+}
+
+func TestDeliveryACKV2QueueFullRequiresExplicitNonretryableShape(t *testing.T) {
+	for _, omitRetryable := range []bool{false, true} {
+		f := newACKV2Fixture(t, true)
+		ack := f.ack("failed", "", "", f.stamp.Add(time.Second))
+		ack.Meta["reason"] = "queue_full"
+		if omitRetryable {
+			delete(ack.Meta, "retryable")
+		} else {
+			ack.Meta["retryable"] = true
+		}
+		f.sendEnv(f.conn, ack)
+		if confirm := f.readEnvUntil(f.conn, 100*time.Millisecond, func(env model.Envelope) bool {
+			return metaString(env.Meta, "type") == "delivery_ack_confirm"
+		}); confirm != nil {
+			t.Fatalf("malformed queue_full ACK accepted omitRetryable=%t: %+v", omitRetryable, confirm)
+		}
+		if got := f.record(); got.State != "sent" {
+			t.Fatalf("malformed queue_full ACK changed delivery: %+v", got)
+		}
 	}
 }
 

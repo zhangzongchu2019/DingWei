@@ -2,9 +2,11 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -50,6 +52,107 @@ func TestDeliveryACKV2BindingSurvivesConnectionAndRetryChanges(t *testing.T) {
 	d, err = db.BindSessionDeliveryACK(ctx, a.DeliveryID, a.KeyID, a.SessionName, 2, "driver")
 	if err != nil || d.AckGeneration != 1 || d.Attempts != 10 {
 		t.Fatalf("transport attempts changed logical generation: %+v %v", d, err)
+	}
+}
+
+func TestDeliveryACKV2QueueFullAtomicallyDeadLettersAndCreatesFixedNotice(t *testing.T) {
+	db, ctx, a, now := v2DeliveryFixture(t)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "sender-key", SessionName: "sender", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetSessionEndpointDeliveryACK(ctx, "sender-key", "sender", true); err != nil {
+		t.Fatal(err)
+	}
+	original := model.Envelope{ID: "queue-full-message", From: "sender#sender-key", To: "seat#owner", Body: "PRIVATE BODY MUST NOT LEAK"}
+	raw, _ := json.Marshal(original)
+	if _, err := db.db.ExecContext(ctx, `UPDATE session_delivery SET envelope_json=?,source_type='session_inbound' WHERE id=?`, string(raw), a.DeliveryID); err != nil {
+		t.Fatal(err)
+	}
+	mustApplyACK(t, db, ctx, a, now)
+	queued, _ := db.GetSessionDelivery(ctx, "ack-test")
+	if queued.State != "delivered" {
+		t.Fatalf("fixture did not reach delivered: %+v", queued)
+	}
+	failure := model.SessionDeliveryACK{DeliveryID: "ack-test", KeyID: "owner", SessionName: "seat", Protocol: 2,
+		ProcessingMode: "driver", Generation: 1, Phase: "failed", FailureReason: "queue_full", Retryable: false, OccurredAt: now}
+	dead, changed, err := db.ApplySessionDeliveryACK(ctx, failure, now)
+	if err != nil || !changed || dead.State != "dead" || dead.LastError != "queue_full" {
+		t.Fatalf("queue_full terminal transition: %+v changed=%t err=%v", dead, changed, err)
+	}
+	notice, err := db.GetSessionDelivery(ctx, model.FailureNoticeDeliveryID("ack-test"))
+	if err != nil || notice == nil || notice.State != "queued" || notice.SourceType != "failure_notice" {
+		t.Fatalf("missing durable sender notice: %+v %v", notice, err)
+	}
+	var payload model.Envelope
+	if err := json.Unmarshal([]byte(notice.Envelope), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Body != "发送未进入目标收件箱：目标 Agent 忙且收件箱已满；本条未提交，请缩短排队或稍后重新发送。" || strings.Contains(payload.Body, "PRIVATE BODY") || payload.Meta["failed_delivery_id"] != "ack-test" {
+		t.Fatalf("unsafe or inaccurate notice: %+v", payload)
+	}
+	if _, changed, err := db.ApplySessionDeliveryACK(ctx, failure, now); err != nil || changed {
+		t.Fatalf("duplicate ACK was not idempotent: changed=%t err=%v", changed, err)
+	}
+	var count int
+	if err := db.db.QueryRowContext(ctx, `SELECT count(*) FROM session_delivery WHERE source_type='failure_notice' AND source_message_id=?`, "ack-test").Scan(&count); err != nil || count != 1 {
+		t.Fatalf("duplicate durable notice count=%d err=%v", count, err)
+	}
+}
+
+func TestDeliveryACKV2QueueFullNoticeInsertFailureRollsBackTerminal(t *testing.T) {
+	db, ctx, a, now := v2DeliveryFixture(t)
+	original := model.Envelope{ID: "queue-full-message", From: "sender#sender-key", To: "seat#owner", Body: "private"}
+	raw, _ := json.Marshal(original)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "sender-key", SessionName: "sender", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.db.ExecContext(ctx, `UPDATE session_delivery SET envelope_json=?,source_type='session_inbound' WHERE id=?`, string(raw), a.DeliveryID); err != nil {
+		t.Fatal(err)
+	}
+	mustApplyACK(t, db, ctx, a, now)
+	if _, err := db.db.ExecContext(ctx, `CREATE TRIGGER fail_queue_full_notice BEFORE INSERT ON session_delivery WHEN NEW.source_type='failure_notice' BEGIN SELECT RAISE(ABORT,'synthetic notice insert fault'); END`); err != nil {
+		t.Fatal(err)
+	}
+	failure := model.SessionDeliveryACK{DeliveryID: "ack-test", KeyID: "owner", SessionName: "seat", Protocol: 2,
+		ProcessingMode: "driver", Generation: 1, Phase: "failed", FailureReason: "queue_full", OccurredAt: now}
+	if _, _, err := db.ApplySessionDeliveryACK(ctx, failure, now); err == nil {
+		t.Fatal("notice insert fault must fail the terminal transaction")
+	}
+	got, _ := db.GetSessionDelivery(ctx, "ack-test")
+	if got.State != "delivered" || got.LastError != "" {
+		t.Fatalf("terminal state committed without notice: %+v", got)
+	}
+}
+
+func TestDeliveryACKV2QueueFullFeishuNoticeUsesDurableOutboundQueue(t *testing.T) {
+	db, ctx, a, now := v2DeliveryFixture(t)
+	if _, err := db.db.ExecContext(ctx, `INSERT INTO bot_channel(id,name,app_id,purpose,can_send,can_receive,active) VALUES('bot-id','bot-name','app','general',1,1,1)`); err != nil {
+		t.Fatal(err)
+	}
+	original := model.Envelope{ID: "queue-full-feishu-message", From: "ou_sender#owner#bot-name", To: "seat#owner", Body: "PRIVATE FEISHU BODY MUST NOT LEAK"}
+	raw, _ := json.Marshal(original)
+	if _, err := db.db.ExecContext(ctx, `UPDATE session_delivery SET envelope_json=?,source_type='feishu_inbound' WHERE id=?`, string(raw), a.DeliveryID); err != nil {
+		t.Fatal(err)
+	}
+	failure := model.SessionDeliveryACK{DeliveryID: a.DeliveryID, KeyID: a.KeyID, SessionName: a.SessionName, Protocol: 2,
+		ProcessingMode: "driver", Generation: 1, Phase: "failed", FailureReason: "queue_full", OccurredAt: now}
+	if _, _, err := db.ApplySessionDeliveryACK(ctx, failure, now); err != nil {
+		t.Fatal(err)
+	}
+	id := model.FailureNoticeDeliveryID(a.DeliveryID)
+	var entity, content, status string
+	if err := db.db.QueryRowContext(ctx, `SELECT chat_entity_id,content_json,status FROM message WHERE id=?`, id).Scan(&entity, &content, &status); err != nil {
+		t.Fatalf("durable Feishu sender notice missing: %v", err)
+	}
+	if entity != "bot-id:personal:ou_sender" || status != "queued" || strings.Contains(content, "PRIVATE FEISHU BODY") || !strings.Contains(content, "本条未提交") {
+		t.Fatalf("unsafe or malformed Feishu notice: entity=%s status=%s content=%s", entity, status, content)
+	}
+	if _, _, err := db.ApplySessionDeliveryACK(ctx, failure, now); err != nil {
+		t.Fatal(err)
+	}
+	var count int
+	if err := db.db.QueryRowContext(ctx, `SELECT count(*) FROM message WHERE id=?`, id).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("duplicate Feishu notice count=%d err=%v", count, err)
 	}
 }
 

@@ -13,6 +13,7 @@ import shutil
 import sys
 import time
 import threading
+from datetime import datetime, timezone
 from collections import deque
 from dataclasses import dataclass
 from typing import Protocol
@@ -80,6 +81,7 @@ class _ForgetConnectionIdentity:
     async def __aexit__(self, *exc):
         self.owner._connection_agent_id = ""
         self.owner._connection_delivery_ack_source = ""
+        self.owner._connection_queue_full_ack = False
         runtime = getattr(self.owner, "sub_agents", None)
         if runtime is not None: runtime.disconnect()
         return False
@@ -234,6 +236,7 @@ class SessionHelper(SubAgentConnection):
         self.enroll_credential: "enroll.Credential | None" = None  # set by main() under SH_ENROLL=1
         self._connection_agent_id = ""  # authenticated WS response, connection-scoped
         self._connection_delivery_ack_source = ""
+        self._connection_queue_full_ack = False
         self.enroll_state_dir = ""
         self.book = AddressBook(cfg.session_name, cfg.key_id, cfg.bot_name)
         self.mirror = MirrorState(bool(cfg.mirror_to), cfg.mirror_to)
@@ -796,6 +799,7 @@ class SessionHelper(SubAgentConnection):
             session_addr("workpulse", self.book.key_id), "", self.book.self_addr,
             {"type": "session_capabilities", "delivery_ack_v1": True,
              "delivery_ack_v2": self.cfg.mode == "driver",
+             "delivery_ack_queue_full_v1": self.cfg.mode == "driver",
              "processing_mode": "driver" if self.cfg.mode == "driver" else "desktop" if self.cfg.mode == "desktop" else "legacy",
              "pilot_template_v1": bool(getattr(self,"enroll_credential",None) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False)),
              "spec_clarification_v1": bool(getattr(self,"enroll_credential",None) and not getattr(self.cfg,"ipc_upload_only",False) and not getattr(self.cfg,"ipc_send_body_only",False)),
@@ -818,6 +822,7 @@ class SessionHelper(SubAgentConnection):
 
         self._connection_agent_id = ""
         self._connection_delivery_ack_source = ""
+        self._connection_queue_full_ack = False
         ws_url, headers = self._connection()
         print(f"[sessionHelper] connect {ws_url} mode={self.cfg.mode}", flush=True)
         # 代理(SH_PROXY):off/none/direct=强制直连(另清掉HTTPS_PROXY等环境变量);URL=用该代理;空=也直连——以 proxy=None 传给 websockets.connect,15.0 起 None 即不用代理、不读 HTTPS_PROXY(proxy 参数 15.0 才有,故依赖须 websockets>=15)
@@ -853,6 +858,10 @@ class SessionHelper(SubAgentConnection):
             # Dedicated Agent clients use a placeholder key locally; pin the actual
             # server system address from authenticated WS response, never offer text.
             response_headers = getattr(getattr(ws, "response", None), "headers", {})
+            self._connection_queue_full_ack = (
+                self.cfg.mode == "driver" and
+                response_headers.get("X-DW-Queue-Full-ACK") == "queue-full/v1"
+            )
             self._bind_connection_agent_identity(response_headers)
             if getattr(self, "enroll_credential", None) is None:
                 self._connection_delivery_ack_source = session_addr('workpulse', self.book.key_id)
@@ -1423,7 +1432,14 @@ class SessionHelper(SubAgentConnection):
         except OverflowError:
             wire = env.get('meta') or {}
             extra = {k: wire[v] for k, v in (('ack_protocol','delivery_ack_protocol'),('processing_mode','processing_mode'),('ack_generation','ack_generation')) if v in wire}
-            ack = self.delivery_ack(delivery_id, "busy", reason="queue_full", retryable=True, **extra)
+            if (self.cfg.mode == 'driver' and self._connection_queue_full_ack and
+                    extra.get('ack_protocol') == 2 and extra.get('processing_mode') == 'driver' and
+                    isinstance(extra.get('ack_generation'), int) and extra['ack_generation'] > 0):
+                occurred_at = datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+                ack = self.delivery_ack(delivery_id, "failed", reason="queue_full", retryable=False,
+                                        occurred_at=occurred_at, **extra)
+            else:
+                ack = self.delivery_ack(delivery_id, "busy", reason="queue_full", retryable=True, **extra)
         except Exception as exc:
             print(f"[delivery] inbox unavailable: {exc}", flush=True)
             ack = self.delivery_ack(delivery_id, "failed", reason="inbox_unavailable", retryable=True)

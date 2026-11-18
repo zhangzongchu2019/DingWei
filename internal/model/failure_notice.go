@@ -15,7 +15,7 @@ func FailureNoticeDeliveryID(deliveryID string) string {
 
 func DeliveryFailureReasonAllowed(reason string) bool {
 	switch reason {
-	case "outbound_permission_denied", "sub_agent_not_found", "sub_agent_ended", "sub_agent_generation_mismatch", "retry_exhausted", "delivery_ack_unsupported", "delivery_capability_unconfirmed_expired", "delivery_expired":
+	case "outbound_permission_denied", "sub_agent_not_found", "sub_agent_ended", "sub_agent_generation_mismatch", "retry_exhausted", "delivery_ack_unsupported", "delivery_capability_unconfirmed_expired", "delivery_expired", "queue_full":
 		return true
 	}
 	return false
