@@ -305,16 +305,15 @@ class HubDeliveryPathTest(unittest.TestCase):
         # R61 N1c 把先入 FIFO 后 initialize 的顺序限于 Codex。
         # 此格保留其他 driver 的同步 start 错误合同，app 仍可据此拒绝未启动的投递。
         with tempfile.TemporaryDirectory() as td:
-            adapter = self._mk(td, "crash")
+            class StartingFailure:
+                def start(self):
+                    raise RuntimeError("synthetic non-Codex startup failure")
+
+            cfg = load_config(dict(BASE_ENV, SH_DRIVER="claude", SH_MODE="driver", SH_CLI_CWD=td))
+            adapter = DriverAdapter(cfg, driver=StartingFailure())
             adapter._which = "claude"
-            with self.assertRaises(Exception) as cm:
+            with self.assertRaisesRegex(RuntimeError, "synthetic non-Codex startup failure"):
                 adapter.handle_delivery({"body": "ping", "meta": {"source_kind": "user"}})
-            from sessionhelper.codexDriver import JsonRpcError
-            self.assertIsInstance(cm.exception, JsonRpcError)
-            self.assertEqual(cm.exception.code, -32001)
-            self.assertEqual(cm.exception.method, "initialize")
-            self.assertIn("FAKE_START_BAD", cm.exception.message)
-            self.assertNotIn("FAKE_START_BAD", str(cm.exception))
 
     def test_enqueue_human_start_failure_fails_with_reason(self):
         # 小提示①：enqueue_human 的 catch 也要有格——crash 时投递以带原因 failed 结束
