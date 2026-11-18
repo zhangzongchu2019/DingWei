@@ -49,5 +49,12 @@ def main():
   assert digest((DOC/'evidence/mutations'/(r['name']+'.log')).read_bytes())==r['raw_sha256']
   if 'killed' in r:assert r['killed'] and r['business_failure'] and not r['compile_error'] and not r['panic']
   else:assert r['rc']==0
- print('VERIFY_OK source='+SOURCE+' evidence_files='+str(len(m['files']))+' mutations40 product_unchanged first_design_exact')
+ q=json.loads((DOC/'evidence/ruling-dee06b54/qualification.json').read_text())
+ assert q['source_commit']==SOURCE and q['planned_candidate_rounds']==5
+ if q['status']=='PASS':
+  candidates=[r for r in q['results'] if r['name'].startswith('candidate-')]
+  assert len(candidates)==5 and sum(r['disposition']=='GREEN' for r in candidates)>=3
+  assert all(r['disposition'] in ('GREEN','KNOWN_N4_ONLY') for r in q['results'])
+  assert any(r['name']=='main-comparison' for r in q['results'])
+ print('VERIFY_EVIDENCE_OK qualification='+q['status']+' source='+SOURCE+' evidence_files='+str(len(m['files']))+' mutations40 product_unchanged first_design_exact')
 if __name__=='__main__':main()
