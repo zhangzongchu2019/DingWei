@@ -1,0 +1,4 @@
+read_loadavg = 4.36 4.34 4.32
+suite.renderer_flood_stress.loadavg_start=1.00 2.00 3.00
+suite.renderer_flood_stress.loadavg_end=4.00 5.00 6.00
+RECEIPT-UNIT OK
