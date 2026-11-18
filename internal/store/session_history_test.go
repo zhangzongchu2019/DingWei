@@ -167,7 +167,7 @@ func TestSessionHistoryMigrationLedgerIsSeparateFromPrimaryStore(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer history.Close()
-	if err := history.db.QueryRowContext(ctx, `SELECT count(*) FROM session_history_migrations`).Scan(&count); err != nil || count != 1 {
+	if err := history.db.QueryRowContext(ctx, `SELECT count(*) FROM session_history_migrations`).Scan(&count); err != nil || count != 2 {
 		t.Fatalf("history migrations=%d err=%v", count, err)
 	}
 }

@@ -1,0 +1,12 @@
+{
+  "source_commit": "a32c877cf6ef21a909d2806f4b08e3e925d05d98",
+  "uid": 1001,
+  "isolation": "env-i explicit dictionary; private HOME/TMPDIR; GOPROXY=off; local pgtest strict; no inherited SH/DINGWEI/DW/DATAD variables; only expressly required DW_DESKTOP_INTEGRATION_PYTHON supplied",
+  "go": "go1.22.2",
+  "node": "v22.23.1",
+  "openspec": "1.16.0",
+  "artifact_policy": "build.sh --test-only; no release artifact, no upload, no production or staging connection",
+  "raw_logs_local_directory": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n3",
+  "replay": "Full commands with source and UTC recorded in gates.json; reproduce in clean detached worktree with locally installed locked helper Python and Playwright, PostgreSQL test archives available offline. No seat credentials are needed.",
+  "python": "3.12.3"
+}

@@ -1,0 +1,93 @@
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/match
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/owner
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/agent
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/session
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/generation
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/delivery
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/origin
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/queued
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/turn
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/conflict
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/expired
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/missing
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/client_claim
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/kind
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/stored_trust
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/stored_attestation
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/other_delivery
+--- PASS: TestHistoryProvenanceExactAssociationAndFailClosed (0.32s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/match (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/owner (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/agent (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/session (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/generation (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/delivery (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/origin (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/queued (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/turn (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/conflict (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/expired (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/missing (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/client_claim (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/kind (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/stored_trust (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/stored_attestation (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/other_delivery (0.02s)
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/trust
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/attested
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/kind
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/display
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/source
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/size
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/quota-false
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/quota-true
+--- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds (0.05s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/trust (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/attested (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/kind (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/display (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/source (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/size (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/quota-false (0.01s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/quota-true (0.02s)
+=== RUN   TestHistoryProvenanceAppendRollbackAndOversize
+=== RUN   TestHistoryProvenanceAppendRollbackAndOversize/insert_failure
+=== RUN   TestHistoryProvenanceAppendRollbackAndOversize/oversize
+--- PASS: TestHistoryProvenanceAppendRollbackAndOversize (0.08s)
+    --- PASS: TestHistoryProvenanceAppendRollbackAndOversize/insert_failure (0.02s)
+    --- PASS: TestHistoryProvenanceAppendRollbackAndOversize/oversize (0.05s)
+=== RUN   TestHistoryProvenanceLifecycleAndEviction
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/ttl
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/disable
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/delete
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/generation
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/agent_capacity
+    session_history_provenance_test.go:320: history agent quota counter inconsistent
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/global_capacity
+    session_history_provenance_test.go:320: history global quota counter inconsistent
+--- FAIL: TestHistoryProvenanceLifecycleAndEviction (0.09s)
+    --- PASS: TestHistoryProvenanceLifecycleAndEviction/ttl (0.01s)
+    --- PASS: TestHistoryProvenanceLifecycleAndEviction/disable (0.02s)
+    --- PASS: TestHistoryProvenanceLifecycleAndEviction/delete (0.02s)
+    --- PASS: TestHistoryProvenanceLifecycleAndEviction/generation (0.02s)
+    --- FAIL: TestHistoryProvenanceLifecycleAndEviction/agent_capacity (0.01s)
+    --- FAIL: TestHistoryProvenanceLifecycleAndEviction/global_capacity (0.01s)
+=== RUN   TestHistoryProvenanceMigrationDigestAndNonconsecutiveNumber
+--- PASS: TestHistoryProvenanceMigrationDigestAndNonconsecutiveNumber (0.02s)
+=== RUN   TestHistoryProvenanceLegacyUpgradeAndUnmatchedBytes
+--- PASS: TestHistoryProvenanceLegacyUpgradeAndUnmatchedBytes (0.03s)
+=== RUN   TestHistoryProvenanceEventEvictionAlsoCleansQueuedEvidence
+--- PASS: TestHistoryProvenanceEventEvictionAlsoCleansQueuedEvidence (0.02s)
+=== RUN   TestHistoryProvenanceCleanupAndEvictionWorkIsBounded
+=== RUN   TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/ttl
+    session_history_provenance_test.go:465: eviction materialized 0 rows; budget 500
+=== RUN   TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/identity
+    session_history_provenance_test.go:465: eviction materialized 0 rows; budget 500
+--- FAIL: TestHistoryProvenanceCleanupAndEvictionWorkIsBounded (0.36s)
+    --- FAIL: TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/ttl (0.18s)
+    --- FAIL: TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/identity (0.18s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.969s
+FAIL

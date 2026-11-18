@@ -4516,7 +4516,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		if wantReceipt {
 			h.writeQueuedReceiptToSource(ctx, env, receiptNonce, deliveryID)
 		}
-		h.publishInputObservation(keyID, sessionName, env, deliveryID, "hub_received", "primary", true)
+		h.publishInputObservation(keyID, sessionName, env, deliveryID, "hub_received", "primary", true, c)
 		h.publishSourceCopyObservation(env, deliveryID, "hub_received")
 		connSeq := 0
 		if c != nil {
@@ -4565,7 +4565,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		directID := "direct_" + env.ID
 		// Legacy helpers provide no injection ACK. A successful WebSocket write only
 		// proves handoff, so use the weaker pty_write/injection-unconfirmed stage.
-		h.publishInputObservation(keyID, sessionName, env, directID, "pty_write", "primary", false)
+		h.publishInputObservation(keyID, sessionName, env, directID, "pty_write", "primary", false, c)
 		h.publishSourceCopyObservation(env, directID, "pty_write")
 	}
 	if ackInbound && h.Repo != nil && env.ID != "" {
@@ -4871,9 +4871,12 @@ func (h *Hub) publishDeliveryUpdateForDelivery(d model.SessionDelivery, delivery
 		// An old native CLI can reset its View stream after the original input
 		// observation. Re-anchor this receipt to its persisted original input;
 		// no model admission/terminal is inferred or sent to the driver.
+		// This late receipt has no immutable enqueue-time target identity.
+		// An explicit nil keeps the realtime event but cannot mint a sidecar
+		// against whichever Agent now occupies the same session name.
 		var original model.Envelope
 		if json.Unmarshal([]byte(d.Envelope), &original) == nil {
-			h.publishInputObservation(d.KeyID, d.SessionName, original, d.ID, "helper_received", "primary", false)
+			h.publishInputObservation(d.KeyID, d.SessionName, original, d.ID, "helper_received", "primary", false, nil)
 		}
 	}
 	metadata := map[string]any{"ack_protocol": d.AckProtocol, "processing_mode": d.ProcessingMode, "ack_generation": d.AckGeneration}

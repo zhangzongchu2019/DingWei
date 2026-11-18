@@ -1,0 +1,101 @@
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/match
+    session_history_provenance_test.go:143: history budget drift actual=363 global=585 generations=363
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/owner
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/agent
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/session
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/generation
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/delivery
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/origin
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/queued
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/turn
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/conflict
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/expired
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/missing
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/client_claim
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/kind
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/stored_trust
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/stored_attestation
+=== RUN   TestHistoryProvenanceExactAssociationAndFailClosed/other_delivery
+--- FAIL: TestHistoryProvenanceExactAssociationAndFailClosed (0.29s)
+    --- FAIL: TestHistoryProvenanceExactAssociationAndFailClosed/match (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/owner (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/agent (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/session (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/generation (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/delivery (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/origin (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/queued (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/turn (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/conflict (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/expired (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/missing (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/client_claim (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/kind (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/stored_trust (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/stored_attestation (0.02s)
+    --- PASS: TestHistoryProvenanceExactAssociationAndFailClosed/other_delivery (0.02s)
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/trust
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/attested
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/kind
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/display
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/source
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/size
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/quota-false
+=== RUN   TestHistoryProvenanceIdempotencyTrustAndBounds/quota-true
+--- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds (0.04s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/trust (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/attested (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/kind (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/display (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/source (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/size (0.00s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/quota-false (0.01s)
+    --- PASS: TestHistoryProvenanceIdempotencyTrustAndBounds/quota-true (0.01s)
+=== RUN   TestHistoryProvenanceAppendRollbackAndOversize
+=== RUN   TestHistoryProvenanceAppendRollbackAndOversize/insert_failure
+    session_history_provenance_test.go:260: history budget drift actual=363 global=585 generations=363
+=== RUN   TestHistoryProvenanceAppendRollbackAndOversize/oversize
+    session_history_provenance_test.go:260: history budget drift actual=363 global=585 generations=363
+--- FAIL: TestHistoryProvenanceAppendRollbackAndOversize (0.07s)
+    --- FAIL: TestHistoryProvenanceAppendRollbackAndOversize/insert_failure (0.02s)
+    --- FAIL: TestHistoryProvenanceAppendRollbackAndOversize/oversize (0.05s)
+=== RUN   TestHistoryProvenanceLifecycleAndEviction
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/ttl
+    session_history_provenance_test.go:337: history budget drift actual=0 global=222 generations=0
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/disable
+    session_history_provenance_test.go:337: history budget drift actual=0 global=222 generations=0
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/delete
+    session_history_provenance_test.go:337: history budget drift actual=0 global=222 generations=0
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/generation
+    session_history_provenance_test.go:337: history budget drift actual=0 global=222 generations=0
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/agent_capacity
+    session_history_provenance_test.go:337: history budget drift actual=0 global=64000001 generations=0
+=== RUN   TestHistoryProvenanceLifecycleAndEviction/global_capacity
+    session_history_provenance_test.go:320: history global quota counter inconsistent
+--- FAIL: TestHistoryProvenanceLifecycleAndEviction (0.09s)
+    --- FAIL: TestHistoryProvenanceLifecycleAndEviction/ttl (0.01s)
+    --- FAIL: TestHistoryProvenanceLifecycleAndEviction/disable (0.01s)
+    --- FAIL: TestHistoryProvenanceLifecycleAndEviction/delete (0.01s)
+    --- FAIL: TestHistoryProvenanceLifecycleAndEviction/generation (0.01s)
+    --- FAIL: TestHistoryProvenanceLifecycleAndEviction/agent_capacity (0.02s)
+    --- FAIL: TestHistoryProvenanceLifecycleAndEviction/global_capacity (0.01s)
+=== RUN   TestHistoryProvenanceMigrationDigestAndNonconsecutiveNumber
+--- PASS: TestHistoryProvenanceMigrationDigestAndNonconsecutiveNumber (0.02s)
+=== RUN   TestHistoryProvenanceLegacyUpgradeAndUnmatchedBytes
+--- PASS: TestHistoryProvenanceLegacyUpgradeAndUnmatchedBytes (0.03s)
+=== RUN   TestHistoryProvenanceEventEvictionAlsoCleansQueuedEvidence
+    session_history_provenance_test.go:443: history budget drift actual=0 global=222 generations=0
+--- FAIL: TestHistoryProvenanceEventEvictionAlsoCleansQueuedEvidence (0.02s)
+=== RUN   TestHistoryProvenanceCleanupAndEvictionWorkIsBounded
+=== RUN   TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/ttl
+    session_history_provenance_test.go:489: history budget drift actual=227 global=113727 generations=227
+=== RUN   TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/identity
+    session_history_provenance_test.go:489: history budget drift actual=227 global=113727 generations=227
+--- FAIL: TestHistoryProvenanceCleanupAndEvictionWorkIsBounded (0.41s)
+    --- FAIL: TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/ttl (0.20s)
+    --- FAIL: TestHistoryProvenanceCleanupAndEvictionWorkIsBounded/identity (0.21s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/store	0.958s
+FAIL

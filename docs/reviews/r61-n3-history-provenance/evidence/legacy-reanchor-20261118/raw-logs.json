@@ -1,0 +1,157 @@
+[
+  {
+    "name": "all40-mutations.log",
+    "bytes": 1094,
+    "sha256": "2f7e2262c15aaabd7eeda23c9e89bb1fc5b71a62df5e2ae2545742d1f0e220b0",
+    "published_bytes": 1094,
+    "published_sha256": "2f7e2262c15aaabd7eeda23c9e89bb1fc5b71a62df5e2ae2545742d1f0e220b0",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/all40-mutations.log"
+  },
+  {
+    "name": "browser-full.log",
+    "bytes": 100902,
+    "sha256": "b819cee141fe4b0185c1e3de60e91d698e3367ecd483cf5bff1f5d0a14145a2e",
+    "published_bytes": 100902,
+    "published_sha256": "b819cee141fe4b0185c1e3de60e91d698e3367ecd483cf5bff1f5d0a14145a2e",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/browser-full.log"
+  },
+  {
+    "name": "build-canonical.log",
+    "bytes": 1151376,
+    "sha256": "a22d13eaf06952c17add9b2e67dca432cbabfa21329c0d0240ce49cd21bfc157",
+    "published_bytes": 1151376,
+    "published_sha256": "a22d13eaf06952c17add9b2e67dca432cbabfa21329c0d0240ce49cd21bfc157",
+    "redactions": 0,
+    "archive_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/raw/build-canonical.log.gz",
+    "archive_sha256": "e5e128af6c703dfa32775e5b9207c0ca27b7d35a358a37f8b8e128c96831a3a0"
+  },
+  {
+    "name": "fixture-export.log",
+    "bytes": 4916,
+    "sha256": "3a127335db6a8566d8a82668133907ea6fdc791e236739830d22575937c854df",
+    "published_bytes": 4916,
+    "published_sha256": "3a127335db6a8566d8a82668133907ea6fdc791e236739830d22575937c854df",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/fixture-export.log"
+  },
+  {
+    "name": "focused-race.log",
+    "bytes": 25146,
+    "sha256": "6e8ac02653faeff7b5d24e170834accee4a317a936436c019acc3cc26d2bab9a",
+    "published_bytes": 25146,
+    "published_sha256": "6e8ac02653faeff7b5d24e170834accee4a317a936436c019acc3cc26d2bab9a",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/focused-race.log"
+  },
+  {
+    "name": "legacy_history_target-build.log",
+    "bytes": 78,
+    "sha256": "9513c2ffb0ae294bdb07b069ce1a5ec66a7650256d2518926614b4cfb1f36ad2",
+    "published_bytes": 78,
+    "published_sha256": "9513c2ffb0ae294bdb07b069ce1a5ec66a7650256d2518926614b4cfb1f36ad2",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/legacy_history_target-build.log"
+  },
+  {
+    "name": "legacy_history_target-test.log",
+    "bytes": 2552,
+    "sha256": "54ac44c4cf081d771b991c61afbbadeab7481dcda6bf0c52011015543a6db489",
+    "published_bytes": 2552,
+    "published_sha256": "54ac44c4cf081d771b991c61afbbadeab7481dcda6bf0c52011015543a6db489",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/legacy_history_target-test.log"
+  },
+  {
+    "name": "legacy_realtime_preserved-build.log",
+    "bytes": 78,
+    "sha256": "e1f64fac69c09b10d0608735b5911fc7ad00d2cb8c1819d9049f0c3b22e6fef9",
+    "published_bytes": 78,
+    "published_sha256": "e1f64fac69c09b10d0608735b5911fc7ad00d2cb8c1819d9049f0c3b22e6fef9",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/legacy_realtime_preserved-build.log"
+  },
+  {
+    "name": "legacy_realtime_preserved-test.log",
+    "bytes": 2292,
+    "sha256": "335c8c30b40a78df55b9489db70af4805c768274e7882bb89d3fcc3f9146b921",
+    "published_bytes": 2292,
+    "published_sha256": "335c8c30b40a78df55b9489db70af4805c768274e7882bb89d3fcc3f9146b921",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/legacy_realtime_preserved-test.log"
+  },
+  {
+    "name": "m8-full3.log",
+    "bytes": 3910312,
+    "sha256": "236bcd9149807d2f2eb0d1b1cf586389ccf0a50c1941189fa0612b9b76de21a0",
+    "published_bytes": 3910264,
+    "published_sha256": "72c8696d2325efbe480bdaea145ee5decb4562da6ff9ea5e18e6f8bae6a8ead2",
+    "redactions": 6,
+    "archive_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/raw/m8-full3.log.gz",
+    "archive_sha256": "c20dc501f904134113bab2612eb4d43b30bd96678912834987933d59ee2c4c16"
+  },
+  {
+    "name": "new-mutations.log",
+    "bytes": 66,
+    "sha256": "e8c00710304831c54be4e8b156678e8d5fc730b704580db581d5709966670abe",
+    "published_bytes": 66,
+    "published_sha256": "e8c00710304831c54be4e8b156678e8d5fc730b704580db581d5709966670abe",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/new-mutations.log"
+  },
+  {
+    "name": "new-product-focused.log",
+    "bytes": 12408,
+    "sha256": "a063e3353716d9e76d2c886f38db887bfa2a18804a84b3303b6f4ce6e8d5b0e9",
+    "published_bytes": 12408,
+    "published_sha256": "a063e3353716d9e76d2c886f38db887bfa2a18804a84b3303b6f4ce6e8d5b0e9",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/new-product-focused.log"
+  },
+  {
+    "name": "old-product-red.log",
+    "bytes": 2552,
+    "sha256": "b197544fbc2d66e802ce0449b83fed71dbe48dbb466deca674226e70a1593828",
+    "published_bytes": 2552,
+    "published_sha256": "b197544fbc2d66e802ce0449b83fed71dbe48dbb466deca674226e70a1593828",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/old-product-red.log"
+  },
+  {
+    "name": "route-control-fixed-931.log",
+    "bytes": 1806,
+    "sha256": "083972837f360071c747ab1969e82143120e5c59afd124adf78f7fa5f436b23c",
+    "published_bytes": 1806,
+    "published_sha256": "083972837f360071c747ab1969e82143120e5c59afd124adf78f7fa5f436b23c",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/route-control-fixed-931.log"
+  },
+  {
+    "name": "route-control-original-a32.log",
+    "bytes": 1805,
+    "sha256": "e4b337d7436272a3ac66c1b96562fdf5c879984caa237f95c9c73af6e3906924",
+    "published_bytes": 1805,
+    "published_sha256": "e4b337d7436272a3ac66c1b96562fdf5c879984caa237f95c9c73af6e3906924",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/route-control-original-a32.log"
+  },
+  {
+    "name": "store-full3.log",
+    "bytes": 323753,
+    "sha256": "37516b37765e8799700c995a905be6b35dd831017ac75b5b1d25fbc79334c994",
+    "published_bytes": 323753,
+    "published_sha256": "37516b37765e8799700c995a905be6b35dd831017ac75b5b1d25fbc79334c994",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/store-full3.log"
+  },
+  {
+    "name": "strict.log",
+    "bytes": 1398,
+    "sha256": "8c1ae110739ef564384ea606a94157d7ed4a577b9c7d5aa44be55b1598f38169",
+    "published_bytes": 1398,
+    "published_sha256": "8c1ae110739ef564384ea606a94157d7ed4a577b9c7d5aa44be55b1598f38169",
+    "redactions": 0,
+    "published_path": "docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/strict.log"
+  }
+]

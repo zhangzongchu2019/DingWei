@@ -1,0 +1,36 @@
+[
+  {
+    "source_commit": "a32c877cf6ef21a909d2806f4b08e3e925d05d98",
+    "test_overlay": "current real route + private-marker assertion + late legacy ACK",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestHistoryProvenanceCurrentRouteLegacyReanchorControl$",
+      "-count=1",
+      "-v"
+    ],
+    "started_utc": "2026-11-18T10:12:32.036665+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T10:12:44.208415+00:00",
+    "raw_sha256": "e4b337d7436272a3ac66c1b96562fdf5c879984caa237f95c9c73af6e3906924"
+  },
+  {
+    "source_commit": "9313197f8ac3e2a585cd399935d5b313084b3b1e",
+    "test_overlay": "current real route + private-marker assertion + late legacy ACK",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestHistoryProvenanceCurrentRouteLegacyReanchorControl$",
+      "-count=1",
+      "-v"
+    ],
+    "started_utc": "2026-11-18T10:12:44.339830+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T10:12:56.747416+00:00",
+    "raw_sha256": "083972837f360071c747ab1969e82143120e5c59afd124adf78f7fa5f436b23c"
+  }
+]

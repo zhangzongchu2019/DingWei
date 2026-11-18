@@ -1,0 +1,11 @@
+{
+  "observed_utc": "2026-11-18T09:21:26.696583+00:00",
+  "uid": 1001,
+  "nproc": 16,
+  "loadavg": [
+    4.44921875,
+    3.5419921875,
+    3.2060546875
+  ],
+  "note": "observation during mutation stage, not backfilled start-of-stage load"
+}
