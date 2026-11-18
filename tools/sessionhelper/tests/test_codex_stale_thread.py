@@ -3,6 +3,8 @@
 All transports are local fakes; the separate real_protocol.py checks the exact
 0.159.2 server. No credentials, managed daemon, or external model are used here.
 """
+import asyncio
+import contextlib
 import json
 from contextlib import nullcontext
 import io
@@ -21,6 +23,8 @@ from sessionhelper.codexDriver import (CodexProtocolDriver, JsonRpcError, StdioJ
 from sessionhelper.driver_adapter import DriverAdapter
 from sessionhelper.inbox import DeliveryInbox
 from sessionhelper.daemon_identity import DaemonIdentityError
+from sessionhelper.app import SessionHelper
+from sessionhelper.config import load_config
 
 
 class RPC:
@@ -792,6 +796,128 @@ class RecoveryThreadInheritance(unittest.TestCase):
     def test_lane_identity_mismatch_is_rejected(self):
         old=self.driver(lane='child'); new=self.driver()
         with self.assertRaises(ValueError):new.inherit_recovery_thread(old)
+
+
+class FirstDeliveryInitializeWait(unittest.TestCase):
+    def test_real_delivery_worker_persists_initialize_wait_then_submits_once(self):
+        class RPC:
+            def __init__(self, workdir, error):
+                self.workdir = workdir
+                self.errors = [error]
+                self.calls = []
+
+            def healthy(self):
+                return True
+
+            def stop(self):
+                pass
+
+            def notify(self, *args):
+                pass
+
+            def request(self, method, params, timeout=0):
+                self.calls.append((method, params))
+                if method == 'initialize' and self.errors:
+                    raise self.errors.pop(0)
+                if method in ('thread/read', 'thread/resume'):
+                    return {'thread': {'id': 'bound-thread', 'cwd': self.workdir,
+                                       'status': {'type': 'idle'}, 'canAcceptDirectInput': True}}
+                if method == 'thread/turns/list':
+                    return {'data': []}
+                if method == 'turn/start':
+                    return {'turn': {'id': 'turn-' + params['clientUserMessageId'], 'status': 'inProgress'}}
+                if method == 'thread/start':
+                    return {'thread': {'id': 'bound-thread'}}
+                return {}
+
+        class WS:
+            def __init__(self):
+                self.sent = []
+
+            async def send(self, payload):
+                self.sent.append(json.loads(payload))
+
+        errors = (
+            TimeoutError('synthetic initialize timeout'),
+            JsonRpcError('initialize', {'code': -32603, 'message': 'synthetic temporary unavailable'}),
+        )
+        for index, error in enumerate(errors):
+            with self.subTest(error=type(error).__name__), tempfile.TemporaryDirectory() as tmp:
+                rpc = RPC(tmp, error)
+
+                def make_driver():
+                    driver = CodexProtocolDriver(
+                        workdir=tmp, store_path=str(Path(tmp) / 'driver.db'),
+                        bound_thread_id='bound-thread', require_bound_thread=True)
+
+                    def start_locked():
+                        driver._rpc = rpc
+                        driver._initialize()
+
+                    driver._start_locked = start_locked
+                    return driver
+
+                first = make_driver()
+                replacement = make_driver()
+                cfg = load_config({
+                    'SH_SESSION_NAME': 'seat', 'SH_OWNER': 'review', 'SH_KEY_ID': 'review-0001',
+                    'SH_SECRET': 'synthetic-local-only', 'SH_DRIVER': 'codex', 'SH_MODE': 'driver',
+                    'SH_INBOX_DB': str(Path(tmp) / 'inbox.db'), 'SH_STATE_DIR': str(Path(tmp) / 'state'),
+                    'SH_CLI_CWD': tmp, 'SH_CODEX_HOME': str(Path(tmp) / 'codex'),
+                    'SH_PROVISION_STATE_FILE': str(Path(tmp) / 'update.json'),
+                    'SH_PROVISION_VERSIONS_FILE': str(Path(tmp) / 'versions.json'),
+                    'SH_COLLECT': '0', 'SH_PROXY': 'off',
+                })
+                with mock.patch.object(DriverAdapter, '_build_driver', return_value=first):
+                    helper = SessionHelper(cfg)
+                helper.upload_addendum_due = lambda: ''
+                helper.adapter._build_driver = lambda _which: replacement
+                delivery_id = 'dw-dlv_' + str(index + 1) * 32
+                env = {'id': 'source', 'from': 'peer-review', 'to': 'seat-review', 'body': 'first',
+                       'meta': {'delivery_id': delivery_id, 'delivery_ack_protocol': 2,
+                                'processing_mode': 'driver', 'ack_generation': 1}}
+                helper.delivery_inbox.accept(delivery_id, env)
+                for ack in helper.delivery_inbox.pending_delivery_acks():
+                    helper.delivery_inbox.confirm_delivery_ack(ack['payload'] | {'type': 'delivery_ack_confirm'})
+
+                async def exercise():
+                    ws = WS()
+                    worker = asyncio.create_task(helper.delivery_worker_loop(ws))
+                    try:
+                        for _ in range(500):
+                            row = await asyncio.to_thread(helper.delivery_inbox.lifecycle, delivery_id)
+                            if row and row.get('admitted_at') is not None:
+                                break
+                            await asyncio.sleep(.02)
+                        self.assertIsNotNone(row.get('busy_wait_started_at'),
+                                             'N1C_STARTUP_TRANSIENT_MISSING_DURABLE_WAIT')
+                        self.assertIsNotNone(row.get('submission_may_have_started_at'),
+                                             'N1C_STARTUP_RECOVERY_NEVER_REACHED_SUBMISSION')
+                        self.assertIsNotNone(row.get('admitted_at'),
+                                             'N1C_STARTUP_RECOVERY_DROPPED_OR_STALLED_DELIVERY')
+                        self.assertEqual([method for method, _ in rpc.calls].count('turn/start'), 1,
+                                         'N1C_STARTUP_RECOVERY_SUBMITTED_MORE_THAN_ONCE')
+                        self.assertNotIn('thread/start', [method for method, _ in rpc.calls],
+                                         'N1C_STARTUP_RECOVERY_ROTATED_BOUND_THREAD')
+                        acks = [item['payload'] for item in helper.delivery_inbox.pending_delivery_acks()]
+                        self.assertFalse(any(ack.get('state') == 'failed' for ack in acks),
+                                         'N1C_STARTUP_TRANSIENT_EMITTED_TERMINAL_FAILED_ACK')
+                    finally:
+                        worker.cancel()
+                        with contextlib.suppress(asyncio.CancelledError):
+                            await worker
+                        helper.adapter._lane_stop.set()
+                        helper.adapter._lane_closing.set()
+                        helper.adapter._work_available.set()
+                        helper.adapter._bridge_wake.set()
+                        helper.adapter._worker_thread.join(2)
+                        helper.adapter._bridge_thread.join(2)
+                        current = helper.adapter.driver
+                        current.stop()
+                        if current is not first:
+                            first.stop()
+
+                asyncio.run(exercise())
 
 
 if __name__ == '__main__':

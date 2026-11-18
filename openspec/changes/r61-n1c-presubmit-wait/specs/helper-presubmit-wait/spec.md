@@ -44,11 +44,20 @@ The helper MUST keep later deliveries behind a persisted busy-wait head. On rest
 - **WHEN** the submission marker exists
 - **THEN** the delivery becomes unknown/manual and no second turn/start is sent
 
-### Requirement: Pre-submit busy state uses the existing Hub retry path
+### Requirement: Pre-submit busy state preserves the Hub receipt boundary
 
-After durable busy-wait persistence, the helper MUST send the existing retryable ACK v2 busy signal and MUST NOT relax terminal failed ACK validation. The Hub MUST return that delivery to its existing queued state for a later delivery attempt.
+After durable busy-wait persistence, the helper MUST send the existing retryable ACK v2 busy signal and MUST NOT relax terminal failed ACK validation. Hub behavior depends on whether it has persisted `DeliveredAt` for the delivery.
 
-#### Scenario: Old Hub receives a busy validation-wait ACK
+#### Scenario: Busy arrives before Hub records delivery
 
-- **WHEN** a compatible older Hub receives the helper's ACK v2 busy signal
-- **THEN** it returns the original delivery to queued without marking it terminal
+- **WHEN** the Hub receives the busy ACK before `DeliveredAt` is persisted
+- **THEN** the Hub uses its existing busy-to-queued retry path
+- **AND** it does not mark the delivery terminal
+
+#### Scenario: Busy arrives after helper has confirmed queue receipt
+
+- **WHEN** the Hub receives the busy ACK after `DeliveredAt` is non-null
+- **THEN** the Hub keeps the delivery in `delivered` and treats busy as informational
+- **AND** it does not reset the receipt boundary or schedule a second delivery
+- **AND** the helper's durable FIFO keeps the same delivery at its head until read-only validation recovers
+- **AND** after recovery the same delivery reaches exactly one `turn/start` with no loss

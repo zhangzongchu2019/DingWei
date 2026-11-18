@@ -909,7 +909,11 @@ class CodexProtocolDriver(Driver):
         # must validate/resume the exact bound thread under this same lock.
         lock = self.__dict__.get("_start_lock") or self.__dict__.setdefault("_start_lock", threading.Lock())
         with lock:
-            if self._rpc is not None and self._rpc.healthy():
+            # A transport can remain live after initialize returned a
+            # transient server error. Such a connection is not ready for
+            # thread/read or submission; retry initialization before treating
+            # start() as complete.
+            if self._rpc is not None and self._rpc.healthy() and self._initialized:
                 return
             if self._rpc is not None and hasattr(self._rpc, 'broker') and not self._rpc.closed:
                 # Reuse this seat's broker on reconnect. A lane never creates

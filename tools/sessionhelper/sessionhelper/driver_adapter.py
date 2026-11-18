@@ -200,11 +200,12 @@ class DriverAdapter:
 
     # ------------------------------------------------------------ 生命周期
 
-    def start(self) -> None:
+    def start(self, *, defer_driver_start: bool = False) -> None:
         with self._start_lock:
             if self._started:
                 return
-            self.driver.start()
+            if not defer_driver_start:
+                self.driver.start()
             self._bridge_thread = threading.Thread(target=self._event_bridge, daemon=True)
             self._worker_thread = threading.Thread(target=self._command_worker, daemon=True)
             self._bridge_thread.start()
@@ -246,8 +247,13 @@ class DriverAdapter:
         if not body:
             observe(getattr(self, "delivery_progress", None), str((env.get("meta") or {}).get("delivery_id") or env.get("id") or ""), "unknown")
             return ""
-        if not self._started:
-            self.start()
+        # First durable Codex deliveries must reach the adapter FIFO before
+        # initialize can fail. The command worker persists dispatch intent,
+        # then CodexProtocolDriver handles transient initialize errors through
+        # the same durable pre-submit wait as thread/read and thread/resume.
+        # Starting the CLI inline here lets app.py reject_unstarted before the
+        # delivery has entered that lifecycle.
+        defer_codex_start = not self._started and self._which == 'codex'
         if (env.get("meta") or {}).get("kind")=="task_blocker_ready":
             staged=self._blocker_journal().stage(env)
             env=json.loads(staged['envelope_json'])
@@ -265,6 +271,8 @@ class DriverAdapter:
                 on_admission_failed()
             raise OverflowError(result.reason or "queue_full")
         if result.state == "duplicate":
+            if defer_codex_start:
+                self.start(defer_driver_start=True)
             # Existing durable lifecycle/outbox owns replay. A duplicate is
             # never evidence of a new admission.
             if on_admission_failed is not None:
@@ -275,6 +283,8 @@ class DriverAdapter:
         if result.state == "queued":
             if on_injected is not None:
                 self._injected_callbacks[result.command.delivery_id] = on_injected
+            if defer_codex_start:
+                self.start(defer_driver_start=True)
             self._work_available.set()
         return ""
 
