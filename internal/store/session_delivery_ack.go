@@ -163,6 +163,13 @@ func (s *SQLite) ApplySessionDeliveryACK(ctx context.Context, a model.SessionDel
 		if reason == "queue_full" && d.State != "dead" && d.State != "sent" && d.State != "delivered" {
 			return nil, false, ErrDeliveryACKTransition
 		}
+		// queue_full is a claim that the helper rejected this delivery before
+		// persisting it. Once the Hub has a durable delivery receipt, that claim
+		// cannot terminate the delivery. A replay of the already committed
+		// queue_full terminal remains idempotent below.
+		if reason == "queue_full" && d.State != "dead" && (d.State == "delivered" || d.DeliveredAt != nil || d.InjectedAt != nil) {
+			return nil, false, ErrDeliveryACKTransition
+		}
 		if d.State == "sent" || d.State == "delivered" {
 			if _, err := tx.ExecContext(ctx, `UPDATE session_delivery SET state='dead',last_error=?,lease_until=NULL,updated_at=? WHERE id=?`, reason, stamp, d.ID); err != nil {
 				return nil, false, err

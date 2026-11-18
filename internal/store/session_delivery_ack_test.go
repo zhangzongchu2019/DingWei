@@ -68,11 +68,6 @@ func TestDeliveryACKV2QueueFullAtomicallyDeadLettersAndCreatesFixedNotice(t *tes
 	if _, err := db.db.ExecContext(ctx, `UPDATE session_delivery SET envelope_json=?,source_type='session_inbound' WHERE id=?`, string(raw), a.DeliveryID); err != nil {
 		t.Fatal(err)
 	}
-	mustApplyACK(t, db, ctx, a, now)
-	queued, _ := db.GetSessionDelivery(ctx, "ack-test")
-	if queued.State != "delivered" {
-		t.Fatalf("fixture did not reach delivered: %+v", queued)
-	}
 	failure := model.SessionDeliveryACK{DeliveryID: "ack-test", KeyID: "owner", SessionName: "seat", Protocol: 2,
 		ProcessingMode: "driver", Generation: 1, Phase: "failed", FailureReason: "queue_full", Retryable: false, OccurredAt: now}
 	dead, changed, err := db.ApplySessionDeliveryACK(ctx, failure, now)
@@ -99,17 +94,67 @@ func TestDeliveryACKV2QueueFullAtomicallyDeadLettersAndCreatesFixedNotice(t *tes
 	}
 }
 
-func TestDeliveryACKV2QueueFullNoticeInsertFailureRollsBackTerminal(t *testing.T) {
+func TestDeliveryACKV2QueueFullCannotOverrideDurableQueuedReceipt(t *testing.T) {
 	db, ctx, a, now := v2DeliveryFixture(t)
-	original := model.Envelope{ID: "queue-full-message", From: "sender#sender-key", To: "seat#owner", Body: "private"}
-	raw, _ := json.Marshal(original)
 	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "sender-key", SessionName: "sender", Active: true}); err != nil {
 		t.Fatal(err)
 	}
+	original := model.Envelope{ID: "queue-full-message", From: "sender#sender-key", To: "seat#owner", Body: "private"}
+	raw, _ := json.Marshal(original)
 	if _, err := db.db.ExecContext(ctx, `UPDATE session_delivery SET envelope_json=?,source_type='session_inbound' WHERE id=?`, string(raw), a.DeliveryID); err != nil {
 		t.Fatal(err)
 	}
 	mustApplyACK(t, db, ctx, a, now)
+	queued, _ := db.GetSessionDelivery(ctx, "ack-test")
+	if queued.State != "delivered" || queued.DeliveredAt == nil {
+		t.Fatalf("fixture did not persist queued receipt: %+v", queued)
+	}
+	failure := model.SessionDeliveryACK{DeliveryID: "ack-test", KeyID: "owner", SessionName: "seat", Protocol: 2,
+		ProcessingMode: "driver", Generation: 1, Phase: "failed", FailureReason: "queue_full", Retryable: false, OccurredAt: now}
+	if _, _, err := db.ApplySessionDeliveryACK(ctx, failure, now); !errors.Is(err, ErrDeliveryACKTransition) {
+		t.Fatalf("queue_full overrode durable queued receipt: %v", err)
+	}
+	got, _ := db.GetSessionDelivery(ctx, "ack-test")
+	if got.State != "delivered" || got.DeliveredAt == nil || got.LastError != "" {
+		t.Fatalf("durable queued receipt changed: %+v", got)
+	}
+	if notice, err := db.GetSessionDelivery(ctx, model.FailureNoticeDeliveryID("ack-test")); err != nil || notice != nil {
+		t.Fatalf("persisted delivery got a not-submitted notice: %+v err=%v", notice, err)
+	}
+}
+
+func TestLegacyQueueFullTerminalDoesNotCreateNegotiatedNotice(t *testing.T) {
+	db, ctx := newTestSQLite(t)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "sender-key", SessionName: "sender", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	original := model.Envelope{ID: "legacy-source", From: "sender#sender-key", To: "seat#owner", Body: "private"}
+	raw, _ := json.Marshal(original)
+	if err := db.EnqueueSessionDelivery(ctx, model.SessionDelivery{ID: "legacy-queue-full", KeyID: "owner", SessionName: "seat", Envelope: string(raw), SourceType: "session_inbound", State: "sent", Attempts: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpdateSessionDelivery(ctx, "legacy-queue-full", "dead", "queue_full", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.GetSessionDelivery(ctx, "legacy-queue-full")
+	if err != nil || got.State != "dead" || got.LastError != "queue_full" {
+		t.Fatalf("legacy terminal behavior changed: %+v err=%v", got, err)
+	}
+	if notice, err := db.GetSessionDelivery(ctx, model.FailureNoticeDeliveryID("legacy-queue-full")); err != nil || notice != nil {
+		t.Fatalf("legacy queue_full created ACKv2 notice: %+v err=%v", notice, err)
+	}
+}
+
+func TestDeliveryACKV2QueueFullNoticeInsertFailureRollsBackTerminal(t *testing.T) {
+	db, ctx, a, now := v2DeliveryFixture(t)
+	if err := db.UpsertSessionEndpoint(ctx, model.SessionEndpoint{KeyID: "sender-key", SessionName: "sender", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	original := model.Envelope{ID: "queue-full-message", From: "sender#sender-key", To: "seat#owner", Body: "private"}
+	raw, _ := json.Marshal(original)
+	if _, err := db.db.ExecContext(ctx, `UPDATE session_delivery SET envelope_json=?,source_type='session_inbound' WHERE id=?`, string(raw), a.DeliveryID); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := db.db.ExecContext(ctx, `CREATE TRIGGER fail_queue_full_notice BEFORE INSERT ON session_delivery WHEN NEW.source_type='failure_notice' BEGIN SELECT RAISE(ABORT,'synthetic notice insert fault'); END`); err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +164,7 @@ func TestDeliveryACKV2QueueFullNoticeInsertFailureRollsBackTerminal(t *testing.T
 		t.Fatal("notice insert fault must fail the terminal transaction")
 	}
 	got, _ := db.GetSessionDelivery(ctx, "ack-test")
-	if got.State != "delivered" || got.LastError != "" {
+	if got.State != "sent" || got.LastError != "" {
 		t.Fatalf("terminal state committed without notice: %+v", got)
 	}
 }

@@ -33,6 +33,8 @@ Hub 接受条件全部成立：当前连接确为该 session 的 current connect
 
 合法拒收在 ACK v2 phase handler 内，以仓储事务将原 `session_delivery` 更新为 dead，reason 固定 `queue_full`，清除 lease，并在同一事务建立发送方可见通知。发信方是已支持 durable failure notice 的 session 时，复用 `enqueueDeliveryFailureNoticeTx` / `failure_notice` `session_delivery` outbox，并将 `queue_full` 纳入 `DeliveryFailureReasonAllowed` 与 `failureNoticeReasonText`；保留 source type 限制和防递归。其他已支持来源由新增有界 `delivery_failure_notice_outbox` 记录 failed delivery ID、确定 notice ID、路由目标引用与模板码，不复制原正文；dispatcher 用稳定 notice ID 投递，只有确认未发送的错误才重试，发送结果不确定时转 manual/unknown 并告警，避免重复通知。
 
+终态资格还要求 Hub 尚无持久接收证据：非终态 delivery 若已有 `delivered_at` 或 `injected_at`，不得因后到的 `queue_full` ACK 终结；同一 delivery 已由合法 ACK v2 queue-full 事务终结后，重复 ACK 仍幂等。legacy ACK 保留既有 dead/reason 更新行为，但通用 legacy state update 不可触发新增 queue-full notice；唯一创建该 notice 的入口是已通过当前连接、双向能力、协议、generation 与 pre-persistence 条件校验的 ACK v2 事务。
+
 发送方文案固定为：`发送未进入目标收件箱：目标 Agent 忙且收件箱已满；本条未提交，请缩短排队或稍后重新发送。` 通知只包含原 delivery ID 和 reason code，不带正文、原始账户标识或任意 helper 文本；按原 delivery ID 唯一去重。View 的 delivery_update 以 `stage=helper_received,status=failed,reason=queue_full` 显示明确拒收。sender outbox dispatch 失败会按有界退避重试，持久化 attempt/next_attempt_at；达到上限后保留 dead-letter 记录和可观测告警，不能静默删除。
 
 若 ACK transaction 失败，Hub 不确认该 phase、保留现有 lease/retry recovery；若确认写回 helper 失败，helper 重发，Hub 依据相同 generation 与终态幂等确认、不重复通知。failure notice outbox 投递失败继续由 Hub durable delivery drain 重试。

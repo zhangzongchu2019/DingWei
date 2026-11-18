@@ -13,3 +13,7 @@ All nine mutations returned rc=1 on a behavior assertion (no compile failures). 
 | M07 | Change deterministic Feishu notice ID | `TestDeliveryACKV2QueueFullFeishuNoticeUsesDurableOutboundQueue`: durable sender notice missing at deterministic ID. |
 | M08 | Raise existing outbound retry/dead-letter threshold from 3 to 99 | `TestMessageQueueFailRetriesThenDead`: fourth failed message was still claimable instead of dead-lettered. |
 | M09 | Map generic inbox I/O failure to terminal queue-full | `test_inbox_failure_is_not_misclassified_as_queue_full`: expected `inbox_unavailable`, got `queue_full`. |
+# R1/R2 independent-review follow-up mutations
+
+- R1, delete the `delivered_at`/`injected_at` terminal guard in `internal/store/session_delivery_ack.go`: red in `TestDeliveryACKV2QueueFullCannotOverrideDurableQueuedReceipt` (`queue_full overrode durable queued receipt: <nil>`) and Hub WS `TestDeliveryACKV2QueueFullCannotRejectPersistedDelivery` (a failed ACK confirmation was observed). Raw output: `evidence/r1-r2-followup/R1-delete-durable-receipt-guard.log`.
+- R2, remove the `errText != "queue_full"` gate in `internal/store/sqlite.go`: red in `TestLegacyACKQueueFullKeepsTerminalBehaviorWithoutNegotiatedNotice` because an unnegotiated legacy ACK created a durable queue-full notice. Raw output: `evidence/r1-r2-followup/R2-legacy-queuefull-notice-gate.log`.

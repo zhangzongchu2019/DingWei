@@ -10,5 +10,8 @@
 - [x] 构建门：冻结锚 `c0ec52db044d92a539a5d7010e597d7338787fc1` 上 `build.sh --test-only` 通过，两个 helper profile、Python 27／shell 2。
 - [x] m8/store `-count=3` 与 PG strict 已执行；m8 仅一次已知名单内 `SQLITE_INTERRUPT`，store 三轮通过；独立 Z-3 五轮 m8 为 4/5 全绿，另一次仅命中另一已知名单格。每轮原文在 `evidence/`。
 - [x] OpenSpec 1.16.0 `validate --all --strict --no-interactive`：43 passed／0 failed，rc=0。
+- [x] R1：拒绝已提交 `delivered_at`／`injected_at` 的 queue_full ACK，并保留相同合法终态 ACK 的幂等重放；store 与 Hub WS 负例断言既有阶段不变且没有 not-submitted notice。删除 durable receipt guard 的变异在两项业务断言转红，原始日志见 `docs/reviews/r61-n1b-queue-full/evidence/r1-r2-followup/R1-delete-durable-receipt-guard.log`。
+- [x] R2：legacy ACKv1 的 queue_full terminal 保留原 dead/reason 行为，但不走新增 notice 事务；Hub WS 与 store 回归覆盖未协商 legacy 路径。删除 legacy notice gate 的变异在无协商 notice 断言转红，原始日志见 `docs/reviews/r61-n1b-queue-full/evidence/r1-r2-followup/R2-legacy-queuefull-notice-gate.log`。
+- [x] R1/R2 修订锚 `ed7259faf0a37ba334b12288617c51b6b4dfa2f7` 最终门：build helper profiles 2 / Python 27 / shell 2；m8 与 store PG strict `-count=3` 均 rc=0；OpenSpec strict 43/0。原始输出见 `docs/reviews/r61-n1b-queue-full/evidence/r1-r2-followup/`。
 
 主要证据可直接用 `git cat-file blob <blob-id>` 原样取回：完整门日志 `evidence/m8-store-count3-final.log`＝`1bcc0ffe29fd84c748b9b1b570ad4c0a666d160e`；Z-3 汇总 `evidence/z3/SUMMARY.txt`＝`ea34ba6889c0815d5bd30f58fb6c3b7a6b315228`；OpenSpec strict `evidence/openspec-strict-final.log`＝`0c9b982b6c8c09d71c8bb97840193c42c2eab5f5`；四格 helper ACK `evidence/compat/results.txt`＝`f7455bf5d02cdbeed6d9320a29d7e0a8c0330a89`。全部 37 个 evidence 文件的 blob SHA 与文件 SHA-256 见同目录 `SHA256SUMS`。

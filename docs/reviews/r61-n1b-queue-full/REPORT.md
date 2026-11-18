@@ -43,3 +43,24 @@ Final evidence is collected against the frozen source anchor above. Raw command 
 | OpenSpec 1.16.0 `validate --all --strict --no-interactive` | PASS, 43 passed / 0 failed, rc=0. Log: `evidence/openspec-strict-final.log`. |
 | Compatibility cells | Four helper-side ACK probes PASS rc=0. These are not four standalone live Hub/helper process combinations; see the limitation above and `evidence/compat/README.md`. Real new-Hub websocket protocol checks are in the m8 log. |
 | Mutation checks | 9/9 business-assertion failures. Logs are under `evidence/mutations/`; M05's exploratory compile failure was replaced by a compiling mutation that fails on the missing durable notice assertion. |
+
+## Independent review follow-up: R1 and R2
+
+Coder56's review found two missing boundaries in the frozen source. R1: a queue-full ACK was accepted after a durable `delivered` receipt. The store now rejects queue-full terminalization when a nonterminal row has `delivered_at` or `injected_at`; a replay of an already committed matching dead/queue_full row remains idempotent. R2: generic legacy dead-letter updates could enter the newly expanded queue-full notice allowlist without ACK v2 negotiation. The generic update path now preserves the legacy dead/reason transition but excludes queue_full from notice enqueue; only the negotiated ACK v2 terminal transaction can create that notice.
+
+Added regression coverage: store positive pre-persistence queue_full notice, store rejection after queued receipt, Hub websocket rejection after queued receipt, legacy store terminal without notice, and legacy websocket queue_full terminal without notice.
+
+### R1/R2 follow-up source and final gates
+
+The follow-up implementation is frozen at `ed7259faf0a37ba334b12288617c51b6b4dfa2f7` (tree `77f691594ed097e0ad13af324cff0d5e506c9212`), parent `bf0b405c146b6bd2513c9e80ba1eee9feaa29842`. The gates below were run against this source after both review fixes; they supersede the earlier `c0ec52db` readings for R1/R2 behavior.
+
+| Gate | Result |
+| --- | --- |
+| `SOURCE_COMMIT=ed7259fa... build.sh --test-only`, env-isolated with locked helper venv | PASS rc=0; `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`, expected helper cases 1277 per profile. |
+| `go test -p 1 -count=3 -timeout=45m -v ./internal/m8 ./internal/store`, `HUB_TEST_PG_STRICT=1`, env-isolated | PASS rc=0; m8 `ok` in 726.985s, store `ok` in 255.991s; no failing tests and no `interrupted (9)`. The final log records 4,131 top-level PASS lines and 96 top-level SKIP lines across the three repetitions; skipped cases and conditions are enumerated in `SKIPS.md`. |
+| OpenSpec 1.16.0 `validate --all --strict --no-interactive` | PASS rc=0; 43 passed / 0 failed. |
+| Focused R1/R2 regressions | PASS rc=0 for store and Hub websocket queue-full/legacy cases. |
+| R1 mutation: delete durable-receipt guard | KILLED at store assertion `queue_full overrode durable queued receipt` and Hub WS assertion observing an unexpected failed ACK confirmation. |
+| R2 mutation: remove generic legacy notice gate | KILLED at `TestLegacyACKQueueFullKeepsTerminalBehaviorWithoutNegotiatedNotice` because legacy queue_full created a durable notice. |
+
+Raw final gate and mutation outputs, SHA256 values, and Git blob coordinates are under `evidence/r1-r2-followup/`. The first exploratory m8/store run was intentionally interrupted while checking an opt-in skip; it is retained separately as `evidence/m8-store-count3-interrupted-default-timeout.log` and is not counted as a gate result. Coder56 review of the appended source tip is still pending.

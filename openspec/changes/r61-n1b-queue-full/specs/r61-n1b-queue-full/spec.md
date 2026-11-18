@@ -27,3 +27,16 @@ Hub and helper MUST NOT classify busy waiting, possible submission, admission un
 #### Scenario: Delivery may already have been submitted
 - **WHEN** the delivery has a durable inbox row or a submission may have started
 - **THEN** the queue-full terminal path is unavailable and the existing lifecycle or unknown/manual rules apply
+
+#### Scenario: Durable Hub receipt cannot be replaced by queue-full
+- **WHEN** the Hub has committed a queued/delivered receipt for the delivery
+- **THEN** a later queue-full ACK is rejected without changing the durable stage
+- **AND** no not-submitted notice is created
+
+### Requirement: Legacy ACKs do not gain negotiated queue-full notice semantics
+The Hub MUST preserve legacy ACK terminal behavior, but MUST create a queue-full not-submitted notice only through a valid, fully negotiated ACK v2 queue-full transaction.
+
+#### Scenario: Legacy queue-full failure ACK
+- **WHEN** a legacy/v1 helper sends `failed` with reason `queue_full`
+- **THEN** the Hub may preserve its existing legacy terminal state and reason
+- **AND** the Hub MUST NOT create the new durable queue-full notice
