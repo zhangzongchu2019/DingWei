@@ -1,0 +1,117 @@
+{
+  "passed": true,
+  "rule": "known3 only; each actual FAIL must contain interrupted9 in own top-test RUN scope; rc0 diagnostics are counted separately, never erased",
+  "rows": [
+    {
+      "gate": "m8-store-full3",
+      "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+      "rc": 1,
+      "raw_sha256": "861131618d77efd63a2ef0f8299b99213b2858156fb9da139a02fb9011217add",
+      "failures": [
+        {
+          "name": "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+          "fail_line": 13527,
+          "scope_start_line": 13520,
+          "interrupted_in_scope": [
+            {
+              "line": 13526,
+              "text": "    hub_test.go:3741: interrupted (9)"
+            }
+          ]
+        }
+      ],
+      "interrupted_total_lines": 1
+    },
+    {
+      "gate": "z3-baseline-target20",
+      "source": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+      "rc": 1,
+      "raw_sha256": "4486ce87d710e1674032e3bebba0352e7fa445dd6accc32a587a5635e10fec73",
+      "failures": [
+        {
+          "name": "TestSessionNameReconnectKeepsNameAndReleaseReuses",
+          "fail_line": 11,
+          "scope_start_line": 1,
+          "interrupted_in_scope": [
+            {
+              "line": 10,
+              "text": "    hub_test.go:3505: interrupted (9)"
+            }
+          ]
+        },
+        {
+          "name": "TestSessionNameReconnectKeepsNameAndReleaseReuses",
+          "fail_line": 165,
+          "scope_start_line": 155,
+          "interrupted_in_scope": [
+            {
+              "line": 164,
+              "text": "    hub_test.go:3505: interrupted (9)"
+            }
+          ]
+        }
+      ],
+      "interrupted_total_lines": 2
+    },
+    {
+      "gate": "z3-m8-round1",
+      "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+      "rc": 0,
+      "raw_sha256": "8c787752bf16e55aec5425af04df1adcdb3259cfda6186f8d4635ed458f67fdb",
+      "failures": [],
+      "interrupted_total_lines": 0
+    },
+    {
+      "gate": "z3-m8-round2",
+      "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+      "rc": 0,
+      "raw_sha256": "47c70848840ba109d9b943ea2efa5d6d0e522dd87c1c309dd5d5d09a2752f427",
+      "failures": [],
+      "interrupted_total_lines": 0
+    },
+    {
+      "gate": "z3-m8-round3",
+      "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+      "rc": 0,
+      "raw_sha256": "121dea055323090f99ff4c9d3702b2bad4aa14f19539d047c87aae3ac97da824",
+      "failures": [],
+      "interrupted_total_lines": 0
+    },
+    {
+      "gate": "z3-m8-round4",
+      "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+      "rc": 0,
+      "raw_sha256": "4ca3cb4feb79d0deb8e820e589dc26f3aab32307a48b69a04ec2258e652c02c2",
+      "failures": [],
+      "interrupted_total_lines": 0
+    },
+    {
+      "gate": "z3-m8-round5",
+      "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+      "rc": 0,
+      "raw_sha256": "506f7376fa74dfd2ac582e279c94c36cbec5da37d6daffc0033f1077fd62cbf9",
+      "failures": [],
+      "interrupted_total_lines": 0
+    },
+    {
+      "gate": "z3-matching-baseline1-20",
+      "source": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+      "rc": 1,
+      "raw_sha256": "08f3c9fbd7e94a87d4b5ac863ca7fb9d0577e878c1f56462fbaaca7b3d301857",
+      "failures": [
+        {
+          "name": "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+          "fail_line": 72,
+          "scope_start_line": 65,
+          "interrupted_in_scope": [
+            {
+              "line": 71,
+              "text": "    hub_test.go:3741: interrupted (9)"
+            }
+          ]
+        }
+      ],
+      "interrupted_total_lines": 1
+    }
+  ]
+}

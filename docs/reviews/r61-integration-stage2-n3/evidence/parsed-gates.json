@@ -1,0 +1,397 @@
+[
+  {
+    "name": "canonical",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T14:32:33.030287+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T14:41:54.459143+00:00",
+    "sha256": "bd5995838b899dac74a2f58c9012e45b7aa96cc4f945d6cf35e964aabdb0b984",
+    "top_pass": 6,
+    "all_pass": 21,
+    "top_skip": 0,
+    "all_skip": 0,
+    "failures": [],
+    "interrupted": [],
+    "data_race_lines": [],
+    "packages": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t24.902s"
+    ]
+  },
+  {
+    "name": "m8-store-full3",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "./internal/store/...",
+      "-count=3",
+      "-p",
+      "1",
+      "-timeout",
+      "90m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T14:41:54.504062+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T15:05:11.757266+00:00",
+    "sha256": "861131618d77efd63a2ef0f8299b99213b2858156fb9da139a02fb9011217add",
+    "top_pass": 4352,
+    "all_pass": 7427,
+    "top_skip": 45,
+    "all_skip": 99,
+    "failures": [
+      "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent (0.14s)"
+    ],
+    "interrupted": [
+      {
+        "line": 13526,
+        "text": "    hub_test.go:3741: interrupted (9)"
+      }
+    ],
+    "data_race_lines": [],
+    "packages": [
+      "FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/m8\t988.961s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store\t262.099s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store/migrate\t122.517s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store/pgtest\t17.367s"
+    ]
+  },
+  {
+    "name": "focused-race",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "./internal/m8",
+      "./internal/store",
+      "-run",
+      "DeliveryACK|QueueFull|FailureNotice|ReliableSessionDeliveryBusyAck|HistoryProvenance|SessionHistory",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T15:05:11.860311+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T15:12:45.128657+00:00",
+    "sha256": "8dfbff62390c4d2faac2a8e56178db3cac99861573865eff9ad3682c4b1d35ff",
+    "top_pass": 103,
+    "all_pass": 175,
+    "top_skip": 2,
+    "all_skip": 17,
+    "failures": [],
+    "interrupted": [],
+    "data_race_lines": [],
+    "packages": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t259.233s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store\t154.381s"
+    ]
+  },
+  {
+    "name": "browser-full",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "tools/run-browser-regressions.py",
+      "--receipt",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-integration-stage2-n3-20261118/browser-receipt.txt"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T15:12:45.171360+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T15:25:26.152291+00:00",
+    "sha256": "9e8709462a6234c28fa7e9ee3f20ff6f86f632ee4540c9bfba3a0080f0e26adb",
+    "top_pass": 0,
+    "all_pass": 0,
+    "top_skip": 0,
+    "all_skip": 0,
+    "failures": [],
+    "interrupted": [],
+    "data_race_lines": [],
+    "packages": []
+  },
+  {
+    "name": "strict",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+      "validate",
+      "--all",
+      "--strict"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T15:25:26.194651+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T15:25:26.597954+00:00",
+    "sha256": "4cef9955b9b3e5c95d84af772bc95d3278e118f53594314cf8be81888704db5c",
+    "top_pass": 0,
+    "all_pass": 0,
+    "top_skip": 0,
+    "all_skip": 0,
+    "failures": [],
+    "interrupted": [],
+    "data_race_lines": [],
+    "packages": []
+  },
+  {
+    "name": "z3-baseline-target20",
+    "source": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestSessionNameReconnectKeepsNameAndReleaseReuses$",
+      "-count=20",
+      "-p",
+      "1",
+      "-timeout",
+      "30m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61i2-baseline",
+    "started_utc": "2026-11-18T15:25:26.688928+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T15:25:32.774839+00:00",
+    "sha256": "4486ce87d710e1674032e3bebba0352e7fa445dd6accc32a587a5635e10fec73",
+    "top_pass": 18,
+    "all_pass": 18,
+    "top_skip": 0,
+    "all_skip": 0,
+    "failures": [
+      "TestSessionNameReconnectKeepsNameAndReleaseReuses (0.13s)",
+      "TestSessionNameReconnectKeepsNameAndReleaseReuses (0.14s)"
+    ],
+    "interrupted": [
+      {
+        "line": 10,
+        "text": "    hub_test.go:3505: interrupted (9)"
+      },
+      {
+        "line": 164,
+        "text": "    hub_test.go:3505: interrupted (9)"
+      }
+    ],
+    "data_race_lines": [],
+    "packages": [
+      "FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/m8\t3.371s"
+    ]
+  },
+  {
+    "name": "z3-m8-round1",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T15:25:32.819384+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T15:31:06.349805+00:00",
+    "sha256": "8c787752bf16e55aec5425af04df1adcdb3259cfda6186f8d4635ed458f67fdb",
+    "failures": [],
+    "interrupted_lines": 0,
+    "top_pass": 998,
+    "all_pass": 1690,
+    "top_skip": 10,
+    "all_skip": 28,
+    "interrupted": [],
+    "data_race_lines": [],
+    "packages": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t331.205s"
+    ]
+  },
+  {
+    "name": "z3-m8-round2",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T15:31:06.417677+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T15:36:40.170726+00:00",
+    "sha256": "47c70848840ba109d9b943ea2efa5d6d0e522dd87c1c309dd5d5d09a2752f427",
+    "failures": [],
+    "interrupted_lines": 0,
+    "top_pass": 998,
+    "all_pass": 1690,
+    "top_skip": 10,
+    "all_skip": 28,
+    "interrupted": [],
+    "data_race_lines": [],
+    "packages": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t331.493s"
+    ]
+  },
+  {
+    "name": "z3-m8-round3",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T15:36:40.239063+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T15:42:16.427308+00:00",
+    "sha256": "121dea055323090f99ff4c9d3702b2bad4aa14f19539d047c87aae3ac97da824",
+    "failures": [],
+    "interrupted_lines": 0,
+    "top_pass": 998,
+    "all_pass": 1690,
+    "top_skip": 10,
+    "all_skip": 28,
+    "interrupted": [],
+    "data_race_lines": [],
+    "packages": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t333.848s"
+    ]
+  },
+  {
+    "name": "z3-m8-round4",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T15:42:16.490979+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T15:47:51.066292+00:00",
+    "sha256": "4ca3cb4feb79d0deb8e820e589dc26f3aab32307a48b69a04ec2258e652c02c2",
+    "failures": [],
+    "interrupted_lines": 0,
+    "top_pass": 998,
+    "all_pass": 1690,
+    "top_skip": 10,
+    "all_skip": 28,
+    "interrupted": [],
+    "data_race_lines": [],
+    "packages": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t332.242s"
+    ]
+  },
+  {
+    "name": "z3-m8-round5",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T15:47:51.131497+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T15:53:23.866902+00:00",
+    "sha256": "506f7376fa74dfd2ac582e279c94c36cbec5da37d6daffc0033f1077fd62cbf9",
+    "top_pass": 998,
+    "all_pass": 1690,
+    "top_skip": 10,
+    "all_skip": 28,
+    "failures": [],
+    "interrupted": [],
+    "data_race_lines": [],
+    "packages": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t330.298s"
+    ]
+  },
+  {
+    "name": "z3-matching-baseline1-20",
+    "target": "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+    "source": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent$",
+      "-count=20",
+      "-p",
+      "1",
+      "-timeout",
+      "30m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61i2-baseline",
+    "started_utc": "2026-11-18T15:53:44.274825+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T15:53:51.268359+00:00",
+    "sha256": "08f3c9fbd7e94a87d4b5ac863ca7fb9d0577e878c1f56462fbaaca7b3d301857",
+    "failures": [
+      "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent (0.14s)"
+    ],
+    "top_pass": 19,
+    "all_pass": 19,
+    "top_skip": 0,
+    "all_skip": 0,
+    "interrupted": [
+      {
+        "line": 71,
+        "text": "    hub_test.go:3741: interrupted (9)"
+      }
+    ],
+    "data_race_lines": [],
+    "packages": [
+      "FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/m8\t4.612s"
+    ]
+  }
+]

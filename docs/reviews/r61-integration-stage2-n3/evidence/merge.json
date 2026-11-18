@@ -1,0 +1,13 @@
+{
+  "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "tree": "5c73e93df0255e73137428a9376b65321e91279a",
+  "parents": [
+    "c430c3c65f0f8d9b669c8bef24f4194871f11283",
+    "1a2a4160208c839c97e1b35039c7eafc6e7216e1"
+  ],
+  "utc": "2026-11-18T14:31:56.429877+00:00",
+  "no_ff": true,
+  "manual_resolutions": [],
+  "already_present_n1b": "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8",
+  "supplement_handling": "appendN3 after completedN1b; preserve first8merges and docs, not reset/repeat"
+}

@@ -1,0 +1,95 @@
+[
+  {
+    "name": "canonical",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "./build.sh",
+      "--test-only"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T14:32:33.030287+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T14:41:54.459143+00:00",
+    "sha256": "bd5995838b899dac74a2f58c9012e45b7aa96cc4f945d6cf35e964aabdb0b984"
+  },
+  {
+    "name": "m8-store-full3",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "./internal/store/...",
+      "-count=3",
+      "-p",
+      "1",
+      "-timeout",
+      "90m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T14:41:54.504062+00:00",
+    "rc": 1,
+    "ended_utc": "2026-11-18T15:05:11.757266+00:00",
+    "sha256": "861131618d77efd63a2ef0f8299b99213b2858156fb9da139a02fb9011217add"
+  },
+  {
+    "name": "focused-race",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "./internal/m8",
+      "./internal/store",
+      "-run",
+      "DeliveryACK|QueueFull|FailureNotice|ReliableSessionDeliveryBusyAck|HistoryProvenance|SessionHistory",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "60m",
+      "-v"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T15:05:11.860311+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T15:12:45.128657+00:00",
+    "sha256": "8dfbff62390c4d2faac2a8e56178db3cac99861573865eff9ad3682c4b1d35ff"
+  },
+  {
+    "name": "browser-full",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "tools/run-browser-regressions.py",
+      "--receipt",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-integration-stage2-n3-20261118/browser-receipt.txt"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T15:12:45.171360+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T15:25:26.152291+00:00",
+    "sha256": "9e8709462a6234c28fa7e9ee3f20ff6f86f632ee4540c9bfba3a0080f0e26adb"
+  },
+  {
+    "name": "strict",
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "command": [
+      "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+      "validate",
+      "--all",
+      "--strict"
+    ],
+    "cwd": "/data/ai-dev-data/r61-integration",
+    "started_utc": "2026-11-18T15:25:26.194651+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T15:25:26.597954+00:00",
+    "sha256": "4cef9955b9b3e5c95d84af772bc95d3278e118f53594314cf8be81888704db5c"
+  }
+]

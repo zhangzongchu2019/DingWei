@@ -1,0 +1,49 @@
+{
+  "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "utc": "2026-11-18T14:34:51.016913+00:00",
+  "required_ancestors": {
+    "bfaec0ba": true,
+    "f7b32525": true,
+    "638cb324": true,
+    "8ae6b083": true,
+    "415b9bf5": true,
+    "e26d7ee0": true,
+    "429cf1dd": true,
+    "ed7259fa": true,
+    "b81737d0": true,
+    "9313197f8ac3e2a585cd399935d5b313084b3b1e": true
+  },
+  "unchanged_from_prior": {
+    "VERSION": true,
+    "cmd": true,
+    "go.mod": true,
+    "go.sum": true,
+    "scripts": true,
+    "deploy": true,
+    "tools/sessionhelper": true,
+    "view-service/renderer-canary-sse.html": true,
+    "internal/store/migrations": true
+  },
+  "n3_exact_files": {
+    "internal/m8/history_provenance.go": true,
+    "internal/m8/history_provenance_test.go": true,
+    "internal/m8/terminal.go": true,
+    "internal/store/session_history.go": true,
+    "internal/store/session_history_provenance.go": true,
+    "internal/store/session_history_provenance_test.go": true,
+    "internal/store/history_migrations/0078_history_provenance.sql": true,
+    "view-service/history-provenance-browser-regression.js": true
+  },
+  "merge_chain": [
+    "4581b34ac1e4b9973d12c559cf6ac7772107bebf c430c3c65f0f8d9b669c8bef24f4194871f11283 1a2a4160208c839c97e1b35039c7eafc6e7216e1",
+    "cd01d67a2c126c850b1229fc486ee30cb1ddd3e8 0ab43c630c37fdf01ce68d5c66c0db0141a682af b81737d0897c7edfea171371dba8ead6c1ef8f28",
+    "38b9538dd2b1f1783aee6d7890ea03b83e33184e 63f5c3d7b6dd12a25d3e01ea00b71f0a5ab2dc75 429cf1dd9c0cb59cb82191d5c7cfb0014f2420e0",
+    "63f5c3d7b6dd12a25d3e01ea00b71f0a5ab2dc75 bbf29d8e8de2f2a6faa4de01d8eba01ae486c957 e26d7ee0046ef008cfa850a240d453869b56daa5",
+    "bbf29d8e8de2f2a6faa4de01d8eba01ae486c957 f884c854dcd12af4d48a928d9e018db2ec5a0e66 415b9bf5199e711b5323e21a0a147082a2108498",
+    "f884c854dcd12af4d48a928d9e018db2ec5a0e66 0c3cf7e48d6efa6bebd1861fd7680e9d0255f0c4 8ae6b083dc3c3875bc3ddf8cc6ae53fd593ab298",
+    "0c3cf7e48d6efa6bebd1861fd7680e9d0255f0c4 625f70cf355be943012d40fe73e70e1d014eb67a 638cb32477af230bedd2aba0bc547dee82b162ef",
+    "625f70cf355be943012d40fe73e70e1d014eb67a 1283116e56a32a55f998e61f4782ab78185dfa56 f7b32525cd1b99d5188fbc3c8133018b6a8a8a82",
+    "1283116e56a32a55f998e61f4782ab78185dfa56 206d41b26dab646c0e50a111eed5a45ccf7c72f6 bfaec0ba27060299fc87b0ad592db9fb5dc75b63"
+  ],
+  "n1c_source_not_ancestor": true
+}

@@ -1,0 +1,36 @@
+{
+  "targets": [
+    "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent"
+  ],
+  "records": [
+    {
+      "name": "z3-matching-baseline1-20",
+      "target": "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+      "source": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+      "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent$",
+        "-count=20",
+        "-p",
+        "1",
+        "-timeout",
+        "30m",
+        "-v"
+      ],
+      "cwd": "/data/ai-dev-data/r61i2-baseline",
+      "started_utc": "2026-11-18T15:53:44.274825+00:00",
+      "rc": 1,
+      "ended_utc": "2026-11-18T15:53:51.268359+00:00",
+      "sha256": "08f3c9fbd7e94a87d4b5ac863ca7fb9d0577e878c1f56462fbaaca7b3d301857",
+      "failures": [
+        "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent"
+      ]
+    }
+  ],
+  "complete": true,
+  "prior_auxiliary_control": "reconnect count20 retained separately if Z3 required"
+}

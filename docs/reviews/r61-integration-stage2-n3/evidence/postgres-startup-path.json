@@ -1,0 +1,28 @@
+{
+  "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "external_DSN_absent_in_whitelist": true,
+  "paths": {
+    "internal/m8/claim_client_integration_test.go": {
+      "lines": [
+        47,
+        62,
+        67,
+        72
+      ],
+      "meaning": "test explicitly clears DSN, Pool acquires isolated DB, real SELECT current_setting(server_version_num) and logs result",
+      "source_blob_sha256": "a23dd5591bebcab302561a6bae1c2f5dbec65099be8c60ab49418a65b8c73aa5"
+    },
+    "internal/store/pgtest/pgtest.go": {
+      "lines": [
+        152,
+        168,
+        255,
+        270,
+        276
+      ],
+      "meaning": "acquire chooses toolBinary/start when DSN absent; exec process, await ready protocol; startup failure cannot produce version PASS",
+      "source_blob_sha256": "0d84556d8b92c3027c09424d037617032dac89b39134e4fde02fac444ed46e37"
+    }
+  },
+  "proof": "runtime version lines + successful actual SQL query with cleared DSN and Pool.start source establish real temporary PostgreSQL; no DSN/password values exported"
+}

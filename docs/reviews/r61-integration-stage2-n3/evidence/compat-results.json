@@ -1,0 +1,120 @@
+[
+  {
+    "case": "old501-newhelper",
+    "started_utc": "2026-11-18T15:53:31.790605+00:00",
+    "ended_utc": "2026-11-18T15:53:34.391136+00:00",
+    "hub_process": "old-hub-501",
+    "hub_source_commit": "501e5b8a185b20f5c931c8ebb89c16bfd633a01e",
+    "helper_source": "/data/ai-dev-data/r61-integration/tools/sessionhelper",
+    "helper_source_commit": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "actual_handshake": true,
+    "actual_recv_accept": true,
+    "model_consumption": "fixture paused; no CLI/provider",
+    "observed": {
+      "version": "0.2.3.40",
+      "negotiated": false,
+      "wire_protocol": 2,
+      "delivery_id": "dw-dlv_2a5bed4865ede564c81cb8f8e4727830"
+    },
+    "ack": {
+      "type": "delivery_ack",
+      "delivery_id": "dw-dlv_2a5bed4865ede564c81cb8f8e4727830",
+      "state": "busy",
+      "no_mirror": true,
+      "reason": "queue_full",
+      "retryable": true,
+      "ack_protocol": 2,
+      "processing_mode": "driver",
+      "ack_generation": 1
+    },
+    "hub_row": {
+      "id": "dw-dlv_2a5bed4865ede564c81cb8f8e4727830",
+      "state": "queued",
+      "last_error": "helper_busy",
+      "ack_protocol": 2,
+      "processing_mode": "driver",
+      "ack_generation": 1
+    },
+    "failure_notice_rows": 0,
+    "rc": 0
+  },
+  {
+    "case": "newhub-newhelper",
+    "started_utc": "2026-11-18T15:53:34.560924+00:00",
+    "ended_utc": "2026-11-18T15:53:37.140615+00:00",
+    "hub_process": "integrated-hub",
+    "hub_source_commit": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "helper_source": "/data/ai-dev-data/r61-integration/tools/sessionhelper",
+    "helper_source_commit": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "actual_handshake": true,
+    "actual_recv_accept": true,
+    "model_consumption": "fixture paused; no CLI/provider",
+    "observed": {
+      "version": "0.2.3.40",
+      "negotiated": true,
+      "wire_protocol": 2,
+      "delivery_id": "dw-dlv_632d0a9e655a9d3cbda91fccaad17c65"
+    },
+    "ack": {
+      "type": "delivery_ack",
+      "delivery_id": "dw-dlv_632d0a9e655a9d3cbda91fccaad17c65",
+      "state": "failed",
+      "no_mirror": true,
+      "reason": "queue_full",
+      "retryable": false,
+      "occurred_at": "2026-11-18T15:53:36.590805Z",
+      "ack_protocol": 2,
+      "processing_mode": "driver",
+      "ack_generation": 1
+    },
+    "hub_row": {
+      "id": "dw-dlv_632d0a9e655a9d3cbda91fccaad17c65",
+      "state": "dead",
+      "last_error": "queue_full",
+      "ack_protocol": 2,
+      "processing_mode": "driver",
+      "ack_generation": 1
+    },
+    "failure_notice_rows": 1,
+    "rc": 0
+  },
+  {
+    "case": "newhub-old39",
+    "started_utc": "2026-11-18T15:53:37.360139+00:00",
+    "ended_utc": "2026-11-18T15:53:39.930012+00:00",
+    "hub_process": "integrated-hub",
+    "hub_source_commit": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "helper_source": "/data/ai-dev-data/wt-coder56-helper-02339/tools/sessionhelper",
+    "helper_source_commit": "2e1e4c9db3c42cf7c987a548fa9214aad67a9f0c",
+    "actual_handshake": true,
+    "actual_recv_accept": true,
+    "model_consumption": "fixture paused; no CLI/provider",
+    "observed": {
+      "version": "0.2.3.39",
+      "negotiated": false,
+      "wire_protocol": 2,
+      "delivery_id": "dw-dlv_3c1953a6a4dbbc9419c5e9720e34f791"
+    },
+    "ack": {
+      "type": "delivery_ack",
+      "delivery_id": "dw-dlv_3c1953a6a4dbbc9419c5e9720e34f791",
+      "state": "busy",
+      "no_mirror": true,
+      "reason": "queue_full",
+      "retryable": true,
+      "ack_protocol": 2,
+      "processing_mode": "driver",
+      "ack_generation": 1
+    },
+    "hub_row": {
+      "id": "dw-dlv_3c1953a6a4dbbc9419c5e9720e34f791",
+      "state": "queued",
+      "last_error": "helper_busy",
+      "ack_protocol": 2,
+      "processing_mode": "driver",
+      "ack_generation": 1
+    },
+    "failure_notice_rows": 0,
+    "rc": 0
+  }
+]

@@ -1,0 +1,234 @@
+{
+  "versions": [
+    "180003"
+  ],
+  "full3_version_lines": 15,
+  "entries": [
+    {
+      "gate": "canonical",
+      "line": 9760,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "canonical",
+      "line": 9770,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "canonical",
+      "line": 9780,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "canonical",
+      "line": 9790,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "canonical",
+      "line": 9795,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 840,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 850,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 860,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 870,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 875,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 9459,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 9469,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 9479,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 9489,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 9494,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 18112,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 18122,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 18132,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 18142,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "m8-store-full3",
+      "line": 18147,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round1",
+      "line": 840,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round1",
+      "line": 850,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round1",
+      "line": 860,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round1",
+      "line": 870,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round1",
+      "line": 875,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round2",
+      "line": 840,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round2",
+      "line": 850,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round2",
+      "line": 860,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round2",
+      "line": 870,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round2",
+      "line": 875,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round3",
+      "line": 840,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round3",
+      "line": 850,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round3",
+      "line": 860,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round3",
+      "line": 870,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round3",
+      "line": 875,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round4",
+      "line": 840,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round4",
+      "line": 850,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round4",
+      "line": 860,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round4",
+      "line": 870,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round4",
+      "line": 875,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round5",
+      "line": 840,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round5",
+      "line": 850,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round5",
+      "line": 860,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round5",
+      "line": 870,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    },
+    {
+      "gate": "z3-m8-round5",
+      "line": 875,
+      "text": "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    }
+  ],
+  "mode": "PGstrict real pgtest temporary PostgreSQL; fresh HOME /data/ai-dev-data/r61i23h, cached18.3archive only; no externalDSN"
+}

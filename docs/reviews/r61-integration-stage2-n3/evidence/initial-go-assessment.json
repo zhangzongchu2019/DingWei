@@ -1,0 +1,19 @@
+{
+  "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "rc": 1,
+  "failures": [
+    "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent (0.14s)"
+  ],
+  "interrupt_lines": [
+    {
+      "line": 13526,
+      "text": "    hub_test.go:3741: interrupted (9)"
+    }
+  ],
+  "package_results": [
+    "FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/m8\t988.961s",
+    "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store\t262.099s",
+    "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store/migrate\t122.517s",
+    "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store/pgtest\t17.367s"
+  ]
+}

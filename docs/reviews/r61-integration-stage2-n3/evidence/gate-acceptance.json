@@ -1,0 +1,161 @@
+{
+  "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+  "accepted": true,
+  "initial_full3_rc": 1,
+  "z3_required": true,
+  "qualification": {
+    "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+    "required": true,
+    "rounds": [
+      {
+        "name": "z3-m8-round1",
+        "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+        "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+        "command": [
+          "go",
+          "test",
+          "./internal/m8",
+          "-count=1",
+          "-p",
+          "1",
+          "-timeout",
+          "60m",
+          "-v"
+        ],
+        "cwd": "/data/ai-dev-data/r61-integration",
+        "started_utc": "2026-11-18T15:25:32.819384+00:00",
+        "rc": 0,
+        "ended_utc": "2026-11-18T15:31:06.349805+00:00",
+        "sha256": "8c787752bf16e55aec5425af04df1adcdb3259cfda6186f8d4635ed458f67fdb",
+        "failures": [],
+        "interrupted_lines": 0
+      },
+      {
+        "name": "z3-m8-round2",
+        "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+        "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+        "command": [
+          "go",
+          "test",
+          "./internal/m8",
+          "-count=1",
+          "-p",
+          "1",
+          "-timeout",
+          "60m",
+          "-v"
+        ],
+        "cwd": "/data/ai-dev-data/r61-integration",
+        "started_utc": "2026-11-18T15:31:06.417677+00:00",
+        "rc": 0,
+        "ended_utc": "2026-11-18T15:36:40.170726+00:00",
+        "sha256": "47c70848840ba109d9b943ea2efa5d6d0e522dd87c1c309dd5d5d09a2752f427",
+        "failures": [],
+        "interrupted_lines": 0
+      },
+      {
+        "name": "z3-m8-round3",
+        "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+        "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+        "command": [
+          "go",
+          "test",
+          "./internal/m8",
+          "-count=1",
+          "-p",
+          "1",
+          "-timeout",
+          "60m",
+          "-v"
+        ],
+        "cwd": "/data/ai-dev-data/r61-integration",
+        "started_utc": "2026-11-18T15:36:40.239063+00:00",
+        "rc": 0,
+        "ended_utc": "2026-11-18T15:42:16.427308+00:00",
+        "sha256": "121dea055323090f99ff4c9d3702b2bad4aa14f19539d047c87aae3ac97da824",
+        "failures": [],
+        "interrupted_lines": 0
+      },
+      {
+        "name": "z3-m8-round4",
+        "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+        "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+        "command": [
+          "go",
+          "test",
+          "./internal/m8",
+          "-count=1",
+          "-p",
+          "1",
+          "-timeout",
+          "60m",
+          "-v"
+        ],
+        "cwd": "/data/ai-dev-data/r61-integration",
+        "started_utc": "2026-11-18T15:42:16.490979+00:00",
+        "rc": 0,
+        "ended_utc": "2026-11-18T15:47:51.066292+00:00",
+        "sha256": "4ca3cb4feb79d0deb8e820e589dc26f3aab32307a48b69a04ec2258e652c02c2",
+        "failures": [],
+        "interrupted_lines": 0
+      },
+      {
+        "name": "z3-m8-round5",
+        "source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+        "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+        "command": [
+          "go",
+          "test",
+          "./internal/m8",
+          "-count=1",
+          "-p",
+          "1",
+          "-timeout",
+          "60m",
+          "-v"
+        ],
+        "cwd": "/data/ai-dev-data/r61-integration",
+        "started_utc": "2026-11-18T15:47:51.131497+00:00",
+        "rc": 0,
+        "ended_utc": "2026-11-18T15:53:23.866902+00:00",
+        "sha256": "506f7376fa74dfd2ac582e279c94c36cbec5da37d6daffc0033f1077fd62cbf9",
+        "failures": [],
+        "interrupted_lines": 0
+      }
+    ],
+    "green_rounds": 5,
+    "complete": true,
+    "passed": true
+  },
+  "all_other_gates_rc0": true,
+  "matching_baselines_complete": true,
+  "matching_baselines": [
+    {
+      "name": "z3-matching-baseline1-20",
+      "target": "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+      "source": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+      "integration_source": "4581b34ac1e4b9973d12c559cf6ac7772107bebf",
+      "command": [
+        "go",
+        "test",
+        "./internal/m8",
+        "-run",
+        "^TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent$",
+        "-count=20",
+        "-p",
+        "1",
+        "-timeout",
+        "30m",
+        "-v"
+      ],
+      "cwd": "/data/ai-dev-data/r61i2-baseline",
+      "started_utc": "2026-11-18T15:53:44.274825+00:00",
+      "rc": 1,
+      "ended_utc": "2026-11-18T15:53:51.268359+00:00",
+      "sha256": "08f3c9fbd7e94a87d4b5ac863ca7fb9d0577e878c1f56462fbaaca7b3d301857",
+      "failures": [
+        "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent"
+      ]
+    }
+  ]
+}
