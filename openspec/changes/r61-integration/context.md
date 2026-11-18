@@ -15,3 +15,7 @@
 组长12:57:47Z补令于14:29Z注入；N1b-only已交c430c3c6，故保留其不可变历史，在其上no-ff合N3 1a2a4160208c839c97e1b35039c7eafc6e7216e1（产品9313197f），形成4581b34ac1e4b9973d12c559cf6ac7772107bebf/tree5c73e93df0255e73137428a9376b65321e91279a。当前合后证据入口 `5ccfc46bb3f2da227b31c7c0a87cf7024400457f:docs/reviews/r61-integration-stage2-n3/REPORT.md`，旧N1b-only门不作新合后绿。
 
 canonical两profile各1277/97文件；store/...三遍rc0，初始m8三遍rc1仅NewSessionNameNotifies已知interrupted9；按既定Z3固定5轮全绿、每轮998顶层PASS/0中断，失败原样披露。focusedrace103顶层/175含子项/17SKIP/0Race；浏览器48/48含新增HP8/8，strict45/0。PG180003实际版本15行及Pool/start/SQL调用链齐。真实501/39/new三向运输协议通过，模型消费fixture暂停，无CLI全回合声明。源码/版本不再改，N1c尚未合；待组长复核与后续令。
+
+## 第三段晚到令追加环境与证据
+
+同一合后源4581b34a/tree5c73e93d的全门已在a85b6c7d交；本段仅追加docs/openspec，补件目录docs/reviews/r61-integration-stage3-supplement。独立0ab43c63树同落点count20绿；新增外部overlay只加测试，生产源码不改。实际Hub为两个不同OS测试worker进程，真实隔离PG身份库跨进程保持、app/history SQLite文件共用；授权HTTP history前后完整JSON相等。生产renderer在两个新浏览器上下文渲染真实HTTP快照，live SSE为空。Agent与timer命名Agent的来源kind均agent，不代表定时器调度/真实CLI。仅overlay新增虚拟文件编译因Go1.22.2 vet路径限制用-vet=off，原全门不变。原始失败/成功日志、SHA与probe构建来源均在补件。本人收件只读metadata不导出正文/信封/凭据；两callerID在此schema中无逐件映射。

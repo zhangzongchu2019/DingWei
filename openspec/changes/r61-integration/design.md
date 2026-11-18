@@ -22,3 +22,9 @@ Z-3首轮三遍和资格五轮分列，初始失败保留、不改SKIP。固定5
 对应R61I-007。原N1b-only c430及其门记录保持不可变；收到12:57:47Z补令后，在其上追加N3 no-ff，来源1a2a4160、产品9313197f，合后源4581b34a。共享hub与runner由ort自动合并，无冲突、无产品手工改动；N1b R1/R2文件保留，N3 legacy重锚显式nil及五元组sidecar/Append逻辑逐字等同其冻结源。应用库0077不改，history独立0078。VERSION、helper、renderer产品页不变，新增history浏览器suite使runner48套。
 
 重新在双项合后源跑全部门和真实501/39协议兼容，不复用单项或N1b-only绿。初始m8中断按既定Z3保存首轮并固定5轮，实际5/5全包绿、每轮0中断；main辅助reconnect20次18/2，实际NewSessionName落点20次19/1，全部原rc/SHA保留，不从小样本推断失败率。日志审计逐条要求实际FAIL在自身RUN范围内有中断诊断，不以别处清理日志代替。本段作者门不替代组长/独立复核，N1c仍待其独立冻结令。
+
+## 第三段重启回放与晚到令核验
+
+14:29:24Z令注入时合后源4581b34a已包含N1b/N3，父c430＋1a2、tree5c73e93d；因此不重复merge或改写历史。R61I-S010以两个不同OS worker执行实际Hub/授权handler验证，持久PG身份与SQLite历史跨进程保持；先确认两条trusted/hub来源存在，再完整比较重启前后history，防止空对空绿。renderer层用真实HTTP快照冷页面，不冒称浏览器连liveHub。timer仅是已认证Agent席的display_name，kind仍agent；不引入新产品语义。对应补件包含初次overlay-vet编译失败、PG夹具enum失败及错误kind预期失败，均为夹具修正后fresh全流程重跑，产品不变。
+
+最新令指定0ab43c63同失败测试对照，补20次全部绿，不将先前main206对照替代它、不推断小样本概率。本人收件admission_unknown仅代表准入未确认；delivery/Hub源ID不等于caller requestID，无法硬配时如实留缺，不由零命中声称未投递。

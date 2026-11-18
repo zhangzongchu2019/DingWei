@@ -37,7 +37,7 @@ b=js('restart-browser-result.json');assert b['source']==SOURCE and b['rc']==0
 assert len(b['readings'])==2 and all(x['icons']==2 and x['fresh_browser_context'] and not x['sse_replay'] for x in b['readings'])
 assert b['readings'][0]['titles']==b['readings'][1]['titles']==['opus50ts','timer']
 p=js('probe-build-provenance.json')
-assert p['probe_sha256']==sha((E/'restart_probe_test.go').read_bytes()) and p['overlay_sha256']==sha((E/'overlay.json').read_bytes())
+assert p['probe_sha256']==sha((E/'restart_probe_test.go.txt').read_bytes()) and p['overlay_sha256']==sha((E/'overlay.json').read_bytes())
 i=js('own-inbox-metadata.json');assert 'cannot individually map' in i['mapping_limit']
 assert [x['state'] for x in i['evidence_rows']]==['admission_unknown','processed','admission_unknown']
 # 旧全门由不可变Git证据单独取出，避免把新文档误称旧strict运行时的内容。
