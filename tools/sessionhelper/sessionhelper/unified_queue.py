@@ -117,7 +117,9 @@ class UnifiedCommandQueue:
         """Retry a not-dispatched current command without a new queue identity."""
         with self._lock:
             if self._current is None or self._current.delivery_id!=delivery_id or self._current.state!='admitting':return False
-            command=self._current;self._current=None;command.state='queued';self._pending.append(command)
+            # A deferred head is still the FIFO head. Putting it at the tail
+            # would let later accepted deliveries overtake a durable busy wait.
+            command=self._current;self._current=None;command.state='queued';self._pending.appendleft(command)
             return True
 
     def admit(self, delivery_id: str, turn_id: str) -> dict | None:

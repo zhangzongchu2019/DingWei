@@ -1080,6 +1080,12 @@ class DriverAdapter:
         last_failure_log = 0.0
         healthy_since = None
         while not getattr(self,"_lane_stop",threading.Event()).is_set():
+            recovery = self._transport_recovery
+            if recovery is not None and not recovery.is_set():
+                # Do not consume the old driver's event stream while its
+                # replacement is still passing pre-submit initialization.
+                self._bridge_sleep(0.1)
+                continue
             subscriptions += 1
             skipped = 0
             forwarded = 0

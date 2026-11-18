@@ -25,6 +25,7 @@ from sessionhelper.inbox import DeliveryInbox
 from sessionhelper.daemon_identity import DaemonIdentityError
 from sessionhelper.app import SessionHelper
 from sessionhelper.config import load_config
+from sessionhelper.contract import SessionEvent
 try:
     from _home_isolation import HomeIsolation
 except ImportError:
@@ -813,6 +814,8 @@ class RecoveryThreadInheritance(unittest.TestCase):
 
 
 class LiveInitializeRetry(unittest.TestCase):
+    # S4 live-transport probe: a healthy socket does not mean a failed
+    # initialize succeeded. Keep this exact regression in the repository.
     def test_healthy_transport_after_initialize_timeout_still_initializes(self):
         with tempfile.TemporaryDirectory() as tmp:
             class RPC:
@@ -868,6 +871,7 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                 self.workdir = workdir
                 self.errors = list(errors)
                 self.calls = []
+                self.driver = None
 
             def healthy(self):
                 return True
@@ -888,7 +892,14 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                 if method == 'thread/turns/list':
                     return {'data': []}
                 if method == 'turn/start':
-                    return {'turn': {'id': 'turn-' + params['clientUserMessageId'], 'status': 'inProgress'}}
+                    turn_id = 'turn-' + params['clientUserMessageId']
+                    # Model successful completion so the adapter can advance
+                    # its FIFO head and submit the following delivery.
+                    threading.Timer(0.05, lambda: self.driver._emit_event(SessionEvent(
+                        kind='state_change', delivery_id=params['clientUserMessageId'],
+                        turn_id=turn_id, data={'change': 'turn_completed', 'status': 'completed'}
+                    ))).start()
+                    return {'turn': {'id': turn_id, 'status': 'inProgress'}}
                 if method == 'thread/start':
                     return {'thread': {'id': 'bound-thread'}}
                 return {}
@@ -920,6 +931,7 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                         driver._initialize()
 
                     driver._start_locked = start_locked
+                    rpc.driver = driver
                     return driver
 
                 first = make_driver()
@@ -942,7 +954,12 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                 env = {'id': 'source', 'from': 'peer-review', 'to': 'seat-review', 'body': 'first',
                        'meta': {'delivery_id': delivery_id, 'delivery_ack_protocol': 2,
                                 'processing_mode': 'driver', 'ack_generation': 1}}
+                later_id = 'dw-dlv_' + str(index + 3) * 32
+                later_env = {'id': 'source-later', 'from': 'peer-review', 'to': 'seat-review', 'body': 'later',
+                             'meta': {'delivery_id': later_id, 'delivery_ack_protocol': 2,
+                                      'processing_mode': 'driver', 'ack_generation': 1}}
                 helper.delivery_inbox.accept(delivery_id, env)
+                helper.delivery_inbox.accept(later_id, later_env)
                 for ack in helper.delivery_inbox.pending_delivery_acks():
                     helper.delivery_inbox.confirm_delivery_ack(ack['payload'] | {'type': 'delivery_ack_confirm'})
 
@@ -952,17 +969,30 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                     try:
                         for _ in range(500):
                             row = await asyncio.to_thread(helper.delivery_inbox.lifecycle, delivery_id)
-                            if row and row.get('admitted_at') is not None:
+                            later_row = await asyncio.to_thread(helper.delivery_inbox.lifecycle, later_id)
+                            if (row and row.get('admitted_at') is not None
+                                    and later_row and later_row.get('admitted_at') is not None):
                                 break
                             await asyncio.sleep(.02)
                         self.assertIsNotNone(row.get('busy_wait_started_at'),
                                              'N1C_STARTUP_TRANSIENT_MISSING_DURABLE_WAIT')
+                        start_calls = [(method, params.get('clientUserMessageId'))
+                                       for method, params in rpc.calls
+                                       if method in ('initialize', 'turn/start')]
                         self.assertIsNotNone(row.get('submission_may_have_started_at'),
-                                             'N1C_STARTUP_RECOVERY_NEVER_REACHED_SUBMISSION')
+                                             'N1C_STARTUP_RECOVERY_NEVER_REACHED_SUBMISSION: '
+                                             f'row={row!r} later={later_row!r} starts={start_calls!r}')
                         self.assertIsNotNone(row.get('admitted_at'),
                                              'N1C_STARTUP_RECOVERY_DROPPED_OR_STALLED_DELIVERY')
-                        self.assertEqual([method for method, _ in rpc.calls].count('turn/start'), 1,
-                                         'N1C_STARTUP_RECOVERY_SUBMITTED_MORE_THAN_ONCE')
+                        self.assertEqual([method for method, _ in rpc.calls].count('turn/start'), 2,
+                                         'N1C_STARTUP_RECOVERY_FIFO_SUBMISSIONS_NOT_EXACTLY_TWICE: '
+                                         f'starts={start_calls!r} first={row!r} later={later_row!r}')
+                        self.assertIsNotNone(later_row.get('admitted_at'),
+                                             'N1C_STARTUP_RECOVERY_DROPPED_LATER_FIFO_ITEM')
+                        self.assertEqual(
+                            [params['clientUserMessageId'] for method, params in rpc.calls if method == 'turn/start'],
+                            [delivery_id, later_id],
+                            'N1C_STARTUP_RECOVERY_LATER_FIFO_ORDER_OR_EXACTLY_ONCE_BROKEN')
                         self.assertGreaterEqual([method for method, _ in rpc.calls].count('initialize'), 3,
                                                 'N1C_STARTUP_RECOVERY_DID_NOT_RETRY_SECOND_TRANSIENT')
                         self.assertNotIn('thread/start', [method for method, _ in rpc.calls],

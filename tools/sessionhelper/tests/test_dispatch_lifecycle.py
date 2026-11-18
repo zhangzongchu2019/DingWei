@@ -435,14 +435,24 @@ class PresubmitRecoveryStartRetryTest(unittest.TestCase):
 
     def test_event_bridge_resubscribes_after_recovery_event_is_set(self):
         calls = []
-        driver = SimpleNamespace(events=lambda: calls.append('subscribed') or (),
+        recovery = threading.Event()
+        sleeps = []
+        def events():
+            calls.append(('subscribed', recovery.is_set()))
+            return ()
+        driver = SimpleNamespace(events=events,
                                  healthy=lambda: True, on_activity=None)
         adapter = self.adapter(driver, 'codex')
-        adapter._transport_recovery = threading.Event()
-        adapter._transport_recovery.set()
-        adapter._bridge_sleep = lambda _seconds: adapter._lane_stop.set()
+        adapter._transport_recovery = recovery
+        def bridge_sleep(_seconds):
+            sleeps.append(None)
+            if len(sleeps) == 1:
+                recovery.set()
+            else:
+                adapter._lane_stop.set()
+        adapter._bridge_sleep = bridge_sleep
         adapter._event_bridge()
-        self.assertEqual(calls, ['subscribed'], 'N1C_EVENT_BRIDGE_SKIPPED_RECOVERED_TRANSPORT')
+        self.assertEqual(calls, [('subscribed', True)], 'N1C_EVENT_BRIDGE_SUBSCRIBED_BEFORE_RECOVERY')
 
 
 class AdmissionDeadlineTest(unittest.TestCase):
