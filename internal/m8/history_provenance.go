@@ -2,15 +2,26 @@ package m8
 
 import (
 	"context"
-	"github.com/zhangzongchu2019/dingwei/internal/store"
 	"log"
+
+	"github.com/zhangzongchu2019/dingwei/internal/store"
 )
 
-func (h *Hub) rememberHistoryInputProvenance(key, session, delivery, message string, p displayProvenance) {
+func (h *Hub) rememberHistoryInputProvenance(key, session, delivery, message string, p displayProvenance, target ...*sessionClient) {
 	// Use the authenticated connection's immutable identity, never helper data or
 	// an address label. Do not borrow identity/PG connections inside route locks.
-	h.mu.Lock()
-	c := h.sessionClients[key][session]
+	var c *sessionClient
+	if len(target) > 0 {
+		c = target[0] // identity captured by routing, before enqueue/name reuse
+	} else {
+		h.mu.Lock()
+		c = h.sessionClients[key][session]
+		h.mu.Unlock()
+	}
+	if c != nil && (c.keyID != key || c.sessionName != session) {
+		log.Printf("history_provenance_unavailable reason=identity_mismatch")
+		return
+	}
 	owner, agent := "", ""
 	if c != nil {
 		owner = c.ownerKey
@@ -19,7 +30,6 @@ func (h *Hub) rememberHistoryInputProvenance(key, session, delivery, message str
 			agent = c.keyID
 		}
 	}
-	h.mu.Unlock()
 	if owner == "" || agent == "" {
 		log.Printf("history_provenance_unavailable reason=identity_unavailable")
 		return

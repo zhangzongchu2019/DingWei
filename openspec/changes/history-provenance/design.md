@@ -69,3 +69,4 @@ renderer 只对已经通过 `normalizeEvent` 的标准 provenance 画图：`kind
 - helper关联字段遵循真实协议：kind/delivery_id/origin_delivery_id/turn_id在顶层，仅data.lifecycle在data；queued、空turn、不同ID、跨五元组或冲突证据均关闭图标。没有有效sidecar的JSON保留原字节，未追溯更新旧事件。
 - 来源记录仅使用当前认证连接的owner/stable Agent ID快照，不在可能持有identity授权锁的route回调内再次借PG连接。无法取得目标稳定身份（例如当时目标未连接）或写sidecar失败时记录固定原因并fail-closed，无图标；不影响已经durable enqueue的投递，也不在后续echo里从正文/地址/临近卡片重建来源。
 - SQLite事件和sidecar的事务原子性不延伸到应用库投递，二者仍独立；原可靠投递回执时序不变。history关闭时清sidecar，删除队列及TTL每批分别有界处理sidecar；恢复/迁移测试覆盖已有0001 ledger升级及digest拒绝。
+- 路由调用显式传入入队时已经捕获的认证目标连接身份；即使入队后同名Agent替换，sidecar也不能重新绑定到新在线槽。独立回归覆盖旧/新稳定ID及错误key/session快照，错误或空身份仍fail-closed。

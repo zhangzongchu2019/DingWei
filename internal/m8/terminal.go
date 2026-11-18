@@ -844,7 +844,7 @@ func (h *Hub) publishFailureDockEvent(keyID, sessionName, noticeID, sourceID, ta
 	h.publishSessionEvent(keyID, sessionName, string(raw))
 }
 
-func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envelope, deliveryID, stage, role string, cancellable bool) {
+func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envelope, deliveryID, stage, role string, cancellable bool, historyTarget ...*sessionClient) {
 	keyID, sessionName = h.subViewObservation(keyID, sessionName, deliveryID, role == "copy")
 	if strings.Contains(sessionName, "/sub-v1-") {
 		cancellable = false
@@ -874,7 +874,7 @@ func (h *Hub) publishInputObservation(keyID, sessionName string, env model.Envel
 	}
 	if role == "primary" && h.SessionHistoryEnabled && h.SessionHistory != nil {
 		if p, ok := provenanceForEnvelope(env); ok {
-			h.rememberHistoryInputProvenance(keyID, sessionName, deliveryID, env.ID, p)
+			h.rememberHistoryInputProvenance(keyID, sessionName, deliveryID, env.ID, p, historyTarget...)
 		}
 	}
 	event, _ := json.Marshal(inputObservationEvent(env, deliveryID, stage, role, cancellable, sourceKind, displayName, time.Now().UTC()))

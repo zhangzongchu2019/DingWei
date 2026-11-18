@@ -4512,7 +4512,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		if wantReceipt {
 			h.writeQueuedReceiptToSource(ctx, env, receiptNonce, deliveryID)
 		}
-		h.publishInputObservation(keyID, sessionName, env, deliveryID, "hub_received", "primary", true)
+		h.publishInputObservation(keyID, sessionName, env, deliveryID, "hub_received", "primary", true, c)
 		h.publishSourceCopyObservation(env, deliveryID, "hub_received")
 		connSeq := 0
 		if c != nil {
@@ -4561,7 +4561,7 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		directID := "direct_" + env.ID
 		// Legacy helpers provide no injection ACK. A successful WebSocket write only
 		// proves handoff, so use the weaker pty_write/injection-unconfirmed stage.
-		h.publishInputObservation(keyID, sessionName, env, directID, "pty_write", "primary", false)
+		h.publishInputObservation(keyID, sessionName, env, directID, "pty_write", "primary", false, c)
 		h.publishSourceCopyObservation(env, directID, "pty_write")
 	}
 	if ackInbound && h.Repo != nil && env.ID != "" {

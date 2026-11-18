@@ -163,3 +163,111 @@ func TestHistoryProvenanceObservationRejectsCopyAndUntrusted(t *testing.T) {
 		})
 	}
 }
+
+func TestHistoryProvenanceUsesCapturedTargetNotReusedName(t *testing.T) {
+	for _, which := range []string{"replacement", "wrong_key", "wrong_session"} {
+		t.Run(which, func(t *testing.T) {
+			h, _, ctx := newTestHub(t)
+			history, e := store.OpenSessionHistory(filepath.Join(t.TempDir(), "history.db"))
+			if e != nil {
+				t.Fatal(e)
+			}
+			defer history.Close()
+			if e = history.SetEnabled(ctx, true, time.Now()); e != nil {
+				t.Fatal(e)
+			}
+			h.SessionHistory, h.SessionHistoryEnabled = history, true
+			old := &sessionClient{keyID: "key", ownerKey: "owner", sessionName: "work", metricsAgentID: "old"}
+			replacement := &sessionClient{keyID: "key", ownerKey: "owner", sessionName: "work", metricsAgentID: "new"}
+			h.sessionClients = map[string]map[string]*sessionClient{"key": {"work": replacement}}
+			captured := sessionClient{keyID: old.keyID, ownerKey: old.ownerKey, sessionName: old.sessionName, metricsAgentID: old.metricsAgentID}
+			if which == "wrong_key" {
+				captured.keyID = "other"
+			}
+			if which == "wrong_session" {
+				captured.sessionName = "other"
+			}
+			env := model.Envelope{ID: "source", From: "timer#key", Body: "synthetic", Meta: map[string]any{hubIngressMetaKey: hubIngressAgent}}
+			h.publishInputObservation("key", "work", env, "d", "hub_received", "primary", true, &captured)
+			echo := model.Envelope{ID: "new-echo", Body: `{"kind":"user_input","delivery_id":"d","origin_delivery_id":"d","turn_id":"t","data":{"lifecycle":"admitted"}}`, Meta: map[string]any{"type": terminalSessionEventType}}
+			h.handleSessionEventEnvelope(replacement, echo)
+			page, e := history.Page(ctx, "owner", "new", "work", "", nil)
+			if e != nil || len(page.Events) != 1 {
+				t.Fatalf("replacement page %v %v", page, e)
+			}
+			if strings.Contains(string(page.Events[0].Event), `"provenance"`) {
+				t.Fatal("same-name replacement inherited captured target proof")
+			}
+			echo.ID = "old-echo"
+			h.handleSessionEventEnvelope(old, echo)
+			page, e = history.Page(ctx, "owner", "old", "work", "", nil)
+			if e != nil || len(page.Events) != 1 {
+				t.Fatalf("captured page %v %v", page, e)
+			}
+			found := strings.Contains(string(page.Events[0].Event), `"provenance"`)
+			if found != (which == "replacement") {
+				t.Fatalf("captured target %s proof=%v", which, found)
+			}
+		})
+	}
+}
+
+type historyEnqueueCaptureRepo struct {
+	store.Repository
+	after func(model.SessionDelivery)
+}
+
+func (r *historyEnqueueCaptureRepo) EnqueueSessionDelivery(ctx context.Context, d model.SessionDelivery) error {
+	if e := r.Repository.EnqueueSessionDelivery(ctx, d); e != nil {
+		return e
+	}
+	r.after(d)
+	return nil
+}
+
+func TestHistoryProvenanceRoutingPinsIdentityBeforeEnqueue(t *testing.T) {
+	v := newViewEnv(t)
+	history := openEnabledNewPlatformHistory(t, v)
+	target, status, body := v.dial(v.zKimiCred, "")
+	if target == nil {
+		t.Fatalf("helper %d %s", status, body)
+	}
+	defer target.CloseNow()
+	waitSessionOnline(t, v.hub, AgentKeyID("zzc"), "kimi")
+	v.hub.mu.Lock()
+	old := v.hub.sessionClients[AgentKeyID("zzc")]["kimi"]
+	v.hub.mu.Unlock()
+	old.stateMu.Lock()
+	old.deliveryACKV1 = true
+	old.stateMu.Unlock()
+	replacement := &sessionClient{keyID: old.keyID, ownerKey: old.ownerKey, sessionName: old.sessionName, metricsAgentID: "same-name-new-stable-id"}
+	defer func() { v.hub.mu.Lock(); v.hub.sessionClients[old.keyID][old.sessionName] = old; v.hub.mu.Unlock() }()
+	var queued model.SessionDelivery
+	v.hub.Repo = &historyEnqueueCaptureRepo{Repository: v.hub.Repo, after: func(d model.SessionDelivery) {
+		queued = d
+		v.hub.mu.Lock()
+		v.hub.sessionClients[old.keyID][old.sessionName] = replacement
+		v.hub.mu.Unlock()
+	}}
+	env := model.Envelope{ID: "identity-snapshot", From: "timer#" + old.keyID, To: "kimi#" + old.keyID, Body: "synthetic snapshot", Meta: map[string]any{hubIngressMetaKey: hubIngressAgent}}
+	if e := v.hub.routeToSession(v.ctx, old.keyID, old.sessionName, env, false); e != nil {
+		t.Fatal(e)
+	}
+	if queued.ID == "" {
+		t.Fatal("route did not enqueue")
+	}
+	raw, _ := json.Marshal(map[string]any{"kind": "user_input", "delivery_id": queued.ID, "origin_delivery_id": queued.ID, "turn_id": "turn-snapshot", "data": map[string]any{"lifecycle": "admitted"}})
+	v.hub.handleSessionEventEnvelope(replacement, model.Envelope{ID: "replacement-echo", Body: string(raw), Meta: map[string]any{"type": terminalSessionEventType}})
+	page, e := history.Page(v.ctx, old.ownerKey, replacement.metricsAgentID, old.sessionName, "", nil)
+	if e != nil || len(page.Events) != 1 {
+		t.Fatalf("page %+v %v", page, e)
+	}
+	if strings.Contains(string(page.Events[0].Event), `"provenance"`) {
+		t.Fatal("route rebound queued provenance to same-name replacement")
+	}
+	v.hub.handleSessionEventEnvelope(old, model.Envelope{ID: "captured-echo", Body: string(raw), Meta: map[string]any{"type": terminalSessionEventType}})
+	page, e = history.Page(v.ctx, old.ownerKey, old.metricsAgentID, old.sessionName, "", nil)
+	if e != nil || len(page.Events) != 1 || !strings.Contains(string(page.Events[0].Event), `"provenance"`) {
+		t.Fatalf("route lost original captured identity proof: %+v %v", page, e)
+	}
+}
