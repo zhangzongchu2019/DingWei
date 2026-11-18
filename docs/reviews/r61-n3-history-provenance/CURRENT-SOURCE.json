@@ -3,5 +3,7 @@
   "evidence_directory": "evidence/legacy-reanchor-20261118",
   "prior_handoff": "4394f282ce109ae7f375120622a720665f115971",
   "independent_reviewer": "qwen38mvb4.zzc",
-  "note": "A32 evidence retained historical. Late togpt technical finding independently reproduced; withdrawn togpt review request not reopened."
+  "note": "A32 evidence retained historical. Late togpt technical finding independently reproduced; withdrawn togpt review request not reopened.",
+  "author_evidence_commit": "f868fe6a3",
+  "validated_document_commit": "ee7b8c4b2230b180851fe075a28306b1d7d5a84a"
 }

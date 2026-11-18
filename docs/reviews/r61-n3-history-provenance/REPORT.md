@@ -35,6 +35,8 @@
 
 完成：最小修订与全量作者门。阻塞：无实现阻塞；qwen独立复核与组长终审尚未完成，旧4394/A32不因此获得PASS。新证据入口为CURRENT-SOURCE.json；离线核验仍从仓根执行VERIFY.py与SHA256SUMS。
 
+新作者证据提交 `f868fe6a3`；最终文档提交 `ee7b8c4b2230b180851fe075a28306b1d7d5a84a` 上 strict 42/0、rc0，命令/UTC/SHA见本次evidence/final-document-strict.json。后续只追加证据，不再修改openspec。
+
 ---
 
 # 以下为原A32交件历史（当时状态，非当前源）

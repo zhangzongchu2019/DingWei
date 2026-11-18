@@ -1,7 +1,7 @@
-1c261e962a13a2336716c43e4ff6f7510d01bc952c63f25155e3d52591d5ff2e  docs/reviews/r61-n3-history-provenance/CURRENT-SOURCE.json
-d7e4257aacf8510bd8d92936e8781c9cad37b0c9b2203a7b755b55374ebcb5df  docs/reviews/r61-n3-history-provenance/MANIFEST.json
+e1c8677bbb03923c34f1574460c43abb669f1ebf0613e5eb893f9ae9720482f5  docs/reviews/r61-n3-history-provenance/CURRENT-SOURCE.json
+5e4ccaee4afc0e881be790fe8b67767d94ff57717f9054a81a422f08e8318744  docs/reviews/r61-n3-history-provenance/MANIFEST.json
 db64715a7c9c100aed6e7f29ef6de2405f604fb7488e391a291dee262a9a8708  docs/reviews/r61-n3-history-provenance/MUTATIONS.md
-2747fd5904feb121e45dea4a626c82b78d857900a49a49355a31bacb01e04917  docs/reviews/r61-n3-history-provenance/REPORT.md
+b3084feb180080e336ee74b5f5337ab2087a74efda90a2e4d44012e428a7995b  docs/reviews/r61-n3-history-provenance/REPORT.md
 31b718377adfd890e92e55f67f18a496408a8e5a82d707fc73cdce3af0a17f71  docs/reviews/r61-n3-history-provenance/VERIFY.py
 9625b0bd67e1b053994080bc3462cbdf52156b7f6ad7766f7bb2f3566f297146  docs/reviews/r61-n3-history-provenance/evidence/SKIPS.json
 7b6fbc5d84e7947ee2ff9d1dfc80c367bc6db7bf2f2ac9a4d5c5f99a7e8d5da8  docs/reviews/r61-n3-history-provenance/evidence/browser-full.log
@@ -34,6 +34,8 @@ b2d4cc9c8e2dded7ed45e8e8b98dcf3e58a15cef14af3b79950dcfb185e336fe  docs/reviews/r
 97c7eb2e05709b96aab2a723b306384ec81cb8e3970458973b93bd55800d4ae7  docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/current-route-controls.json
 a3757b90e2d5fcd0ed9f7acef403c0704d00a86049d298fc3ef20b451b26ea9d  docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/environment-observation.json
 9ef67a702ea73ecfc254b4ba818174733651fa33a20461a372fa37692b2c40bf  docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/export_after.py
+6829015a59cbe7a233313cd92451a002c542fb8881de47fb04bd33d7165e239c  docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/final-document-strict.json
+8c1ae110739ef564384ea606a94157d7ed4a577b9c7d5aa44be55b1598f38169  docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/final-document-strict.log
 6052079a89b1b3800f87f02ff91595ce7de0baafbed454eb28fad63fd47a2a5c  docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/fixture-export.json
 3a127335db6a8566d8a82668133907ea6fdc791e236739830d22575937c854df  docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/fixture-export.log
 6e8ac02653faeff7b5d24e170834accee4a317a936436c019acc3cc26d2bab9a  docs/reviews/r61-n3-history-provenance/evidence/legacy-reanchor-20261118/focused-race.log
