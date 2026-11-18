@@ -225,6 +225,12 @@ function startServer(rendererBytesProvider, consoleHTML) {
       page.on('pageerror', (e) => console.log(`    [pageerror ${vp.width}]`, String(e.message).slice(0, 160)));
       await page.goto(`${server.base}/console`, { waitUntil: 'domcontentloaded' });
       await page.locator(`nav button[title="${SESSION}"]`).waitFor({ state: 'attached', timeout: 20000 });
+      // S-R62-MOBILE：窄屏（≤768）菜单是可折叠抽屉、默认收起；先开抽屉再点 Agent
+      // （点中后产品逻辑自动收抽屉）。嵌入态可见性／几何判据一字不改。
+      if (vp.width <= 768) {
+        await page.locator('#navToggle').click();
+        await page.waitForFunction(() => document.querySelector('nav').classList.contains('open'));
+      }
       await page.click(`nav button[title="${SESSION}"]`);
       await page.locator(`#panes iframe[title="Agent view: ${SESSION}"]`).waitFor({ state: 'attached', timeout: 20000 });
       const frame = page.frames().find((f) => f.url().includes(`/view/${encodeURIComponent(SESSION)}`));
