@@ -963,10 +963,50 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                 for ack in helper.delivery_inbox.pending_delivery_acks():
                     helper.delivery_inbox.confirm_delivery_ack(ack['payload'] | {'type': 'delivery_ack_confirm'})
 
+                # Force the reviewer's real interleaving: pause only after the
+                # real defer_current released its queue lock, let recovery and
+                # the follower enqueue finish, then resume the command worker.
+                deferred_head = threading.Event()
+                release_head = threading.Event()
+                original_defer = helper.adapter._commands.defer_current
+
+                def defer_with_interleaving(delivery):
+                    result = original_defer(delivery)
+                    recovery = helper.adapter._transport_recovery
+                    if (result and delivery == delivery_id and recovery is not None
+                            and not recovery.is_set() and not deferred_head.is_set()):
+                        deferred_head.set()
+                        if not release_head.wait(8):
+                            raise AssertionError('N1C_FIFO_PROBE_RELEASE_TIMEOUT')
+                    return result
+
+                helper.adapter._commands.defer_current = defer_with_interleaving
+
                 async def exercise():
                     ws = WS()
                     worker = asyncio.create_task(helper.delivery_worker_loop(ws))
                     try:
+                        for _ in range(300):
+                            if deferred_head.is_set():
+                                break
+                            await asyncio.sleep(.01)
+                        self.assertTrue(deferred_head.is_set(),
+                                        'N1C_FIFO_PROBE_DID_NOT_REACH_DEFER_INTERLEAVING')
+                        recovery = helper.adapter._transport_recovery
+                        for _ in range(800):
+                            if recovery is not None and recovery.is_set():
+                                break
+                            await asyncio.sleep(.01)
+                        self.assertTrue(recovery is not None and recovery.is_set(),
+                                        'N1C_FIFO_PROBE_RECOVERY_DID_NOT_FINISH')
+                        for _ in range(200):
+                            if any(item.delivery_id == later_id for item in helper.adapter._commands.pending):
+                                break
+                            await asyncio.sleep(.01)
+                        self.assertTrue(any(item.delivery_id == later_id
+                                            for item in helper.adapter._commands.pending),
+                                        'N1C_FIFO_PROBE_FOLLOWER_NOT_ENQUEUED_BEFORE_RELEASE')
+                        release_head.set()
                         for _ in range(500):
                             row = await asyncio.to_thread(helper.delivery_inbox.lifecycle, delivery_id)
                             later_row = await asyncio.to_thread(helper.delivery_inbox.lifecycle, later_id)
@@ -1001,6 +1041,7 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                         self.assertFalse(any(ack.get('state') == 'failed' for ack in acks),
                                          'N1C_STARTUP_TRANSIENT_EMITTED_TERMINAL_FAILED_ACK')
                     finally:
+                        release_head.set()
                         worker.cancel()
                         with contextlib.suppress(asyncio.CancelledError):
                             await worker

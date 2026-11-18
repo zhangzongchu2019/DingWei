@@ -1,4 +1,4 @@
-73b9c5bfb09a03696a6b03f21460b1867839397acddee3c14a75b52b40b27066  docs/reviews/r61-n1c-presubmit-wait/REPORT.md
+d8523a1a0f480817a4aa74432387d21daf1a326995240da34cb61171bc32980e  docs/reviews/r61-n1c-presubmit-wait/REPORT.md
 7f94a444764efcc50488e36adfe02c63f66a4c5ae32804ce6e742f024ca8c837  docs/reviews/r61-n1c-presubmit-wait/SKIPS.md
 4466b47efb54035b2e3f474d20284eaaa4bad257fe91418637595bc86b628c0f  docs/reviews/r61-n1c-presubmit-wait/evidence/build-test-only-failed-5dd67f96.log
 0a151403d65155cd14e2112c5307bba8907b188bcbbaab9bf13c32c4db1a0275  docs/reviews/r61-n1c-presubmit-wait/evidence/build-test-only-final-rerun.log
@@ -52,4 +52,6 @@ ced0dcb13c13eb34d9f2cefe48db67dab58fccd2ad51da9219b7001e4afe8449  docs/reviews/r
 ebf33a79a928939594291f493b92b18be685e57b902764a568f8f4ebd8f5bf0b  docs/reviews/r61-n1c-presubmit-wait/evidence/r3/mutation-retry-auth-failure.log
 00deedb25054eaeed804dcc843071547cc54a415fbd49e52ffe1de9e006e2ad4  docs/reviews/r61-n1c-presubmit-wait/evidence/r3/openspec-strict-ba699497.log
 b8f042c0c672140c5aa22434060a0aefd5a9bd11d0f0650e97bce7fcb4de09ba  docs/reviews/r61-n1c-presubmit-wait/evidence/r3/run-build-tests-ba699497.log
+478f05cd5713c30020d5c133cc3924e6b23a0a2301f1989cd3325612747e7705  docs/reviews/r61-n1c-presubmit-wait/evidence/r4-fifo-append-tail-mutation.log
+c0b7b3cf1ef7f06007130f691a6f73a8cb1ee8b1a47f59a771e407e6c392e6ce  docs/reviews/r61-n1c-presubmit-wait/evidence/r4-focused.log
 f7c956d2923bd942175b1446481394aa36925658221bf92705e587e64a64e377  docs/reviews/r61-n1c-presubmit-wait/evidence/toolchain.txt
