@@ -40,6 +40,9 @@ const { finishRegression, launchChromium, regressionCollector, startRendererServ
    for(const negative of ['unattested','untrusted','absent']){
     history=JSON.parse(JSON.stringify(record.history));
     const event=history.events[0].event;
+    // Keep negative fixtures well formed even when a deletion mutation removed
+    // the positive block. The preceding icon_count==1 assertion still fails.
+    if(!event.provenance)event.provenance={kind:'agent',display_name:name,attested_by:'hub',trust_decision:'trusted'};
     if(negative==='absent')delete event.provenance;
     else if(negative==='unattested')event.provenance.attested_by='client';
     else event.provenance.trust_decision='unknown';
