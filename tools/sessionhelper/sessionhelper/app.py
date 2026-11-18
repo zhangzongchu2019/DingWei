@@ -1314,15 +1314,16 @@ class SessionHelper(SubAgentConnection):
         meta.update(extra)
         return envelope(session_addr("workpulse", self.book.key_id), "", self.book.self_addr, meta)
 
-    def _queue_driver_busy_ack(self, delivery_id: str) -> None:
+    def _queue_driver_busy_ack(self, delivery_id: str) -> bool:
         """Bridge driver-thread pre-submit waits to the active websocket loop."""
         try:
             self._driver_busy_ack_requests.put_nowait(str(delivery_id))
+            return True
         except queue.Full:
-            # The local durable busy marker and Hub lease retry remain safe;
-            # this optional early requeue signal may be retried on the next
-            # websocket delivery if the bounded wake queue is saturated.
+            # The local durable busy marker remains safe; a later retry may
+            # enqueue this wake once the bounded websocket bridge has room.
             print('[delivery][WARN][BUSY_ACK_QUEUE_FULL] durable wait remains active', flush=True)
+            return False
 
     def is_delivery_cancel(self, env: dict) -> bool:
         return is_delivery_cancel_envelope(env)

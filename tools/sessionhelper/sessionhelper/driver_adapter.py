@@ -113,8 +113,12 @@ class DriverAdapter:
                     callback = getattr(self, 'on_busy_wait', None)
                     if first_request and callable(callback):
                         try:
-                            callback(delivery_id)
+                            if callback(delivery_id) is False:
+                                with self._busy_ack_lock:
+                                    self._busy_ack_requested.discard(delivery_id)
                         except Exception as exc:
+                            with self._busy_ack_lock:
+                                self._busy_ack_requested.discard(delivery_id)
                             print(f'[delivery][WARN][BUSY_ACK_QUEUE_FAILED] id={delivery_id} error={type(exc).__name__}', flush=True)
                 return saved
             def persist_submission_boundary(delivery_id):
