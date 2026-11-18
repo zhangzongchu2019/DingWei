@@ -254,3 +254,20 @@ browser-all-final.log＋receipt／build-tests.log＝全量门。
 
 产品零改动（renderer/console_auth sha 同锚）；VERSION 未动；未推 main；未跑 build.sh
 出发布件；未碰预发／现网；未改他人分支。两测试件之外只新增 docs/evidence。
+
+## 七 v2 rebase 追记（2026-11-18T00:53Z，r60 定锚 501e5b8a）
+
+- 触发：组长派单 dw-dlv_630d6d8bd6f70b64a04629a7360eaa66（2026-11-17T22:56:24Z）。r60 最终锚＝501e5b8a185b20f5c931c8ebb89c16bfd633a01e（tree 2e160bfe3ac9f5aac5c3fdc8f428133053af6968，VERSION 0.2.3.40，逐字核同）。远端 coder56solzzc/r60-ingress-fix tip 其後前进至 8518403634d7af41548296c85c38ea3ea90c62d3（仅多一条 docs，501e5b8a 为其祖先）⇒ 按派单以 pinned 锚为底。
+- 分支 qwen38mvb4/browser-flake-windows-v2 tip b1b5aa077982066084b432f3b704bebc552de022：cherry-pick 2e1206c4a→b1b5aa077 零冲突（锚差 9818b979..501e5b8a 与本单零文件重叠）；range-diff 全＝（evidence-v2/flake-range-diff.txt）。冻结件 2e1206c4 未改写。
+- 门（静默串行，NODE_PATH=/home/is3/pwrun/node_modules）：
+  - 靶件两格：r15 rc=0；console rc=0（passed=20 failed=0）（evidence-v2/flake-r15-run1.log／flake-console-run1.log）。
+  - 浏览器全量 runner：起 2026-11-17T23:51:47Z、止 2026-11-18T00:03:47Z，45/45 全绿 aggregate_rc=0（flake-browser-all.log／.rc／.start／.end）。修好的 r15 翻页窗、mutations 格与 console 零组格在新锚全绿。
+  - run-build-tests.sh 三轮（PATH 前置 sessionhelper-venv）：
+    - 轮1 起 00:04:27Z、止 00:14:48Z，rc=1。红＝test_guide_staging.GuideRealAdapterBoundaryTest.test_claude_stream_json_user_frame_boundary_counts_zero_one_two（test_guide_staging.py:654，第二业务帧期望 SECOND、实测带 GUIDE 平台上下文前缀）；helper 门 claude profile failures=1，set -eu 致 Go／shell 段未跑（flake-build-tests.log／.rc）。
+    - 轮2 起 00:20:52Z、止 00:32:53Z，rc=1。红名不同＝test_sessionhelper.SessionHelperTest.test_delivery_worker_high_frequency_busy_window_processes_all（test_sessionhelper.py:1252，processed 6!=8）＋test_delivery_worker_recovers_when_injection_failure_turns_busy（test_sessionhelper.py:1183，injected!=processed）；claude／codex 两 profile 各 failures=1（flake-build-tests-r2.log／.rc）。
+    - 轮3 起 00:36:02Z、止 00:46:26Z，rc=1。红＝test_sub_agent_helper.RuntimeTests.test_slow_creation_does_not_block_parent_lifecycle_seal（test_sub_agent_helper.py:563，NATIVE_CREATE_BLOCKED_LIFECYCLE_SEAL，closer.is_alive() 实测 True）；claude profile failures=1、codex profile rc=0（flake-build-tests-r3.log／.rc）。
+  - 三轮共 4 个不同红名，均不在派单点名的 AdmissionDeadline*／AA010 族，但均系锚件 helper python 时序格（本单零 helper 改动）；同码 N-2 v2 全量 build 于 23:33:57–23:47:27Z rc=0（BUILD_TESTS_OK helper_profiles=2 python=27 shell=2）。
+  - 单测对照（仿门 env -i 隔离 HOME，原锚 501e5b8a 与本分支两工作树）：guide_staging 边界格 锚×5＋v2×5＝10/10 绿；busy_window 格 锚×3＋v2×3＝6/6 绿；injection_failure 恢复格 锚×3＋v2×3＝6/6 绿；lifecycle_seal 格 锚×3＋v2×3＝6/6 绿（gs-*.log／dw-*.log／sa-*.log）⇒ 四红均系全量并行门序列内瞬态（等待窗／线程调度敏感），非确定性、非本单改动所致。当时机器 loadavg 约 5–6／96 核，本席无并行负载。
+  - 处置：记名不修（超出本单范围）；不再续跑第四轮（避免重试至绿掩盖读数），三轮原始日志全入证据，披露候组长裁（是否归 helper 侧时序格桶转 togpt60，与 AdmissionDeadline* 族同桶）。
+- 跨分支佐证：N-2 v2（不含本单修法）全量 runner r15_mutations 红，且原锚 mutations×3＝3/3 红于同红点（r15-session-history-browser-regression.js:96 既有 3s 窗抢先目标断言）⇒ 本单修法在新锚消除该窗（本分支 mutations 于 45/45 内绿）。
+- 边界：仅两冻结测试件＋docs／evidence-v2；产品零改动；VERSION 未动；未推 main；未出发布件；未碰预发／现网。
