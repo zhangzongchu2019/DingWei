@@ -177,10 +177,13 @@ func TestDeliveryACKV2QueueFullRequiresNegotiationAndCreatesDurableNotice(t *tes
 }
 
 func TestDeliveryACKV2QueueFullIgnoredWithoutHelperCapability(t *testing.T) {
-	f := newACKV2Fixture(t, true)
-	f.client.stateMu.Lock()
-	f.client.deliveryACKQueueFullV1 = false
-	f.client.stateMu.Unlock()
+	f := newACKV2FixtureWithCapabilities(t, true, false, "", false, nil)
+	if err := f.hub.Repo.UpsertSessionEndpoint(f.ctx, model.SessionEndpoint{KeyID: f.client.keyID, SessionName: "source", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.hub.Repo.SetSessionEndpointDeliveryACK(f.ctx, f.client.keyID, "source", true); err != nil {
+		t.Fatal(err)
+	}
 	ack := f.ack("failed", "", "", f.stamp.Add(time.Second))
 	ack.Meta["reason"] = "queue_full"
 	ack.Meta["retryable"] = false
@@ -219,6 +222,12 @@ func TestNewHubOldHelperQueueFullKeepsRetryableBusyPath(t *testing.T) {
 func TestDeliveryACKV2QueueFullRequiresExplicitNonretryableShape(t *testing.T) {
 	for _, omitRetryable := range []bool{false, true} {
 		f := newACKV2Fixture(t, true)
+		if err := f.hub.Repo.UpsertSessionEndpoint(f.ctx, model.SessionEndpoint{KeyID: f.client.keyID, SessionName: "source", Active: true}); err != nil {
+			t.Fatal(err)
+		}
+		if err := f.hub.Repo.SetSessionEndpointDeliveryACK(f.ctx, f.client.keyID, "source", true); err != nil {
+			t.Fatal(err)
+		}
 		ack := f.ack("failed", "", "", f.stamp.Add(time.Second))
 		ack.Meta["reason"] = "queue_full"
 		if omitRetryable {
