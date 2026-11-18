@@ -25,6 +25,20 @@ from sessionhelper.inbox import DeliveryInbox
 from sessionhelper.daemon_identity import DaemonIdentityError
 from sessionhelper.app import SessionHelper
 from sessionhelper.config import load_config
+try:
+    from _home_isolation import HomeIsolation
+except ImportError:
+    from tests._home_isolation import HomeIsolation
+
+_HOME = HomeIsolation()
+
+
+def setUpModule():
+    _HOME.start()
+
+
+def tearDownModule():
+    _HOME.finish()
 
 
 class RPC:
@@ -868,8 +882,9 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                     'SH_PROVISION_VERSIONS_FILE': str(Path(tmp) / 'versions.json'),
                     'SH_COLLECT': '0', 'SH_PROXY': 'off',
                 })
-                with mock.patch.object(DriverAdapter, '_build_driver', return_value=first):
-                    helper = SessionHelper(cfg)
+                with mock.patch.dict(os.environ, {'SH_DRIVER': 'codex'}):
+                    with mock.patch.object(DriverAdapter, '_build_driver', return_value=first):
+                        helper = SessionHelper(cfg)
                 helper.upload_addendum_due = lambda: ''
                 helper.adapter._build_driver = lambda _which: replacement
                 delivery_id = 'dw-dlv_' + str(index + 1) * 32
@@ -910,8 +925,10 @@ class FirstDeliveryInitializeWait(unittest.TestCase):
                         helper.adapter._lane_closing.set()
                         helper.adapter._work_available.set()
                         helper.adapter._bridge_wake.set()
-                        helper.adapter._worker_thread.join(2)
-                        helper.adapter._bridge_thread.join(2)
+                        if getattr(helper.adapter, '_worker_thread', None):
+                            helper.adapter._worker_thread.join(2)
+                        if getattr(helper.adapter, '_bridge_thread', None):
+                            helper.adapter._bridge_thread.join(2)
                         current = helper.adapter.driver
                         current.stop()
                         if current is not first:

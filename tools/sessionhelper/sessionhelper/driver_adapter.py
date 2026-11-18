@@ -254,6 +254,8 @@ class DriverAdapter:
         # Starting the CLI inline here lets app.py reject_unstarted before the
         # delivery has entered that lifecycle.
         defer_codex_start = not self._started and self._which == 'codex'
+        if not self._started and not defer_codex_start:
+            self.start()
         if (env.get("meta") or {}).get("kind")=="task_blocker_ready":
             staged=self._blocker_journal().stage(env)
             env=json.loads(staged['envelope_json'])

@@ -301,12 +301,12 @@ class HubDeliveryPathTest(unittest.TestCase):
             blob2 = json.dumps(events2, ensure_ascii=False)
             self.assertNotIn("terminal_timeout", blob2, "turn/completed(failed) 已终态 ⇒ 不得再补 terminal_timeout")
 
-    def test_handle_delivery_start_failure_raises_for_app_catch(self):
-        # 面 2 经 handle_delivery：start 失败原样抛出——app 层（delivery_worker_loop
-        # 的 except Exception）兜住并发 failed ACK（cli_injection_failed）。
-        # adapter 这层不吞（吞了 app 就没法区分「起不来」与「已受理」）。
+    def test_non_codex_handle_delivery_start_failure_raises_for_app_catch(self):
+        # R61 N1c 把先入 FIFO 后 initialize 的顺序限于 Codex。
+        # 此格保留其他 driver 的同步 start 错误合同，app 仍可据此拒绝未启动的投递。
         with tempfile.TemporaryDirectory() as td:
             adapter = self._mk(td, "crash")
+            adapter._which = "claude"
             with self.assertRaises(Exception) as cm:
                 adapter.handle_delivery({"body": "ping", "meta": {"source_kind": "user"}})
             from sessionhelper.codexDriver import JsonRpcError
