@@ -1,0 +1,12 @@
+AssertionError [ERR_ASSERTION]: 离线 Agent 的面板必须保持禁用(这是有意设计),实测 pointer-events=""
+
+'' !== 'none'
+
+    at main (/tmp/wt-r62-slim/view-service/console-panel-pointerevents-regression.js:125:12) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: '',
+  expected: 'none',
+  operator: 'strictEqual',
+  diff: 'simple'
+}

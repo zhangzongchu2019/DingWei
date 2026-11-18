@@ -1,0 +1,25 @@
+G1 m8 full -count=1 HUB_TEST_PG_STRICT=1
+anchor=879612362fb5e6aeb7197a1627b8e89fae4edcea base=206d41b26dab646c0e50a111eed5a45ccf7c72f6
+start=2026-11-18T14:55:40Z end=2026-11-18T15:06:13Z
+rc=0
+top-level PASS=988 FAIL=0 SKIP=11
+
+SKIP names:
+--- SKIP: TestChangeEvidenceConsoleBrowser (0.00s)
+--- SKIP: TestMuxProductHTTP1EightSeats (0.00s)
+--- SKIP: TestConsolePlatformPayloadDump (0.00s)
+--- SKIP: TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel (0.00s)
+--- SKIP: TestDeliveryACKActualCLILateWireTerminal (1.25s)
+--- SKIP: TestFailureNoticeDriverTurnEndToEnd (0.00s)
+--- SKIP: TestGroupReplyMCP (0.00s)
+--- SKIP: TestHelper0232MixedVersionEndToEnd (0.00s)
+--- SKIP: TestEnvelopeReadTimeoutEnvironmentChild (0.00s)
+--- SKIP: TestSessionHistoryTwentyAgentPublishP99 (0.00s)
+--- SKIP: TestSpecMCPEndToEnd (0.00s)
+
+interrupted(9) lines (Z-3 单列):
+7965:2026/11/18 07:05:52 session delivery lease release failed key_id=u_zzc session=quill conn_seq=1 reason=session_disconnected error="interrupted (9)"
+7967:2026/11/18 07:05:52 session delivery lease release failed key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected error="interrupted (9)"
+7971:2026/11/18 07:05:52 session delivery lease release failed key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected error="interrupted (9)"
+归属格：TestViewDirectOutputCanStillMentionAgent（view_direct_no_return_test.go:198，PASS）
+聚焦×10：r62 锚 10/10 PASS 9 行；main 基锚 10/10 PASS 3 行 ⇒ 继承性竞态，两锚均现

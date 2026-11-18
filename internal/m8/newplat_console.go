@@ -36,28 +36,16 @@ func (h *Hub) newPlatformRequireAction(action string, w http.ResponseWriter, r *
 
 // handleNewPlatformConsolePlatform 新平台的 /api/console/platform：形状与旧接口相同（role、actions、items）。
 // 平台项：管理角色下发 platform-admin（console 内部 tab，无 target）。
-// Specs 与任务管理经身份垫片接上（R-V2-SPEC-TASK-SHIM-IMPL）后照常下发。
+// S-R62-CONSOLE-SLIM（业主令 rulings ㊿-补129）：整个菜单只保留「Agent」与「平台管理」。
+// Specs、任务管理、研发问题待答、坐标派审、委员会版本确认不再下发。
+// 只摘入口：后端路由、表、数据、迁移一律不删不改；直连旧 URL 的行为保持现状。
 func (h *Hub) handleNewPlatformConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	role := platformRole(r)
 	// 编组已接上新平台（np_group，组长裁定 132246Z）⇒ 人人都有「Agent 管理」入口（编排件第八节定的标题；页面据 id 打开编组工作区）。
-	// Specs 与任务管理（R-V2-SPEC-TASK-SHIM-IMPL G4）：经身份垫片接上新平台，人人下发（与旧平台同形、同序）。
 	items := []model.ConsolePlatformItem{{
-		ID: "specs", Kind: "spec", Title: "Specs",
-		Href: "#specs", Status: "approved", Active: true,
-	}, {
-		ID: "task-board", Kind: "task-board", Title: "任务管理",
-		Href: "#task-board", Status: "approved", Active: true,
-	}, {
 		ID: "agent-groups", Kind: "agent-groups", Title: "Agent 管理",
 		Href: "#agent-groups", Status: "approved", Active: true,
 	}}
-	if h.coordinateReviewEntry(r.Context(), platformPrincipal(r)) {
-		items = append(items, model.ConsolePlatformItem{ID: "coordinate-reviews", Kind: "coordinate-reviews", Title: "坐标派审", Href: "/console/coordinate-reviews", Target: "_blank", Status: "approved", Active: true})
-	}
-	if h.openSpecConfirmationReady() {
-		items = append(items, model.ConsolePlatformItem{ID: "openspec-confirmations", Kind: "openspec-confirmations", Title: "委员会版本确认", Href: "/console/openspec-confirmations", Target: "_blank", Status: "approved", Active: true})
-	}
-	items = append(items, model.ConsolePlatformItem{ID: "pilot-questions", Kind: "questions", Title: "研发问题待答", Href: "/console/questions", Status: "approved", Active: true})
 	if role == consolePlatformRoleManagement {
 		items = append(items, model.ConsolePlatformItem{
 			ID: "platform-admin", Kind: "platform-admin", Title: "平台管理",

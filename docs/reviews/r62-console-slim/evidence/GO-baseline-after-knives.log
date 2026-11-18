@@ -1,0 +1,31 @@
+=== RUN   TestNewPlatformConsoleMenuSlimExactlyTwoEntries
+2026/11/18 07:36:43 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:43 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestNewPlatformConsoleMenuSlimExactlyTwoEntries (0.26s)
+=== RUN   TestLegacyConsoleMenuSlimRemovedEntriesAbsent
+2026/11/18 07:36:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:36:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestLegacyConsoleMenuSlimRemovedEntriesAbsent (0.57s)
+=== RUN   TestR7OpenSpecConfirmationSlimMenuNeverExposesEntry
+2026/11/18 07:36:44 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:44 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestR7OpenSpecConfirmationSlimMenuNeverExposesEntry (0.25s)
+=== RUN   TestConsolePlatformAgentGroupsEntryIsInternalTabForBothRoles
+2026/11/18 07:36:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:36:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsolePlatformAgentGroupsEntryIsInternalTabForBothRoles (0.61s)
+=== RUN   TestConsolePlatformHandlersExposeOnlyActionableBuiltinsAndEnforceWorkflow
+2026/11/18 07:36:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestConsolePlatformHandlersExposeOnlyActionableBuiltinsAndEnforceWorkflow (0.27s)
+=== RUN   TestNewPlatformConsolePlatform
+2026/11/18 07:36:45 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:45 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- PASS: TestNewPlatformConsolePlatform (0.26s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/m8	2.356s
+baseline rc=0

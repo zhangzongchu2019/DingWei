@@ -1,10 +1,12 @@
-// 平台功能面板(Specs / Agent 编组)不得被 Agent 在线轮询判成"离线"而变成不可点。
+// 平台功能面板(Agent 编组 / 平台管理)不得被 Agent 在线轮询判成"离线"而变成不可点。
+// S-R62-CONSOLE-SLIM：Specs 菜单入口已摘，受测平台面板改为保留的「平台管理」内部 tab；
+// 缺陷形状与判据不变（历史实测里的 Specs 面板即当年的平台面板样本）。
 //
 // 🔴 缺陷形状(业主 2026-09-23 报"下拉无响应/组码框无法输入/Specs 按键无响应"):
 //    console 外壳每 15 秒跑一次 refreshAgents → applyAgentSnapshot(agents),其中
 //      tabs.forEach((e,session) => { const online = agentSnapshot.get(session)===true;
 //                                    e.pane.style.pointerEvents = online ? '' : 'none'; })
-//    而平台面板也登记在同一张 tabs 表里(`__specs` / `__agent-groups`),
+//    而平台面板也登记在同一张 tabs 表里(`__platform-admin` / `__agent-groups`),
 //    它们不是真实会话 ⇒ agentSnapshot.get(...) 是 undefined ⇒ online=false
 //    ⇒ **整块 pane 被设成 pointer-events:none** ⇒ 点不进、聚不了焦、于是"按键也没反应"。
 //    🔵 pointer-events 这个机制本身对【Agent 掉线】是有意设计,不动它;
@@ -40,10 +42,12 @@ function productionHTML() {
   let html = source.slice(contentStart, end);
   // 变异:把"跳过平台面板"的保护去掉 ⇒ 本件必须转红。锚失配即报错,不静默空跑。
   if (MUTATION === 'panel-treated-as-agent') {
-    assert.ok(html.includes('isPlatformPaneKey'),
-      'panel-treated-as-agent 锚点未命中:修复尚未落地,或保护写法与本件预期不同。\n'
-      + '修复方请把"跳过平台面板"的判断命名为 isPlatformPaneKey(session),或同步改本件的锚点 —— 变异不生效等于这条证明不存在。');
-    html = html.replace(/if\s*\(isPlatformPaneKey\(session\)\)\s*return;/g, '');
+    // S-R62-CONSOLE-SLIM：锚点改与产品实际写法一致（console_auth.go 的 startsWith('__') 保护，
+    // 与 console-browser-regression.js 的 disable-platform-tabs-on-agent-refresh 同锚）。
+    const anchor = "if(String(session).startsWith('__')) return;";
+    assert.ok(html.includes(anchor),
+      'panel-treated-as-agent 锚点未命中:保护写法与本件预期不同 —— 变异不生效等于这条证明不存在。');
+    html = html.split(anchor).join('');
   }
   if (MUTATION && MUTATION !== 'panel-treated-as-agent') throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
@@ -62,11 +66,10 @@ async function main() {
     if (req.url === '/console') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(html); return; }
     if (req.url === '/api/console/agents') return json({ agents });
     if (req.url === '/api/console/platform') return json({ role: 'management', actions: ['read', 'submit'], items: [
-      { id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' },
-      { id: 'specs', kind: 'spec', title: 'Specs', href: '#specs', status: 'approved' },
-      { id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: '#agent-groups', status: 'approved' }] });
+      { id: 'agent-groups', kind: 'agent-groups', title: 'Agent 管理', href: '#agent-groups', status: 'approved' },
+      { id: 'platform-admin', kind: 'platform-admin', title: '平台管理', href: '#platform-admin', status: 'approved' }] });
     if (String(req.url).startsWith('/api/console/agent-groups')) return json({ principal: 'owner-a', owned_agents: [{ id: 'agent-a', session_name: 'owner-alpha-2642', online: true }], groups: [] });
-    if (String(req.url).startsWith('/console/specs')) { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end('<!doctype html><title>specs stub</title><button id=stub>stub</button>'); return; }
+    if (req.url === '/api/console/platform/users' && req.method === 'GET') return json({ users: [] });
     if (String(req.url).startsWith('/view/')) { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end('<!doctype html><title>view stub</title>'); return; }
     res.writeHead(404); res.end('not found');
   });
@@ -80,8 +83,8 @@ async function main() {
     const pageErrors = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
     await page.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'load' });
-    await page.waitForSelector('#platform-items a[data-item-id=specs]');
-    await page.click('#platform-items a[data-item-id=specs]');
+    await page.waitForSelector('#platform-items a[data-item-id=platform-admin]');
+    await page.click('#platform-items a[data-item-id=platform-admin]');
     await page.click('#platform-items a[data-item-id=agent-groups]');
     await page.click('#a button');
     await page.evaluate(() => window.openTab('owner-offline-2642'));   // 离线项在折叠区且按钮 disabled,直接走产品函数
@@ -91,11 +94,11 @@ async function main() {
       const pick = (pred) => { const el = [...document.querySelectorAll('#panes > *')].find(pred); return el ? (el.style.pointerEvents || '') : 'MISSING'; };
       const tab = (title) => { const t = [...document.querySelectorAll('#tabs .tab')].find((x) => x.title === title); return t ? { cls: t.className, aria: t.getAttribute('aria-disabled') } : 'MISSING'; };
       return {
-        specs: pick((el) => el.tagName === 'IFRAME' && el.src.includes('/console/specs')),
-        groups: pick((el) => el.classList && el.classList.contains('group-workspace')),
+        admin: pick((el) => el.querySelector && el.querySelector('#adminInvite')),
+        groups: pick((el) => el.querySelector && el.querySelector('#groupAddOpen')),
         agent: pick((el) => el.tagName === 'IFRAME' && el.src.includes('/view/owner-alpha-2642')),
         offlineAgent: pick((el) => el.tagName === 'IFRAME' && el.src.includes('/view/owner-offline-2642')),
-        specsTab: tab('Specs'), groupsTab: tab('Agent 管理'),
+        adminTab: tab('平台管理'), groupsTab: tab('Agent 管理'),
       };
     });
 
@@ -103,16 +106,16 @@ async function main() {
     await page.evaluate(() => window.refreshAgents && window.refreshAgents());
     await page.waitForTimeout(400);
     const manual = await paneState();
-    assert.strictEqual(manual.specs, '', `刷新一次 Agent 在线状态后,Specs 面板被设成 pointer-events:${manual.specs} ⇒ 整块点不进去`);
+    assert.strictEqual(manual.admin, '', `刷新一次 Agent 在线状态后,平台管理面板被设成 pointer-events:${manual.admin} ⇒ 整块点不进去`);
     assert.strictEqual(manual.groups, '', `刷新一次 Agent 在线状态后,编组面板被设成 pointer-events:${manual.groups} ⇒ 整块点不进去`);
-    assert.notStrictEqual(manual.specsTab.aria, 'true', 'Specs 页签被标成 aria-disabled=true,而它完全可用');
+    assert.notStrictEqual(manual.adminTab.aria, 'true', '平台管理页签被标成 aria-disabled=true,而它完全可用');
     assert.notStrictEqual(manual.groupsTab.aria, 'true', '编组页签被标成 aria-disabled=true,而它完全可用');
     passed += 4;
 
     // ② 🔴 真的等满一个 15 秒 tick —— 此前所有装置都在 15 秒内跑完,才一直全绿
     await page.waitForTimeout(16500);
     const ticked = await paneState();
-    assert.strictEqual(ticked.specs, '', `等满一个 15 秒 tick 后,Specs 面板 pointer-events=${ticked.specs} ⇒ 业主看到的"按键无响应"`);
+    assert.strictEqual(ticked.admin, '', `等满一个 15 秒 tick 后,平台管理面板 pointer-events=${ticked.admin} ⇒ 业主看到的"按键无响应"`);
     assert.strictEqual(ticked.groups, '', `等满一个 15 秒 tick 后,编组面板 pointer-events=${ticked.groups} ⇒ 业主看到的"下拉无响应/组码框打不进字"`);
     passed += 2;
 
@@ -124,10 +127,11 @@ async function main() {
     passed += 2;
 
     // ④ 真实点击:面板内的控件必须还能点(像人一样,先点回那个页签再操作)
-    await page.locator('#tabs .tab').filter({ hasText: 'Specs' }).click();
+    await page.locator('#tabs .tab').filter({ hasText: '平台管理' }).click();
     await page.waitForTimeout(200);
-    const frame = page.frames().find((f) => f.url().includes('/console/specs'));
-    await frame.locator('#stub').click({ timeout: 4000 });
+    await page.locator('#inviteName').click({ timeout: 4000 });
+    await page.keyboard.type('probe');
+    assert.strictEqual(await page.locator('#inviteName').inputValue(), 'probe', '平台管理面板的输入框在一个 tick 之后必须仍能输入');
     await page.locator('#tabs .tab').filter({ hasText: 'Agent 管理' }).click();
     await page.waitForTimeout(200);
     await page.locator('#groupAddOpen').click({ timeout: 4000 });

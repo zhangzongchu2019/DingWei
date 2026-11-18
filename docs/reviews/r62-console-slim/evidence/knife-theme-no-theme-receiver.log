@@ -1,0 +1,13 @@
+AssertionError [ERR_ASSERTION]: iframe html data-theme must follow the shell
+
+'light' !== 'dark'
+
+    at /tmp/wt-r62-slim/view-service/console-specs-theme-regression.js:92:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'light',
+  expected: 'dark',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+rc=1

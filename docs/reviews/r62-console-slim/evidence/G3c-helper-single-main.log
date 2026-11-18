@@ -1,0 +1,12 @@
+test_claude_stream_json_user_frame_boundary_counts_zero_one_two (test_guide_staging.GuideRealAdapterBoundaryTest.test_claude_stream_json_user_frame_boundary_counts_zero_one_two) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter] deliver id=dw-business-1 -> accepted (isReplay ack, turn=3b23b8d9eae845839b8ed767e5d5f89e)
+[delivery] done id=dw-business-1 source=fixture (turn=3b23b8d9eae845839b8ed767e5d5f89e)
+[driver-adapter] deliver id=dw-business-2 -> accepted (isReplay ack, turn=ea61531c7019448ba810d915a2d86339)
+[delivery] done id=dw-business-2 source=fixture (turn=ea61531c7019448ba810d915a2d86339)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.433s
+
+OK

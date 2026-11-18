@@ -1,0 +1,2 @@
+page.waitForFunction: Timeout 3000ms exceeded.
+    at main (/tmp/wt-extseat-v-main/view-service/r15-session-history-browser-regression.js:96:16)

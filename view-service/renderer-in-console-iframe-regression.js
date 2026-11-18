@@ -223,6 +223,12 @@ const MEASURE = () => {
     page.on('pageerror', (e) => console.log(`    [pageerror ${vp.width}x${vp.height}]`, String(e.message).slice(0, 200)));
     await page.goto(`${base}/console`, { waitUntil: 'domcontentloaded' });
     await page.locator(`nav button[title="${SESSION}"]`).waitFor({ state: 'attached', timeout: 20000 });
+    // S-R62-MOBILE：窄屏（≤768）菜单是可折叠抽屉、默认收起；先开抽屉再点 Agent
+    // （点中后产品逻辑自动收抽屉）。iframe 视口／遮罩铺满等几何判据一字不改。
+    if (vp.width <= 768) {
+      await page.locator('#navToggle').click();
+      await page.waitForFunction(() => document.querySelector('nav').classList.contains('open'));
+    }
     await page.click(`nav button[title="${SESSION}"]`);
     await page.locator(`#panes iframe[title="Agent view: ${SESSION}"]`).waitFor({ state: 'attached', timeout: 20000 });
     const frame = page.frames().find((f) => f.url().includes(`/view/${encodeURIComponent(SESSION)}`));
@@ -377,7 +383,18 @@ const MEASURE = () => {
             return { m, pt, scrim };
           };
           const light = await shoot();
+          // S-R62-MOBILE：窄屏（≤768）◐ 在抽屉里且抽屉默认收起；先开抽屉再点主题。
+          // 点主题不是导航、产品不自动收抽屉 ⇒ 点完后走业主真实路径「点遮罩空白处」收起，
+          // 否则 navMask 会挡住 iframe 内的后续点击。主题传播等待与几何/对比度判据一字不改。
+          if (vp.width <= 768) {
+            await page.locator('#navToggle').click();
+            await page.waitForFunction(() => document.querySelector('nav').classList.contains('open'));
+          }
           await page.click('#themeBtn');
+          if (vp.width <= 768) {
+            await page.locator('#navMask').click({ position: { x: vp.width - 20, y: vp.height - 20 } });
+            await page.waitForFunction(() => !document.querySelector('nav').classList.contains('open'));
+          }
           // 🔴 必须等它真的传到 pane:BroadcastChannel / storage 都是异步的,
           //    不等就会量到"开关点了、pane 还是浅色"的那一瞬 —— 那正是本条要抓的缺陷。
           await frame.waitForFunction(() => document.body.dataset.theme === 'dark', null, { timeout: 20000 });

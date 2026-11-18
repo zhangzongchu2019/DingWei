@@ -94,8 +94,9 @@ func TestConsolePlatformAgentGroupsEntryIsInternalTabForBothRoles(t *testing.T) 
 		ownerEntry.Kind != entry.Kind || ownerEntry.Status != entry.Status || ownerEntry.Active != entry.Active {
 		t.Errorf("owner 与 management 拿到的入口形状必须逐项相同(同一个内部 tab),\n owner=%+v\n mgmt =%+v", ownerEntry, entry)
 	}
-	if len(ownerItems) != 3 || ownerItems[0].ID != "specs" || ownerItems[1].ID != "task-board" || ownerItems[2].ID != "agent-groups" {
-		t.Errorf("owner 的平台项应为 specs/task-board/agent-groups 三项,实为 %+v", ownerItems)
+	// S-R62-CONSOLE-SLIM：owner 菜单恰为一项 agent-groups；被摘项不得回潮。
+	if len(ownerItems) != 1 || ownerItems[0].ID != "agent-groups" {
+		t.Errorf("owner 的平台项应恰为 agent-groups 一项,实为 %+v", ownerItems)
 	}
 }
 

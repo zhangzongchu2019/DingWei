@@ -104,7 +104,8 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/console') { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end(shell); return; }
   if (url.pathname === '/console/tasks') { if (url.searchParams.get('embedded') !== '1') { res.writeHead(302, { Location: '/console?task_manager=1'+(url.searchParams.get('spec_id')?'&spec_id='+encodeURIComponent(url.searchParams.get('spec_id')):'') }); res.end(); return; } res.writeHead(200, { 'Content-Type': 'text/html' }); res.end(board); return; }
   if (url.pathname === '/api/console/platform') {
-    sendJSON(res, { role: 'owner', actions: ['read'], items: [{ id: 'task-board', kind: 'task-board', title: '任务管理', href: '#task-board', status: 'approved' }] }); return;
+    // S-R62-CONSOLE-SLIM：任务管理菜单入口已摘；夹具与产品新形状同形（只留 agent-groups）。
+    sendJSON(res, { role: 'owner', actions: ['read'], items: [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 管理', href: '#agent-groups', status: 'approved' }] }); return;
   }
   if (url.pathname === '/api/console/agents') { sendJSON(res, { agents: [] }); return; }
   if (url.pathname === '/api/console/agent-groups') { sendJSON(res, { owned_agents: [], groups: [] }); return; }
@@ -179,8 +180,10 @@ async function main() {
   const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || 'chrome', headless: true });
   const page = await browser.newPage();
   page.setDefaultTimeout(3000);
-  await page.goto(base + '/console');
-  await page.locator('#platform-items a[data-item-id="task-board"]').click();
+  // S-R62-CONSOLE-SLIM：菜单不再下发 task-board；改走保留的直连 URL 自动打开路径
+  // （console_auth.go 的 ?task_manager=1 ⇒ openTaskBoardWorkspace，派单「直连旧 URL 保持现状」）。
+  await page.goto(base + '/console?task_manager=1');
+  assert.strictEqual(await page.locator('#platform-items a[data-item-id="task-board"]').count(), 0, '任务管理不得再出现在菜单中');
   const frame = page.frameLocator('iframe[title="任务管理"]');
   assert.match(page.frames().find((candidate) => candidate.url().includes('/console/tasks')).url(), /\/console\/tasks\?embedded=1&board_instance=[0-9a-f]{32}$/, 'A7 embedded task URL remains a task-management page');
   const reloadAndSelect = async () => { const boardFrame = page.frames().find((candidate) => candidate.url().includes('/console/tasks')); await boardFrame.goto(boardFrame.url()); await frame.locator('#spec-list tr').first().waitFor(); await frame.locator('#spec-list tr').first().click(); await frame.locator('#task-list tr').first().waitFor(); };

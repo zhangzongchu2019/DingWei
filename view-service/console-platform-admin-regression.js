@@ -99,7 +99,8 @@ function read(req) { return new Promise((resolve) => { let body = ''; req.on('da
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
 function err(res, status, code, extra) { json(res, status, { error: code, detail: 'SECRET-HUB-TEXT', ...extra }); }
 function platformItems(role) {
-  const base = [{ id: 'specs', kind: 'spec', title: 'Specs', href: '#specs', status: 'approved' }];
+  // S-R62-CONSOLE-SLIM：菜单只留 Agent 管理＋平台管理（specs/task-board 已摘）。
+  const base = [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 管理', href: '#agent-groups', status: 'approved' }];
   if (role !== 'management') return base;
   return [...base,
     { id: 'platform-admin', kind: 'platform-admin', title: '平台管理', href: '#platform-admin', status: 'approved' },
@@ -157,7 +158,9 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await test('an ordinary owner gets no 平台管理 entry', async () => {
       const owner = await context.newPage(); watch(owner); owner.setDefaultTimeout(2500);
       await owner.goto(`${base}/console`);
-      await owner.locator('#platform-items a[data-item-id="specs"]').waitFor({ state: 'visible' });
+      await owner.locator('#platform-items a[data-item-id="agent-groups"]').waitFor({ state: 'visible' });
+      assert.strictEqual(await owner.locator('#platform-items a[data-item-id="specs"]').count(), 0);
+      assert.strictEqual(await owner.locator('#platform-items a[data-item-id="task-board"]').count(), 0);
       assert.strictEqual(await owner.locator('#platform-items a[data-item-id="platform-admin"]').count(), 0);
       assert.strictEqual(await owner.locator('#platform-items a[data-item-id="admin"]').count(), 0);
       await owner.close();

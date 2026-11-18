@@ -146,13 +146,10 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	}
 	// Agent 列表是 console 外壳本身,不是可点击的平台入口。保留 id=agents
 	// 的占用规则,但不把一个没有动作的假入口下发给客户端。
+	// S-R62-CONSOLE-SLIM（业主令 rulings ㊿-补129）：菜单只保留「Agent」与「平台管理」。
+	// Specs、任务管理、坐标派审、委员会版本确认不再下发（旧平台同形摘入口；
+	// 后端路由、表、数据、迁移一律不删不改；直连旧 URL 的行为保持现状）。
 	builtins := []model.ConsolePlatformItem{{
-		ID: "specs", Kind: "spec", Title: "Specs",
-		Href: "#specs", Status: "approved", Active: true,
-	}, {
-		ID: "task-board", Kind: "task-board", Title: "任务管理",
-		Href: "#task-board", Status: "approved", Active: true,
-	}, {
 		// Agent 编组入口:0.2.1.55 起由 console 自己接成内部 tab;
 		// S-GROUP-ENTRY(2026-09-29)起对**所有 principal** 下发,不再关在 role==management 里。
 		//
@@ -208,12 +205,6 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	}
 	if h.SpecReader != nil {
 		builtins = append(builtins, model.ConsolePlatformItem{ID: "openspec-read", Kind: "openspec-read", Title: "OpenSpec 只读文档", Href: "/console/openspec", Target: "_blank", Status: "approved", Active: true})
-	}
-	if h.coordinateReviewEntry(r.Context(), platformPrincipal(r)) {
-		builtins = append(builtins, model.ConsolePlatformItem{ID: "coordinate-reviews", Kind: "coordinate-reviews", Title: "坐标派审", Href: "/console/coordinate-reviews", Target: "_blank", Status: "approved", Active: true})
-	}
-	if h.openSpecConfirmationReady() {
-		builtins = append(builtins, model.ConsolePlatformItem{ID: "openspec-confirmations", Kind: "openspec-confirmations", Title: "委员会版本确认", Href: "/console/openspec-confirmations", Target: "_blank", Status: "approved", Active: true})
 	}
 	items = append(builtins, items...)
 	w.Header().Set("Content-Type", "application/json")

@@ -1,0 +1,203 @@
+  · console 页取自生产源码 internal/m8/console_auth.go(137411 字节)
+  · renderer  /tmp/wt-r62-mobile/view-service/renderer-canary-sse.html
+    sha256=c1f299d73fac42b7… 385153 字节
+  ✅ iframe-① 真 console 开 Agent tab,iframe 内跑的是【仓内那一份】renderer(不是占位页)
+    · iframe-② 实测: [
+ {
+  "win": "1280x900",
+  "iframeViewport": [
+   1040,
+   859
+  ],
+  "ovTop": 0,
+  "ovH": 859,
+  "cvBottom": 650,
+  "hit": true,
+  "chain": "body",
+  "consoleNavTopElement": "DIV"
+ },
+ {
+  "win": "1280x1600",
+  "iframeViewport": [
+   1040,
+   1559
+  ],
+  "ovTop": 0,
+  "ovH": 1559,
+  "cvBottom": 650,
+  "hit": true,
+  "chain": "body",
+  "consoleNavTopElement": "DIV"
+ },
+ {
+  "win": "420x900",
+  "iframeViewport": [
+   420,
+   787
+  ],
+  "ovTop": 0,
+  "ovH": 787,
+  "cvBottom": 371.28,
+  "hit": true,
+  "chain": "body",
+  "consoleNavTopElement": "none"
+ }
+]
+    · 🔴 如实报(不断言):遮罩开着时 console 自己的 nav 仍是最上层命中元素 —— iframe 盖不到自己外面,这是架构固有边界,不是本次修复能解决的。 不断言它,因为断言等于把缺陷钉成契约、将来真要修就会红。
+  ✅ iframe-② 🔴 遮罩必须铺满【iframe 自己的视口】—— 三档浏览器窗口各验一次
+    · iframe-③ 实测(浅色 / 暗色 同文档对照): [
+ {
+  "窗口": "1280x900",
+  "iframe视口": [
+   1040,
+   859
+  ],
+  "父链": "body",
+  "浅色": {
+   "bodyBg": "rgb(246, 247, 249)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    111,
+    111,
+    112
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 5.02,
+   "遮罩vs页面": 4.68
+  },
+  "暗色": {
+   "bodyBg": "rgb(17, 19, 22)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    7,
+    8,
+    9
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 20.04,
+   "遮罩vs页面": 1.08,
+   "按钮对比度": "#shotConfirm=14.72 #shotCancel=14.72"
+  },
+  "遮罩rect": {
+   "left": 0,
+   "top": 0,
+   "right": 1040,
+   "bottom": 859,
+   "width": 1040,
+   "height": 859
+  },
+  "画布rect": {
+   "left": 120,
+   "top": 50,
+   "right": 920,
+   "bottom": 650,
+   "width": 800,
+   "height": 600
+  },
+  "中心命中": "shotCanvas"
+ },
+ {
+  "窗口": "1280x1600",
+  "iframe视口": [
+   1040,
+   1559
+  ],
+  "父链": "body",
+  "浅色": {
+   "bodyBg": "rgb(246, 247, 249)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    111,
+    111,
+    112
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 5.02,
+   "遮罩vs页面": 4.68
+  },
+  "暗色": {
+   "bodyBg": "rgb(17, 19, 22)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    7,
+    8,
+    9
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 20.04,
+   "遮罩vs页面": 1.08,
+   "按钮对比度": "#shotConfirm=14.72 #shotCancel=14.72"
+  },
+  "遮罩rect": {
+   "left": 0,
+   "top": 0,
+   "right": 1040,
+   "bottom": 1559,
+   "width": 1040,
+   "height": 1559
+  },
+  "画布rect": {
+   "left": 120,
+   "top": 50,
+   "right": 920,
+   "bottom": 650,
+   "width": 800,
+   "height": 600
+  },
+  "中心命中": "shotWrap"
+ },
+ {
+  "窗口": "420x900",
+  "iframe视口": [
+   420,
+   787
+  ],
+  "父链": "body",
+  "浅色": {
+   "bodyBg": "rgb(246, 247, 249)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    110,
+    110,
+    111
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 5.09,
+   "遮罩vs页面": 4.75
+  },
+  "暗色": {
+   "bodyBg": "rgb(17, 19, 22)",
+   "遮罩computed": "rgba(0, 0, 0, 0.55)",
+   "实测遮罩底色": [
+    17,
+    19,
+    22
+   ],
+   "提示色": "rgb(255, 255, 255)",
+   "提示对比度": 18.61,
+   "遮罩vs页面": 1,
+   "按钮对比度": "#shotConfirm=14.72 #shotCancel=14.72"
+  },
+  "遮罩rect": {
+   "left": 0,
+   "top": 0,
+   "right": 420,
+   "bottom": 787,
+   "width": 420,
+   "height": 787
+  },
+  "画布rect": {
+   "left": 0,
+   "top": 56.28,
+   "right": 420,
+   "bottom": 371.28,
+   "width": 420,
+   "height": 315
+  },
+  "中心命中": "shotWrap"
+ }
+]
+    · 🔵 只打印不断言的两项:「遮罩vs页面」是**变暗提示的强度**(暗色下必然低, 因为遮罩是 rgba(0,0,0,.55) 压在 #111316 上;产品没有给这个值定过规格 ⇒ 断言它就是替产品立契约); 「遮罩computed」恒为 rgba(0,0,0,0.55) ⇒ 它是硬编码的,**不随主题变** —— 这条也是实测出来的,不是读码。
+  ✅ iframe-③ 暗色交叉:console 顶层 ◐ 切暗后,真 iframe 内遮罩仍铺满 iframe 视口,且遮罩文字/按钮仍可读
+
+通过 3 / 失败 0   (真 console iframe 路径)

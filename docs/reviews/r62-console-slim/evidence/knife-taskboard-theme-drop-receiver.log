@@ -1,0 +1,16 @@
+AssertionError [ERR_ASSERTION]: 任务管理页公共主题接收器必须已连接
+
+false !== true
+
+    at Proxy.<anonymous> (/tmp/wt-r62-slim/view-service/console-task-board-regression.js:7:91)
+    at main (/tmp/wt-r62-slim/view-service/console-task-board-regression.js:191:10)
+    at runNextTicks (node:internal/process/task_queues:64:5)
+    at process.processImmediate (node:internal/timers:452:9)
+    at process.callbackTrampoline (node:internal/async_hooks:130:17) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: 'strictEqual',
+  diff: 'simple'
+}

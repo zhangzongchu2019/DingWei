@@ -1,0 +1,2 @@
+PASS task-board theme: light=rgb(246, 248, 251) dark=rgb(27, 31, 36) src=/console/tasks?embedded=1&board_instance=baad12e119ab82b6a8ae5a9e587f7987 state=kept fresh-open=dark
+rc=0
