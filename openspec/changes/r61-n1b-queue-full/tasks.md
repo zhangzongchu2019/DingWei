@@ -10,5 +10,7 @@
 - [x] 构建门：冻结锚 `c0ec52db044d92a539a5d7010e597d7338787fc1` 上 `build.sh --test-only` 通过，两个 helper profile、Python 27／shell 2。
 - [x] m8/store `-count=3` 与 PG strict 已执行；m8 仅一次已知名单内 `SQLITE_INTERRUPT`，store 三轮通过；独立 Z-3 五轮 m8 为 4/5 全绿，另一次仅命中另一已知名单格。每轮原文在 `evidence/`。
 - [x] OpenSpec 1.16.0 `validate --all --strict --no-interactive`：43 passed／0 failed，rc=0。
+- [x] R1：拒绝已提交 `delivered_at`／`injected_at` 的 queue_full ACK，并保留相同合法终态 ACK 的幂等重放；store 与 Hub WS 负例断言既有阶段不变且没有 not-submitted notice。两格删保护见 `docs/reviews/r61-n1b-queue-full/evidence/mutations-followup/R1-delete-durable-receipt-guard.log`。
+- [x] R2：legacy ACKv1 的 queue_full terminal 保留原 dead/reason 行为，但不走新增 notice 事务；Hub WS 与 store 回归覆盖未协商 legacy 路径，删保护见 `docs/reviews/r61-n1b-queue-full/evidence/mutations-followup/R2-legacy-queuefull-notice-gate.log`。
 
 主要证据可直接用 `git cat-file blob <blob-id>` 原样取回：完整门日志 `evidence/m8-store-count3-final.log`＝`1bcc0ffe29fd84c748b9b1b570ad4c0a666d160e`；Z-3 汇总 `evidence/z3/SUMMARY.txt`＝`ea34ba6889c0815d5bd30f58fb6c3b7a6b315228`；OpenSpec strict `evidence/openspec-strict-final.log`＝`0c9b982b6c8c09d71c8bb97840193c42c2eab5f5`；四格 helper ACK `evidence/compat/results.txt`＝`f7455bf5d02cdbeed6d9320a29d7e0a8c0330a89`。全部 37 个 evidence 文件的 blob SHA 与文件 SHA-256 见同目录 `SHA256SUMS`。

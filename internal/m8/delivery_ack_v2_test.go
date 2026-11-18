@@ -176,6 +176,34 @@ func TestDeliveryACKV2QueueFullRequiresNegotiationAndCreatesDurableNotice(t *tes
 	}
 }
 
+func TestDeliveryACKV2QueueFullCannotRejectPersistedDelivery(t *testing.T) {
+	f := newACKV2Fixture(t, true)
+	if err := f.hub.Repo.UpsertSessionEndpoint(f.ctx, model.SessionEndpoint{KeyID: f.client.keyID, SessionName: "source", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	f.sendAndConfirm("queued", "", "", f.stamp)
+	before := f.record()
+	if before.State != "delivered" || before.DeliveredAt == nil {
+		t.Fatalf("queued ACK did not commit durable receipt: %+v", before)
+	}
+	ack := f.ack("failed", "", "", f.stamp.Add(time.Second))
+	ack.Meta["reason"] = "queue_full"
+	ack.Meta["retryable"] = false
+	f.sendEnv(f.conn, ack)
+	if confirm := f.readEnvUntil(f.conn, 100*time.Millisecond, func(env model.Envelope) bool {
+		return metaString(env.Meta, "type") == "delivery_ack_confirm" && metaString(env.Meta, "state") == "failed"
+	}); confirm != nil {
+		t.Fatalf("queue_full ACK for persisted delivery was confirmed: %+v", confirm)
+	}
+	got := f.record()
+	if got.State != "delivered" || got.DeliveredAt == nil || got.LastError != "" {
+		t.Fatalf("queue_full changed persisted delivery: %+v", got)
+	}
+	if notice, err := f.hub.Repo.GetSessionDelivery(f.ctx, model.FailureNoticeDeliveryID("ack-wire")); err != nil || notice != nil {
+		t.Fatalf("persisted delivery got a false not-submitted notice: %+v err=%v", notice, err)
+	}
+}
+
 func TestDeliveryACKV2QueueFullIgnoredWithoutHelperCapability(t *testing.T) {
 	f := newACKV2FixtureWithCapabilities(t, true, false, "", false, nil)
 	if err := f.hub.Repo.UpsertSessionEndpoint(f.ctx, model.SessionEndpoint{KeyID: f.client.keyID, SessionName: "source", Active: true}); err != nil {
@@ -195,6 +223,27 @@ func TestDeliveryACKV2QueueFullIgnoredWithoutHelperCapability(t *testing.T) {
 	}
 	if got := f.record(); got.State != "sent" && got.State != "delivered" {
 		t.Fatalf("unnegotiated ACK changed delivery: %+v", got)
+	}
+}
+
+func TestLegacyACKQueueFullKeepsTerminalBehaviorWithoutNegotiatedNotice(t *testing.T) {
+	f := newACKV2FixtureWithCapabilities(t, false, false, "", false, nil)
+	if err := f.hub.Repo.UpsertSessionEndpoint(f.ctx, model.SessionEndpoint{KeyID: f.client.keyID, SessionName: "source", Active: true}); err != nil {
+		t.Fatal(err)
+	}
+	legacy := model.Envelope{ID: "legacy-queue-full", To: "workpulse#enrolled", Meta: map[string]any{
+		"type": "delivery_ack", "delivery_id": "ack-wire", "state": "failed", "reason": "queue_full", "retryable": false,
+	}}
+	f.sendEnv(f.conn, legacy)
+	waitFor(t, time.Second, "legacy queue_full terminal update", func() bool {
+		return f.record().State == "dead"
+	})
+	got := f.record()
+	if got.LastError != "queue_full" {
+		t.Fatalf("legacy terminal reason changed: %+v", got)
+	}
+	if notice, err := f.hub.Repo.GetSessionDelivery(f.ctx, model.FailureNoticeDeliveryID("ack-wire")); err != nil || notice != nil {
+		t.Fatalf("unnegotiated legacy ACK created queue_full notice: %+v err=%v", notice, err)
 	}
 }
 

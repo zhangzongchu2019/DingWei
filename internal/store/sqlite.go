@@ -2376,7 +2376,10 @@ func (s *SQLite) ClaimSessionDelivery(ctx context.Context, keyID, sessionName st
 }
 
 func (s *SQLite) UpdateSessionDelivery(ctx context.Context, id, state, errText string, nextAttemptAt time.Time) error {
-	if state == "dead" && model.DeliveryFailureReasonAllowed(errText) {
+	// queue_full notices are authorized only by ApplySessionDeliveryACK's
+	// negotiated ACK v2 transaction. Legacy terminal updates keep their historic
+	// dead-letter behavior, but cannot create the new not-submitted notice.
+	if state == "dead" && errText != "queue_full" && model.DeliveryFailureReasonAllowed(errText) {
 		now := s.now().UTC()
 		if nextAttemptAt.IsZero() {
 			nextAttemptAt = now

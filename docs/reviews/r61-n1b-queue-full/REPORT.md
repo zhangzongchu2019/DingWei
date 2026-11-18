@@ -43,3 +43,9 @@ Final evidence is collected against the frozen source anchor above. Raw command 
 | OpenSpec 1.16.0 `validate --all --strict --no-interactive` | PASS, 43 passed / 0 failed, rc=0. Log: `evidence/openspec-strict-final.log`. |
 | Compatibility cells | Four helper-side ACK probes PASS rc=0. These are not four standalone live Hub/helper process combinations; see the limitation above and `evidence/compat/README.md`. Real new-Hub websocket protocol checks are in the m8 log. |
 | Mutation checks | 9/9 business-assertion failures. Logs are under `evidence/mutations/`; M05's exploratory compile failure was replaced by a compiling mutation that fails on the missing durable notice assertion. |
+
+## Independent review follow-up: R1 and R2
+
+Coder56's review found two missing boundaries in the frozen source. R1: a queue-full ACK was accepted after a durable `delivered` receipt. The store now rejects queue-full terminalization when a nonterminal row has `delivered_at` or `injected_at`; a replay of an already committed matching dead/queue_full row remains idempotent. R2: generic legacy dead-letter updates could enter the newly expanded queue-full notice allowlist without ACK v2 negotiation. The generic update path now preserves the legacy dead/reason transition but excludes queue_full from notice enqueue; only the negotiated ACK v2 terminal transaction can create that notice.
+
+Added regression coverage: store positive pre-persistence queue_full notice, store rejection after queued receipt, Hub websocket rejection after queued receipt, legacy store terminal without notice, and legacy websocket queue_full terminal without notice. Focused results and mutation evidence are to be appended after full gates complete. This follow-up remains unreviewed until coder56 examines the appended source tip.
