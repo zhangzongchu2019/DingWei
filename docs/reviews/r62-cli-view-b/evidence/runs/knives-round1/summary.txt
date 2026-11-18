@@ -1,0 +1,15 @@
+cli-view-offstate-add rc=2 |   FAIL G1 默认关：无 CLI DOM、body 无 cli-view-on、按钮 aria-pressed=false: G1 关态不得有 CLI 行
+cli-view-toggle-wire rc=2 |   FAIL G3 点按钮开合：CLI DOM 出现/还原、aria-pressed、localStorage 随动: G3 开后 body 须带 cli-view-on（K2 接线断须红在这里）
+cli-view-persist rc=2 |   FAIL G3 点按钮开合：CLI DOM 出现/还原、aria-pressed、localStorage 随动: G3 localStorage 须 on
+cli-view-trust-bypass rc=2 |   FAIL G6 来源前缀：attested 挂、不可信不挂、echo 合卡只一行: G6 不可信来源不得挂前缀（fail-closed；K4 须红在这里）
+cli-view-fail-newline rc=2 |   FAIL G7 delivery failed 只更新用户行阶段缀，不另起错误行: G7 失败不得另起错误行（K5 须红在这里）
+cli-view-longtext-full rc=2 |   FAIL G8 超长正文：摘要≤1200＋pager 行，打开全文现拼逐字正确: G8 >4000 字须出 pager 行（K6 全量渲染须红在这里）
+cli-view-nowrap rc=0 | 
+cli-view-dom-depend rc=0 | 
+cli-view-override-flip rc=0 | 
+cli-view-threshold rc=2 | AssertionError [ERR_ASSERTION]: K10 自检：SOFT_CAP 与 flood 套件漂移（阈值放宽刀须红在这里）
+cli-view-tool-drop rc=2 |   FAIL G5 映射：›/•/✗/Worked for 行首与关键字段、工具完成后保留行: G5 commandExecution 须 • Ran <command>
+run7 rc=0 | renderer-cli-view-regression: G1～G12 通过
+run8 rc=0 | renderer-cli-view-regression: G1～G12 通过
+run9 rc=0 | renderer-cli-view-regression: G1～G12 通过
+ALL_DONE

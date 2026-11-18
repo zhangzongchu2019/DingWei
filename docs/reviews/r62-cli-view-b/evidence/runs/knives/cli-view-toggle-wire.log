@@ -1,0 +1,52 @@
+  PASS G1 默认关：无 CLI DOM、body 无 cli-view-on、按钮 aria-pressed=false
+  PASS G2 关态 #timeline innerHTML＋body class 与基锚逐字节同一
+  FAIL G3 点按钮开合：CLI DOM 出现/还原、aria-pressed、localStorage 随动: G3 开后 body 须带 cli-view-on（K2 接线断须红在这里）
+  FAIL G4 跨 tab 同步：BroadcastChannel 跟随、写入方自 apply、新页读 localStorage: G4 写入方须自己立刻 apply
+  FAIL G5 映射：›/•/✗/Worked for 行首与关键字段、工具完成后保留行: G5 用户行须 › 开头含正文
+  FAIL G5b 工具行校准：live commandExecution 绿样本＋rollout FileChange changes 映射: G5b live command 串须原样渲染
+  FAIL G6 来源前缀：attested 挂、不可信不挂、echo 合卡只一行: G6 同一投递（input_posted＋admitted echo）CLI 只一行（T-074 合卡语义）
+
+0 !== 1
+
+  FAIL G7 delivery failed 只更新用户行阶段缀，不另起错误行: Cannot read properties of undefined (reading 'includes')
+  FAIL G6b admitted echo 合卡入回合：仍只一行、canonical 前缀保留: page.waitForFunction: Timeout 5000ms exceeded.
+  FAIL G8 超长正文：摘要≤1200＋pager 行，打开全文现拼逐字正确: G8 >4000 字须出 pager 行（K6 全量渲染须红在这里）
+
+0 !== 1
+
+  PASS G9 窄屏 390×844：CLI 开态横向溢出 0、按钮≥40、长命令不横滚
+  PASS G9 窄屏 360×780：CLI 开态横向溢出 0、按钮≥40、长命令不横滚
+  PASS G9 PC 1440 关态 #timeline 像素同基锚（元素截图逐字节）
+  FAIL G10 重连回放＋回合分段＋逐出后开态投影与事件态一致: G10 分段重建后行数须守恒
+
+7 !== 0
+
+  PASS G11 override 优先：true 强制开、false 强制关、按钮置灰
+  PASS G12 flood CLI-on：事件/节点峰值终值 ≤ 20000+100，全文逐字收敛
+G12_READINGS {"scenario":"flood","pushed":0,"lastSeq":100002,"seconds":"16.7","peakEvents":20001,"finalEvents":10020,"peakNodes":55,"finalNodes":55,"peakCliNodes":14,"finalCliNodes":14,"pagerCount":1,"bound":20100}
+  PASS G12 late-order CLI-on：事件/节点峰值终值 ≤ 20000+100，全文逐字收敛
+G12_READINGS {"scenario":"late-order","pushed":0,"lastSeq":30002,"seconds":"5.0","peakEvents":20001,"finalEvents":10006,"peakNodes":55,"finalNodes":55,"peakCliNodes":14,"finalCliNodes":14,"pagerCount":1,"bound":20100}
+  PASS G12 toggle-storm ≥50 次：每次开态投影一致、关态容器空、节点数有界
+G12_READINGS {"scenario":"toggle-storm","toggles":55,"mismatches":0,"maxNodeDelta":42,"finalMatch":true,"finalEvents":6002}
+Error: 9 regression check(s) failed
+G3 点按钮开合：CLI DOM 出现/还原、aria-pressed、localStorage 随动: G3 开后 body 须带 cli-view-on（K2 接线断须红在这里）
+G4 跨 tab 同步：BroadcastChannel 跟随、写入方自 apply、新页读 localStorage: G4 写入方须自己立刻 apply
+G5 映射：›/•/✗/Worked for 行首与关键字段、工具完成后保留行: G5 用户行须 › 开头含正文
+G5b 工具行校准：live commandExecution 绿样本＋rollout FileChange changes 映射: G5b live command 串须原样渲染
+G6 来源前缀：attested 挂、不可信不挂、echo 合卡只一行: G6 同一投递（input_posted＋admitted echo）CLI 只一行（T-074 合卡语义）
+
+0 !== 1
+
+G7 delivery failed 只更新用户行阶段缀，不另起错误行: Cannot read properties of undefined (reading 'includes')
+G6b admitted echo 合卡入回合：仍只一行、canonical 前缀保留: page.waitForFunction: Timeout 5000ms exceeded.
+G8 超长正文：摘要≤1200＋pager 行，打开全文现拼逐字正确: G8 >4000 字须出 pager 行（K6 全量渲染须红在这里）
+
+0 !== 1
+
+G10 重连回放＋回合分段＋逐出后开态投影与事件态一致: G10 分段重建后行数须守恒
+
+7 !== 0
+
+    at Object.finish (/tmp/wt-r62-cli-view-b/view-service/renderer-regression-selfhost.js:20:34)
+    at /tmp/wt-r62-cli-view-b/view-service/renderer-cli-view-regression.js:445:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

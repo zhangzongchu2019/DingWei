@@ -1,0 +1,24 @@
+[
+  {
+    "type": "commandExecution",
+    "id": "call_mock_1",
+    "pluginId": null,
+    "scriptPath": null,
+    "command": "/bin/bash -lc \"printf 'ok\\\\tmain\\\\t1.2s\\\\n'\"",
+    "cwd": "/tmp/cli-view-b-evidence/cal-0170/work",
+    "processId": "20647",
+    "source": "unifiedExecStartup",
+    "status": "completed",
+    "commandActions": [
+      {
+        "type": "unknown",
+        "command": "printf 'ok\\tmain\\t1.2s\\n'"
+      }
+    ],
+    "aggregatedOutput": "ok\tmain\t1.2s\n",
+    "exitCode": 0,
+    "durationMs": 0,
+    "startedAtMs": 1795038427266,
+    "completedAtMs": 1795038427266
+  }
+]
