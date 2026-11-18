@@ -43,6 +43,13 @@
   "projected_queue_probe": {
     "candidate_rc": 1,
     "main_rc": 1,
-    "classification": "existing boundary; not counted as passing safety gate or killed mutation; leader ruling pending"
+    "classification": "existing boundary; both red logs preserved, not positive regression or killed mutation; leader18:05:27Z ruled no TTL semantics change, generic in-flight revocation belongs r62 slice3"
+  },
+  "ruling": {
+    "utc": "2026-11-18T18:05:27Z",
+    "ttl_semantics_change": false,
+    "positive_projected_delivery_regression_added": false,
+    "safe_regression_source": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+    "followup_design": "r62 slice3 ordinary-group equal rights"
   }
 }

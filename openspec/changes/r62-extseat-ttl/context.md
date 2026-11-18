@@ -9,3 +9,5 @@
 最终冻结产品/测试2fd6aeba（完整40位见REPORT），证据b5e6e590102dedfa19c234fd726ea341fb23685e；四包三遍3081顶层/5250含子项PASS、84逐名SKIP、0FAIL/0中断；canonical两profile各1270、Python27/shell2，strict42/0。报告与VERIFY位于docs/reviews/r62-extseat-ttl。独立复核与组长验收待回。
 
 17:33Z追加核项补测源0b9a10f9227a35eaa01117cb767b9c883e6fb9ec，仅新增lifetime_expired_group_pg_test.go；全部TestR62三遍18顶层/45含子项PASS、无跳过。原四包整包仍绑定2fd原锚，新canonical以0b9重跑。已投影旧边界双源红并报组长，不改产品；证据在group-expiry-followup。
+
+2026-11-18T18:05:27Z裁定：已投影件后续组失效的通用边界归r62切片三，本片不加AG发送围栏；90c7以来生产文件零改，0b9仅新增未投影安全格。红探针双源原日志与安全格证据见c3038963的group-expiry-followup目录，文档新锚以回执为准。

@@ -1,6 +1,6 @@
 # S-R62-EXTSEAT-TTL 作者交件
 
-状态：原TTL实施与作者门完成；17:33Z追加核项已补常驻PG测试，另发现既有已投影队列边界，先报组长待裁定。不是发布GO。
+状态：原TTL实施与作者门完成；17:33Z追加核项已补常驻PG测试，另发现既有已投影队列边界，组长18:05:27Z已裁定本片不改语义，通用在途授权问题归切片三。不是发布GO。
 
 补件入口：[组到期但消息未到期的分阶段行为](group-expiry-followup/REPORT.md)。产品实现字节仍2fd，新增测试锚0b9；原全门不冒称新源重跑，增量测试及canonical独立记录。
 
@@ -37,3 +37,13 @@ cmd/tools/scripts/deploy/view-service、三条迁移目录、go.mod/go.sum/VERSI
 
 ## 下一步
 qwen以固定2fd产品与交审文档tip只读复核；组长验收后另定集成。作者不勾验收。原始日志经gzip无损压缩，raw-log-manifest.json保存压缩前后SHA；VERIFY.py同时核Git对象、当前产品字节、原始日志SHA与变异判据。
+
+## 已知边界（组长2026-11-18T18:05:27Z裁定）
+
+外部消息在双方仍在组内且授权有效时已投影进入SQLite session_delivery，随后组过期或提前解散，原目标上线仍可能收到已投影件。两源真实PG／WS红探针及原始读数见group-expiry-followup，现象在main206和本片2fd均存在。要在正常同构新七天流程人为复现倒置，需要隔离夹具错位独立expiry；正常受理时同事务TouchGroup＋GREATEST保证group expiry不早于新消息expiry，故同构新请求自然流程不会产生组先于消息到期。提前解散则仍有同类既有边界；不把“不自然倒置”扩大为“任何存量／迁移组合都无边界”。
+
+本片只改七天TTL，不新增发送前AG围栏、不撤回已投影件。通用的“失去授权后在途件”语义由r62切片三（普通编组同权）设计，与内部普通组移出成员时的行为一并决定，不能为外部席单独先加。该边界不是TTL回归，也不是在本片验收为期望行为；不新增“过期后仍投递”正向回归。
+
+安全面已由0b9的TestR62ExpiredGroupCannotDeliverUnexpiredQueuedMessagesPG常驻格钉住：未投影outbox不调用Projector，dead/group_unavailable；inbox组结算后dead/group_unavailable；Check／Wait／WaitReply／Receipt拒绝且不返正文／摘要／回执，token不能续活过期组。三遍18顶层／45含子项PASS、0FAIL／0SKIP与两刀业务红原始证据保持。此测试名中的CannotDeliver只覆盖其实际断言的未投影／外部读取层，不外推已投影Hub队列。补件无需重复添加等价格或钉死不想要的行为。
+
+本次仅追加文档以落实裁定，90c7ec3a以来生产路径零改；0b9只有上述测试新增，原产品行为仍2fd。canonical复用固定0b9完整rc0、原四包三遍复用2fd；不冒称本次文档锚重跑完整门。独立验收仍待qwen／组长，不推main、不部署。

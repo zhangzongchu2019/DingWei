@@ -37,5 +37,5 @@ if q.exists():
  assert json.loads((D/'group-expiry-followup/evidence/pg-expired-group.json').read_text())['rc']==0
  for c in json.loads((D/'group-expiry-followup/evidence/group-mutations.json').read_text()):
   assert c['compile_rc']==0 and c['rc']!=0 and c['original_sha256']==c['restored_sha256']
- print('SUPPLEMENT_OK test1 incremental_mutations2; existing projected queue red on both anchors, ruling pending')
+ print('SUPPLEMENT_OK test1 incremental_mutations2; existing projected queue red on both anchors;18:05:27Z ruling defers generic in-flight semantics to slice3')
 print('VERIFY_OK',s,'products',len(m['files']),'mutations',len(cuts))

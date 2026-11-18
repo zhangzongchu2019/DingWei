@@ -1,6 +1,6 @@
 # 组到期而消息未到期：现行行为补核
 
-状态：PG未投影层的常驻回归通过；已投影Hub队列存在既有继续投递边界，已先报组长，语义待裁定。未改生产行为、未把此处写成无条件安全PASS。
+状态：PG未投影层的常驻回归通过；已投影Hub队列存在既有继续投递边界，已先报组长，18:05:27Z已裁定本片不改语义，归切片三设计。未改生产行为、未把此处写成无条件安全PASS。
 
 ## 锚与来源
 组长2026-11-18T17:33:05Z追加核项，收到时初交90c7ec3a已经推送。原冻结产品行为源2fd6aebacbb3dae3ac3fa82d84968367552151ca不变；补测源0b9a10f9227a35eaa01117cb767b9c883e6fb9ec仅追加internal/tempgroup/lifetime_expired_group_pg_test.go。原四个产品/测试文件字节未变，没有迁移或语义修法。
@@ -29,7 +29,7 @@ Send/EnqueueFromHelper按受理时刻t写message expiry=t+MessageTTL（inbox.go:
 
 机制：extseat/inbox.go:438注释已明确不回退已投影投递，:447只更新PG state=queued；m8/extseat.go:178只入SQLite通用队列，无AG/expiry旁证。hub.go:4913起drain，sub_agent.go:455的写前检查只覆盖现有outbound intent/subagent旁证，extseat该行没有outbound intent，outbound_recovery.go:205-208直接返回nil；相应生产文件main→2fd逐字节零差异。回退为旧常量不会补此边界。
 
-组长待裁定：是否保留“合法投影即交给Hub既有可靠投递”的接管语义，并明确生命周期拒绝只针对尚未投影项；或要求对已投影但尚未发送的队列新增AG围栏/撤销机制（须稳定身份、代际与期限旁证，另批范围，不能声称能撤回已进helper的内容）。本补件不选定也不实施任何语义变更。
+历史待裁问题（已由下列18:05:27Z裁定关闭）：是否保留“合法投影即交给Hub既有可靠投递”的接管语义，并明确生命周期拒绝只针对尚未投影项；或要求对已投影但尚未发送的队列新增AG围栏/撤销机制（须稳定身份、代际与期限旁证，另批范围，不能声称能撤回已进helper的内容）。本补件不选定也不实施任何语义变更。
 
 ## 常驻回归与变异
 TestR62ExpiredGroupCannotDeliverUnexpiredQueuedMessagesPG覆盖：过期时Check/Wait/WaitReply/Receipt/Authenticate拒绝且无正文；ProjectOne不调用Projector并正确dead/group_unavailable；message-only Expire不误判尚未到期inbox；真实group Expire→NotifyPending→Finalize完成后inbox终局；group/message/token期限全部不被拒绝请求重写。新增测试与全部TestR62实际-count=3：rc0、18顶层/45含子项PASS、0FAIL/0SKIP。
@@ -39,3 +39,7 @@ TestR62ExpiredGroupCannotDeliverUnexpiredQueuedMessagesPG覆盖：过期时Check
 验证复用：原2fd四包三遍/两TTL刀/strict保留原锚原始读数，不冒称在0b9整包重跑；0b9生产文件及原测试文件均未变，新增测试以源码SHA绑定上述三遍读数。新SOURCE_COMMIT=0b9的完整canonical另跑，读数以canonical-followup.json为准；文档补记后strict另记。组长裁定前不修产品、不推main、不部署。
 
 最终增量门实读：SOURCE_COMMIT=0b9的canonical完整rc0，Claude/Codex各1270/1270、inventory97，BUILD_TESTS_OK helper_profiles=2 python=27 shell=2；追加文档strict42/0。原三遍整包明确复用2fd，不冒称0b9重跑；summary.json分列绿色PG回归与两个源的红色已投影边界。
+
+## 18:05:27Z裁定入账
+
+组长明确本TTL片不改语义、不加发送前AG围栏；已投影消息受理时已获双方组内授权，后续是否撤回属于通用在途授权语义，归r62切片三与内部普通组同权一并设计。本件红探针保留为已知边界证据，不改成正向期望回归，不删除或重写rc1。安全面常驻格已在0b9追加并通过，精确范围及正常流程不倒置条件见上文与主REPORT“已知边界”。R62TTL-PM01在本片的处置已完成，不表示该通用边界已经修复；后续实现需另派。
