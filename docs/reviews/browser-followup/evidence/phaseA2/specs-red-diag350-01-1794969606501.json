@@ -1,0 +1,973 @@
+{
+  "error": "复制之后列表行没有可见反馈(实测 \"\") ⇒ 业主又是\"点了没反应\"\n+ actual - expected\n\n+ ''\n- 'link address copied'\n",
+  "diag": {
+    "copied": "http://127.0.0.1:46525/console/specs/spec-readonly",
+    "firstRowStatus": "",
+    "firstRowStatusHidden": true,
+    "clickedRowConnected": false,
+    "clickedRowStatus": null,
+    "rowCount": 20,
+    "detailStatus": "",
+    "detailStatusHidden": false
+  },
+  "net": [
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969577302
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=2",
+      "t": 1794969577349
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=2",
+      "t": 1794969577356
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969577422
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969577436
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969577510
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969577521
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969577554
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969577591
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969577606
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969577615
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969577624
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969577630
+    },
+    {
+      "k": "req",
+      "m": "PATCH",
+      "u": "/api/console/task-proposals/task-a/plan",
+      "t": 1794969578005
+    },
+    {
+      "k": "res",
+      "s": 409,
+      "u": "/api/console/task-proposals/task-a/plan",
+      "t": 1794969578028
+    },
+    {
+      "k": "req",
+      "m": "PATCH",
+      "u": "/api/console/task-proposals/task-a/plan",
+      "t": 1794969578088
+    },
+    {
+      "k": "res",
+      "s": 204,
+      "u": "/api/console/task-proposals/task-a/plan",
+      "t": 1794969578103
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578103
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578104
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969578129
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969578147
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578147
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578167
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969578174
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969578188
+    },
+    {
+      "k": "req",
+      "m": "PATCH",
+      "u": "/api/console/task-proposals/task-b/plan",
+      "t": 1794969578293
+    },
+    {
+      "k": "res",
+      "s": 409,
+      "u": "/api/console/task-proposals/task-b/plan",
+      "t": 1794969578308
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/specs/spec-1/tasks",
+      "t": 1794969578573
+    },
+    {
+      "k": "res",
+      "s": 201,
+      "u": "/api/console/specs/spec-1/tasks",
+      "t": 1794969578599
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578599
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578611
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969578640
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969578658
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578659
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578667
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969578675
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969578686
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969578749
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969578761
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578825
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578836
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969578860
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969578880
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578916
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969578925
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969578928
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969578951
+    },
+    {
+      "k": "req",
+      "m": "PATCH",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969579142
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969579159
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969579171
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969579175
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969579194
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969579223
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969579242
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969579257
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969579257
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969579277
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969579288
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969579310
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969579965
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969579987
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580059
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580067
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2/presplit",
+      "t": 1794969580086
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2/presplit",
+      "t": 1794969580110
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580110
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580115
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2/agent-review",
+      "t": 1794969580132
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2/agent-review",
+      "t": 1794969580146
+    },
+    {
+      "k": "req",
+      "m": "PATCH",
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580265
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580271
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969580275
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969580281
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580291
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580315
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2/presplit",
+      "t": 1794969580343
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2/presplit",
+      "t": 1794969580349
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580354
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580367
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2/agent-review",
+      "t": 1794969580382
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2/agent-review",
+      "t": 1794969580386
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580419
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580424
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2/presplit",
+      "t": 1794969580445
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2/presplit",
+      "t": 1794969580452
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580459
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580467
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-2/agent-review",
+      "t": 1794969580471
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-2/agent-review",
+      "t": 1794969580473
+    },
+    {
+      "k": "req",
+      "m": "PATCH",
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580590
+    },
+    {
+      "k": "res",
+      "s": 409,
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580619
+    },
+    {
+      "k": "req",
+      "m": "PATCH",
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580851
+    },
+    {
+      "k": "res",
+      "s": 400,
+      "u": "/api/console/specs/spec-2",
+      "t": 1794969580870
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969581042
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969581058
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969581547
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969581559
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/specs",
+      "t": 1794969582218
+    },
+    {
+      "k": "res",
+      "s": 201,
+      "u": "/api/console/specs",
+      "t": 1794969582222
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969582223
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969582237
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-24",
+      "t": 1794969582288
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-24",
+      "t": 1794969582295
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-24/presplit",
+      "t": 1794969582333
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-24/presplit",
+      "t": 1794969582343
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-24",
+      "t": 1794969582365
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-24",
+      "t": 1794969582400
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-24/agent-review",
+      "t": 1794969582400
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-24/agent-review",
+      "t": 1794969582411
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969583062
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969583175
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/specs",
+      "t": 1794969584460
+    },
+    {
+      "k": "res",
+      "s": 201,
+      "u": "/api/console/specs",
+      "t": 1794969584478
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969584478
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969584502
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-25",
+      "t": 1794969584622
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-25",
+      "t": 1794969584628
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-25/presplit",
+      "t": 1794969584757
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-25/presplit",
+      "t": 1794969584784
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-25",
+      "t": 1794969584809
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-25",
+      "t": 1794969584822
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-25/agent-review",
+      "t": 1794969584828
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-25/agent-review",
+      "t": 1794969584828
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969585487
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969585494
+    },
+    {
+      "k": "req",
+      "m": "POST",
+      "u": "/api/console/specs",
+      "t": 1794969600410
+    },
+    {
+      "k": "res",
+      "s": 201,
+      "u": "/api/console/specs",
+      "t": 1794969600427
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969600428
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969600443
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-26",
+      "t": 1794969600518
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-26",
+      "t": 1794969600534
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-26/presplit",
+      "t": 1794969600819
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-26/presplit",
+      "t": 1794969600856
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-26",
+      "t": 1794969600887
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-26",
+      "t": 1794969600935
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-26/agent-review",
+      "t": 1794969600962
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-26/agent-review",
+      "t": 1794969600999
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969601954
+    },
+    {
+      "k": "res",
+      "s": 500,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969601970
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969602855
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969602866
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969602953
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969603009
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969603087
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969603135
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969603566
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/presplit",
+      "t": 1794969603598
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969603614
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1",
+      "t": 1794969603620
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969603632
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-1/agent-review",
+      "t": 1794969603641
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969605213
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969605223
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs/spec-readonly",
+      "t": 1794969605338
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs/spec-readonly",
+      "t": 1794969605350
+    },
+    {
+      "k": "mark",
+      "s": "s7-start",
+      "t": 1794969605961
+    },
+    {
+      "k": "req",
+      "m": "GET",
+      "u": "/api/console/specs?page=1",
+      "t": 1794969606004
+    },
+    {
+      "k": "mark",
+      "s": "copy-click",
+      "t": 1794969606055
+    },
+    {
+      "k": "mark",
+      "s": "copy-clicked",
+      "t": 1794969606091
+    },
+    {
+      "k": "res",
+      "s": 200,
+      "u": "/api/console/specs?page=1",
+      "t": 1794969606360
+    }
+  ],
+  "at": "2026-11-18T02:40:06.501Z"
+}

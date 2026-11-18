@@ -68,6 +68,13 @@ function consoleHTMLFromProductionSource() {
     mutate("status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=true;", "status.textContent=agents.length?'':'没有自己的 Agent';retry.hidden=agents.length>0;");
   }
   if (MUTATION === 'unhandled-group-action') html = html.replace("status.textContent='编组操作失败: '+String(err&&err.message||err);return false;", "throw err;");
+  // S-BROWSER-FOLLOWUP：格2（零组审计流程）判别力刀。既有 unhandled-group-action 的锚
+  // （status.textContent='编组操作失败: …'）已随产品 groupAction 重构为 groupFeedback 而漂移
+  // （基锚实测 --mutate=unhandled-group-action 全绿＝假绿，见 REPORT §四披露）。
+  // 本刀静默 groupAction 错误反馈：审计流程的「该编组已关闭添加」与格3 的失败文案均永不出现。
+  if (MUTATION === 'silent-group-action-feedback') {
+    mutate("groupFeedback(feedback||'group-status',msg||('HTTP '+r.status));return false;", "return false;");
+  }
   if (MUTATION === 'legacy-group-deadlock') {
     html = html.replace('detail.before(retryArea);', 'detail.append(retryArea);');
   }
@@ -83,7 +90,7 @@ function consoleHTMLFromProductionSource() {
   html = html.split('{{CONSOLE_VERSION_TEXT}}').join(HARNESS_VERSION + ' · ' + HARNESS_COMMIT.slice(0, 7))
     .split('{{CONSOLE_VERSION}}').join(HARNESS_VERSION)
     .split('{{CONSOLE_COMMIT}}').join(HARNESS_COMMIT);
-  if (MUTATION && !['group-no-precheck','group-no-normalize','group-json-message-ignored','hardcoded-version','stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','restore-inert-agents-entry','unhandled-group-action','legacy-group-deadlock','clear-agents-on-failure','agents-ignore-request-order','agents-stale-ignore-order','agents-stale-no-dot','agents-stale-first-failure','agents-stale-on-auth'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  if (MUTATION && !['group-no-precheck','group-no-normalize','group-json-message-ignored','hardcoded-version','stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','restore-inert-agents-entry','unhandled-group-action','legacy-group-deadlock','clear-agents-on-failure','agents-ignore-request-order','agents-stale-ignore-order','agents-stale-no-dot','agents-stale-first-failure','agents-stale-on-auth','silent-group-action-feedback'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -391,7 +398,10 @@ async function main() {
 
     await test('distinguishes platform and Agent load failures from true empty states', async () => {
       const stalePage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-      stalePage.setDefaultTimeout(1500);
+      // 负载时序窗修法（S-BROWSER-FOLLOWUP，照零组格前例）：本格各等待依赖页面 fetch
+      // 完成，产品自身 fetch 超时 8000ms（console_auth.go:792）；1500ms 上界比产品
+      // 超时还短，负载下会在产品合法等待时先红。改用 CONDITION_WAIT_MS(30000)≫8000＋余量；断言不改。
+      stalePage.setDefaultTimeout(CONDITION_WAIT_MS);
       await stalePage.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
       await stalePage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
       await stalePage.locator('#platform-items a[data-item-id="agent-groups"]').waitFor({ state: 'visible' });
@@ -440,7 +450,8 @@ async function main() {
       failAgentsLoad = '500';
       await stalePage.close();
       const failedPage = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-      failedPage.setDefaultTimeout(1500);
+      // 同上：1500ms 上界短于产品 fetch 超时 8000ms；CONDITION_WAIT_MS≫8000＋调度余量。
+      failedPage.setDefaultTimeout(CONDITION_WAIT_MS);
       const failedPageErrors = [], failedConsoleErrors = [], expectedFailureDiagnostics = [];
       failedPage.on('pageerror', (error) => failedPageErrors.push(error.message));
       failedPage.on('console', (message) => {
@@ -461,12 +472,22 @@ async function main() {
       failPlatformLoad = 'timeout';
       failAgentsLoad = 'timeout';
       await failedPage.evaluate(() => { consoleFetchTimeoutMs = 100; });
-      await failedPage.locator('#retryPlatform').click();
-      await failedPage.locator('#retryAgents').click();
-      assert.strictEqual(await failedPage.locator('#platform-status').textContent(), '工作台加载中…');
-      assert.strictEqual(await failedPage.locator('#agents-status').textContent(), 'Agent 列表加载中…');
+      // 100ms abort 旋钮下，「点击→读加载文案」若分两次 CDP 往返，负载下往返本身可
+      // 超过 100ms，读到的是已被 abort 改写的超时文案（竞态在测试侧，不在产品）。
+      // 同一 evaluate 内点击＋同步读：单线程内无定时器可插入；断言值一字不改。
+      const loadingTexts = await failedPage.evaluate(() => {
+        document.getElementById('retryPlatform').click();
+        document.getElementById('retryAgents').click();
+        return { platform: document.getElementById('platform-status').textContent, agents: document.getElementById('agents-status').textContent };
+      });
+      assert.strictEqual(loadingTexts.platform, '工作台加载中…');
+      assert.strictEqual(loadingTexts.agents, 'Agent 列表加载中…');
       await failedPage.locator('#platform-status').filter({ hasText: '工作台加载失败: 请求超时' }).waitFor({ state: 'visible' });
       await failedPage.locator('#agents-status').filter({ hasText: 'Agent 列表加载失败: 请求超时' }).waitFor({ state: 'visible' });
+      // 恢复产品默认（console_auth.go:792 consoleFetchTimeoutMs=8000）：100ms 只是逼出
+      // 挂起夹具 AbortError 的测试旋钮；不恢复则后续 empty/成功段的健康 fetch 在负载下
+      // 与 100ms abort 竞态。超时段断言已在旋钮下完成，恢复不影响其判别力。
+      await failedPage.evaluate(() => { consoleFetchTimeoutMs = 8000; });
 
       failPlatformLoad = 'empty';
       failAgentsLoad = 'empty';
@@ -583,7 +604,9 @@ async function main() {
       });
       await auditContext.addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
       const auditPage = await auditContext.newPage();
-      auditPage.setDefaultTimeout(1500);
+      // 同零组格修法：1500ms 上界短于产品 fetch 超时 8000ms；负载下各 waitFor/click
+      // 会在产品合法等待时先红。CONDITION_WAIT_MS≫8000＋调度余量；断言不改。
+      auditPage.setDefaultTimeout(CONDITION_WAIT_MS);
       const auditErrors = [];
       const auditExpectedHTTPDiagnostics = [];
       auditPage.on('pageerror', (error) => auditErrors.push(error.message));
@@ -735,24 +758,28 @@ async function main() {
         assert.ok(String(await locator.textContent() || '').includes(text), criterion);
       };
       failGroupLoad = '500';
-      await page.locator('#retryGroups').click();
+      await page.locator('#retryGroups').click({ timeout: CONDITION_WAIT_MS });
       await expectText('#groupRetryFeedback', '编组加载失败: HTTP 500', '编组加载失败: HTTP 500');
       assert.strictEqual(await page.locator('#groupLeader').isDisabled(), true);
       assert.strictEqual(await page.locator('#groupLeader option').textContent(), '加载失败');
-      failGroupLoad = 'shape'; await page.locator('#retryGroups').click(); await expectText('#groupRetryFeedback', '响应格式无效', '响应格式无效');
-      failGroupLoad = 'timeout'; await page.evaluate(() => { groupFetchTimeoutMs=20; }); await page.locator('#retryGroups').click(); await expectText('#groupRetryFeedback', '请求超时', '请求超时');
-      failGroupLoad = 'empty'; await page.locator('#retryGroups').click(); await expectText('#group-status', '没有自己的 Agent', '没有自己的 Agent');
+      failGroupLoad = 'shape'; await page.locator('#retryGroups').click({ timeout: CONDITION_WAIT_MS }); await expectText('#groupRetryFeedback', '响应格式无效', '响应格式无效');
+      failGroupLoad = 'timeout'; await page.evaluate(() => { groupFetchTimeoutMs=20; }); await page.locator('#retryGroups').click({ timeout: CONDITION_WAIT_MS }); await expectText('#groupRetryFeedback', '请求超时', '请求超时');
+      // 恢复产品默认（console_auth.go:792 groupFetchTimeoutMs=8000）：20ms 只是逼出
+      // 挂起夹具 AbortError 的测试旋钮；不恢复则后续 empty/恢复段的健康 fetch 在负载下
+      // 与 20ms abort 竞态（前单 conditionDeadline ~29.6s 超时红的根因）。断言不改。
+      await page.evaluate(() => { groupFetchTimeoutMs = 8000; });
+      failGroupLoad = 'empty'; await page.locator('#retryGroups').click({ timeout: CONDITION_WAIT_MS }); await expectText('#group-status', '没有自己的 Agent', '没有自己的 Agent');
       assert.strictEqual(await page.locator('#groupLeader option').textContent(), '没有自己的 Agent');
-      failGroupLoad = ''; await page.locator('#retryGroups').click(); await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false, null, { timeout: Math.max(1, conditionDeadline - Date.now()) });
+      failGroupLoad = ''; await page.locator('#retryGroups').click({ timeout: CONDITION_WAIT_MS }); await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false, null, { timeout: Math.max(1, conditionDeadline - Date.now()) });
       assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['alpha', 'beta']);
       failGroupLoad = '';
       failGroupAction = '500';
-      if (await page.locator('#groupAddPanel').isHidden()) await page.locator('#groupAddOpen').click();
-      await page.locator('#groupShortName').fill('团队3');
-      await page.locator('#createGroup').click();
+      if (await page.locator('#groupAddPanel').isHidden()) await page.locator('#groupAddOpen').click({ timeout: CONDITION_WAIT_MS });
+      await page.locator('#groupShortName').fill('团队3', { timeout: CONDITION_WAIT_MS });
+      await page.locator('#createGroup').click({ timeout: CONDITION_WAIT_MS });
       await expectText('#groupNameFeedback', 'fixture create denied', 'fixture create denied');
       failGroupAction = 'network';
-      await page.locator('#createGroup').click();
+      await page.locator('#createGroup').click({ timeout: CONDITION_WAIT_MS });
       await expectText('#groupNameFeedback', '请求失败:', '请求失败:');
       failGroupAction = '';
     });

@@ -1,0 +1,2 @@
+page.waitForFunction: Timeout 3000ms exceeded.
+    at main (/tmp/wt-followup/view-service/r15-follow-release-after-replay-regression.js:129:16)

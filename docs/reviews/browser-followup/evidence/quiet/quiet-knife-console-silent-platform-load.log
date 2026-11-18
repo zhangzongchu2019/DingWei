@@ -1,0 +1,13 @@
+  PASS loads the real console document
+  PASS keeps platform workspaces interactive after a full Agent refresh interval
+  PASS resets the created name while preserving the selected short-name Agent
+  PASS offers owned active offline Agents as group membership candidates
+  FAIL distinguishes platform and Agent load failures from true empty states: locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('#platform-status').filter({ hasText: '工作台加载失败: HTTP 500: fixture platform unavailable' }) to be visible[22m
+
+console browser harness: passed=4 failed=1
+distinguishes platform and Agent load failures from true empty states: locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('#platform-status').filter({ hasText: '工作台加载失败: HTTP 500: fixture platform unavailable' }) to be visible[22m
+

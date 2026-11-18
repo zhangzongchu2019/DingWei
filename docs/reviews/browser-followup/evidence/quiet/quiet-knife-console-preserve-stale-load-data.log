@@ -1,0 +1,13 @@
+  PASS loads the real console document
+  PASS keeps platform workspaces interactive after a full Agent refresh interval
+  PASS resets the created name while preserving the selected short-name Agent
+  PASS offers owned active offline Agents as group membership candidates
+  FAIL distinguishes platform and Agent load failures from true empty states: failed refresh must clear stale platform entries
+
+3 !== 0
+
+console browser harness: passed=4 failed=1
+distinguishes platform and Agent load failures from true empty states: failed refresh must clear stale platform entries
+
+3 !== 0
+

@@ -1,0 +1,15 @@
+AssertionError [ERR_ASSERTION]: 没有自己的 Agent 时空态必须说话
++ actual - expected
+
++ ''
+- '没有自己的在线 Agent'
+
+    at Proxy.<anonymous> (/tmp/wt-anchor-501/view-service/console-specs-instrumented-followup.js:14:91)
+    at main (/tmp/wt-anchor-501/view-service/console-specs-instrumented-followup.js:409:12) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: '',
+  expected: '没有自己的在线 Agent',
+  operator: 'strictEqual',
+  diff: 'simple'
+}

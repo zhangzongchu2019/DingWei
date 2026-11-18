@@ -1,0 +1,40 @@
+S-6④ 独立用例: 拆解=true 工作流=true 预拆在详情内=true
+locator.click: Timeout 2500ms exceeded.
+Call log:
+[2m  - waiting for locator('#new-title')[22m
+[2m    - locator resolved to <input required="" id="new-title"/>[22m
+[2m  - attempting click action[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m    5 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying click action[22m
+[2m      - waiting 500ms[22m
+
+    at keyboardReplace (/tmp/wt-anchor-501/view-service/console-specs-instrumented-followup.js:533:81)
+    at main (/tmp/wt-anchor-501/view-service/console-specs-instrumented-followup.js:534:11) {
+  log: [
+    "  - waiting for locator('#new-title')",
+    '    - locator resolved to <input required="" id="new-title"/>',
+    '  - attempting click action',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is not visible',
+    '    - retrying click action',
+    '    - waiting 20ms',
+    '    2 × waiting for element to be visible, enabled and stable',
+    '      - element is not visible',
+    '    - retrying click action',
+    '      - waiting 100ms',
+    '    5 × waiting for element to be visible, enabled and stable',
+    '      - element is not visible',
+    '    - retrying click action',
+    '      - waiting 500ms'
+  ],
+  name: 'TimeoutError'
+}
