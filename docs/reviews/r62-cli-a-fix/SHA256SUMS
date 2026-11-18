@@ -1,7 +1,9 @@
-dd736eeda7d166b0ca8c86c2ec9ccc690933f62b1bddc586ea72d29e27896ec5  docs/reviews/r62-cli-a-fix/REPORT.md
+83206ee7081f83dc75dd29b298a3ca18212af61ba2f40725cfc0b15017b54244  docs/reviews/r62-cli-a-fix/REPORT.md
 f099ee186253deb0d1fe02beb64a6cd20306c3bcf0b93d657d978a09b184aa5f  docs/reviews/r62-cli-a-fix/evidence/focused-c1-c3.log
 fd807bfa75ae5690f6f88bdab2beafd1190513b1b5da4af4afc2dadb05da5e87  docs/reviews/r62-cli-a-fix/evidence/helper-round4.log
 f30d7efeaa0085a30993cab60efd9413f8278dce418e6c41a45ea4f29d018685  docs/reviews/r62-cli-a-fix/evidence/helper-round5.log
 447b8bc2045fe7a642aff26c80c6263ec6800c0ce797c0e22353193e005f4a3e  docs/reviews/r62-cli-a-fix/evidence/mutation-codex-duplicate-event.log
 90afdd6ec89323eb227e2dc06d1424ed54b76cbaf579824d39fa2b7b9a69d15a  docs/reviews/r62-cli-a-fix/evidence/mutation-codex-response-item.log
 d9a5ada145097e4cbe64dc69d9dbf72d4e90fa7c6b96f085d057e6f8c8081e90  docs/reviews/r62-cli-a-fix/evidence/mutation-opencode-db-route.log
+7bcb742c22274fb4fabe7cc56c0998bfa6fd10172cb26f29a33e15b3ee357487  docs/reviews/r62-cli-a-fix/evidence/c2-opencode-no-answer-focused.log
+dea62df01cde9ebb5f5d4fb863c851019c9c609822f49db8332e0a79c4d47db4  docs/reviews/r62-cli-a-fix/evidence/c2-opencode-placeholder-mutation.log

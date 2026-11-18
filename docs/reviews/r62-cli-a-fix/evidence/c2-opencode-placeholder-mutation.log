@@ -1,0 +1,14 @@
+test_opencode_sync_no_answer_is_nonretryable_cli_timeout (tests.test_sessionhelper.SessionHelperTest.test_opencode_sync_no_answer_is_nonretryable_cli_timeout) ... FAIL
+
+======================================================================
+FAIL: test_opencode_sync_no_answer_is_nonretryable_cli_timeout (tests.test_sessionhelper.SessionHelperTest.test_opencode_sync_no_answer_is_nonretryable_cli_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/dev/tmp/r62-cli-a-fix/tools/sessionhelper/tests/test_sessionhelper.py", line 2166, in test_opencode_sync_no_answer_is_nonretryable_cli_timeout
+    with self.assertRaises(CLIAnswerTimeout) as raised:
+AssertionError: CLIAnswerTimeout not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.012s
+
+FAILED (failures=1)

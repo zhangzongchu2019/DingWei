@@ -2152,6 +2152,29 @@ class SessionHelperTest(unittest.TestCase):
         self.assertEqual(injected, ["OpenCode prompt"])
         self.assertEqual(adapter.mirror_q.get_nowait(), ("opencode", "OpenCode answer"))
 
+    def test_opencode_sync_no_answer_is_nonretryable_cli_timeout(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="opencode", SH_CLI_REPLY_WAIT="0.1"))
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.start = lambda: True
+        adapter._child_gone = lambda: False
+        injected = []
+        admitted = []
+        adapter.inject_text = lambda body: injected.append(body)
+        adapter.collect_opencode_db_reply = lambda _prompt, _injected_at, _wait: ("no_answer", "")
+
+        with self.assertRaises(CLIAnswerTimeout) as raised:
+            adapter.handle_delivery(
+                {"body": "OpenCode prompt without a completed assistant reply"},
+                on_admitted=lambda: admitted.append(True),
+            )
+
+        self.assertEqual(injected, ["OpenCode prompt without a completed assistant reply"])
+        self.assertEqual(admitted, [True])
+        self.assertEqual(raised.exception.reason, "cli_answer_timeout")
+        self.assertFalse(raised.exception.retryable)
+        self.assertEqual(delivery_failure_ack_fields(raised.exception), ("cli_answer_timeout", False))
+
     def test_opencode_helpers_parse_time_and_strip_fence(self):
         self.assertEqual(opencode_time(1_783_000_000_000), 1_783_000_000)
         self.assertEqual(strip_markdown_code_fence("```go\nfmt.Println(1)\n```"), "fmt.Println(1)")
