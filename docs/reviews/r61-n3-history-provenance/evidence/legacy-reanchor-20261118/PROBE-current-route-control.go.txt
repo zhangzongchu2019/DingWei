@@ -1,0 +1,54 @@
+package m8
+import("encoding/json";"testing";"strings";"github.com/zhangzongchu2019/dingwei/internal/model")
+func TestHistoryProvenanceCurrentRouteLegacyReanchorControl(t *testing.T) {
+	v := newViewEnv(t)
+	history := openEnabledNewPlatformHistory(t, v)
+	target, status, body := v.dial(v.zKimiCred, "")
+	if target == nil {
+		t.Fatalf("helper %d %s", status, body)
+	}
+	defer target.CloseNow()
+	waitSessionOnline(t, v.hub, AgentKeyID("zzc"), "kimi")
+	v.hub.mu.Lock()
+	old := v.hub.sessionClients[AgentKeyID("zzc")]["kimi"]
+	v.hub.mu.Unlock()
+	old.stateMu.Lock()
+	old.deliveryACKV1 = true
+	old.stateMu.Unlock()
+	replacement := &sessionClient{keyID: old.keyID, ownerKey: old.ownerKey, sessionName: old.sessionName, metricsAgentID: "same-name-new-stable-id"}
+	defer func() { v.hub.mu.Lock(); v.hub.sessionClients[old.keyID][old.sessionName] = old; v.hub.mu.Unlock() }()
+	var queued model.SessionDelivery
+	v.hub.Repo = &historyEnqueueCaptureRepo{Repository: v.hub.Repo, after: func(d model.SessionDelivery) {
+		queued = d
+		v.hub.mu.Lock()
+		v.hub.sessionClients[old.keyID][old.sessionName] = replacement
+		v.hub.mu.Unlock()
+	}}
+	env := model.Envelope{ID: "identity-snapshot", From: "timer#" + old.keyID, To: "kimi#" + old.keyID, Body: "synthetic snapshot", Meta: map[string]any{hubIngressMetaKey: hubIngressAgent}}
+	if e := v.hub.routeToSession(v.ctx, old.keyID, old.sessionName, env, false); e != nil {
+		t.Fatal(e)
+	}
+	if queued.ID == "" {
+		t.Fatal("route did not enqueue")
+	}
+	var persisted model.Envelope
+	if err := json.Unmarshal([]byte(queued.Envelope), &persisted); err != nil { t.Fatal(err) }
+	if metaString(persisted.Meta, hubIngressMetaKey) != "" { t.Fatal("normal route persisted private ingress marker") }
+	if queued.Provenance == "" { t.Fatal("control fixture did not capture canonical provenance") }
+	if !v.hub.handleSessionDeliveryAck(v.ctx, old, model.Envelope{Meta: map[string]any{"type":"delivery_ack", "delivery_id":queued.ID,"state":"injected"}}) { t.Fatal("legacy ACK was not handled") }
+	if row, err := v.hub.Repo.GetSessionDelivery(v.ctx, queued.ID); err != nil || row == nil || row.State != "legacy_received" { t.Fatalf("control lacks actual legacy reanchor: %+v %v", row, err) }
+	raw, _ := json.Marshal(map[string]any{"kind": "user_input", "delivery_id": queued.ID, "origin_delivery_id": queued.ID, "turn_id": "turn-snapshot", "data": map[string]any{"lifecycle": "admitted"}})
+	v.hub.handleSessionEventEnvelope(replacement, model.Envelope{ID: "replacement-echo", Body: string(raw), Meta: map[string]any{"type": terminalSessionEventType}})
+	page, e := history.Page(v.ctx, old.ownerKey, replacement.metricsAgentID, old.sessionName, "", nil)
+	if e != nil || len(page.Events) != 1 {
+		t.Fatalf("page %+v %v", page, e)
+	}
+	if strings.Contains(string(page.Events[0].Event), `"provenance"`) {
+		t.Fatal("route rebound queued provenance to same-name replacement")
+	}
+	v.hub.handleSessionEventEnvelope(old, model.Envelope{ID: "captured-echo", Body: string(raw), Meta: map[string]any{"type": terminalSessionEventType}})
+	page, e = history.Page(v.ctx, old.ownerKey, old.metricsAgentID, old.sessionName, "", nil)
+	if e != nil || len(page.Events) != 1 || !strings.Contains(string(page.Events[0].Event), `"provenance"`) {
+		t.Fatalf("route lost original captured identity proof: %+v %v", page, e)
+	}
+}

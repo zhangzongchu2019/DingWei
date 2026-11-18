@@ -1,0 +1,14 @@
+{
+  "source_commit": "9313197f8ac3e2a585cd399935d5b313084b3b1e",
+  "source_tree": "8ee1d3e5673cc66453c9b32083505e23bc602090",
+  "prior_source": "a32c877cf6ef21a909d2806f4b08e3e925d05d98",
+  "product_delta_paths": [
+    "internal/m8/history_provenance_test.go",
+    "internal/m8/hub.go"
+  ],
+  "product_delta_stat": " internal/m8/history_provenance_test.go | 81 ++++++++++++++++++++++++++++++++++\n internal/m8/hub.go                     |  5 ++-\n 2 files changed, 85 insertions(+), 1 deletion(-)\n",
+  "application_migrations_unchanged": true,
+  "history_migrations_unchanged": true,
+  "old40_rerun": 40,
+  "new_mutations": 2
+}

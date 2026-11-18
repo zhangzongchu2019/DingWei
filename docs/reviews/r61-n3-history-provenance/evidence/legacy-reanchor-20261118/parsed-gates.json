@@ -1,0 +1,88 @@
+[
+  {
+    "name": "browser-full",
+    "source_commit": "9313197f8ac3e2a585cd399935d5b313084b3b1e",
+    "rc": 0,
+    "top_pass_lines": 0,
+    "all_pass_lines": 0,
+    "top_skip_lines": 0,
+    "skip_lines": 0,
+    "failures": [],
+    "interrupted_line_numbers": []
+  },
+  {
+    "name": "build-canonical",
+    "source_commit": "9313197f8ac3e2a585cd399935d5b313084b3b1e",
+    "rc": 0,
+    "top_pass_lines": 6,
+    "all_pass_lines": 21,
+    "top_skip_lines": 0,
+    "skip_lines": 0,
+    "failures": [],
+    "interrupted_line_numbers": []
+  },
+  {
+    "name": "store-full3",
+    "source_commit": "9313197f8ac3e2a585cd399935d5b313084b3b1e",
+    "rc": 0,
+    "top_pass_lines": 1344,
+    "all_pass_lines": 2343,
+    "top_skip_lines": 15,
+    "skip_lines": 15,
+    "failures": [],
+    "interrupted_line_numbers": []
+  },
+  {
+    "name": "m8-full3",
+    "source_commit": "9313197f8ac3e2a585cd399935d5b313084b3b1e",
+    "rc": 0,
+    "top_pass_lines": 2973,
+    "all_pass_lines": 5019,
+    "top_skip_lines": 33,
+    "skip_lines": 87,
+    "failures": [],
+    "interrupted_line_numbers": [],
+    "rounds": [
+      {
+        "round": 1,
+        "top_pass": 991,
+        "top_fail": 0,
+        "interrupted_lines": 0
+      },
+      {
+        "round": 2,
+        "top_pass": 991,
+        "top_fail": 0,
+        "interrupted_lines": 0
+      },
+      {
+        "round": 3,
+        "top_pass": 991,
+        "top_fail": 0,
+        "interrupted_lines": 0
+      }
+    ]
+  },
+  {
+    "name": "focused-race",
+    "source_commit": "9313197f8ac3e2a585cd399935d5b313084b3b1e",
+    "rc": 0,
+    "top_pass_lines": 41,
+    "all_pass_lines": 89,
+    "top_skip_lines": 1,
+    "skip_lines": 1,
+    "failures": [],
+    "interrupted_line_numbers": []
+  },
+  {
+    "name": "strict",
+    "source_commit": "9313197f8ac3e2a585cd399935d5b313084b3b1e",
+    "rc": 0,
+    "top_pass_lines": 0,
+    "all_pass_lines": 0,
+    "top_skip_lines": 0,
+    "skip_lines": 0,
+    "failures": [],
+    "interrupted_line_numbers": []
+  }
+]

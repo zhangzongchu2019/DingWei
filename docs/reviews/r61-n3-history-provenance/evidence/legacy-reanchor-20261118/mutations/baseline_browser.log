@@ -1,0 +1,11 @@
+  PASS agent: DB/HTTP history only, refresh icon_count==1
+  PASS agent/unattested: history icon_count==0
+  PASS agent/untrusted: history icon_count==0
+  PASS agent/absent: history icon_count==0
+{"case":"agent","message_id":"hp-message-agent","delivery_id":"dw-dlv_a5e4b3efe5e34cd0dbd2a8c7997599f2","origin_delivery_id":"dw-dlv_a5e4b3efe5e34cd0dbd2a8c7997599f2","turn_id":"turn-agent","history_event_id":"echo-agent","sse_ids":["id: 833d35f07e3eb799-1","id: 833d35f07e3eb799-2","id: 833d35f07e3eb799-3"]}
+  PASS timer: DB/HTTP history only, refresh icon_count==1
+  PASS timer/unattested: history icon_count==0
+  PASS timer/untrusted: history icon_count==0
+  PASS timer/absent: history icon_count==0
+{"case":"timer","message_id":"hp-message-timer","delivery_id":"dw-dlv_1d35780c9a5fa157337dc7dfed5ca583","origin_delivery_id":"dw-dlv_1d35780c9a5fa157337dc7dfed5ca583","turn_id":"turn-timer","history_event_id":"echo-timer","sse_ids":["id: 5034a4ffba6de4a4-1","id: 5034a4ffba6de4a4-2","id: 5034a4ffba6de4a4-3"]}
+history-provenance-browser-regression: 8/8 PASS

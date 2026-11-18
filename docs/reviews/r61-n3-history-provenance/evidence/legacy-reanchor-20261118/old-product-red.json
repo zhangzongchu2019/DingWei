@@ -1,0 +1,16 @@
+{
+  "source_product": "a32c877cf6ef21a909d2806f4b08e3e925d05d98",
+  "test_overlay": "new legacy reanchor regression only; old product unchanged",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "^TestHistoryProvenanceLegacyReanchorDoesNotFollowReusedName$",
+    "-count=1",
+    "-v"
+  ],
+  "started_utc": "2026-11-18T09:15:18.015023+00:00",
+  "rc": 1,
+  "ended_utc": "2026-11-18T09:15:33.152282+00:00"
+}

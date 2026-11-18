@@ -1,3 +1,46 @@
+# 当前交件：legacy 重锚最小修订（2026-11-18）
+
+冻结产品与测试源 `9313197f8ac3e2a585cd399935d5b313084b3b1e`，基 main `206d41b2`，追加于原交件4394的线性历史。作者门不替代独立复核；正式复核方按组长07:50Z改派为qwen38mvb4，togpt延迟技术意见作为修订输入，不恢复已撤回的旧派审。不推main、不部署、不出发布件。
+
+## 问题范围与证据强度
+
+当前正常路由先由 `sessionClientEnvelope` 剥除 `_hub_ingress_channel`，再保存 delivery Envelope。`provenanceForEnvelope` 缺该标记即不出可信来源。因此，本次不能声称证明了当前正常路由或现网已发生同名身份串写。真实当前路由的补充控制在原A32与新931上均rc0：存储Envelope无该标记，legacy ACK后替换身份仍无历史图标；原捕获身份的既有证明可消费。探针源码、命令、UTC与日志见本次 evidence 的 `current-route-controls.json` 和 `PROBE-current-route-control.go.txt`。
+
+新增四格反例直接构造仍保留该服务器标记的持久Envelope，覆盖 injected/processed × 有/无原目标sidecar，属于旧记录形态或未来路径的条件性防线验证。没有取样现网，也没有证据确认真实历史库存在这类保留标记的记录。旧A32叠加新测试四格均业务断言红；这不等于当前正常路由四格红。
+
+## 修改与回归
+
+`hub.go` 的 legacy_received 重锚调用显式传入空 captured target：只发布原有实时 observation，不按当前同名槽补签sidecar。已有原身份sidecar不删除、不重写，仍可按五元组正常消费。产品运行逻辑只改这一调用；新增81行测试，另同步规格/设计。history迁移0078、应用迁移0077、renderer、依赖与VERSION均相对A32不变。
+
+新增 `TestHistoryProvenanceLegacyReanchorDoesNotFollowReusedName` 四格使用真实SQLite、ACK handler及history append，连接身份为本地合成。替换身份echo不得继承图标；原身份只在原来有证明时显示；实时提示仍存在。无真实CLI或在线席位数据。
+
+## 新源完整作者门
+
+所有下表读数都在931固定产品/测试源重新运行，没有借用A32的作者门。普通用户，env-i白名单，独立HOME/TMPDIR，PG strict，锁定解释器；逐门命令/UTC/rc/原SHA见 `evidence/legacy-reanchor-20261118/gates.json`。PASS是日志行计数，含count重复，不是不同场景数；SKIP逐名与条件见同目录SKIPS.json。
+
+| 门 | rc | 顶层PASS | 含子项PASS | SKIP行 | interrupted诊断行 |
+|---|---:|---:|---:|---:|---:|
+| browser-full | 0 | 0 | 0 | 0 | 0 |
+| build-canonical | 0 | 6 | 21 | 0 | 0 |
+| store-full3 | 0 | 1344 | 2343 | 15 | 0 |
+| m8-full3 | 0 | 2973 | 5019 | 87 | 0 |
+| focused-race | 0 | 41 | 89 | 1 | 0 |
+| strict | 0 | 0 | 0 | 0 | 0 |
+
+浏览器全量46套，以receipt逐套rc与aggregate为准；canonical以BUILD_TESTS_OK为准。m8三遍逐轮计数见parsed-gates.json，诊断interrupted与断言FAIL分别记录，不以rc0推定0诊断，也不宣称修复N-4。
+
+42把有效删保护在本次源码实跑：原40刀全部重新执行，另2刀分别恢复当前槽推断、删除实时重锚发布；均build成功且业务断言红，逐刀还原SHA相同，前后基线绿。原40刀中的4KiB契约联合删除Go与SQL冗余校验，仍只算一刀，不夸称各自独立。脚本、原日志和摘要均在本次evidence；不与历史A32的40刀叠加计数。
+
+大日志以确定性gzip入Git；raw-logs.json分别列本机原SHA与发布SHA，若测试夹具样式被敏感扫描脱敏则明确记录，不冒称逐字相同。fixture-export重新从931真实本地Hub/DB/HTTP/SSE导出；协议echo合成、浏览器fixture回放的边界沿用下方历史说明。
+
+完成：最小修订与全量作者门。阻塞：无实现阻塞；qwen独立复核与组长终审尚未完成，旧4394/A32不因此获得PASS。新证据入口为CURRENT-SOURCE.json；离线核验仍从仓根执行VERIFY.py与SHA256SUMS。
+
+---
+
+# 以下为原A32交件历史（当时状态，非当前源）
+
+下方旧SOURCE_COMMIT、旧40刀、旧派审/六门及原文strict坐标仅用于历史追溯。当前源与正式复核方以上方当前交件为准；D181首轮失败、A32诊断及既有失败不抹除。
+
 # R61 N-3 历史来源保留：实现交件
 
 基main 206d41b26dab646c0e50a111eed5a45ccf7c72f6。原样设计导入c3b3db27c，对6a60a1a6指定目录逐字节相同；首提交只新增该目录7文件。后续实现在本任务分支，SOURCE_COMMIT=a32c877cf6ef21a909d2806f4b08e3e925d05d98。不推main、不部署，不构建/上传发布件；build.sh --test-only只跑规定构建门。

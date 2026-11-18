@@ -1,0 +1,32 @@
+[
+  {
+    "name": "legacy_history_target",
+    "before": "h.publishInputObservation(d.KeyID, d.SessionName, original, d.ID, \"helper_received\", \"primary\", false, nil)",
+    "after": "h.publishInputObservation(d.KeyID, d.SessionName, original, d.ID, \"helper_received\", \"primary\", false)",
+    "source": "9313197f8ac3e2a585cd399935d5b313084b3b1e",
+    "original_sha256": "26dfb4894f221788d0bcdd406caea6eeab88ced6befa38565b8928c0b2d8f364",
+    "started_utc": "2026-11-18T09:20:02.227955+00:00",
+    "build_rc": 0,
+    "build_raw_sha256": "9513c2ffb0ae294bdb07b069ce1a5ec66a7650256d2518926614b4cfb1f36ad2",
+    "test_rc": 1,
+    "test_raw_sha256": "54ac44c4cf081d771b991c61afbbadeab7481dcda6bf0c52011015543a6db489",
+    "business_assertion": true,
+    "restored_sha256": "26dfb4894f221788d0bcdd406caea6eeab88ced6befa38565b8928c0b2d8f364",
+    "ended_utc": "2026-11-18T09:20:18.888164+00:00"
+  },
+  {
+    "name": "legacy_realtime_preserved",
+    "before": "h.publishInputObservation(d.KeyID, d.SessionName, original, d.ID, \"helper_received\", \"primary\", false, nil)",
+    "after": "// cut realtime reanchor",
+    "source": "9313197f8ac3e2a585cd399935d5b313084b3b1e",
+    "original_sha256": "26dfb4894f221788d0bcdd406caea6eeab88ced6befa38565b8928c0b2d8f364",
+    "started_utc": "2026-11-18T09:20:18.890277+00:00",
+    "build_rc": 0,
+    "build_raw_sha256": "e1f64fac69c09b10d0608735b5911fc7ad00d2cb8c1819d9049f0c3b22e6fef9",
+    "test_rc": 1,
+    "test_raw_sha256": "335c8c30b40a78df55b9489db70af4805c768274e7882bb89d3fcc3f9146b921",
+    "business_assertion": true,
+    "restored_sha256": "26dfb4894f221788d0bcdd406caea6eeab88ced6befa38565b8928c0b2d8f364",
+    "ended_utc": "2026-11-18T09:20:33.257611+00:00"
+  }
+]

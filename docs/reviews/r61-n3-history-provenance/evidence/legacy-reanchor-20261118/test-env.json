@@ -1,0 +1,19 @@
+{
+  "HOME": "/tmp/n1bh",
+  "TMPDIR": "/data/ai-dev-data/n1bt-review",
+  "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+  "LANG": "C.UTF-8",
+  "USER": "dev",
+  "LOGNAME": "dev",
+  "GOPATH": "/home/dev/go",
+  "GOMODCACHE": "/home/dev/go/pkg/mod",
+  "GOCACHE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n1b-review/go-cache",
+  "GOPROXY": "off",
+  "GOFLAGS": "-mod=mod",
+  "HUB_TEST_PG_STRICT": "1",
+  "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3",
+  "OPENSPEC_TELEMETRY": "0",
+  "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+  "PLAYWRIGHT_BROWSERS_PATH": "/home/dev/.cache/ms-playwright",
+  "SOURCE_COMMIT": "9313197f8ac3e2a585cd399935d5b313084b3b1e"
+}
