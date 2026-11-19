@@ -156,7 +156,13 @@ func TestConsolePlatformHandlersExposeOnlyActionableBuiltinsAndEnforceWorkflow(t
 
 	rr = callConsolePlatform(t, hub, "owner", consolePlatformActionRead, http.MethodGet,
 		"/api/console/platform", nil, hub.HandleConsolePlatform)
-	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"id":"custom-specs"`)) {
-		t.Fatalf("owner approved list code=%d body=%q", rr.Code, rr.Body.String())
+	// S-R62-OLDPLAT-SLIM 白名单口径（组长 2026-11-19T00:20:38Z 裁定）：已批准自定义项
+	// 不再随菜单下发；批准工作流本身不动（上面 204＋下面落库状态），菜单恒只 builtin。
+	if rr.Code != http.StatusOK || bytes.Contains(rr.Body.Bytes(), []byte(`"id":"custom-specs"`)) {
+		t.Fatalf("owner 菜单不得下发自定义项（白名单口径）code=%d body=%q", rr.Code, rr.Body.String())
+	}
+	approved, err := hub.Repo.(*store.SQLite).ConsolePlatformItem(context.Background(), "custom-specs")
+	if err != nil || approved == nil || approved.Status != "approved" {
+		t.Fatalf("批准工作流须照旧落库 approved: %+v err=%v", approved, err)
 	}
 }

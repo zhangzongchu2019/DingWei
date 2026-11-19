@@ -91,21 +91,23 @@ func TestSGroupEntryOwnerSeesGroupEntryButNotAdminEntry(t *testing.T) {
 		}
 	})
 
-	t.Run("② 同一请求的 items 仍不含 admin(平台管理)", func(t *testing.T) {
+	t.Run("② 同一请求的 items 仍不含 admin(旧版后台已摘)", func(t *testing.T) {
 		if leaked, ok := findPlatformItem(ownerItems, "admin"); ok {
-			t.Fatalf("🔴 一刀切把管理面也放出去了:role=owner 收到 %+v。\n"+
-				"   本单只把 agent-groups 移出 management 块;**平台管理必须留在块内** ——\n"+
-				"   它指向 /console/admin,是真·管理面(RequireConsoleManagement 那道门在后面,\n"+
-				"   但让普通业主看到一个点了就 403 的入口本身就是缺陷)。", leaked)
+			t.Fatalf("🔴 role=owner 收到旧版后台入口 %+v。\n"+
+				"   S-R62-OLDPLAT-SLIM(rulings ㊿-补133):admin 已从菜单对**所有角色**摘除;\n"+
+				"   管理面由 platform-admin 内部页签承载(仅 management),owner 两者都不得见。", leaked)
 		}
 	})
 }
 
-// 排他的另一半:management 侧**两项都还在**。
+// 排他的另一半:management 侧 agent-groups 与 platform-admin 都还在,旧版后台已摘。
 //
 //	🔴 没有这一格,「把 agent-groups 从 builtins 里整个删掉」也能让 ① 之外的所有闸绿 ——
 //	   那不是修复,是把功能对**所有人**关掉。判据要能区分"移给所有人"与"谁都没有"。
-func TestSGroupEntryManagementStillSeesBothEntries(t *testing.T) {
+//	S-R62-OLDPLAT-SLIM(rulings ㊿-补133):本格原钉「management 两项都还在(agent-groups＋admin)」;
+//	admin 摘除后翻转为「agent-groups＋platform-admin 必须在、admin 必须不在」——
+//	把 admin 加回、或删掉 agent-groups/platform-admin 任一,都必红。
+func TestSGroupEntryManagementKeepsWorkspaceEntriesNotLegacyAdmin(t *testing.T) {
 	role, items := consolePlatformItemsFor(t, "manager")
 	if role != consolePlatformRoleManagement {
 		t.Fatalf("夹具前提坏了:manager 应解析为 %q,实为 %q", consolePlatformRoleManagement, role)
@@ -114,8 +116,11 @@ func TestSGroupEntryManagementStillSeesBothEntries(t *testing.T) {
 		t.Fatalf("🔴 management 反而拿不到 agent-groups 了,实为 %s ⇒ 这不是\"移出 management 块\","+
 			"是把入口对所有人删掉了", sGroupEntryIDs(items))
 	}
-	if _, ok := findPlatformItem(items, "admin"); !ok {
-		t.Fatalf("🔴 management 拿不到「平台管理」入口,实为 %s ⇒ 本单不得动 admin 那一项", sGroupEntryIDs(items))
+	if _, ok := findPlatformItem(items, "platform-admin"); !ok {
+		t.Fatalf("🔴 management 拿不到「平台管理」页签,实为 %s ⇒ 管理面入口不得随旧版后台一起摘掉", sGroupEntryIDs(items))
+	}
+	if leaked, ok := findPlatformItem(items, "admin"); ok {
+		t.Fatalf("🔴 S-R62-OLDPLAT-SLIM:management 菜单不得再下发旧版后台,实收 %+v(加回必红)", leaked)
 	}
 }
 

@@ -1,94 +1,39 @@
 package m8
 
-// Nova-260921-A(B1-b) —— console 左栏那个「平台管理」入口。
+// 历史: Nova-260921-A(B1-b) 时本格钉「旧版后台入口 management 可见、指向 /console/admin」
+// (变异 M11 咬出来的缺口:删掉 builtin 零转红)。S-R62-CONSOLE-SLIM 后管理角色入口由
+// platform-admin 内部页签承载。
 //
-// 🔴 本格是**变异 M11 咬出来的缺口**,不是设计时想到的:
-// 把 HandleConsolePlatform 里 `ID:"admin"` 那条 builtin 整个删掉 ⇒
-// `go test ./internal/admin/... ./internal/m8/... ./cmd/workpulse/...` **rc=0、零转红**(实测),
-// 而业主在 console 里**再也看不见这个入口**。功能其实还在(直接访问 /console/admin 可用),
-// 但「看不见的功能等于不存在」—— 本组今日同型第十次。
+// S-R62-OLDPLAT-SLIM(业主令 rulings ㊿-补133):旧版后台(id=admin)从菜单摘除,
+// 本格翻转为「任何角色的菜单都不得下发 admin」——把 builtin 加回必红。
+// 后端路由 /console/admin、RequireConsoleManagement 授权与数据不动(直连行为保持现状);
+// 授权面仍由 TestRequireConsoleManagement* 与 internal/admin 侧钉住,本格只管菜单下发。
 //
-// 三腿,每腿都带阳性对照(判据写在失败消息里,不写在文档里让人记得):
-//
-//	① management 看得到,且 href=/console/admin、target=_blank
-//	   🔴 href 必须是 **/console/admin**(console 角色授权的新门),不是 /admin(旧后台 wp_admin 那道)。
-//	      指错了业主点进去就是 303 → /admin/login:形态对上了、方向相反
-//	      (板件 runbooks/SPEC-OWNER-TAB-ADMIN-20260920.md §二 的原话)。
-//	② owner 看不到 —— 否则普通业主看见一个点了就 403 的入口
-//	   (板件 B1-a 已因「界面显示可管理、点下去 404 ⇒ 业主当故障反复点」卡过一次)。
-//	   🔴 阳性对照**不钉在"哪几个 builtin 项"上**(2026-09-29 改,组长裁定):
-//	      原先要求 owner 必须拿到 agents 与 specs,而上游把 owner 的 builtin 改成了
-//	      specs + task-board(agents 没了)⇒ **对照素材被产品的正当改动掏空**,本格恒红。
-//	      🔵 教训与组长那道出站闸同一天同一形状:阳性对照自己也得定期验。
-//	      现改为三条**与集合内容无关**的判据:
-//	        (a) 这趟请求 200 且响应可解析 —— consolePlatformItemsFor 内部已钉,走到这里即成立;
-//	        (b) owner 拿到的项**非空** —— 空集合证不了"漏与不漏",必须拒绝下结论;
-//	        (c) 同一条观测通道在 management 那腿**确实看得见 admin** ——
-//	            没有(c),"没发给 owner"与"通道根本观测不到 admin"分不开。
-//	③ id=admin 是保留字:提交同 id 的自定义项必须被拒。
-//
-// 🔵 UI 可见性**不是**授权判据:真正的门是 RequireConsoleManagement
-// (internal/m8/console_management.go),那一侧由 G1/G2 与本包的
-// TestRequireConsoleManagement* 钉住。本格只管"入口存在、发给谁、指向哪"。
+// 阳性对照沿用 2026-09-29 组长裁定的「与集合内容无关」三条:
+//   (a) 请求 200 且可解析(consolePlatformItemsFor 内部已钉);
+//   (b) 该角色拿到的项**非空** —— 空集合证不了「漏与不漏」;
+//   (c) 同一条通道看得见保留项 agent-groups —— 观测量对菜单内容敏感。
+// id=admin 保留字一格(TestConsolePlatformAdminIDIsReserved)原样保留。
 import (
 	"net/http"
 	"testing"
 )
 
-func TestConsolePlatformAdminEntryIsManagementOnlyAndPointsAtTheConsoleDoor(t *testing.T) {
-	role, items := consolePlatformItemsFor(t, "manager")
-	if role != consolePlatformRoleManagement {
-		t.Fatalf("夹具前提坏了:manager 应解析为 management,实为 %q ⇒ 下面两腿的结论都不采信", role)
+func TestConsolePlatformAdminEntrySlimMenuNeverExposesEntry(t *testing.T) {
+	for _, principalID := range []string{"manager", "owner"} {
+		role, items := consolePlatformItemsFor(t, principalID)
+		if len(items) == 0 {
+			t.Fatalf("阳性对照失效:%s 这一趟 200 且可解析,但一项都没拿到 ⇒ 空集合证不了「没有 admin」", principalID)
+		}
+		if _, ok := findPlatformItem(items, "agent-groups"); !ok {
+			t.Fatalf("阳性对照失效:%s 菜单里连 agent-groups 都观测不到 ⇒ 通道对菜单内容不敏感,本腿不采信", principalID)
+		}
+		if leaked, ok := findPlatformItem(items, "admin"); ok {
+			t.Fatalf("🔴 S-R62-OLDPLAT-SLIM:菜单不得再下发旧版后台(id=admin),%s(role=%s)却收到 %+v。\n"+
+				"判据:HandleConsolePlatform 的 builtin 里不得有 ID:\"admin\" 这一条(加回必红);\n"+
+				"后端路由 /console/admin 与授权不动,摘的只是菜单入口。", principalID, role, leaked)
+		}
 	}
-
-	// 🔵 (c) 的载体:①腿真的看见 admin 才置真。子格顺序执行,②腿读它当阳性对照。
-	mgmtSawAdmin := false
-
-	t.Run("management 必须看得到入口,且指向 console 那道门", func(t *testing.T) {
-		entry, ok := findPlatformItem(items, "admin")
-		if !ok {
-			t.Fatalf("🔴 management 拿不到「平台管理」入口,items=%+v。\n"+
-				"后果:/console/admin 仍然可用,但业主在 console 里**看不见它** ⇒ 等于没搬。\n"+
-				"判据:HandleConsolePlatform 的 builtin 里必须有 ID:\"admin\" 这一条(M11 实测:删掉它零转红)。", items)
-		}
-		mgmtSawAdmin = true
-		if entry.Href != "/console/admin" {
-			t.Fatalf("🔴 入口 href=%q,必须是 /console/admin。\n"+
-				"判据:指到 /admin(旧后台)⇒ 业主点进去 303 → /admin/login —— 形态对上了、方向相反\n"+
-				"(板件 SPEC-OWNER-TAB-ADMIN-20260920.md §二)。业主原话是「admin 接纳 console 的鉴权方式」。", entry.Href)
-		}
-		if entry.Target != "_blank" {
-			t.Errorf("target=%q,应为 _blank:/console/admin 是独立文档,顶层导航会把右栏活 iframe 与它们的 SSE 一起带走"+
-				"(与 Agent 编组入口同一条实测理由)", entry.Target)
-		}
-		if entry.Title == "" || entry.Status != "approved" || !entry.Active {
-			t.Errorf("入口必须是已批准的活平台项,实为 %+v", entry)
-		}
-	})
-
-	t.Run("owner 看不到入口,且这一趟请求本身是好的(阳性对照)", func(t *testing.T) {
-		ownerRole, ownerItems := consolePlatformItemsFor(t, "owner")
-		if ownerRole != consolePlatformRoleOwner {
-			t.Fatalf("夹具前提坏了:owner 应解析为 owner,实为 %q", ownerRole)
-		}
-		// 🔴 阳性对照(b):这一趟拿到了东西,才有资格断言"里面没有 admin"。
-		// 少了这一步,"没漏"与"整条请求失败"长得一模一样。
-		// 🔵 判据刻意**不指任何具体 builtin 项**:上游换掉 owner 的 builtin 集合时,本格不该红。
-		if len(ownerItems) == 0 {
-			t.Fatalf("阳性对照失效:owner 这一趟 200 且响应可解析,但**一项都没拿到** ⇒ " +
-				"空集合证不了「没有 admin」是漏还是本就什么都没有,本腿不采信")
-		}
-		// 🔴 阳性对照(c):同一条通道在 management 那腿看得见 admin ⇒ 观测量对 admin 敏感。
-		if !mgmtSawAdmin {
-			t.Fatalf("阳性对照失效:management 那腿没能证明这条通道**看得见** admin ⇒ " +
-				"本腿的「owner 没有 admin」不采信(分不清「没发给 owner」与「通道根本观测不到 admin」)")
-		}
-		if leaked, ok := findPlatformItem(ownerItems, "admin"); ok {
-			t.Fatalf("🔴 非 management 也拿到了「平台管理」入口:%+v。\n"+
-				"后果:普通业主(默认角色就是 owner)看见一个点下去 403 的入口,会当成故障反复点。\n"+
-				"判据:这一项与 agent-groups 同口径,只对 management 发。", leaked)
-		}
-	})
 }
 
 func TestConsolePlatformAdminIDIsReserved(t *testing.T) {
