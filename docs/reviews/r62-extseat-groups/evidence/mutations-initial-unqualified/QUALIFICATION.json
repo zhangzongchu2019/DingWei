@@ -1,0 +1,4 @@
+{
+  "qualified": false,
+  "reason": "M1/M3 removed SQL parameter slots and failed at SQL binding/type checking; these are not authorization kills. All initial readings retained but not counted. Final source reruns preserve parameter slots."
+}

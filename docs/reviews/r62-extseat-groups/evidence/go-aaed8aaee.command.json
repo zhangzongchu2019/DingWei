@@ -1,0 +1,19 @@
+{
+  "cwd": "/data/ai-dev-data/r62-extseat-groups",
+  "source": "aaed8aaee6630e2683096c977a058da653fee7e2",
+  "command": [
+    "go",
+    "test",
+    "./internal/extseat",
+    "./internal/tempgroup",
+    "./internal/identity",
+    "./internal/m8",
+    "-count=3",
+    "-p",
+    "1",
+    "-timeout",
+    "60m",
+    "-v"
+  ],
+  "env_file": "env-aaed8aaee.json"
+}

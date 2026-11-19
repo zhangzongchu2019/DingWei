@@ -1,0 +1,9 @@
+{
+  "cwd": "/data/ai-dev-data/r62-extseat-groups",
+  "source": "ee9dbfd2f1af811befa793ce95f8fe2f224fe92a",
+  "command": [
+    "./build.sh",
+    "--test-only"
+  ],
+  "env_file": "env-ee9dbfd2.json"
+}

@@ -1,0 +1,8 @@
+{
+  "utc": "2026-11-19T02:47:48.814849+00:00",
+  "stopped_own_waiting_pids": [
+    2563995
+  ],
+  "reason": "move baseline to dedicated immutable worktree so NAME report commit does not alter asserted baseline HEAD",
+  "tests_had_started": false
+}

@@ -1,0 +1,14 @@
+{
+  "refs/remotes/origin/main": {
+    "tip": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+    "0112_or_0113": []
+  },
+  "refs/remotes/origin/togpt60lunazzc/r62-extseat-name": {
+    "tip": "d7910d36fc0200a7e3aaa8677b3b3cb8ddb46545",
+    "0112_or_0113": [
+      "internal/store/migrate/migrations/0112_np_agent_display_name.sql"
+    ]
+  },
+  "checked_utc": "2026-11-19T02:55:23.390770+00:00",
+  "own_migration": "0113_extseat_groups.sql"
+}

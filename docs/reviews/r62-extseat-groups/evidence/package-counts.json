@@ -1,0 +1,34 @@
+[
+  {
+    "package_result": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/extseat\t104.146s",
+    "top_pass": 108,
+    "all_pass": 201,
+    "top_skip": 0,
+    "all_skip": 0,
+    "all_fail": 0
+  },
+  {
+    "package_result": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/tempgroup\t20.382s",
+    "top_pass": 12,
+    "all_pass": 24,
+    "top_skip": 0,
+    "all_skip": 0,
+    "all_fail": 0
+  },
+  {
+    "package_result": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/identity\t114.980s",
+    "top_pass": 231,
+    "all_pass": 645,
+    "top_skip": 0,
+    "all_skip": 0,
+    "all_fail": 0
+  },
+  {
+    "package_result": "FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/m8\t965.591s",
+    "top_pass": 2957,
+    "all_pass": 4964,
+    "top_skip": 33,
+    "all_skip": 87,
+    "all_fail": 1
+  }
+]
