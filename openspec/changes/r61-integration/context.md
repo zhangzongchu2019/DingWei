@@ -19,3 +19,7 @@ canonical两profile各1277/97文件；store/...三遍rc0，初始m8三遍rc1仅N
 ## 第三段晚到令追加环境与证据
 
 同一合后源4581b34a/tree5c73e93d的全门已在a85b6c7d交；本段仅追加docs/openspec，补件目录docs/reviews/r61-integration-stage3-supplement。独立0ab43c63树同落点count20绿；新增外部overlay只加测试，生产源码不改。实际Hub为两个不同OS测试worker进程，真实隔离PG身份库跨进程保持、app/history SQLite文件共用；授权HTTP history前后完整JSON相等。生产renderer在两个新浏览器上下文渲染真实HTTP快照，live SSE为空。Agent与timer命名Agent的来源kind均agent，不代表定时器调度/真实CLI。仅overlay新增虚拟文件编译因Go1.22.2 vet路径限制用-vet=off，原全门不变。原始失败/成功日志、SHA与probe构建来源均在补件。本人收件只读metadata不导出正文/信封/凭据；两callerID在此schema中无逐件映射。
+
+## 第四段当前锚（2026-11-19）
+
+N-1c冻结1362f08f（产品e7d59ab1）经no-ff合入d6，源acd6ead19dab1ae969d7c72b58359967a20c7018/tree d12d5411911cb2ebc9a6d45b9680b745d5778bd5。无冲突，原c6f935096 AA010方法完整SHA相同。仅轻量go build与canonical helper两profile、指定探针已绿，未跑集成全门；证据22d52d5b7c0207f2f4292f5c8503e4fd82818c0f。等AUTH-FIRST在09Z前qwen结论决定第五段，再对最终源统一全门。VERSION仍0.2.3.40；NAME/GROUPS属r62均不在本分支。
