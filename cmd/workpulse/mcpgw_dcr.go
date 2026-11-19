@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"net/netip"
@@ -31,8 +32,10 @@ func readDCRPolicy() (mcpgw.DCRPolicy, error) {
 		}
 		p.BoundTTL = v
 	}
-	if raw := os.Getenv("DW_MCP_DCR_HTTPS_REDIRECTS"); raw != "" {
-		p.HTTPSRedirects = strings.Split(raw, ",")
+	if raw := os.Getenv("DW_MCP_DCR_HTTPS_REDIRECTS_JSON"); raw != "" {
+		if len(raw) > 16384 || json.Unmarshal([]byte(raw), &p.HTTPSRedirects) != nil {
+			return p, errors.New("invalid DCR HTTPS redirect list")
+		}
 	}
 	if raw := os.Getenv("DW_MCP_DCR_TRUSTED_PROXIES"); raw != "" {
 		for _, v := range strings.Split(raw, ",") {

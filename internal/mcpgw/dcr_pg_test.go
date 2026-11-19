@@ -158,6 +158,9 @@ func TestDCRPGLifetimesSubjectEvictionAndRenewal(t *testing.T) {
 		t.Fatal("unbound exact/past expiry accepted")
 	}
 	// An already-authorized five-minute snapshot may still complete at expiry.
+	if e = s.Prune(ctx); e != nil {
+		t.Fatal(e)
+	}
 	if e = s.Redeemed(ctx, c.ID, principal); e != nil {
 		t.Fatal("valid in-flight grant lost on registration expiry", e)
 	}
@@ -332,5 +335,29 @@ func TestDCRPGBoundedCleanupForWidelySharedClient(t *testing.T) {
 	}
 	if dcrCount(t, p, `SELECT count(*) FROM mcpgw_dcr_client`) != 0 || dcrCount(t, p, `SELECT count(*) FROM mcpgw_dcr_binding`) != 0 {
 		t.Fatal("bounded shared-client cleanup failed to progress")
+	}
+}
+
+func TestDCRPGCleanupPreservesUnexpiredRegistration(t *testing.T) {
+	s, _, _ := dcrPG(t, false)
+	ctx := context.Background()
+	c, _, _, e := s.Register(ctx, "source", dcrClient(t))
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = s.Prune(ctx); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = s.Resolve(ctx, c.ID); e != nil {
+		t.Fatal("GC deleted a live unbound registration", e)
+	}
+	if e = s.Redeemed(ctx, c.ID, dcrPrincipal("live")); e != nil {
+		t.Fatal(e)
+	}
+	if e = s.Prune(ctx); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = s.Resolve(ctx, c.ID); e != nil {
+		t.Fatal("GC deleted a live subject binding", e)
 	}
 }

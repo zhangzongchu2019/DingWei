@@ -276,6 +276,7 @@ func TestDCRHTTPRejectionsRateAndSafeDiagnostics(t *testing.T) {
 		{strings.Replace(publicRegistration, "http://127.0.0.1:43123/callback", "http://evil.example/callback?private-body", 1), 400, "loopback_bad"},
 		{strings.Replace(publicRegistration, "http://127.0.0.1:43123/callback", "https://evil.example/callback?private-body", 1), 400, "https_unlisted"},
 		{strings.Replace(publicRegistration, "http://127.0.0.1:43123/callback", "codebuddy://oauth/callback?private-body", 1), 400, "custom_scheme"},
+		{strings.Replace(publicRegistration, "http://127.0.0.1:43123/callback", strings.Repeat("a", 40)+"://oauth/callback?private-body", 1), 400, "custom_scheme"},
 		{strings.TrimSuffix(publicRegistration, "}") + `,"client_secret":"not-allowed"}`, 400, ""},
 	} {
 		dcrExec(t, p, `DELETE FROM mcpgw_dcr_bucket`)
@@ -289,6 +290,15 @@ func TestDCRHTTPRejectionsRateAndSafeDiagnostics(t *testing.T) {
 	}
 	if strings.Contains(logs.String(), "private-body") || strings.Contains(logs.String(), "evil.example") || !strings.Contains(logs.String(), `"scheme":"codebuddy"`) {
 		t.Fatal("redirect diagnostic leaked URI or omitted scheme")
+	}
+	for _, line := range strings.Split(strings.TrimSpace(logs.String()), "\n") {
+		var event map[string]any
+		if json.Unmarshal([]byte(line), &event) != nil {
+			t.Fatal("invalid diagnostic JSON")
+		}
+		if scheme, ok := event["scheme"].(string); ok && len(scheme) > 32 {
+			t.Fatal("redirect diagnostic scheme exceeded 32 bytes")
+		}
 	}
 	dcrExec(t, p, `DELETE FROM mcpgw_dcr_bucket`)
 	for i := 0; i < 5; i++ {

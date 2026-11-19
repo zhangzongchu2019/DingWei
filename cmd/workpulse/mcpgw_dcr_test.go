@@ -10,7 +10,7 @@ import (
 )
 
 func TestDCRConfigurationBoundLifetimeAndOptionalIsolation(t *testing.T) {
-	for _, k := range []string{"DW_MCP_DCR_ENABLED", "DW_MCP_DCR_BOUND_TTL", "DW_MCP_DCR_HTTPS_REDIRECTS", "DW_MCP_DCR_TRUSTED_PROXIES"} {
+	for _, k := range []string{"DW_MCP_DCR_ENABLED", "DW_MCP_DCR_BOUND_TTL", "DW_MCP_DCR_HTTPS_REDIRECTS_JSON", "DW_MCP_DCR_TRUSTED_PROXIES"} {
 		t.Setenv(k, "")
 	}
 	p, e := readDCRPolicy()
@@ -45,7 +45,7 @@ func TestDCRConfigurationBoundLifetimeAndOptionalIsolation(t *testing.T) {
 		t.Fatal("bad trusted proxy accepted")
 	}
 	t.Setenv("DW_MCP_DCR_TRUSTED_PROXIES", "")
-	t.Setenv("DW_MCP_DCR_HTTPS_REDIRECTS", "https://*.vendor.example/cb")
+	t.Setenv("DW_MCP_DCR_HTTPS_REDIRECTS_JSON", `["https://*.vendor.example/cb"]`)
 	p, e = readDCRPolicy()
 	if e != nil {
 		t.Fatal(e)
@@ -71,5 +71,23 @@ func TestDCRGCUsesShutdownLifecycle(t *testing.T) {
 	jobs.Seal()
 	if startDCRGC(ctx, d) {
 		t.Fatal("GC admitted after background group was sealed")
+	}
+}
+
+func TestDCRExactHTTPSConfigurationDoesNotSplitURICommas(t *testing.T) {
+	t.Setenv("DW_MCP_DCR_ENABLED", "true")
+	t.Setenv("DW_MCP_DCR_BOUND_TTL", "")
+	t.Setenv("DW_MCP_DCR_TRUSTED_PROXIES", "")
+	t.Setenv("DW_MCP_DCR_HTTPS_REDIRECTS_JSON", `["https://vendor.example/cb?value=a,b"]`)
+	p, e := readDCRPolicy()
+	if e != nil || len(p.HTTPSRedirects) != 1 || p.HTTPSRedirects[0] != "https://vendor.example/cb?value=a,b" {
+		t.Fatal("exact callback URL was split or changed", e)
+	}
+	if _, e = mcpgw.NewDCR(p, nil); e != nil {
+		t.Fatal(e)
+	}
+	t.Setenv("DW_MCP_DCR_HTTPS_REDIRECTS_JSON", `[1]`)
+	if _, e = readDCRPolicy(); e == nil {
+		t.Fatal("invalid HTTPS redirect configuration accepted")
 	}
 }
