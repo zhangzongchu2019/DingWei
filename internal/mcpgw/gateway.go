@@ -70,6 +70,7 @@ type Config struct {
 	Login        Login
 	Clients      ClientResolver
 	Store        Store
+	DCR          *DCR
 	SendReplyMax time.Duration
 	Now          func() time.Time
 }
@@ -109,6 +110,7 @@ func (g *Gateway) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/.well-known/oauth-authorization-server", g.guard(g.serverMetadata))
 	mux.HandleFunc("/oauth/authorize", g.guard(g.authorize))
 	mux.HandleFunc("/oauth/token", g.guard(g.token))
+	mux.HandleFunc("/oauth/register", g.registerClient)
 	mux.HandleFunc("/feishu/connect", g.guard(g.connect))
 	mux.HandleFunc("/mcp/oauth/feishu/callback", g.guard(g.callback))
 }

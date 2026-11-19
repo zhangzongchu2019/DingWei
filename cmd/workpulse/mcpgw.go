@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -43,8 +44,15 @@ func registerOptionalMCPGateway(ctx context.Context, mux *http.ServeMux, pool *r
 		return fail()
 	}
 	cfg.Store = store
+	cfg.DCR = configuredDCR(ctx, pool, access, resource, key)
+	if cfg.Logger == nil {
+		cfg.Logger = slog.Default()
+	}
 	if e = registerMCPGatewayRoutes(mux, cfg); e != nil {
 		return fail()
+	}
+	if cfg.DCR.Store != nil && cfg.DCR.Policy.Enabled {
+		startDCRGC(ctx, cfg.DCR)
 	}
 	return true
 }
