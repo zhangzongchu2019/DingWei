@@ -99,6 +99,7 @@ func TestExternalGroupsNoPairNoGroupAndExternalPeerPG(t *testing.T) {
 	}
 	_ = raw
 	ctx := directContext()
+	f.ordinary(t, "helper-only", "helper") // 全局有普通组不等于这个无 AG 席已入组。
 	if _, e = f.s.Send(ctx, a, "helper.ho", "not yet", "deny"); !errors.Is(e, extshared.ErrNotPermitted) {
 		t.Fatalf("ungrouped send escaped: %v", e)
 	}
