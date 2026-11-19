@@ -355,3 +355,15 @@ func TestExternalGroupsConcurrentSameIDRecoversOriginalReceiptPG(t *testing.T) {
 		t.Fatalf("duplicate outbox %d %v", n, e)
 	}
 }
+
+func TestExternalGroupsOwnGroupDoesNotAuthorizeDifferentTargetPG(t *testing.T) {
+	f := ordinaryFixture(t)
+	_, a, _, err := f.s.IssueTokenWithoutPair(f.ctx, extshared.Principal{Provider: "feishu", TenantKey: "tenant", Issuer: "app", Subject: "cross-group", DisplayName: "cross"}, "cross")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.ordinary(t, "source-only", a.AgentID)
+	if _, e := f.s.Send(directContext(), a, "helper.ho", "cross-group", "cross"); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatalf("own group authorized a nonmember target: %v", e)
+	}
+}

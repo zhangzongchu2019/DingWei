@@ -62,6 +62,7 @@ func newFixture(t *testing.T) *fixture {
 	f := &fixture{ctx: ctx, p: p, now: now, t: t}
 	f.s = &Service{Pool: p, Access: access, Now: func() time.Time { return f.now }}
 	f.seats = &extseat.Service{Pool: p, Access: access, Identity: identity.NewService(identity.NewPGStore(p), func() time.Time { return f.now }, nil), Groups: f.s, TenantKey: "tenant", Resource: "https://example.invalid/mcp", Now: func() time.Time { return f.now }}
+	f.seats.Identity.CommunicationTenantKey = "tenant"
 	return f
 }
 func (f *fixture) issue(target string) extseat.Seat {
