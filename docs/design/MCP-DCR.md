@@ -65,7 +65,7 @@ C. 自定义scheme：首版默认拒绝（invalid_redirect_uri），不能只因
 
 每外部稳定主体最多16个活跃绑定，成功兑换在同事务中更新last_redeemed并淘汰最久未兑换者（平局按client_id固定序）。主体键来自Seats.Authenticate的可信Principal四元组(provider,tenant_key,issuer,subject)，以域分离HMAC保存，不用Agent/seat ID或客户端自报身份。公共client可能被多人使用，绑定表按(resource,client_id,principal_hash)隔离；淘汰仅删该主体绑定，保留其它主体活绑定；client无任何活绑定后即不再以绑定态解析，不恢复未绑定24h期限。client到期取活绑定最晚到期，绑定清理与容量事务共用resource锁。五分钟既有事务仍可收尾，成功兑换可恢复该主体绑定，不重建Agent去重规则。
 
-建议每resource最多4096个存活client、每来源128个。受理时在同一PG受控事务中有界清理≤256条过期client并计数/插入，索引覆盖resource+expiry/source；未物理清完的过期行不计配额，但不删未过期行。每分钟后台有界清理client及过期source bucket，并受现有后台生命周期管理；不能每请求全表删或留下终身累计配额。
+建议每resource最多4096个存活client、每来源128个。受理时在同一PG受控事务中有界清理≤256条过期client并计数/插入，索引覆盖resource+expiry/source；未物理清完的过期行不计配额，但不删未过期行。清理先删≤256个超期主体绑定，再删≤256个无子绑定的超期client，防止外键级联使批次无界；为既有五分钟授权快照保留五分钟GC余量，新authorize仍严格按到期拒绝。每分钟后台有界清理client及过期source bucket，并受现有后台生命周期管理；不能每请求全表删或留下终身累计配额。
 
 登记限流与client分配都用resource级PG事务锁/原子计量，多Hub与重启不重置。 持久TTL与桶计量使用同一PG时钟，不由客户端时间或各Hub漂移时钟决定；测试用隔离存库的受控时间边界，不改现网钟。存储失败不回假201，容量满明确503；DCR容量不影响CIMD、既有bearer与五分钟OAuth池。配额只能限制注册洪泛消耗，不能声称抵御任意分布式DDoS；独立小池满时只拒新DCR，保留恢复/清理与现有OAuth通道。
 
@@ -116,7 +116,7 @@ FAQ：
 
 建议DW_MCP_DCR_ENABLED缺省false；开启需独立PG表/计量可用、策略校验通过。关掉后不广告registration_endpoint，登记404、新DCR authorize拒绝，但旧五分钟attempt/code快照可收尾，已签bearer仍按原权限；CIMD与内置客户端不依赖DCR。回退旧二进制不删表、不回改迁移、不重开已消费code，5分钟状态沿兼容快照，不把public ID当secret。正式旧二进制+加法PG迁移及往返演练是实现门，不以设计推断已可回滚。
 
-待组长过目定：A-DCR-01上述TTL/额度与可信代理取源；A-DCR-02 HTTPS精确URL初始空、自定义scheme首版拒绝；A-DCR-03保留未认证GET/非法体401和认证GET405、不做旧SSE。这些是本席技术建议，不冒称业主逐项定值。实际CodeBuddy callback形式未知要补证；PG迁移号在实现前协调，暂定0115并复核撞号。四条修订提交后开始实现，无main/部署授权。
+组长08:37:52Z已定：A-DCR-01采用本页两段TTL与主体16上限，额度/取源照准；A-DCR-02 HTTPS精确URL初始空、自定义scheme首版拒绝；A-DCR-03保留未认证GET/非法体401和认证GET405、不做旧SSE。这些是本席技术建议，不冒称业主逐项定值。实际CodeBuddy callback形式未知要补证；PG迁移号在实现前协调，暂定0115并复核撞号。四条修订提交后开始实现，无main/部署授权。
 
 ## 11. 标准与输入来源
 
