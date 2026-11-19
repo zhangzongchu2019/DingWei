@@ -1,0 +1,8 @@
+{
+  "source": "64f08d658f99aeec9092bc61003769ef4d597ccd",
+  "cwd": "/data/ai-dev-data/mcp-dcr",
+  "command": [
+    "./build.sh",
+    "--test-only"
+  ]
+}

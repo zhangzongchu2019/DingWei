@@ -59,11 +59,11 @@ C. 自定义scheme：首版默认拒绝（invalid_redirect_uri），不能只因
 
 新增独立PG动态client表和受限登记计量表，resource分区。客户端行含(resource,client_id)唯一键、accepted metadata加密sealed、source_hash、created/expires；用现有持久OAuth32字节密钥构造AES-GCM，AAD绑定resource/client ID，不把DCR放进mcpgw_oauth的10000条短事务配额。source_hash为持久密钥域分离HMAC，不存原始IP；备份与该密钥关联，不新增下载凭据。
 
-建议绝对TTL24小时（可配1小时～7天），GET/authorize/工具调用不续期，计量只算未过期行。过期ID新authorize为invalid_client、且不回退CIMD；客户端需重新注册。先前已建立的attempt/code按原五分钟快照完成，不因client GC半途失效；现有已签bearer照原seat/token现核，不因登记到期被额外吊销或延寿。client TTL不是Agent/AG/消息/14天token的期限。
+建议绝对TTL24小时（可配1小时～7天），GET/authorize/工具调用不续期，计量只算未过期行。过期ID新authorize为invalid_client、且不回退CIMD；客户端需重新注册。先前已建立的attempt/code按原五分钟快照完成，不因client GC半途失效；现有已签bearer照原seat/token现核，不因登记到期被额外吊销或延寿。client TTL不是Agent/AG/消息/14天token的期限。 client_id_expires_at不是RFC7591通用到期契约，客户端可能忽略；不能假定CodeBuddy会自动重注册。短TTL与客户端缓存的兼容性须受控实测，未支持自动重注册时接入文档要说明重新连接/登记步骤，不能静默延长服务端TTL。
 
 建议每resource最多4096个存活client、每来源128个。受理时在同一PG受控事务中有界清理≤256条过期client并计数/插入，索引覆盖resource+expiry/source；未物理清完的过期行不计配额，但不删未过期行。每分钟后台有界清理client及过期source bucket，并受现有后台生命周期管理；不能每请求全表删或留下终身累计配额。
 
-登记限流与client分配都用resource级PG事务锁/原子计量，多Hub与重启不重置。存储失败不回假201，容量满明确503；DCR容量不影响CIMD、既有bearer与五分钟OAuth池。配额只能限制注册洪泛消耗，不能声称抵御任意分布式DDoS；独立小池满时只拒新DCR，保留恢复/清理与现有OAuth通道。
+登记限流与client分配都用resource级PG事务锁/原子计量，多Hub与重启不重置。 持久TTL与桶计量使用同一PG时钟，不由客户端时间或各Hub漂移时钟决定；测试用隔离存库的受控时间边界，不改现网钟。存储失败不回假201，容量满明确503；DCR容量不影响CIMD、既有bearer与五分钟OAuth池。配额只能限制注册洪泛消耗，不能声称抵御任意分布式DDoS；独立小池满时只拒新DCR，保留恢复/清理与现有OAuth通道。
 
 ## 6. 来源、限流和有界处理（DCR-005，建议值待过目）
 
