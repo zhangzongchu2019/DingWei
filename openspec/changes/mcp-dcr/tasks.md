@@ -8,7 +8,7 @@
 - [x] T-06 真实HTTP注册至initialize全链、无预建Agent、三回调类型和错误/容量/重启/代理边界。
 - [x] T-07 PKCE、非回环、secret注册、限流四项必红及矩阵各保护的业务断言变异；不以编译错/panic计刀。
 - [x] T-08 实现冻结源canonical＋mcpgw/extseat/m8三遍PG strict，SKIP逐名，相关cmd/store/focused race与strict。
-- [ ] T-09 qwen独立复核、组长终审；无发布令不推main、不部署、不出发布件。
+- [x] T-09 qwen独立复核、组长终审；无发布令不推main、不部署、不出发布件。证据：qwen 复核 PASS 提交 6710553ae8a89634bc111928be4884fb01fd9e5a；组长冻结 3a522724032a1e3cf7c9ecaab845d4c0920b2d2b 并入 r62 第二段 444643076f5933c4657535f8b5f0e2511c16b4e4；现网发布 8213f12937aba18080a384bcabd2ae483d246098（结项件 6bbca0d8d2a951015b88ceed6eff12b8de567d9c，默认关）。
 
 ## 交接记录
 

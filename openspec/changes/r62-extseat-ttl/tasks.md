@@ -5,7 +5,7 @@
 - [x] T-03 两个旧值变异compile0且业务断言红，恢复SHA相同/基线绿。证据：`b5e6e590102dedfa19c234fd726ea341fb23685e:docs/reviews/r62-extseat-ttl/evidence/mutations.json`。
 - [x] T-04 固定SOURCE_COMMIT=2fd完成canonical、四包三遍PG strict：3081顶层/5250含子项PASS，0FAIL/0中断，84次逐名SKIP；strict42/0。证据：`b5e6e590102dedfa19c234fd726ea341fb23685e:docs/reviews/r62-extseat-ttl/evidence/runs.json`及`SKIPS.md`。
 - [x] T-05 报告/原日志SHA/可执行VERIFY均Git归档；最终普通推送核ls-remote后以交审信坐标请qwen只读复核、抄组长。证据：`b5e6e590102dedfa19c234fd726ea341fb23685e:docs/reviews/r62-extseat-ttl/REPORT.md`；投递回执写本席交接记录，不冒称已读。
-- [ ] T-06 组长/独立复核验收；作者门不代签。
+- [x] T-06 组长/独立复核验收；作者门不代签。证据：qwen 独立复核 PASS 提交 e9ab4cbf；组长终审冻结 3639406c2；随 r62 集成第一段 5248e813a11443f1f0a2948508337fd1e6ee5eec 现网发布 8213f12937aba18080a384bcabd2ae483d246098（结项件 6bbca0d8d2a951015b88ceed6eff12b8de567d9c）。
 
 ## 交接记录
 - 2026-11-18；coder56solzzc；源2fd6aeba，证据b5e6e590102dedfa19c234fd726ea341fb23685e。完成：只实现第1片两个TTL；canonical/PG真实三遍/两刀/strict完成，前驱9576中止尝试及旧夹具红绿如实单列，不拼接。阻塞：产品实现无阻塞，独立复核待回。下一步：普通推送核远端后qwen只读复核，组长另定集成；不改r61、VERSION、main或部署。
