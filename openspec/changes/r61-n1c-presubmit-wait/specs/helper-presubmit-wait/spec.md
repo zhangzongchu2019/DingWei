@@ -4,7 +4,7 @@
 
 ### Requirement: Transient pre-submit validation failures remain queued
 
-The Codex helper MUST retain pre-submit validation failures as a durable FIFO-head wait or fail-closed operator hold. It MUST avoid terminal failure and thread rotation before the submission boundary.
+The Codex helper MUST persist classified transient pre-submit failures at the FIFO head for retry. A definitive initial-initialize authentication rejection before submission MUST use the non-retryable failed path. Read/resume authentication and binding mismatches MUST remain fail-closed operator holds. Unknown submission state MUST NOT be retried or replayed.
 
 #### Scenario: Validation transport recovers before submission
 
@@ -25,23 +25,37 @@ The Codex helper MUST retain pre-submit validation failures as a durable FIFO-he
 - **AND** it does not send a terminal failed ACK or submit a later FIFO item before recovery
 - **AND** after recovery the original head and later items retain FIFO order
 
-#### Scenario: Recovery does not retry an unknown submission or definitive refusal
+#### Scenario: Initial initialize authentication rejection is a non-retryable failure
 
-- **WHEN** replacement startup fails with authentication, identity, daemon, binding, or other definitive refusal
+- **WHEN** the current delivery has no submission marker and its initial Codex initialize handshake returns a definitive authentication rejection
+- **THEN** the helper records the existing non-retryable `failed/session_unavailable` result
+- **AND** it sends no thread/start or turn/start for that delivery
+- **AND** the rejection is not retained as a busy-wait or operator-held FIFO item
+
+#### Scenario: Read or resume authentication mismatch remains an operator hold
+
+- **WHEN** thread/read or thread/resume returns an authentication or binding rejection before submission
+- **THEN** the helper keeps the durable busy marker and the same delivery at the FIFO head
+- **AND** it emits an operator alert without a terminal failed ACK
+- **AND** it does not rotate or submit a different thread
+
+#### Scenario: Recovery does not retry an unknown submission or other definitive refusal
+
+- **WHEN** replacement startup fails with identity, daemon, binding, or other definitive refusal, excluding the initial initialize authentication case above
 - **OR** the current delivery has a non-null submission marker
 - **THEN** recovery remains quarantined and emits an operator alert
 - **AND** it does not automatically retry startup or send another turn/start
 - **AND** later FIFO items remain blocked
 
-#### Scenario: Binding mismatch is not retried or rotated
+#### Scenario: Non-authentication binding mismatch is not retried or rotated
 
-- **WHEN** validation proves a thread identity, cwd, direct-input, authentication, or daemon identity mismatch
+- **WHEN** validation proves a thread identity, cwd, direct-input, or daemon identity mismatch
 - **THEN** the delivery fails closed without creating or selecting another thread
 - **AND** no turn/start request is sent
 
-#### Scenario: Definitive binding mismatch remains queued for operator action
+#### Scenario: Definitive read/resume binding mismatch remains queued for operator action
 
-- **WHEN** validation proves a thread identity, cwd, direct-input, authentication, or daemon identity mismatch
+- **WHEN** thread/read or thread/resume proves an authentication, thread identity, cwd, direct-input, or daemon identity mismatch
 - **THEN** the busy-wait marker remains durable and the delivery stays at the FIFO head
 - **AND** the helper emits a bounded diagnostic alert and sends no terminal failed ACK
 - **AND** later deliveries remain blocked until operator action and safe revalidation

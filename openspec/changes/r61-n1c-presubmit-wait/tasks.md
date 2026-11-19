@@ -3,7 +3,7 @@
 - [x] Implement bounded-backoff retry of transient read-only pre-submit validation failures.
 - [x] Persist busy wait before waiting and keep the same envelope/thread at the FIFO head.
 - [x] Send ACK v2 busy only after the local durable wait marker is written.
-- [x] Keep identity, cwd, direct-input, authentication, and daemon identity mismatches fail-closed.
+- [x] Keep thread/read and thread/resume authentication, identity, cwd, direct-input, and daemon identity mismatches fail-closed as FIFO-head operator holds; distinguish a definitive initial initialize authentication rejection as non-retryable failed when no submission was issued.
 - [x] Route transient initialize failures on the first Codex delivery through the durable adapter FIFO before validation starts; startup regression covers transport timeout and temporary RPC error using the real helper worker, adapter, SQLite lifecycle, and synthetic RPC.
 - [x] Preserve marker-based restart behavior: null submission marker resumes; non-null becomes unknown/manual.
 - [x] Re-run `build.sh --test-only` on frozen source `d8711290bf39c5f5b1305ab33663bf1e638474a9` with both helper profiles: Claude 1282/1282, Codex 1282/1282; `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`, inventory 97. Raw log and SHA are in `docs/reviews/r61-n1c-presubmit-wait/evidence/r1/` and REPORT.
@@ -13,7 +13,9 @@
 - [x] Verify both Hub receipt-boundary outcomes: the existing pre-`DeliveredAt` ACK test observes busy→queued; coder56's real old-Hub/helper-process trace after `DeliveredAt` keeps `delivered`, then helper FIFO resumes the same delivery with exactly one `turn/start` and no loss. Review evidence: `review/coder56solzzc/r61-n1c-review-20261118` at `7bf230f1dfa6e2a8836ac7bf40a3ab093847f15b`, `docs/reviews/r61-n1c-coder56/evidence/compat-result-trace.json`.
 - [x] Publish the report and evidence coordinates. No main push or deployment.
 - [x] Retry only classified transient replacement-start failures while the current lifecycle has a null submission marker; retain FIFO quarantine for definitive refusal or unknown submission.
-- [x] Verify two consecutive transient startup errors, including timeout and initialize RPC -32603, followed by recovery and exactly-once FIFO submissions; verify authentication refusal and non-null submission marker stay quarantined.
+- [x] Verify two consecutive transient startup errors, including timeout and initialize RPC -32603, followed by recovery and exactly-once FIFO submissions; verify initial initialize authentication rejection settles failed, while thread/read or thread/resume authentication refusal and non-null submission marker remain quarantined.
 - [x] Cover event-bridge resubscription after the recovery event is set and retain the live healthy-transport initialize retry probe from coder56's S4 evidence.
 - [x] Run the recovery and initialize mutations; red must be in the corresponding business assertions.
+- [x] R6: reproduce the initial-start watchdog/authentication race, add deterministic real-worker regression and initial-initialize authentication terminal contract; pre-fix 52a3f8a7 2/200, baseline d6e56a8b 0/200, repaired source 0/200. Focused 117 tests and final helper profiles 1290/1290 each; details and raw evidence in `docs/reviews/r61-n1c-presubmit-wait/evidence/r6/` and the R6 section of REPORT.
+- [x] Align design/spec classification: initial initialize authentication rejection is failed/non-retryable only before submission; read/resume authentication and binding mismatches remain operator-held. OpenSpec strict evidence: `docs/reviews/r61-n1c-presubmit-wait/evidence/r6/openspec-strict-docs.log`.
 - [x] Re-run isolated helper build, m8/store `-count=3`, and OpenSpec strict at source `ba69949734dfc9ef93d8c29bb092f4aa1db73c46`; evidence and SHA256 inventory are in `docs/reviews/r61-n1c-presubmit-wait/evidence/r3/`.
