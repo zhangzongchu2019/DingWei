@@ -162,7 +162,11 @@ func newFixture(t *testing.T, dsn string) *fixture {
 	if e != nil {
 		t.Fatal(e)
 	}
-	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(sqlText) + string(policyDDL) + string(copyDDL) + `CREATE SEQUENCE test_group_seq;CREATE TABLE test_groups(code text PRIMARY KEY,generation bigint,target text,external text,expires_at timestamptz,active boolean NOT NULL DEFAULT true);CREATE TABLE test_touches(event text PRIMARY KEY,kind text);`
+	copyUpgradeDDL, e := os.ReadFile("../store/migrate/migrations/0114_agent_feishu_summary_copy.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(sqlText) + string(policyDDL) + string(copyDDL) + string(copyUpgradeDDL) + `CREATE SEQUENCE test_group_seq;CREATE TABLE test_groups(code text PRIMARY KEY,generation bigint,target text,external text,expires_at timestamptz,active boolean NOT NULL DEFAULT true);CREATE TABLE test_touches(event text PRIMARY KEY,kind text);`
 	if _, e = pool.Exec(ctx, ac, ddl); e != nil {
 		t.Fatal(e)
 	}

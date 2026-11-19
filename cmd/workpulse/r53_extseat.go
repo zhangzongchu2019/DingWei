@@ -125,6 +125,7 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 		copyQueue = &extseat.PGFeishuCopyQueue{Pool: d.pool, Access: repo.SystemCtx()}
 		seats.FeishuCopies = copyQueue
 		d.hub.ExternalCopyReplies = copyQueue
+		d.hub.AgentFeishuCopies = copyQueue
 	}
 	enabled := registerOptionalMCPGateway(ctx, d.mux, d.pool, repo.SystemCtx(), cfg.resource, func(store mcpgw.Store) (mcpgw.Config, error) {
 		oauth := d.oauth

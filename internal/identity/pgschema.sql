@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS np_identity (
     user_id_lc text NOT NULL REFERENCES np_user (user_id_lc),
     PRIMARY KEY (provider, issuer, subject)
 );
+CREATE INDEX IF NOT EXISTS np_identity_user_provider ON np_identity(user_id_lc, provider);
 
 CREATE TABLE IF NOT EXISTS np_registration_code (
     code_digest text        PRIMARY KEY,
@@ -59,7 +60,8 @@ CREATE TABLE IF NOT EXISTS np_agent (
     suspended_at    timestamptz,
     suspended_by    text        NOT NULL DEFAULT '',
     last_source_ip text,
-    last_source_at timestamptz
+    last_source_at timestamptz,
+    feishu_copy_enabled boolean
 );
 -- 名字只在「未吊销」（active 或 suspended）范围内唯一：吊销即释放名字，暂停中仍占用。
 CREATE UNIQUE INDEX IF NOT EXISTS np_agent_owner_name_current

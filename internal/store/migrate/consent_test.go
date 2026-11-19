@@ -28,15 +28,15 @@ func TestConsent0108AppliesAfter0110And0111OnlyOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := ledgerRows(t, p)
-	if len(before) != 14 || before["0110_extseat_expect_reply.sql"].digest == "" || before["0111_extseat_feishu_copy.sql"].digest == "" {
+	if len(before) != 15 || before["0110_extseat_expect_reply.sql"].digest == "" || before["0111_extseat_feishu_copy.sql"].digest == "" || before["0114_agent_feishu_summary_copy.sql"].digest == "" {
 		t.Fatalf("R57_LATE_0108_DEPLOYED_BASELINE %v", keysOf(before))
 	}
 	report, err := Migrate(ctx, p, HubDomains())
-	if err != nil || strings.Join(report.Applied, ",") != "0108_extseat_short_name.sql" || len(report.Skipped) != 14 {
+	if err != nil || strings.Join(report.Applied, ",") != "0108_extseat_short_name.sql" || len(report.Skipped) != 15 {
 		t.Fatalf("R57_LATE_0108_ONLY_PENDING report=%+v err=%v", report, err)
 	}
 	after := ledgerRows(t, p)
-	if len(after) != 15 || after["0108_extseat_short_name.sql"].digest == "" {
+	if len(after) != 16 || after["0108_extseat_short_name.sql"].digest == "" {
 		t.Fatalf("R57_LATE_0108_LEDGER %v", keysOf(after))
 	}
 	for name, old := range before {
@@ -46,7 +46,7 @@ func TestConsent0108AppliesAfter0110And0111OnlyOnce(t *testing.T) {
 		}
 	}
 	repeated, err := Migrate(ctx, p, HubDomains())
-	if err != nil || len(repeated.Applied) != 0 || len(repeated.Skipped) != 15 {
+	if err != nil || len(repeated.Applied) != 0 || len(repeated.Skipped) != 16 {
 		t.Fatalf("R57_LATE_0108_RESTART report=%+v err=%v", repeated, err)
 	}
 }

@@ -69,17 +69,31 @@ type Delivery struct {
 }
 
 type FeishuCopyEvent struct {
-	ID, SeatID, Issuer, Subject string
-	ExternalName, TargetName    string
-	OwnerDisplayName            string
-	OwnerShortName              string
-	Direction, Body             string
-	CreatedAt, ExpiresAt        time.Time
+	ID, SeatID, AgentID, Issuer, Subject string
+	ExternalName, TargetName             string
+	OwnerDisplayName                     string
+	OwnerShortName                       string
+	Direction, Group, Body               string
+	CreatedAt, ExpiresAt                 time.Time
+}
+
+// AgentFeishuCopyEvent 是内部 Agent 对话的只读抄送快照。队列实现必须在服务端
+// 由 Agent 属主解析唯一、已验证的飞书身份；调用方不得提供收件 open_id。
+type AgentFeishuCopyEvent struct {
+	ID, AgentID, SourceName, TargetName, Group, Body string
+	CreatedAt                                        time.Time
+}
+
+// AgentFeishuCopyService 只提供偏好写入和内部消息抄送入队。
+type AgentFeishuCopyService interface {
+	SetPreference(context.Context, string, string, bool) error
+	EnqueueAgent(context.Context, AgentFeishuCopyEvent) error
 }
 
 const (
 	FeishuCopyExternalToInternal = "external_to_internal"
 	FeishuCopyInternalToExternal = "internal_to_external"
+	FeishuCopyInternalAgent      = "internal_agent"
 )
 
 // FeishuCopyQueue 将抄送副本与主消息在同一 PG 事务中原子入队。
