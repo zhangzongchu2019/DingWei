@@ -1,0 +1,36 @@
+PASS an ordinary owner gets no 平台管理 entry
+FAIL a management user sees the new tab entry; the old popup back office entry is gone (S-R62-OLDPLAT-SLIM): 旧版后台入口已摘（rulings ㊿-补133）：菜单不得再渲染 admin 项
+
+1 !== 0
+
+PASS clicking opens the 平台管理 tab; the capability menu lists only what exists (no fake entries)
+PASS user list: first load failure shows the reason with a retry; retry shows the empty state
+PASS incomplete form is hinted locally and nothing is sent
+PASS Hub refusals use our wording (never the Hub text), keep the typed values; forbidden says "no permission"
+PASS creating a user shows the one-time code, expiry and the Feishu command; inputs are cleared; the user appears in the list
+PASS every column of the users table has real width, so the status and the regenerate button are actually visible (real-Hub finding: fixed layout squeezed them to 0)
+PASS copy puts exactly the code on the clipboard and says so
+PASS "完成" wipes the code from the page and nothing is persisted in browser storage
+PASS regenerating for a pending user shows the new code (old one is not shown again)
+PASS pending row shows the Hub-provided code, its expiry and a copy button; copy puts exactly the code on the clipboard
+PASS the row code disappears when the Hub stops sending the keys (used / regenerated / expired server-side), and never shows for a non-pending user
+PASS a code without an expiry key, or already expired by the browser clock, is never even rendered (watched with a MutationObserver, so a remove-right-after-render cannot hide it)
+PASS a shown row code vanishes by itself when it expires, without a refresh
+PASS the invite section has an explicit expand/collapse control: arrow + hint, form folds away and comes back with typed values intact
+PASS closing the tab throws the page state away: reopening shows no code
+PASS 绑定飞书: the button first asks for the current password (masked); nothing is sent until it is typed
+PASS 绑定飞书: right password => JSON {password} only (no target), "#register 码" + expiry shown, password field cleared and form closed, copy = full command, nothing persisted
+PASS 绑定飞书: Enter in the password field submits (real keystroke)
+PASS 绑定飞书: wrong password (401) says "口令不对" in our words, clears the field, shows no code; rate limit (429) says try later with the wait; never the Hub text
+PASS 绑定飞书: already bound (409) says so and closes the form; forbidden / 500 use our wording, never the Hub text, and clear the password
+PASS 绑定飞书: an expired code disappears by itself and says so
+PASS 退出 sits at the bottom of the left nav (own footer container), no longer in the "Work platform" title row; 绑定飞书 stays where it was
+PASS 退出 is pinned to the bottom of the viewport with a very short agent list (not hugging the list)
+PASS 退出 stays visible at the viewport bottom with a very long agent list, does not scroll away, and never covers the last item (also on a narrow, short screen)
+PASS dark theme: the footer follows the dark shell (not a white strip) and the button text is readable
+PASS 绑定飞书 button follows the Hub flag: unbound/unknown keep the button; bound shows only the non-clickable 「飞书已绑定」 line
+PASS 绑定飞书 flow: after a successful bind, 「完成,关闭」 re-fetches the state and the button turns into 「飞书已绑定」; an already-bound 409 does the same
+PASS the console has a 退出 button: it POSTs /console/logout once and then goes to /console/login
+PASS a failed logout does not pretend to have logged out: stays on the console, says so, and the button works again
+PASS no pageerror and no unexpected console error across the whole run
+platform admin browser: passed=31 failed=1 mutation=none

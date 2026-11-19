@@ -1,0 +1,17 @@
+2026/11/18 16:36:39 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 16:36:39 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 16:36:39 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 16:36:39 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- FAIL: TestLegacyConsoleMenuSlimRemovedEntriesAbsent (0.47s)
+    console_menu_slim_test.go:122: manager 菜单不得再下发被摘项 "openspec-read": agent-groups,platform-admin,openspec-read
+    console_menu_slim_test.go:131: manager(role=management) 菜单应恰为 "agent-groups,platform-admin",实为 "agent-groups,platform-admin,openspec-read"
+    console_menu_slim_test.go:122: owner 菜单不得再下发被摘项 "openspec-read": agent-groups,openspec-read
+    console_menu_slim_test.go:131: owner(role=owner) 菜单应恰为 "agent-groups",实为 "agent-groups,openspec-read"
+2026/11/18 16:36:40 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 16:36:40 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- FAIL: TestLegacyConsoleMenuSlimCustomItemsNeverEmitted (0.23s)
+    console_menu_slim_test.go:176: manager(role=management) 库内有自定义项时菜单仍应恰为 "agent-groups,platform-admin",实为 "agent-groups,platform-admin,openspec-read"（恢复拼接自定义项必红在这里）
+    console_menu_slim_test.go:176: owner(role=owner) 库内有自定义项时菜单仍应恰为 "agent-groups",实为 "agent-groups,openspec-read"（恢复拼接自定义项必红在这里）
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	0.737s
+FAIL

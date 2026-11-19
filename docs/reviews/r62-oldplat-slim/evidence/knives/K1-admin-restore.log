@@ -1,0 +1,24 @@
+2026/11/18 16:36:01 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 16:36:01 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 16:36:01 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 16:36:01 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- FAIL: TestLegacyConsoleMenuSlimRemovedEntriesAbsent (0.68s)
+    console_menu_slim_test.go:122: manager 菜单不得再下发被摘项 "admin": agent-groups,platform-admin,admin
+    console_menu_slim_test.go:131: manager(role=management) 菜单应恰为 "agent-groups,platform-admin",实为 "agent-groups,platform-admin,admin"
+2026/11/18 16:36:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 16:36:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- FAIL: TestLegacyConsoleMenuSlimCustomItemsNeverEmitted (0.33s)
+    console_menu_slim_test.go:176: manager(role=management) 库内有自定义项时菜单仍应恰为 "agent-groups,platform-admin",实为 "agent-groups,platform-admin,admin"（恢复拼接自定义项必红在这里）
+2026/11/18 16:36:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 16:36:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- FAIL: TestConsolePlatformAdminEntrySlimMenuNeverExposesEntry (0.28s)
+    console_platform_admin_entry_test.go:32: 🔴 S-R62-OLDPLAT-SLIM:菜单不得再下发旧版后台(id=admin),manager(role=management)却收到 {ID:admin Kind:admin Title:旧版后台 Href:/console/admin Target:_blank Status:approved SubmittedBy: Active:true CreatedAt:0001-01-01 00:00:00 +0000 UTC UpdatedAt:0001-01-01 00:00:00 +0000 UTC}。
+        判据:HandleConsolePlatform 的 builtin 里不得有 ID:"admin" 这一条(加回必红);
+        后端路由 /console/admin 与授权不动,摘的只是菜单入口。
+2026/11/18 16:36:02 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 16:36:02 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+--- FAIL: TestSGroupEntryManagementKeepsWorkspaceEntriesNotLegacyAdmin (0.25s)
+    console_platform_group_entry_owner_test.go:123: 🔴 S-R62-OLDPLAT-SLIM:management 菜单不得再下发旧版后台,实收 {ID:admin Kind:admin Title:旧版后台 Href:/console/admin Target:_blank Status:approved SubmittedBy: Active:true CreatedAt:0001-01-01 00:00:00 +0000 UTC UpdatedAt:0001-01-01 00:00:00 +0000 UTC}(加回必红)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	1.624s
+FAIL
