@@ -1,0 +1,50 @@
+{
+  "utc": "2026-11-19T06:09:29.566147+00:00",
+  "leader_order": "dw-dlv_56b420e95b978e85137ac058f413ce4b at05:56:04Z, read06:08Z",
+  "waiter_pids": [
+    2792328,
+    2795556
+  ],
+  "stopped_owned_roots": [
+    {
+      "root_pid": 2788440,
+      "argv": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-integration-stage5-20261119/run.py",
+      "descendant_pids": [
+        2788440,
+        2788533,
+        2789503
+      ]
+    },
+    {
+      "root_pid": 2788441,
+      "argv": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-integration-stage5-20261119/run.py",
+      "descendant_pids": [
+        2788441,
+        2788531,
+        2788546,
+        2789495,
+        2789500,
+        2789501,
+        2791258,
+        2791267,
+        2791273,
+        2791281,
+        2791284,
+        2791298,
+        2791311,
+        2791317,
+        2791320,
+        2791329,
+        2791333,
+        2791339,
+        2791346,
+        2791353,
+        2800490,
+        2800510
+      ]
+    }
+  ],
+  "scope": "only exact own Python gate runners and their descendants; no online helper, production or other seat process",
+  "r61_initial_parallel_gates": "partial readings only; do not count PASS; restart once serial at same8cf source",
+  "N6": "pause entirely; if already finished preserve actual result, do not invent stopped pid"
+}

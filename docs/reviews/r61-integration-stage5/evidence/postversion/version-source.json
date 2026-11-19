@@ -1,0 +1,12 @@
+{
+  "source": "4a349ee59a1d8d7b8b9c562c462bded2f8b0f192",
+  "tree": "7fa866de593b6c382ee9c209eb0ac744b9cb47b4",
+  "parent_full_gate_source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "version": "0.2.3.41",
+  "only_paths": [
+    "VERSION",
+    "internal/version/version.go",
+    "tools/sessionhelper/sessionhelper/__init__.py"
+  ],
+  "utc": "2026-11-19T07:04:31.770728+00:00"
+}

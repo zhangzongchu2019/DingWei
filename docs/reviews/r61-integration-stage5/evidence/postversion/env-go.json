@@ -1,0 +1,21 @@
+{
+  "HOME": "/data/ai-dev-data/r61s5vgoh",
+  "TMPDIR": "/data/ai-dev-data/r61s5vgot",
+  "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+  "LANG": "C.UTF-8",
+  "USER": "dev",
+  "LOGNAME": "dev",
+  "GOPATH": "/home/dev/go",
+  "GOMODCACHE": "/home/dev/go/pkg/mod",
+  "GOCACHE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n1b-review/go-cache",
+  "GOPROXY": "off",
+  "GOFLAGS": "-mod=mod",
+  "HUB_TEST_PG_STRICT": "1",
+  "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3",
+  "OPENSPEC_TELEMETRY": "0",
+  "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+  "PLAYWRIGHT_BROWSERS_PATH": "/home/dev/.cache/ms-playwright",
+  "SOURCE_COMMIT": "4a349ee59a1d8d7b8b9c562c462bded2f8b0f192",
+  "DW_FAILURE_NOTICE_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3",
+  "PYTHONPATH": "/data/ai-dev-data/r61-integration/tools/sessionhelper"
+}

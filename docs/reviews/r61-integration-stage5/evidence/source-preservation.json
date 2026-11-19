@@ -1,0 +1,25 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "version": "0.2.3.40",
+  "merge_source": "ce3c084af7ec2d249b9026e96f2b5fa77e71cc84",
+  "merge_parents": [
+    "5305358fd2e37f2eabe6f5349877eba7b015d143",
+    "584eb119dd86f60549b8871d51a1811fe6f1019f"
+  ],
+  "test_addition_paths": [
+    "internal/mcpgw/r61_auth_first_baseline_test.go"
+  ],
+  "AA010_preserved_from_d6_sha256": "44af85d97eb4dfa0e345471e28de5efd7d76aafe7ec211083ef70f374185304a",
+  "critical_ancestors": {
+    "206d41b2": true,
+    "0ab43c63": true,
+    "d6e56a8b": true,
+    "1362f08f": true,
+    "bfaec0ba": true,
+    "f7b32525": true,
+    "415b9bf5": true,
+    "ce9b7a95": true,
+    "584eb119": true
+  },
+  "renderer_retainCanonicalTrustedProvenance": true
+}

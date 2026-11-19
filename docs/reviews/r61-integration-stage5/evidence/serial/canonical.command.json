@@ -1,0 +1,10 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "command": [
+    "./build.sh",
+    "--test-only"
+  ],
+  "cwd": "/data/ai-dev-data/r61-integration",
+  "env_file": "env-canonical.json",
+  "runner_pid": 2800771
+}

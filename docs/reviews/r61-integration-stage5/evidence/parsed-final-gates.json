@@ -1,0 +1,178 @@
+{
+  "serial/focused-race": {
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T06:43:58.232391+00:00",
+    "end_utc": "2026-11-19T06:50:50.137249+00:00",
+    "sha256": "0493547958b67211c67243cff6b95b109316b3aae2ffdccf71fe06d49c6f4773",
+    "top_pass": 103,
+    "all_pass": 175,
+    "top_fail": 0,
+    "all_fail": 0,
+    "top_skip": 2,
+    "all_skip": 17,
+    "interrupted_lines": [],
+    "data_race": 0,
+    "package_summary": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t251.467s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store\t152.930s"
+    ]
+  },
+  "serial/m8-store-full3": {
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T06:22:08.441886+00:00",
+    "end_utc": "2026-11-19T06:43:58.081607+00:00",
+    "sha256": "a5efb71e192ee70c5f68eb4cc88fe42d7e68686b842987a821115648ddae6e80",
+    "top_pass": 4353,
+    "all_pass": 7428,
+    "top_fail": 0,
+    "all_fail": 0,
+    "top_skip": 45,
+    "all_skip": 99,
+    "interrupted_lines": [],
+    "data_race": 0,
+    "package_summary": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t979.962s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store\t248.138s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store/migrate\t61.014s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/store/pgtest\t16.283s"
+    ]
+  },
+  "serial/canonical": {
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T06:12:39.799661+00:00",
+    "end_utc": "2026-11-19T06:22:08.345179+00:00",
+    "sha256": "60245c9429aa0e0d36dafbb8a416706cc9436885e08aa62c4be12e3eeca58c2c",
+    "top_pass": 6,
+    "all_pass": 21,
+    "top_fail": 0,
+    "all_fail": 0,
+    "top_skip": 0,
+    "all_skip": 0,
+    "interrupted_lines": [],
+    "data_race": 0,
+    "package_summary": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t28.143s"
+    ]
+  },
+  "serial/strict": {
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T07:03:29.669646+00:00",
+    "end_utc": "2026-11-19T07:03:29.979712+00:00",
+    "sha256": "901a14ea22abe9f50f31843a4150bb2d1938f9a3bd102ca5aa5f61e19f487f0c",
+    "top_pass": 0,
+    "all_pass": 0,
+    "top_fail": 0,
+    "all_fail": 0,
+    "top_skip": 0,
+    "all_skip": 0,
+    "interrupted_lines": [],
+    "data_race": 0,
+    "package_summary": []
+  },
+  "serial/http-four": {
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T07:03:41.741350+00:00",
+    "end_utc": "2026-11-19T07:03:42.263718+00:00",
+    "sha256": "b39be84626ad3a7bc6a78f55bac415411ea98f724363c358d3a93fab451ffdf0",
+    "top_pass": 1,
+    "all_pass": 5,
+    "top_fail": 0,
+    "all_fail": 0,
+    "top_skip": 0,
+    "all_skip": 0,
+    "interrupted_lines": [],
+    "data_race": 0,
+    "package_summary": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/mcpgw\t0.031s"
+    ]
+  },
+  "serial/browser-full": {
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T06:50:50.212890+00:00",
+    "end_utc": "2026-11-19T07:03:29.592303+00:00",
+    "sha256": "129aefec264d0da96ea58ca1925fc937bd03400be1ad11aa71e9b592d03f6922",
+    "top_pass": 0,
+    "all_pass": 0,
+    "top_fail": 0,
+    "all_fail": 0,
+    "top_skip": 0,
+    "all_skip": 0,
+    "interrupted_lines": [],
+    "data_race": 0,
+    "package_summary": []
+  },
+  "serial/integrated-hub-build": {
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T07:03:30.257616+00:00",
+    "end_utc": "2026-11-19T07:03:32.971430+00:00",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "top_pass": 0,
+    "all_pass": 0,
+    "top_fail": 0,
+    "all_fail": 0,
+    "top_skip": 0,
+    "all_skip": 0,
+    "interrupted_lines": [],
+    "data_race": 0,
+    "package_summary": []
+  },
+  "serial/actual-process-compat": {
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T07:03:33.051691+00:00",
+    "end_utc": "2026-11-19T07:03:41.522290+00:00",
+    "sha256": "077bce710682045bbec04270f9a783728d81d8af4279b9e27d30f63dd6d01a5b",
+    "top_pass": 0,
+    "all_pass": 0,
+    "top_fail": 0,
+    "all_fail": 0,
+    "top_skip": 0,
+    "all_skip": 0,
+    "interrupted_lines": [],
+    "data_race": 0,
+    "package_summary": []
+  },
+  "postversion/m8-version-full1": {
+    "source": "4a349ee59a1d8d7b8b9c562c462bded2f8b0f192",
+    "rc": 0,
+    "start_utc": "2026-11-19T07:04:36.631184+00:00",
+    "end_utc": "2026-11-19T07:10:22.249230+00:00",
+    "sha256": "8e8c87d652001d62939edb646e87a17d9a02302357fb9020cb55cd2d76512543",
+    "top_pass": 998,
+    "all_pass": 1690,
+    "top_fail": 0,
+    "all_fail": 0,
+    "top_skip": 10,
+    "all_skip": 28,
+    "interrupted_lines": [],
+    "data_race": 0,
+    "package_summary": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t334.969s"
+    ]
+  },
+  "postversion/canonical-version": {
+    "source": "4a349ee59a1d8d7b8b9c562c462bded2f8b0f192",
+    "rc": 0,
+    "start_utc": "2026-11-19T07:10:22.374405+00:00",
+    "end_utc": "2026-11-19T07:19:50.614854+00:00",
+    "sha256": "9d027fcb7f60d50c6dd8d79a783be9ceb2d6c0ab8545ec456669bd69f1beed4a",
+    "top_pass": 6,
+    "all_pass": 21,
+    "top_fail": 0,
+    "all_fail": 0,
+    "top_skip": 0,
+    "all_skip": 0,
+    "interrupted_lines": [],
+    "data_race": 0,
+    "package_summary": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t30.178s"
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "initial_full3_rc": 0,
+  "required": false,
+  "allowed": [
+    "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+    "TestViewMentionRoute/a_peer_without_delivery_ack_v1_is_not_sent_to",
+    "TestSessionNameReconnectKeepsNameAndReleaseReuses"
+  ],
+  "rounds": [],
+  "state": "PASS_ALL_GREEN",
+  "initial_failures": [],
+  "passed": true
+}

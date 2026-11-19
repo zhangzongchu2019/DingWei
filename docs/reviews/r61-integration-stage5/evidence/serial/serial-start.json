@@ -1,0 +1,8 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "utc": "2026-11-19T06:12:39.691340+00:00",
+  "leader_order": "dw-dlv_56b420e95b978e85137ac058f413ce4b",
+  "all_commands_strictly_serial": true,
+  "old_parallel_phase": "parent artifact directory retains all stopped/partial logs; not a gate PASS",
+  "N6_stopped_or_finished": "N6 naturally ended06:00:38Z; no other own test workload; N6 stayspaused until version handoff"
+}

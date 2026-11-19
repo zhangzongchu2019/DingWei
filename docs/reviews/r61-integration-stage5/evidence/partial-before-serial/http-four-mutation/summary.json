@@ -1,0 +1,67 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "physical_knives": 1,
+  "scope": "integration HTTP4 protection only; not added to AUTH12 or qwen5",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestR61MCPUnauthenticatedFourBaselinesOverRealHTTP$",
+      "-count=1",
+      "-v"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T06:07:34.172136+00:00",
+    "end_utc": "2026-11-19T06:07:35.886236+00:00",
+    "sha256": "c41971991d008567498f6382b9970797f0511e2a70b70e72aea819b2a4bd9de3"
+  },
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T06:07:35.886428+00:00",
+    "end_utc": "2026-11-19T06:07:36.912215+00:00",
+    "sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "mutated": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestR61MCPUnauthenticatedFourBaselinesOverRealHTTP$",
+      "-count=1",
+      "-v"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T06:07:36.912249+00:00",
+    "end_utc": "2026-11-19T06:07:37.457486+00:00",
+    "sha256": "db209123ccc0dc87da1144eebf2aa6f9425e6c6f082aa3c9ef4746c0705959d9"
+  },
+  "business_red": true,
+  "restored": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestR61MCPUnauthenticatedFourBaselinesOverRealHTTP$",
+      "-count=1",
+      "-v"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T06:07:37.457624+00:00",
+    "end_utc": "2026-11-19T06:07:37.991779+00:00",
+    "sha256": "109adac5f72f2a60b5aada74ae17d73688f74020f1338520917c80b56fff9d35"
+  },
+  "restored_sha256": "3a26f443235e3f75b6d6f72d39136233cff13afb54488f2051edc6c63fe09ad0",
+  "porcelain": ""
+}

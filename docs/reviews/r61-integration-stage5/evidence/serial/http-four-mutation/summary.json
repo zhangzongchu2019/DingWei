@@ -1,0 +1,71 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "physical_knives": 1,
+  "serial_after_full_gates": true,
+  "scope": "integration HTTP4 order guard; do not combine with component12 or independent5",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestR61MCPUnauthenticatedFourBaselinesOverRealHTTP$",
+      "-count=1",
+      "-v"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T07:04:15.109808+00:00",
+    "end_utc": "2026-11-19T07:04:15.637578+00:00",
+    "sha256": "64cbc80ea165e2ac93512335d301f747376993e225b3411606dd64215af8cd02"
+  },
+  "path": "internal/mcpgw/gateway.go",
+  "old": "func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {",
+  "new": "func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {\n if singleHeader(r, \"MCP-Protocol-Version\") != CompatProtocolVersion { rpcError(w, 400, nil, wireError{Code:-32022, Message:\"Unsupported protocol version\"}); return }",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T07:04:15.637865+00:00",
+    "end_utc": "2026-11-19T07:04:16.150976+00:00",
+    "sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "mutated": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestR61MCPUnauthenticatedFourBaselinesOverRealHTTP$",
+      "-count=1",
+      "-v"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T07:04:16.151012+00:00",
+    "end_utc": "2026-11-19T07:04:16.673069+00:00",
+    "sha256": "70a90c40a4f1c7ca41a881a8444bc0f392d320b805a4f6770ba4a4541de2c347"
+  },
+  "business_red": true,
+  "restored": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestR61MCPUnauthenticatedFourBaselinesOverRealHTTP$",
+      "-count=1",
+      "-v"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T07:04:16.673180+00:00",
+    "end_utc": "2026-11-19T07:04:17.219016+00:00",
+    "sha256": "b39be84626ad3a7bc6a78f55bac415411ea98f724363c358d3a93fab451ffdf0"
+  },
+  "restored_sha256": "3a26f443235e3f75b6d6f72d39136233cff13afb54488f2051edc6c63fe09ad0",
+  "porcelain": ""
+}

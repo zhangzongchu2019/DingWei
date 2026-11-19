@@ -1,0 +1,12 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "cwd": "/data/ai-dev-data/r61-integration",
+  "env_file": "env-strict.json",
+  "runner_pid": 2788439
+}

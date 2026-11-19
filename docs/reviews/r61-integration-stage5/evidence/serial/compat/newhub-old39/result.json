@@ -1,0 +1,39 @@
+{
+  "case": "newhub-old39",
+  "started_utc": "2026-11-19T07:03:38.695141+00:00",
+  "ended_utc": "2026-11-19T07:03:41.263036+00:00",
+  "hub_process": "integrated-hub",
+  "hub_source_commit": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "helper_source": "/data/ai-dev-data/wt-coder56-helper-02339/tools/sessionhelper",
+  "helper_source_commit": "2e1e4c9db3c42cf7c987a548fa9214aad67a9f0c",
+  "actual_handshake": true,
+  "actual_recv_accept": true,
+  "model_consumption": "fixture paused; no CLI/provider",
+  "observed": {
+    "version": "0.2.3.39",
+    "negotiated": false,
+    "wire_protocol": 2,
+    "delivery_id": "dw-dlv_945f21787641b70b7f6d0194ff30a0b1"
+  },
+  "ack": {
+    "type": "delivery_ack",
+    "delivery_id": "dw-dlv_945f21787641b70b7f6d0194ff30a0b1",
+    "state": "busy",
+    "no_mirror": true,
+    "reason": "queue_full",
+    "retryable": true,
+    "ack_protocol": 2,
+    "processing_mode": "driver",
+    "ack_generation": 1
+  },
+  "hub_row": {
+    "id": "dw-dlv_945f21787641b70b7f6d0194ff30a0b1",
+    "state": "queued",
+    "last_error": "helper_busy",
+    "ack_protocol": 2,
+    "processing_mode": "driver",
+    "ack_generation": 1
+  },
+  "failure_notice_rows": 0,
+  "rc": 0
+}

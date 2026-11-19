@@ -1,0 +1,19 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./internal/m8",
+    "./internal/store",
+    "-run",
+    "DeliveryACK|QueueFull|FailureNotice|ReliableSessionDeliveryBusyAck|HistoryProvenance|SessionHistory",
+    "-count=1",
+    "-p=1",
+    "-timeout=60m",
+    "-v"
+  ],
+  "cwd": "/data/ai-dev-data/r61-integration",
+  "env_file": "env-race.json",
+  "runner_pid": 2828785
+}

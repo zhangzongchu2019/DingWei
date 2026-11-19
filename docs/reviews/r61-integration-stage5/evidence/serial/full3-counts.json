@@ -1,0 +1,38 @@
+{
+  "github.com/zhangzongchu2019/dingwei/internal/m8": {
+    "seconds": 979.962,
+    "top_pass": 2994,
+    "all_pass": 5070,
+    "top_skip": 30,
+    "all_skip": 84,
+    "fail": 0,
+    "interrupted_lines": 0
+  },
+  "github.com/zhangzongchu2019/dingwei/internal/store": {
+    "seconds": 248.138,
+    "top_pass": 1227,
+    "all_pass": 2022,
+    "top_skip": 15,
+    "all_skip": 15,
+    "fail": 0,
+    "interrupted_lines": 0
+  },
+  "github.com/zhangzongchu2019/dingwei/internal/store/migrate": {
+    "seconds": 61.014,
+    "top_pass": 87,
+    "all_pass": 132,
+    "top_skip": 0,
+    "all_skip": 0,
+    "fail": 0,
+    "interrupted_lines": 0
+  },
+  "github.com/zhangzongchu2019/dingwei/internal/store/pgtest": {
+    "seconds": 16.283,
+    "top_pass": 45,
+    "all_pass": 204,
+    "top_skip": 0,
+    "all_skip": 0,
+    "fail": 0,
+    "interrupted_lines": 0
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "utc": "2026-11-19T06:16:34.562425+00:00",
+  "old_owned_session_ids": [
+    2788440,
+    2788441,
+    2792328,
+    2795556
+  ],
+  "remaining_nonzombie_in_old_sessions": [],
+  "no_private_env_or_arguments_read": true
+}

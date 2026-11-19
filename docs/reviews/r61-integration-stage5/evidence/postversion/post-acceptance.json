@@ -1,0 +1,20 @@
+{
+  "source": "4a349ee59a1d8d7b8b9c562c462bded2f8b0f192",
+  "all_serial": true,
+  "passed": true,
+  "go_policy": {
+    "source": "4a349ee59a1d8d7b8b9c562c462bded2f8b0f192",
+    "initial_full1_rc": 0,
+    "required": false,
+    "allowed": [
+      "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+      "TestViewMentionRoute/a_peer_without_delivery_ack_v1_is_not_sent_to",
+      "TestSessionNameReconnectKeepsNameAndReleaseReuses"
+    ],
+    "rounds": [],
+    "state": "PASS_ALL_GREEN",
+    "initial_failures": [],
+    "passed": true
+  },
+  "end_utc": "2026-11-19T07:19:50.626772+00:00"
+}

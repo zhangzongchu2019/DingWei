@@ -1,0 +1,27 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "baseline": "5305358fd2e37f2eabe6f5349877eba7b015d143",
+  "scope": "code identity only; not a substitute for required integration gates or Z3 runs",
+  "objects": {
+    "internal/m8": {
+      "current": "863de9fee1d8be6f8dfe6a8adf70bcbf54b57981",
+      "stage4": "863de9fee1d8be6f8dfe6a8adf70bcbf54b57981",
+      "same": true
+    },
+    "internal/store": {
+      "current": "3c4f945393008c772d43465c2e0f136cae7cc7f8",
+      "stage4": "3c4f945393008c772d43465c2e0f136cae7cc7f8",
+      "same": true
+    },
+    "go.mod": {
+      "current": "362bb888ef3346356e451a58cd87064e84474317",
+      "stage4": "362bb888ef3346356e451a58cd87064e84474317",
+      "same": true
+    },
+    "go.sum": {
+      "current": "871e6a788732f19d19a470cc34dfdb8e366b364f",
+      "stage4": "871e6a788732f19d19a470cc34dfdb8e366b364f",
+      "same": true
+    }
+  }
+}

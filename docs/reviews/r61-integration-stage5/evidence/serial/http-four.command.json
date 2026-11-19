@@ -1,0 +1,15 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "-run",
+    "^TestR61MCPUnauthenticatedFourBaselinesOverRealHTTP$",
+    "-count=1",
+    "-v"
+  ],
+  "cwd": "/data/ai-dev-data/r61-integration",
+  "env_file": "env-http.json",
+  "runner_pid": 2838875
+}

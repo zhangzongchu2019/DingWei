@@ -1,0 +1,16 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "./internal/store/...",
+    "-count=3",
+    "-p=1",
+    "-timeout=90m",
+    "-v"
+  ],
+  "cwd": "/data/ai-dev-data/r61-integration",
+  "env_file": "env-go.json",
+  "runner_pid": 2788440
+}

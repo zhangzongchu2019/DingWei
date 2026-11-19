@@ -1,0 +1,1244 @@
+{
+  "serial/focused-race": [
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+      "line": 20,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+      "line": 21,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+      "line": 22,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+      "line": 41,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+      "line": 42,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+      "line": 43,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+      "line": 44,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+      "line": 63,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+      "line": 64,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+      "line": 65,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+      "line": 66,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+      "line": 77,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+      "line": 78,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+      "line": 89,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+      "line": 90,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILateWireTerminal",
+      "line": 95,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/focused-race.log"
+    },
+    {
+      "name": "TestSessionHistoryTwentyAgentPublishP99",
+      "line": 474,
+      "condition_lines": [
+        "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+      ],
+      "raw_log": "serial/focused-race.log"
+    }
+  ],
+  "serial/m8-store-full3": [
+    {
+      "name": "TestChangeEvidenceConsoleBrowser",
+      "line": 1016,
+      "condition_lines": [
+        "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestMuxProductHTTP1EightSeats",
+      "line": 1153,
+      "condition_lines": [
+        "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsolePlatformPayloadDump",
+      "line": 1314,
+      "condition_lines": [
+        "    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "line": 1643,
+      "condition_lines": [
+        "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+      "line": 1867,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+      "line": 1868,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+      "line": 1869,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+      "line": 1888,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+      "line": 1889,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+      "line": 1890,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+      "line": 1891,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+      "line": 1910,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+      "line": 1911,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+      "line": 1912,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+      "line": 1913,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+      "line": 1924,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+      "line": 1925,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+      "line": 1936,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+      "line": 1937,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILateWireTerminal",
+      "line": 1942,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestGroupReplyMCP",
+      "line": 3765,
+      "condition_lines": [
+        "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+      "line": 3982,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+      "line": 3983,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "line": 3984,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelper0232MixedVersionEndToEnd",
+      "line": 3987,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:55: explicit immutable release pins required"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+      "line": 5354,
+      "condition_lines": [
+        "    hub_timeout_contract_test.go:50: subprocess probe only"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestSessionHistoryTwentyAgentPublishP99",
+      "line": 7188,
+      "condition_lines": [
+        "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestSpecMCPEndToEnd",
+      "line": 7555,
+      "condition_lines": [
+        "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestChangeEvidenceConsoleBrowser",
+      "line": 9638,
+      "condition_lines": [
+        "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestMuxProductHTTP1EightSeats",
+      "line": 9775,
+      "condition_lines": [
+        "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsolePlatformPayloadDump",
+      "line": 9936,
+      "condition_lines": [
+        "    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "line": 10265,
+      "condition_lines": [
+        "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+      "line": 10489,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+      "line": 10490,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+      "line": 10491,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+      "line": 10510,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+      "line": 10511,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+      "line": 10512,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+      "line": 10513,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+      "line": 10532,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+      "line": 10533,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+      "line": 10534,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+      "line": 10535,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+      "line": 10546,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+      "line": 10547,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+      "line": 10558,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+      "line": 10559,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILateWireTerminal",
+      "line": 10564,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestGroupReplyMCP",
+      "line": 12395,
+      "condition_lines": [
+        "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+      "line": 12612,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+      "line": 12613,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "line": 12614,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelper0232MixedVersionEndToEnd",
+      "line": 12617,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:55: explicit immutable release pins required"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+      "line": 13992,
+      "condition_lines": [
+        "    hub_timeout_contract_test.go:50: subprocess probe only"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestSessionHistoryTwentyAgentPublishP99",
+      "line": 15842,
+      "condition_lines": [
+        "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestSpecMCPEndToEnd",
+      "line": 16209,
+      "condition_lines": [
+        "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestChangeEvidenceConsoleBrowser",
+      "line": 18298,
+      "condition_lines": [
+        "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestMuxProductHTTP1EightSeats",
+      "line": 18435,
+      "condition_lines": [
+        "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsolePlatformPayloadDump",
+      "line": 18596,
+      "condition_lines": [
+        "    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "line": 18933,
+      "condition_lines": [
+        "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+      "line": 19157,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+      "line": 19158,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+      "line": 19159,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+      "line": 19178,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+      "line": 19179,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+      "line": 19180,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+      "line": 19181,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+      "line": 19200,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+      "line": 19201,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+      "line": 19202,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+      "line": 19203,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+      "line": 19214,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+      "line": 19215,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+      "line": 19226,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+      "line": 19227,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILateWireTerminal",
+      "line": 19232,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestGroupReplyMCP",
+      "line": 21071,
+      "condition_lines": [
+        "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+      "line": 21288,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+      "line": 21289,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "line": 21290,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestHelper0232MixedVersionEndToEnd",
+      "line": 21293,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:55: explicit immutable release pins required"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+      "line": 22668,
+      "condition_lines": [
+        "    hub_timeout_contract_test.go:50: subprocess probe only"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestSessionHistoryTwentyAgentPublishP99",
+      "line": 24536,
+      "condition_lines": [
+        "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestSpecMCPEndToEnd",
+      "line": 24911,
+      "condition_lines": [
+        "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "line": 26536,
+      "condition_lines": [
+        "    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "line": 26539,
+      "condition_lines": [
+        "    console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+      "line": 26598,
+      "condition_lines": [
+        "    feishu_sticky_compat_test.go:116: R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+      "line": 27285,
+      "condition_lines": [
+        "    task_dispatch_compat_test.go:196: exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestR10RestartChildAuthority",
+      "line": 27352,
+      "condition_lines": [
+        "    task_dispatch_restart_test.go:22: subprocess-only probe, exercised by TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "line": 27936,
+      "condition_lines": [
+        "    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "line": 27939,
+      "condition_lines": [
+        "    console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+      "line": 27998,
+      "condition_lines": [
+        "    feishu_sticky_compat_test.go:116: R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+      "line": 28685,
+      "condition_lines": [
+        "    task_dispatch_compat_test.go:196: exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestR10RestartChildAuthority",
+      "line": 28752,
+      "condition_lines": [
+        "    task_dispatch_restart_test.go:22: subprocess-only probe, exercised by TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+      "line": 29336,
+      "condition_lines": [
+        "    console_task_lineage_test.go:135: K17 covers new writes only; legacy acceptance_json rows containing \"DOD\" await the production count before any 0049 migration decision"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+      "line": 29339,
+      "condition_lines": [
+        "    console_task_lineage_test.go:139: future K7: enforce at the start gate using console_spec_task_acceptance, never acceptance_json; creation remains allowed with zero links until that timing is sealed"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+      "line": 29398,
+      "condition_lines": [
+        "    feishu_sticky_compat_test.go:116: R14_OLD_HUB_BINARY not supplied; exact-r48 compatibility fixture is run by the R14 evidence gate"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+      "line": 30085,
+      "condition_lines": [
+        "    task_dispatch_compat_test.go:196: exact-r48 binary not provided; supplied by the isolated R10 compatibility evidence gate"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    },
+    {
+      "name": "TestR10RestartChildAuthority",
+      "line": 30152,
+      "condition_lines": [
+        "    task_dispatch_restart_test.go:22: subprocess-only probe, exercised by TestR10SeparateProcessRestartPreservesAuthorityAndUnknownNotice"
+      ],
+      "raw_log": "serial/m8-store-full3.log"
+    }
+  ],
+  "serial/canonical": [],
+  "serial/strict": [],
+  "serial/http-four": [],
+  "serial/browser-full": [],
+  "serial/integrated-hub-build": [],
+  "serial/actual-process-compat": [],
+  "postversion/m8-version-full1": [
+    {
+      "name": "TestChangeEvidenceConsoleBrowser",
+      "line": 1016,
+      "condition_lines": [
+        "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestMuxProductHTTP1EightSeats",
+      "line": 1153,
+      "condition_lines": [
+        "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestConsolePlatformPayloadDump",
+      "line": 1314,
+      "condition_lines": [
+        "    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+      "line": 1643,
+      "condition_lines": [
+        "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+      "line": 1867,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+      "line": 1868,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+      "line": 1869,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+      "line": 1888,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+      "line": 1889,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+      "line": 1890,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+      "line": 1891,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+      "line": 1910,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+      "line": 1911,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+      "line": 1912,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+      "line": 1913,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+      "line": 1924,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+      "line": 1925,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+      "line": 1936,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+      "line": 1937,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestDeliveryACKActualCLILateWireTerminal",
+      "line": 1942,
+      "condition_lines": [
+        "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestGroupReplyMCP",
+      "line": 3764,
+      "condition_lines": [
+        "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+      "line": 3982,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+      "line": 3983,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+      "line": 3984,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestHelper0232MixedVersionEndToEnd",
+      "line": 3987,
+      "condition_lines": [
+        "    helper_update_e2e_test.go:55: explicit immutable release pins required"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+      "line": 5354,
+      "condition_lines": [
+        "    hub_timeout_contract_test.go:50: subprocess probe only"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestSessionHistoryTwentyAgentPublishP99",
+      "line": 7189,
+      "condition_lines": [
+        "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    },
+    {
+      "name": "TestSpecMCPEndToEnd",
+      "line": 7557,
+      "condition_lines": [
+        "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+      ],
+      "raw_log": "postversion/m8-version-full1.log"
+    }
+  ],
+  "postversion/canonical-version": []
+}

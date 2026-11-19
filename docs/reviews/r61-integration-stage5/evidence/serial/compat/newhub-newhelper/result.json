@@ -1,0 +1,40 @@
+{
+  "case": "newhub-newhelper",
+  "started_utc": "2026-11-19T07:03:35.895537+00:00",
+  "ended_utc": "2026-11-19T07:03:38.475408+00:00",
+  "hub_process": "integrated-hub",
+  "hub_source_commit": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "helper_source": "/data/ai-dev-data/r61-integration/tools/sessionhelper",
+  "helper_source_commit": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "actual_handshake": true,
+  "actual_recv_accept": true,
+  "model_consumption": "fixture paused; no CLI/provider",
+  "observed": {
+    "version": "0.2.3.40",
+    "negotiated": true,
+    "wire_protocol": 2,
+    "delivery_id": "dw-dlv_d3eadc40b9842548c6777f4f68612c1e"
+  },
+  "ack": {
+    "type": "delivery_ack",
+    "delivery_id": "dw-dlv_d3eadc40b9842548c6777f4f68612c1e",
+    "state": "failed",
+    "no_mirror": true,
+    "reason": "queue_full",
+    "retryable": false,
+    "occurred_at": "2026-11-19T07:03:37.924923Z",
+    "ack_protocol": 2,
+    "processing_mode": "driver",
+    "ack_generation": 1
+  },
+  "hub_row": {
+    "id": "dw-dlv_d3eadc40b9842548c6777f4f68612c1e",
+    "state": "dead",
+    "last_error": "queue_full",
+    "ack_protocol": 2,
+    "processing_mode": "driver",
+    "ack_generation": 1
+  },
+  "failure_notice_rows": 1,
+  "rc": 0
+}

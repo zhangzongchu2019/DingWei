@@ -1,0 +1,66 @@
+[
+  {
+    "name": "canonical",
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T06:12:39.799661+00:00",
+    "end_utc": "2026-11-19T06:22:08.345179+00:00",
+    "sha256": "60245c9429aa0e0d36dafbb8a416706cc9436885e08aa62c4be12e3eeca58c2c"
+  },
+  {
+    "name": "m8-store-full3",
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T06:22:08.441886+00:00",
+    "end_utc": "2026-11-19T06:43:58.081607+00:00",
+    "sha256": "a5efb71e192ee70c5f68eb4cc88fe42d7e68686b842987a821115648ddae6e80"
+  },
+  {
+    "name": "focused-race",
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T06:43:58.232391+00:00",
+    "end_utc": "2026-11-19T06:50:50.137249+00:00",
+    "sha256": "0493547958b67211c67243cff6b95b109316b3aae2ffdccf71fe06d49c6f4773"
+  },
+  {
+    "name": "browser-full",
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T06:50:50.212890+00:00",
+    "end_utc": "2026-11-19T07:03:29.592303+00:00",
+    "sha256": "129aefec264d0da96ea58ca1925fc937bd03400be1ad11aa71e9b592d03f6922"
+  },
+  {
+    "name": "strict",
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T07:03:29.669646+00:00",
+    "end_utc": "2026-11-19T07:03:29.979712+00:00",
+    "sha256": "901a14ea22abe9f50f31843a4150bb2d1938f9a3bd102ca5aa5f61e19f487f0c"
+  },
+  {
+    "name": "integrated-hub-build",
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T07:03:30.257616+00:00",
+    "end_utc": "2026-11-19T07:03:32.971430+00:00",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "actual-process-compat",
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T07:03:33.051691+00:00",
+    "end_utc": "2026-11-19T07:03:41.522290+00:00",
+    "sha256": "077bce710682045bbec04270f9a783728d81d8af4279b9e27d30f63dd6d01a5b"
+  },
+  {
+    "name": "http-four",
+    "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+    "rc": 0,
+    "start_utc": "2026-11-19T07:03:41.741350+00:00",
+    "end_utc": "2026-11-19T07:03:42.263718+00:00",
+    "sha256": "b39be84626ad3a7bc6a78f55bac415411ea98f724363c358d3a93fab451ffdf0"
+  }
+]

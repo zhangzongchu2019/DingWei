@@ -1,0 +1,12 @@
+{
+  "source": "8cf2de74cb51fe7eb340541b4db099093eee92f5",
+  "tree": "29d82a1b418eb44b08d80b7de3afcc9336c4f89f",
+  "merge": "ce3c084af7ec2d249b9026e96f2b5fa77e71cc84",
+  "merge_parents": [
+    "5305358fd2e37f2eabe6f5349877eba7b015d143",
+    "584eb119dd86f60549b8871d51a1811fe6f1019f"
+  ],
+  "new_integration_commit": "only one new mcpgw test, no production changes",
+  "version": "0.2.3.40",
+  "utc": "2026-11-19T06:00:29.788555+00:00"
+}
