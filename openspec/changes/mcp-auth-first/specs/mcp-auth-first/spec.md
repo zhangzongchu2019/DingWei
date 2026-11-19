@@ -31,3 +31,14 @@
 #### Scenario: MAF-S005 版本检查抢在鉴权前
 - **WHEN** 将版本校验恢复到鉴权入口之前
 - **THEN** 未认证三版本401格转业务红；还原源后基线恢复绿
+
+### Requirement: MAF-005 Connect失败不泄露状态并说明重启授权
+/feishu/connect的attempt不存在、过期、cookie缺失/不匹配 MUST 在Accept接受text/html时返回统一中文说明和400，要求同一浏览器五分钟内从AI工具重新Authenticate、不复制链接；非HTML MUST 保留原JSON与400。浏览器绑定、五分钟期限和Origin MUST NOT放宽，页面不得反射attempt或区分失败原因。
+
+#### Scenario: MAF-S006 HTML和JSON统一拒绝
+- **WHEN** 不存在/过期/错误浏览器的attempt请求分别接受HTML或JSON
+- **THEN** HTML为同一静态中文说明及400、无状态泄露，JSON逐字保留invalid_request及400
+
+#### Scenario: MAF-S007 Cookie和五分钟仍是安全界
+- **WHEN** 原浏览器在5分钟减1ns和恰好5分钟打开链接，或请求不带cookie
+- **THEN** 只有前者成功，其余400；删cookie比较或延长TTL须对应业务断言红

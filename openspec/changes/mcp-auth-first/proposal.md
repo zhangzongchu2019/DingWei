@@ -8,6 +8,7 @@
 - 标准initialize非空未知版本协商到完整支持的2025-06-18；不宣称实现03旧batch或11新tasks。
 - 无协议头且无私有版本依据时按2025-03-26识别；非initialize因该版本尚未支持而返回明确Unsupported version，不能误落私有HeaderMismatch。
 - 只接收documented clientInfo可选description/websiteUrl/icons，不使用或外取其URL。
+- /feishu/connect对attempt不存在/过期/cookie不匹配的HTML请求返回同一中文说明及400，非HTML保留JSON；浏览器绑定与五分钟TTL不动。
 
 ## 需求来源
 
@@ -20,3 +21,5 @@
 ## 待 PM 决策
 
 无新增PM项。发布路线、构建件和上线授权由组长另定。
+
+追加来源：组长2026-11-19T03:30:24Z，dw-dlv_253b11c26545050d364d4b1f02351b59；只改失败展示，不改变授权安全边界。

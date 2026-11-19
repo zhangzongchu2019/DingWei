@@ -29,3 +29,9 @@
 - [06工具结果](https://modelcontextprotocol.io/specification/2025-06-18/server/tools)：structuredContent及outputSchema是06的新增可选结构。
 
 三版本×未鉴权三方法（有/无版本头）、所有HTTP方法/无效媒体与Origin/不读body、错误token过期吊销、已鉴权协商与完整后续链、缺头默认与私有旧网关负格。删前置鉴权前增加版本检查须未鉴权401断言红；恢复initialize固定版本拒绝须协商格红。普通推送交件，R6到锚即中断。
+
+## Connect失败说明（03:30Z追加）
+
+readAttempt的浏览器cookie哈希比较和五分钟oauthTTL逐字保留。只有connect的readAttempt失败分支调用新的统一展示helper：Accept明确接受text/html时为静态中文HTML、400，解释必须同浏览器且五分钟内从AI工具Authenticate重新发起，不复制URL；不存在/过期/缺cookie/错cookie返回完全相同字节。无attempt/客户端/redirect/原错误反射，不带表单、脚本或自动重试链接，CSP default-src/base-uri/form-action/frame-ancestors均none，no-store/no-referrer/nosniff。非HTML沿用400与原JSON invalid_request；q=0不选择HTML。已鉴权mcp的Origin变化不扩展到connect，connect原Origin守卫不改。
+
+常驻格为三类拒绝（含缺/错cookie）×HTML/JSON、同cookie在5分钟减1ns仍成功、恰好5分钟拒绝、HTML禁用质量保留JSON。删cookie比较必须红“无cookie打开”业务断言；把TTL扩到10分钟须五分钟边界格红。

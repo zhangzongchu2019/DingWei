@@ -194,7 +194,7 @@ func (g *Gateway) connect(w http.ResponseWriter, r *http.Request) {
 	}
 	a, attemptErr := g.readAttempt(r, attempt, false)
 	if attemptErr != nil {
-		oauthError(w, 400, "invalid_request")
+		failConnectAttempt(w, r)
 		return
 	}
 	// C 的重定向 state 与 B 事务关联，回调先验浏览器和期限再允许 C 签发。
