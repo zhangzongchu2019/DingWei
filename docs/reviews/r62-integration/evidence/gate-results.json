@@ -1,0 +1,878 @@
+{
+  "go_package_gates": {
+    "m8": {
+      "counts": {
+        "pass": 4949,
+        "skip": 135,
+        "fail": 1
+      },
+      "skip_names": [
+        "TestBlockerAcrossRealHTTPHelperIPCMCP",
+        "TestChangeEvidenceConsoleBrowser",
+        "TestConsolePlatformPayloadDump",
+        "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+        "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+        "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+        "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+        "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+        "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+        "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+        "TestDeliveryACKActualCLILateWireTerminal",
+        "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+        "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+        "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+        "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+        "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+        "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+        "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+        "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+        "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+        "TestDesktopMCPRoundTripAcrossRealHub",
+        "TestDeviceClaimAcrossActualClientAndHub",
+        "TestDeviceClaimAcrossActualClientAndPostgres",
+        "TestEnvelopeReadTimeoutEnvironmentChild",
+        "TestFailureNoticeDriverTurnEndToEnd",
+        "TestGroupReplyMCP",
+        "TestHelper0232MixedVersionEndToEnd",
+        "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+        "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+        "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+        "TestHostedBodySendAcrossRealHub",
+        "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+        "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+        "TestLegacyIngressDefaultCycleLongBusinessKeepsPong",
+        "TestLegacyIngressLimitedWirePongCompetition",
+        "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+        "TestLegacyIngressSmallControlBlockedPhysicalWrite",
+        "TestLegacyIngressSmallControlReadPause",
+        "TestMuxProductHTTP1EightSeats",
+        "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+        "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+        "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+        "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+        "TestSessionHistoryTwentyAgentPublishP99",
+        "TestSpecMCPEndToEnd"
+      ],
+      "fail_names": [
+        "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent"
+      ],
+      "source_log_sha256": "6923acaf953ca1dd8fd80f76b5d685b1d989223285de21370bfbb69500108f6e"
+    },
+    "store": {
+      "counts": {
+        "pass": 2358,
+        "skip": 15
+      },
+      "skip_names": [
+        "TestConsoleTaskLegacyDODMigrationPendingProductionCount",
+        "TestConsoleTaskStartRequiresAcceptanceLinkPendingStartGateRuling",
+        "TestFeishuStickyOldHubMigrationRollbackCompatibility",
+        "TestR10OldR48HubUpgradeAndRollbackOnIsolatedCopy",
+        "TestR10RestartChildAuthority"
+      ],
+      "fail_names": [],
+      "source_log_sha256": "d58794b5d029c1233f4861a617b66221370e2b23cd200bdf9945068b1e63a81e"
+    },
+    "extseat": {
+      "counts": {
+        "pass": 222
+      },
+      "skip_names": [],
+      "fail_names": [],
+      "source_log_sha256": "a5d37b34a2b7e7cd0a65c31ce8ebc7ee1d3fcd84aa244922dfdf0f5b923a110e"
+    },
+    "extshared": {
+      "counts": {
+        "pass": 33
+      },
+      "skip_names": [],
+      "fail_names": [],
+      "source_log_sha256": "84c067e5157b56eea6579bc0064e060f06baaf2a465c058fa3d3dcf7ad5848cd"
+    },
+    "tempgroup": {
+      "counts": {
+        "pass": 69
+      },
+      "skip_names": [],
+      "fail_names": [],
+      "source_log_sha256": "6a38524ec7252c3e7e56f44877983320af302660057dcb4f508ec1056e4b075f"
+    }
+  },
+  "z3_five_rounds": {
+    "integration": [
+      {
+        "counts": {
+          "pass": 1650,
+          "skip": 45
+        },
+        "skip_names": [
+          "TestBlockerAcrossRealHTTPHelperIPCMCP",
+          "TestChangeEvidenceConsoleBrowser",
+          "TestConsolePlatformPayloadDump",
+          "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "TestDeliveryACKActualCLILateWireTerminal",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "TestDesktopMCPRoundTripAcrossRealHub",
+          "TestDeviceClaimAcrossActualClientAndHub",
+          "TestDeviceClaimAcrossActualClientAndPostgres",
+          "TestEnvelopeReadTimeoutEnvironmentChild",
+          "TestFailureNoticeDriverTurnEndToEnd",
+          "TestGroupReplyMCP",
+          "TestHelper0232MixedVersionEndToEnd",
+          "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "TestHostedBodySendAcrossRealHub",
+          "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+          "TestLegacyIngressDefaultCycleLongBusinessKeepsPong",
+          "TestLegacyIngressLimitedWirePongCompetition",
+          "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+          "TestLegacyIngressSmallControlBlockedPhysicalWrite",
+          "TestLegacyIngressSmallControlReadPause",
+          "TestMuxProductHTTP1EightSeats",
+          "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+          "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+          "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+          "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "TestSessionHistoryTwentyAgentPublishP99",
+          "TestSpecMCPEndToEnd"
+        ],
+        "fail_names": [],
+        "source_log_sha256": "4d9a620e025d5eeadbe4e0acd06b6a2ef255bc6378ad4673db57fa2654ed5361",
+        "round": 1,
+        "rc": 0,
+        "status": "green",
+        "failures": [],
+        "interrupts": [],
+        "filtered_log": "z3-integration-round-1-outcomes.jsonl"
+      },
+      {
+        "counts": {
+          "pass": 1649,
+          "skip": 45,
+          "fail": 1
+        },
+        "skip_names": [
+          "TestBlockerAcrossRealHTTPHelperIPCMCP",
+          "TestChangeEvidenceConsoleBrowser",
+          "TestConsolePlatformPayloadDump",
+          "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "TestDeliveryACKActualCLILateWireTerminal",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "TestDesktopMCPRoundTripAcrossRealHub",
+          "TestDeviceClaimAcrossActualClientAndHub",
+          "TestDeviceClaimAcrossActualClientAndPostgres",
+          "TestEnvelopeReadTimeoutEnvironmentChild",
+          "TestFailureNoticeDriverTurnEndToEnd",
+          "TestGroupReplyMCP",
+          "TestHelper0232MixedVersionEndToEnd",
+          "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "TestHostedBodySendAcrossRealHub",
+          "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+          "TestLegacyIngressDefaultCycleLongBusinessKeepsPong",
+          "TestLegacyIngressLimitedWirePongCompetition",
+          "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+          "TestLegacyIngressSmallControlBlockedPhysicalWrite",
+          "TestLegacyIngressSmallControlReadPause",
+          "TestMuxProductHTTP1EightSeats",
+          "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+          "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+          "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+          "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "TestSessionHistoryTwentyAgentPublishP99",
+          "TestSpecMCPEndToEnd"
+        ],
+        "fail_names": [
+          "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent"
+        ],
+        "source_log_sha256": "707d42bd58b4430aa77d84f8fb372b16a375ae5f1c1f9bb94624cca4b8a4cbc8",
+        "round": 2,
+        "rc": 1,
+        "status": "allowed-only",
+        "failures": [
+          "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent"
+        ],
+        "interrupts": [
+          "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent"
+        ],
+        "filtered_log": "z3-integration-round-2-outcomes.jsonl"
+      },
+      {
+        "counts": {
+          "pass": 1650,
+          "skip": 45
+        },
+        "skip_names": [
+          "TestBlockerAcrossRealHTTPHelperIPCMCP",
+          "TestChangeEvidenceConsoleBrowser",
+          "TestConsolePlatformPayloadDump",
+          "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "TestDeliveryACKActualCLILateWireTerminal",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "TestDesktopMCPRoundTripAcrossRealHub",
+          "TestDeviceClaimAcrossActualClientAndHub",
+          "TestDeviceClaimAcrossActualClientAndPostgres",
+          "TestEnvelopeReadTimeoutEnvironmentChild",
+          "TestFailureNoticeDriverTurnEndToEnd",
+          "TestGroupReplyMCP",
+          "TestHelper0232MixedVersionEndToEnd",
+          "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "TestHostedBodySendAcrossRealHub",
+          "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+          "TestLegacyIngressDefaultCycleLongBusinessKeepsPong",
+          "TestLegacyIngressLimitedWirePongCompetition",
+          "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+          "TestLegacyIngressSmallControlBlockedPhysicalWrite",
+          "TestLegacyIngressSmallControlReadPause",
+          "TestMuxProductHTTP1EightSeats",
+          "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+          "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+          "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+          "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "TestSessionHistoryTwentyAgentPublishP99",
+          "TestSpecMCPEndToEnd"
+        ],
+        "fail_names": [],
+        "source_log_sha256": "ae7e498f283c1386ed5d86cb0a4e73474bb6b67885758d6c2a630107480d2d58",
+        "round": 3,
+        "rc": 0,
+        "status": "green",
+        "failures": [],
+        "interrupts": [],
+        "filtered_log": "z3-integration-round-3-outcomes.jsonl"
+      },
+      {
+        "counts": {
+          "pass": 1650,
+          "skip": 45
+        },
+        "skip_names": [
+          "TestBlockerAcrossRealHTTPHelperIPCMCP",
+          "TestChangeEvidenceConsoleBrowser",
+          "TestConsolePlatformPayloadDump",
+          "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "TestDeliveryACKActualCLILateWireTerminal",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "TestDesktopMCPRoundTripAcrossRealHub",
+          "TestDeviceClaimAcrossActualClientAndHub",
+          "TestDeviceClaimAcrossActualClientAndPostgres",
+          "TestEnvelopeReadTimeoutEnvironmentChild",
+          "TestFailureNoticeDriverTurnEndToEnd",
+          "TestGroupReplyMCP",
+          "TestHelper0232MixedVersionEndToEnd",
+          "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "TestHostedBodySendAcrossRealHub",
+          "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+          "TestLegacyIngressDefaultCycleLongBusinessKeepsPong",
+          "TestLegacyIngressLimitedWirePongCompetition",
+          "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+          "TestLegacyIngressSmallControlBlockedPhysicalWrite",
+          "TestLegacyIngressSmallControlReadPause",
+          "TestMuxProductHTTP1EightSeats",
+          "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+          "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+          "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+          "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "TestSessionHistoryTwentyAgentPublishP99",
+          "TestSpecMCPEndToEnd"
+        ],
+        "fail_names": [],
+        "source_log_sha256": "b8bf47b7e3800640d317abfc3e89da2530c00ff9a2e7f7d664cf6c72897c1288",
+        "round": 4,
+        "rc": 0,
+        "status": "green",
+        "failures": [],
+        "interrupts": [],
+        "filtered_log": "z3-integration-round-4-outcomes.jsonl"
+      },
+      {
+        "counts": {
+          "pass": 1650,
+          "skip": 45
+        },
+        "skip_names": [
+          "TestBlockerAcrossRealHTTPHelperIPCMCP",
+          "TestChangeEvidenceConsoleBrowser",
+          "TestConsolePlatformPayloadDump",
+          "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "TestDeliveryACKActualCLILateWireTerminal",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "TestDesktopMCPRoundTripAcrossRealHub",
+          "TestDeviceClaimAcrossActualClientAndHub",
+          "TestDeviceClaimAcrossActualClientAndPostgres",
+          "TestEnvelopeReadTimeoutEnvironmentChild",
+          "TestFailureNoticeDriverTurnEndToEnd",
+          "TestGroupReplyMCP",
+          "TestHelper0232MixedVersionEndToEnd",
+          "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "TestHostedBodySendAcrossRealHub",
+          "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+          "TestLegacyIngressDefaultCycleLongBusinessKeepsPong",
+          "TestLegacyIngressLimitedWirePongCompetition",
+          "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+          "TestLegacyIngressSmallControlBlockedPhysicalWrite",
+          "TestLegacyIngressSmallControlReadPause",
+          "TestMuxProductHTTP1EightSeats",
+          "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+          "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+          "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+          "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "TestSessionHistoryTwentyAgentPublishP99",
+          "TestSpecMCPEndToEnd"
+        ],
+        "fail_names": [],
+        "source_log_sha256": "b72763bddf1906d238d50e70e4d8099f791c1608998ee8dbef9f940381422ea8",
+        "round": 5,
+        "rc": 0,
+        "status": "green",
+        "failures": [],
+        "interrupts": [],
+        "filtered_log": "z3-integration-round-5-outcomes.jsonl"
+      }
+    ],
+    "baseline_e07": [
+      {
+        "counts": {
+          "pass": 1647,
+          "skip": 45,
+          "fail": 1
+        },
+        "skip_names": [
+          "TestBlockerAcrossRealHTTPHelperIPCMCP",
+          "TestChangeEvidenceConsoleBrowser",
+          "TestConsolePlatformPayloadDump",
+          "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "TestDeliveryACKActualCLILateWireTerminal",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "TestDesktopMCPRoundTripAcrossRealHub",
+          "TestDeviceClaimAcrossActualClientAndHub",
+          "TestDeviceClaimAcrossActualClientAndPostgres",
+          "TestEnvelopeReadTimeoutEnvironmentChild",
+          "TestFailureNoticeDriverTurnEndToEnd",
+          "TestGroupReplyMCP",
+          "TestHelper0232MixedVersionEndToEnd",
+          "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "TestHostedBodySendAcrossRealHub",
+          "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+          "TestLegacyIngressDefaultCycleLongBusinessKeepsPong",
+          "TestLegacyIngressLimitedWirePongCompetition",
+          "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+          "TestLegacyIngressSmallControlBlockedPhysicalWrite",
+          "TestLegacyIngressSmallControlReadPause",
+          "TestMuxProductHTTP1EightSeats",
+          "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+          "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+          "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+          "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "TestSessionHistoryTwentyAgentPublishP99",
+          "TestSpecMCPEndToEnd"
+        ],
+        "fail_names": [
+          "TestSessionNameReconnectKeepsNameAndReleaseReuses"
+        ],
+        "source_log_sha256": "e08f24dd8bfd6989fc246dbd624e89254dafcdd8feb9ecaf5b21576a408104a5",
+        "round": 1,
+        "rc": 1,
+        "status": "allowed-only",
+        "failures": [
+          "TestSessionNameReconnectKeepsNameAndReleaseReuses"
+        ],
+        "interrupts": [
+          "TestSessionNameReconnectKeepsNameAndReleaseReuses"
+        ],
+        "filtered_log": "z3-e07-round-1-outcomes.jsonl"
+      },
+      {
+        "counts": {
+          "pass": 1648,
+          "skip": 45
+        },
+        "skip_names": [
+          "TestBlockerAcrossRealHTTPHelperIPCMCP",
+          "TestChangeEvidenceConsoleBrowser",
+          "TestConsolePlatformPayloadDump",
+          "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "TestDeliveryACKActualCLILateWireTerminal",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "TestDesktopMCPRoundTripAcrossRealHub",
+          "TestDeviceClaimAcrossActualClientAndHub",
+          "TestDeviceClaimAcrossActualClientAndPostgres",
+          "TestEnvelopeReadTimeoutEnvironmentChild",
+          "TestFailureNoticeDriverTurnEndToEnd",
+          "TestGroupReplyMCP",
+          "TestHelper0232MixedVersionEndToEnd",
+          "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "TestHostedBodySendAcrossRealHub",
+          "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+          "TestLegacyIngressDefaultCycleLongBusinessKeepsPong",
+          "TestLegacyIngressLimitedWirePongCompetition",
+          "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+          "TestLegacyIngressSmallControlBlockedPhysicalWrite",
+          "TestLegacyIngressSmallControlReadPause",
+          "TestMuxProductHTTP1EightSeats",
+          "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+          "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+          "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+          "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "TestSessionHistoryTwentyAgentPublishP99",
+          "TestSpecMCPEndToEnd"
+        ],
+        "fail_names": [],
+        "source_log_sha256": "fd966311704d495b0003523efcbb04c03ff048de956f060f3e38e9bd2d115b5e",
+        "round": 2,
+        "rc": 0,
+        "status": "green",
+        "failures": [],
+        "interrupts": [],
+        "filtered_log": "z3-e07-round-2-outcomes.jsonl"
+      },
+      {
+        "counts": {
+          "pass": 1648,
+          "skip": 45
+        },
+        "skip_names": [
+          "TestBlockerAcrossRealHTTPHelperIPCMCP",
+          "TestChangeEvidenceConsoleBrowser",
+          "TestConsolePlatformPayloadDump",
+          "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "TestDeliveryACKActualCLILateWireTerminal",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "TestDesktopMCPRoundTripAcrossRealHub",
+          "TestDeviceClaimAcrossActualClientAndHub",
+          "TestDeviceClaimAcrossActualClientAndPostgres",
+          "TestEnvelopeReadTimeoutEnvironmentChild",
+          "TestFailureNoticeDriverTurnEndToEnd",
+          "TestGroupReplyMCP",
+          "TestHelper0232MixedVersionEndToEnd",
+          "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "TestHostedBodySendAcrossRealHub",
+          "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+          "TestLegacyIngressDefaultCycleLongBusinessKeepsPong",
+          "TestLegacyIngressLimitedWirePongCompetition",
+          "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+          "TestLegacyIngressSmallControlBlockedPhysicalWrite",
+          "TestLegacyIngressSmallControlReadPause",
+          "TestMuxProductHTTP1EightSeats",
+          "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+          "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+          "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+          "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "TestSessionHistoryTwentyAgentPublishP99",
+          "TestSpecMCPEndToEnd"
+        ],
+        "fail_names": [],
+        "source_log_sha256": "e2d0b82139db9d94098316d4f5980765a06de3bfd93743f341606538ce4f47a5",
+        "round": 3,
+        "rc": 0,
+        "status": "green",
+        "failures": [],
+        "interrupts": [],
+        "filtered_log": "z3-e07-round-3-outcomes.jsonl"
+      },
+      {
+        "counts": {
+          "pass": 1648,
+          "skip": 45
+        },
+        "skip_names": [
+          "TestBlockerAcrossRealHTTPHelperIPCMCP",
+          "TestChangeEvidenceConsoleBrowser",
+          "TestConsolePlatformPayloadDump",
+          "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "TestDeliveryACKActualCLILateWireTerminal",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "TestDesktopMCPRoundTripAcrossRealHub",
+          "TestDeviceClaimAcrossActualClientAndHub",
+          "TestDeviceClaimAcrossActualClientAndPostgres",
+          "TestEnvelopeReadTimeoutEnvironmentChild",
+          "TestFailureNoticeDriverTurnEndToEnd",
+          "TestGroupReplyMCP",
+          "TestHelper0232MixedVersionEndToEnd",
+          "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "TestHostedBodySendAcrossRealHub",
+          "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+          "TestLegacyIngressDefaultCycleLongBusinessKeepsPong",
+          "TestLegacyIngressLimitedWirePongCompetition",
+          "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+          "TestLegacyIngressSmallControlBlockedPhysicalWrite",
+          "TestLegacyIngressSmallControlReadPause",
+          "TestMuxProductHTTP1EightSeats",
+          "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+          "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+          "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+          "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "TestSessionHistoryTwentyAgentPublishP99",
+          "TestSpecMCPEndToEnd"
+        ],
+        "fail_names": [],
+        "source_log_sha256": "2af0d8018517c7dff1105480c4e167179152e65eda94ab49fdde1cf958276c2d",
+        "round": 4,
+        "rc": 0,
+        "status": "green",
+        "failures": [],
+        "interrupts": [],
+        "filtered_log": "z3-e07-round-4-outcomes.jsonl"
+      },
+      {
+        "counts": {
+          "pass": 1648,
+          "skip": 45
+        },
+        "skip_names": [
+          "TestBlockerAcrossRealHTTPHelperIPCMCP",
+          "TestChangeEvidenceConsoleBrowser",
+          "TestConsolePlatformPayloadDump",
+          "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "TestDeliveryACKActualCLILateWireTerminal",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "TestDesktopMCPRoundTripAcrossRealHub",
+          "TestDeviceClaimAcrossActualClientAndHub",
+          "TestDeviceClaimAcrossActualClientAndPostgres",
+          "TestEnvelopeReadTimeoutEnvironmentChild",
+          "TestFailureNoticeDriverTurnEndToEnd",
+          "TestGroupReplyMCP",
+          "TestHelper0232MixedVersionEndToEnd",
+          "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "TestHostedBodySendAcrossRealHub",
+          "TestHostedBodySendSameRequestIDAcrossCLIProcesses",
+          "TestLegacyIngressBurstKeepsFIFOAndCommittedACK",
+          "TestLegacyIngressDefaultCycleLongBusinessKeepsPong",
+          "TestLegacyIngressLimitedWirePongCompetition",
+          "TestLegacyIngressReadPauseResumesWithoutDisconnect",
+          "TestLegacyIngressSmallControlBlockedPhysicalWrite",
+          "TestLegacyIngressSmallControlReadPause",
+          "TestMuxProductHTTP1EightSeats",
+          "TestPilotQuestionAcrossRealHTTPHelperIPCMCP",
+          "TestPilotTemplateAcrossRealHTTPHelperIPCMCP",
+          "TestProjectContextAcrossRealHTTPHelperIPCMCP",
+          "TestR60OutboundControlBackpressureRecoversWithSendStatus",
+          "TestSessionHistoryTwentyAgentPublishP99",
+          "TestSpecMCPEndToEnd"
+        ],
+        "fail_names": [],
+        "source_log_sha256": "b1216c428629392493eeffc557f2f83fdc6ee42e29f8390412807627ff979df0",
+        "round": 5,
+        "rc": 0,
+        "status": "green",
+        "failures": [],
+        "interrupts": [],
+        "filtered_log": "z3-e07-round-5-outcomes.jsonl"
+      }
+    ]
+  },
+  "z3_focused_25": {
+    "integration": {
+      "counts": {
+        "pass": 70,
+        "fail": 5
+      },
+      "fail_names": [
+        "TestSessionNameReconnectKeepsNameAndReleaseReuses",
+        "TestSessionNameReconnectKeepsNameAndReleaseReuses",
+        "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+        "TestSessionNameReconnectKeepsNameAndReleaseReuses",
+        "TestSessionNameReconnectKeepsNameAndReleaseReuses"
+      ],
+      "interrupt_tests": [
+        "TestSessionNameReconnectKeepsNameAndReleaseReuses",
+        "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent"
+      ],
+      "source_log_sha256": "153356151d5be33841a560f28ad64059321e1e4fbcba28cd8ae6c7fe08819a12",
+      "filtered_log": "z3-focused-integration-outcomes.jsonl",
+      "interrupt_counts": {
+        "TestSessionNameReconnectKeepsNameAndReleaseReuses": 4,
+        "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent": 1
+      }
+    },
+    "baseline_e07": {
+      "counts": {
+        "pass": 72,
+        "fail": 3
+      },
+      "fail_names": [
+        "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+        "TestSessionNameReconnectKeepsNameAndReleaseReuses",
+        "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent"
+      ],
+      "interrupt_tests": [
+        "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+        "TestSessionNameReconnectKeepsNameAndReleaseReuses"
+      ],
+      "source_log_sha256": "7090a009acb0ce7d10628ea70a71fd6ebf2ad2dc659c61bd66c7424d8a82edc2",
+      "filtered_log": "z3-focused-baseline_e07-outcomes.jsonl",
+      "interrupt_counts": {
+        "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent": 2,
+        "TestSessionNameReconnectKeepsNameAndReleaseReuses": 1
+      }
+    }
+  },
+  "r15_same_cell": {
+    "e07": [
+      {
+        "run": "e07-pagination-1",
+        "rc": 0,
+        "output": "PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=-0.25 post_live_anchor_delta_px=-0.25 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true"
+      },
+      {
+        "run": "e07-pagination-2",
+        "rc": 0,
+        "output": "PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=-0.25 post_live_anchor_delta_px=-0.25 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true"
+      },
+      {
+        "run": "e07-pagination-3",
+        "rc": 0,
+        "output": "PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=-0.25 post_live_anchor_delta_px=-0.25 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true"
+      },
+      {
+        "run": "e07-pagination-4",
+        "rc": 0,
+        "output": "PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=-0.25 post_live_anchor_delta_px=-0.25 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true"
+      },
+      {
+        "run": "e07-pagination-5",
+        "rc": 0,
+        "output": "PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=-0.25 post_live_anchor_delta_px=-0.25 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true"
+      },
+      {
+        "run": "e07-mutations",
+        "rc": 0,
+        "output": "PASS mutant=drop_history_node_move rc=2 red_at=\"timeline order invalid:\"\nPASS mutant=drop_scroll_anchor_correction rc=2 red_at=\"scroll anchor shifted\"\nPASS mutant=restore_live_eviction_during_paged_history rc=2 red_at=\"post-live history prefix was evicted:\""
+      }
+    ],
+    "integration": [
+      {
+        "run": "integration-pagination-1",
+        "rc": 0,
+        "output": "PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=-0.25 post_live_anchor_delta_px=-0.25 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true"
+      },
+      {
+        "run": "integration-pagination-2",
+        "rc": 0,
+        "output": "PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=-0.25 post_live_anchor_delta_px=-0.25 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true"
+      },
+      {
+        "run": "integration-pagination-3",
+        "rc": 0,
+        "output": "PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=-0.25 post_live_anchor_delta_px=-0.25 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true"
+      },
+      {
+        "run": "integration-pagination-4",
+        "rc": 0,
+        "output": "PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=-0.25 post_live_anchor_delta_px=-0.25 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true"
+      },
+      {
+        "run": "integration-pagination-5",
+        "rc": 0,
+        "output": "PASS channel=bundled-chromium latest=100 older=100 live=1 live_after_page=true cursor_exclusive=true anchor_delta_px=-0.25 post_live_anchor_delta_px=-0.25 history_pair_cards=1 feature_disabled_gap=true errors=503,401,404,500 live_unblocked=true"
+      },
+      {
+        "run": "integration-mutations",
+        "rc": 0,
+        "output": "PASS mutant=drop_history_node_move rc=2 red_at=\"timeline order invalid:\"\nPASS mutant=drop_scroll_anchor_correction rc=2 red_at=\"scroll anchor shifted\"\nPASS mutant=restore_live_eviction_during_paged_history rc=2 red_at=\"post-live history prefix was evicted:\""
+      }
+    ]
+  },
+  "build": {
+    "rc": 0,
+    "summary": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2; HELPER_INVENTORY_OK files=97",
+    "source_commit": "84d56286229ae24f63f4ec016c87a292caba6b3f",
+    "source_log_sha256": "fe69942dd8b3c7cd56a88f4815c17eadc331217aaf5ea8d4a848381bd11de555"
+  },
+  "openspec": {
+    "rc": 0,
+    "totals": "50 passed, 0 failed (50 items)",
+    "source_log_sha256": "283f3d6f36f3ad14ccc1f0ea1137869250b2a1b4312079ee735f1232635b121f"
+  },
+  "browser": {
+    "rc": 0,
+    "suite_count": 54,
+    "aggregate_rc": 0,
+    "receipt": "browser-full-runner-receipt.txt",
+    "receipt_sha256": "850e063fd7dfa0e4a3541af144f55cbb780f906b39df9302bc01ccb2d165f6a9"
+  },
+  "mobile_mutation_whitelist": {
+    "restore-slimmed-entries": {
+      "rc": 1,
+      "red_assertions": [
+        "renders no platform entry without an observable action",
+        "slim menu is exactly two entries for management"
+      ]
+    },
+    "silent-group-action-feedback": {
+      "rc": 1,
+      "red_assertions": [
+        "shows group load and network action failures beside their controls",
+        "group name: malformed names are explained locally in the shared sentence; invisible characters are stripped; a JSON error shows its message"
+      ],
+      "note": "The browser script also reported a separate zero-group workflow timeout in this mutation run; the relevant feedback assertion was red."
+    }
+  }
+}
