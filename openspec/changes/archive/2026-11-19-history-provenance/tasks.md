@@ -18,7 +18,7 @@
 - [x] T-11 真实WS入站、DB/HTTP/SSE、历史刷新DOM正负格及同名替换：同源 `internal/m8/history_provenance_test.go` 与 `view-service/history-provenance-browser-regression.js`。
 - [x] T-12 SOURCE_COMMIT构建门、store/m8三遍、PG strict、focused race、浏览器全量、strict与逐名SKIP：`9a145fd138c7d15bf1ec027b773b960919e69056:docs/reviews/r61-n3-history-provenance/evidence/gates.json`，同提交 `evidence/SKIPS.json` 与原始日志gzip均可直接核。
 - [x] T-13 删保护40刀均业务断言红、还原基线rc0：`9a145fd138c7d15bf1ec027b773b960919e69056:docs/reviews/r61-n3-history-provenance/evidence/mutations/summary.json`；4KiB单契约含两处冗余校验的联合cut，不冒称两刀独立转红。
-- [ ] T-14 qwen38mvb4独立复核与组长集成裁定（组长07:50Z已改派，旧togpt派审撤回）；作者交件不替代此项。
+- [x] T-14 qwen38mvb4独立复核与组长集成裁定（组长07:50Z已改派，旧togpt派审撤回）；作者交件不替代此项。（结项勾：qwen38mvb4 独立复核 PASS 621df13e，冻结 9313197f；组长集成裁定＝第三段终审冻结 d6e56a8b，2026-11-18T16:27:29Z） 凭据见 docs/reviews/r61-closeout/RECEIPTS.md。
 
 ## 交接记录
 

@@ -3,7 +3,7 @@
 - [x] T-01 七项逐次核远端全值，按序no-ff合入；见合并源38b9538dd2b1f1783aee6d7890ea03b83e33184e及first-parent七提交。
 - [x] T-02 核两处复活、silent反馈与429白名单，VERSION不变；见evidence/structure.json。
 - [x] T-03 固定合并源完成canonical、Go三遍、浏览器全量、strict与逐名SKIP；不可变证据 `a0bec74e5f356258e2a6f5092fe7862246dd07c5:docs/reviews/r61-integration-stage1/evidence/gates.json`；同提交 `merges.json`、`SKIPS.json`、原日志gzip与codex-guide-verdict均可git cat-file核验。
-- [ ] T-04 组长/独立复核与后续三项冻结集成，作者门不替代此项。
+- [x] T-04 组长/独立复核与后续三项冻结集成，作者门不替代此项。（结项勾：第四段并 N-1c 1362f08f、第五段并 AUTH-FIRST 584eb119，终锚产品 4a349ee5／文档 0bc90cec；组长 2026-11-19T07:24:21Z 核 merge-tree 0ae99272 可重算、测试单独提交、版本位三处；现网 SWITCH_PASS 2026-11-19T10:01:37Z） 凭据见 docs/reviews/r61-closeout/RECEIPTS.md。
 
 - [x] T-05 第二段只合入冻结N-1b，合前核ls-remote与ed7259fa..tip文档边界；merge源cd01d67a2c126c850b1229fc486ee30cb1ddd3e8，父0ab43c63＋b81737d0，无冲突。证据 `fcfd0ec38a51621fff25ad1f3d7b5d7269f6301b:docs/reviews/r61-integration-stage2/evidence/merge.json`。
 - [x] T-06 第二段固定源canonical、PG strict三遍、focused race、浏览器47/47、strict与三向真实进程协议兼容；初始m8三遍rc1仅已知Z-3，固定五轮4/5全绿、第五轮仅同名单内中断，按7e622c94d104合格，非初始全绿。证据 `fcfd0ec38a51621fff25ad1f3d7b5d7269f6301b:docs/reviews/r61-integration-stage2/evidence/gates.json`、同锚z3-qualification.json、compat-results.json、postgres-evidence.json与raw-logs.json；逐名SKIP见SKIPS.json。等待组长复核，不自签收。
