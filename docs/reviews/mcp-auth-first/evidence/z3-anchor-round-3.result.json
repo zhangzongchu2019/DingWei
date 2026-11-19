@@ -1,0 +1,12 @@
+{
+  "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+  "round": 3,
+  "rc": 0,
+  "start_utc": "2026-11-19T05:27:30.811845+00:00",
+  "end_utc": "2026-11-19T05:33:01.769849+00:00",
+  "pass_top": 986,
+  "pass_all": 1655,
+  "skip_occurrences": 29,
+  "interrupted_lines": 0,
+  "failures": []
+}

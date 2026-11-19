@@ -1,0 +1,14 @@
+{
+  "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+  "cwd": "/data/ai-dev-data/mcp-auth-first",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-count=1",
+    "-p=1",
+    "-timeout=60m",
+    "-v"
+  ],
+  "env_file": "env-anchor-go.json"
+}

@@ -42,6 +42,6 @@ internal/feishulogin/connect.go 仅去掉手填 target_agent 的具体 placehold
 
 ## A-AUTH-02 保留私有提示与既有06选择优先级
 
-自查反例在907源确认：显式私有2026头配标准initialize提议时，standardInitialize可盖过privateHint而200。这不是可交付行为，已在新锚修正：先精确保留原06选择两式（显式06头；无版本头且initialize提议06），其它请求若带2026头／Mcp-Method／私有_meta协议键则交原私有codec严格拒绝；无私有提示才让标准codec协商未知版本。新增两格保护三版本混合封套与无头06旧优先级，未认证始终在分流之前401。删此私有提示保护须PRIVATE_INITIALIZE_GUARD业务红。907原七刀虽绿但未覆盖本支，旧反例与停门日志保留，最终八刀及完整门以修后源为准。
+自查反例在907源确认：显式私有2026头配标准initialize提议时，standardInitialize可盖过privateHint而200。这不是可交付行为，已在新锚修正：先精确保留原06选择两式（显式06头；无版本头且initialize提议06），其它请求若带2026头／Mcp-Method／私有_meta协议键则交原私有codec严格拒绝；无私有提示才让标准codec协商未知版本。新增两格保护三版本混合封套与无头06旧优先级，未认证始终在分流之前401。删此私有提示保护须PRIVATE_INITIALIZE_GUARD业务红。907原七刀虽绿但未覆盖本支，旧反例与停门日志保留，该阶段计划的八刀只作历史记录；补齐存在性矩阵后，最终十二刀及完整门以ce9冻结源的交件为准。
 
 A-AUTH-02提示判定补齐：保留原06选择优先后，已知Mcp-Method／Mcp-Name按字段存在而非非空值识别，因此空头和重复头仍走原私有严格路径；params._meta中任一私有metaPrefix键也识别为私有提示，普通progressToken及其他命名空间不误判。矩阵覆盖8类提示、03/11、鉴权有无，以及两种既有06选择。359反例原输出保留；新增各分支删保护与兼容选择刀，固定最终源重新全门，不累加中间刀数。

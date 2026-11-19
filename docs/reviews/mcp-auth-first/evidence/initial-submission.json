@@ -1,0 +1,12 @@
+{
+  "utc": "2026-11-19T05:16:55.509783+00:00",
+  "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+  "tip": "623fcf4c82a7a22ce3de06135b9fa4ef3cc7bcaf",
+  "tree": "c914332a183f7485baae7fc71567ddca4cdbdc08",
+  "ls_remote": "623fcf4c82a7a22ce3de06135b9fa4ef3cc7bcaf\trefs/heads/coder56solzzc/mcp-auth-first",
+  "status": "CODE_FIXED_REVIEW_PARALLEL_Z3_PENDING_NOT_FULL_PASS",
+  "leader_order": "dw-dlv_cf483dd48674721660f5914d23219927",
+  "leader_receipt": "dw-dlv_cb1e48cb1ce3c02bf208327188c4abad",
+  "review_request_receipt": "dw-dlv_6d97204a965ec3c863e77fa9a472a86b",
+  "no_product_edits_after_push": true
+}

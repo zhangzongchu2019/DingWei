@@ -1,0 +1,7 @@
+{
+  "utc": "2026-11-19T05:14:57.179556+00:00",
+  "pid": 2761813,
+  "reason": "leader required initial docs push before full gate; waiting runner HEAD equality replaced with ancestor plus docs-only diff guard",
+  "rounds_started_before_restart": 0,
+  "no_test_process_stopped": true
+}

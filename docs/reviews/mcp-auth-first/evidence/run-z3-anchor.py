@@ -22,7 +22,8 @@ while not (A/'go-count3-anchor.result.json').exists():time.sleep(2)
 initial=json.loads((A/'go-count3-anchor.result.json').read_text())
 f=failures((A/'go-count3-anchor.log').read_text(errors='replace'))
 assert initial['source']==S and initial['rc']!=0 and f and all(x['allowed'] for x in f),(initial,f)
-assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=W).decode().strip()==S
+assert subprocess.run(['git','merge-base','--is-ancestor',S,'HEAD'],cwd=W).returncode==0
+assert all(x.startswith(('docs/','openspec/')) for x in subprocess.check_output(['git','diff','--name-only',S,'HEAD'],cwd=W).decode().splitlines())
 summary={'source':S,'policy':'leader Z3: fresh serial five; >=3 fully green; every other failure must be interrupted(9) at the three explicitly allowed sites','allowed':allowed,'initial_rc':initial['rc'],'initial_failures':f,'rounds':[],'state':'RUNNING'}
 (A/'z3-anchor-summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n')
 for n in range(1,6):

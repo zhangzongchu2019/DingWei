@@ -1,5 +1,3 @@
-> 初交审快照：遵组长2026-11-19T05:10:12Z令先推固定产品／测试ce9b7a95。canonical、strict、12刀与还原基线已完成；m8三遍出现已知N4，Z3全新五轮仍待完成。**不记全门PASS。** 复核与五轮并行，后续仅追加文档。
-
 # S-MCP-AUTH-FIRST 实现交件
 
 ## 对象与状态
@@ -70,9 +68,36 @@ gateway.go的/mcp改为直接注册mcp鉴权入口。该入口先设置no-store�
 
 ## 作者门
 
-普通uid1001、Go1.22.2、锁定Python3.12.3，env白名单、数据盘HOME/TMP，SOURCE_COMMIT钉ce9b7a95；HUB_TEST_PG_STRICT=1，显式DW_DESKTOP_INTEGRATION_PYTHON以实跑跨运行时门。未继承在线SH/DINGWEI凭据，无现网连接。最终读数将在门结束后填写；未完成前不记通过。
+普通uid1001、Go1.22.2、锁定Python3.12.3，env白名单、数据盘HOME/TMP，SOURCE_COMMIT钉ce9b7a95；HUB_TEST_PG_STRICT=1，显式DW_DESKTOP_INTEGRATION_PYTHON以实跑跨运行时门。未继承在线SH/DINGWEI凭据，无现网连接。最终门按既定Z3例外完成，原始三遍并非全绿，见下列独立分项；不把author门当独立复核结论。
 
-ce9原四包三遍中m8出现既有允许名单 TestSessionNameReconnectKeepsNameAndReleaseReuses 的 interrupted(9)，原rc1与全部输出保留，不称全绿。main206同环境独立HOME下同用例count20为18PASS／2FAIL、两条同形中断，rc1；这是基线落点对照，不是候选整包替代，不据短样本推断概率。候选按既定Z3规则另起全新串行五轮整包，五轮每轮原日志单独保存。
+ce9原四包三遍中m8出现既有允许名单 TestSessionNameReconnectKeepsNameAndReleaseReuses 的 interrupted(9)，原rc1与全部输出保留，不称全绿。main206同环境独立HOME下同用例count20为18PASS／2FAIL、两条同形中断，rc1；这是基线落点对照，不是候选整包替代，不据短样本推断概率。候选按既定Z3规则另起全新串行五轮整包，五轮每轮原日志单独保存，终值见表。
+
+## 最终作者门终值（全部绑定ce9）
+
+canonical：两个helper profile各1270，inventory97，`BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`。OpenSpec strict42/0（另有最终文档strict）。Go1.22.2、Python3.12.3、普通uid1001、PG18.3真实子进程证据在anchor-pg-runtime.json；最终两个白名单的PYTHONPATH均指本分支，不沿用早期GROUPS路径。
+
+下表三遍PASS/FAIL/SKIP按各级`---`记录统计；顶层PASS另列，子项不重复冒称独立顶层测试。
+
+| 包（三遍） | 顶层PASS | 含子项PASS | 含子项FAIL | 含子项SKIP | 原始包结果 |
+|---|---:|---:|---:|---:|---|
+| mcpgw | 240 | 1092 | 0 | 18 | `ok  	github.com/zhangzongchu2019/dingwei/internal/mcpgw	345.737s` |
+| extseat | 69 | 162 | 0 | 0 | `ok  	github.com/zhangzongchu2019/dingwei/internal/extseat	60.856s` |
+| feishulogin | 141 | 333 | 0 | 0 | `ok  	github.com/zhangzongchu2019/dingwei/internal/feishulogin	0.034s` |
+| m8 | 2957 | 4964 | 1 | 87 | `FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	961.819s` |
+
+35个唯一SKIP名称／105次出现逐名及条件见SKIPS.md与SKIPS.json；没有将FAIL改SKIP。没有强启浏览器/真实CLI/perf等其它opt-in，未宣称真实Antigravity验收。
+
+按既定Z3允许名单另跑**全新串行五轮**m8，未择优、未沿用上述三遍：
+
+| 新轮次 | rc | 顶层PASS | 含子项PASS | 各级SKIP | interrupted(9)原始行 | FAIL |
+|---|---:|---:|---:|---:|---:|---|
+| 1 | 0 | 986 | 1655 | 29 | 0 | 0 |
+| 2 | 0 | 986 | 1655 | 29 | 0 | 0 |
+| 3 | 0 | 986 | 1655 | 29 | 0 | 0 |
+| 4 | 0 | 986 | 1655 | 29 | 0 | 0 |
+| 5 | 1 | 985 | 1654 | 29 | 1 | TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent |
+
+五轮全绿4/5；其它FAIL仅可为已批准名单的同形interrupted，否则脚本当场停报。每轮command/result/log与UTC在evidence/z3-anchor-round-*，原三遍rc1及main206对照也完整保留。无store改动或名单扩张，不以单跑绿替代整包。此例外只处置继承N4，不说明其已修复。
 
 ## 变异与负对照
 
@@ -143,4 +168,17 @@ curl -q -sS -i --max-time 10 'https://dw123.cmjrt.com/mcp' \
 
 无迁移/持久状态/新开关；若按部署命令换回旧Hub，会恢复旧版本先验阻断OAuth的行为，不会造成新数据库回滚要求。本单不执行换件。外部客户端不能靠回退得到已修的认证挑战；发布路线由组长另定。
 
-完成：代码、回归、十二刀和精确最终测试文件配旧源的负对照。待：完整门终值、push/ls-remote及独立复核。下一步按全门结果归档；R6新锚到即优先复验，不将其错误复验范围混入本片。
+完成：代码、回归、十二刀和精确最终测试文件配旧源的负对照。作者完整门、十二刀与原始失败已归档，产品未改；初交审623fcf4c已push且ls-remote核同，qwen按组长令与五轮并行复核。下一步只追加文档、核最终远端、给qwen与组长补证，等待独立复核／终审；不自并AUTH、不部署。R6已交PASS并已在r61第四段合入，不再重复复验。
+
+## 本件复核命令与证据定位
+
+在仓库根运行：
+
+```sh
+python3 docs/reviews/mcp-auth-first/VERIFY.py
+sha256sum -c docs/reviews/mcp-auth-first/SHA256SUMS
+```
+
+VERIFY只读Git对象、当前产品与证据；核11个产品／测试路径、228份原始件及gzip解压后的原文SHA、最终十二刀与还原基线、精确旧源负对照、canonical与strict原rc、三遍原rc1及新五轮既定Z3判据。RAW-INDEX保留中间资格失败／停止尝试，不把它们拼作最终门。INITIAL-VERIFY仅是05:10令先推阶段的旧入口，不据它判最终门。
+
+最终原始件：evidence/canonical-anchor.log.gz、go-count3-anchor.log.gz、z3-anchor-round-1到5.log.gz、z3-baseline-count20.log.gz、mutations-anchor/summary.json；每件command/result含UTC和固定源，实际PG版本在anchor-pg-runtime.json。35个唯一SKIP见SKIPS.md，全部105次原始出现见SKIPS.json。
