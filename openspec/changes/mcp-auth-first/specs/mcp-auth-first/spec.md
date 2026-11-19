@@ -42,3 +42,10 @@
 #### Scenario: MAF-S007 Cookie和五分钟仍是安全界
 - **WHEN** 原浏览器在5分钟减1ns和恰好5分钟打开链接，或请求不带cookie
 - **THEN** 只有前者成功，其余400；删cookie比较或延长TTL须对应业务断言红
+
+### Requirement: MAF-006 协作目标不提供虚构默认值
+授权页手填目标输入框 MUST 不提供具体 Agent 全名的 placeholder 或示例，首次渲染不预填任何目标；提示 MUST 指引向组长或管理员索取已存在的全名。现有校验与 GROUPS 切片三可选目标语义 MUST NOT 因本项文案修改而改变。
+
+#### Scenario: MAF-S008 初次打开没有具体默认目标
+- **WHEN** 初次打开需要手填目标的授权页
+- **THEN** 目标输入为空、无 placeholder 和具体 Agent 示例，提示为指定文案；恢复 placeholder 必须业务断言红

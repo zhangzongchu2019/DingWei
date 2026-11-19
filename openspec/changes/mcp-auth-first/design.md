@@ -35,3 +35,7 @@
 readAttempt的浏览器cookie哈希比较和五分钟oauthTTL逐字保留。只有connect的readAttempt失败分支调用新的统一展示helper：Accept明确接受text/html时为静态中文HTML、400，解释必须同浏览器且五分钟内从AI工具Authenticate重新发起，不复制URL；不存在/过期/缺cookie/错cookie返回完全相同字节。无attempt/客户端/redirect/原错误反射，不带表单、脚本或自动重试链接，CSP default-src/base-uri/form-action/frame-ancestors均none，no-store/no-referrer/nosniff。非HTML沿用400与原JSON invalid_request；q=0不选择HTML。已鉴权mcp的Origin变化不扩展到connect，connect原Origin守卫不改。
 
 常驻格为三类拒绝（含缺/错cookie）×HTML/JSON、同cookie在5分钟减1ns仍成功、恰好5分钟拒绝、HTML禁用质量保留JSON。删cookie比较必须红“无cookie打开”业务断言；把TTL扩到10分钟须五分钟边界格红。
+
+## 目标输入文案（03:48Z追加）
+
+internal/feishulogin/connect.go 仅去掉手填 target_agent 的具体 placeholder 与示例，保留空初始 value 和既有服务端校验，提示逐字为「填写你要协作的 Agent 全名（向你的组长或管理员索取），系统中必须已存在」。GROUPS 产品 aaed8aae 对同文件只修改 renderConnectPage 中 allowUnpaired／allowReauthentication 自动入口条件，本片改模板两行，未覆盖该函数；后续合并应同时保留可不建临时配对入口及本片文案，不使目标重新必选。回归检查渲染输入无 placeholder／初始值空、提示不含具体全名，恢复旧 placeholder 必须红。
