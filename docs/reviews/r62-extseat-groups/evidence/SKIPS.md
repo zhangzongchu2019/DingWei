@@ -1,0 +1,31 @@
+# 四包三遍 SKIP 条件
+
+- `TestChangeEvidenceConsoleBrowser`：console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration
+- `TestConsolePlatformPayloadDump`：console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)
+- `TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel`：console_task_board_page_test.go:122：K13数据模型尚未实现。
+- `TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread`：delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist`：delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread`：delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist`：delivery_ack_real_cli_e2e_linux_test.go：需要显式DW_ACK_V2_E2E_PYTHON（同族源码Skip条件；父子并发日志未在邻近四行重复打印，未臆造新的原因）
+- `TestDeliveryACKActualCLICancelAtomicBoundary/claude`：delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLICancelAtomicBoundary/codex`：delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLILateWireTerminal`：delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude`：delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex`：delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude`：delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit`：delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex`：delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected`：delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm`：delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected`：delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+- `TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm`：delivery_ack_real_cli_e2e_linux_test.go：需要显式DW_ACK_V2_E2E_PYTHON（同族源码Skip条件；父子并发日志未在邻近四行重复打印，未臆造新的原因）
+- `TestEnvelopeReadTimeoutEnvironmentChild`：hub_timeout_contract_test.go:50: subprocess probe only
+- `TestFailureNoticeDriverTurnEndToEnd`：failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime
+- `TestGroupReplyMCP`：group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON
+- `TestHelper0232MixedVersionEndToEnd`：helper_update_e2e_test.go:55: explicit immutable release pins required
+- `TestHelperSelfUpdateEndToEnd/install_restart_confirm`：helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python
+- `TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason`：helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python
+- `TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory`：helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python
+- `TestMuxProductHTTP1EightSeats`：console_mux_product_test.go:34：需MUX_PUPPETEER实际Chrome专用门。
+- `TestSessionHistoryTwentyAgentPublishP99`：session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate
+- `TestSpecMCPEndToEnd`：spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses

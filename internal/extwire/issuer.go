@@ -30,11 +30,32 @@ func (a Issuer) IssueToken(ctx context.Context, req feishulogin.IssueRequest) (f
 	if a.Seats == nil || a.Resource == "" {
 		return feishulogin.IssuedToken{}, extshared.ErrNotPermitted
 	}
-	raw, seat, group, err := a.Seats.IssueToken(ctx, req.Principal, req.ShortName, req.TargetAgent)
+	var raw, group string
+	var seat extseat.Seat
+	var err error
+	if req.ExistingSeatID != "" {
+		issuer, ok := a.Seats.(interface {
+			Reauthenticate(context.Context, extshared.Principal, string) (string, extseat.Seat, string, error)
+		})
+		if !ok || req.TargetAgent != "" || req.WithoutPair {
+			return feishulogin.IssuedToken{}, extshared.ErrNotPermitted
+		}
+		raw, seat, group, err = issuer.Reauthenticate(ctx, req.Principal, req.ExistingSeatID)
+	} else if req.WithoutPair {
+		issuer, ok := a.Seats.(interface {
+			IssueTokenWithoutPair(context.Context, extshared.Principal, string) (string, extseat.Seat, string, error)
+		})
+		if !ok || req.TargetAgent != "" {
+			return feishulogin.IssuedToken{}, extshared.ErrNotPermitted
+		}
+		raw, seat, group, err = issuer.IssueTokenWithoutPair(ctx, req.Principal, req.ShortName)
+	} else {
+		raw, seat, group, err = a.Seats.IssueToken(ctx, req.Principal, req.ShortName, req.TargetAgent)
+	}
 	if err != nil {
 		return feishulogin.IssuedToken{}, err
 	}
-	if raw == "" || seat.ID == "" || group == "" {
+	if (req.ExistingSeatID != "" && seat.ID != req.ExistingSeatID) || raw == "" || seat.ID == "" || (!req.WithoutPair && req.ExistingSeatID == "" && group == "") || (req.WithoutPair && group != "") {
 		return feishulogin.IssuedToken{}, errors.New("extwire: incomplete issue result from extseat")
 	}
 	return feishulogin.IssuedToken{
@@ -46,4 +67,13 @@ func (a Issuer) IssueToken(ctx context.Context, req feishulogin.IssueRequest) (f
 		Audience:              a.Resource,
 		Scopes:                append([]string(nil), extshared.MVPScopes[:]...),
 	}, nil
+}
+
+func (a Issuer) ExistingSeats(ctx context.Context, p extshared.Principal) ([]extshared.SeatChoice, error) {
+	if provider, ok := a.Seats.(interface {
+		ExistingSeats(context.Context, extshared.Principal) ([]extshared.SeatChoice, error)
+	}); ok {
+		return provider.ExistingSeats(ctx, p)
+	}
+	return nil, nil
 }

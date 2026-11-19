@@ -1,0 +1,21 @@
+{
+  "utc": "2026-11-19T02:09:07.482863+00:00",
+  "reason": "source93 qualification invalidated by completion of approved same-identity reauthentication; final gates will run on next clean candidate",
+  "stopped_own_descendants": [
+    {
+      "pid": 2459368,
+      "command_basename": "python3",
+      "cwd": "/data/ai-dev-data/r62-extseat-groups/internal/m8"
+    },
+    {
+      "pid": 2454869,
+      "command_basename": "m8.test",
+      "cwd": "/data/ai-dev-data/r62-extseat-groups/internal/m8"
+    },
+    {
+      "pid": 2424055,
+      "command_basename": "go",
+      "cwd": "/data/ai-dev-data/r62-extseat-groups"
+    }
+  ]
+}

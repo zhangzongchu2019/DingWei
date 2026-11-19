@@ -1,0 +1,11 @@
+{
+  "cwd": "/data/ai-dev-data/r62-extseat-groups",
+  "source": "aaed8aaee6630e2683096c977a058da653fee7e2",
+  "command": [
+    "python3",
+    "tools/run-browser-regressions.py",
+    "--receipt",
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r62-extseat-groups-20261119/browser-aaed8aaee.receipt.txt"
+  ],
+  "env_file": "env-aaed8aaee.json"
+}

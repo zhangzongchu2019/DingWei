@@ -98,6 +98,22 @@ func ParseAGCode(s string) (int64, bool) {
 }
 
 var shortNameRE = regexp.MustCompile(`^[a-z0-9]{1,20}$`)
+var unpairedNameRE = regexp.MustCompile(`^[a-z0-9]{1,20}_EX[a-f0-9]{32}$`)
+
+// UnpairedAgentName 不含组语义，组关系变化不能更改这个稳定地址。
+func UnpairedAgentName(short, stableID string) (string, error) {
+	name := short + "_EX" + strings.TrimPrefix(stableID, "ex_")
+	if !unpairedNameRE.MatchString(name) {
+		return "", errors.New("extshared: invalid unpaired external identity")
+	}
+	return name, nil
+}
+
+func IsExternalAgentName(name string) bool {
+	name = strings.Replace(strings.Replace(strings.ToLower(name), "_ag", "_AG", 1), "_ex", "_EX", 1)
+	_, _, paired := SplitAgentName(name)
+	return paired || unpairedNameRE.MatchString(name)
+}
 
 // ValidShortName 使用方自起的短名：仅小写字母与数字，1～20 位（㊿-补29；普通名称规则不变）。
 func ValidShortName(s string) bool { return shortNameRE.MatchString(s) }

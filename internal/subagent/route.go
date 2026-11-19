@@ -36,7 +36,7 @@ func Parse(name, owner string) (Route, error) {
 	// Preserve historical external roots only for two-part principal addresses.
 	validRoot := validName(root)
 	if len(parts) == 2 {
-		_, _, external := extshared.SplitAgentName(root)
+		external := extshared.IsExternalAgentName(root)
 		validRoot = validRoot || external
 	}
 	if !validRoot {

@@ -1,0 +1,9 @@
+{
+  "source": "ec17a8b5392edf71080e01242bb8b8fe94d52b13",
+  "command": [
+    "python3",
+    "tools/run-browser-regressions.py",
+    "--receipt",
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r62-extseat-groups-20261119/browser-first.receipt.json"
+  ]
+}

@@ -57,6 +57,18 @@ func (g *Gateway) call(ctx context.Context, seat extseat.Seat, name string, raw 
 	if !knownTool(name) {
 		return nil, errMethod
 	}
+	var fields map[string]json.RawMessage
+	if e := json.Unmarshal(raw, &fields); e == nil {
+		if data, ok := fields["routing"]; ok {
+			var choice extshared.Routing
+			if e := parseArgs(data, &choice); e != nil || !choice.Valid() || choice.Mode == "" {
+				return nil, errParams
+			}
+			ctx = extshared.WithRouting(ctx, choice)
+			delete(fields, "routing")
+			raw, _ = json.Marshal(fields)
+		}
+	}
 	switch name {
 	case "list", "list_online":
 		if e := parseArgs(raw, &struct{}{}); e != nil {
@@ -225,6 +237,7 @@ func toolDefinitions(maxWait ...time.Duration) []any {
 	}
 	stringProp := func() any { return map[string]any{"type": "string"} }
 	schema := func(props map[string]any, required ...string) any {
+		props["routing"] = map[string]any{"description": "普通组或无 AG 席使用 mode=direct；group 须给 kind/ref；未传仍仅原临时 AG，显式组失效不换组。", "type": "object", "properties": map[string]any{"mode": map[string]any{"type": "string", "enum": []string{"direct", "group"}}, "kind": map[string]any{"type": "string", "enum": []string{"ordinary", "temporary"}}, "ref": map[string]any{"type": "string"}}, "required": []string{"mode"}, "additionalProperties": false}
 		if required == nil {
 			required = []string{}
 		}
@@ -234,8 +247,8 @@ func toolDefinitions(maxWait ...time.Duration) []any {
 		return map[string]any{"name": name, "description": description, "inputSchema": s}
 	}
 	old := []any{
-		tool("list_online", "查看本 AG 内在线席位。", schema(map[string]any{})),
-		tool("send_message", "按全名向本AG成员发送；wait_reply_seconds可在本次调用等首条新回信并自动received，缺省0；有等待参数时expect_reply缺省true，显式false尊重；无等待参数时缺省false。超时给recv/check提示，重试沿用client_message_id；受理不等于送达。", schema(map[string]any{"to": stringProp(), "body": stringProp(), "client_message_id": stringProp(), "expect_reply": map[string]any{"type": "boolean"}, "wait_reply_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": cap.Seconds()}}, "to", "body", "client_message_id")),
+		tool("list_online", "查看所选授权范围的在线席位；普通组传 routing.mode=direct，未传仅原 AG。", schema(map[string]any{})),
+		tool("send_message", "按全名向授权成员发送；routing.mode=direct 选择普通组优先，group 显式选择 kind/ref，缺省仅原 AG；wait_reply_seconds可在本次调用等首条新回信并自动received，缺省0；有等待参数时expect_reply缺省true，显式false尊重；无等待参数时缺省false。超时给recv/check提示，重试沿用client_message_id；受理不等于送达。", schema(map[string]any{"to": stringProp(), "body": stringProp(), "client_message_id": stringProp(), "expect_reply": map[string]any{"type": "boolean"}, "wait_reply_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": cap.Seconds()}}, "to", "body", "client_message_id")),
 		tool("wait_for_messages", "领取本人未确认投递；按 delivery_id 与 generation 去重后显式确认。", schema(map[string]any{"wait_seconds": map[string]any{"type": "number", "minimum": 0, "maximum": extshared.WaitMax.Seconds()}})),
 		tool("ack", "确认本人投递已收到，不表示已执行。", schema(map[string]any{"delivery_id": stringProp(), "generation": map[string]any{"type": "integer", "minimum": 1}, "phase": map[string]any{"type": "string", "enum": []string{string(extshared.PhaseReceived)}}}, "delivery_id", "generation", "phase")),
 	}

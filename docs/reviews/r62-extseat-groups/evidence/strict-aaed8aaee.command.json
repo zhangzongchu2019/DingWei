@@ -1,0 +1,11 @@
+{
+  "cwd": "/data/ai-dev-data/r62-extseat-groups",
+  "source": "aaed8aaee6630e2683096c977a058da653fee7e2",
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "env_file": "env-aaed8aaee.json"
+}

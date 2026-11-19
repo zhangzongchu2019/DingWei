@@ -1,0 +1,44 @@
+[
+  {
+    "label": "baseline206",
+    "source": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestSessionNameReconnectKeepsNameAndReleaseReuses$",
+      "-count=200",
+      "-p=1",
+      "-timeout=20m",
+      "-v"
+    ],
+    "start_utc": "2026-11-19T02:50:30.892255+00:00",
+    "end_utc": "2026-11-19T02:51:19.784228+00:00",
+    "rc": 1,
+    "pass": 193,
+    "fail": 7,
+    "interrupted_lines": 7
+  },
+  {
+    "label": "candidate-aaed8aaee",
+    "source": "aaed8aaee6630e2683096c977a058da653fee7e2",
+    "command": [
+      "go",
+      "test",
+      "./internal/m8",
+      "-run",
+      "^TestSessionNameReconnectKeepsNameAndReleaseReuses$",
+      "-count=200",
+      "-p=1",
+      "-timeout=20m",
+      "-v"
+    ],
+    "start_utc": "2026-11-19T02:51:19.787506+00:00",
+    "end_utc": "2026-11-19T02:51:55.935248+00:00",
+    "rc": 1,
+    "pass": 187,
+    "fail": 13,
+    "interrupted_lines": 13
+  }
+]

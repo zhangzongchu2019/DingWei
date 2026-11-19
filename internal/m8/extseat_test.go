@@ -71,6 +71,20 @@ func (s externalIdentityFixture) GetGroup(ctx context.Context, code string) (*id
 	return s.Store.GetGroup(ctx, code)
 }
 
+func (s externalIdentityFixture) ExternalAgentsCanCommunicate(ctx context.Context, source, target, tenant string, at time.Time) (bool, error) {
+	a, e := s.GetAgent(ctx, source)
+	if e != nil {
+		return false, e
+	}
+	b, e := s.GetAgent(ctx, target)
+	if e != nil {
+		return false, e
+	}
+	ac, bc := *a, *b
+	ac.Origin, bc.Origin = identity.OriginSelfhost, identity.OriginSelfhost
+	return identity.NewService(s, func() time.Time { return at }, nil).AgentsCanCommunicate(ctx, &ac, &bc)
+}
+
 type externalCapture struct {
 	source, target, body string
 	online               []extseat.OnlineAgent

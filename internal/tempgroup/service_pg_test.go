@@ -49,7 +49,7 @@ func newFixture(t *testing.T) *fixture {
 	if e != nil {
 		t.Fatal(e)
 	}
-	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(a) + string(policy) + string(copyDDL) + string(d)
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(a) + string(policy) + string(copyDDL) + groupRoutingDDL(t) + string(d)
 	if _, e = p.Exec(ctx, access, ddl); e != nil {
 		t.Fatal(e)
 	}
@@ -62,6 +62,7 @@ func newFixture(t *testing.T) *fixture {
 	f := &fixture{ctx: ctx, p: p, now: now, t: t}
 	f.s = &Service{Pool: p, Access: access, Now: func() time.Time { return f.now }}
 	f.seats = &extseat.Service{Pool: p, Access: access, Identity: identity.NewService(identity.NewPGStore(p), func() time.Time { return f.now }, nil), Groups: f.s, TenantKey: "tenant", Resource: "https://example.invalid/mcp", Now: func() time.Time { return f.now }}
+	f.seats.Identity.CommunicationTenantKey = "tenant"
 	return f
 }
 func (f *fixture) issue(target string) extseat.Seat {
@@ -370,4 +371,13 @@ func TestExternalMemberOwnerMayDissolveWithoutSidebarExemptionPG(t *testing.T) {
 	if e = f.s.Dissolve(f.ctx, a.OwnerLC, a.Group, v.ExpiresAt); e != nil {
 		t.Fatal("external member owner rejected", e)
 	}
+}
+
+func groupRoutingDDL(t *testing.T) string {
+	t.Helper()
+	b, e := os.ReadFile("../store/migrate/migrations/0113_extseat_groups.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
+	return string(b)
 }

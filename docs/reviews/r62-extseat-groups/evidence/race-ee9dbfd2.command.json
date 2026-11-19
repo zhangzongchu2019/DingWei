@@ -1,0 +1,20 @@
+{
+  "cwd": "/data/ai-dev-data/r62-extseat-groups",
+  "source": "ee9dbfd2f1af811befa793ce95f8fe2f224fe92a",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./internal/extseat",
+    "./internal/m8",
+    "-run",
+    "TestExternalGroups|TestExternalSeatSender",
+    "-count=1",
+    "-p",
+    "1",
+    "-timeout",
+    "15m",
+    "-v"
+  ],
+  "env_file": "env-ee9dbfd2.json"
+}

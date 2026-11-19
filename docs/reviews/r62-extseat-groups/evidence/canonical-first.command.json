@@ -1,0 +1,8 @@
+{
+  "cwd": "/data/ai-dev-data/r62-extseat-groups",
+  "command": [
+    "./build.sh",
+    "--test-only"
+  ],
+  "source": "ec17a8b5392edf71080e01242bb8b8fe94d52b13"
+}

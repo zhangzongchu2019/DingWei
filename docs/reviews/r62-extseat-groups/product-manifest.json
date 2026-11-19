@@ -1,0 +1,174 @@
+{
+  "source": "aaed8aaee6630e2683096c977a058da653fee7e2",
+  "tree": "8c8306960d118a172190cedcdd2f07ada79f546b",
+  "files": [
+    {
+      "path": "cmd/workpulse/r53_extseat.go",
+      "sha256": "ac0e72c304b2bfba6cc5c99e0cd6cff3010d051353e70868888e60ab68bb6d97"
+    },
+    {
+      "path": "internal/extseat/core_pg_test.go",
+      "sha256": "8c00e5e69b7d8eaadd487bdec6e44392c3f8400094fd138846d37f5cec9378a2"
+    },
+    {
+      "path": "internal/extseat/group_inbox.go",
+      "sha256": "2c552cd4fddf2b61f871a116f311968f999def49e2233a69a8f2c7b112b72bc6"
+    },
+    {
+      "path": "internal/extseat/group_routing.go",
+      "sha256": "33e86f9b8ea6be58cabd6fa307b08414672f116a1b9751eb3936d832db701f5a"
+    },
+    {
+      "path": "internal/extseat/group_routing_pg_test.go",
+      "sha256": "312e509c9e47cce0390ffdfeaa3105201a18f806171441535aa77891acaf8da4"
+    },
+    {
+      "path": "internal/extseat/inbox.go",
+      "sha256": "dcd17ab887012593c1bfaeac0013cfbf43b3b364de7e279e9446ef58660de30b"
+    },
+    {
+      "path": "internal/extseat/inbox_controls.go",
+      "sha256": "d7edfeb69326f63dfc802e009d5d9320a97ff8c26f8f87b34c11f13ea6533acb"
+    },
+    {
+      "path": "internal/extseat/outbox.go",
+      "sha256": "6135caaaa5ac46997a694cf99120a39d55b52e936d9aa580c8055895f4dd07c3"
+    },
+    {
+      "path": "internal/extseat/reauthenticate.go",
+      "sha256": "f2b0161e402ecf3cba892932122005ebe7200b83a8dffac53ba6e09cfebb8c48"
+    },
+    {
+      "path": "internal/extseat/service.go",
+      "sha256": "46ca1d5a28ef75edf4d145cfe49286a355be60fc6bb1b5544c7808b451048a3d"
+    },
+    {
+      "path": "internal/extseat/types.go",
+      "sha256": "28cadda16878baec3dc84877cb526d2244c8292e519bda987795eb926e6bc400"
+    },
+    {
+      "path": "internal/extshared/extshared.go",
+      "sha256": "b98b74e0b6743a50765db57050b433edb3892d8d5f8ae2563aa37380b50e20dc"
+    },
+    {
+      "path": "internal/extshared/extshared_test.go",
+      "sha256": "db95055bb55b1b03c1dbb01e272498b0564271545181f70659baf74ac7948c11"
+    },
+    {
+      "path": "internal/extshared/routing.go",
+      "sha256": "545c3615af187d4244c0e1acfde1dc4daaf250ad91457527667dabe59dc53bf1"
+    },
+    {
+      "path": "internal/extwire/issuer.go",
+      "sha256": "7f4812d972a26cd9fb4f5d16322b6607e1bbaeb4671694b51bd8b0662a155f39"
+    },
+    {
+      "path": "internal/feishulogin/connect.go",
+      "sha256": "d2e220f10c1af986b321813c1dbf42e0a67aedf4854cd1f0739ab37a62216334"
+    },
+    {
+      "path": "internal/feishulogin/defaults.go",
+      "sha256": "82d9702bc34543a255bda6b45804d3083b004141cd4fb4a48ddce729cb4ef416"
+    },
+    {
+      "path": "internal/feishulogin/handler.go",
+      "sha256": "7737308318056debddeb334db6322938b6a0f18f490a9f8cd1678c17050164d1"
+    },
+    {
+      "path": "internal/feishulogin/types.go",
+      "sha256": "43f888aa70cd4ff1bb077f00578d298e88115ebf264a3271cfd9f15ae1e0cf77"
+    },
+    {
+      "path": "internal/feishulogin/unpaired_test.go",
+      "sha256": "ad1374ca29941f90a47dd2e68cc9509868e0c536ad8c7b681ec906968983666b"
+    },
+    {
+      "path": "internal/identity/communication.go",
+      "sha256": "65e4c1abf934e61ba71b7a97f3e2f83f21b014bc6888eb9c093f3f5c20f33114"
+    },
+    {
+      "path": "internal/identity/group.go",
+      "sha256": "b420e0a26cfad4f327b73733e88f2d09faf840396528a29f28c054470814d97b"
+    },
+    {
+      "path": "internal/identity/service.go",
+      "sha256": "15afef8ce1e67e0df0ec92f3e2a72f9c199b93a7b3477396d8b058bae463c1b1"
+    },
+    {
+      "path": "internal/m8/claim_client_integration_test.go",
+      "sha256": "4f783923a0d2fa8c1920be54fd2cff6e9e3faf745a21967bb7ccbfe808c3c437"
+    },
+    {
+      "path": "internal/m8/console_auth.go",
+      "sha256": "8f404c3cd64359a8eb65134de117d4f59a4735d21c27d504f82b06a12080f5af"
+    },
+    {
+      "path": "internal/m8/extseat.go",
+      "sha256": "3a204eb3ce79fd60fef67e38954a737073ac05a473eecd42c312641fa2389b71"
+    },
+    {
+      "path": "internal/m8/extseat_sender_e2e_test.go",
+      "sha256": "ed0b5601990df849163b721256856ae689730a47887d8cc80f507781f9747281"
+    },
+    {
+      "path": "internal/m8/extseat_test.go",
+      "sha256": "a072c04e95775d46c3c1ee3ca359adaaf38f34b14e537c78e9c15a4b505c7b70"
+    },
+    {
+      "path": "internal/m8/newplat_groups.go",
+      "sha256": "8f5699a0815bbd8a8b110340fe8d2a8f340581e95239465d7b6064fc8a28bb16"
+    },
+    {
+      "path": "internal/mcpgw/selection.go",
+      "sha256": "b065990053ff73ea14d7f5d5b83069e582cd94b386e54bdd943bb0d28fac004c"
+    },
+    {
+      "path": "internal/mcpgw/tools.go",
+      "sha256": "b968f9b7efd863297789e55dadecc0d682fce62837599b1f4bbfd90c393f7cb7"
+    },
+    {
+      "path": "internal/store/migrate/consent_test.go",
+      "sha256": "fc49ebaff7f66ef3e2b36324924060af4d1def52c89d37df1c316d9164e24496"
+    },
+    {
+      "path": "internal/store/migrate/domains_test.go",
+      "sha256": "1368a76ffe4e947a1523a09a7adfb5c9437e0e35114fd6ac184d295926e10f83"
+    },
+    {
+      "path": "internal/store/migrate/extseat_groups_test.go",
+      "sha256": "49e08700bc964c4baeb3d84d23fcacff1c29964dfbd35515ad9e63fe757c6e79"
+    },
+    {
+      "path": "internal/store/migrate/ledger_test.go",
+      "sha256": "79f845222e000e0f229b675a8ca66205463d96583ddccfbe6cd6e970b31ff21c"
+    },
+    {
+      "path": "internal/store/migrate/migrate_test.go",
+      "sha256": "e4fb6a6a036f8da8721b7c7912f1e22b1e47f0d44b89034271f5e25915a01afd"
+    },
+    {
+      "path": "internal/store/migrate/migrations/0113_extseat_groups.sql",
+      "sha256": "9f0b3bbd52664cfa7e2db36f7173a95d5c7be9342dacdd6736fe02d98e877e5a"
+    },
+    {
+      "path": "internal/subagent/route.go",
+      "sha256": "eb23507644cab92d01c9240cf8dc80fec4c0a24753db0794382d6fbd1cadb52e"
+    },
+    {
+      "path": "internal/subagent/route_test.go",
+      "sha256": "89a95891c4db380eba0815cc0bb88e0692bc147a56ab15441aa73a6cd694e9d0"
+    },
+    {
+      "path": "internal/tempgroup/service_pg_test.go",
+      "sha256": "c3125f1d94462116449c9b3d702f841c43ce605d30531ea002756cbac4559899"
+    },
+    {
+      "path": "tools/run-browser-regressions.py",
+      "sha256": "f1524dcb0ef416b6e70459d5a478d01685eb822c81fb811bbcfd1529ecfdf798"
+    },
+    {
+      "path": "view-service/console-extseat-groups-regression.js",
+      "sha256": "0e5b021b758c7bbed83e727b19336c710b231cdfaf3a5f842ad35e2f73d37e6a"
+    }
+  ]
+}

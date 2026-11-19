@@ -1,0 +1,208 @@
+{
+  "source": "ee9dbfd2f1af811befa793ce95f8fe2f224fe92a",
+  "original_sha256": "65e4c1abf934e61ba71b7a97f3e2f83f21b014bc6888eb9c093f3f5c20f33114",
+  "baseline": {
+    "rc": 0,
+    "command": [
+      "go",
+      "test",
+      "./internal/extseat",
+      "-run",
+      "TestExternalGroups",
+      "-count=1",
+      "-v"
+    ],
+    "start_utc": "2026-11-19T02:16:08.625338+00:00",
+    "end_utc": "2026-11-19T02:16:28.864540+00:00",
+    "log": "baseline.log",
+    "log_sha256": "e0d43a59c70269f9c89cfba7b9b3f4aec532bf186cef2dfaf1e9fcc75da5babd"
+  },
+  "mutations": [
+    {
+      "id": "M1-target-membership",
+      "path": "internal/identity/communication.go",
+      "old": "JOIN np_group_member t ON t.code=g.code AND t.agent_id=$2",
+      "new": "JOIN np_group_member t ON t.code=g.code AND $2::text<>''",
+      "test": "TestExternalGroupsOwnGroupDoesNotAuthorizeDifferentTargetPG",
+      "build": {
+        "rc": 0,
+        "command": [
+          "go",
+          "test",
+          "./internal/extseat",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "start_utc": "2026-11-19T02:16:28.864799+00:00",
+        "end_utc": "2026-11-19T02:16:30.112390+00:00",
+        "log": "M1-target-membership-build.log",
+        "log_sha256": "152f3bc5f4a5a21c9f35410348be9db3e2497747729b64c8d6adbd960f05cb52"
+      },
+      "reading": {
+        "rc": 1,
+        "command": [
+          "go",
+          "test",
+          "./internal/extseat",
+          "-run",
+          "^TestExternalGroupsOwnGroupDoesNotAuthorizeDifferentTargetPG$",
+          "-count=1",
+          "-v"
+        ],
+        "start_utc": "2026-11-19T02:16:30.112480+00:00",
+        "end_utc": "2026-11-19T02:16:31.823065+00:00",
+        "log": "M1-target-membership.log",
+        "log_sha256": "2e0156b8213cc4938428ddd3ff8bdce1130903c70620f11d1e4239edf3d8f234"
+      },
+      "failed_assertions": [
+        "    group_routing_pg_test.go:368: own group authorized a nonmember target: <nil>"
+      ],
+      "business_red": true
+    },
+    {
+      "id": "M2-explicit-route",
+      "path": "internal/identity/communication.go",
+      "old": "(choice.Mode == \"direct\" || choice.Ref == ref)",
+      "new": "true",
+      "test": "TestExternalGroupsOrdinaryAndExplicitIsolationPG",
+      "build": {
+        "rc": 0,
+        "command": [
+          "go",
+          "test",
+          "./internal/extseat",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "start_utc": "2026-11-19T02:16:31.824144+00:00",
+        "end_utc": "2026-11-19T02:16:33.071304+00:00",
+        "log": "M2-explicit-route-build.log",
+        "log_sha256": "152f3bc5f4a5a21c9f35410348be9db3e2497747729b64c8d6adbd960f05cb52"
+      },
+      "reading": {
+        "rc": 1,
+        "command": [
+          "go",
+          "test",
+          "./internal/extseat",
+          "-run",
+          "^TestExternalGroupsOrdinaryAndExplicitIsolationPG$",
+          "-count=1",
+          "-v"
+        ],
+        "start_utc": "2026-11-19T02:16:33.071428+00:00",
+        "end_utc": "2026-11-19T02:16:34.659935+00:00",
+        "log": "M2-explicit-route.log",
+        "log_sha256": "894053754ec7b09f0af8d86a0605f630ce518a3e3a4d5cc82d1140f9de8ae0c7"
+      },
+      "failed_assertions": [
+        "    group_routing_pg_test.go:78: invalid explicit group borrowed another grant: <nil>"
+      ],
+      "business_red": true
+    },
+    {
+      "id": "M3-ungrouped-source",
+      "path": "internal/identity/communication.go",
+      "old": "JOIN np_group_member s ON s.code=g.code AND s.agent_id=$1",
+      "new": "JOIN np_group_member s ON s.code=g.code AND $1::text<>''",
+      "test": "TestExternalGroupsNoPairNoGroupAndExternalPeerPG",
+      "build": {
+        "rc": 0,
+        "command": [
+          "go",
+          "test",
+          "./internal/extseat",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "start_utc": "2026-11-19T02:16:34.661277+00:00",
+        "end_utc": "2026-11-19T02:16:35.896928+00:00",
+        "log": "M3-ungrouped-source-build.log",
+        "log_sha256": "5152d6396715ca382cbb92bf517176598c5f7a1f3136a58834fdcf23e98e194a"
+      },
+      "reading": {
+        "rc": 1,
+        "command": [
+          "go",
+          "test",
+          "./internal/extseat",
+          "-run",
+          "^TestExternalGroupsNoPairNoGroupAndExternalPeerPG$",
+          "-count=1",
+          "-v"
+        ],
+        "start_utc": "2026-11-19T02:16:35.897021+00:00",
+        "end_utc": "2026-11-19T02:16:37.741042+00:00",
+        "log": "M3-ungrouped-source.log",
+        "log_sha256": "232585110fad6719062171948c03394588e8bddd92e779b0699cd667216db2a8"
+      },
+      "failed_assertions": [
+        "    group_routing_pg_test.go:104: ungrouped send escaped: <nil>"
+      ],
+      "business_red": true
+    },
+    {
+      "id": "M4-owner-admin",
+      "path": "internal/identity/communication.go",
+      "old": "(a.owner_lc=$2 OR actor.type='platform_admin') AND s.revoked_at",
+      "new": "true AND s.revoked_at",
+      "test": "TestExternalGroupsControlledMembershipAndRollbackPG",
+      "build": {
+        "rc": 0,
+        "command": [
+          "go",
+          "test",
+          "./internal/extseat",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "start_utc": "2026-11-19T02:16:37.742497+00:00",
+        "end_utc": "2026-11-19T02:16:39.126049+00:00",
+        "log": "M4-owner-admin-build.log",
+        "log_sha256": "152f3bc5f4a5a21c9f35410348be9db3e2497747729b64c8d6adbd960f05cb52"
+      },
+      "reading": {
+        "rc": 1,
+        "command": [
+          "go",
+          "test",
+          "./internal/extseat",
+          "-run",
+          "^TestExternalGroupsControlledMembershipAndRollbackPG$",
+          "-count=1",
+          "-v"
+        ],
+        "start_utc": "2026-11-19T02:16:39.126136+00:00",
+        "end_utc": "2026-11-19T02:16:40.858848+00:00",
+        "log": "M4-owner-admin.log",
+        "log_sha256": "49b19c1e6b731990d83eb659e5788af4d31d70c184ca8ba3d8c498c48a815839"
+      },
+      "failed_assertions": [
+        "    group_routing_pg_test.go:166: unrelated member added external Agent"
+      ],
+      "business_red": true
+    }
+  ],
+  "final_baseline": {
+    "rc": 0,
+    "command": [
+      "go",
+      "test",
+      "./internal/extseat",
+      "-run",
+      "TestExternalGroups",
+      "-count=1",
+      "-v"
+    ],
+    "start_utc": "2026-11-19T02:16:40.859261+00:00",
+    "end_utc": "2026-11-19T02:16:54.702210+00:00",
+    "log": "final-baseline.log",
+    "log_sha256": "1616a422a6cdaa45d92538bdf23abb94232a5a912da5867a3510146d41741ad8"
+  },
+  "restored_sha256": "65e4c1abf934e61ba71b7a97f3e2f83f21b014bc6888eb9c093f3f5c20f33114",
+  "porcelain": ""
+}

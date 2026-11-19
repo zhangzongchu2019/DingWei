@@ -48,7 +48,11 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(extseatDDL) + string(policyDDL) + string(copyDDL) + string(groupDDL)
+	routeDDL, err := os.ReadFile("../store/migrate/migrations/0113_extseat_groups.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(extseatDDL) + string(policyDDL) + string(copyDDL) + string(groupDDL) + string(routeDDL)
 	if _, err = pool.Exec(ctx, access, ddl); err != nil {
 		t.Fatal(err)
 	}
@@ -65,6 +69,7 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	}
 	pgIdentity := identity.NewService(identity.NewPGStore(pool), func() time.Time { return now }, nil)
 	groups := &tempgroup.Service{Pool: pool, Access: access, Now: func() time.Time { return now }}
+	pgIdentity.CommunicationTenantKey = "tenant-e2e"
 	seats := &extseat.Service{Pool: pool, Access: access, Identity: pgIdentity, Groups: groups, TenantKey: "tenant-e2e", Resource: "https://fixture.invalid/mcp", Now: func() time.Time { return now }}
 	principal := extshared.Principal{Provider: "feishu", TenantKey: "tenant-e2e", Issuer: "fixture-app", Subject: "mcp-asist", DisplayName: "MCP 授权人"}
 	targetFullName := v.svc.FullName(ctx, target)

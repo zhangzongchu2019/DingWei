@@ -1,0 +1,19 @@
+{
+  "source": "93c63d2626ce75497fe47fa64f760bf3b5de83bf",
+  "command": [
+    "go",
+    "test",
+    "./internal/extseat",
+    "./internal/tempgroup",
+    "./internal/identity",
+    "./internal/store/migrate",
+    "./internal/m8",
+    "-count=3",
+    "-p",
+    "1",
+    "-timeout",
+    "60m",
+    "-v"
+  ],
+  "env_file": "env-final.json"
+}

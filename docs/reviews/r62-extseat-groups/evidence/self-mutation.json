@@ -1,0 +1,49 @@
+{
+  "source": "aaed8aaee6630e2683096c977a058da653fee7e2",
+  "path": "internal/identity/group.go",
+  "old": "store.JoinExternalGroup(ctx, code, agentID, Lower(actorLC),",
+  "new": "store.JoinExternalGroup(ctx, code, agentID, agent.OwnerLC,",
+  "results": [
+    {
+      "name": "self-baseline",
+      "rc": 0,
+      "command": [
+        "go",
+        "test",
+        "./internal/extseat",
+        "-run",
+        "^TestExternalGroupsControlledMembershipAndRollbackPG$",
+        "-count=1",
+        "-v"
+      ]
+    },
+    {
+      "name": "self-build",
+      "rc": 0,
+      "command": [
+        "go",
+        "test",
+        "./internal/extseat",
+        "-run",
+        "^$",
+        "-count=1"
+      ]
+    },
+    {
+      "name": "self-red",
+      "rc": 1,
+      "command": [
+        "go",
+        "test",
+        "./internal/extseat",
+        "-run",
+        "^TestExternalGroupsControlledMembershipAndRollbackPG$",
+        "-count=1",
+        "-v"
+      ]
+    }
+  ],
+  "business_red": true,
+  "restored_sha256": "b420e0a26cfad4f327b73733e88f2d09faf840396528a29f28c054470814d97b",
+  "porcelain": ""
+}

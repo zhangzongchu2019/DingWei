@@ -9,7 +9,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/store/pgtest"
 )
 
-// 0108 is older than the deployed 0110/0111 numbers, but the ledger is a set of
+// 0108 is older than the deployed 0110/0111/0112/0113 numbers, but the ledger is a set of
 // applied entries, not a high-water mark. Existing entries must not replay.
 func TestConsent0108AppliesAfter0110And0111OnlyOnce(t *testing.T) {
 	ctx := context.Background()
@@ -28,15 +28,15 @@ func TestConsent0108AppliesAfter0110And0111OnlyOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := ledgerRows(t, p)
-	if len(before) != 15 || before["0110_extseat_expect_reply.sql"].digest == "" || before["0111_extseat_feishu_copy.sql"].digest == "" {
+	if len(before) != 16 || before["0110_extseat_expect_reply.sql"].digest == "" || before["0111_extseat_feishu_copy.sql"].digest == "" || before["0112_np_agent_display_name.sql"].digest == "" || before["0113_extseat_groups.sql"].digest == "" {
 		t.Fatalf("R57_LATE_0108_DEPLOYED_BASELINE %v", keysOf(before))
 	}
 	report, err := Migrate(ctx, p, HubDomains())
-	if err != nil || strings.Join(report.Applied, ",") != "0108_extseat_short_name.sql" || len(report.Skipped) != 15 {
+	if err != nil || strings.Join(report.Applied, ",") != "0108_extseat_short_name.sql" || len(report.Skipped) != 16 {
 		t.Fatalf("R57_LATE_0108_ONLY_PENDING report=%+v err=%v", report, err)
 	}
 	after := ledgerRows(t, p)
-	if len(after) != 16 || after["0108_extseat_short_name.sql"].digest == "" {
+	if len(after) != 17 || after["0108_extseat_short_name.sql"].digest == "" {
 		t.Fatalf("R57_LATE_0108_LEDGER %v", keysOf(after))
 	}
 	for name, old := range before {
@@ -46,7 +46,7 @@ func TestConsent0108AppliesAfter0110And0111OnlyOnce(t *testing.T) {
 		}
 	}
 	repeated, err := Migrate(ctx, p, HubDomains())
-	if err != nil || len(repeated.Applied) != 0 || len(repeated.Skipped) != 16 {
+	if err != nil || len(repeated.Applied) != 0 || len(repeated.Skipped) != 17 {
 		t.Fatalf("R57_LATE_0108_RESTART report=%+v err=%v", repeated, err)
 	}
 }

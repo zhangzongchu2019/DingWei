@@ -159,14 +159,14 @@ func (h *Handler) postConnectPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) renderConnectPage(w http.ResponseWriter, r *http.Request, status int, data connectPageData) {
-	if h.defaults != nil && len(h.defaults.Allowed(h.teamTenantKey)) > 0 {
+	if h.allowUnpaired || h.allowReauthentication || (h.defaults != nil && len(h.defaults.Allowed(h.teamTenantKey)) > 0) {
 		data.Automatic = true
 		targets := h.validTargets(r.Context())
-		if len(targets) == 0 {
+		if len(targets) == 0 && !h.allowUnpaired && !h.allowReauthentication {
 			http.Error(w, "没有可用协作目标，请联系管理员。", http.StatusForbidden)
 			return
 		}
-		if len(h.defaults.Allowed(h.teamTenantKey)) == 1 {
+		if h.defaults != nil && len(h.defaults.Allowed(h.teamTenantKey)) == 1 {
 			data.TargetAgent = targets[0]
 		}
 	}
