@@ -1,0 +1,94 @@
+[
+  {
+    "name": "go-build",
+    "source": "acd6ead19dab1ae969d7c72b58359967a20c7018",
+    "command": [
+      "go",
+      "build",
+      "./..."
+    ],
+    "started_utc": "2026-11-19T04:30:04.890000+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-19T04:30:08.198902+00:00",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "fifo-timeout",
+    "source": "acd6ead19dab1ae969d7c72b58359967a20c7018",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n1c-review-20261118/r5-recheck/probe_fifo_interleaving.py"
+    ],
+    "started_utc": "2026-11-19T04:30:08.242801+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-19T04:30:11.693294+00:00",
+    "sha256": "276b75d8b8a722ab54e5cc27cb041cf50e16a6b9ae3436a3b56722941024a1ec"
+  },
+  {
+    "name": "fifo-rpc",
+    "source": "acd6ead19dab1ae969d7c72b58359967a20c7018",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n1c-review-20261118/r5-recheck/probe_fifo_interleaving.py"
+    ],
+    "started_utc": "2026-11-19T04:30:11.738822+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-19T04:30:15.191762+00:00",
+    "sha256": "29255adb285aeed15b5fb95b341cbc3236f610444ba44f90b939e2137aba60c2"
+  },
+  {
+    "name": "blocker-fairness",
+    "source": "acd6ead19dab1ae969d7c72b58359967a20c7018",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n1c-review-20261118/r5-recheck/probe_blocker_head.py"
+    ],
+    "started_utc": "2026-11-19T04:30:15.235245+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-19T04:30:18.062002+00:00",
+    "sha256": "3bbe6be15e1a0317ff4e773f3942f1a31aad70780843633fb19288a9bf605c41"
+  },
+  {
+    "name": "blocker-recovery-cross",
+    "source": "acd6ead19dab1ae969d7c72b58359967a20c7018",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n1c-review-20261118/r5-recheck/probe_blocker_recovery_gate.py"
+    ],
+    "started_utc": "2026-11-19T04:30:18.106948+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-19T04:30:21.621582+00:00",
+    "sha256": "b2e8ccce1a72dbfab6ee709603cb33eeadee00b18815ecc4f43fb36789b5082c"
+  },
+  {
+    "name": "r6-and-AA010",
+    "source": "acd6ead19dab1ae969d7c72b58359967a20c7018",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "-B",
+      "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-integration-stage4-20261119/run_isolated.py",
+      "test_driver_failure_faces.HubDeliveryPathTest.test_handle_delivery_initialize_auth_rejection_is_terminal",
+      "test_sub_agent_helper.StoreTests.test_aa010_feature_off_drains_without_native_or_capability"
+    ],
+    "started_utc": "2026-11-19T04:30:21.664892+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-19T04:30:22.151194+00:00",
+    "sha256": "998334f639359c51e9734d27a3b45326a4fa4baffdf1992349c789f866f39f9c"
+  },
+  {
+    "name": "helper-two-profiles",
+    "source": "acd6ead19dab1ae969d7c72b58359967a20c7018",
+    "command": [
+      "/tmp/coder-0232-locked-venv/bin/python3",
+      "scripts/run-helper-build-tests.py"
+    ],
+    "started_utc": "2026-11-19T04:30:22.197635+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-19T04:38:44.638601+00:00",
+    "sha256": "3700fd8b2ad90bae7fde3174bc0a1c56d3cfc7bc1577a776cc5761092820e096"
+  }
+]
