@@ -1,0 +1,11 @@
+UTC 2026-11-18T22:04:10Z (completion from final log)
+SOURCE_COMMIT=5ff24a421 (source plus test-contract commits)
+COMMAND=env -i PATH=/tmp/lockvenv/bin:/usr/local/go/bin:/usr/bin:/bin HOME=/tmp/r62-cli-ready-home TMPDIR=/tmp GOCACHE=/home/dev/.cache/go-build GOMODCACHE=/home/dev/go/pkg/mod bash scripts/run-build-tests.sh
+GO=go1.22.2 linux/amd64
+UID=1001(dev)
+HELPER_INVENTORY_OK files=97
+Claude: profile rc=0, 1270 suite + 9 supervisor tests, total 1279
+Codex: profile rc=0, 1270 suite + 9 supervisor tests, total 1279
+Other canonical subgroups: python=27, shell=2
+Go m8: PASS, rc=0
+Final: BUILD_TESTS_OK helper_profiles=2 python=27 shell=2; BUILD_GATE_RC=0

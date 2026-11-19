@@ -1,0 +1,58 @@
+test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn (tests.test_sessionhelper.SessionHelperTest.test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn) ... ok
+test_codex_async_transcript_missing_user_is_nonretryable (tests.test_sessionhelper.SessionHelperTest.test_codex_async_transcript_missing_user_is_nonretryable) ... [cli] delivery failed reason=cli_injection_not_received retryable=false detail=（注入未被 CLI 接收：transcript 未出现对应 user 轮）
+ok
+test_durable_delivery_fails_explicitly_when_cli_cannot_stay_up (tests.test_cli_exit_visible.CLIExitVisible.test_durable_delivery_fails_explicitly_when_cli_cannot_stay_up) ... ok
+test_exit_after_ready_clears_ready_and_is_logged (tests.test_cli_exit_visible.CLIExitVisible.test_exit_after_ready_clears_ready_and_is_logged) ... /usr/lib/python3.12/pty.py:95: DeprecationWarning: This process (pid=1511299) is multi-threaded, use of forkpty() may lead to deadlocks in the child.
+  pid, fd = os.forkpty()
+ok
+test_exit_during_startup_is_logged_with_code_and_redacted_tail (tests.test_cli_exit_visible.CLIExitVisible.test_exit_during_startup_is_logged_with_code_and_redacted_tail) ... ok
+test_exit_tail_redacts_auth_scheme_json_and_flags (tests.test_cli_exit_visible.CLIExitVisible.test_exit_tail_redacts_auth_scheme_json_and_flags) ... ok
+test_exit_tail_redacts_key_value_secrets (tests.test_cli_exit_visible.CLIExitVisible.test_exit_tail_redacts_key_value_secrets) ... ok
+test_start_checks_liveness_even_when_ready_is_set (tests.test_cli_exit_visible.CLIExitVisible.test_start_checks_liveness_even_when_ready_is_set) ... ok
+test_startup_exit_backs_off_instead_of_respawning_in_a_loop (tests.test_cli_exit_visible.CLIExitVisible.test_startup_exit_backs_off_instead_of_respawning_in_a_loop) ... ok
+test_block_markers_match_without_spaces (tests.test_cli_exit_visible.CodexLoginMenuNotReady.test_block_markers_match_without_spaces) ... ok
+test_block_patterns_can_be_extended_by_env (tests.test_cli_exit_visible.CodexLoginMenuNotReady.test_block_patterns_can_be_extended_by_env) ... ok
+test_login_menu_is_not_ready (tests.test_cli_exit_visible.CodexLoginMenuNotReady.test_login_menu_is_not_ready) ... ok
+test_partial_redraw_with_prompt_does_not_unblock (tests.test_cli_exit_visible.CodexLoginMenuNotReady.test_partial_redraw_with_prompt_does_not_unblock) ... ok
+test_real_package_error_screen_then_exit_fails_fast (tests.test_cli_exit_visible.CodexLoginMenuNotReady.test_real_package_error_screen_then_exit_fails_fast) ... ok
+test_same_screen_without_menu_is_ready (tests.test_cli_exit_visible.CodexLoginMenuNotReady.test_same_screen_without_menu_is_ready) ... ok
+test_trust_folder_and_update_screens_are_blocking (tests.test_cli_exit_visible.CodexLoginMenuNotReady.test_trust_folder_and_update_screens_are_blocking) ... ok
+test_trust_prompt_is_blocking (tests.test_cli_exit_visible.CodexLoginMenuNotReady.test_trust_prompt_is_blocking) ... ok
+test_banner_alone_is_not_ready (tests.test_cli_exit_visible.CodexReadiness.test_banner_alone_is_not_ready) ... ok
+test_banner_with_prompt_glyph_then_exit_is_never_ready (tests.test_cli_exit_visible.CodexReadiness.test_banner_with_prompt_glyph_then_exit_is_never_ready) ... ok
+test_prompt_after_banner_is_ready (tests.test_cli_exit_visible.CodexReadiness.test_prompt_after_banner_is_ready) ... ok
+test_ready_patterns_override (tests.test_cli_exit_visible.CodexReadiness.test_ready_patterns_override) ... ok
+test_healthy_home_stays_ready_when_answer_mentions_blocker_text (tests.test_cli_exit_visible.CodexStartupBlockers.test_healthy_home_stays_ready_when_answer_mentions_blocker_text) ... ok
+test_leaving_trust_page_unblocks_on_full_redraw (tests.test_cli_exit_visible.CodexStartupBlockers.test_leaving_trust_page_unblocks_on_full_redraw) ... ok
+test_real_api_key_detected_screen_is_blocking (tests.test_cli_exit_visible.CodexStartupBlockers.test_real_api_key_detected_screen_is_blocking) ... ok
+test_real_trust_folder_screen_fails_start_immediately (tests.test_cli_exit_visible.CodexStartupBlockers.test_real_trust_folder_screen_fails_start_immediately) ... ok
+test_real_update_banner_home_is_ready (tests.test_cli_exit_visible.CodexStartupBlockers.test_real_update_banner_home_is_ready) ... ok
+test_restarted_child_does_not_inherit_previous_screen (tests.test_cli_exit_visible.CodexStartupBlockers.test_restarted_child_does_not_inherit_previous_screen) ... ok
+test_restarted_child_is_judged_afresh_during_its_startup (tests.test_cli_exit_visible.CodexStartupBlockers.test_restarted_child_is_judged_afresh_during_its_startup) ... ok
+test_update_modal_28x12_snapshot_is_blocking (tests.test_cli_exit_visible.CodexStartupBlockers.test_update_modal_28x12_snapshot_is_blocking) ... ok
+test_update_modal_80x12_snapshot_is_blocking (tests.test_cli_exit_visible.CodexStartupBlockers.test_update_modal_80x12_snapshot_is_blocking) ... ok
+test_generic_failure_keeps_old_ack_fields (tests.test_cli_exit_visible.InjectionNotReceivedFails.test_generic_failure_keeps_old_ack_fields) ... ok
+test_no_session_file_fails_not_processed (tests.test_cli_exit_visible.InjectionNotReceivedFails.test_no_session_file_fails_not_processed) ... ok
+test_respawned_child_ends_its_own_startup (tests.test_cli_exit_visible.PtyRespawnStartupWindow.test_respawned_child_ends_its_own_startup) ... ok
+test_respawned_child_is_judged_afresh_during_its_startup (tests.test_cli_exit_visible.PtyRespawnStartupWindow.test_respawned_child_is_judged_afresh_during_its_startup) ... ok
+test_durable_delivery_without_user_turn_fails_without_reply (tests.test_durable_agent_delivery_injects_cli.DurableAgentDeliveryInjectsCLI.test_durable_delivery_without_user_turn_fails_without_reply) ... /home/dev/tmp/r62-cli-a-fix/tools/sessionhelper/tests/test_durable_agent_delivery_injects_cli.py:131: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/sh-durable-cli-gpbgvj6z/cli.log' mode='r' encoding='utf-8'>
+  self._wait(lambda: os.path.exists(self.cli_log) and body in open(self.cli_log).read(), 20,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+connection handler failed
+Traceback (most recent call last):
+  File "/tmp/lockvenv/lib/python3.12/site-packages/websockets/asyncio/server.py", line 376, in conn_handler
+    await self.handler(connection)
+  File "/home/dev/tmp/r62-cli-a-fix/tools/sessionhelper/tests/test_durable_agent_delivery_injects_cli.py", line 63, in handler
+    async for raw in ws:
+  File "/tmp/lockvenv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 242, in __aiter__
+    yield await self.recv()
+          ^^^^^^^^^^^^^^^^^
+  File "/tmp/lockvenv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 136.164s
+
+OK

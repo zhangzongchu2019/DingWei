@@ -1,0 +1,11 @@
+test_opencode_sync_delivery_stays_on_database_reply_path (tests.test_sessionhelper.SessionHelperTest.test_opencode_sync_delivery_stays_on_database_reply_path) ... ok
+test_opencode_sync_no_answer_is_nonretryable_cli_timeout (tests.test_sessionhelper.SessionHelperTest.test_opencode_sync_no_answer_is_nonretryable_cli_timeout) ... [cli] delivery failed reason=cli_answer_timeout retryable=false detail=（答案超时：已确认 opencode user 轮落库，但未取到 assistant 回答）
+ok
+test_codex_sync_reply_from_real_rollout_shape_is_not_timeout_placeholder (tests.test_sessionhelper.SessionHelperTest.test_codex_sync_reply_from_real_rollout_shape_is_not_timeout_placeholder) ... ok
+test_codex_sync_answer_timeout_is_failed_not_processed (tests.test_sessionhelper.SessionHelperTest.test_codex_sync_answer_timeout_is_failed_not_processed) ... [cli] delivery failed reason=cli_answer_timeout retryable=false detail=（答案超时：已确认 user 轮落盘，但未取到 assistant 回答）
+ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.014s
+
+OK

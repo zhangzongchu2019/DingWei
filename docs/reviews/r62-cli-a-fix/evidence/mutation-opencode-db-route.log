@@ -1,0 +1,17 @@
+test_opencode_sync_delivery_stays_on_database_reply_path (tests.test_sessionhelper.SessionHelperTest.test_opencode_sync_delivery_stays_on_database_reply_path) ... FAIL
+
+======================================================================
+FAIL: test_opencode_sync_delivery_stays_on_database_reply_path (tests.test_sessionhelper.SessionHelperTest.test_opencode_sync_delivery_stays_on_database_reply_path)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/dev/tmp/r62-cli-a-fix/tools/sessionhelper/tests/test_sessionhelper.py", line 2151, in test_opencode_sync_delivery_stays_on_database_reply_path
+    self.assertEqual(reply, "OpenCode answer", "OpenCode must keep using its SQLite message/part reader")
+AssertionError: '已注入 CLI，等待模型输出。' != 'OpenCode answer'
+- 已注入 CLI，等待模型输出。
++ OpenCode answer
+ : OpenCode must keep using its SQLite message/part reader
+
+----------------------------------------------------------------------
+Ran 1 test in 0.213s
+
+FAILED (failures=1)

@@ -1,0 +1,24 @@
+test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn (tests.test_sessionhelper.SessionHelperTest.test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn) ... 
+  test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn (tests.test_sessionhelper.SessionHelperTest.test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn) (async_reply=False) ... FAIL
+  test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn (tests.test_sessionhelper.SessionHelperTest.test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn) (async_reply=True) ... FAIL
+
+======================================================================
+FAIL: test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn (tests.test_sessionhelper.SessionHelperTest.test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn) (async_reply=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r62-cli-ready-baseline/tools/sessionhelper/tests/test_sessionhelper.py", line 2193, in test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn
+    self.assertLess(
+AssertionError: 4 not less than 2 : injected/admitted ACK 必须等 transcript user 轮落盘
+
+======================================================================
+FAIL: test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn (tests.test_sessionhelper.SessionHelperTest.test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn) (async_reply=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r62-cli-ready-baseline/tools/sessionhelper/tests/test_sessionhelper.py", line 2189, in test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn
+    self.assertEqual(state["user_rows"], 1, "rollout 里必须恰有一条对应 user 轮")
+AssertionError: 0 != 1 : rollout 里必须恰有一条对应 user 轮
+
+----------------------------------------------------------------------
+Ran 1 test in 2.509s
+
+FAILED (failures=2)

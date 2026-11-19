@@ -25,11 +25,14 @@ from sessionhelper.app import (
     is_no_mirror_envelope,
     is_client_onboarding_text,
     is_online_directory_text,
+    delivery_failure_ack_fields,
 )
 from sessionhelper.cli import (
     BRACKETED_PASTE_END,
     BRACKETED_PASTE_START,
+    CLIAnswerTimeout,
     CLIAdapter,
+    CLIInjectionNotReceived,
     CLI_PROFILES,
     OpenCodeDBReader,
     TranscriptTailer,
@@ -563,7 +566,7 @@ class SessionHelperTest(unittest.TestCase):
         self.assertIn("CLI未就绪", reply)
 
     def test_cli_async_reply_transcript_confirms_user_without_sync_reply(self):
-        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="claude", SH_ASYNC_REPLY="1"))
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_ASYNC_REPLY="1"))
         self.assertTrue(cfg.async_reply)
         adapter = CLIAdapter(cfg)
         adapter.ready.set()
@@ -571,9 +574,11 @@ class SessionHelperTest(unittest.TestCase):
         calls = {"confirm": 0, "collect": 0}
         adapter.start = lambda: True
 
-        def fake_confirm(prompt):
+        def fake_confirm(prompt, on_injected=None):
             calls["confirm"] += 1
             self.assertEqual(prompt, "长耗时任务")
+            if on_injected is not None:
+                on_injected()
             return "ok"
 
         def fake_collect(_prompt):
@@ -584,6 +589,17 @@ class SessionHelperTest(unittest.TestCase):
         adapter.inject_and_collect_transcript_reply = fake_collect
         self.assertEqual(adapter.handle({"body": "长耗时任务"}), "")
         self.assertEqual(calls, {"confirm": 1, "collect": 0})
+
+    def test_claude_async_transcript_keeps_existing_direct_injection_behavior(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="claude", SH_ASYNC_REPLY="1"))
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.transcript = object()
+        adapter.start = lambda: True
+        injected = []
+        adapter.inject_text = injected.append
+        self.assertEqual(adapter.handle({"body": "Claude 异步任务"}), "")
+        self.assertEqual(injected, ["Claude 异步任务"])
 
     def test_cli_sync_reply_default_still_collects_transcript_reply(self):
         cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="claude"))
@@ -2064,6 +2080,71 @@ class SessionHelperTest(unittest.TestCase):
         }
         self.assertEqual(parse_codex_event(event), ("codex", "codex answer"))
 
+    def test_codex_transcript_parser_extracts_real_response_item_assistant_fixture(self):
+        fixture = Path(__file__).parent / "fixtures" / "codex-response-item-assistant-real.jsonl"
+        event = json.loads(fixture.read_text(encoding="utf-8"))
+        self.assertEqual(parse_codex_event(event), ("codex", "收到。"))
+
+    def test_codex_supported_rollout_pairs_mirror_one_assistant_reply(self):
+        fixture_dir = Path(__file__).parent / "fixtures"
+        for fixture_name in ("codex-t159-assistant-pair-real.jsonl", "codex-t170-assistant-pair-real.jsonl"):
+            with self.subTest(fixture=fixture_name):
+                with tempfile.TemporaryDirectory() as tmp:
+                    path = Path(tmp) / fixture_name
+                    path.write_bytes((fixture_dir / fixture_name).read_bytes())
+                    parsed = TranscriptTailer("codex", path, from_end=False).read_events()
+                # These versions store the same message ID in item_completed and response_item.
+                # item_completed is not a text event; only response_item becomes mirror text.
+                self.assertIn(parsed, [[("codex", "收到。")], [("codex", "收到")]])
+
+    def test_codex_sync_reply_from_real_rollout_shape_is_not_timeout_placeholder(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_CLI_REPLY_WAIT="0.1", SH_CLI_USER_ACK_WAIT="0.1"))
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.start = lambda: True
+        adapter._child_gone = lambda: False
+        adapter.inject_text = lambda _prompt: None
+        body = "用当前 rollout 形状回收答案"
+        fixture = Path(__file__).parent / "fixtures" / "codex-response-item-assistant-real.jsonl"
+        assistant_row = fixture.read_text(encoding="utf-8").strip()
+        with tempfile.TemporaryDirectory() as tmp:
+            transcript_path = Path(tmp) / "rollout.jsonl"
+            transcript_path.write_text(
+                json.dumps({"type": "response_item", "payload": {"type": "message", "role": "user",
+                    "content": [{"type": "input_text", "text": body}]}}) + "\n" + assistant_row + "\n",
+                encoding="utf-8",
+            )
+            adapter.transcript = TranscriptTailer("codex", transcript_path, from_end=False)
+            try:
+                reply = adapter.handle_delivery({"body": body})
+            except CLIAnswerTimeout as exc:
+                self.fail(f"真实 assistant 消息被漏读，回合被错误降为答案超时占位：{exc}")
+
+        self.assertEqual(reply, "收到。", "assistant response_item 必须回收为答案，不能退成正常 processed 的超时占位")
+
+    def test_codex_sync_answer_timeout_is_failed_not_processed(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex"))
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.transcript = object()
+        adapter.start = lambda: True
+        adapter._child_gone = lambda: False
+        admitted = []
+        def fake_collect(_prompt, on_injected=None):
+            if on_injected is not None:
+                on_injected()
+            return "no_answer", ""
+
+        adapter.inject_and_collect_transcript_reply = fake_collect
+
+        with self.assertRaises(CLIAnswerTimeout) as raised:
+            adapter.handle_delivery({"body": "已完成的 user 轮"}, on_admitted=lambda: admitted.append(True))
+
+        self.assertEqual(admitted, [True], "user 轮已确认后仍需标记已 admission")
+        self.assertEqual(raised.exception.reason, "cli_answer_timeout")
+        self.assertFalse(raised.exception.retryable, "不得重试已注入的 user 轮")
+        self.assertEqual(delivery_failure_ack_fields(raised.exception), ("cli_answer_timeout", False))
+
     def test_codex_transcript_parser_extracts_user_message(self):
         event = {
             "type": "response_item",
@@ -2091,7 +2172,7 @@ class SessionHelperTest(unittest.TestCase):
             tailer = TranscriptTailer("claude", path, from_end=False)
             self.assertEqual(tailer.read_events(), [("user", "hello")])
 
-    def test_cli_reinjects_when_transcript_user_turn_missing(self):
+    def test_claude_retries_body_when_transcript_user_turn_is_missing(self):
         cfg = load_config(
             dict(
                 BASE_ENV,
@@ -2116,12 +2197,130 @@ class SessionHelperTest(unittest.TestCase):
                 return [("user", "冷启动第一条"), ("claude", "干净答案")]
 
         adapter.transcript = FakeTranscript()
-        adapter.inject_text = lambda text: counter.__setitem__("injects", counter["injects"] + 1)
-        adapter.transcript_retry_delay = lambda attempt: 0
+        adapter.inject_text = lambda _text: counter.__setitem__("injects", counter["injects"] + 1)
+        adapter.transcript_retry_delay = lambda _attempt: 0
 
         status, reply = adapter.inject_and_collect_transcript_reply("冷启动第一条")
         self.assertEqual((status, reply), ("ok", "干净答案"))
         self.assertEqual(counter["injects"], 2)
+
+    def test_codex_0170_prompt_before_initialize_is_admitted_only_after_one_user_turn(self):
+        fixture = Path(__file__).parent / "fixtures" / "codex-0.170.0-prompt-before-initialize.txt"
+        pane = fixture.read_text(encoding="utf-8")
+        self.assertIn("› Ask Codex to do anything", pane)
+
+        for async_reply in (False, True):
+            with self.subTest(async_reply=async_reply), tempfile.TemporaryDirectory() as tmp:
+                cfg = load_config(
+                    dict(
+                        BASE_ENV,
+                        SH_MODE="cli",
+                        SH_CLI="codex",
+                        SH_ASYNC_REPLY="1" if async_reply else "0",
+                        SH_CLI_USER_ACK_WAIT="2.5",
+                        SH_CLI_REPLY_WAIT="0.1",
+                    )
+                )
+                adapter = CLIAdapter(cfg)
+                adapter.ready.set()  # d2 arm: prompt-plus-quiet incorrectly reports ready before initialize
+                adapter.start = lambda: adapter.ready.is_set()
+                transcript_path = Path(tmp) / "rollout.jsonl"
+                adapter.transcript = TranscriptTailer("codex", transcript_path, from_end=False)
+                state = {"initialized": False, "pending": "", "user_rows": 0}
+                observations = []
+
+                def finish_initialize():
+                    state["initialized"] = True
+                    observations.append("initialize_ready")
+
+                initializer = threading.Timer(2.1, finish_initialize)
+                initializer.start()
+
+                def submit_enter():
+                    if not state["initialized"]:
+                        observations.append("early_cr_dropped")
+                        return
+                    if state["user_rows"]:
+                        observations.append("extra_cr")
+                        return
+                    state["user_rows"] += 1
+                    observations.append("transcript_user_persisted")
+                    rows = [
+                        {
+                            "type": "response_item",
+                            "payload": {
+                                "type": "message",
+                                "role": "user",
+                                "content": [{"type": "input_text", "text": state["pending"]}],
+                            },
+                        },
+                        {
+                            "type": "response_item",
+                            "payload": {
+                                "type": "message",
+                                "role": "assistant",
+                                "content": [{"type": "output_text", "text": "已完成"}],
+                            },
+                        },
+                    ]
+                    with transcript_path.open("a", encoding="utf-8") as stream:
+                        for row in rows:
+                            stream.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+                def inject_text(text):
+                    state["pending"] = text
+                    observations.append("prompt_typed_once")
+                    submit_enter()
+
+                adapter.inject_text = inject_text
+                adapter.submit_enter = submit_enter
+                try:
+                    admitted = []
+                    answer = adapter.handle_delivery(
+                        {"body": "用 d2 竞态形态做一次任务"},
+                        on_injected=lambda: (observations.append("injected_ack"), admitted.append(True)),
+                    )
+                finally:
+                    initializer.cancel()
+                    initializer.join(timeout=1)
+
+                self.assertEqual(state["user_rows"], 1, "rollout 里必须恰有一条对应 user 轮")
+                self.assertEqual(observations.count("prompt_typed_once"), 1, "同一任务正文只能键入一次")
+                self.assertEqual(observations.count("transcript_user_persisted"), 1)
+                self.assertEqual(observations.count("injected_ack"), 1)
+                self.assertLess(
+                    observations.index("transcript_user_persisted"),
+                    observations.index("injected_ack"),
+                    "injected/admitted ACK 必须等 transcript user 轮落盘",
+                )
+                self.assertNotIn("extra_cr", observations)
+                self.assertEqual(admitted, [True])
+                if async_reply:
+                    self.assertEqual(answer, "")
+                else:
+                    self.assertEqual(answer, "已完成")
+
+    def test_codex_async_transcript_missing_user_is_nonretryable(self):
+        cfg = load_config(
+            dict(BASE_ENV, SH_MODE="cli", SH_CLI="codex", SH_ASYNC_REPLY="1", SH_CLI_USER_ACK_WAIT="0.01")
+        )
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.start = lambda: True
+        adapter.transcript = type("EmptyTranscript", (), {"read_events": lambda _self: []})()
+        adapter.inject_text = lambda _text: None
+        adapter.submit_enter = lambda: None
+        admitted = []
+
+        with self.assertRaises(CLIInjectionNotReceived) as raised:
+            adapter.handle_delivery(
+                {"body": "不应假报成功"},
+                on_injected=lambda: admitted.append(True),
+            )
+
+        self.assertEqual(raised.exception.reason, "cli_injection_not_received")
+        self.assertFalse(raised.exception.retryable)
+        self.assertEqual(admitted, [])
 
     def test_opencode_db_reader_collects_finished_text_reply(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2161,6 +2360,50 @@ class SessionHelperTest(unittest.TestCase):
             session = reader.find_user_message("请总结", now / 1000 - 0.1)
             self.assertEqual(session, ("sess-1", now / 1000))
             self.assertEqual(reader.find_finished_assistant_reply("sess-1", now / 1000), "干净答案")
+
+    def test_opencode_sync_delivery_stays_on_database_reply_path(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="opencode", SH_CLI_REPLY_WAIT="0.1"))
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.start = lambda: True
+        adapter._child_gone = lambda: False
+        injected = []
+        adapter.inject_text = lambda body: injected.append(body)
+        def collect_opencode(prompt, injected_at, wait):
+            adapter.mirror_q.put(("opencode", "OpenCode answer"))
+            return "ok", "OpenCode answer"
+
+        adapter.collect_opencode_db_reply = collect_opencode
+        adapter.transcript = object()
+
+        reply = adapter.handle_delivery({"body": "OpenCode prompt"})
+
+        self.assertEqual(reply, "OpenCode answer", "OpenCode must keep using its SQLite message/part reader")
+        self.assertEqual(injected, ["OpenCode prompt"])
+        self.assertEqual(adapter.mirror_q.get_nowait(), ("opencode", "OpenCode answer"))
+
+    def test_opencode_sync_no_answer_is_nonretryable_cli_timeout(self):
+        cfg = load_config(dict(BASE_ENV, SH_MODE="cli", SH_CLI="opencode", SH_CLI_REPLY_WAIT="0.1"))
+        adapter = CLIAdapter(cfg)
+        adapter.ready.set()
+        adapter.start = lambda: True
+        adapter._child_gone = lambda: False
+        injected = []
+        admitted = []
+        adapter.inject_text = lambda body: injected.append(body)
+        adapter.collect_opencode_db_reply = lambda _prompt, _injected_at, _wait: ("no_answer", "")
+
+        with self.assertRaises(CLIAnswerTimeout) as raised:
+            adapter.handle_delivery(
+                {"body": "OpenCode prompt without a completed assistant reply"},
+                on_admitted=lambda: admitted.append(True),
+            )
+
+        self.assertEqual(injected, ["OpenCode prompt without a completed assistant reply"])
+        self.assertEqual(admitted, [True])
+        self.assertEqual(raised.exception.reason, "cli_answer_timeout")
+        self.assertFalse(raised.exception.retryable)
+        self.assertEqual(delivery_failure_ack_fields(raised.exception), ("cli_answer_timeout", False))
 
     def test_opencode_helpers_parse_time_and_strip_fence(self):
         self.assertEqual(opencode_time(1_783_000_000_000), 1_783_000_000)

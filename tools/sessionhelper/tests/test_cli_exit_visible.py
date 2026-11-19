@@ -273,7 +273,7 @@ class InjectionNotReceivedFails(unittest.TestCase):
             with self.assertRaises(CLIInjectionNotReceived) as cm:
                 a.handle_delivery({"body": "task"}, on_injected=lambda: injected.append(1))
         self.assertIn("注入未被 CLI 接收", str(cm.exception))
-        self.assertTrue(injected, "the text was written into the CLI")
+        self.assertFalse(injected, "without a matching transcript user turn, do not ACK the injection as admitted")
         self.assertIn("[cli] delivery failed reason=cli_injection_not_received retryable=false", out.getvalue())
         self.assertEqual(delivery_failure_ack_fields(cm.exception), ("cli_injection_not_received", False))
         with contextlib.redirect_stdout(io.StringIO()):

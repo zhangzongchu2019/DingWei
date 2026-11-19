@@ -1,0 +1,25 @@
+test_codex_sync_reply_from_real_rollout_shape_is_not_timeout_placeholder (tests.test_sessionhelper.SessionHelperTest.test_codex_sync_reply_from_real_rollout_shape_is_not_timeout_placeholder) ... [cli] delivery failed reason=cli_answer_timeout retryable=false detail=（答案超时：已确认 user 轮落盘，但未取到 assistant 回答）
+FAIL
+
+======================================================================
+FAIL: test_codex_sync_reply_from_real_rollout_shape_is_not_timeout_placeholder (tests.test_sessionhelper.SessionHelperTest.test_codex_sync_reply_from_real_rollout_shape_is_not_timeout_placeholder)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/cli-a-fix-mut/tools/sessionhelper/tests/test_sessionhelper.py", line 2007, in test_codex_sync_reply_from_real_rollout_shape_is_not_timeout_placeholder
+    reply = adapter.handle_delivery({"body": body})
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/cli-a-fix-mut/tools/sessionhelper/sessionhelper/cli.py", line 394, in handle_delivery
+    raise self._delivery_failed(CLIAnswerTimeout, "（答案超时：已确认 user 轮落盘，但未取到 assistant 回答）")
+sessionhelper.cli.CLIAnswerTimeout: （答案超时：已确认 user 轮落盘，但未取到 assistant 回答）
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/cli-a-fix-mut/tools/sessionhelper/tests/test_sessionhelper.py", line 2009, in test_codex_sync_reply_from_real_rollout_shape_is_not_timeout_placeholder
+    self.fail(f"真实 assistant 消息被漏读，回合被错误降为答案超时占位：{exc}")
+AssertionError: 真实 assistant 消息被漏读，回合被错误降为答案超时占位：（答案超时：已确认 user 轮落盘，但未取到 assistant 回答）
+
+----------------------------------------------------------------------
+Ran 1 test in 0.507s
+
+FAILED (failures=1)
