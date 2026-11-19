@@ -899,7 +899,7 @@ class BusyAdmissionTest(unittest.TestCase):
         cfg=SimpleNamespace(busy_buffer_max=5,turn_terminal_timeout_seconds=1800,admission_timeout_seconds=60,busy_admission_max_seconds=1800)
         self.adapter=DriverAdapter(cfg,driver=driver);self.adapter._which=which;self.adapter._started=True
         self.adapter.delivery_lifecycle=self.inbox
-        self.recoveries=[];self.adapter._recover_transport=lambda cmd:self.recoveries.append(cmd.delivery_id)
+        self.recoveries=[];self.adapter._recover_transport=lambda cmd, **kwargs:self.recoveries.append(cmd.delivery_id)
         self.adapter.handle_delivery(self.env)
         self.command=self.adapter._commands.start_next()
         def run():

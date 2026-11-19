@@ -158,3 +158,24 @@ The evidence checksum manifest was repaired at this delivery source: all existin
 
 Round 1's unrelated failure is recorded verbatim in `evidence/r5-auth/52a3f8a-round1.log`; it does not change the auth-case outcome. The three baseline runs and their six passing auth observations are the `d6e56a8b` rows in the preceding R4 comparison table.
 - The queue strategy change is included in source commit `52a3f8a7041d5fdcf7f3eac6f1e118c1a277adf3`; the following report/evidence commit is documentation only. R4 history through `d0a0cab5` is unchanged.
+
+## R6 — initialize authentication rejection and first-start race (2026-11-19)
+
+**Finding.** On N-1c source `52a3f8a7041d5fdcf7f3eac6f1e118c1a277adf3`, the requested `test_handle_delivery_turn_auth_failure` intermittently fails before it reaches the operation named by the test. In the traced failure, the fake app-server saw only `initialize`; there was no `thread/start` or `turn/start`. The adapter's watchdog can run in the small interval after `_bounded_deliver` launches the delivery worker but before `CodexProtocolDriver.start()` has established its first transport. `transport_recovery_required()` then sees an uninitialized driver as unhealthy and starts recovery against the still-running initial start. Recovery can quarantine the FIFO head before the definite authentication rejection is classified, leaving the queue without a `failed` terminal. This explains the empty state and the recovery alert in the captured failure. The comparison tree `d6e56a8b13bcb622eb0610e4a7cd129f834d9ff3` did not show this outcome in the same 200-run sample; that sample alone does not establish a general rate.
+
+**Repair.** The exact gates are `driver_adapter.py:623-636` (skip recovery only before the first connection), `codexDriver.py:918-962` (publish startup failure under the start lock), `codexDriver.py:1207-1213` (definite initialize-auth rejection to failed), and `codexDriver.py:1857-1864` (do not race an active or already-failed start with the watchdog). The delivery worker owns the first start. Definite authentication rejection from `initialize` settles through the existing non-retryable failed receipt path. Authentication rejection during thread/read validation remains operator-held, and the existing post-submit/unknown protections are unchanged. A local-queue result caused by a classified transient startup failure can still invoke bounded recovery after `deliver()` returns. No Hub, store, ACK contract, or other helper profile behavior changed.
+
+**Regression evidence.** `test_handle_delivery_initialize_auth_rejection_is_terminal` uses the real helper worker, adapter, Codex driver and SQLite queue with a fake JSON-RPC server. It blocks the first delivery call to hold the exact pre-transport watchdog window, supplies a deterministic `initialize` 401 rejection, and asserts: no premature recovery, terminal state `failed`, RPC trace exactly `initialize` (no thread/turn submission), no injected callback, and release of the FIFO head. The test passes on this source. Removing the `initial_start_pending` guard makes the same test fail at the business assertion `initial startup must not be preempted by the recovery watchdog`; the mutation log is `evidence/r6/mutation-initial-watchdog.log`. The deterministic green log is `evidence/r6/deterministic-auth-green.log`.
+
+**Requested sampling.** Isolated, serial runs of the original test before the repair produced:
+
+| Source | Runs | Failures | Failed iterations |
+| --- | ---: | ---: | --- |
+| N-1c `52a3f8a7` | 200 | 2 | 12, 159 |
+| Baseline `d6e56a8b` | 200 | 0 | — |
+| N-1c `52a3f8a7`, with RPC method trace enabled | 200 | 1 | 39 |
+| Repaired source | 200 | 0 | — |
+
+All loops used `env -i`, one test process at a time, isolated HOME/TMP, and the locked Python interpreter. The traced pre-fix failure contained only the `initialize` RPC before recovery/quarantine; raw failure logs and per-loop results are under `evidence/r6/`. The repaired run's 200 individual logs are preserved in `postfix-200-raw.tar.gz`.
+
+**Coverage.** The focused regression set (`test_codex_stale_thread`, `test_dispatch_lifecycle`, `test_driver_failure_faces`) passed 117 tests with zero failures after the final test changes (`evidence/r6/focused-117.log`). The canonical `scripts/run-build-tests.sh` gate passed under `env -i` with `DW_DESKTOP_INTEGRATION_PYTHON=/tmp/lockvenv/bin/python3`: `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2` (`evidence/r6/canonical-build.log`). After tightening the deterministic test probe to only report the no-RPC initial-start window, the two-profile helper gate was rerun against that final test fixture: both Claude and Codex reported 1290/1290 cases, groups `[1281, 9]`, inventory 97, rc=0 (`evidence/r6/helper-two-profile-final.log`). R3–R5 focused cases remain included in the 117-test set.

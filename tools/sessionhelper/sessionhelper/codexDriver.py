@@ -130,9 +130,20 @@ def _presubmit_validation_needs_operator_hold(exc: Exception) -> bool:
     """Binding/ownership rejections are retained at FIFO head for intervention."""
     if isinstance(exc, (DaemonIdentityError, ThreadUnavailable, PrivateEndpointError)):
         return True
-    return isinstance(exc, JsonRpcError) and exc.method in (
-        'initialize', 'thread/read', 'thread/resume'
-    ) and not _presubmit_validation_is_retryable(exc)
+    # A rejected initial initialize has no usable session to wait on; the
+    # delivery path settles that definite no-submit result as failed. Existing
+    # read/resume authentication mismatches remain operator-held and fail-closed.
+    if (isinstance(exc, JsonRpcError) and exc.method == 'initialize'
+            and exc.classify() == 'authentication'):
+        return False
+    return (isinstance(exc, JsonRpcError)
+            and exc.method in ('initialize', 'thread/read', 'thread/resume')
+            and not _presubmit_validation_is_retryable(exc))
+
+
+def _is_initialization_auth_rejection(exc: Exception) -> bool:
+    return (isinstance(exc, JsonRpcError) and exc.method == 'initialize'
+            and exc.classify() == 'authentication')
 
 
 def _error_class(exc: Exception, thread_id: str = "") -> str:
@@ -802,6 +813,7 @@ class CodexProtocolDriver(Driver):
 
         self._rpc: StdioJsonRpc | None = None
         self._initialized = False
+        self._startup_failed = False
         self._required_bound_thread_id = bound_thread_id if require_bound_thread else ""
         if require_bound_thread and not bound_thread_id:
             raise ValueError("configured bound thread id must not be empty")
@@ -909,6 +921,7 @@ class CodexProtocolDriver(Driver):
         # must validate/resume the exact bound thread under this same lock.
         lock = self.__dict__.get("_start_lock") or self.__dict__.setdefault("_start_lock", threading.Lock())
         with lock:
+            self._startup_failed = False
             # A transport can remain live after initialize returned a
             # transient server error. Such a connection is not ready for
             # thread/read or submission; retry initialization before treating
@@ -918,11 +931,15 @@ class CodexProtocolDriver(Driver):
             if self._rpc is not None and hasattr(self._rpc, 'broker') and not self._rpc.closed:
                 # Reuse this seat's broker on reconnect. A lane never creates
                 # or independently tears down the shared physical transport.
-                self._rpc.start()
-                self._initialize()
-                if self._event_thread is None or not self._event_thread.is_alive():
-                    self._event_thread = threading.Thread(target=self._pump_notifications, daemon=True)
-                    self._event_thread.start()
+                try:
+                    self._rpc.start()
+                    self._initialize()
+                    if self._event_thread is None or not self._event_thread.is_alive():
+                        self._event_thread = threading.Thread(target=self._pump_notifications, daemon=True)
+                        self._event_thread.start()
+                except Exception as exc:
+                    self._startup_failed = True
+                    raise
                 return
             # A few lifecycle tests construct the driver with __new__ to
             # exercise start() without running __init__. Treat that as a
@@ -934,7 +951,15 @@ class CodexProtocolDriver(Driver):
                     self._rpc.stop()
                 except Exception:
                     pass
-            self._start_locked()
+            try:
+                self._start_locked()
+            except Exception as exc:
+                # Publish the definite startup result before releasing the
+                # start lock. The adapter must let deliver() classify a
+                # terminal auth/ownership rejection instead of racing it with
+                # transport recovery merely because health() is false.
+                self._startup_failed = True
+                raise
             if had_connection and self._view_item_backfill and self._thread_id:
                 self._backfill_pending = True
         self._notify_activity()
@@ -1181,6 +1206,8 @@ class CodexProtocolDriver(Driver):
                                                detail='presubmit validation transport unavailable')
                     if _presubmit_validation_needs_operator_hold(exc):
                         return self._hold_presubmit_validation(envelope_id, exc)
+                    if _is_initialization_auth_rejection(exc):
+                        return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
                     if not self._required_bound_thread_id and not isinstance(exc, DaemonIdentityError):
                         raise
                     return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
@@ -1828,6 +1855,9 @@ class CodexProtocolDriver(Driver):
         self._verified_binding = self._binding_key()
 
     def transport_recovery_required(self, timeout):
+        lock = self.__dict__.get('_start_lock')
+        if (lock is not None and lock.locked()) or self._startup_failed:
+            return False
         if not self.health():
             return True
         writing = getattr(self._rpc, '_write_started', None)

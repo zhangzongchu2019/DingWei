@@ -1,4 +1,4 @@
-ca554441cc0b6e052208687c94066247cd149abcfc66100ee1b4339d147dce0d  docs/reviews/r61-n1c-presubmit-wait/REPORT.md
+8f2b8a5612b500e5de6f254e7f5ff6a2337629c927b3023413ebeee38912df55  docs/reviews/r61-n1c-presubmit-wait/REPORT.md
 7f94a444764efcc50488e36adfe02c63f66a4c5ae32804ce6e742f024ca8c837  docs/reviews/r61-n1c-presubmit-wait/SKIPS.md
 4466b47efb54035b2e3f474d20284eaaa4bad257fe91418637595bc86b628c0f  docs/reviews/r61-n1c-presubmit-wait/evidence/build-test-only-failed-5dd67f96.log
 0a151403d65155cd14e2112c5307bba8907b188bcbbaab9bf13c32c4db1a0275  docs/reviews/r61-n1c-presubmit-wait/evidence/build-test-only-final-rerun.log
@@ -67,3 +67,17 @@ d977f538a2f1ac33fa85d49451b650b765c91ea2b7f12b39fcf3a9cd682d5238  docs/reviews/r
 9d6a99e624b33ce11aa86bf9b3fac76672de3218ddee8aa5a303d8864d9b43d9  docs/reviews/r61-n1c-presubmit-wait/evidence/r5/mutation-blocker-preserve-head.log
 6ef66828e1372419ef535731fb577a7f1dd7c6570ce08b8f6002e6ada541485e  docs/reviews/r61-n1c-presubmit-wait/evidence/r5/mutation-recovery-tail.log
 f7c956d2923bd942175b1446481394aa36925658221bf92705e587e64a64e377  docs/reviews/r61-n1c-presubmit-wait/evidence/toolchain.txt
+4e133e5f77261ac6d86c6e049915f3b05b124eff8c6f700fe7c1af231bca6250  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/SAMPLING.md
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/baseline-d6e56a8b-results.txt
+bdd5971d028ea6ff29a6b0066d6569f515122ba417823a2edca670f11fbf39f3  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/canonical-build.log
+a8bb99067d4202a3ff982bcd52d0e1a55fd0828051075c5ba4d4efbae9e5474e  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/deterministic-auth-green.log
+27879cbde7f35e3b188d44791b4c0eed647d531380159d3f12f6ec325f51f608  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/deterministic-prefx-red.log
+3f5968e054dcd315f6106a8d92d8f9177ad303320f6b3062d9ac5df47655cc7a  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/focused-117.log
+cd7f084802fc93cd03c9eb06b5e259375f5ecf4e3721c76f1bbb40f82dcebda2  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/helper-two-profile-final.log
+684b7dc2207ecbf80e61106d46a33899a90b7bb0bb44712cdad617c11f3deced  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/mutation-initial-watchdog.log
+c0e6f14bc0dc5be9f5ad61be55394f81ab65794acd18bcf1de76ffac01dca4ee  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/postfix-200-raw.tar.gz
+dd6931c1a05f1111c07dc8cbe1ea321c3bcbe08efd6058caa2c29e2a093078e6  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/postfix-200-results.tsv
+e5c82073ae1d5ae59d963e4179773820c7359a6973d37afb0ca00af3469eba79  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/prefix-52a3f8a7-failures.log
+71ae358965a00c1fb841a8b26ca7e335c267a87d6aef04aa7843f6884cdb34ae  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/prefix-52a3f8a7-results.txt
+8c030bedb691beeaf1b928e2429dd162acb76060d253ca62eddab7288549745d  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/trace-prefix-52a3f8a7-failure.log
+d72b57384d564b166e605cb1fe15b30202227d8df8021b4e67f0275e92852971  docs/reviews/r61-n1c-presubmit-wait/evidence/r6/trace-prefix-52a3f8a7-results.txt

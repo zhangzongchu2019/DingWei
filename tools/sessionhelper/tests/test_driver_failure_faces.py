@@ -12,6 +12,7 @@ import stat
 import sys
 import tempfile
 import textwrap
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -38,6 +39,7 @@ def tearDownModule():
 FAKE_CODEX = textwrap.dedent(
     """
     import json, os, sys
+    TRACE = os.environ.get("FAKE_CODEX_TRACE", "")
     BEHAVIOR = os.environ.get("FAKE_CODEX_BEHAVIOR", "ok")
     if BEHAVIOR == "crash" and False:
         pass
@@ -48,11 +50,17 @@ FAKE_CODEX = textwrap.dedent(
             continue
         rid = msg.get("id")
         method = msg.get("method", "")
+        if TRACE:
+            with open(TRACE, "a", encoding="utf-8") as trace:
+                trace.write(method + "\\n")
         if rid is None:
             continue  # notification（initialized 等）
         if method == "initialize":
             if BEHAVIOR == "crash":
                 out = {"id": rid, "error": {"code": -32001, "message": "app-server cannot start: config corrupt (FAKE_START_BAD)"}}
+            elif BEHAVIOR == "initauthfail":
+                # Definite rejection before any thread/turn submission.
+                out = {"id": rid, "error": {"code": -32000, "message": "401 Unauthorized: token expired (FAKE_INIT_AUTH_BAD)"}}
             else:
                 out = {"id": rid, "result": {"serverInfo": {"name": "fake", "version": "0"}}}
         elif method == "thread/start":
@@ -109,6 +117,7 @@ class DriverFailureFacesTest(unittest.TestCase):
             "SH_DRIVER": "codex",
             "SH_CODEX_BIN": sys.executable,  # python 本体当"codex"（真命令经 _patch_cmd 换成脚本）
             "FAKE_CODEX_BEHAVIOR": behavior,
+            "FAKE_CODEX_TRACE": os.path.join(td, "rpc-methods.log"),
             "SH_CLI_CWD": td,
             "SH_TURN_TERMINAL_TIMEOUT_SECONDS": "1",
         })
@@ -254,13 +263,71 @@ class HubDeliveryPathTest(unittest.TestCase):
                 if state:
                     break
                 time.sleep(0.05)
-            self.assertEqual(state, "failed")
+            trace_path = os.path.join(td, "rpc-methods.log")
+            rpc_methods = Path(trace_path).read_text().splitlines() if os.path.exists(trace_path) else []
+            self.assertEqual(state, "failed", f"turn auth denial must settle failed; RPC methods={rpc_methods}")
             events = []
             while not adapter._event_q.empty():
                 events.append(adapter._event_q.get_nowait())
             blob = json.dumps(events, ensure_ascii=False)
             # 本路径失败载体＝队列终态 failed＋日志（session_event 的 turn_completed
             # 由 turn/completed 通知驱动，本行为不发通知 ⇒ 不在此断言）
+
+    def test_handle_delivery_initialize_auth_rejection_is_terminal(self):
+        """A known initialize denial must settle failed, not quarantine the FIFO."""
+        with tempfile.TemporaryDirectory() as td:
+            adapter = self._mk(td, "initauthfail")
+            # Pin the exact first-start window: before Codex creates its first
+            # RPC transport, the generic health probe would report "broken".
+            # A true recovery signal here would preempt initialize and strand
+            # the known auth rejection in the recovery queue.
+            adapter.driver.transport_recovery_required = lambda _timeout: adapter.driver._rpc is None
+            recoveries = []
+            recovery_observed = threading.Event()
+            def observe_recovery(command):
+                recoveries.append(command.delivery_id)
+                recovery_observed.set()
+            adapter._recover_transport = observe_recovery
+            original_deliver = adapter.driver.deliver
+            startup_gate = threading.Event()
+            startup_entered = threading.Event()
+            deliver_calls = []
+            def gated_deliver(*args, **kwargs):
+                deliver_calls.append(1)
+                if len(deliver_calls) == 1:
+                    startup_entered.set()
+                    startup_gate.wait(2)
+                return original_deliver(*args, **kwargs)
+            adapter.driver.deliver = gated_deliver
+            injected = []
+            adapter.handle_delivery(
+                {"body": "ping", "meta": {"source_kind": "user"}},
+                on_injected=lambda: injected.append(True),
+            )
+            self.assertTrue(startup_entered.wait(1), "delivery worker did not enter initial start")
+            time.sleep(0.08)
+            preempted_initial_start = recovery_observed.is_set()
+            startup_gate.set()
+            deadline = time.monotonic() + 3
+            state = ""
+            while time.monotonic() < deadline:
+                for command in list(adapter._commands._by_delivery.values()):
+                    if command.state == "failed":
+                        state = command.state
+                if state:
+                    break
+                time.sleep(0.01)
+            trace_path = os.path.join(td, "rpc-methods.log")
+            rpc_methods = Path(trace_path).read_text().splitlines() if os.path.exists(trace_path) else []
+            self.assertEqual(state, "failed", f"known auth rejection must become a failed terminal; RPC methods={rpc_methods}")
+            self.assertEqual(rpc_methods, ["initialize"], "auth denial must stop before thread or turn submission")
+            self.assertEqual(injected, [], "auth rejection is not model admission")
+            self.assertFalse(preempted_initial_start, "initial startup must not be preempted by the recovery watchdog")
+            self.assertIsNone(adapter._commands.current, "terminal rejection must release the FIFO head")
+            events = []
+            while not adapter._event_q.empty():
+                events.append(adapter._event_q.get_nowait())
+            self.assertIn("authentication", json.dumps(events, ensure_ascii=False))
 
     def test_handle_delivery_turn_failed_event_surfaces(self):
         # 事件面：turn/completed(status=failed) 通知 ⇒ session_event 带 turn_completed

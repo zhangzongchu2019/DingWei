@@ -621,7 +621,13 @@ class DriverAdapter:
         while not done.wait(0.02):
             if getattr(self, '_lane_stop', threading.Event()).is_set(): return None
             required = getattr(old_driver, 'transport_recovery_required', None)
+            initial_start_pending = (
+                getattr(self, '_which', None) == 'codex'
+                and getattr(old_driver, '_connection_generation', 0) == 0
+                and getattr(old_driver, '_rpc', None) is None
+            )
             if (getattr(self, '_which', None) == 'codex' and callable(required)
+                    and not initial_start_pending
                     and old_driver.submission_started(command.delivery_id) is None
                     and required(self._admission_timeout_for(command))):
                 command._delivery_worker = done
@@ -666,14 +672,19 @@ class DriverAdapter:
             command._delivery_worker = done
             self._commands.defer_current(command.delivery_id, preserve_fifo_head=True)
             if not old_driver.health():
-                self._recover_transport(command)
+                # deliver() has returned an explicit pre-submit wait/hold.
+                # That is the safe point to replace an unhealthy startup
+                # transport, even when its failure marker suppressed the
+                # watchdog's earlier speculative recovery.
+                self._recover_transport(command, allow_after_presubmit_result=True)
             return None
         return result[0]
 
-    def _recover_transport(self, command):
+    def _recover_transport(self, command, *, allow_after_presubmit_result=False):
         old = self.driver
         required = getattr(old, 'transport_recovery_required', None)
-        if getattr(self, '_which', None) == 'codex' and callable(required) and not required(self._admission_timeout):
+        if (getattr(self, '_which', None) == 'codex' and callable(required)
+                and not allow_after_presubmit_result and not required(self._admission_timeout)):
             # Waiting for a response on a healthy connection is not a stuck
             # writer. The next worker may wait on the delivery lock locally.
             return
