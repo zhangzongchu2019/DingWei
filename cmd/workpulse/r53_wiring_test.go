@@ -100,6 +100,7 @@ func TestR53ResourceMustMatchPublicOrigin(t *testing.T) {
 }
 func TestR53WiringPG(t *testing.T) {
 	t.Setenv("DW_R53_EXTSEAT", "1")
+	t.Setenv("DW_MCP_DCR_ENABLED", "false")
 	wiringKey(t)
 	jobs := &lifecycle.Group{}
 	ctx, cancel := context.WithCancel(context.WithValue(context.Background(), runTasksKey{}, jobs))
@@ -175,7 +176,7 @@ func TestR53WiringPG(t *testing.T) {
 	if err := wireR53(ctx, cfg, checker, group, d); err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource/mcp", "/api/external/", "/feishu/connect", "/healthz", "/mcp", "/mcp/oauth/feishu/callback", "/mcp/clients/codex.json", "/oauth/authorize", "/oauth/token"}
+	want := []string{"/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource/mcp", "/api/external/", "/feishu/connect", "/healthz", "/mcp", "/mcp/oauth/feishu/callback", "/mcp/clients/codex.json", "/oauth/authorize", "/oauth/register", "/oauth/token"}
 	sort.Strings(want)
 	if !reflect.DeepEqual(wiringPaths(t, mux), want) {
 		t.Fatalf("registered routes %v", wiringPaths(t, mux))
@@ -203,6 +204,19 @@ func TestR53WiringPG(t *testing.T) {
 		w := httptest.NewRecorder()
 		mux.ServeHTTP(w, r)
 		return w
+	}
+	// Registration remains routed when DCR is disabled; the handler hides it
+	// with 404 for both methods before reading client metadata.
+	for _, method := range []string{http.MethodGet, http.MethodPost} {
+		t.Run("dcr_disabled_"+method, func(t *testing.T) {
+			r := httptest.NewRequest(method, wiringOrigin+"/oauth/register", strings.NewReader(`{"redirect_uris":["http://127.0.0.1:43123/callback"]}`))
+			r.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			mux.ServeHTTP(w, r)
+			if w.Code != http.StatusNotFound {
+				t.Fatalf("DCR_DISABLED_REGISTRATION_STATUS method=%s got=%d want=404", method, w.Code)
+			}
+		})
 	}
 	w := request("GET", "/oauth/authorize?"+q.Encode(), nil, nil)
 	if w.Code != 302 {
