@@ -3,7 +3,7 @@
 - [x] Implement bounded-backoff retry of transient read-only pre-submit validation failures.
 - [x] Persist busy wait before waiting and keep the same envelope/thread at the FIFO head.
 - [x] Send ACK v2 busy only after the local durable wait marker is written.
-- [x] Keep thread/read and thread/resume authentication, identity, cwd, direct-input, and daemon identity mismatches fail-closed as FIFO-head operator holds; distinguish a definitive initial initialize authentication rejection as non-retryable failed when no submission was issued.
+- [x] Keep thread/read and thread/resume authentication, identity, cwd, direct-input, and daemon identity mismatches fail-closed as FIFO-head operator holds; distinguish first direct initialize authentication rejection (non-retryable failed) from replacement initialize rejection during recovery (quarantined, no terminal ACK).
 - [x] Route transient initialize failures on the first Codex delivery through the durable adapter FIFO before validation starts; startup regression covers transport timeout and temporary RPC error using the real helper worker, adapter, SQLite lifecycle, and synthetic RPC.
 - [x] Preserve marker-based restart behavior: null submission marker resumes; non-null becomes unknown/manual.
 - [x] Re-run `build.sh --test-only` on frozen source `d8711290bf39c5f5b1305ab33663bf1e638474a9` with both helper profiles: Claude 1282/1282, Codex 1282/1282; `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`, inventory 97. Raw log and SHA are in `docs/reviews/r61-n1c-presubmit-wait/evidence/r1/` and REPORT.
@@ -17,5 +17,5 @@
 - [x] Cover event-bridge resubscription after the recovery event is set and retain the live healthy-transport initialize retry probe from coder56's S4 evidence.
 - [x] Run the recovery and initialize mutations; red must be in the corresponding business assertions.
 - [x] R6: reproduce the initial-start watchdog/authentication race, add deterministic real-worker regression and initial-initialize authentication terminal contract; pre-fix 52a3f8a7 2/200, baseline d6e56a8b 0/200, repaired source 0/200. Focused 117 tests and final helper profiles 1290/1290 each; details and raw evidence in `docs/reviews/r61-n1c-presubmit-wait/evidence/r6/` and the R6 section of REPORT.
-- [x] Align design/spec classification: initial initialize authentication rejection is failed/non-retryable only before submission; read/resume authentication and binding mismatches remain operator-held. OpenSpec strict evidence: `docs/reviews/r61-n1c-presubmit-wait/evidence/r6/openspec-strict-docs.log`.
+- [x] Align design/spec classification: first direct initialize authentication rejection before submission is failed/non-retryable; replacement initialize rejection during recovery and read/resume authentication/binding mismatches remain operator-held. OpenSpec strict evidence: `docs/reviews/r61-n1c-presubmit-wait/evidence/r6/openspec-strict-docs.log`.
 - [x] Re-run isolated helper build, m8/store `-count=3`, and OpenSpec strict at source `ba69949734dfc9ef93d8c29bb092f4aa1db73c46`; evidence and SHA256 inventory are in `docs/reviews/r61-n1c-presubmit-wait/evidence/r3/`.

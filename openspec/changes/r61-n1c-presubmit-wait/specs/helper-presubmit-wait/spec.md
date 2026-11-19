@@ -4,7 +4,7 @@
 
 ### Requirement: Transient pre-submit validation failures remain queued
 
-The Codex helper MUST persist classified transient pre-submit failures at the FIFO head for retry. A definitive initial-initialize authentication rejection before submission MUST use the non-retryable failed path. Read/resume authentication and binding mismatches MUST remain fail-closed operator holds. Unknown submission state MUST NOT be retried or replayed.
+The Codex helper MUST persist classified transient pre-submit failures at the FIFO head for retry. A definitive authentication rejection from the delivery's first direct initialize before submission MUST use the non-retryable failed path. Authentication rejection during replacement startup, read/resume authentication and binding mismatches MUST remain fail-closed operator holds. Unknown submission state MUST NOT be retried or replayed.
 
 #### Scenario: Validation transport recovers before submission
 
@@ -39,9 +39,15 @@ The Codex helper MUST persist classified transient pre-submit failures at the FI
 - **AND** it emits an operator alert without a terminal failed ACK
 - **AND** it does not rotate or submit a different thread
 
+#### Scenario: Replacement initialize authentication rejection stays quarantined
+
+- **WHEN** a transient pre-submit failure has already entered recovery and replacement `start()` receives a definitive initialize authentication rejection
+- **THEN** recovery does not retry the replacement or send a terminal failed ACK
+- **AND** it keeps the same delivery quarantined at the FIFO head and emits an operator alert
+
 #### Scenario: Recovery does not retry an unknown submission or other definitive refusal
 
-- **WHEN** replacement startup fails with identity, daemon, binding, or other definitive refusal, excluding the initial initialize authentication case above
+- **WHEN** replacement startup fails with identity, daemon, binding, or another definitive refusal
 - **OR** the current delivery has a non-null submission marker
 - **THEN** recovery remains quarantined and emits an operator alert
 - **AND** it does not automatically retry startup or send another turn/start
