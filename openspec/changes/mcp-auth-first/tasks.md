@@ -13,3 +13,5 @@
 2026-11-19 coder56solzzc：299b5d75前段canonical与三包三遍均rc0。收到03:30:24Z追加connect失败页，原门只作前段证据；新代码/规格待钉新源后重跑完整门，不以299绿覆盖新增产品。readAttempt与oauthTTL不改。
 
 2026-11-19 coder56solzzc：R6复验PASS已交5e51a568，恢复本单。03:48Z追加授权页无具体Agent默认示例，新增MAF-006与渲染格；原6c门保留（m8仅已知N4落点rc1），新源完整门再钉，旧读数不覆盖追加产品。GROUPS同文件为不同函数hunk，后续须保留其可选目标语义。
+
+2026-11-19 coder56solzzc：3c5e8f3d首次文案资格门暴露旧表单测试仍强制旧示例字符串；仅同步这一旧文案断言为业主指定新提示，原required／pattern／CSRF／目标校验断言不变，新无placeholder格保持。两道3c门已按本席PID停止，完整原输出和停止记录留档，不记PASS。修正后Connect与MCP定向两包rc0，再钉产品／测试新源跑全门。最终环境PYTHONPATH显式指向本分支，前段6c所用GROUPS路径仅作原始资格记录，不背书最终跨进程门。
