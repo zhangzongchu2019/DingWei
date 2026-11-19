@@ -145,7 +145,7 @@ func (h *Hub) handleNewPlatformAgentGroups(w http.ResponseWriter, r *http.Reques
 				}
 				for _, a := range items {
 					full := h.Identity.FullName(r.Context(), &a)
-					externalCandidates = append(externalCandidates, npOwnedAgentView{ID: a.ID, SessionName: full, FullName: full, Name: a.Name, External: true})
+					externalCandidates = append(externalCandidates, npOwnedAgentView{ID: a.ID, SessionName: full, FullName: full, Name: a.Name, External: true, Online: h.AgentOnline(a.ID)})
 				}
 			}
 		}

@@ -228,8 +228,8 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 			}
 		}
 		rows := ledgerRows(t, pool)
-		if len(rows) != 15 || rows["0103_agent_last_source_r31.sql"].digest == "" || rows["0200_hosted_r30_baseline.sql"].digest == "" || rows["0201_hosted_node_access_r31.sql"].digest == "" || rows["0102_device_claim.sql"].digest == "" || rows[coreEntry].digest == "" || rows[frozenIdentityEntry].digest == "" || rows["0101_group_communication.sql"].digest == "" {
-			t.Errorf("账上读到 %v，要 Hub 域十五条（含 %s 与 %s）", keysOf(rows), coreEntry, frozenIdentityEntry)
+		if len(rows) != 16 || rows["0103_agent_last_source_r31.sql"].digest == "" || rows["0200_hosted_r30_baseline.sql"].digest == "" || rows["0201_hosted_node_access_r31.sql"].digest == "" || rows["0102_device_claim.sql"].digest == "" || rows[coreEntry].digest == "" || rows[frozenIdentityEntry].digest == "" || rows["0101_group_communication.sql"].digest == "" || rows["0113_extseat_groups.sql"].digest == "" {
+			t.Errorf("账上读到 %v，要 Hub 域十六条（含 %s 与 %s）", keysOf(rows), coreEntry, frozenIdentityEntry)
 		}
 		if _, ok := rows[frozenFanoutEntry]; ok {
 			t.Errorf("Hub 库的账上记了 %s —— 那条属 fanout 域", frozenFanoutEntry)
@@ -307,7 +307,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 			t.Errorf("表清单动了：\n迁前 %v\n迁后 %v", before, after)
 		}
 		afterRows := ledgerRows(t, pool)
-		if len(afterRows) != len(beforeRows)+13 {
+		if len(afterRows) != len(beforeRows)+14 {
 			t.Errorf("账多了条目：迁前 %v、迁后 %v", keysOf(beforeRows), keysOf(afterRows))
 		}
 		for name, r := range beforeRows {
