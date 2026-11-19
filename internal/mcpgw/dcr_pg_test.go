@@ -361,3 +361,21 @@ func TestDCRPGCleanupPreservesUnexpiredRegistration(t *testing.T) {
 		t.Fatal("GC deleted a live subject binding", e)
 	}
 }
+
+func TestDCRFullPoolDoesNotConsumeExistingOAuthCapacity(t *testing.T) {
+	s, p, key := dcrPG(t, true)
+	ctx := context.Background()
+	oauth, e := NewSQLStore(ctx, p, testAccess(t), s.resource, key)
+	if e != nil {
+		t.Fatal(e)
+	}
+	dcrExec(t, p, `INSERT INTO mcpgw_dcr_client(resource,client_id,sealed,source_hash,created_ns,expires_ns) SELECT $1,'fixture-'||i,decode('00','hex'),'fixture',0,9223372036854775807 FROM generate_series(1,4096) i`, s.resource)
+	dcrExec(t, p, `INSERT INTO mcpgw_oauth(resource,kind,key_hash,sealed,expires_ns) SELECT $1,'attempt',lpad(i::text,64,'0'),decode('00','hex'),9223372036854775807 FROM generate_series(1,9000) i`, s.resource)
+	if _, _, _, e = s.Register(ctx, "source", dcrClient(t)); !errors.Is(e, errDCRCapacity) {
+		t.Fatal("fixture DCR pool was not full", e)
+	}
+	now := time.Now()
+	if e = oauth.Put(ctx, "attempt", hash("unrelated-cimd"), []byte("test-only-payload"), now.Add(time.Minute), now); e != nil {
+		t.Fatal("full DCR registry consumed the existing OAuth grant pool", e)
+	}
+}

@@ -68,14 +68,22 @@ func TestDCRAuthorizeIsolationActualRedirectAndClosedSnapshots(t *testing.T) {
 	if request() != 400 || resolver.calls != 0 {
 		t.Fatal("expired client revived or fell through CIMD")
 	}
+	offLive, _, _, e := s.Register(ctx, "source", dcrClient(t))
+	if e != nil {
+		t.Fatal(e)
+	}
 	d.Policy.Enabled = false
 	q.Set("client_id", clientID)
 	if request() != 302 || resolver.calls != 1 {
 		t.Fatal("DCR shutdown disabled existing CIMD")
 	}
-	q.Set("client_id", c.ID)
+	q.Set("client_id", offLive.ID)
 	if request() != 400 {
 		t.Fatal("DCR shutdown allowed new authorization")
+	}
+	metadata := serve(mux, httptest.NewRequest("GET", testOrigin+"/.well-known/oauth-authorization-server", nil))
+	if strings.Contains(metadata.Body.String(), "registration_endpoint") || !strings.Contains(metadata.Body.String(), `"client_id_metadata_document_supported":true`) {
+		t.Fatal("DCR shutdown advertised registration or disabled CIMD discovery")
 	}
 	d.Policy.Enabled = true
 	d.Policy.HTTPSRedirects = []string{"https://vendor.example/cb"}
