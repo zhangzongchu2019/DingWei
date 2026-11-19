@@ -60,9 +60,11 @@ const (
 type Service struct {
 	auditFailures atomic.Uint64
 
-	Store Store
-	Now   func() time.Time
-	Rand  io.Reader
+	Store                  Store
+	Now                    func() time.Time
+	Rand                   io.Reader
+	ExternalGroups         bool
+	CommunicationTenantKey string
 	// OnRevoked 在吊销成功（非重复吊销）后、Revoke 返回前同步调用：Hub 据此以 4401 断开在线连接并重推在线清单（V2 A1）。
 	OnRevoked func(agentID string)
 	// OnCredentialIssued 凭据被取走（旧凭据随之作废）后、Poll 返回前同步调用：Hub 据此断开该 Agent 仍在线的连接
@@ -425,7 +427,7 @@ func (s *Service) ResolveFullName(ctx context.Context, fullName string) (*Agent,
 		return nil, nil, ErrNotFound
 	}
 	name, short := fullName[:i], fullName[i+1:]
-	_, _, externalName := extshared.SplitAgentName(name)
+	externalName := extshared.IsExternalAgentName(name)
 	if (!ValidAgentName(name) && !externalName) || !ValidShortName(short) {
 		return nil, nil, ErrNotFound
 	}

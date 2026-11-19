@@ -19,6 +19,7 @@ import (
 // Handler provides B's two integration functions. It does not implement an MCP
 // authorization server and never writes logs or audits containing credentials.
 type Handler struct {
+	allowUnpaired bool
 	appID         string
 	teamTenantKey string
 	redirectURI   string
@@ -50,7 +51,7 @@ func NewHandler(cfg Config) (*Handler, error) {
 		cfg.Random = rand.Reader
 	}
 	return &Handler{
-		appID: cfg.AppID, teamTenantKey: cfg.TeamTenantKey, redirectURI: cfg.RedirectURI,
+		allowUnpaired: cfg.AllowUnpaired, appID: cfg.AppID, teamTenantKey: cfg.TeamTenantKey, redirectURI: cfg.RedirectURI,
 		oauth: cfg.OAuth, states: cfg.States, tokens: cfg.Tokens, stateTTL: cfg.StateTTL,
 		now: cfg.Now, random: cfg.Random, defaults: cfg.Defaults,
 		connectCSP: connectPageCSPFor(authorizeOriginOf(cfg.OAuth, cfg.RedirectURI)),
@@ -60,7 +61,7 @@ func NewHandler(cfg Config) (*Handler, error) {
 // Start begins Feishu login and binds the complete issuance intent to state.
 func (h *Handler) Start(ctx context.Context, req StartRequest) (StartResult, error) {
 	if req.Automatic {
-		if h.defaults == nil || len(h.defaults.Allowed(h.teamTenantKey)) == 0 || req.ShortName != "" {
+		if (!h.allowUnpaired && (h.defaults == nil || len(h.defaults.Allowed(h.teamTenantKey)) == 0)) || req.ShortName != "" {
 			return StartResult{}, ErrInvalidStart
 		}
 		if req.TargetAgent != "" && !h.allowedTarget(ctx, req.TargetAgent) {
@@ -159,7 +160,7 @@ func (h *Handler) Callback(ctx context.Context, req CallbackRequest) (CallbackRe
 	if attempt.Request.Automatic {
 		attempt.Request.ShortName = AutomaticShortName(profile, h.now())
 		targets := h.validTargets(ctx)
-		if h.defaults != nil && len(h.defaults.Allowed(h.teamTenantKey)) > 1 {
+		if h.allowUnpaired || (h.defaults != nil && len(h.defaults.Allowed(h.teamTenantKey)) > 1) {
 			return h.prepareSelection(ctx, attempt, targets)
 		}
 		if !h.allowedTarget(ctx, attempt.Request.TargetAgent) {
@@ -174,7 +175,10 @@ func (h *Handler) issue(ctx context.Context, attempt LoginAttempt) (CallbackResu
 	if !h.now().Before(attempt.ExpiresAt) {
 		return CallbackResult{}, ErrStateExpired
 	}
-	if attempt.Request.Automatic && !h.allowedTarget(ctx, attempt.Request.TargetAgent) {
+	if attempt.Request.WithoutPair && (!h.allowUnpaired || attempt.Request.TargetAgent != "") {
+		return CallbackResult{}, ErrInvalidStart
+	}
+	if attempt.Request.Automatic && !attempt.Request.WithoutPair && !h.allowedTarget(ctx, attempt.Request.TargetAgent) {
 		return CallbackResult{}, ErrInvalidStart
 	}
 	issued, err := h.tokens.IssueToken(ctx, attempt.Request)

@@ -85,3 +85,18 @@ func TestScopeStringMatchesPersistedText(t *testing.T) {
 		t.Fatalf("scope text drifted: %q", ScopeString())
 	}
 }
+
+func TestUnpairedNameIsStableExternalSyntaxOnly(t *testing.T) {
+	name, e := UnpairedAgentName("bot", "ex_0123456789abcdef0123456789abcdef")
+	if e != nil || name != "bot_EX0123456789abcdef0123456789abcdef" || !IsExternalAgentName(name) || !IsExternalAgentName("bot_ex0123456789abcdef0123456789abcdef") {
+		t.Fatalf("unpaired syntax %q %v", name, e)
+	}
+	if _, _, ok := SplitAgentName(name); ok {
+		t.Fatal("unpaired identity interpreted as AG")
+	}
+	for _, bad := range []string{"bot_EX0", "bot_EX0123456789abcdef0123456789abcdef_extra", "bot_AG0"} {
+		if IsExternalAgentName(bad) {
+			t.Fatalf("malformed external identity accepted: %q", bad)
+		}
+	}
+}

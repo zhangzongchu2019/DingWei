@@ -147,7 +147,25 @@ func (s *Service) CreateGroup(ctx context.Context, actorLC, leaderAgentID, short
 	}
 	now := s.Now()
 	g := Group{Code: code, ShortName: shortName, CreatorLC: Lower(actorLC), LeaderAgentID: leaderAgentID, CreatedAt: now, UpdatedAt: now}
-	if err := s.Store.CreateGroup(ctx, g); err != nil {
+	leader, err := s.Store.GetAgent(ctx, leaderAgentID)
+	if errors.Is(err, ErrNotFound) {
+		return nil, ErrGroupAgentUnavailable
+	}
+	if err != nil {
+		return nil, err
+	}
+	if leader.Origin == OriginExternal {
+		store, ok := s.Store.(interface {
+			CreateExternalOwnedGroup(context.Context, Group, string) error
+		})
+		if !ok || !s.ExternalGroups {
+			return nil, ErrGroupAgentUnavailable
+		}
+		err = store.CreateExternalOwnedGroup(ctx, g, s.CommunicationTenantKey)
+	} else {
+		err = s.Store.CreateGroup(ctx, g)
+	}
+	if err != nil {
 		return nil, err
 	}
 	s.audit(ctx, g.CreatorLC, "group.create", code, "leader="+leaderAgentID)
@@ -156,6 +174,29 @@ func (s *Service) CreateGroup(ctx context.Context, actorLC, leaderAgentID, short
 
 // JoinGroup 把 actorLC 自己的 Agent 加入编组。
 func (s *Service) JoinGroup(ctx context.Context, actorLC, code, agentID string) error {
+	agent, err := s.Store.GetAgent(ctx, agentID)
+	if errors.Is(err, ErrNotFound) {
+		return ErrGroupAgentUnavailable
+	}
+	if err != nil {
+		return err
+	}
+	if agent.Origin == OriginExternal {
+		if !s.ExternalGroups {
+			return ErrGroupAgentUnavailable
+		}
+		store, ok := s.Store.(interface {
+			JoinExternalGroup(context.Context, string, string, string, string, time.Time) error
+		})
+		if !ok {
+			return ErrGroupAgentUnavailable
+		}
+		if err := store.JoinExternalGroup(ctx, code, agentID, Lower(actorLC), s.CommunicationTenantKey, s.Now()); err != nil {
+			return err
+		}
+		s.audit(ctx, Lower(actorLC), "group.join", code, "agent="+agentID)
+		return nil
+	}
 	if err := s.Store.JoinGroup(ctx, code, agentID, Lower(actorLC), s.Now()); err != nil {
 		return err
 	}
@@ -356,6 +397,15 @@ func (s *Service) AgentsCanCommunicate(ctx context.Context, source, target *Agen
 	}
 	if source.ID == target.ID {
 		return true, nil
+	}
+	if source.Origin == OriginExternal || target.Origin == OriginExternal {
+		store, ok := s.Store.(interface {
+			ExternalAgentsCanCommunicate(context.Context, string, string, string, time.Time) (bool, error)
+		})
+		if !ok {
+			return false, nil
+		}
+		return store.ExternalAgentsCanCommunicate(ctx, source.ID, target.ID, s.CommunicationTenantKey, s.Now())
 	}
 	sourceCodes, err := s.Store.ListAgentGroups(ctx, source.ID)
 	if err != nil {

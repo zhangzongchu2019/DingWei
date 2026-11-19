@@ -69,10 +69,13 @@ func (h *Handler) validTargets(ctx context.Context) []string {
 	return out
 }
 func (h *Handler) prepareSelection(ctx context.Context, a LoginAttempt, targets []string) (CallbackResult, error) {
-	if len(targets) == 0 {
+	if len(targets) == 0 && !h.allowUnpaired {
 		return CallbackResult{}, ErrInvalidStart
 	}
-	recent, err := h.defaults.Recent(ctx, a.Request.Principal)
+	recent, err := "", error(nil)
+	if h.defaults != nil {
+		recent, err = h.defaults.Recent(ctx, a.Request.Principal)
+	}
 	if err != nil {
 		return CallbackResult{}, ErrInvalidStart
 	}
@@ -95,7 +98,7 @@ func (h *Handler) prepareSelection(ctx context.Context, a LoginAttempt, targets 
 	if err = h.states.Create(ctx, a); err != nil {
 		return CallbackResult{}, err
 	}
-	return CallbackResult{AttemptID: a.Request.AttemptID, Selection: token, Targets: targets, Preferred: preferred}, nil
+	return CallbackResult{AllowUnpaired: h.allowUnpaired, AttemptID: a.Request.AttemptID, Selection: token, Targets: targets, Preferred: preferred}, nil
 }
 func (h *Handler) selectTarget(ctx context.Context, req CallbackRequest) (CallbackResult, error) {
 	a, err := h.states.Consume(ctx, hashState(req.Selection), h.now())
@@ -105,9 +108,13 @@ func (h *Handler) selectTarget(ctx context.Context, req CallbackRequest) (Callba
 	if req.AttemptID != "" && a.Request.AttemptID != req.AttemptID {
 		return CallbackResult{}, callbackFailure(FailureAuthorizationUsed, TargetCategoryUnverified, req.AttemptID, ErrInvalidState)
 	}
-	if a.Purpose != StatePurposeSelection || a.AppID != h.appID || a.RedirectURI != h.redirectURI || !a.Request.Automatic || a.Request.Principal.TenantKey != h.teamTenantKey || a.Request.Principal.Subject == "" || !extshared.ValidShortName(a.Request.ShortName) || !h.allowedTarget(ctx, req.Target) {
+	if a.Purpose != StatePurposeSelection || a.AppID != h.appID || a.RedirectURI != h.redirectURI || !a.Request.Automatic || a.Request.Principal.TenantKey != h.teamTenantKey || a.Request.Principal.Subject == "" || !extshared.ValidShortName(a.Request.ShortName) || !(h.allowedTarget(ctx, req.Target) || (h.allowUnpaired && req.Target == "__no_pair__")) {
 		return CallbackResult{}, ErrInvalidStart
 	}
 	a.Request.TargetAgent = req.Target
+	if req.Target == "__no_pair__" {
+		a.Request.TargetAgent = ""
+		a.Request.WithoutPair = true
+	}
 	return h.issue(ctx, a)
 }

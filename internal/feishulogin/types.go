@@ -118,6 +118,7 @@ type OAuthClient interface {
 // only after the trusted profile. A pending multi-target selection stores that
 // verified principal and the generated name in the encrypted, one-time state.
 type IssueRequest struct {
+	WithoutPair bool                // 仅消费已验证 selection state 后设置
 	Principal   extshared.Principal // server-verified identity; never accepted from the browser
 	ShortName   string              // external Agent short name, validated by extshared rules
 	TargetAgent string              // target helper's canonical full name
@@ -164,6 +165,7 @@ type StateStore interface {
 // Config contains server-owned configuration. TeamTenantKey is independent and
 // required; production wiring should populate it from DW_FEISHU_TEAM_TENANT_KEY.
 type Config struct {
+	AllowUnpaired bool
 	AppID         string
 	TeamTenantKey string
 	RedirectURI   string
@@ -206,9 +208,10 @@ type CallbackRequest struct {
 // CallbackResult is the single local-token disclosure point in this package.
 // The non-secret issuance metadata is forwarded unchanged for B's OAuth response.
 type CallbackResult struct {
-	Selection string
-	Targets   []string
-	Preferred string
+	AllowUnpaired bool
+	Selection     string
+	Targets       []string
+	Preferred     string
 
 	AttemptID             string
 	Token                 string

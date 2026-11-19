@@ -13,6 +13,9 @@ import (
 
 // Send 原子受理＋续组＋outbox；SQLite结果不参与accepted的定义。
 func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, expectReplyArg ...bool) (SendReceipt, error) {
+	if routed(ctx) {
+		return s.routedSend(ctx, a, to, body, clientID, len(expectReplyArg) > 0 && expectReplyArg[0])
+	}
 	var result SendReceipt
 	if err := extshared.CheckMessageBody(body); err != nil {
 		return result, err
@@ -96,6 +99,25 @@ func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, e
 
 // EnqueueFromHelper 由Hub认证后的helper身份调用；不从消息正文接受sender/AG。
 func (s *Service) EnqueueFromHelper(ctx context.Context, sourceAgentID, targetAgentID, messageID, body string) (SendReceipt, error) {
+	var useOrdinary bool
+	if !s.ExternalGroups && !routed(ctx) {
+		if e := s.tx(ctx, func(tx repo.Tx) error {
+			var err error
+			useOrdinary, err = s.hasOrdinaryTx(ctx, tx, targetAgentID)
+			if err == nil && !useOrdinary {
+				err = tx.QueryRow(ctx, `SELECT ag_code IS NULL FROM np_extseat WHERE agent_id=$1`, targetAgentID).Scan(&useOrdinary)
+				if errors.Is(err, sql.ErrNoRows) {
+					return extshared.ErrNotPermitted
+				}
+			}
+			return err
+		}); e != nil {
+			return SendReceipt{}, e
+		}
+	}
+	if s.ExternalGroups || routed(ctx) || useOrdinary {
+		return s.routedEnqueue(ctx, sourceAgentID, targetAgentID, messageID, body)
+	}
 	var result SendReceipt
 	if err := extshared.CheckMessageBody(body); err != nil {
 		return result, err
@@ -208,6 +230,10 @@ func (s *Service) claim(ctx context.Context, a Seat) ([]Delivery, error) {
 	return s.claimSince(ctx, a, nil)
 }
 func (s *Service) claimSince(ctx context.Context, a Seat, since *time.Time) ([]Delivery, error) {
+	if routed(ctx) {
+		ds, _, _, _, _, e := s.routedInbox(ctx, a, "claim", "", 0, since)
+		return ds, e
+	}
 	var result []Delivery
 	now := s.now()
 	e := s.tx(ctx, func(tx repo.Tx) error {
@@ -284,6 +310,18 @@ func (s *Service) Wait(ctx context.Context, a Seat, max time.Duration) ([]Delive
 	}
 }
 func (s *Service) presence(ctx context.Context, a Seat) error {
+	if routed(ctx) {
+		return s.tx(ctx, func(tx repo.Tx) error {
+			fresh, e := s.routedIdentity(ctx, tx, a)
+			if e != nil {
+				return e
+			}
+			if _, e = s.grants(ctx, tx, fresh); e != nil {
+				return e
+			}
+			return s.seen(ctx, tx, fresh, s.now())
+		})
+	}
 	now := s.now()
 	return s.tx(ctx, func(tx repo.Tx) error {
 		fresh, _, e := s.authTx(ctx, tx, a, now)
@@ -295,6 +333,10 @@ func (s *Service) presence(ctx context.Context, a Seat) error {
 	})
 }
 func (s *Service) Ack(ctx context.Context, a Seat, id string, gen int) error {
+	if routed(ctx) {
+		_, _, _, _, _, e := s.routedInbox(ctx, a, "ack", id, gen, nil)
+		return e
+	}
 	now := s.now()
 	return s.tx(ctx, func(tx repo.Tx) error {
 		fresh, g, e := s.authTx(ctx, tx, a, now)
@@ -352,6 +394,10 @@ func (s *Service) Expire(ctx context.Context) error {
 
 // Receipt 只提供本席位的收件状态与可查死因，不泄露别人消息。
 func (s *Service) Receipt(ctx context.Context, a Seat, id string) (state, reason string, err error) {
+	if routed(ctx) {
+		_, _, _, state, reason, err = s.routedInbox(ctx, a, "receipt", id, 0, nil)
+		return
+	}
 	err = s.tx(ctx, func(tx repo.Tx) error {
 		fresh, _, e := s.authTx(ctx, tx, a, s.now())
 		if e != nil {
@@ -367,6 +413,9 @@ func (s *Service) Receipt(ctx context.Context, a Seat, id string) (state, reason
 }
 
 func (s *Service) ListOnline(ctx context.Context, a Seat) ([]OnlineAgent, error) {
+	if routed(ctx) {
+		return s.routedOnline(ctx, a)
+	}
 	var helpers []OnlineAgent
 	var e error
 	if s.Helpers != nil {
@@ -398,7 +447,7 @@ func (s *Service) Online(ctx context.Context) ([]OnlineAgent, error) {
 	var out []OnlineAgent
 	now := s.now()
 	e := s.tx(ctx, func(tx repo.Tx) error {
-		rows, e := tx.Query(ctx, `SELECT s.agent_id,s.ag_code,s.ag_generation,a.owner_lc,a.name,u.short_name,s.last_seen_at FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE s.revoked_at IS NULL AND a.state='active' AND u.state='active' AND s.last_seen_at>$1 AND EXISTS(SELECT 1 FROM np_extseat_token t WHERE t.seat_id=s.agent_id AND t.revoked_at IS NULL AND t.expires_at>$2 AND t.auth_generation=s.auth_generation) ORDER BY a.id`, now.Add(-extshared.PresenceTimeout), now)
+		rows, e := tx.Query(ctx, `SELECT s.agent_id,COALESCE(s.ag_code,''),COALESCE(s.ag_generation,0),a.owner_lc,a.name,u.short_name,s.last_seen_at FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE s.revoked_at IS NULL AND a.state='active' AND u.state='active' AND s.last_seen_at>$1 AND EXISTS(SELECT 1 FROM np_extseat_token t WHERE t.seat_id=s.agent_id AND t.revoked_at IS NULL AND t.expires_at>$2 AND t.auth_generation=s.auth_generation) ORDER BY a.id`, now.Add(-extshared.PresenceTimeout), now)
 		if e != nil {
 			return e
 		}
@@ -421,7 +470,18 @@ func (s *Service) Online(ctx context.Context) ([]OnlineAgent, error) {
 			return e
 		}
 		for _, c := range items {
-			if _, e = s.Groups.RecheckGroup(ctx, tx, c.a, now); e != nil {
+			ordinary, err := s.hasOrdinaryTx(ctx, tx, c.a.AgentID)
+			if err != nil {
+				return err
+			}
+			if ordinary || c.a.Group == "" {
+				if _, err = s.grants(extshared.WithRouting(ctx, extshared.Routing{Mode: "direct"}), tx, c.a); err != nil {
+					if errors.Is(err, extshared.ErrNotPermitted) {
+						continue
+					}
+					return err
+				}
+			} else if _, e = s.Groups.RecheckGroup(ctx, tx, c.a, now); e != nil {
 				if errors.Is(e, extshared.ErrGroupDissolved) || errors.Is(e, extshared.ErrTargetNotInAG) {
 					continue
 				}

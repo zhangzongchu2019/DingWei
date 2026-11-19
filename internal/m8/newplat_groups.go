@@ -1,6 +1,7 @@
 package m8
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -53,6 +54,10 @@ type npOwnedAgentView struct {
 	FullName    string `json:"full_name"`
 	Name        string `json:"name"`
 	Online      bool   `json:"online"`
+	External    bool   `json:"external,omitempty"`
+	Enrollment  string `json:"enrollment,omitempty"`
+	Pairing     string `json:"pairing,omitempty"`
+	Target      string `json:"target,omitempty"`
 }
 
 func (h *Hub) npGroupView(info identity.GroupInfo) npGroupView {
@@ -117,11 +122,36 @@ func (h *Hub) handleNewPlatformAgentGroups(w http.ResponseWriter, r *http.Reques
 		for i := range owned {
 			ag := &owned[i]
 			full := h.Identity.FullName(r.Context(), ag)
-			ownedViews = append(ownedViews, npOwnedAgentView{ID: ag.ID, SessionName: full, FullName: full, Name: ag.Name, Online: h.AgentOnline(ag.ID)})
+			view := npOwnedAgentView{ID: ag.ID, SessionName: full, FullName: full, Name: ag.Name, Online: h.AgentOnline(ag.ID), External: ag.Origin == identity.OriginExternal}
+			if view.External && strings.Contains(ag.Name, "_EX") {
+				view.Pairing = "未创建"
+				view.Target = "—"
+				view.Enrollment = "已验证／未编组"
+				if codes, e := h.Identity.Store.ListAgentGroups(r.Context(), ag.ID); e == nil && len(codes) > 0 {
+					view.Enrollment = "已验证／已编组"
+				}
+			}
+			ownedViews = append(ownedViews, view)
+		}
+		externalCandidates := []npOwnedAgentView{}
+		if h.Identity.ExternalGroups {
+			if store, ok := h.Identity.Store.(interface {
+				ExternalGroupCandidates(context.Context, string, string) ([]identity.Agent, error)
+			}); ok {
+				items, e := store.ExternalGroupCandidates(r.Context(), actor, h.Identity.CommunicationTenantKey)
+				if e != nil {
+					http.Error(w, "agent groups unavailable", 503)
+					return
+				}
+				for _, a := range items {
+					full := h.Identity.FullName(r.Context(), &a)
+					externalCandidates = append(externalCandidates, npOwnedAgentView{ID: a.ID, SessionName: full, FullName: full, Name: a.Name, External: true})
+				}
+			}
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
-		_ = json.NewEncoder(w).Encode(map[string]any{"principal": actor, "groups": views, "owned_agents": ownedViews})
+		_ = json.NewEncoder(w).Encode(map[string]any{"principal": actor, "groups": views, "owned_agents": ownedViews, "external_candidates": externalCandidates})
 	case http.MethodPost:
 		var req struct {
 			AgentID   string `json:"agent_id"`

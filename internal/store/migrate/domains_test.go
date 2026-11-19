@@ -114,7 +114,7 @@ func TestLedgerInDomains_PartitionsRealLedger(t *testing.T) {
 
 	// 🔴 名单写死：本格钉的是【真账本里现在有哪几条、各属哪个域】，引 Ledger() 去比就是自己比自己。
 	hub := names(mustLedgerIn(t, HubDomains()))
-	if strings.Join(hub, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+	if strings.Join(hub, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0113_extseat_groups.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
 		t.Errorf("HubDomains 取到 %v，要 %s（core＋identity，🔴 不含 fanout 的 %s）",
 			hub, coreEntry+","+frozenIdentityEntry, frozenFanoutEntry)
 	}
@@ -214,7 +214,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Migrate(HubDomains): %v", err)
 		}
-		if strings.Join(rep.Applied, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+		if strings.Join(rep.Applied, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0113_extseat_groups.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
 			t.Errorf("Applied = %v，要 Hub 域迁移按字典序全部应用", rep.Applied)
 		}
 		for _, tbl := range append(hubTables, r31HostedTableNames()...) {
@@ -289,7 +289,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		if err != nil {
 			t.Fatalf("在生产 Hub 现状上跑 Hub 侧 Migrate 竟然报错（部署会起不来）: %v", err)
 		}
-		if strings.Join(rep.Applied, ",") != "0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+		if strings.Join(rep.Applied, ",") != "0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0113_extseat_groups.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
 			t.Errorf("Applied=%v, want all pending Hub migrations including session creation time", rep.Applied)
 		}
 		if strings.Join(rep.Skipped, ",") != coreEntry+","+frozenIdentityEntry {

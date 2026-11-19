@@ -1,6 +1,7 @@
 package m8
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -27,7 +28,7 @@ func (h *Hub) routeExternalSeat(ctx context.Context, keyID, name string, env mod
 		return false, nil
 	}
 	// Hub 会话索引使用小写；恢复编组前缀后再按共享外部名称语法校验。
-	if _, _, ok := extshared.SplitAgentName(strings.Replace(name, "_ag", "_AG", 1)); !ok {
+	if !extshared.IsExternalAgentName(strings.Replace(strings.Replace(name, "_ag", "_AG", 1), "_ex", "_EX", 1)) {
 		return false, nil
 	}
 	target, ok := h.newPlatformAgentAt(ctx, keyID, name)
@@ -62,6 +63,19 @@ func (h *Hub) routeExternalSeat(ctx context.Context, keyID, name string, env mod
 	}
 	if err := extshared.CheckMessageBody(env.Body); err != nil {
 		return true, err
+	}
+	if raw, exists := env.Meta["routing"]; exists {
+		data, err := json.Marshal(raw)
+		if err != nil {
+			return true, extshared.ErrNotPermitted
+		}
+		var choice extshared.Routing
+		decoder := json.NewDecoder(bytes.NewReader(data))
+		decoder.DisallowUnknownFields()
+		if decoder.Decode(&choice) != nil || !choice.Valid() || choice.Mode == "" {
+			return true, extshared.ErrNotPermitted
+		}
+		ctx = extshared.WithRouting(ctx, choice)
 	}
 	r, e := h.ExternalSeats.EnqueueFromHelper(ctx, source.ID, target.ID, env.ID, env.Body)
 	if e != nil {

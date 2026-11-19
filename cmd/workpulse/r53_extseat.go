@@ -28,10 +28,11 @@ import (
 // 合同 docs/design/R53-MVP-CONTRACT.md 第 6 节：TenantKey 与 Resource 由组长在 main 统一配置，
 // A／B／C 三路读同一份，不各自定义、不内置默认值。默认关：DW_R53_EXTSEAT 不为 "1" 时一行不执行。
 type r53Config struct {
-	tenantKey    string // DW_FEISHU_TEAM_TENANT_KEY：本团队飞书 tenant
-	publicOrigin string // 与新平台使用同一 DW_PUBLIC_ORIGIN 配置
-	resource     string // DW_MCP_RESOURCE：MCP 受保护资源标识（暂定 https://dw123.cmjrt.com/mcp）
-	copyDisabled bool   // DW_MCP_FEISHU_COPY_ENABLED=0 时关闭；缺省开启
+	tenantKey      string // DW_FEISHU_TEAM_TENANT_KEY：本团队飞书 tenant
+	publicOrigin   string // 与新平台使用同一 DW_PUBLIC_ORIGIN 配置
+	resource       string // DW_MCP_RESOURCE：MCP 受保护资源标识（暂定 https://dw123.cmjrt.com/mcp）
+	externalGroups bool
+	copyDisabled   bool // DW_MCP_FEISHU_COPY_ENABLED=0 时关闭；缺省开启
 }
 
 var (
@@ -46,14 +47,19 @@ func r53ConfigFromEnv(newplatOn bool) (r53Config, bool, error) {
 	if strings.TrimSpace(os.Getenv("DW_R53_EXTSEAT")) != "1" {
 		return r53Config{}, false, nil
 	}
+	groupsFlag := strings.TrimSpace(os.Getenv("DW_EXTSEAT_GROUPS"))
+	if groupsFlag != "" && groupsFlag != "0" && groupsFlag != "1" {
+		return r53Config{}, true, errors.New("DW_EXTSEAT_GROUPS must be 0 or 1")
+	}
 	copyEnabled := strings.TrimSpace(os.Getenv("DW_MCP_FEISHU_COPY_ENABLED"))
 	if copyEnabled != "" && copyEnabled != "1" && copyEnabled != "0" {
 		return r53Config{}, true, errR53CopySwitch
 	}
 	cfg := r53Config{
-		tenantKey:    strings.TrimSpace(os.Getenv("DW_FEISHU_TEAM_TENANT_KEY")),
-		resource:     strings.TrimSpace(os.Getenv("DW_MCP_RESOURCE")),
-		copyDisabled: copyEnabled == "0",
+		externalGroups: groupsFlag == "1",
+		tenantKey:      strings.TrimSpace(os.Getenv("DW_FEISHU_TEAM_TENANT_KEY")),
+		resource:       strings.TrimSpace(os.Getenv("DW_MCP_RESOURCE")),
+		copyDisabled:   copyEnabled == "0",
 	}
 	if !newplatOn {
 		return cfg, true, errR53NeedsNewplat
@@ -116,7 +122,9 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 	if d.hub == nil || d.hub.Identity == nil || d.pool == nil || d.mux == nil || cfg.tenantKey == "" {
 		return errors.New("r53: incomplete Hub dependencies or TenantKey")
 	}
-	seats := &extseat.Service{Pool: d.pool, Access: repo.SystemCtx(), Identity: d.hub.Identity,
+	d.hub.Identity.ExternalGroups = cfg.externalGroups
+	d.hub.Identity.CommunicationTenantKey = cfg.tenantKey
+	seats := &extseat.Service{ExternalGroups: cfg.externalGroups, Pool: d.pool, Access: repo.SystemCtx(), Identity: d.hub.Identity,
 		Helpers: m8.HubHelperPresence{Hub: d.hub}, Groups: groups, TenantKey: cfg.tenantKey, Resource: cfg.resource,
 		OnBackgroundError:        func(error) { log.Print("r53: external seat background operation failed") },
 		OnFeishuCopyEnqueueError: func(error) { log.Print("r53: Feishu copy enqueue failed") }}
@@ -141,7 +149,7 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 			return mcpgw.Config{}, err
 		}
 		defaults.Identity, defaults.Pool, defaults.Access = d.hub.Identity, d.pool, repo.SystemCtx()
-		login, err := feishulogin.NewHandler(feishulogin.Config{AppID: d.appID, TeamTenantKey: cfg.tenantKey, RedirectURI: redirect,
+		login, err := feishulogin.NewHandler(feishulogin.Config{AllowUnpaired: cfg.externalGroups, AppID: d.appID, TeamTenantKey: cfg.tenantKey, RedirectURI: redirect,
 			Defaults: defaults, OAuth: oauth, States: mcpgw.LoginStates{Store: store}, Tokens: extwire.Issuer{Seats: seats, Resource: cfg.resource}})
 		if err != nil {
 			return mcpgw.Config{}, err

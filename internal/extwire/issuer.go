@@ -30,11 +30,24 @@ func (a Issuer) IssueToken(ctx context.Context, req feishulogin.IssueRequest) (f
 	if a.Seats == nil || a.Resource == "" {
 		return feishulogin.IssuedToken{}, extshared.ErrNotPermitted
 	}
-	raw, seat, group, err := a.Seats.IssueToken(ctx, req.Principal, req.ShortName, req.TargetAgent)
+	var raw, group string
+	var seat extseat.Seat
+	var err error
+	if req.WithoutPair {
+		issuer, ok := a.Seats.(interface {
+			IssueTokenWithoutPair(context.Context, extshared.Principal, string) (string, extseat.Seat, string, error)
+		})
+		if !ok || req.TargetAgent != "" {
+			return feishulogin.IssuedToken{}, extshared.ErrNotPermitted
+		}
+		raw, seat, group, err = issuer.IssueTokenWithoutPair(ctx, req.Principal, req.ShortName)
+	} else {
+		raw, seat, group, err = a.Seats.IssueToken(ctx, req.Principal, req.ShortName, req.TargetAgent)
+	}
 	if err != nil {
 		return feishulogin.IssuedToken{}, err
 	}
-	if raw == "" || seat.ID == "" || group == "" {
+	if raw == "" || seat.ID == "" || (!req.WithoutPair && group == "") || (req.WithoutPair && group != "") {
 		return feishulogin.IssuedToken{}, errors.New("extwire: incomplete issue result from extseat")
 	}
 	return feishulogin.IssuedToken{

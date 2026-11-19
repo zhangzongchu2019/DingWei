@@ -18,6 +18,10 @@ type InboxSummary struct {
 // readPending is enforced read-only by PG, including group/auth callbacks.
 // No body, lease, presence, token renewal or TouchGroup is written here.
 func (s *Service) readPending(ctx context.Context, a Seat, since *time.Time, eligible bool) ([]InboxSummary, error) {
+	if routed(ctx) {
+		_, out, _, _, _, err := s.routedInbox(ctx, a, "check", "", 0, since)
+		return out, err
+	}
 	out := []InboxSummary{}
 	reader, ok := s.Groups.(interface {
 		ReadGroup(context.Context, repo.Tx, Seat, time.Time) (Group, error)
@@ -104,6 +108,10 @@ func (s *Service) WaitReply(ctx context.Context, a Seat, since time.Time, max ti
 func (s *Service) Clear(ctx context.Context, a Seat, confirm bool) ([]string, error) {
 	if !confirm {
 		return nil, extshared.ErrNotPermitted
+	}
+	if routed(ctx) {
+		_, _, out, _, _, err := s.routedInbox(ctx, a, "clear", "", 0, nil)
+		return out, err
 	}
 	out := []string{}
 	e := s.tx(ctx, func(tx repo.Tx) error {

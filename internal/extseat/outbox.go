@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/zhangzongchu2019/dingwei/internal/extshared"
+	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 )
 
@@ -20,9 +21,10 @@ func (s *Service) ProjectOne(ctx context.Context, p Projector) (bool, error) {
 	now := s.now()
 	err := s.tx(ctx, func(tx repo.Tx) error {
 		var d Delivery
-		var seatID, targetID string
+		var seatID, targetID, routeKind, routeRef string
+		var routeGeneration int64
 		var a Seat
-		e := tx.QueryRow(ctx, `SELECT delivery_id,seat_id,target_agent_id,source_name,target_name,body,ag_code,ag_generation,created_at,expires_at,expect_reply FROM np_extseat_outbox WHERE state='queued' ORDER BY created_at,delivery_id LIMIT 1 FOR UPDATE SKIP LOCKED`).Scan(&d.ID, &seatID, &targetID, &d.From, &d.To, &d.Body, &a.Group, &a.Generation, &d.CreatedAt, &d.ExpiresAt, &d.ExpectReply)
+		e := tx.QueryRow(ctx, `SELECT delivery_id,seat_id,target_agent_id,source_name,target_name,body,COALESCE(ag_code,''),COALESCE(ag_generation,0),created_at,expires_at,expect_reply,route_kind,COALESCE(route_ref,ag_code),route_generation FROM np_extseat_outbox WHERE state='queued' ORDER BY created_at,delivery_id LIMIT 1 FOR UPDATE SKIP LOCKED`).Scan(&d.ID, &seatID, &targetID, &d.From, &d.To, &d.Body, &a.Group, &a.Generation, &d.CreatedAt, &d.ExpiresAt, &d.ExpectReply, &routeKind, &routeRef, &routeGeneration)
 		if errors.Is(e, sql.ErrNoRows) {
 			return nil
 		}
@@ -45,6 +47,31 @@ func (s *Service) ProjectOne(ctx context.Context, p Projector) (bool, error) {
 		}
 		if err != nil {
 			return err
+		}
+		if routeKind == "ordinary" {
+			grant, e := identity.RecheckCommunicationTx(ctx, tx, identity.CommunicationGrant{Kind: routeKind, Ref: routeRef, Generation: routeGeneration, Source: identity.Agent{ID: seatID}, Target: identity.Agent{ID: targetID}}, s.TenantKey, s.now())
+			if errors.Is(e, extshared.ErrNotPermitted) {
+				return dead("group_unavailable")
+			}
+			if e != nil {
+				return e
+			}
+			if grant.Target.Origin == identity.OriginExternal {
+				return dead("target_unavailable")
+			}
+			if e = tx.QueryRow(ctx, `SELECT short_name FROM np_user WHERE user_id_lc=$1`, grant.Target.OwnerLC).Scan(&d.TargetOwnerShortName); e != nil {
+				return e
+			}
+			now = s.now()
+			if !now.Before(d.ExpiresAt) {
+				return dead("message_expired")
+			}
+			d.Generation = 1
+			if e = p.Project(ctx, d, grant.Target); e != nil {
+				return e
+			}
+			_, e = tx.Exec(ctx, `UPDATE np_extseat_outbox SET state='projected',projected_at=$2 WHERE delivery_id=$1`, d.ID, now)
+			return e
 		}
 		g, e := s.Groups.RecheckGroup(ctx, tx, a, now)
 		if e != nil {
