@@ -1,0 +1,64 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K06",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "DO UPDATE SET redeemed_ns=excluded.redeemed_ns,expires_ns=excluded.expires_ns",
+  "new": "DO NOTHING",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:27:44.710803+00:00",
+    "end_utc": "2026-11-19T09:27:46.178669+00:00",
+    "log_sha256": "beb3a43fc9033c4b06fd0168069204365c455b25db72d577997c3b3e0edb50ea"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "342263ceb97b11e2da721a229fd3731b6882fb3561bf7dd107aa77cb731bcb27",
+  "patch_sha256": "6c68032199a0ca778a3b3f1b8c1786f8bb31516befbe5a1e1bb31239440f3504",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:43.544695+00:00",
+    "end_utc": "2026-11-19T09:27:44.710665+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:149: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+    "    dcr_pg_test.go:175: successful token exchange did not renew bound TTL"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:46.179064+00:00",
+    "end_utc": "2026-11-19T09:27:47.595484+00:00",
+    "log_sha256": "d4763713da6a399498421fbfb82c836000c5102ded86c0314ff1229397e84c05"
+  },
+  "accepted": true
+}

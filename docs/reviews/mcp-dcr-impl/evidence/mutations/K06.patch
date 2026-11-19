@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_store.go
++++ b/internal/mcpgw/dcr_store.go
+@@ -240,7 +240,7 @@
+ 			return errRecord
+ 		}
+ 		expiry := now + int64(s.boundTTL)
+-		if _, e := tx.Exec(ctx, `INSERT INTO mcpgw_dcr_binding(resource,client_id,principal_hash,redeemed_ns,expires_ns) VALUES($1,$2,$3,$4,$5) ON CONFLICT(resource,client_id,principal_hash) DO UPDATE SET redeemed_ns=excluded.redeemed_ns,expires_ns=excluded.expires_ns`, s.resource, id, subject, now, expiry); e != nil {
++		if _, e := tx.Exec(ctx, `INSERT INTO mcpgw_dcr_binding(resource,client_id,principal_hash,redeemed_ns,expires_ns) VALUES($1,$2,$3,$4,$5) ON CONFLICT(resource,client_id,principal_hash) DO NOTHING`, s.resource, id, subject, now, expiry); e != nil {
+ 			return e
+ 		}
+ 		// RETURNING identifies at most the evicted associations. Recompute only

@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr.go
++++ b/internal/mcpgw/dcr.go
+@@ -64,7 +64,7 @@
+ 		return "", errRecord
+ 	}
+ 	ip = ip.Unmap()
+-	if p.trustedPeer(ip) {
++	if true {
+ 		v := r.Header.Values("X-Forwarded-For")
+ 		if len(v) > 1 {
+ 			return "", errRecord

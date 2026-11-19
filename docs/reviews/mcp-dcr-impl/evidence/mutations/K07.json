@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K07",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "OFFSET 16",
+  "new": "OFFSET 1600",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:33:48.051731+00:00",
+    "end_utc": "2026-11-19T09:33:51.221308+00:00",
+    "log_sha256": "19c654097b1f7f269b8268238bc9cd4907f0eeb555c22afaf78a79f8fbf36f2f"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "8f9a9fc9e07131e8dc7997caa442fea7c408122b7c48e1e2edad19776d5fd5dd",
+  "patch_sha256": "f5c28c7ea0597ad4de328bbd460661412ac89d7a154c6c17b568fd116a5a9332",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:46.835067+00:00",
+    "end_utc": "2026-11-19T09:33:48.051566+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:187: principal bound client limit not enforced"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:51.221593+00:00",
+    "end_utc": "2026-11-19T09:33:54.240633+00:00",
+    "log_sha256": "4fe96dc9a42f838efd48f1cd63cbf1620d1564fc16d62f4746d665424fe91cf7"
+  },
+  "accepted": true
+}

@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K41",
+  "file": "internal/mcpgw/dcr_policy.go",
+  "old": " || method != \"none\"",
+  "new": "",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPublicMetadataAndRedirectPolicy$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:36:32.440402+00:00",
+    "end_utc": "2026-11-19T09:36:32.955301+00:00",
+    "log_sha256": "e0aa96897ad30b68ff13ed12844d45fdb3c01a3c5de1f9d81980aa1cef967bdc"
+  },
+  "occurrence": 0,
+  "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "mutant_sha256": "b97e289e0db648a3729250e8582ff8e8bbdd5d7b9d63809192703dfdf6614a0d",
+  "patch_sha256": "faffab301abb5a7152e61116771ce5791c7db06a7d12d06d0bee0fb041a9f71d",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:31.324519+00:00",
+    "end_utc": "2026-11-19T09:36:32.440268+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_test.go:52: secret authentication method accepted"
+  ],
+  "killed": true,
+  "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPublicMetadataAndRedirectPolicy$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:32.955622+00:00",
+    "end_utc": "2026-11-19T09:36:33.520291+00:00",
+    "log_sha256": "edb99cbb36d0c9f2bbc56d3f3e0b22da08cc6d86addc5080d7b6663f747bc138"
+  },
+  "accepted": true
+}

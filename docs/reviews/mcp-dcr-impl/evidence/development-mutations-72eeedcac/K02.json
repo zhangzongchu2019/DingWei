@@ -1,0 +1,66 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K02",
+  "file": "internal/mcpgw/dcr_policy.go",
+  "old": "return fail(\"loopback_bad\", \"\")",
+  "new": "return nil",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPublicMetadataAndRedirectPolicy$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:27:29.494413+00:00",
+    "end_utc": "2026-11-19T09:27:30.059363+00:00",
+    "log_sha256": "436017361ae0bd0b45ce8bebcba516309ee161f2e96953d6e5852583abe10e20"
+  },
+  "occurrence": 0,
+  "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "mutant_sha256": "97a6985119abb72123bfdec203753ddf571a419c370a4ac42ace76776cf81432",
+  "patch_sha256": "0a1b24d4d787ca80c01ee924068c63727f9a33d8dcce5b11b3f8129e0fd5157e",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:28.378550+00:00",
+    "end_utc": "2026-11-19T09:27:29.494280+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_test.go:37: unsafe redirect accepted/wrong category \"http://127.0.0.2/callback\": <nil>",
+    "    dcr_test.go:37: unsafe redirect accepted/wrong category \"http://127.1/callback\": <nil>",
+    "    dcr_test.go:37: unsafe redirect accepted/wrong category \"http://localhost.evil/callback\": <nil>",
+    "    dcr_test.go:37: unsafe redirect accepted/wrong category \"http://evil.example/callback\": <nil>"
+  ],
+  "killed": true,
+  "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPublicMetadataAndRedirectPolicy$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:30.059910+00:00",
+    "end_utc": "2026-11-19T09:27:30.624731+00:00",
+    "log_sha256": "edb99cbb36d0c9f2bbc56d3f3e0b22da08cc6d86addc5080d7b6663f747bc138"
+  },
+  "accepted": true
+}

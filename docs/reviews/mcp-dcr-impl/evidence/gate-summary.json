@@ -1,0 +1,50 @@
+[
+  {
+    "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+    "rc": 0,
+    "start_utc": "2026-11-19T09:37:50.059534+00:00",
+    "end_utc": "2026-11-19T09:47:18.744015+00:00",
+    "log_sha256": "debace9a689adc57840adbc0e20cc276f662d818f60b1bf365d21b4dc41b0bf8",
+    "phase": "canonical-final"
+  },
+  {
+    "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+    "rc": 1,
+    "start_utc": "2026-11-19T09:47:18.780814+00:00",
+    "end_utc": "2026-11-19T10:11:31.936828+00:00",
+    "log_sha256": "5a8018a49a4cecd6bf60f20456f332496f3c2776b1a67c07639b238894dcbe5f",
+    "phase": "go-packages-count3"
+  },
+  {
+    "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+    "rc": 0,
+    "start_utc": "2026-11-19T10:40:18.996427+00:00",
+    "end_utc": "2026-11-19T10:40:41.155828+00:00",
+    "log_sha256": "4e0de4311cfa960ff988d78a11a00b2fe595f3ebf4981428f71d043bf23defe1",
+    "phase": "migration-full"
+  },
+  {
+    "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+    "rc": 0,
+    "start_utc": "2026-11-19T10:40:41.195478+00:00",
+    "end_utc": "2026-11-19T10:40:47.336292+00:00",
+    "log_sha256": "eadfcc6b6a25d90c3eb1322d1b3573592fcdca8902df54f643b0fc52bace8c46",
+    "phase": "cmd-focused"
+  },
+  {
+    "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+    "rc": 0,
+    "start_utc": "2026-11-19T10:40:47.370540+00:00",
+    "end_utc": "2026-11-19T10:41:19.998135+00:00",
+    "log_sha256": "eae6701b2eefe47d74048ad87e152b00f680a0f2f59f0f4db1aa029ce594b9df",
+    "phase": "focused-race"
+  },
+  {
+    "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+    "rc": 0,
+    "start_utc": "2026-11-19T10:41:20.034741+00:00",
+    "end_utc": "2026-11-19T10:41:20.580627+00:00",
+    "log_sha256": "5dfc06b522e70d58d27bbfe517dc064ef5ada7d53235fd7235c2d81b38a46da6",
+    "phase": "strict-final"
+  }
+]

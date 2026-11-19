@@ -1,0 +1,61 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K15",
+  "file": "internal/mcpgw/dcr.go",
+  "old": "if p.trustedPeer(ip) {",
+  "new": "if true {",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRTrustedProxySource$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:28:21.451133+00:00",
+    "end_utc": "2026-11-19T09:28:22.016510+00:00",
+    "log_sha256": "9180233c23e5dbfd638aecf4e16527d7ad12234d16c8ad53e9df602904f7eedb"
+  },
+  "occurrence": 0,
+  "original_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "mutant_sha256": "b2e2eec1bc9d8a008ca7d74d26ec52f9d69a75ae23d267b7a0c0b3132efd772d",
+  "patch_sha256": "a20ab9415c2560d02fcf6618ad6f5dfe955e8581eca5b0a701bb587ffbf8b8a7",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:28:20.335277+00:00",
+    "end_utc": "2026-11-19T09:28:21.450998+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [],
+  "killed": false,
+  "restored_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRTrustedProxySource$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:28:22.016800+00:00",
+    "end_utc": "2026-11-19T09:28:22.531368+00:00",
+    "log_sha256": "9180233c23e5dbfd638aecf4e16527d7ad12234d16c8ad53e9df602904f7eedb"
+  },
+  "accepted": false
+}

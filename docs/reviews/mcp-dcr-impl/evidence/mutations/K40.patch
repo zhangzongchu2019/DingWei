@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr.go
++++ b/internal/mcpgw/dcr.go
+@@ -119,7 +119,7 @@
+ 	r.Close = true
+ 	w.Header().Set("Connection", "close")
+ 	d := g.cfg.DCR
+-	if d == nil || !d.Policy.Enabled {
++	if d == nil {
+ 		http.NotFound(w, r)
+ 		return
+ 	}

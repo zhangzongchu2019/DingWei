@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K22",
+  "file": "internal/mcpgw/oauth.go",
+  "old": "e = g.cfg.DCR.Store.Redeemed(r.Context(), a.ClientID, seat.Principal)",
+  "new": "e = nil",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRActualHTTPRegisterFeishuTokenAndInitialize$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:35:17.404400+00:00",
+    "end_utc": "2026-11-19T09:35:19.321525+00:00",
+    "log_sha256": "662856add6caf7f3b1ef5af21aef35d3f2c3fa835caa223a014c0baad69dff49"
+  },
+  "occurrence": 0,
+  "original_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "mutant_sha256": "72ec4cfe6203c3c06572025cafbc884663572adc844147756d4844efd2260c19",
+  "patch_sha256": "f344d3ba8a35af00e4f047c6f381c2dbe3fa8a1c6a94ebffd794a91361cb1275",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:16.288024+00:00",
+    "end_utc": "2026-11-19T09:35:17.404274+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_http_test.go:227: successful token exchange did not persist bound client"
+  ],
+  "killed": true,
+  "restored_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRActualHTTPRegisterFeishuTokenAndInitialize$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:19.321838+00:00",
+    "end_utc": "2026-11-19T09:35:20.938540+00:00",
+    "log_sha256": "5e99ff7ac44af27e92eb28d51fe26c6c9032fc2ad064b74734e88eae54bd3a78"
+  },
+  "accepted": true
+}

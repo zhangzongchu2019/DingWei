@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K26",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": " AND b.principal_hash<>$2",
+  "new": "",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:35:32.824474+00:00",
+    "end_utc": "2026-11-19T09:35:34.440959+00:00",
+    "log_sha256": "af0159f4e099c56fb2fc17ffb15a79456681451ff023f025f543486bd1a4a05e"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "9738d083bfe7efdb78ea41f7d9e4e679b4584739369c20fca777f88969ef951f",
+  "patch_sha256": "8a3a74c984ebc0f9b75ad0f178e74a340a08dccbf38ba99dba4701ff24c76dce",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:31.706222+00:00",
+    "end_utc": "2026-11-19T09:35:32.824342+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:235: eviction retained a deadline beyond the remaining subject binding"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:34.441489+00:00",
+    "end_utc": "2026-11-19T09:35:35.957958+00:00",
+    "log_sha256": "da86c9783526034e1c0ef755f3a8798eabf7391256e6f208f1837a0e257e1b93"
+  },
+  "accepted": true
+}

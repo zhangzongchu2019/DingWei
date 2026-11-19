@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_policy.go
++++ b/internal/mcpgw/dcr_policy.go
+@@ -53,7 +53,7 @@
+ 	var b strings.Builder
+ 	for _, c := range strings.ToLower(s) {
+ 		if c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '+' || c == '-' || c == '.' {
+-			if b.Len() == 32 {
++			if b.Len() == 3200 {
+ 				break
+ 			}
+ 			b.WriteByte(byte(c))

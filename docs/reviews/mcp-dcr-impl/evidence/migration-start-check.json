@@ -1,0 +1,5 @@
+{
+  "original_file": "migration-start-check.txt",
+  "sha256": "51e10d094cd256c6c63770317544ff626733be5518d6b601fa9fa440f59377e6",
+  "raw": "2026-11-19 after 08:38Z: first fetch SSH timeout, subsequent ls-remote rc0.\nmain=206d41b26dab646c0e50a111eed5a45ccf7c72f6\nNAME=ceab869cfc3b1ad3644c9996624521874c0358b2\nGROUPS=4fd154f8f3ff4da61165027cf1ac4dd14e737b93\nLeader reserves r62 0112-0114, allocates tentative 0115 to DCR.\n"
+}

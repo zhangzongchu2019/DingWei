@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K04",
+  "file": "internal/mcpgw/dcr.go",
+  "old": "if e = d.Store.Admit(r.Context(), source); e != nil {",
+  "new": "if e = error(nil); e != nil {",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:33:27.863647+00:00",
+    "end_utc": "2026-11-19T09:33:30.983131+00:00",
+    "log_sha256": "968ff865798e3ab9443ebbee7482d321945dce76adf5e3b76d58500b3c231d0d"
+  },
+  "occurrence": 0,
+  "original_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "mutant_sha256": "390c79e79fe1c5f217a038686e7db33ed4db32e9ecac8064cbab15dcdc320cce",
+  "patch_sha256": "86ddb4e06a3b1908fb142c43bd7595bf0d0efa97ed3e08f60be5e4bf9433a7e8",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:26.642311+00:00",
+    "end_utc": "2026-11-19T09:33:27.858509+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_http_test.go:312: bad metadata bypassed persistent rate limit"
+  ],
+  "killed": true,
+  "restored_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:30.983435+00:00",
+    "end_utc": "2026-11-19T09:33:34.202792+00:00",
+    "log_sha256": "2293213f3f2c897f350551d2642fc1326a0a07f9e03a864e44bfea77a3a3f97d"
+  },
+  "accepted": true
+}

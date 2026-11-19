@@ -1,0 +1,64 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K13",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "FROM mcpgw_dcr_client c WHERE resource=$1 AND expires_ns<=$2",
+  "new": "FROM mcpgw_dcr_client c WHERE resource=$1 AND expires_ns<>$2",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGCleanupPreservesUnexpiredRegistration$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:28:13.644336+00:00",
+    "end_utc": "2026-11-19T09:28:14.960352+00:00",
+    "log_sha256": "b24fa7485fd5205e2c1f69663c77888f97d83d2ed4e1cf0069b6da585a2b9d1b"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "1f74a5ab9ca8861b9f9b1ef002f1d211c60f272827fd72751344ca0b570e7add",
+  "patch_sha256": "1273b287b04e6f83b05fdd6bc49a68e1966b2bf81665746481917c3d9bc62f59",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:28:12.528672+00:00",
+    "end_utc": "2026-11-19T09:28:13.644185+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:342: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+    "    dcr_pg_test.go:352: GC deleted a live unbound registration mcpgw: missing, expired or consumed record"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGCleanupPreservesUnexpiredRegistration$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:28:14.960668+00:00",
+    "end_utc": "2026-11-19T09:28:16.426875+00:00",
+    "log_sha256": "60d0b96685386274b364ed706eae52e31123cba02d179a8913ab3ec72185d757"
+  },
+  "accepted": true
+}

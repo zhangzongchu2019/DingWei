@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_store.go
++++ b/internal/mcpgw/dcr_store.go
+@@ -138,7 +138,7 @@
+ 		if e != nil {
+ 			return e
+ 		}
+-		if !ok {
++		if false {
+ 			return &repo.CommitErr{Err: errDCRRate}
+ 		}
+ 		key := "source/" + s.digest("source", source)

@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/oauth.go
++++ b/internal/mcpgw/oauth.go
+@@ -427,7 +427,7 @@
+ 	// It is not an Agent identity/deduplication key. Old binaries can finish
+ 	// existing five-minute grants because their wire shape is unchanged.
+ 	if strings.HasPrefix(a.ClientID, dcrPrefix) && g.cfg.DCR != nil && g.cfg.DCR.Store != nil {
+-		if e = g.cfg.DCR.Store.Redeemed(r.Context(), a.ClientID, seat.Principal); e != nil {
++		if e = nil; e != nil {
+ 			oauthError(w, 503, "temporarily_unavailable")
+ 			return
+ 		}

@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_store.go
++++ b/internal/mcpgw/dcr_store.go
+@@ -76,7 +76,7 @@
+ 	return hex.EncodeToString(h.Sum(nil))
+ }
+ func (s *SQLDynamicClients) transaction(ctx context.Context, fn func(context.Context, repo.Tx, int64) error) error {
+-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
++	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+ 	defer cancel()
+ 	return s.db.InTx(ctx, s.access, nil, func(tx repo.Tx) error {
+ 		if _, e := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended($1,0))`, "mcpgw-dcr/"+s.resource); e != nil {

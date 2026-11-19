@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K18",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "context.WithTimeout(ctx, 2*time.Second)",
+  "new": "context.WithTimeout(ctx, 20*time.Second)",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRDBDeadlineAndCancelledAdmission$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:34:45.310806+00:00",
+    "end_utc": "2026-11-19T09:34:49.932338+00:00",
+    "log_sha256": "76ab7008dbb7003895313723ce20087b315eda8f140fde63cf1d28bc39e6010e"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "ccae11899999da02d08c200e549517e2ac327dbf6ca8c5d820f52cd7a09f3f85",
+  "patch_sha256": "8bbca0741b95bd6a86ae76f815c4f33beb5882a334bf51114981395049a9ebce",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:44.194468+00:00",
+    "end_utc": "2026-11-19T09:34:45.310667+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_boundaries_test.go:150: DCR DB work was not bounded: elapsed=3.205596431s err=<nil>"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRDBDeadlineAndCancelledAdmission$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:49.932643+00:00",
+    "end_utc": "2026-11-19T09:34:53.251945+00:00",
+    "log_sha256": "24abe3779e7623c365e5763536e6fa79c99b01bf78e625a87c8efe8c2fc124ba"
+  },
+  "accepted": true
+}

@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_policy.go
++++ b/internal/mcpgw/dcr_policy.go
+@@ -29,7 +29,7 @@
+ 	if p.BoundTTL == 0 {
+ 		p.BoundTTL = 30 * 24 * time.Hour
+ 	}
+-	if p.BoundTTL < 7*24*time.Hour || p.BoundTTL > 90*24*time.Hour {
++	if p.BoundTTL < 7*24*time.Hour || false {
+ 		return errors.New("mcpgw: invalid DCR bound lifetime")
+ 	}
+ 	for _, raw := range p.HTTPSRedirects {

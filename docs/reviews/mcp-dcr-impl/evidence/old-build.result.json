@@ -1,0 +1,16 @@
+{
+  "source": "4a349ee59a1d8d7b8b9c562c462bded2f8b0f192",
+  "purpose": "isolated compatibility test executable only; not release artifact",
+  "command": [
+    "go",
+    "build",
+    "-buildvcs=false",
+    "-o",
+    "/data/ai-dev-data/local-run-artifacts/coder56solzzc/mcp-dcr-impl-20261119/old-4a349ee5-test-executable",
+    "./cmd/workpulse"
+  ],
+  "rc": 0,
+  "start_utc": "2026-11-19T09:06:47.200277+00:00",
+  "end_utc": "2026-11-19T09:06:54.370693+00:00",
+  "sha256": "d9264f2dcd9c1877a48a0fb9a88fcf68a5f6fbae07ca5597cc1556f49cd5387d"
+}

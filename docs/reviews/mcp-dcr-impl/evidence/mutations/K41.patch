@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_policy.go
++++ b/internal/mcpgw/dcr_policy.go
+@@ -212,7 +212,7 @@
+ 		}
+ 	}
+ 	var method string
+-	if json.Unmarshal(f["token_endpoint_auth_method"], &method) != nil || method != "none" {
++	if json.Unmarshal(f["token_endpoint_auth_method"], &method) != nil {
+ 		return c, errors.New("invalid_client_metadata")
+ 	}
+ 	for _, item := range []struct{ key, value string }{{"grant_types", "authorization_code"}, {"response_types", "code"}} {

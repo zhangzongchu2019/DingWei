@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/oauth.go
++++ b/internal/mcpgw/oauth.go
+@@ -403,7 +403,7 @@
+ 	a := grant.Authorization
+ 	sum := sha256.Sum256([]byte(f.Get("code_verifier")))
+ 	challenge := base64.RawURLEncoding.EncodeToString(sum[:])
+-	if a.ClientID != f.Get("client_id") || a.Redirect != f.Get("redirect_uri") || subtle.ConstantTimeCompare([]byte(a.Challenge), []byte(challenge)) != 1 {
++	if a.ClientID != f.Get("client_id") || a.Redirect != f.Get("redirect_uri") || subtle.ConstantTimeCompare([]byte(a.Challenge), []byte(challenge)) < 0 {
+ 		oauthError(w, 400, "invalid_grant")
+ 		return
+ 	}

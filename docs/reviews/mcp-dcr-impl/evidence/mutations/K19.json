@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K19",
+  "file": "internal/mcpgw/dcr.go",
+  "old": "time.Now().Add(3*time.Second)",
+  "new": "time.Now().Add(20*time.Second)",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPBoundedSlotsAndSlowBody$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:34:54.422603+00:00",
+    "end_utc": "2026-11-19T09:35:00.747383+00:00",
+    "log_sha256": "b867386554339c63745442549a0200ae6ed63399cc8ca238bcb5b81c0a71ed9f"
+  },
+  "occurrence": 0,
+  "original_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "mutant_sha256": "9b84b43802e89cab614b96fffe4524ce833f67400d0ffa69bb9081c04cdb3aee",
+  "patch_sha256": "7449fd075d266c94eb17ecd1efda8957e91182804d8d95429f1784b64f47d9ca",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:53.256652+00:00",
+    "end_utc": "2026-11-19T09:34:54.422463+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_boundaries_test.go:212: slow registration body not bounded: elapsed=5.001755125s response=\"\" err=read tcp 127.0.0.1:53842->127.0.0.1:42797: i/o timeout"
+  ],
+  "killed": true,
+  "restored_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPBoundedSlotsAndSlowBody$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:00.747697+00:00",
+    "end_utc": "2026-11-19T09:35:05.169334+00:00",
+    "log_sha256": "dee0db1870ca7137e439b50645b4c34e5ce44d61f2d8712e42b1ffd7e91abef6"
+  },
+  "accepted": true
+}

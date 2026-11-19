@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K24",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "ORDER BY expires_ns,client_id LIMIT 256",
+  "new": "ORDER BY expires_ns,client_id LIMIT 256000",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:35:24.362735+00:00",
+    "end_utc": "2026-11-19T09:35:26.029799+00:00",
+    "log_sha256": "25b9841384e381cb949addab280ca821b952c1b0b1c98304f57baa7e79b43127"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "c7e04efeb945f5724febdf7e1378491978360b908ee62d13053ebac99fc6907a",
+  "patch_sha256": "3f6c699550dc7761badce208b9d6d6cda69c5afe844bb8314c0688d936982180",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:23.195109+00:00",
+    "end_utc": "2026-11-19T09:35:24.362604+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:285: cleanup was not bounded to 256"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:26.030116+00:00",
+    "end_utc": "2026-11-19T09:35:27.747611+00:00",
+    "log_sha256": "7c7ddfe6e96ac8272a1e72a9e566b5a61f2ed3dc13e6602e8c467807aca75a09"
+  },
+  "accepted": true
+}

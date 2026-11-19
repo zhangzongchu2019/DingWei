@@ -1,0 +1,10 @@
+--- a/internal/mcpgw/gateway.go
++++ b/internal/mcpgw/gateway.go
+@@ -276,6 +276,7 @@
+ 	return s
+ }
+ func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {
++ if r.Header.Get("MCP-Protocol-Version")!="2025-06-18" {oauthError(w,400,"invalid_request");return}
+ 	w.Header().Set("Cache-Control", "no-store")
+ 	w.Header().Set("X-Content-Type-Options", "nosniff")
+ 	w.Header().Set("Referrer-Policy", "same-origin")

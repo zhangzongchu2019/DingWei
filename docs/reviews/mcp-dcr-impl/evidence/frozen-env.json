@@ -1,0 +1,21 @@
+{
+  "HOME": "/data/ai-dev-data/dcrfh",
+  "TMPDIR": "/data/ai-dev-data/dcrft",
+  "PATH": "/tmp/coder-0232-locked-venv/bin:/usr/local/bin:/usr/bin:/bin",
+  "LANG": "C.UTF-8",
+  "USER": "dev",
+  "LOGNAME": "dev",
+  "GOPATH": "/home/dev/go",
+  "GOMODCACHE": "/home/dev/go/pkg/mod",
+  "GOCACHE": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/r61-n1b-review/go-cache",
+  "GOPROXY": "off",
+  "GOFLAGS": "-mod=mod",
+  "HUB_TEST_PG_STRICT": "1",
+  "DW_DESKTOP_INTEGRATION_PYTHON": "/tmp/coder-0232-locked-venv/bin/python3",
+  "OPENSPEC_TELEMETRY": "0",
+  "NODE_PATH": "/tmp/coder-a3-playwright/node_modules",
+  "PLAYWRIGHT_BROWSERS_PATH": "/home/dev/.cache/ms-playwright",
+  "PYTHONPATH": "/data/ai-dev-data/mcp-dcr/tools/sessionhelper",
+  "SOURCE_COMMIT": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "DW_DCR_OLD_BINARY": "/data/ai-dev-data/local-run-artifacts/coder56solzzc/mcp-dcr-impl-20261119/old-4a349ee5-test-executable"
+}

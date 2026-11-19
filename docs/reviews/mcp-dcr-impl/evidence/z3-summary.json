@@ -1,0 +1,68 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "runs": [
+    {
+      "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+      "rc": 0,
+      "start_utc": "2026-11-19T10:12:52.913725+00:00",
+      "end_utc": "2026-11-19T10:18:23.573151+00:00",
+      "log_sha256": "42719a403897d992f348cd11b71ee969b31e95b73e2d5a7a73b2f1e6cee61b8e",
+      "phase": "z3-fresh-1",
+      "failures": [],
+      "interrupted_lines": 0,
+      "top_pass": 997,
+      "all_pass": 1679
+    },
+    {
+      "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+      "rc": 0,
+      "start_utc": "2026-11-19T10:18:23.693968+00:00",
+      "end_utc": "2026-11-19T10:23:50.240823+00:00",
+      "log_sha256": "73d2e0191ee9a7fe519628a8d9f2f22505169b257708d964129a8162fbbafe22",
+      "phase": "z3-fresh-2",
+      "failures": [],
+      "interrupted_lines": 0,
+      "top_pass": 997,
+      "all_pass": 1679
+    },
+    {
+      "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+      "rc": 0,
+      "start_utc": "2026-11-19T10:23:50.365682+00:00",
+      "end_utc": "2026-11-19T10:29:22.410375+00:00",
+      "log_sha256": "1ee0f0dbb553a264ed743cae436cab3b6de2c6f2a20d2fdfb1e8b5b95b3d33eb",
+      "phase": "z3-fresh-3",
+      "failures": [],
+      "interrupted_lines": 0,
+      "top_pass": 997,
+      "all_pass": 1679
+    },
+    {
+      "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+      "rc": 0,
+      "start_utc": "2026-11-19T10:29:22.534127+00:00",
+      "end_utc": "2026-11-19T10:34:49.678283+00:00",
+      "log_sha256": "4828c47694c28f5490653ceacb2341d6fd83c5ede5617bbd2ed3d9c303dee618",
+      "phase": "z3-fresh-4",
+      "failures": [],
+      "interrupted_lines": 0,
+      "top_pass": 997,
+      "all_pass": 1679
+    },
+    {
+      "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+      "rc": 0,
+      "start_utc": "2026-11-19T10:34:49.801516+00:00",
+      "end_utc": "2026-11-19T10:40:18.868277+00:00",
+      "log_sha256": "fc1ef8f5019a36064ffaed70fdbc525bb5ce90c2a8244d954445fb558356f95b",
+      "phase": "z3-fresh-5",
+      "failures": [],
+      "interrupted_lines": 0,
+      "top_pass": 997,
+      "all_pass": 1679
+    }
+  ],
+  "green": 5,
+  "required_green": 3,
+  "complete": true
+}

@@ -1,0 +1,14 @@
+{
+  "base": "4a349ee59a1d8d7b8b9c562c462bded2f8b0f192",
+  "source": "64f08d658f99aeec9092bc61003769ef4d597ccd",
+  "tree": "f01a86dec7ae5e9e2f7d234c5bd34589248ee261",
+  "changed_paths": [
+    "docs/design/MCP-DCR.md",
+    "openspec/changes/mcp-dcr/design.md",
+    "openspec/changes/mcp-dcr/proposal.md",
+    "openspec/changes/mcp-dcr/specs/mcp-dynamic-client-registration/context.md",
+    "openspec/changes/mcp-dcr/specs/mcp-dynamic-client-registration/spec.md",
+    "openspec/changes/mcp-dcr/tasks.md"
+  ],
+  "non_document_changes": []
+}

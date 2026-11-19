@@ -1,0 +1,330 @@
+[
+  {
+    "id": "K01",
+    "file": "internal/mcpgw/oauth.go",
+    "old": "q.Get(\"code_challenge_method\") != \"S256\" ||",
+    "new": "false ||",
+    "test": "TestDCRActualHTTPRegisterFeishuTokenAndInitialize",
+    "occurrence": 0
+  },
+  {
+    "id": "K02",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": "return fail(\"loopback_bad\", \"\")",
+    "new": "return nil",
+    "test": "TestDCRPublicMetadataAndRedirectPolicy",
+    "occurrence": 0
+  },
+  {
+    "id": "K03",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": "\"client_secret\", ",
+    "new": "",
+    "test": "TestDCRHTTPRejectionsRateAndSafeDiagnostics",
+    "occurrence": 0
+  },
+  {
+    "id": "K04",
+    "file": "internal/mcpgw/dcr.go",
+    "old": "if e = d.Store.Admit(r.Context(), source); e != nil {",
+    "new": "if e = error(nil); e != nil {",
+    "test": "TestDCRHTTPRejectionsRateAndSafeDiagnostics",
+    "occurrence": 0
+  },
+  {
+    "id": "K05",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "AND expires_ns>(extract(epoch FROM clock_timestamp())*1000000000)::bigint",
+    "new": "AND true",
+    "test": "TestDCRPGLifetimesSubjectEvictionAndRenewal",
+    "occurrence": 0
+  },
+  {
+    "id": "K06",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "DO UPDATE SET redeemed_ns=excluded.redeemed_ns,expires_ns=excluded.expires_ns",
+    "new": "DO NOTHING",
+    "test": "TestDCRPGLifetimesSubjectEvictionAndRenewal",
+    "occurrence": 0
+  },
+  {
+    "id": "K07",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "OFFSET 16",
+    "new": "OFFSET 1600",
+    "test": "TestDCRPGLifetimesSubjectEvictionAndRenewal",
+    "occurrence": 0
+  },
+  {
+    "id": "K08",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": "const dcrUnboundTTL = 24 * time.Hour",
+    "new": "const dcrUnboundTTL = 72 * time.Hour",
+    "test": "TestDCRPGPersistenceRateAndIsolation",
+    "occurrence": 0
+  },
+  {
+    "id": "K09",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "if !ok {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+    "new": "if false {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+    "test": "TestDCRPGPersistenceRateAndIsolation",
+    "occurrence": 1
+  },
+  {
+    "id": "K10",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "if !ok {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+    "new": "if false {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+    "test": "TestDCRPGPersistenceRateAndIsolation",
+    "occurrence": 0
+  },
+  {
+    "id": "K11",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "total >= 4096",
+    "new": "false",
+    "test": "TestDCRPGQuotaGCAndConcurrentAdmission",
+    "occurrence": 0
+  },
+  {
+    "id": "K12",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "own >= 128",
+    "new": "false",
+    "test": "TestDCRPGQuotaGCAndConcurrentAdmission",
+    "occurrence": 0
+  },
+  {
+    "id": "K13",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "FROM mcpgw_dcr_client c WHERE resource=$1 AND expires_ns<=$2",
+    "new": "FROM mcpgw_dcr_client c WHERE resource=$1 AND expires_ns<>$2",
+    "test": "TestDCRPGCleanupPreservesUnexpiredRegistration",
+    "occurrence": 0
+  },
+  {
+    "id": "K14",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": " AND NOT EXISTS(SELECT 1 FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id)",
+    "new": "",
+    "test": "TestDCRPGBoundedCleanupForWidelySharedClient",
+    "occurrence": 0
+  },
+  {
+    "id": "K15",
+    "file": "internal/mcpgw/dcr.go",
+    "old": "if p.trustedPeer(ip) {",
+    "new": "if true {",
+    "test": "TestDCRTrustedProxySource",
+    "occurrence": 0
+  },
+  {
+    "id": "K16",
+    "file": "internal/mcpgw/oauth.go",
+    "old": "e = g.cfg.DCR.Policy.redirect(q.Get(\"redirect_uri\"))",
+    "new": "e = nil",
+    "test": "TestDCRAuthorizeIsolationActualRedirectAndClosedSnapshots",
+    "occurrence": 0
+  },
+  {
+    "id": "K17",
+    "file": "internal/mcpgw/oauth.go",
+    "old": "} else if dynamicClient {",
+    "new": "} else if false {",
+    "test": "TestDCRAuthorizeIsolationActualRedirectAndClosedSnapshots",
+    "occurrence": 0
+  },
+  {
+    "id": "K18",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "context.WithTimeout(ctx, 2*time.Second)",
+    "new": "context.WithTimeout(ctx, 20*time.Second)",
+    "test": "TestDCRDBDeadlineAndCancelledAdmission",
+    "occurrence": 0
+  },
+  {
+    "id": "K19",
+    "file": "internal/mcpgw/dcr.go",
+    "old": "time.Now().Add(3*time.Second)",
+    "new": "time.Now().Add(20*time.Second)",
+    "test": "TestDCRHTTPBoundedSlotsAndSlowBody",
+    "occurrence": 0
+  },
+  {
+    "id": "K20",
+    "file": "internal/mcpgw/dcr.go",
+    "old": "w.Header().Set(\"Connection\", \"close\")",
+    "new": "",
+    "test": "TestDCRHTTPBoundedSlotsAndSlowBody",
+    "occurrence": 0
+  },
+  {
+    "id": "K21",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": "p.BoundTTL > 90*24*time.Hour",
+    "new": "false",
+    "test": "TestDCRPublicMetadataAndRedirectPolicy",
+    "occurrence": 0
+  },
+  {
+    "id": "K22",
+    "file": "internal/mcpgw/oauth.go",
+    "old": "e = g.cfg.DCR.Store.Redeemed(r.Context(), a.ClientID, seat.Principal)",
+    "new": "e = nil",
+    "test": "TestDCRActualHTTPRegisterFeishuTokenAndInitialize",
+    "occurrence": 0
+  },
+  {
+    "id": "K23",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": "if b.Len() == 32 {",
+    "new": "if b.Len() == 3200 {",
+    "test": "TestDCRPublicMetadataAndRedirectPolicy",
+    "occurrence": 0
+  },
+  {
+    "id": "K24",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "ORDER BY expires_ns,client_id LIMIT 256",
+    "new": "ORDER BY expires_ns,client_id LIMIT 256000",
+    "test": "TestDCRPGQuotaGCAndConcurrentAdmission",
+    "occurrence": 0
+  },
+  {
+    "id": "K25",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "bound=true,expires_ns=COALESCE((SELECT max(expires_ns) FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id),$3)",
+    "new": "bound=true,expires_ns=GREATEST(c.expires_ns,COALESCE((SELECT max(expires_ns) FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id),$3))",
+    "test": "TestDCRPGLifetimesSubjectEvictionAndRenewal",
+    "occurrence": 0
+  },
+  {
+    "id": "K26",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": " AND b.principal_hash<>$2",
+    "new": "",
+    "test": "TestDCRPGLifetimesSubjectEvictionAndRenewal",
+    "occurrence": 0
+  },
+  {
+    "id": "K27",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "FROM mcpgw_dcr_binding WHERE resource=$1 AND expires_ns<=$2",
+    "new": "FROM mcpgw_dcr_binding WHERE resource=$1 AND expires_ns<>$2",
+    "test": "TestDCRPGCleanupPreservesUnexpiredRegistration",
+    "occurrence": 0
+  },
+  {
+    "id": "K28",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "now-int64(oauthTTL)",
+    "new": "now",
+    "test": "TestDCRPGLifetimesSubjectEvictionAndRenewal",
+    "occurrence": 1
+  },
+  {
+    "id": "K29",
+    "file": "internal/mcpgw/oauth.go",
+    "old": "subtle.ConstantTimeCompare([]byte(a.Challenge), []byte(challenge)) != 1",
+    "new": "subtle.ConstantTimeCompare([]byte(a.Challenge), []byte(challenge)) < 0",
+    "test": "TestDCRActualHTTPRegisterFeishuTokenAndInitialize",
+    "occurrence": 0
+  },
+  {
+    "id": "K30",
+    "file": "internal/mcpgw/dcr.go",
+    "old": "if !p.trustedPeer(ip) {",
+    "new": "if false {",
+    "test": "TestDCRTrustedProxySource",
+    "occurrence": 0
+  },
+  {
+    "id": "K31",
+    "file": "internal/mcpgw/gateway.go",
+    "old": "func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {",
+    "new": "func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {\n if r.Header.Get(\"MCP-Protocol-Version\")!=\"2025-06-18\" {oauthError(w,400,\"invalid_request\");return}",
+    "test": "TestR61MCPUnauthenticatedFourBaselinesOverRealHTTP",
+    "occurrence": 0
+  },
+  {
+    "id": "K32",
+    "file": "internal/mcpgw/dcr.go",
+    "old": "return d != nil && d.Policy.Enabled && d.Store != nil",
+    "new": "return d != nil && d.Store != nil",
+    "test": "TestDCRAuthorizeIsolationActualRedirectAndClosedSnapshots",
+    "occurrence": 0
+  },
+  {
+    "id": "K33",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": "return fail(\"https_unlisted\", \"\")",
+    "new": "return nil",
+    "test": "TestDCRPublicMetadataAndRedirectPolicy",
+    "occurrence": 0
+  },
+  {
+    "id": "K34",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": "return fail(\"custom_scheme\", u.Scheme)",
+    "new": "return nil",
+    "test": "TestDCRPublicMetadataAndRedirectPolicy",
+    "occurrence": 0
+  },
+  {
+    "id": "K35",
+    "file": "internal/mcpgw/dcr.go",
+    "old": "slots: make(chan struct{}, 32)",
+    "new": "slots: make(chan struct{}, 3200)",
+    "test": "TestDCRHTTPBoundedSlotsAndSlowBody",
+    "occurrence": 0
+  },
+  {
+    "id": "K36",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "if count >= 4096 {",
+    "new": "if count >= 409600 {",
+    "test": "TestDCRPGQuotaGCAndConcurrentAdmission",
+    "occurrence": 0
+  },
+  {
+    "id": "K37",
+    "file": "internal/mcpgw/store.go",
+    "old": "SELECT count(*) FROM mcpgw_oauth WHERE resource=$1",
+    "new": "SELECT (SELECT count(*) FROM mcpgw_oauth WHERE resource=$1)+(SELECT count(*) FROM mcpgw_dcr_client WHERE resource=$1)",
+    "test": "TestDCRFullPoolDoesNotConsumeExistingOAuthCapacity",
+    "occurrence": 0
+  },
+  {
+    "id": "K38",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": "Scheme: filteredScheme(s)",
+    "new": "Scheme: s",
+    "test": "TestDCRHTTPRejectionsRateAndSafeDiagnostics",
+    "occurrence": 0
+  },
+  {
+    "id": "K39",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "if p.Provider == \"\" || p.TenantKey == \"\" || p.Issuer == \"\" || p.Subject == \"\" {",
+    "new": "if false {",
+    "test": "TestDCRPGLifetimesSubjectEvictionAndRenewal",
+    "occurrence": 0
+  },
+  {
+    "id": "K40",
+    "file": "internal/mcpgw/dcr.go",
+    "old": "if d == nil || !d.Policy.Enabled {",
+    "new": "if d == nil {",
+    "test": "TestDCRHTTPRejectionsRateAndSafeDiagnostics",
+    "occurrence": 0
+  },
+  {
+    "id": "K41",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": " || method != \"none\"",
+    "new": "",
+    "test": "TestDCRPublicMetadataAndRedirectPolicy",
+    "occurrence": 0
+  }
+]

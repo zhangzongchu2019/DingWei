@@ -1,0 +1,72 @@
+{
+  "start_utc": "2026-11-19T10:36:29.369159+00:00",
+  "end_utc": "2026-11-19T10:36:32.747643+00:00",
+  "command": [
+    "timeout",
+    "30s",
+    "git",
+    "-c",
+    "core.sshCommand=ssh -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=5 -o ServerAliveCountMax=2",
+    "ls-remote",
+    "git@git.code.tencent.com:wego-ai/dingwei.git",
+    "refs/heads/main",
+    "refs/heads/togpt60lunazzc/r62-extseat-name",
+    "refs/heads/coder56solzzc/r62-extseat-groups"
+  ],
+  "rc": 0,
+  "stdout": "4fd154f8f3ff4da61165027cf1ac4dd14e737b93\trefs/heads/coder56solzzc/r62-extseat-groups\ne07ad81ebea94ba41316b011df751ab400091cc1\trefs/heads/main\nceab869cfc3b1ad3644c9996624521874c0358b2\trefs/heads/togpt60lunazzc/r62-extseat-name\n",
+  "stderr": "",
+  "checks": [
+    {
+      "ref": "refs/heads/coder56solzzc/r62-extseat-groups",
+      "tip": "4fd154f8f3ff4da61165027cf1ac4dd14e737b93",
+      "object_read_rc": 0,
+      "0115_paths": [],
+      "stderr": ""
+    },
+    {
+      "ref": "refs/heads/main",
+      "tip": "e07ad81ebea94ba41316b011df751ab400091cc1",
+      "object_read_rc": 128,
+      "0115_paths": [],
+      "stderr": "fatal: not a tree object\n"
+    },
+    {
+      "ref": "refs/heads/togpt60lunazzc/r62-extseat-name",
+      "tip": "ceab869cfc3b1ad3644c9996624521874c0358b2",
+      "object_read_rc": 0,
+      "0115_paths": [],
+      "stderr": ""
+    }
+  ],
+  "fetch_main": {
+    "utc": "2026-11-19T10:36:53.350569+00:00",
+    "command": [
+      "timeout",
+      "30s",
+      "git",
+      "-c",
+      "core.sshCommand=ssh -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=5 -o ServerAliveCountMax=2",
+      "fetch",
+      "--no-tags",
+      "--no-write-fetch-head",
+      "git@git.code.tencent.com:wego-ai/dingwei.git",
+      "refs/heads/main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "main_after_fetch": {
+    "tip": "e07ad81ebea94ba41316b011df751ab400091cc1",
+    "object_read_rc": 0,
+    "0115_paths": [],
+    "stderr": ""
+  },
+  "base_to_latest_main_product_diff": {
+    "base": "4a349ee59a1d8d7b8b9c562c462bded2f8b0f192",
+    "main": "e07ad81ebea94ba41316b011df751ab400091cc1",
+    "rc": 0,
+    "paths": []
+  }
+}

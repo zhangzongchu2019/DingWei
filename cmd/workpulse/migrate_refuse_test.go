@@ -72,8 +72,8 @@ func TestEmptyDBHubEntryMigratesAndCreatesNoAccount(t *testing.T) {
 	if n := ledgerProbeCount(t, dsn, `SELECT count(*) FROM np_user`); n != 0 {
 		t.Errorf("np_user 有 %d 行：Hub 入口不该建号（建号只归 bootstrap-admin）", n)
 	}
-	if n := ledgerProbeCount(t, dsn, `SELECT count(*) FROM schema_migrations`); n != 16 {
-		t.Fatalf("账上 %d 条，要 16 条（含 0001_core_baseline、0100_identity_baseline、0101_group_communication、0102_device_claim、0103_agent_last_source_r31、0104_np_session_created_at、0105_extseat、0106_tempgroup、0107_mcpgw_oauth、0108_extseat_short_name、0110_extseat_expect_reply、0111_extseat_feishu_copy、0114_agent_feishu_summary_copy、0200_hosted_r30_baseline、0201_hosted_node_access_r31、0300_console_transport_slot）", n)
+	if n := ledgerProbeCount(t, dsn, `SELECT count(*) FROM schema_migrations`); n != 19 {
+		t.Fatalf("账上 %d 条，要 19 条（含 0001_core_baseline、0100_identity_baseline、0101_group_communication、0102_device_claim、0103_agent_last_source_r31、0104_np_session_created_at、0105_extseat、0106_tempgroup、0107_mcpgw_oauth、0108_extseat_short_name、0110_extseat_expect_reply、0111_extseat_feishu_copy、0114_agent_feishu_summary_copy、0200_hosted_r30_baseline、0201_hosted_node_access_r31、0300_console_transport_slot）", n)
 	}
 	// 重启：仍成功，且账不增（digest 记账只跑一次那条语义在装配点上也要成立）。
 	_, _, c2, err := openNewPlatformStore(context.Background(), dsn)
@@ -81,8 +81,8 @@ func TestEmptyDBHubEntryMigratesAndCreatesNoAccount(t *testing.T) {
 		t.Fatalf("重启 openNewPlatformStore: %v", err)
 	}
 	c2()
-	if n := ledgerProbeCount(t, dsn, `SELECT count(*) FROM schema_migrations`); n != 16 {
-		t.Errorf("重启后账上 %d 条，要仍是 16 条", n)
+	if n := ledgerProbeCount(t, dsn, `SELECT count(*) FROM schema_migrations`); n != 19 {
+		t.Errorf("重启后账上 %d 条，要仍是 19 条", n)
 	}
 }
 

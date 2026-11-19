@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr.go
++++ b/internal/mcpgw/dcr.go
+@@ -161,7 +161,7 @@
+ 			return
+ 		}
+ 		control := http.NewResponseController(w)
+-		if control.SetReadDeadline(time.Now().Add(3*time.Second)) != nil {
++		if control.SetReadDeadline(time.Now().Add(20*time.Second)) != nil {
+ 			oauthError(w, 503, "temporarily_unavailable")
+ 			return
+ 		}

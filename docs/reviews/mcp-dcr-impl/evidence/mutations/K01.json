@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K01",
+  "file": "internal/mcpgw/oauth.go",
+  "old": "q.Get(\"code_challenge_method\") != \"S256\" ||",
+  "new": "false ||",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRActualHTTPRegisterFeishuTokenAndInitialize$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:33:08.227447+00:00",
+    "end_utc": "2026-11-19T09:33:12.048176+00:00",
+    "log_sha256": "d21bbb47a6f7494e6c9684d48ae7e74d6598b28351103e02aa2cf4a5c2275fde"
+  },
+  "occurrence": 0,
+  "original_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "mutant_sha256": "15a630107237b9d90c687c34a2f8af6fee56d21aa2a047fdb7dc2f24d3c0a565",
+  "patch_sha256": "a3535c11a4d9dd7d5df80d03b8e2eab31d1358af8e1c78dc6d0b48e323504ea2",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:06.961149+00:00",
+    "end_utc": "2026-11-19T09:33:08.227306+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_http_test.go:142: DCR authorization did not enforce S256"
+  ],
+  "killed": true,
+  "restored_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRActualHTTPRegisterFeishuTokenAndInitialize$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:12.048648+00:00",
+    "end_utc": "2026-11-19T09:33:15.167868+00:00",
+    "log_sha256": "6266c11685e83c46a637089379ce0e6d83d44a041c8a404cc16e74b0a2f19889"
+  },
+  "accepted": true
+}

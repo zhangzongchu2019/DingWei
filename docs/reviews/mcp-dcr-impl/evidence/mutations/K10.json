@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K10",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "if !ok {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+  "new": "if false {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGPersistenceRateAndIsolation$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:34:07.752443+00:00",
+    "end_utc": "2026-11-19T09:34:10.771542+00:00",
+    "log_sha256": "52f9c876429e239bb135e5cbc74b988915c891c0c132bed1a8a80bf69a057a6a"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "cd60562317405f11fb7611a2e50f27182238f8557db1b68ac03d070955996cd2",
+  "patch_sha256": "6acf0c4c3d7e4a0aaf4151151ee9aff2be2721809ebcc4720bd6b710336901f0",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:06.536351+00:00",
+    "end_utc": "2026-11-19T09:34:07.752293+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:130: global rate not enforced <nil>"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGPersistenceRateAndIsolation$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:10.781810+00:00",
+    "end_utc": "2026-11-19T09:34:13.249905+00:00",
+    "log_sha256": "254184bf064bbec6411c2a870f470e435a5c1d21d7134e0b75e35bab18726770"
+  },
+  "accepted": true
+}

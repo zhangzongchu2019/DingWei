@@ -55,7 +55,11 @@ func (g *Gateway) serverMetadata(w http.ResponseWriter, r *http.Request) {
 	if !method(w, r, "GET") {
 		return
 	}
-	writeJSON(w, 200, map[string]any{"issuer": g.cfg.PublicOrigin, "authorization_endpoint": g.cfg.PublicOrigin + "/oauth/authorize", "token_endpoint": g.cfg.PublicOrigin + "/oauth/token", "response_types_supported": []string{"code"}, "grant_types_supported": []string{"authorization_code"}, "code_challenge_methods_supported": []string{"S256"}, "token_endpoint_auth_methods_supported": []string{"none"}, "scopes_supported": extshared.MVPScopes, "client_id_metadata_document_supported": true, "authorization_response_iss_parameter_supported": true})
+	metadata := map[string]any{"issuer": g.cfg.PublicOrigin, "authorization_endpoint": g.cfg.PublicOrigin + "/oauth/authorize", "token_endpoint": g.cfg.PublicOrigin + "/oauth/token", "response_types_supported": []string{"code"}, "grant_types_supported": []string{"authorization_code"}, "code_challenge_methods_supported": []string{"S256"}, "token_endpoint_auth_methods_supported": []string{"none"}, "scopes_supported": extshared.MVPScopes, "client_id_metadata_document_supported": true, "authorization_response_iss_parameter_supported": true}
+	if g.cfg.DCR.ready() {
+		metadata["registration_endpoint"] = g.cfg.PublicOrigin + "/oauth/register"
+	}
+	writeJSON(w, 200, metadata)
 }
 func fixedScopes(s string) bool {
 	a := strings.Fields(s)
@@ -103,6 +107,7 @@ func (g *Gateway) authorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	localClient := q.Get("client_id") == g.cfg.PublicOrigin+codexClientPath
+	dynamicClient := strings.HasPrefix(q.Get("client_id"), dcrPrefix)
 	var client Client
 	if localClient {
 		// The generated, exact same-origin document is trusted server config.
@@ -112,6 +117,25 @@ func (g *Gateway) authorize(w http.ResponseWriter, r *http.Request) {
 		// Exact pinned ID only: no online fetch, DCR or private-CIMD exception.
 		// Any malformed local copy fails closed, without a network fallback.
 		client, e = defaultCodexClient()
+	} else if dynamicClient {
+		if !g.cfg.DCR.ready() {
+			oauthError(w, 400, "invalid_client")
+			return
+		}
+		client, e = g.cfg.DCR.Store.Resolve(r.Context(), q.Get("client_id"))
+		if e == nil {
+			e = g.cfg.DCR.Policy.redirect(q.Get("redirect_uri"))
+			if e != nil {
+				g.dcrRedirectRejected(e)
+			}
+		}
+		if e == nil {
+			for _, uri := range client.Redirects {
+				if e = g.cfg.DCR.Policy.redirect(uri); e != nil {
+					break
+				}
+			}
+		}
 	} else {
 		client, e = g.cfg.Clients.Resolve(r.Context(), q.Get("client_id"))
 	}
@@ -119,7 +143,7 @@ func (g *Gateway) authorize(w http.ResponseWriter, r *http.Request) {
 	if localClient || q.Get("client_id") == codexDefaultClientID {
 		redirectAllowed = registeredCodexRedirect(client, q.Get("redirect_uri"))
 	}
-	if e != nil || (!localClient && validateClient(client, q.Get("client_id")) != nil) || !redirectAllowed {
+	if e != nil || (!localClient && !dynamicClient && validateClient(client, q.Get("client_id")) != nil) || !redirectAllowed {
 		oauthError(w, 400, "invalid_client")
 		return
 	}
@@ -398,6 +422,15 @@ func (g *Gateway) token(w http.ResponseWriter, r *http.Request) {
 	if seconds <= 0 {
 		oauthError(w, 400, "invalid_grant")
 		return
+	}
+	// The client association is updated only after PKCE and current seat auth.
+	// It is not an Agent identity/deduplication key. Old binaries can finish
+	// existing five-minute grants because their wire shape is unchanged.
+	if strings.HasPrefix(a.ClientID, dcrPrefix) && g.cfg.DCR != nil && g.cfg.DCR.Store != nil {
+		if e = g.cfg.DCR.Store.Redeemed(r.Context(), a.ClientID, seat.Principal); e != nil {
+			oauthError(w, 503, "temporarily_unavailable")
+			return
+		}
 	}
 	writeJSON(w, 200, map[string]any{"access_token": grant.Issued.Token, "token_type": "Bearer", "expires_in": seconds, "scope": extshared.ScopeString()})
 }

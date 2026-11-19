@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K15",
+  "file": "internal/mcpgw/dcr.go",
+  "old": "if p.trustedPeer(ip) {",
+  "new": "if true {",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRTrustedProxySource$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:34:35.099751+00:00",
+    "end_utc": "2026-11-19T09:34:35.664522+00:00",
+    "log_sha256": "7c8e884c8f58ebca415827e5e9116fcd3d4d641b20f5aad57a2db338288fed06"
+  },
+  "occurrence": 0,
+  "original_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "mutant_sha256": "b2e2eec1bc9d8a008ca7d74d26ec52f9d69a75ae23d267b7a0c0b3132efd772d",
+  "patch_sha256": "a20ab9415c2560d02fcf6618ad6f5dfe955e8581eca5b0a701bb587ffbf8b8a7",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:33.980304+00:00",
+    "end_utc": "2026-11-19T09:34:35.099616+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_test.go:102: source \"\" want \"192.0.2.9\": mcpgw: missing, expired or consumed record"
+  ],
+  "killed": true,
+  "restored_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRTrustedProxySource$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:35.664818+00:00",
+    "end_utc": "2026-11-19T09:34:36.229558+00:00",
+    "log_sha256": "4c2b79baa2c6a9317a427f94db9c81ab481b569073905a29bf4696d4e66cd383"
+  },
+  "accepted": true
+}

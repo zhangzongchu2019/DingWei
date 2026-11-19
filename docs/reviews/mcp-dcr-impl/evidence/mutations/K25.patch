@@ -1,0 +1,14 @@
+--- a/internal/mcpgw/dcr_store.go
++++ b/internal/mcpgw/dcr_store.go
+@@ -250,7 +250,7 @@
+ 			return e
+ 		}
+ 		// Eviction of one person's association cannot delete another person's client.
+-		_, e := tx.Exec(ctx, `UPDATE mcpgw_dcr_client c SET bound=true,expires_ns=COALESCE((SELECT max(expires_ns) FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id),$3) WHERE c.resource=$1 AND c.client_id=$2`, s.resource, id, expiry)
+-		return e
+-	})
+-}
++		_, e := tx.Exec(ctx, `UPDATE mcpgw_dcr_client c SET bound=true,expires_ns=GREATEST(c.expires_ns,COALESCE((SELECT max(expires_ns) FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id),$3)) WHERE c.resource=$1 AND c.client_id=$2`, s.resource, id, expiry)
++		return e
++	})
++}

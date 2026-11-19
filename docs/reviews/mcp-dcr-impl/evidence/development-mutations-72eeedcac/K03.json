@@ -1,0 +1,64 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K03",
+  "file": "internal/mcpgw/dcr_policy.go",
+  "old": "\"client_secret\", ",
+  "new": "",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:27:31.794644+00:00",
+    "end_utc": "2026-11-19T09:27:33.160807+00:00",
+    "log_sha256": "a66deb7a7bfa653805f6a77f8d19c8d0c259e1686abe08154fe92bd26b410b1d"
+  },
+  "occurrence": 0,
+  "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "mutant_sha256": "bcebccf1680d212e3ea3537b626c088ee5bd06c81121d2deca4a34318110d4a4",
+  "patch_sha256": "874bcd823662cd62af82675f71b25e77d0a7335ceced5b4ee6d19b90a9295831",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:30.628712+00:00",
+    "end_utc": "2026-11-19T09:27:31.794519+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_http_test.go:258: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+    "    dcr_http_test.go:285: unsafe registration 201: {\"client_id\":\"dw-dcr-yfmVb6kEsOB76Yz4ILl0E5pirPGgpKlYd7gI24FQv5Q\",\"client_id_expires_at\":1795166853,\"client_id_issued_at\":1795080453,\"client_name\":\"Local editor\",\"grant_types\":[\"authorization_code\"],\"redirect_uris\":[\"http://127.0.0.1:43123/callback\"],\"response_types\":[\"code\"],\"scope\":\"list_online send_message wait_for_messages ack\",\"token_endpoint_auth_method\":\"none\"}"
+  ],
+  "killed": true,
+  "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:33.161115+00:00",
+    "end_utc": "2026-11-19T09:27:35.078358+00:00",
+    "log_sha256": "8c742ac63da36b06454c65bf8ad164222cfc6db2ae3d91661213f4811c43172d"
+  },
+  "accepted": true
+}

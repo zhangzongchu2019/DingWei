@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_store.go
++++ b/internal/mcpgw/dcr_store.go
+@@ -225,7 +225,7 @@
+ 	return c, nil
+ }
+ func (s *SQLDynamicClients) Redeemed(ctx context.Context, id string, p extshared.Principal) error {
+-	if p.Provider == "" || p.TenantKey == "" || p.Issuer == "" || p.Subject == "" {
++	if false {
+ 		return errRecord
+ 	}
+ 	// JSON tuple avoids ambiguous delimiter-based identities. Never seat ID.

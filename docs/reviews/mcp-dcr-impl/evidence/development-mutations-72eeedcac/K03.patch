@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_policy.go
++++ b/internal/mcpgw/dcr_policy.go
+@@ -206,7 +206,7 @@
+ 	if e != nil {
+ 		return c, errors.New("invalid_client_metadata")
+ 	}
+-	for _, forbidden := range []string{"client_id", "client_secret", "client_secret_expires_at", "registration_access_token", "registration_client_uri", "jwks", "jwks_uri", "software_statement"} {
++	for _, forbidden := range []string{"client_id", "client_secret_expires_at", "registration_access_token", "registration_client_uri", "jwks", "jwks_uri", "software_statement"} {
+ 		if _, ok := f[forbidden]; ok {
+ 			return c, errors.New("invalid_client_metadata")
+ 		}

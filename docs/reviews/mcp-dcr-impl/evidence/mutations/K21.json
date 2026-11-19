@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K21",
+  "file": "internal/mcpgw/dcr_policy.go",
+  "old": "p.BoundTTL > 90*24*time.Hour",
+  "new": "false",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPublicMetadataAndRedirectPolicy$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:35:15.153418+00:00",
+    "end_utc": "2026-11-19T09:35:15.718181+00:00",
+    "log_sha256": "1f32612c07e262f6e82fe565d670066d379dc278eb6936aa8a96be4cd44e6f31"
+  },
+  "occurrence": 0,
+  "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "mutant_sha256": "05fc270e1346dc8ab35a99eed413d9d1da4bc8b7f79d2a40725adfcf046c7ed9",
+  "patch_sha256": "ba040ee83bfeb306b6629582975e6d8417675e8d4c84bcf84ea5496042914100",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:14.036378+00:00",
+    "end_utc": "2026-11-19T09:35:15.153281+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_test.go:65: unsafe bound TTL accepted 2160h0m0.000000001s"
+  ],
+  "killed": true,
+  "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPublicMetadataAndRedirectPolicy$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:15.718593+00:00",
+    "end_utc": "2026-11-19T09:35:16.283220+00:00",
+    "log_sha256": "edb99cbb36d0c9f2bbc56d3f3e0b22da08cc6d86addc5080d7b6663f747bc138"
+  },
+  "accepted": true
+}

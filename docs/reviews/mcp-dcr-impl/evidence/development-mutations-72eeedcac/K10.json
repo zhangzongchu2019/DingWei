@@ -1,0 +1,64 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K10",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "if !ok {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+  "new": "if false {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGPersistenceRateAndIsolation$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:28:00.680655+00:00",
+    "end_utc": "2026-11-19T09:28:02.097236+00:00",
+    "log_sha256": "84ca519082f23d953266100f88130a77a8691594b370cb78aee431dab97f8341"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "cd60562317405f11fb7611a2e50f27182238f8557db1b68ac03d070955996cd2",
+  "patch_sha256": "6acf0c4c3d7e4a0aaf4151151ee9aff2be2721809ebcc4720bd6b710336901f0",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:59.512041+00:00",
+    "end_utc": "2026-11-19T09:28:00.680490+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:86: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+    "    dcr_pg_test.go:130: global rate not enforced <nil>"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGPersistenceRateAndIsolation$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:28:02.097549+00:00",
+    "end_utc": "2026-11-19T09:28:03.464091+00:00",
+    "log_sha256": "7b0a5418203d9f46395195574f3e95a43ea0ec58badbd53fbde0a8f1d5cef5fb"
+  },
+  "accepted": true
+}

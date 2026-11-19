@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K29",
+  "file": "internal/mcpgw/oauth.go",
+  "old": "subtle.ConstantTimeCompare([]byte(a.Challenge), []byte(challenge)) != 1",
+  "new": "subtle.ConstantTimeCompare([]byte(a.Challenge), []byte(challenge)) < 0",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRActualHTTPRegisterFeishuTokenAndInitialize$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:35:44.938294+00:00",
+    "end_utc": "2026-11-19T09:35:46.504744+00:00",
+    "log_sha256": "2b04714acd7e845d0309388c3868235123a73e44d30c1792dfef127291e16838"
+  },
+  "occurrence": 0,
+  "original_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "mutant_sha256": "d57124cd52ae0cc89dccee429dd4f4d5c30f94204509acb94abe13d8ff8a9cba",
+  "patch_sha256": "022e67f0ab0aaf6716fb907772244d94b098f0c6e51962084f0b8329495fbe9f",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:43.822491+00:00",
+    "end_utc": "2026-11-19T09:35:44.938153+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_http_test.go:213: failed PKCE exchange bound/renewed a client"
+  ],
+  "killed": true,
+  "restored_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRActualHTTPRegisterFeishuTokenAndInitialize$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:46.505044+00:00",
+    "end_utc": "2026-11-19T09:35:48.171664+00:00",
+    "log_sha256": "24d43ad9e1eee620814243a7c79fb6db968265c6bdb36dd18acf898dd9a31eac"
+  },
+  "accepted": true
+}

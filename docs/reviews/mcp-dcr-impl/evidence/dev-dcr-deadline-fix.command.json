@@ -1,0 +1,13 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "-run",
+    "TestDCRHTTPBoundedSlotsAndSlowBody",
+    "-count=2",
+    "-v"
+  ],
+  "cwd": "/data/ai-dev-data/mcp-dcr",
+  "source": "development dirty products; not a frozen gate"
+}

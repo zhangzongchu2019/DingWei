@@ -1,0 +1,23 @@
+{
+  "log": "cmd-focused",
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "top_pass": 18,
+      "all_pass": 30,
+      "top_skip": 0,
+      "all_skip": 0,
+      "failures": [],
+      "skips": [],
+      "package_action": "pass",
+      "elapsed": 4.37
+    }
+  },
+  "interrupted_lines": [],
+  "non_json_lines": [],
+  "totals": {
+    "top_pass": 18,
+    "all_pass": 30,
+    "top_skip": 0,
+    "all_skip": 0
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "log": "z3-baseline4a-view20",
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/internal/m8": {
+      "top_pass": 19,
+      "all_pass": 238,
+      "top_skip": 0,
+      "all_skip": 0,
+      "failures": [
+        {
+          "test": "TestViewMentionRoute/a_peer_without_delivery_ack_v1_is_not_sent_to",
+          "assertions": [
+            "view_mention_route_test.go:420: 回执=[]"
+          ]
+        },
+        {
+          "test": "TestViewMentionRoute",
+          "assertions": []
+        }
+      ],
+      "skips": [],
+      "package_action": "fail",
+      "elapsed": 62.158
+    }
+  },
+  "interrupted_lines": [
+    {
+      "line": 460,
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestViewMentionRoute/a_peer_without_delivery_ack_v1_is_not_sent_to",
+      "output": "2026/11/19 10:12:05 session delivery lease release failed key_id=u_zzc session=quill conn_seq=2 reason=session_disconnected error=\"interrupted (9)\"\n"
+    },
+    {
+      "line": 465,
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestViewMentionRoute/overlong_request_id_is_refused_before_any_delivery",
+      "output": "2026/11/19 10:12:05 session delivery lease release failed key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected error=\"interrupted (9)\"\n"
+    },
+    {
+      "line": 469,
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestViewMentionRoute/overlong_request_id_is_refused_before_any_delivery",
+      "output": "2026/11/19 10:12:05 session delivery lease release failed key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected error=\"interrupted (9)\"\n"
+    }
+  ],
+  "non_json_lines": [],
+  "totals": {
+    "top_pass": 19,
+    "all_pass": 238,
+    "top_skip": 0,
+    "all_skip": 0
+  }
+}

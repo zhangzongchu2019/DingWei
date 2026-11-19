@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K40",
+  "file": "internal/mcpgw/dcr.go",
+  "old": "if d == nil || !d.Policy.Enabled {",
+  "new": "if d == nil {",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:36:27.585020+00:00",
+    "end_utc": "2026-11-19T09:36:29.452211+00:00",
+    "log_sha256": "fa5029d9be774b5063ceb46285ec71d0ec88dca20b2b220a84d81c57a1198c89"
+  },
+  "occurrence": 0,
+  "original_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "mutant_sha256": "4780e0651c0046040968a48d66f4ec998833eb981a293545b23cec9dc2fb66a6",
+  "patch_sha256": "4f4adcd8c068cc6988362358cd5d0b9c341577e5d472565f24e0e02f8853c0c8",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:26.419010+00:00",
+    "end_utc": "2026-11-19T09:36:27.584890+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_http_test.go:332: disabled DCR still registered clients"
+  ],
+  "killed": true,
+  "restored_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:29.452533+00:00",
+    "end_utc": "2026-11-19T09:36:31.319440+00:00",
+    "log_sha256": "61f46ae769f9518dd3ce783ef1ebea47abcf6a873c5d97f6af876c5f6f15f9b0"
+  },
+  "accepted": true
+}

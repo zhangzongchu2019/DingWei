@@ -1,0 +1,20 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "./internal/mcpgw",
+    "./cmd/workpulse",
+    "-run",
+    "TestDCR|TestMCPAuthFirst|TestPGStore",
+    "-count=1",
+    "-p",
+    "1",
+    "-v",
+    "-json",
+    "-timeout=15m"
+  ],
+  "cwd": "/data/ai-dev-data/mcp-dcr",
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "uid": 1001
+}

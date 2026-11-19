@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K38",
+  "file": "internal/mcpgw/dcr_policy.go",
+  "old": "Scheme: filteredScheme(s)",
+  "new": "Scheme: s",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:36:18.723169+00:00",
+    "end_utc": "2026-11-19T09:36:20.339746+00:00",
+    "log_sha256": "5f26983f9f615b09ca433d7556a09300dddf3b5192de036fc3e608252c154b33"
+  },
+  "occurrence": 0,
+  "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "mutant_sha256": "70bf26c986c09556740b7050384e97ea2028a3ff4805219c615be580cc274312",
+  "patch_sha256": "a9fa8e5b33bd207f895e96692cb25531f9f964ab4a79f8d087d8cc06ea0b59cd",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:17.607386+00:00",
+    "end_utc": "2026-11-19T09:36:18.723037+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_http_test.go:300: redirect diagnostic scheme exceeded 32 bytes"
+  ],
+  "killed": true,
+  "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:20.340278+00:00",
+    "end_utc": "2026-11-19T09:36:22.257611+00:00",
+    "log_sha256": "cf24f45acfcc04b4356416fa0d502f98170e4d3f835d4921298a293e5ddb2531"
+  },
+  "accepted": true
+}

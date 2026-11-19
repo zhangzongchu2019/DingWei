@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr.go
++++ b/internal/mcpgw/dcr.go
+@@ -28,7 +28,7 @@
+ 	policy.TrustedProxies = append([]netip.Prefix(nil), policy.TrustedProxies...)
+ 	return &DCR{Policy: policy, Store: store, slots: make(chan struct{}, 32)}, nil
+ }
+-func (d *DCR) ready() bool { return d != nil && d.Policy.Enabled && d.Store != nil }
++func (d *DCR) ready() bool { return d != nil && d.Store != nil }
+ 
+ // RunGC belongs to the caller's shutdown context; no detached per-request work.
+ func (d *DCR) RunGC(ctx context.Context) {

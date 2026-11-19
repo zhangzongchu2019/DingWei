@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/oauth.go
++++ b/internal/mcpgw/oauth.go
+@@ -98,7 +98,7 @@
+ 		oauthError(w, 400, "invalid_request")
+ 		return
+ 	}
+-	if q.Get("response_type") != "code" || q.Get("resource") != g.cfg.Resource || q.Get("code_challenge_method") != "S256" || !challengeRE.MatchString(q.Get("code_challenge")) || len(q.Get("state")) > 2048 {
++	if q.Get("response_type") != "code" || q.Get("resource") != g.cfg.Resource || false || !challengeRE.MatchString(q.Get("code_challenge")) || len(q.Get("state")) > 2048 {
+ 		oauthError(w, 400, "invalid_request")
+ 		return
+ 	}

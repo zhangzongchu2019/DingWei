@@ -30,16 +30,16 @@ func TestConsent0108AppliesAfter0110And0111OnlyOnce(t *testing.T) {
 	}
 	before := ledgerRows(t, p)
 
-	if len(before) != 17 || before["0110_extseat_expect_reply.sql"].digest == "" || before["0111_extseat_feishu_copy.sql"].digest == "" || before["0112_np_agent_display_name.sql"].digest == "" || before["0113_extseat_groups.sql"].digest == "" || before["0114_agent_feishu_summary_copy.sql"].digest == "" {
+	if len(before) != 18 || before["0110_extseat_expect_reply.sql"].digest == "" || before["0111_extseat_feishu_copy.sql"].digest == "" || before["0112_np_agent_display_name.sql"].digest == "" || before["0113_extseat_groups.sql"].digest == "" || before["0114_agent_feishu_summary_copy.sql"].digest == "" || before["0115_mcpgw_dcr.sql"].digest == "" {
 		t.Fatalf("R57_LATE_0108_DEPLOYED_BASELINE %v", keysOf(before))
 	}
 	report, err := Migrate(ctx, p, HubDomains())
-	if err != nil || strings.Join(report.Applied, ",") != "0108_extseat_short_name.sql" || len(report.Skipped) != 17 {
+	if err != nil || strings.Join(report.Applied, ",") != "0108_extseat_short_name.sql" || len(report.Skipped) != 18 {
 		t.Fatalf("R57_LATE_0108_ONLY_PENDING report=%+v err=%v", report, err)
 	}
 	after := ledgerRows(t, p)
 
-	if len(after) != 18 || after["0108_extseat_short_name.sql"].digest == "" {
+	if len(after) != 19 || after["0108_extseat_short_name.sql"].digest == "" {
 		t.Fatalf("R57_LATE_0108_LEDGER %v", keysOf(after))
 	}
 	for name, old := range before {
@@ -49,7 +49,7 @@ func TestConsent0108AppliesAfter0110And0111OnlyOnce(t *testing.T) {
 		}
 	}
 	repeated, err := Migrate(ctx, p, HubDomains())
-	if err != nil || len(repeated.Applied) != 0 || len(repeated.Skipped) != 18 {
+	if err != nil || len(repeated.Applied) != 0 || len(repeated.Skipped) != 19 {
 		t.Fatalf("R57_LATE_0108_RESTART report=%+v err=%v", repeated, err)
 	}
 }

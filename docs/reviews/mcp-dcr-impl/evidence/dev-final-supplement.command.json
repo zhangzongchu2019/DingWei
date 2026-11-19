@@ -1,0 +1,17 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/store/migrate",
+    "./internal/mcpgw",
+    "./cmd/workpulse",
+    "-run",
+    "TestLedger|TestMigrate|TestConsent|TestDCR",
+    "-count=1",
+    "-p",
+    "1",
+    "-v"
+  ],
+  "cwd": "/data/ai-dev-data/mcp-dcr",
+  "source": "development dirty products; not a frozen gate"
+}

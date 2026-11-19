@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_store.go
++++ b/internal/mcpgw/dcr_store.go
+@@ -190,7 +190,7 @@
+ 		if e := tx.QueryRow(ctx, `SELECT count(*),count(*) FILTER(WHERE source_hash=$2) FROM mcpgw_dcr_client WHERE resource=$1 AND expires_ns>$3`, s.resource, sourceHash, now).Scan(&total, &own); e != nil {
+ 			return e
+ 		}
+-		if total >= 4096 || own >= 128 {
++		if false || own >= 128 {
+ 			return errDCRCapacity
+ 		}
+ 		created = time.Unix(0, now).UTC()

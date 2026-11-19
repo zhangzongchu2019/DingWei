@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_store.go
++++ b/internal/mcpgw/dcr_store.go
+@@ -94,7 +94,7 @@
+ 	// redeemable without reviving a client through unauthenticated reads.
+ 	// Delete children first, then child-free parents. ON DELETE CASCADE alone
+ 	// would make a 256-client batch unbounded for a widely shared client ID.
+-	_, e := tx.Exec(ctx, `DELETE FROM mcpgw_dcr_binding WHERE (resource,client_id,principal_hash) IN (SELECT resource,client_id,principal_hash FROM mcpgw_dcr_binding WHERE resource=$1 AND expires_ns<=$2 ORDER BY expires_ns,client_id,principal_hash LIMIT 256)`, s.resource, now-int64(oauthTTL))
++	_, e := tx.Exec(ctx, `DELETE FROM mcpgw_dcr_binding WHERE (resource,client_id,principal_hash) IN (SELECT resource,client_id,principal_hash FROM mcpgw_dcr_binding WHERE resource=$1 AND expires_ns<>$2 ORDER BY expires_ns,client_id,principal_hash LIMIT 256)`, s.resource, now-int64(oauthTTL))
+ 	if e != nil {
+ 		return e
+ 	}

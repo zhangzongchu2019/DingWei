@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K03",
+  "file": "internal/mcpgw/dcr_policy.go",
+  "old": "\"client_secret\", ",
+  "new": "",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:33:18.940667+00:00",
+    "end_utc": "2026-11-19T09:33:23.111719+00:00",
+    "log_sha256": "52d0eb5ec63ecabe85a7988f440bc806d3be8ac76bfba4c84feb831f64bb713c"
+  },
+  "occurrence": 0,
+  "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "mutant_sha256": "bcebccf1680d212e3ea3537b626c088ee5bd06c81121d2deca4a34318110d4a4",
+  "patch_sha256": "874bcd823662cd62af82675f71b25e77d0a7335ceced5b4ee6d19b90a9295831",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:17.674618+00:00",
+    "end_utc": "2026-11-19T09:33:18.940536+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_http_test.go:285: unsafe registration 201: {\"client_id\":\"dw-dcr-Lx2Pes7--lOkuCxpBEwA0Qk02d4lHrCs_HEvbrWo3yQ\",\"client_id_expires_at\":1795167202,\"client_id_issued_at\":1795080802,\"client_name\":\"Local editor\",\"grant_types\":[\"authorization_code\"],\"redirect_uris\":[\"http://127.0.0.1:43123/callback\"],\"response_types\":[\"code\"],\"scope\":\"list_online send_message wait_for_messages ack\",\"token_endpoint_auth_method\":\"none\"}"
+  ],
+  "killed": true,
+  "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:23.116000+00:00",
+    "end_utc": "2026-11-19T09:33:26.636149+00:00",
+    "log_sha256": "8b8e2e8979a816a0d706b3145baced0d955a1fc255dd0cf7fed4f42c5ab2b89d"
+  },
+  "accepted": true
+}

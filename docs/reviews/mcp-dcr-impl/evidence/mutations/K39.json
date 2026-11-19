@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K39",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "if p.Provider == \"\" || p.TenantKey == \"\" || p.Issuer == \"\" || p.Subject == \"\" {",
+  "new": "if false {",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:36:23.379275+00:00",
+    "end_utc": "2026-11-19T09:36:24.796535+00:00",
+    "log_sha256": "625e876f5afca513d150841c1eb740b39c1d2a08ecb8b526c2a6fe73376a8cd3"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "4fd0cd3f9d4e25e54ce2e1ac311d5ae98fa7f8f3ed9aa3c399ebebb50add7c81",
+  "patch_sha256": "c7cfbe80d985dc49085cc7b1914f444acdddddfcac6021348bc0ce83752ec470",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:22.262754+00:00",
+    "end_utc": "2026-11-19T09:36:23.379122+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:238: untrusted/absent principal bound a client"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:24.796839+00:00",
+    "end_utc": "2026-11-19T09:36:26.413573+00:00",
+    "log_sha256": "a55dbfab1f21b0a13c59030b7ba97110883dfb7151b2c8bb0131e766e22a1489"
+  },
+  "accepted": true
+}

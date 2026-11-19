@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr.go
++++ b/internal/mcpgw/dcr.go
+@@ -147,7 +147,7 @@
+ 		oauthError(w, 400, "invalid_client_metadata")
+ 		return
+ 	}
+-	if e = d.Store.Admit(r.Context(), source); e != nil {
++	if e = error(nil); e != nil {
+ 		g.dcrFailure(w, e)
+ 		return
+ 	}
