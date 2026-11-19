@@ -1,0 +1,160 @@
+  FAIL G1 默认关：无 CLI DOM、body 无 cli-view-on、按钮 aria-pressed=false: G1 关态不得有 CLI 行
+
+6 !== 0
+
+  FAIL G2 关态 #timeline innerHTML＋body class 与基锚逐字节同一: G2 关态 body class 与基锚不同（K1 关态加性破坏须红在这里）
+
+'cli-view-on' !== ''
+
+  FAIL G3 点按钮开合：CLI DOM 出现/还原、aria-pressed、localStorage 随动: G3 开后 body 须带 cli-view-on（K2 接线断须红在这里）
+  FAIL G4 跨 tab 同步：BroadcastChannel 跟随、写入方自 apply、新页读 localStorage: G4 写入方须自己立刻 apply
+  FAIL G5 映射：›/•/✗/Worked for 行首与关键字段、工具完成后保留行: G5 用户行须 › 开头含正文
+  FAIL G5b 工具行校准：live commandExecution 绿样本＋rollout FileChange changes 映射: G5b live command 串须原样渲染
+  FAIL G6 来源前缀：attested 挂、不可信不挂、echo 合卡只一行: G6 同一投递（input_posted＋admitted echo）CLI 只一行（T-074 合卡语义）
+
+0 !== 1
+
+  FAIL G7 delivery failed 只更新用户行阶段缀，不另起错误行: Cannot read properties of undefined (reading 'includes')
+  FAIL G6b admitted echo 合卡入回合：仍只一行、canonical 前缀保留: G6b 合卡后独立卡须移除（仅剩 m2 不可信卡）
+
+0 !== 1
+
+  FAIL G8 超长正文：摘要≤1200＋pager 行，打开全文现拼逐字正确: G8 >4000 字须出 pager 行（K6 全量渲染须红在这里）
+
+0 !== 1
+
+  FAIL G9 窄屏 390×844 初始关态 #timeline innerHTML＋body class 与基锚逐字节同一: G9 窄屏 390 初始关态 body class 与基锚不同
+
+'cli-view-on' !== ''
+
+  PASS G9 窄屏 390×844：CLI 开态横向溢出 0、按钮≥40、长命令不横滚
+  FAIL G9 窄屏 390×844 开→关往返后关态仍与基锚逐字节同一（防切换残留）: G9 窄屏 390 往返后关态 body class 与基锚不同（K12 须红在这里）
+
+'cli-view-on' !== ''
+
+  FAIL G9 窄屏 360×780 初始关态 #timeline innerHTML＋body class 与基锚逐字节同一: G9 窄屏 360 初始关态 body class 与基锚不同
+
+'cli-view-on' !== ''
+
+  PASS G9 窄屏 360×780：CLI 开态横向溢出 0、按钮≥40、长命令不横滚
+  FAIL G9 窄屏 360×780 开→关往返后关态仍与基锚逐字节同一（防切换残留）: G9 窄屏 360 往返后关态 body class 与基锚不同（K12 须红在这里）
+
+'cli-view-on' !== ''
+
+  FAIL G9 PC 1440 关态 #timeline 像素同基锚（元素截图逐字节）: locator.screenshot: Timeout 29944.130999999998ms exceeded.
+Call log:
+[2m  - taking element screenshot[22m
+[2m  - waiting for fonts to load...[22m
+[2m  - fonts loaded[22m
+[2m  - attempting scroll into view action[22m
+[2m    2 × waiting for element to be stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying scroll into view action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying scroll into view action[22m
+[2m      - waiting 100ms[22m
+[2m    57 × waiting for element to be stable[22m
+[2m       - element is not visible[22m
+[2m     - retrying scroll into view action[22m
+[2m       - waiting 500ms[22m
+
+  FAIL G10 重连回放＋回合分段＋逐出后开态投影与事件态一致: G10 重连回放后投影须逐行同（K8 读 DOM 须红在这里）
++ actual - expected
+
++ [
++   '• Ran go test ./... -run XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX└ exit 0 · ok  \tmain\t1.2sok  \tmain\t1.2s',
++   '• Edited /tmp/a.go└ update /tmp/a.go--- /tmp/a.go (update)\npackage main\n',
++   '• Ran dw_send└ to: x{\n  "to": "x"\n}',
++   '• 收到，开始跑测试。测试全绿。',
++   '✗ 示例错误',
++   '  Worked for 7s • 04:00'
++ ]
+- []
+
+  FAIL G11 override 优先：true 强制开、false 强制关、按钮置灰: G11 override=false 须关（压过 localStorage on）
+  PASS G12 flood CLI-on：事件/节点峰值终值 ≤ 20000+100，全文逐字收敛
+G12_READINGS {"scenario":"flood","pushed":0,"lastSeq":100002,"seconds":"16.7","peakEvents":20001,"finalEvents":10020,"peakNodes":55,"finalNodes":55,"peakCliNodes":14,"finalCliNodes":14,"pagerCount":1,"bound":20100}
+  PASS G12 late-order CLI-on：事件/节点峰值终值 ≤ 20000+100，全文逐字收敛
+G12_READINGS {"scenario":"late-order","pushed":0,"lastSeq":30002,"seconds":"5.0","peakEvents":20001,"finalEvents":10006,"peakNodes":55,"finalNodes":55,"peakCliNodes":14,"finalCliNodes":14,"pagerCount":1,"bound":20100}
+  PASS G12 toggle-storm ≥50 次：每次开态投影一致、关态容器空、节点数有界
+G12_READINGS {"scenario":"toggle-storm","toggles":55,"mismatches":0,"maxNodeDelta":42,"finalMatch":true,"finalEvents":6002}
+Error: 17 regression check(s) failed
+G1 默认关：无 CLI DOM、body 无 cli-view-on、按钮 aria-pressed=false: G1 关态不得有 CLI 行
+
+6 !== 0
+
+G2 关态 #timeline innerHTML＋body class 与基锚逐字节同一: G2 关态 body class 与基锚不同（K1 关态加性破坏须红在这里）
+
+'cli-view-on' !== ''
+
+G3 点按钮开合：CLI DOM 出现/还原、aria-pressed、localStorage 随动: G3 开后 body 须带 cli-view-on（K2 接线断须红在这里）
+G4 跨 tab 同步：BroadcastChannel 跟随、写入方自 apply、新页读 localStorage: G4 写入方须自己立刻 apply
+G5 映射：›/•/✗/Worked for 行首与关键字段、工具完成后保留行: G5 用户行须 › 开头含正文
+G5b 工具行校准：live commandExecution 绿样本＋rollout FileChange changes 映射: G5b live command 串须原样渲染
+G6 来源前缀：attested 挂、不可信不挂、echo 合卡只一行: G6 同一投递（input_posted＋admitted echo）CLI 只一行（T-074 合卡语义）
+
+0 !== 1
+
+G7 delivery failed 只更新用户行阶段缀，不另起错误行: Cannot read properties of undefined (reading 'includes')
+G6b admitted echo 合卡入回合：仍只一行、canonical 前缀保留: G6b 合卡后独立卡须移除（仅剩 m2 不可信卡）
+
+0 !== 1
+
+G8 超长正文：摘要≤1200＋pager 行，打开全文现拼逐字正确: G8 >4000 字须出 pager 行（K6 全量渲染须红在这里）
+
+0 !== 1
+
+G9 窄屏 390×844 初始关态 #timeline innerHTML＋body class 与基锚逐字节同一: G9 窄屏 390 初始关态 body class 与基锚不同
+
+'cli-view-on' !== ''
+
+G9 窄屏 390×844 开→关往返后关态仍与基锚逐字节同一（防切换残留）: G9 窄屏 390 往返后关态 body class 与基锚不同（K12 须红在这里）
+
+'cli-view-on' !== ''
+
+G9 窄屏 360×780 初始关态 #timeline innerHTML＋body class 与基锚逐字节同一: G9 窄屏 360 初始关态 body class 与基锚不同
+
+'cli-view-on' !== ''
+
+G9 窄屏 360×780 开→关往返后关态仍与基锚逐字节同一（防切换残留）: G9 窄屏 360 往返后关态 body class 与基锚不同（K12 须红在这里）
+
+'cli-view-on' !== ''
+
+G9 PC 1440 关态 #timeline 像素同基锚（元素截图逐字节）: locator.screenshot: Timeout 29944.130999999998ms exceeded.
+Call log:
+[2m  - taking element screenshot[22m
+[2m  - waiting for fonts to load...[22m
+[2m  - fonts loaded[22m
+[2m  - attempting scroll into view action[22m
+[2m    2 × waiting for element to be stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying scroll into view action[22m
+[2m    - waiting 20ms[22m
+[2m    2 × waiting for element to be stable[22m
+[2m      - element is not visible[22m
+[2m    - retrying scroll into view action[22m
+[2m      - waiting 100ms[22m
+[2m    57 × waiting for element to be stable[22m
+[2m       - element is not visible[22m
+[2m     - retrying scroll into view action[22m
+[2m       - waiting 500ms[22m
+
+G10 重连回放＋回合分段＋逐出后开态投影与事件态一致: G10 重连回放后投影须逐行同（K8 读 DOM 须红在这里）
++ actual - expected
+
++ [
++   '• Ran go test ./... -run XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX└ exit 0 · ok  \tmain\t1.2sok  \tmain\t1.2s',
++   '• Edited /tmp/a.go└ update /tmp/a.go--- /tmp/a.go (update)\npackage main\n',
++   '• Ran dw_send└ to: x{\n  "to": "x"\n}',
++   '• 收到，开始跑测试。测试全绿。',
++   '✗ 示例错误',
++   '  Worked for 7s • 04:00'
++ ]
+- []
+
+G11 override 优先：true 强制开、false 强制关、按钮置灰: G11 override=false 须关（压过 localStorage on）
+    at Object.finish (/tmp/wt-r62-cli-view-b/view-service/renderer-regression-selfhost.js:20:34)
+    at /tmp/wt-r62-cli-view-b/view-service/renderer-cli-view-regression.js:466:12
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

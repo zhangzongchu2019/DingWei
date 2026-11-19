@@ -8,11 +8,12 @@
 ## 一、交付坐标
 
 - 产品改动件：`view-service/renderer-canary-sse.html`（唯一产品件）。
-- 新件：`view-service/renderer-cli-view-regression.js`（G1～G12＋G5b/G6b，K1～K11 刀）、`view-service/fixtures/cli-view-tool-items-0170.json`（校准夹具）。
+- 新件：`view-service/renderer-cli-view-regression.js`（G1～G12＋G5b/G6b，K1～K12 刀；V1 追加窄屏关态初始/往返两态字节同一格）、`view-service/fixtures/cli-view-tool-items-0170.json`（校准夹具）。
 - 登记件：`tools/run-browser-regressions.py`（SUITES＋OVERRIDE_ENV_NAMES）。
 - 证据：`docs/reviews/r62-cli-view-b/evidence/`（calibration／runs／shots／conn）。
 - 提交：merge `1e8e46934`（ab87b96fe＋7d3035c6，无冲突，docs 与产品件不相交）；产品＋测试 `852ec1796`（renderer 308 增 0 删＋套件＋夹具＋runner，4 件 1013 增）；docs 提交见交件信 tip。
 - 合并前后内容同一核对：renderer／套件／runner／夹具四件 sha256 合并前后逐字同（400a5118…／f5ac290b…／8661052a…／acadbb75…）；全量 runner 测的工作树内容即最终提交内容。
+- V1/V2 追加（组长 2026-11-18T23:15:25Z 复核 PASS 后小活）：测试提交只改 `renderer-cli-view-regression.js`（窄屏两视口初始关＋开→关往返后关态与基锚逐字节比对，＋K12 cli-view-toggle-residue 刀；**renderer 产品件零改动**，sha 与 852ec1796 逐字同）；docs 提交为本报告 §八＋v4 证据＋SUMS，tip 见交件信。
 
 ## 二、实现概要（加性双投影）
 
@@ -38,9 +39,11 @@
 
 ## 四、回归与刀读数
 
-单跑三连绿（final 件，段 2026-11-18T22:33:47Z～22:38:27Z）：run10／run11／run12 均 rc0，G1～G12＋G5b/G6b 共 18 格全 PASS（`evidence/runs/run10.log` 等）。此前 run4～run9 为迭代轮（含判别力修复前），日志并存不混计。
+单跑三连绿（18 格版 final 件，段 2026-11-18T22:33:47Z～22:38:27Z）：run10／run11／run12 均 rc0，G1～G12＋G5b/G6b 共 18 格全 PASS（`evidence/runs/cli-view-b-run10.log` 等）。此前 run4～run9 为迭代轮（含判别力修复前），日志并存不混计。
 
-删保护刀阵（final 件全量重跑，`evidence/runs/knives/summary.txt`，11/11 红在判据文案）：
+V1 追加后（22 格）单跑三连绿：run13／run14／run15 均 rc0、22 PASS／0 FAIL（段 2026-11-18T23:22:21Z 起，`evidence/runs/cli-view-b-run13.log` 等）。新增 4 格＝窄屏 390/360 各「初始关态字节同一」＋「开→关往返后关态字节同一」；G12 读数与 18 格版同（flood 16.7s／late-order 5.0s／peakEvents 20001≤20100／peakCliNodes 14／storm 55 次 mismatch 0）。
+
+删保护刀阵（V1 追加后 final 件全量重跑，`evidence/runs/knives-v4/summary.txt`，12/12 红在判据文案；18 格版 11 刀原读数存 `evidence/runs/knives/`，renderer 产品件零改动、判据不变）：
 
 | 刀 | rc | 首红判据 |
 | --- | --- | --- |
@@ -55,6 +58,9 @@
 | K9 cli-view-override-flip | 2 | G11 override=true 须有 CLI 投影（钩子与开关同向） |
 | K10 cli-view-threshold | 2 | 套件自检：SOFT_CAP 与 flood 套件漂移（阈值放宽刀） |
 | K11 cli-view-tool-drop | 2 | G5 commandExecution 须 • Ran <command> |
+| K12 cli-view-toggle-residue | 2 | G9 窄屏 390 往返后关态 innerHTML 与基锚字节不同（K12 切换残留须红在这里） |
+
+K12 判别力专杀往返格：刀在 applyCliView 开态分支往主 `#timeline` 追加注释节点（关态分支不动）⇒ K12 下 G1／G2／两视口「初始关态」格均 PASS，仅两视口「开→关往返后」格红（390/360 各一，`knives-v4/knife-cli-view-toggle-residue.log`）；注释节点不渲染像素，PC 像素格不受扰。初始关态格防「加性层破坏现 DOM」，往返格防「切换残留」，两态各有判据。
 
 判别力修复披露（首轮 knives-round1 假绿三把，已修并重跑全刀阵）：
 - K7 首轮假绿：fixture 无超长命令，nowrap 不溢出。修：fixtureA commandExecution 加 300 字符长参数（anywhere 换行则溢出 0，nowrap 则容器 scrollWidth 超界）。
@@ -71,7 +77,9 @@ G12 读数（run12，阈值与 flood 本体逐字同，K10 自检锚定）：
 
 全文收敛判在数据层（软上限 compactTurnGroup 合并不丢文）：dataFull 与逐条拼接逐字同；DOM 按长文策略渲前 1200 字摘要＋pager（G8 覆盖点开全文逐字）。
 
-负载纪律：门段串行、无人为加负载。段前 22:17:32Z／段后 22:38:27Z conn 探针：helper PID 555221，hub TCP inode 1222944048 前后相同 ⇒ 重连 0（`evidence/conn/conn-knives2-before.json`／`-after.json`）。
+负载纪律：门段串行、无人为加负载。段前 22:17:32Z／段后 22:38:27Z conn 探针：helper PID 555221，hub TCP inode 1222944048 前后相同 ⇒ 重连 0（`evidence/conn/cli-view-b-conn-knives2-before.json`／`-after.json`）。
+
+V1/V2 追加段（v4，12 刀＋三绿＋全量 runner 串行）：段前 2026-11-18T23:22:21Z／段后 23:59:44Z conn 探针 inode 1222944048 逐字同 ⇒ 重连 0（`evidence/conn/cli-view-b-conn-v4-before.json`／`-after.json`）；无人为加负载。
 
 ## 五、截图（两视口＋PC，关/开态）
 
@@ -93,18 +101,47 @@ G12 读数（run12，阈值与 flood 本体逐字同，K10 自检锚定）：
 - 登记前单跑三连绿（run10/11/12，§四）；登记后全量 runner 一轮（2026-11-18T22:40:43Z～22:56:01Z，`evidence/runs/fullrunner.log`，receipt commit_sha=4bca74f00＝合并前本地 tip，测的是工作树内容，与最终提交内容逐字同，见 §一 sha 核对）：**52 套 51 绿 1 红**，aggregate_rc=2。
 - 逐套 rc 见 receipt（DW_BROWSER_RECEIPT_V1）：renderer_cli_view rc0；renderer_provenance_icon（8cabb351 来源图标）rc0；renderer_retry_role（r60 ④ 重发）rc0；console_mobile rc0；renderer_in_console_iframe rc0；renderer_failure_dock_embedded rc0；renderer_flood_stress rc0；md_render_core_sync／parity rc0（bypass 未触 sha）。
 - 唯一红：`r15_session_history_mutations` rc1，case restore_live_eviction_during_paged_history，红在 r15-session-history-browser-regression.js:96 的 3000ms 窗（page.waitForFunction Timeout）。两锚对照：本树单跑同 case 红（r15-mutations-current-single.log）；基锚 7d3035c6 renderer（无 CLI 层，临时副本）单跑亦红、case drop_scroll_anchor_correction 同一 3000ms 窗（r15-mutations-base7d3035c6-single.log）⇒ 既有时序窗抖性，非本单回归。415b9bf5（时序窗修复）尚未合入本基，归既定继承族／后续统筹单，不在本单修。
+- V1 追加后全量 runner 再一轮（v4，2026-11-18T23:47Z～23:59:43Z，`evidence/runs/fullrunner-v4.log`＋`fullrunner-v4-receipt.txt`，receipt commit_sha=3491f94ae＝当时 HEAD，测的工作树内容即 V1 测试提交内容，renderer 与 852ec1796 逐字同）：**52 套 50 绿 2 红**，aggregate_rc=2。renderer_cli_view rc0（22 格）；renderer_provenance_icon／renderer_retry_role／console_mobile／renderer_in_console_iframe／renderer_failure_dock_embedded／renderer_flood_stress／md_render_core_sync／parity／console_browser 均 rc0。
+- v4 两红均为 r15 族同一 3000ms 窗（r15-session-history-browser-regression.js:96）：`r15_session_history_pagination` rc2（基线轮 page.waitForFunction Timeout）；`r15_session_history_mutations` rc1（mutant drop_scroll_anchor_correction 期望红在判据、实红在同窗 Timeout＝「wrong assertion failed」）。两锚单跑对照见 §六.1。415b9bf5 未合入本基，归既定继承族（组长 M2 复核全量亦曾 r15 族两红），不在本单修。
+
+### 六.1 r15 族两红两锚单跑对照（v4）
+
+- 方法：r15 两测试件本分支相对 7d3035c6 零改动（git diff 空）；基锚对照用临时副本（view-service 全量拷贝、仅把 renderer-canary-sse.html 换为 `git show 7d3035c6:` 版，sha256 c1f299d73fac…），唯一变量＝renderer。
+- 单跑（2026-11-19T00:01:53Z～00:02:09Z）：本树 pagination rc2（r15:96 同窗 Timeout）、mutations rc0（三刀全红在判据）；基锚 pagination rc0、mutations rc0（三刀全红在判据）。
+- pagination 两锚各五连（00:03:11Z～00:03:46Z）：本树 **2/2/0/0/0**、基锚 **2/2/0/0/0**——逐位相同，四次红全部是 r15-session-history-browser-regression.js:96 的 3000ms 窗 ⇒ 既有时序窗抖性（与本机历史「基锚原 renderer 0/0/2/0/2」读数同族），非本单 CLI 层回归。
+- mutations 全量负载下红（drop_scroll_anchor_correction「wrong assertion failed」，实红在同窗 Timeout）、两锚单跑均绿 ⇒ 负载敏感，同族。
+- 对照段 conn 前后 inode 1222944048 逐字同 ⇒ 重连 0。日志：`evidence/runs/r15-v4-compare/`（单跑 4＋五连 10＋rc＋conn）。
+- 处置：照既定裁定继承（415b9bf5 时序窗修复未合入本基，r62 集成后验证），不在本单修。
 
 ## 七、披露与已知边界
 
-1. **加性 chrome**：状态栏多一个 ▣ 切换按钮（开关本体，任何切换功能不可避免）。G2「关态字节同一」按设计 §一  scope 于 `#timeline` innerHTML＋body class；G9 PC 关态像素同一 scope 于 `#timeline` 元素截图。整页 chrome 因按钮存在而不逐字节同——请组长裁定此 scope 是否符合「关态外观与现网逐字节一致」口径；若需整页同一，按钮须另藏（如设置菜单内），本期未做。
+1. **加性 chrome（已裁）**：▣ 切换按钮保留可见。组长 2026-11-18T23:15:25Z 复核裁定（逐字）：「状态栏的『▣』切换按钮保留可见——业主要能自己切换，按钮是开关本体。『关态与现网逐字节一致』的范围定为：时间线区域 innerHTML＋body class＋时间线元素截图；整页因多一个按钮不逐字节同，接受，本席向业主说明。不必藏进设置菜单。」G2/G9 字节同一与像素同一按此 scope；V1 另补窄屏 390/360 两视口初始关＋开→关往返后两态比对（§四）。
 2. mention-reply 卡、reasoning 行、独立 error 卡（schema_conflict 等）不进 CLI 投影（映射表 scope 外，设计 §二）；回合内 error 有 ✗ 行。
 3. N-2 offturn 折叠条：本基（7d3035c6）不含 N-2 代码；契约注释＋跳过标记登记，N-2 合入后激活（设计 §八）。
 4. md-render-core bypass（markdown-lite）⇒ 无 console_specs_assets_test.go sha 回写；若后续改走 md-render-core 须按设计 §六 流程回写。
 5. K5 刀锚在 G7 实际所经 c1ApplyToEntry 阶段更新钩子；renderUser 的 viaDlv 失败防御分支同语义保护，无单独格（该分支在正常索引命中时不可达，T-074 防御余量）。
 6. r15 两格／console_browser 零组格等既有负载抖按既定裁定继承（415b9bf5／后续统筹单），不在本单修。
 7. 校准探针的 dynamicToolCall 与 fileChange live 形状缺口见 §三.7。
+8. **📎 附件行缺口（V2 盘点新发现，请裁）**：设计 §二 承诺用户行/正文块下挂 `📎 <文件名>` 行，原型未实现（rebuildTurnCLI/renderUserCLI 无附件处理，主时间线 attachFileRenders 产物未投影）；此前披露 1～7 未含此项。本轮 V1/V2 为测试/docs 小活，未擅自实现；请组长裁本期补或后续单（§八.4）。
 
-## 八、边界遵守
+## 八、与原生 Codex CLI 的差异（V2，按组长 2026-11-18T23:15:25Z 复核令增）
+
+对照对象：原生 Codex CLI 0.170.0 TUI（设计期 tmux 帧参照 `evidence/layout/d-0170b/`）。分类：A＝无数据源/范围外；B＝有意差异（设计已定或加性增强）；C＝形状未校准（降级容错）。逐条写「不画什么、为什么、以后能否补」。
+
+1. **reasoning 行不画**（A）。原生 TUI 有 reasoning 摘要行；driver 根本不转发 reasoning item（`tools/sessionhelper/sessionhelper/codexDriver.py:1883` 注释逐字「userMessage / reasoning / 其他未知 item 类型都不作为独立事件暴露」），View 侧无数据源。以后能否补：需 driver/Hub 暴露 reasoning 事件（本单不动 driver/Hub，范围外）；暴露后 View 可加暗色 • 行，纯加性。
+2. **mention-reply 卡不投影**（B）。跨席镜像/提及回复卡不产生 CLI 行（设计 §二 明定：非本席回合语义）；原生 CLI 无跨席消息概念，无对应版式。以后能否补：可映射为分隔行＋来源前缀，需先裁版式。
+3. **独立 error 卡不投影**（B）。schema_conflict 等系统级独立 error 卡不进投影；原型只画回合内 error 的 ✗ 行。设计映射表原写独立 error→✗ 行，原型未实现（原披露 2，组长 23:15:25Z 已接受）。以后能否补：可加 ✗ 诊断行，纯 View 加性。
+4. **📎 附件行未实现**（缺口，请裁）。设计 §二 承诺用户行/正文块下挂 `📎 <文件名>` 行（链接可点、复用 attachFileRenders 产物语义），原型 rebuildTurnCLI/renderUserCLI 无附件处理；此前披露未含此项，本轮 V2 盘点新发现（§七.8）。为什么未画：原型期遗漏，非有意裁剪。以后能否补：能，纯 View 加性（事件侧附件字段已在）；本期补或后续单请组长裁，本轮 docs 小活未擅自实现。
+5. **dynamicToolCall 无样本降级**（C）。校准未获 MCP 工具真样本（§三.7），工具行降级为 `item.name||data.name` 真名行，无参数/输出摘要。以后能否补：取 MCP 真样本校准形状后补摘要，夹具两臂机制已留位。
+6. **fileChange live 形状为推断**（C）。changes 字段名 rollout/live 两源一致，camelCase 外形由 commandExecution 同源推断（§三.7）；0.170 工具集无原生 apply_patch，实证需 MCP 或旧版工具。以后能否补：取真 fileChange live 样本校准；现容错（changes 首键路径、多文件 N files）已覆盖两源已知形状。
+7. **工具完成保留行 vs 原生折叠**（B，有意差异）。原生 TUI 完成后把工具输出折叠为可展开摘要；原型保留 • Ran/Edited 行＋└ details 摘要＋全文（设计 §二，G5 格保护），保证时间线可回溯。不属缺口。
+8. **长文 1200 摘要＋pager vs 原生全量滚动**（B，有意差异）。原生 TUI 全文渲染靠滚动；原型 >4000 字 ⇒ 1200 字摘要＋pager 行、全文点击现拼（G8/G12 flood 性能判据所需）。不属缺口。
+9. **状态行快捷键提示仅版式参照**（B）。`← for agents · ? for shortcuts` 只是原生状态行版式复刻（renderer 状态行第二行），View 无对应快捷键功能。以后能否补：若要真快捷键另单（涉及交互层，非纯投影）。
+10. **用户行阶段缀为 DingWei 特有**（B，加性增强）。`[已送达/失败:…]` 阶段缀来自 DingWei ACK 生命周期，原生 CLI 无此概念；有意加性（G7 格保护失败不另起行）。
+11. **N-2 offturn 折叠条契约预留**（A）。本基 7d3035c6 不含 N-2 代码；契约注释＋跳过标记已登记，N-2（8ae6b083）合入后激活（设计 §八）。原生 CLI 无回合外输出概念，届时捷径为 DingWei 特有折叠条。
+12. **子 Agent 无独立事件种**（A）。renderer 事件流无子 Agent 独立事件种（subagent/sub_agent/agent_task/collab grep 0 命中，设计 §二 已定）；父席的子 Agent 操作以 MCP tool_call 行（dw_* 工具）呈现，与原生 TUI 的子代理树/独立任务行不同。以后能否补：需 driver 暴露子 Agent 生命周期事件（范围外）；暴露后可映射独立任务行。
+
+## 九、边界遵守
 
 - 未改 VERSION；未推 main；未跑 build.sh 出发布件；未碰预发/现网；driver/Hub/helper 零改动。
 - 校准探针隔离 HOME/CODEX_HOME，mock 凭据 dummy；未复用 donor 凭据（本单不需要真 provider）；日志无密钥。
