@@ -1,0 +1,19 @@
+BASELINE_DONE
+BASELINE2_DONE
+cli-view-offstate-add rc=2 |   FAIL G1 默认关：无 CLI DOM、body 无 cli-view-on、按钮 aria-pressed=false: G1 关态不得有 CLI 行
+cli-view-toggle-wire rc=2 |   FAIL G3 点按钮开合：CLI DOM 出现/还原、aria-pressed、localStorage 随动: G3 开后 body 须带 cli-view-on（K2 接线断须红在这里）
+cli-view-persist rc=2 |   FAIL G3 点按钮开合：CLI DOM 出现/还原、aria-pressed、localStorage 随动: G3 localStorage 须 on
+cli-view-trust-bypass rc=2 |   FAIL G6 来源前缀：attested 挂、不可信不挂、echo 合卡只一行: G6 不可信来源不得挂前缀（fail-closed；K4 须红在这里）
+cli-view-fail-newline rc=2 |   FAIL G7 delivery failed 只更新用户行阶段缀，不另起错误行: G7 失败不得另起错误行（K5 须红在这里）
+cli-view-longtext-full rc=2 |   FAIL G8 超长正文：摘要≤1200＋pager 行，打开全文现拼逐字正确: G8 >4000 字须出 pager 行（K6 全量渲染须红在这里）
+cli-view-nowrap rc=2 |   FAIL G9 窄屏 390×844：CLI 开态横向溢出 0、按钮≥40、长命令不横滚: G9 CLI 容器自身横向溢出须 0
+cli-view-dom-depend rc=2 |   FAIL G10 重连回放＋回合分段＋逐出后开态投影与事件态一致: G10 投影不得依赖主 DOM（主 DOM 清空后仍须与事件态同）
+cli-view-override-flip rc=2 |   FAIL G11 override 优先：true 强制开、false 强制关、按钮置灰: G11 override=true 须有 CLI 投影（钩子与开关同向；K9 须红在这里）
+cli-view-threshold rc=2 | AssertionError [ERR_ASSERTION]: K10 自检：SOFT_CAP 与 flood 套件漂移（阈值放宽刀须红在这里）
+cli-view-tool-drop rc=2 |   FAIL G5 映射：›/•/✗/Worked for 行首与关键字段、工具完成后保留行: G5 commandExecution 须 • Ran <command>
+cli-view-toggle-residue rc=2 |   FAIL G9 窄屏 390×844 开→关往返后关态仍与基锚逐字节同一（防切换残留）: G9 窄屏 390 往返后关态 innerHTML 与基锚字节不同（K12 切换残留须红在这里）
+cli-view-attach-drop rc=2 |   FAIL G13 📎 附件行：开态用户行/正文块下挂可点文件名（含长文尾部），关态与基锚字节不变: G13 开态须出现 4 条 📎 附件行（实 0；K13 去挂载须红在这里）
+run17 rc=0 | renderer-cli-view-regression: G1～G13 通过
+run18 rc=0 | renderer-cli-view-regression: G1～G13 通过
+fullrunner rc=2
+ALL_DONE

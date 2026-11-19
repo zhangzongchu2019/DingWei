@@ -122,7 +122,7 @@ V1/V2 追加段（v4，12 刀＋三绿＋全量 runner 串行）：段前 2026-1
 5. K5 刀锚在 G7 实际所经 c1ApplyToEntry 阶段更新钩子；renderUser 的 viaDlv 失败防御分支同语义保护，无单独格（该分支在正常索引命中时不可达，T-074 防御余量）。
 6. r15 两格／console_browser 零组格等既有负载抖按既定裁定继承（415b9bf5／后续统筹单），不在本单修。
 7. 校准探针的 dynamicToolCall 与 fileChange live 形状缺口见 §三.7。
-8. **📎 附件行缺口（V2 盘点新发现，请裁）**：设计 §二 承诺用户行/正文块下挂 `📎 <文件名>` 行，原型未实现（rebuildTurnCLI/renderUserCLI 无附件处理，主时间线 attachFileRenders 产物未投影）；此前披露 1～7 未含此项。本轮 V1/V2 为测试/docs 小活，未擅自实现；请组长裁本期补或后续单（§八.4）。
+8. **📎 附件行缺口（V2 盘点新发现，已裁本期补）**：设计 §二 承诺用户行/正文块下挂 `📎 <文件名>` 行，原型未实现（rebuildTurnCLI/renderUserCLI 无附件处理，主时间线 attachFileRenders 产物未投影）；此前披露 1～7 未含此项。组长 2026-11-19T00:09:16Z 裁定「本期补」，V3 已实现并加 G13 格＋K13 刀，见 §十。
 
 ## 八、与原生 Codex CLI 的差异（V2，按组长 2026-11-18T23:15:25Z 复核令增）
 
@@ -131,7 +131,7 @@ V1/V2 追加段（v4，12 刀＋三绿＋全量 runner 串行）：段前 2026-1
 1. **reasoning 行不画**（A）。原生 TUI 有 reasoning 摘要行；driver 根本不转发 reasoning item（`tools/sessionhelper/sessionhelper/codexDriver.py:1883` 注释逐字「userMessage / reasoning / 其他未知 item 类型都不作为独立事件暴露」），View 侧无数据源。以后能否补：需 driver/Hub 暴露 reasoning 事件（本单不动 driver/Hub，范围外）；暴露后 View 可加暗色 • 行，纯加性。
 2. **mention-reply 卡不投影**（B）。跨席镜像/提及回复卡不产生 CLI 行（设计 §二 明定：非本席回合语义）；原生 CLI 无跨席消息概念，无对应版式。以后能否补：可映射为分隔行＋来源前缀，需先裁版式。
 3. **独立 error 卡不投影**（B）。schema_conflict 等系统级独立 error 卡不进投影；原型只画回合内 error 的 ✗ 行。设计映射表原写独立 error→✗ 行，原型未实现（原披露 2，组长 23:15:25Z 已接受）。以后能否补：可加 ✗ 诊断行，纯 View 加性。
-4. **📎 附件行未实现**（缺口，请裁）。设计 §二 承诺用户行/正文块下挂 `📎 <文件名>` 行（链接可点、复用 attachFileRenders 产物语义），原型 rebuildTurnCLI/renderUserCLI 无附件处理；此前披露未含此项，本轮 V2 盘点新发现（§七.8）。为什么未画：原型期遗漏，非有意裁剪。以后能否补：能，纯 View 加性（事件侧附件字段已在）；本期补或后续单请组长裁，本轮 docs 小活未擅自实现。
+4. **📎 附件行（V3 已补，B＝加性增强）**。设计 §二 承诺用户行/正文块下挂 `📎 <文件名>` 行（链接可点、复用 attachFileRenders 产物语义）；原型期遗漏（V2 盘点新发现，§七.8），组长 2026-11-19T00:09:16Z 裁定本期补，V3 已实现（§十）。与原生差异：原生 CLI 无附件概念，📎 行为 DingWei 特有加性增强；主视图的内联图让位/玩家卡不复刻，CLI 只挂名字链接行。
 5. **dynamicToolCall 无样本降级**（C）。校准未获 MCP 工具真样本（§三.7），工具行降级为 `item.name||data.name` 真名行，无参数/输出摘要。以后能否补：取 MCP 真样本校准形状后补摘要，夹具两臂机制已留位。
 6. **fileChange live 形状为推断**（C）。changes 字段名 rollout/live 两源一致，camelCase 外形由 commandExecution 同源推断（§三.7）；0.170 工具集无原生 apply_patch，实证需 MCP 或旧版工具。以后能否补：取真 fileChange live 样本校准；现容错（changes 首键路径、多文件 N files）已覆盖两源已知形状。
 7. **工具完成保留行 vs 原生折叠**（B，有意差异）。原生 TUI 完成后把工具输出折叠为可展开摘要；原型保留 • Ran/Edited 行＋└ details 摘要＋全文（设计 §二，G5 格保护），保证时间线可回溯。不属缺口。
@@ -146,3 +146,36 @@ V1/V2 追加段（v4，12 刀＋三绿＋全量 runner 串行）：段前 2026-1
 - 未改 VERSION；未推 main；未跑 build.sh 出发布件；未碰预发/现网；driver/Hub/helper 零改动。
 - 校准探针隔离 HOME/CODEX_HOME，mock 凭据 dummy；未复用 donor 凭据（本单不需要真 provider）；日志无密钥。
 - 负载纪律：门段串行、无人为加负载；段前后 conn 探针读数入 evidence/conn/（helper 重连 >2 即停段报——本段未触发）。
+
+## 十、V3 📎 附件行（组长 2026-11-19T00:09:16Z 裁定「本期补」）
+
+裁定逐字：「纯 View 加性、关态不受影响；在同一分支追加：用户行与正文块下挂『📎 文件名』行（链接可点），语义复用 attachFileRenders 产物，不重建上传下载；加一格（开态有附件时出现、关态无变化）＋一刀（去掉附件挂载必红）；V1 关态逐字节格须仍绿。」
+
+### 十.1 实现（renderer-canary-sse.html，纯加性）
+
+- 新 helper `cliAttachmentUrls(cardEl)`：只读 attachFileRenders 的挂载产物 `cardEl._fileHost` 当前子元素的 `data-file-url` 集（有序去重）。**不重扫正文、不重建 HEAD 探测/上传下载**——URL 集天然继承 attachFileRenders 的全部语义：本站 /f/ 过滤、尾标点剥除、流式 openTail 暂缓、长前缀让位、内联图让位、404 兜底保留。
+- 新 helper `cliAttachLine(url, cardEl)`：已解析的附件卡直接取其 `.attachment-name` 链接（名字与 href 与主视图同名同源）；未解析槽位回退 `fileAttachmentShell` 同一名字源（uploadedFileHints → URL 末段）＋ `localFileUrl`。两处名字源一致 ⇒ 槽位→卡异步解析不改变 📎 行内容。
+- `rebuildTurnCLI`：回合用户行下挂正文含该 URL 的 📎 行；正文块（含长文 pager 之后）挂其余 📎 行——长文摘要外的附件不丢（host 来自全文扫描）。无正文块的回合全部挂用户行下，不丢行。
+- `renderUserCLI`：独立输入卡行尾 `insertAdjacentHTML` 追加该卡全部 📎 行（阶段更新/失败路径重渲时随 innerHTML 重置重挂，不重复）。
+- CSS：`.cli-attach` 暗色行＋链接色；窄屏 ≤768 链接 inline-block min-height 40px（与 pager 按钮同例）。
+- 关态零副作用：所有新路径都在 rebuildTurnCLI/renderUserCLI 内（本身带 cliViewOn() 闸），主时间线/attachFileRenders/DW-MD-CORE 生成段零改动 ⇒ 无 md-render-core sha 回写。
+- 已知窗（披露）：📎 集随投影重建刷新；主视图附件的异步让位/补挂（内联图加载失败后补卡）发生在两次重建之间时，CLI 行至下次重建才同步。正文 URL 文本在 CLI 恒可见（cliMarkdownLite 不画图），不丢信息。
+
+### 十.2 回归与刀（renderer-cli-view-regression.js）
+
+- 新格 G13（一格覆盖裁定三要求）：夹具含独立输入卡附件、回合用户行附件、回合正文附件、长文（4500 字）尾部附件共 4 条 /f/ URL（HEAD/GET 路由替身）。断言：① 关态 `.cli-attach` 计 0 且 #timeline innerHTML＋body class 与基锚 7d3035c6 逐字节同（附件产物不被加性层改动）；② 开态恰 4 条「📎 文件名」行、href 指向文件本体、target=_blank；③ 用户行 📎 紧跟用户行、正文 📎 紧跟正文块、长文 📎 紧跟 pager（摘要外不丢）、独立卡下挂 📎；④ 开→关往返后关态仍与基锚字节同（防附件切换残留）。
+- 🔴 夹具同源教训（首版实测踩中，已修）：/f/ 直链按 isOwnFileUrl 对 location.origin 判定。首版基页另起服务器（不同 port）⇒ 基页拒收全部夹具 URL、附件产物为空，G13 等待超时（run16-origin-fail.log 保留披露）。修为单服务器双路径（当前版根路径、基锚 /base/）保同源；两路径均无 /view/ 前缀 ⇒ apiBase 为空、端点一致；localFileUrl 无 canonical origin 时原样返回 ⇒ 两页 href 逐字同，字节同一有判别力。
+- 新刀 K13 `cli-view-attach-drop`：`cliAttachmentUrls` 的 host 遍历改空集（去掉附件挂载读）⇒ G13 开态计数/文案断言红（非超时红：关态附件等待不受 K13 影响，先过等待再红在判据）。锚唯一性已核（现有 11 刀锚＋K13 锚各恰 1 命中）。
+- 既有 G2/G9（V1 窄屏初始关＋往返）字节同一格不动、须仍绿。
+
+### 十.3 门读数（v5，2026-11-19T01:02:12Z～01:48:46Z，串行无加负载）
+
+- 单跑三绿：run16／run17／run18 均 rc0、23 PASS（G1～G13；原 22 格＋G13）。G12 读数与原型逐字同族：flood peakEvents=20001≤bound 20100、late-order 同、toggle-storm 55 次 0 mismatch ⇒ 📎 层无性能回归（夹具无 /f/ URL 时 host 扫描零成本）。
+- 🔴 首版假启动披露：run16-origin-fail.log（rc2）——G13 基页另起服务器致跨 origin 拒收夹具 URL、等待超时；修法与教训见 §十.2。该轮作废不计三绿，保留披露。
+- 刀 13/13 红在判据（evidence/runs/v5-attach/knife-*.log＋summary.txt）：原 12 刀首红判据与 v4 同族；新刀 K13 cli-view-attach-drop **外科手术式**：22 PASS＋仅 G13 红，文案「G13 开态须出现 4 条 📎 附件行（实 0；K13 去挂载须红在这里）」——红在计数断言、非超时（关态附件等待不受 K13 影响，先过等待再红判据）。
+- V1 关态逐字节格仍绿：G2（PC）＋G9（390/360 初始关＋开→关往返）＋G9 PC 像素同一，三绿内全 PASS；G13 另含附件夹具的关态字节同一＋往返同一。
+- 全量 runner（不选格）：52 套 **50 绿 2 红**，aggregate_rc=2。两红均 r15 继承族同窗：pagination rc2（r15:96 Timeout 3000ms）、mutations rc1（drop_history_node_move「wrong assertion failed」，实红同窗 r15:96）。本分支 r15 两件对基锚 7d3035c6 git diff 为空、415b9bf5 未合入 ⇒ 照既定裁定记名继承，r62 集成后验证。renderer_cli_view 在全量内 rc0；来源图标／重发／mobile／iframe／failure dock／flood／md-render-core／console_browser 等关键套全 rc0。
+- conn：段前 01:02:12Z／段后 01:48:46Z，helper PID 555221、WS inode 1222944048 逐字同、ipc_connect_ex=0 ⇒ 重连 0，未触停段线。
+- 截图：evidence/runs/v5-attach/shots/（两视口关/开＋PC 关/开＋工具校准＋**pc-1440-attach-on.png** sha256=7561faf2ec32f2534a03928d746b55a2c99a90c2d474e0b95c4b71a040ae1d4e）。📎 字符在 headless 截图呈方框（本机无 emoji 字体），DOM textContent 逐字「📎 文件名」、断言按文本判；真实桌面/手机浏览器有 emoji 字体正常显示。
+- renderer sha256=09cf2e9869e8229a91ea90d6d635f24a53d2555d96dfcc111a72c67cf525c84a；对 95c97d616 diff **31 增 0 删**（纯加性）；套件 108 增 2 删（两删为 G1～G12→G1～G13 题头/尾注）。
+- 跑法脚本与调试探针入 evidence/runs/v5-attach/scripts/（baseline/baseline2/gates＋g13-probe/g13-probe2，后者复现跨 origin 假启动）。

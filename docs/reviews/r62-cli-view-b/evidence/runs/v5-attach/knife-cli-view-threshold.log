@@ -1,0 +1,16 @@
+AssertionError [ERR_ASSERTION]: K10 自检：SOFT_CAP 与 flood 套件漂移（阈值放宽刀须红在这里）
++ actual - expected
+
++ 20000
+- 1000000000
+
+    at thresholdSelfCheck (/tmp/wt-r62-cli-view-b/view-service/renderer-cli-view-regression.js:28:10)
+    at /tmp/wt-r62-cli-view-b/view-service/renderer-cli-view-regression.js:173:3
+    at Object.<anonymous> (/tmp/wt-r62-cli-view-b/view-service/renderer-cli-view-regression.js:576:3)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49
