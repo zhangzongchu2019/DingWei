@@ -631,8 +631,8 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 		t.Fatalf("Ledger: %v", err)
 	}
 
-	if len(entries) != 17 {
-		t.Fatalf("账本 %d 条（%v），本格按 17 条写断言（变了就改本格，别改断言数字糊过去）",
+	if len(entries) != 19 {
+		t.Fatalf("账本 %d 条（%v），本格按 19 条写断言（变了就改本格，别改断言数字糊过去）",
 			len(entries), names(entries))
 	}
 
@@ -672,12 +672,12 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 		}
 	}
 
-	// 终态：账 17 条、digest 与正文一致、身份域 CheckSchema 过（＝Hub 真起得来）。
+	// 终态：账 19 条、digest 与正文一致、身份域 CheckSchema 过（＝Hub 真起得来）。
 	probe := pools[0]
 	rows := ledgerRows(t, probe)
 
-	if len(rows) != 18 {
-		t.Fatalf("账上 %d 条，要 18 条", len(rows))
+	if len(rows) != 19 {
+		t.Fatalf("账上 %d 条，要 19 条", len(rows))
 	}
 	for _, e := range entries {
 		if rows[e.Name].digest != Digest(e.Body) {
@@ -693,7 +693,7 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 		t.Fatalf("并发之后重跑 MigrateEntries: %v", err)
 	}
 
-	if len(rep.Applied) != 0 || len(rep.Skipped) != 18 {
-		t.Errorf("重跑 Applied=%v Skipped=%v，要空转十八条", rep.Applied, rep.Skipped)
+	if len(rep.Applied) != 0 || len(rep.Skipped) != 19 {
+		t.Errorf("重跑 Applied=%v Skipped=%v，要空转十九条", rep.Applied, rep.Skipped)
 	}
 }

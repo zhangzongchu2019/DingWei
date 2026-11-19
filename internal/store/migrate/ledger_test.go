@@ -208,7 +208,7 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, entry := range entries {
-		if entry.Name == "0105_extseat.sql" || entry.Name == "0106_tempgroup.sql" || entry.Name == "0107_mcpgw_oauth.sql" || entry.Name == "0108_extseat_short_name.sql" || entry.Name == "0110_extseat_expect_reply.sql" || entry.Name == "0111_extseat_feishu_copy.sql" || entry.Name == "0112_np_agent_display_name.sql" || entry.Name == "0113_extseat_groups.sql" || entry.Name == "0114_agent_feishu_summary_copy.sql" {
+		if entry.Name == "0105_extseat.sql" || entry.Name == "0106_tempgroup.sql" || entry.Name == "0107_mcpgw_oauth.sql" || entry.Name == "0108_extseat_short_name.sql" || entry.Name == "0110_extseat_expect_reply.sql" || entry.Name == "0111_extseat_feishu_copy.sql" || entry.Name == "0113_extseat_groups.sql" || entry.Name == "0114_agent_feishu_summary_copy.sql" {
 
 			if _, err := trackA.Exec(ctx, testCtx(t), entry.Body); err != nil {
 				t.Fatal(err)
