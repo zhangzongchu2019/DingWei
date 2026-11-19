@@ -1,6 +1,6 @@
 # MCP 受限动态客户端注册（S-MCP-DCR）设计审阅稿
 
-状态：仅设计，等组长过目；本稿不授权实施、部署或开现网注册口。基点 `4a349ee59a1d8d7b8b9c562c462bded2f8b0f192`（r61 0.2.3.41，含 AUTH-FIRST）。设计截止2026-11-19T12:00Z；实现截止11-20T12:00Z，获设计通过后才开始。需求规范在 openspec/changes/mcp-dcr/specs/mcp-dynamic-client-registration/spec.md，DCR-001～008。
+状态：组长2026-11-19T08:37:52Z有条件通过；按四条修订后开实现，不授权部署或开现网注册口。基点 `4a349ee59a1d8d7b8b9c562c462bded2f8b0f192`（r61 0.2.3.41，含 AUTH-FIRST）。设计截止2026-11-19T12:00Z；实现截止11-20T12:00Z，获设计通过后才开始。需求规范在 openspec/changes/mcp-dcr/specs/mcp-dynamic-client-registration/spec.md，DCR-001～008。
 
 ## 1. 问题与目标
 
@@ -23,7 +23,7 @@
 | extwire/issuer.go:29-49、extseat/service.go:74-165 | 飞书回调调用现有IssueToken创建外部Agent、绑定principal及组并签token；无需预先创建托管/自有Agent |
 | gateway.go:276-303 | AUTH-FIRST已使未认证GET/非法体先401，认证后只收POST；本片保留，不再改为鉴权前400 |
 
-无新依赖、无helper/renderer/Agent权限改造；不改VERSION。新增PG迁移须实施前由组长协调编号，设计不先占0112/0113或任何槽；SQLite应用库与history迁移不动。若随r62集成，保留GROUPS可选AG/普通组和NAME改动，本片不把目标或AG重新变成必选。
+无新依赖、无helper/renderer/Agent权限改造；不改VERSION。PG迁移按组长暂定0115，动工及交件复核main与r62的0112～0114，撞号即报；SQLite应用库与history迁移不动。若随r62集成，保留GROUPS可选AG/普通组和NAME改动，本片不把目标或AG重新变成必选。
 
 ## 3. RFC7591受限接口（DCR-001）
 
@@ -43,7 +43,9 @@
 
 成功201 JSON，no-store/no-cache，返回随机256bit不透明公共ID（dw-dcr-前缀）、client_id_issued_at、实际接受的redirects/none/code字段；可带明确为本服务扩展的client_id_expires_at。无client_secret、client_secret_expires_at、registration_access_token或registration_client_uri；不实现RFC7592管理接口。ID是公开标识，不是凭据。
 
-错误：metadata不符400 invalid_client_metadata，回调不符400 invalid_redirect_uri，超体413，媒体不符415；只回固定短句，不反射URI/请求片段。限流429＋Retry-After；资源容量/存储不可用503 temporarily_unavailable。DCR就绪时入口先取有界槽与登记全局额度，再按可信取源记来源额度，之后才作本路method/Origin/body校验；metadata失败也消耗额度，不为非法源新建无界桶。关闭态404不启动登记存储。此顺序只属新增登记路，不改既有/mcp与其它OAuth的Origin/鉴权顺序。
+错误：metadata不符400 invalid_client_metadata，回调不符400 invalid_redirect_uri，超体413，媒体不符415；只回固定短句，不反射URI/请求片段。回调拒收只记loopback_bad／https_unlisted／custom_scheme／malformed固定枚举；custom_scheme另记最多32字节、过滤为ASCII字母数字加减点的scheme名，不记完整URI。
+
+限流429＋Retry-After；资源容量/存储不可用503 temporarily_unavailable。DCR就绪时入口先取有界槽与登记全局额度，再按可信取源记来源额度，之后才作本路method/Origin/body校验；metadata失败也消耗额度，不为非法源新建无界桶。关闭态404不启动登记存储。此顺序只属新增登记路，不改既有/mcp与其它OAuth的Origin/鉴权顺序。
 
 ## 4. 回调边界与三个形式（DCR-002）
 
@@ -57,9 +59,11 @@ C. 自定义scheme：首版默认拒绝（invalid_redirect_uri），不能只因
 
 ## 5. 持久登记、生命周期与清理（DCR-004/006）
 
-新增独立PG动态client表和受限登记计量表，resource分区。客户端行含(resource,client_id)唯一键、accepted metadata加密sealed、source_hash、created/expires；用现有持久OAuth32字节密钥构造AES-GCM，AAD绑定resource/client ID，不把DCR放进mcpgw_oauth的10000条短事务配额。source_hash为持久密钥域分离HMAC，不存原始IP；备份与该密钥关联，不新增下载凭据。
+新增独立PG动态client表、主体绑定表和受限登记计量表，resource分区。客户端行含(resource,client_id)唯一键、accepted metadata加密sealed、source_hash、created/expires；用现有持久OAuth32字节密钥构造AES-GCM，AAD绑定resource/client ID，不把DCR放进mcpgw_oauth的10000条短事务配额。source_hash为持久密钥域分离HMAC，不存原始IP；备份与该密钥关联，不新增下载凭据。
 
-建议绝对TTL24小时（可配1小时～7天），GET/authorize/工具调用不续期，计量只算未过期行。过期ID新authorize为invalid_client、且不回退CIMD；客户端需重新注册。先前已建立的attempt/code按原五分钟快照完成，不因client GC半途失效；现有已签bearer照原seat/token现核，不因登记到期被额外吊销或延寿。client TTL不是Agent/AG/消息/14天token的期限。 client_id_expires_at不是RFC7591通用到期契约，客户端可能忽略；不能假定CodeBuddy会自动重注册。短TTL与客户端缓存的兼容性须受控实测，未支持自动重注册时接入文档要说明重新连接/登记步骤，不能静默延长服务端TTL。
+未绑定client（尚无成功token兑换）绝对TTL24小时，不续期；首次成功token兑换后转已绑定，默认30天，每次成功token兑换续至30天（可配7～90天）。GET/authorize/失败兑换/工具调用不续期，计量只算未过期行。过期ID新authorize为invalid_client、且不回退CIMD；客户端需重新注册。先前已建立的attempt/code按原五分钟快照完成，不因client GC半途失效；现有已签bearer照原seat/token现核，不因登记到期被额外吊销或延寿。client TTL不是Agent/AG/消息/14天token的期限。 client_id_expires_at不是RFC7591通用到期契约，客户端可能忽略；不能假定CodeBuddy会自动重注册。采用上述已绑定滑动期限降低每日断接风险，客户端缓存仍须受控实测，不延长未绑定期限。
+
+每外部稳定主体最多16个活跃绑定，成功兑换在同事务中更新last_redeemed并淘汰最久未兑换者（平局按client_id固定序）。主体键来自Seats.Authenticate的可信Principal四元组(provider,tenant_key,issuer,subject)，以域分离HMAC保存，不用Agent/seat ID或客户端自报身份。公共client可能被多人使用，绑定表按(resource,client_id,principal_hash)隔离；淘汰仅删该主体绑定，保留其它主体活绑定；client无任何活绑定后即不再以绑定态解析，不恢复未绑定24h期限。client到期取活绑定最晚到期，绑定清理与容量事务共用resource锁。五分钟既有事务仍可收尾，成功兑换可恢复该主体绑定，不重建Agent去重规则。
 
 建议每resource最多4096个存活client、每来源128个。受理时在同一PG受控事务中有界清理≤256条过期client并计数/插入，索引覆盖resource+expiry/source；未物理清完的过期行不计配额，但不删未过期行。每分钟后台有界清理client及过期source bucket，并受现有后台生命周期管理；不能每请求全表删或留下终身累计配额。
 
@@ -102,7 +106,7 @@ FAQ：
 | V02 redirect | 三回环动态端口、错端口范围/host/path/query；HTTPS空名单拒绝及精确名单成功；自定义scheme/通配拒绝；token实际URI逐字匹配 | 放行非回环非名单HTTPS或自定义scheme，拒绝格必红；不得用正向HTTPS名单格误杀正确支持 |
 | V03 公共注册 | none/code成功，无任何secret/管理token字段；basic、secret_post、refresh/implicit/敏感字段/缺none拒绝 | 放行带secret或机密auth method注册必红 |
 | V04 滥用与持久性 | source/global限流、存活上限、并发争额、重启/第二store共享额度；伪造XFF无用，真实代理链右侧取源；桶数量/并发/慢体均有界 | 去限流必红；改信任伪造XFF、删source/global计量各自拒绝格红 |
-| V05 到期/容量 | TTL前/恰到/后，过期不计quota；有界GC释放空间、不清活跃；在途五分钟快照不受GC破坏，已签token仍现核；旧池正常 | 改回终身计数、去“仅清过期”、重启丢登记或超期仍resolve，各格红 |
+| V05 到期/容量 | 未绑定24h前/恰到/后；已绑定30d续期、失败不续、7～90d配置；主体16绑定最久未兑换淘汰，各有删保护红；过期不计quota；有界GC释放空间、不清活跃；在途五分钟快照不受GC破坏，已签token仍现核；旧池正常 | 改回终身计数、去“仅清过期”、重启丢登记或超期仍resolve，各格红 |
 | V06 并存/回退 | 两个Codex、外部CIMD、DCR并存；不透明ID未找到不网络兜底；关闭只停新登记/新DCR authorize，在途code五分钟可收尾，CIMD不受DCR容量影响 | 去分型/混用CIMD校验、关闭时仍新登记、DCR撑满挤掉OAuth池，格红 |
 | V07 未认证/旧SSE | 无bearer GET与三版本initialize/tools/list/ping仍401原WWW；认证GET405；错误origin/过期/吊销均拒绝；AUTH-FIRST与旧codec全绿 | 版本校验挪鉴权前、Console cookie代bearer或放宽scope/tenant/浏览器绑定，各相应拒绝红 |
 
@@ -112,7 +116,7 @@ FAQ：
 
 建议DW_MCP_DCR_ENABLED缺省false；开启需独立PG表/计量可用、策略校验通过。关掉后不广告registration_endpoint，登记404、新DCR authorize拒绝，但旧五分钟attempt/code快照可收尾，已签bearer仍按原权限；CIMD与内置客户端不依赖DCR。回退旧二进制不删表、不回改迁移、不重开已消费code，5分钟状态沿兼容快照，不把public ID当secret。正式旧二进制+加法PG迁移及往返演练是实现门，不以设计推断已可回滚。
 
-待组长过目定：A-DCR-01上述TTL/额度与可信代理取源；A-DCR-02 HTTPS精确URL初始空、自定义scheme首版拒绝；A-DCR-03保留未认证GET/非法体401和认证GET405、不做旧SSE。这些是本席技术建议，不冒称业主逐项定值。实际CodeBuddy callback形式未知要补证；PG迁移号在实现前协调，不先占槽。设计通过前只有docs/openspec，无产品代码。
+待组长过目定：A-DCR-01上述TTL/额度与可信代理取源；A-DCR-02 HTTPS精确URL初始空、自定义scheme首版拒绝；A-DCR-03保留未认证GET/非法体401和认证GET405、不做旧SSE。这些是本席技术建议，不冒称业主逐项定值。实际CodeBuddy callback形式未知要补证；PG迁移号在实现前协调，暂定0115并复核撞号。四条修订提交后开始实现，无main/部署授权。
 
 ## 11. 标准与输入来源
 
@@ -125,3 +129,11 @@ FAQ：
 - MCP2025-06-18 Transports：https://modelcontextprotocol.io/specification/2025-06-18/basic/transports （单端点POST，GET可不提供SSE，旧HTTP+SSE不是同一机制）
 
 组长08:04:13Z补件本席收件dw-dlv_84a2f9a5bb9df7eb6ad435f4ce82d6ea；用户排查原件7573字节、SHA256=37d581902083b91a3a6e64e920636af35e6aa20cd70d83fce9c90a1da7f63d9a，原始件只留本地私有证据，不整篇复制PII/命令到本仓。其“CIMD不可用/必须手发token”和“-d必非法”是用户推断，已在第8节纠正，不当实测事实外推。
+
+## 12. 同人重复开户与公开资料补查（2026-11-19修订）
+
+现行IssueToken无seat/AG复用分支，客户端重注册换ID后再授权仍可能新建seat和临时AG；不能把此前“自动开户”描述成去重或复用。DCR client_id只用于OAuth客户端/授权码绑定，不进外部Agent身份或开户去重键；主体绑定四元组只给DCR保留期/上限计量，不新增开户路径。业主尚未决定“四元组＋短名＋目标复用”的通用修法，本片不实现去重，也不依赖未来修法。
+
+公开资料、未实测：2026-11-19只读核腾讯官方[CodeBuddy MCP文档](https://intl.cloud.tencent.com/zh/document/product/1316/84438)，可确认HTTP/SSE与OAuth接入说明，但未找到IntelliJ/Linux插件实际redirect URI、端口或私有scheme的确定描述。[WorkBuddy官方Connector说明](https://open.workbuddy.cn/docs/connector)另描述云端DCR及自动生成HTTPS回调、要求多域通配；它属于云端Connector，不能当作本次IDE实测。该文还要求refresh token，超出本片code-only范围。本片不照其通配要求放宽；需要实际完整URL才加精确名单。结论：IDE实际回调仍查不到，不能由同厂商云端文档推断。
+
+组长08:37:52Z四项修订：两段TTL与主体16上限、拒收枚举及过滤scheme、GET取舍、开户去重边界已同步本页与规范。迁移暂0115；实现未开始时本提交仍只有docs/openspec。

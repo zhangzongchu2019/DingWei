@@ -40,18 +40,18 @@ DCR MUST 复用每次PKCE S256、固定scope/resource、同浏览器五分钟att
 - **THEN** 拒绝授权/兑换/业务，不扩大scope；去相应保护须对应拒绝断言红
 
 ### Requirement: DCR-004 独立持久登记与有限保留
-DCR MUST 使用独立PGclient表与resource级唯一键，不占mcpgw_oauth短期配额；metadata加密，绝对TTL不因查阅/登录续期。存活配额只计未到期行，GC仅有界清过期行；过期ID拒新authorize且不回退CIMD，旧五分钟快照可完成，已签token仍按原权限现核，不延寿或额外吊销。
+DCR MUST 使用独立PGclient表与resource级唯一键，不占mcpgw_oauth短期配额；metadata加密，未绑定绝对24h不续；首次成功token兑换绑定默认30d，之后成功兑换续期（配置7～90d），失败/查阅不续。每稳定外部主体活绑定最多16，超限淘汰最久未兑换；client_id不进Agent身份或开户去重键。存活配额只计未到期行，GC仅有界清过期行；过期ID拒新authorize且不回退CIMD，旧五分钟快照可完成，已签token仍按原权限现核，不延寿或额外吊销。
 
 #### Scenario: DCR-S008 重启与GC
 - **WHEN** 重启/第二store解析登记，或TTL前/恰到/后及过期积压发生
-- **THEN** 未过期client可用；到期拒新授权，清理释放容量且不删除活client，不产生终身计数停摆
+- **THEN** 未绑定恰24h拒新授权；已绑定成功兑换续期、失败不续；主体第17绑定淘汰最旧者且不误删他人绑定；清理释放容量，不删除活client，各期限/续期/淘汰保护删去须红
 
 #### Scenario: DCR-S009 在途快照与旧池
 - **WHEN** client登记过期/清理时已有合法五分钟attempt/code，或DCR池满
 - **THEN** 快照仍按原client/URI/PKCE一次收尾；既有OAuth短期池和已签bearer不因DCR配额被占满或提权
 
 ### Requirement: DCR-005 防洪泛与可信取源
-DCR MUST 有来源/全局持久令牌桶、存活client/来源桶数量上限和有界处理并发；metadata失败请求不得逃限流。来源只从RemoteAddr或显式可信代理链右侧判定，MUST NOT 无条件信任XFF/Forwarded。超限429及Retry-After，容量/数据库不可用503；日志不存rawIP/metadata/凭据或高基数client标签。
+DCR MUST 有来源/全局持久令牌桶、存活client/来源桶数量上限和有界处理并发；metadata失败请求不得逃限流。来源只从RemoteAddr或显式可信代理链右侧判定，MUST NOT 无条件信任XFF/Forwarded。超限429及Retry-After，容量/数据库不可用503；回调拒收记固定四枚举，私有scheme只记过滤后≤32字节名称；不存rawIP/完整URI/凭据或高基数client标签。
 
 #### Scenario: DCR-S010 计量原子且跨进程
 - **WHEN** 同源/全局额度耗尽、并发争额、重启或第二store请求
