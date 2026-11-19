@@ -1,0 +1,124 @@
+=== RUN   TestConsentLongNameMigrationAndConcurrencyPG
+--- PASS: TestConsentLongNameMigrationAndConcurrencyPG (2.99s)
+=== RUN   TestCorePG
+=== RUN   TestCorePG/RenewalPersistsAcrossRestart
+=== RUN   TestCorePG/RevokedCannotRevive
+=== RUN   TestCorePG/ExpiryEqualityAndClockRollback
+=== RUN   TestCorePG/IdempotencyAndAtomicRollback
+=== RUN   TestCorePG/FeishuCopyEnqueueFailureIsolatedFromPrimarySend
+=== RUN   TestCorePG/PollingNeverTouchesGroup
+=== RUN   TestCorePG/InboxLeaseRedeliveryAndFirstReceipt
+=== RUN   TestCorePG/MessageExpiryAndRevokedWait
+=== RUN   TestCorePG/TenantAndUnforgeableSnapshot
+--- PASS: TestCorePG (3.27s)
+    --- PASS: TestCorePG/RenewalPersistsAcrossRestart (0.08s)
+    --- PASS: TestCorePG/RevokedCannotRevive (0.08s)
+    --- PASS: TestCorePG/ExpiryEqualityAndClockRollback (0.08s)
+    --- PASS: TestCorePG/IdempotencyAndAtomicRollback (0.11s)
+    --- PASS: TestCorePG/FeishuCopyEnqueueFailureIsolatedFromPrimarySend (0.09s)
+    --- PASS: TestCorePG/PollingNeverTouchesGroup (0.10s)
+    --- PASS: TestCorePG/InboxLeaseRedeliveryAndFirstReceipt (0.10s)
+    --- PASS: TestCorePG/MessageExpiryAndRevokedWait (0.19s)
+    --- PASS: TestCorePG/TenantAndUnforgeableSnapshot (0.08s)
+=== RUN   TestIssueTokenMissingTargetClassificationPG
+--- PASS: TestIssueTokenMissingTargetClassificationPG (2.50s)
+=== RUN   TestOutboxAndIsolationPG
+=== RUN   TestOutboxAndIsolationPG/ProjectionRetryStableID
+=== RUN   TestOutboxAndIsolationPG/QueueLimitAndGroupBoundary
+=== RUN   TestOutboxAndIsolationPG/WrongSeatCannotAck
+=== RUN   TestOutboxAndIsolationPG/SameKeyConcurrentSend
+--- PASS: TestOutboxAndIsolationPG (2.90s)
+    --- PASS: TestOutboxAndIsolationPG/ProjectionRetryStableID (0.09s)
+    --- PASS: TestOutboxAndIsolationPG/QueueLimitAndGroupBoundary (0.09s)
+    --- PASS: TestOutboxAndIsolationPG/WrongSeatCannotAck (0.09s)
+    --- PASS: TestOutboxAndIsolationPG/SameKeyConcurrentSend (0.10s)
+=== RUN   TestSecretsAndReceiptRollbackPG
+--- PASS: TestSecretsAndReceiptRollbackPG (2.41s)
+=== RUN   TestTokenAudiencePG
+--- PASS: TestTokenAudiencePG (2.64s)
+=== RUN   TestBackgroundRetriesOutboxPG
+--- PASS: TestBackgroundRetriesOutboxPG (4.22s)
+=== RUN   TestWaitingAuthenticationCannotReviveExpiredPG
+--- PASS: TestWaitingAuthenticationCannotReviveExpiredPG (2.47s)
+=== RUN   TestTokenRowLockWaitRechecksClockPG
+--- PASS: TestTokenRowLockWaitRechecksClockPG (2.49s)
+=== RUN   TestProjectionHoldsBothIdentityLocksPG
+--- PASS: TestProjectionHoldsBothIdentityLocksPG (2.71s)
+=== RUN   TestFeishuCopyTextTruncatesOnlyCopy
+--- PASS: TestFeishuCopyTextTruncatesOnlyCopy (0.00s)
+=== RUN   TestFeishuCopyTextMarksInternalReply
+--- PASS: TestFeishuCopyTextMarksInternalReply (0.00s)
+=== RUN   TestFeishuCopyTextLabelsInternalAgentDirection
+--- PASS: TestFeishuCopyTextLabelsInternalAgentDirection (0.00s)
+=== RUN   TestFeishuCopyTextContainsOnlySanitizedSummary
+--- PASS: TestFeishuCopyTextContainsOnlySanitizedSummary (0.00s)
+=== RUN   TestFeishuCopyOutboxBothDirectionsAndReplySuppressionPG
+--- PASS: TestFeishuCopyOutboxBothDirectionsAndReplySuppressionPG (2.54s)
+=== RUN   TestFeishuCopyDeliveryFailureRetriesIndependentlyPG
+--- PASS: TestFeishuCopyDeliveryFailureRetriesIndependentlyPG (2.93s)
+=== RUN   TestFeishuCopyPersistentPreferenceAndInternalRecipientResolutionPG
+--- PASS: TestFeishuCopyPersistentPreferenceAndInternalRecipientResolutionPG (2.48s)
+=== RUN   TestExternalCopyPersistentOptOutBlocksDefaultAndLeavesPrimaryDeliveryPG
+--- PASS: TestExternalCopyPersistentOptOutBlocksDefaultAndLeavesPrimaryDeliveryPG (2.54s)
+=== RUN   TestFeishuCopyHasIndependentExpiryAndTwentyAttemptLimitPG
+--- PASS: TestFeishuCopyHasIndependentExpiryAndTwentyAttemptLimitPG (2.60s)
+=== RUN   TestFeishuCopyExpirySweepDeadLettersWithoutSendingPG
+--- PASS: TestFeishuCopyExpirySweepDeadLettersWithoutSendingPG (2.51s)
+=== RUN   TestCheckClearReadOnlyScopePG
+--- PASS: TestCheckClearReadOnlyScopePG (2.61s)
+=== RUN   TestSendWaitNewReplyAndReadOnlyPollPG
+--- PASS: TestSendWaitNewReplyAndReadOnlyPollPG (4.94s)
+=== RUN   TestMCPLengthUTF8PG
+=== RUN   TestMCPLengthUTF8PG/61/-1/send
+=== RUN   TestMCPLengthUTF8PG/61/-1/helper
+=== RUN   TestMCPLengthUTF8PG/61/0/send
+=== RUN   TestMCPLengthUTF8PG/61/0/helper
+=== RUN   TestMCPLengthUTF8PG/61/1/send
+=== RUN   TestMCPLengthUTF8PG/61/1/helper
+=== RUN   TestMCPLengthUTF8PG/e4b8ad/-1/send
+=== RUN   TestMCPLengthUTF8PG/e4b8ad/-1/helper
+=== RUN   TestMCPLengthUTF8PG/e4b8ad/0/send
+=== RUN   TestMCPLengthUTF8PG/e4b8ad/0/helper
+=== RUN   TestMCPLengthUTF8PG/e4b8ad/1/send
+=== RUN   TestMCPLengthUTF8PG/e4b8ad/1/helper
+=== RUN   TestMCPLengthUTF8PG/f09f9880/-1/send
+=== RUN   TestMCPLengthUTF8PG/f09f9880/-1/helper
+=== RUN   TestMCPLengthUTF8PG/f09f9880/0/send
+=== RUN   TestMCPLengthUTF8PG/f09f9880/0/helper
+=== RUN   TestMCPLengthUTF8PG/f09f9880/1/send
+=== RUN   TestMCPLengthUTF8PG/f09f9880/1/helper
+--- PASS: TestMCPLengthUTF8PG (2.69s)
+    --- PASS: TestMCPLengthUTF8PG/61/-1/send (0.02s)
+    --- PASS: TestMCPLengthUTF8PG/61/-1/helper (0.01s)
+    --- PASS: TestMCPLengthUTF8PG/61/0/send (0.02s)
+    --- PASS: TestMCPLengthUTF8PG/61/0/helper (0.01s)
+    --- PASS: TestMCPLengthUTF8PG/61/1/send (0.01s)
+    --- PASS: TestMCPLengthUTF8PG/61/1/helper (0.00s)
+    --- PASS: TestMCPLengthUTF8PG/e4b8ad/-1/send (0.02s)
+    --- PASS: TestMCPLengthUTF8PG/e4b8ad/-1/helper (0.01s)
+    --- PASS: TestMCPLengthUTF8PG/e4b8ad/0/send (0.02s)
+    --- PASS: TestMCPLengthUTF8PG/e4b8ad/0/helper (0.01s)
+    --- PASS: TestMCPLengthUTF8PG/e4b8ad/1/send (0.01s)
+    --- PASS: TestMCPLengthUTF8PG/e4b8ad/1/helper (0.00s)
+    --- PASS: TestMCPLengthUTF8PG/f09f9880/-1/send (0.02s)
+    --- PASS: TestMCPLengthUTF8PG/f09f9880/-1/helper (0.01s)
+    --- PASS: TestMCPLengthUTF8PG/f09f9880/0/send (0.02s)
+    --- PASS: TestMCPLengthUTF8PG/f09f9880/0/helper (0.01s)
+    --- PASS: TestMCPLengthUTF8PG/f09f9880/1/send (0.00s)
+    --- PASS: TestMCPLengthUTF8PG/f09f9880/1/helper (0.00s)
+=== RUN   TestTenantDenyPEPBeforeResolve
+--- PASS: TestTenantDenyPEPBeforeResolve (0.00s)
+=== RUN   TestTenantDenyIsErrorNotSuccess
+--- PASS: TestTenantDenyIsErrorNotSuccess (0.00s)
+=== RUN   TestTenantDenyExistingAndMissingSameShape
+--- PASS: TestTenantDenyExistingAndMissingSameShape (2.48s)
+=== RUN   TestTenantDenyMinimalAudit
+--- PASS: TestTenantDenyMinimalAudit (0.00s)
+=== RUN   TestTenantDenyAuditFailureStillDenies
+2026/11/18 22:41:21 extseat: deny audit write failed
+--- PASS: TestTenantDenyAuditFailureStillDenies (0.00s)
+=== RUN   TestTenantDenyUnconfiguredAuditStillDenies
+2026/11/18 22:41:21 extseat: deny audit store unavailable
+--- PASS: TestTenantDenyUnconfiguredAuditStillDenies (0.00s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/extseat	56.914s

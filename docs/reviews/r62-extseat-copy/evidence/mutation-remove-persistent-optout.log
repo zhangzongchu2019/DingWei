@@ -1,0 +1,6 @@
+=== RUN   TestExternalCopyPersistentOptOutBlocksDefaultAndLeavesPrimaryDeliveryPG
+    feishu_copy_test.go:300: PERSISTENT_OPTOUT_PRECEDES_EXTERNAL_DEFAULT copy_count=1 err=<nil>
+--- FAIL: TestExternalCopyPersistentOptOutBlocksDefaultAndLeavesPrimaryDeliveryPG (2.84s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/extseat	2.847s
+FAIL
