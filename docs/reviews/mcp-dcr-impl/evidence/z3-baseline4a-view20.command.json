@@ -1,0 +1,17 @@
+{
+  "source": "4a349ee59a1d8d7b8b9c562c462bded2f8b0f192",
+  "cwd": "/data/ai-dev-data/wt-mcp-dcr-old-4a349ee5",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "^TestViewMentionRoute$",
+    "-count=20",
+    "-p",
+    "1",
+    "-v",
+    "-json",
+    "-timeout=15m"
+  ]
+}

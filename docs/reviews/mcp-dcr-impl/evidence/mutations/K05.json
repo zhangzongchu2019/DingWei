@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K05",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "AND expires_ns>(extract(epoch FROM clock_timestamp())*1000000000)::bigint",
+  "new": "AND true",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:33:35.374185+00:00",
+    "end_utc": "2026-11-19T09:33:37.842444+00:00",
+    "log_sha256": "eab86f1090e7baeb07287851f1c21567f6062d2e6de30d2deede8bf563b7e7db"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "16514b58d70a3df0eb26de7d81fcd273e2cf55230fba02efa342bb76cf8431e6",
+  "patch_sha256": "870753104d2266e447efe241f24367396d71c589d526a28a0db9caf330934052",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:34.208143+00:00",
+    "end_utc": "2026-11-19T09:33:35.374044+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:158: unbound exact/past expiry accepted"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:37.850763+00:00",
+    "end_utc": "2026-11-19T09:33:40.869540+00:00",
+    "log_sha256": "0e44918c4f32b45c8393d39dd70cfdc63f266bd59563bd80efe520f15f2c9cb5"
+  },
+  "accepted": true
+}

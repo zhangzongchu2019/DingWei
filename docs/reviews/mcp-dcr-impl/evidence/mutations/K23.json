@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K23",
+  "file": "internal/mcpgw/dcr_policy.go",
+  "old": "if b.Len() == 32 {",
+  "new": "if b.Len() == 3200 {",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPublicMetadataAndRedirectPolicy$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:35:22.060580+00:00",
+    "end_utc": "2026-11-19T09:35:22.625527+00:00",
+    "log_sha256": "f6e7c338db533c88347cdcb7730e4115766cc2a4bb84c093b91f2d165d8b6e11"
+  },
+  "occurrence": 0,
+  "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "mutant_sha256": "1ff9aa7df84887737532da93d4296c41c8e7ac4f7c756045486de67c9041c8c5",
+  "patch_sha256": "8d23d4388dc981f8472c83ddc368e1c5432d066bfec7b41ea459e9147f535c9d",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:20.943320+00:00",
+    "end_utc": "2026-11-19T09:35:22.060447+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_test.go:74: scheme log not bounded: \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaprivate\""
+  ],
+  "killed": true,
+  "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPublicMetadataAndRedirectPolicy$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:22.625829+00:00",
+    "end_utc": "2026-11-19T09:35:23.190518+00:00",
+    "log_sha256": "938284dc2516cb2ec8d0ddad9ec9235ca62e5b453f401893401697201e233f28"
+  },
+  "accepted": true
+}

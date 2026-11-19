@@ -1,0 +1,9 @@
+{
+  "command": [
+    "sh",
+    "-c",
+    "sh scripts/repo-boundary-gate.sh && sh scripts/dependency-ratchet.sh && sh scripts/tenant-isolation-gate.sh"
+  ],
+  "cwd": "/data/ai-dev-data/mcp-dcr",
+  "source": "development dirty products; not a frozen gate"
+}

@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr.go
++++ b/internal/mcpgw/dcr.go
+@@ -87,7 +87,7 @@
+ 				chain[i] = a.Unmap()
+ 			}
+ 			for i := len(chain) - 1; i >= 0; i-- {
+-				if !p.trustedPeer(ip) {
++				if false {
+ 					break
+ 				}
+ 				ip = chain[i]

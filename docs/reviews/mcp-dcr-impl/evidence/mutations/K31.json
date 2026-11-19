@@ -1,0 +1,66 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K31",
+  "file": "internal/mcpgw/gateway.go",
+  "old": "func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {",
+  "new": "func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {\n if r.Header.Get(\"MCP-Protocol-Version\")!=\"2025-06-18\" {oauthError(w,400,\"invalid_request\");return}",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestR61MCPUnauthenticatedFourBaselinesOverRealHTTP$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:35:51.596044+00:00",
+    "end_utc": "2026-11-19T09:35:52.160808+00:00",
+    "log_sha256": "647e8456153af1aafaac00108311f8018b95b537290f1bc2090bf76a28c1ba92"
+  },
+  "occurrence": 0,
+  "original_sha256": "1fa608ee320c4a8273e26e9b5504398ccac07667c260a05f0985d5bb3615e86f",
+  "mutant_sha256": "986b02cedf60c3aee255a6022332059c6807375ebf8a7be99646b5980785cbe1",
+  "patch_sha256": "4e0411d3a20820a404c35c28709df501bc629d1f428a39d3ff20d12530365609",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:50.480299+00:00",
+    "end_utc": "2026-11-19T09:35:51.595910+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    r61_auth_first_baseline_test.go:52: REAL_HTTP_AUTH_FIRST: status=400 challenge=\"\" body={\"error\":\"invalid_request\"}",
+    "    r61_auth_first_baseline_test.go:52: REAL_HTTP_AUTH_FIRST: status=400 challenge=\"\" body={\"error\":\"invalid_request\"}",
+    "    r61_auth_first_baseline_test.go:52: REAL_HTTP_AUTH_FIRST: status=400 challenge=\"\" body={\"error\":\"invalid_request\"}",
+    "    r61_auth_first_baseline_test.go:52: REAL_HTTP_AUTH_FIRST: status=400 challenge=\"\" body={\"error\":\"invalid_request\"}"
+  ],
+  "killed": true,
+  "restored_sha256": "1fa608ee320c4a8273e26e9b5504398ccac07667c260a05f0985d5bb3615e86f",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestR61MCPUnauthenticatedFourBaselinesOverRealHTTP$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:52.161145+00:00",
+    "end_utc": "2026-11-19T09:35:52.725891+00:00",
+    "log_sha256": "0f09059aafd770233b97facb1966555b43482f6de5bca549997909fa3cb7c6e6"
+  },
+  "accepted": true
+}

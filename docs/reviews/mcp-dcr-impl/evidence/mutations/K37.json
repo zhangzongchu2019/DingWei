@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K37",
+  "file": "internal/mcpgw/store.go",
+  "old": "SELECT count(*) FROM mcpgw_oauth WHERE resource=$1",
+  "new": "SELECT (SELECT count(*) FROM mcpgw_oauth WHERE resource=$1)+(SELECT count(*) FROM mcpgw_dcr_client WHERE resource=$1)",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRFullPoolDoesNotConsumeExistingOAuthCapacity$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:36:14.218155+00:00",
+    "end_utc": "2026-11-19T09:36:15.934935+00:00",
+    "log_sha256": "3c40ca11c7a5abb9591407c493ed410433892fb233d0f35fc45a21143e745e9e"
+  },
+  "occurrence": 0,
+  "original_sha256": "05180407b47a697bc20a81d0cfdcd156b7fd8be8a01d6b33542f7a49204032e0",
+  "mutant_sha256": "230f2b92e128c225a71d84117bfa09cf9535c7a8461b520328f0677b25faca9a",
+  "patch_sha256": "8335985d243958c993f9e0739a2a0bd77058ed3374a03f29188db12c3f4e339f",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:13.102310+00:00",
+    "end_utc": "2026-11-19T09:36:14.218016+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:379: full DCR registry consumed the existing OAuth grant pool mcpgw: pending OAuth limit"
+  ],
+  "killed": true,
+  "restored_sha256": "05180407b47a697bc20a81d0cfdcd156b7fd8be8a01d6b33542f7a49204032e0",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRFullPoolDoesNotConsumeExistingOAuthCapacity$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:15.935258+00:00",
+    "end_utc": "2026-11-19T09:36:17.602361+00:00",
+    "log_sha256": "621dbb9cc7f51b462db9de76ae5b66976de518fe15dba5f5b708cac359e17ad4"
+  },
+  "accepted": true
+}

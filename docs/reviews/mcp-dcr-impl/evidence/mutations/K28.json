@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K28",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "now-int64(oauthTTL)",
+  "new": "now",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:35:41.084434+00:00",
+    "end_utc": "2026-11-19T09:35:42.400605+00:00",
+    "log_sha256": "8c043c99cc0d63ec409cea852debad93bda1e410aff284605da1e60e6783f70b"
+  },
+  "occurrence": 1,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "ff36d1859c79fe71db10b9e8dc493a27a6943dac24ef868661a4cbd73075311f",
+  "patch_sha256": "f84a4d37c4ee34c2ca8c62ed70182f1708e90fab148adf8225011f15f72397bc",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:39.917292+00:00",
+    "end_utc": "2026-11-19T09:35:41.084292+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:165: valid in-flight grant lost on registration expiry mcpgw: missing, expired or consumed record"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:42.400941+00:00",
+    "end_utc": "2026-11-19T09:35:43.817464+00:00",
+    "log_sha256": "d32ddfc98af307c3723f5744df809e217b0c5275f7e7690a94f3de7bc73734c5"
+  },
+  "accepted": true
+}

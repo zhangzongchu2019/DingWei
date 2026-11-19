@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K08",
+  "file": "internal/mcpgw/dcr_policy.go",
+  "old": "const dcrUnboundTTL = 24 * time.Hour",
+  "new": "const dcrUnboundTTL = 72 * time.Hour",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGPersistenceRateAndIsolation$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:33:55.523395+00:00",
+    "end_utc": "2026-11-19T09:33:57.892644+00:00",
+    "log_sha256": "4af932c914ffa415748fc70c5c3ce07160fb9c314a7e8542908171ac4be14571"
+  },
+  "occurrence": 0,
+  "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "mutant_sha256": "d9a2583137459bb685eac7d8f9d980392d782dee54ab3e6c73e87c26bca138fe",
+  "patch_sha256": "9e842f271855bbaa4f6bcd8159970deeb5375c2e3281e2431d4e074f5b9fb97a",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:54.257186+00:00",
+    "end_utc": "2026-11-19T09:33:55.523270+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:93: unbound TTL=72h0m0s"
+  ],
+  "killed": true,
+  "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGPersistenceRateAndIsolation$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:57.892999+00:00",
+    "end_utc": "2026-11-19T09:34:00.210963+00:00",
+    "log_sha256": "486191d023a9a1f7e277869a390e22bf7b90742524c800edaa8b5ff666939938"
+  },
+  "accepted": true
+}

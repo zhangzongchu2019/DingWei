@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K13",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "FROM mcpgw_dcr_client c WHERE resource=$1 AND expires_ns<=$2",
+  "new": "FROM mcpgw_dcr_client c WHERE resource=$1 AND expires_ns<>$2",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGCleanupPreservesUnexpiredRegistration$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:34:27.189376+00:00",
+    "end_utc": "2026-11-19T09:34:28.555455+00:00",
+    "log_sha256": "bfbe25c94018b70c91a8e5724f72158cc99e0a765e4cba63617e7d1909778322"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "1f74a5ab9ca8861b9f9b1ef002f1d211c60f272827fd72751344ca0b570e7add",
+  "patch_sha256": "1273b287b04e6f83b05fdd6bc49a68e1966b2bf81665746481917c3d9bc62f59",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:26.072490+00:00",
+    "end_utc": "2026-11-19T09:34:27.189242+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:352: GC deleted a live unbound registration mcpgw: missing, expired or consumed record"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGCleanupPreservesUnexpiredRegistration$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:28.555779+00:00",
+    "end_utc": "2026-11-19T09:34:29.871821+00:00",
+    "log_sha256": "be70c429930f4a2efb8f154e58440985454a46c208cb219f7c5a24a7d7225264"
+  },
+  "accepted": true
+}

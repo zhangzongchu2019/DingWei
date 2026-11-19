@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K06",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "DO UPDATE SET redeemed_ns=excluded.redeemed_ns,expires_ns=excluded.expires_ns",
+  "new": "DO NOTHING",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:33:42.042333+00:00",
+    "end_utc": "2026-11-19T09:33:44.360284+00:00",
+    "log_sha256": "d36443e0becfe1cde0b76fca29dcf5a0e68f05a45317f18bc44fb7bec44fdc4a"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "342263ceb97b11e2da721a229fd3731b6882fb3561bf7dd107aa77cb731bcb27",
+  "patch_sha256": "6c68032199a0ca778a3b3f1b8c1786f8bb31516befbe5a1e1bb31239440f3504",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:40.876420+00:00",
+    "end_utc": "2026-11-19T09:33:42.042183+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:175: successful token exchange did not renew bound TTL"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:33:44.360599+00:00",
+    "end_utc": "2026-11-19T09:33:46.828451+00:00",
+    "log_sha256": "005c854ed2981631df5a1fd4256baa5b67b5abab8362e5b461c96201e9b716aa"
+  },
+  "accepted": true
+}

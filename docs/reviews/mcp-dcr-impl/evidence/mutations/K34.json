@@ -1,0 +1,64 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K34",
+  "file": "internal/mcpgw/dcr_policy.go",
+  "old": "return fail(\"custom_scheme\", u.Scheme)",
+  "new": "return nil",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPublicMetadataAndRedirectPolicy$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:36:00.051159+00:00",
+    "end_utc": "2026-11-19T09:36:00.615843+00:00",
+    "log_sha256": "0dc75ab67a2f1344ff4ba4ec8980f32dff3e70d0b072dee2d824862c644eb8d5"
+  },
+  "occurrence": 0,
+  "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "mutant_sha256": "c7db3a648a9d7d70798314d37c940fe71eca39f535378b724104f712aca383b3",
+  "patch_sha256": "59a1c6f4044719748144276d46ae0bd5729385cd93da02d53de144f7456e1280",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:58.935326+00:00",
+    "end_utc": "2026-11-19T09:36:00.051030+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_test.go:37: unsafe redirect accepted/wrong category \"codebuddy://oauth/callback?private=value\": <nil>",
+    "    dcr_test.go:37: unsafe redirect accepted/wrong category \"codebuddy:/callback\": <nil>"
+  ],
+  "killed": true,
+  "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPublicMetadataAndRedirectPolicy$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:00.616158+00:00",
+    "end_utc": "2026-11-19T09:36:01.180968+00:00",
+    "log_sha256": "edb99cbb36d0c9f2bbc56d3f3e0b22da08cc6d86addc5080d7b6663f747bc138"
+  },
+  "accepted": true
+}

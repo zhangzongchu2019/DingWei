@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "./cmd/workpulse",
+    "-run",
+    "TestDCR|TestMCPGateway",
+    "-count=1",
+    "-v"
+  ],
+  "cwd": "/data/ai-dev-data/mcp-dcr",
+  "source": "development dirty products; not a frozen gate"
+}

@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/oauth.go
++++ b/internal/mcpgw/oauth.go
+@@ -117,7 +117,7 @@
+ 		// Exact pinned ID only: no online fetch, DCR or private-CIMD exception.
+ 		// Any malformed local copy fails closed, without a network fallback.
+ 		client, e = defaultCodexClient()
+-	} else if dynamicClient {
++	} else if false {
+ 		if !g.cfg.DCR.ready() {
+ 			oauthError(w, 400, "invalid_client")
+ 			return

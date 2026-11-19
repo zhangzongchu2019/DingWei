@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K14",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": " AND NOT EXISTS(SELECT 1 FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id)",
+  "new": "",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGBoundedCleanupForWidelySharedClient$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:34:30.991647+00:00",
+    "end_utc": "2026-11-19T09:34:32.508040+00:00",
+    "log_sha256": "85cb456daeec57d92394622986a99110264e76222155d71cf9b0263fe2613e9b"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "293819e9f360b185b097c2ac9d4a7044600a7c44d3fdb12f5ba611ae68403810",
+  "patch_sha256": "0b26e2dbc867ddeb31fb4d8033b9c9930b6b55ae83c67354032043db7a1c58ee",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:29.875962+00:00",
+    "end_utc": "2026-11-19T09:34:30.991527+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:329: client GC cascaded an unbounded child deletion"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGBoundedCleanupForWidelySharedClient$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:32.508350+00:00",
+    "end_utc": "2026-11-19T09:34:33.974970+00:00",
+    "log_sha256": "320aafd4fbd9a3552f6bf91b9beca2dd757e1aa4625f38f1941e1fa20cd15504"
+  },
+  "accepted": true
+}

@@ -1,0 +1,65 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K17",
+  "file": "internal/mcpgw/oauth.go",
+  "old": "} else if dynamicClient {",
+  "new": "} else if false {",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRAuthorizeIsolationActualRedirectAndClosedSnapshots$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:34:41.457379+00:00",
+    "end_utc": "2026-11-19T09:34:42.823400+00:00",
+    "log_sha256": "704dd79ea4e32431551386650badbb1fda751106aac5cd17012131103ddfea58"
+  },
+  "occurrence": 0,
+  "original_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "mutant_sha256": "beddc7f58ac651b5edf41bb4ff2fffffd435ca91c86f5f618e2877f09a237e0b",
+  "patch_sha256": "99c891b0da48cfa067ea7c4b5d4760684f374782dc9b2a093a89579490b08a24",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:40.341534+00:00",
+    "end_utc": "2026-11-19T09:34:41.457244+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_boundaries_test.go:58: unsafe actual redirect accepted http://127.0.0.1:/callback",
+    "    dcr_boundaries_test.go:58: unsafe actual redirect accepted http://127.0.0.1:54321/callback#",
+    "    dcr_boundaries_test.go:64: unknown opaque client fetched CIMD"
+  ],
+  "killed": true,
+  "restored_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRAuthorizeIsolationActualRedirectAndClosedSnapshots$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:42.823726+00:00",
+    "end_utc": "2026-11-19T09:34:44.189936+00:00",
+    "log_sha256": "4198b38b2324471e0ebd7841f618d0279f332f14497814e00c70011bd5534bd3"
+  },
+  "accepted": true
+}

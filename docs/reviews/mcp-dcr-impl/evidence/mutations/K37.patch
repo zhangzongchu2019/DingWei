@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/store.go
++++ b/internal/mcpgw/store.go
+@@ -67,7 +67,7 @@
+ 			return e
+ 		}
+ 		var count int
+-		if e := tx.QueryRow(ctx, `SELECT count(*) FROM mcpgw_oauth WHERE resource=$1`, s.resource).Scan(&count); e != nil {
++		if e := tx.QueryRow(ctx, `SELECT (SELECT count(*) FROM mcpgw_oauth WHERE resource=$1)+(SELECT count(*) FROM mcpgw_dcr_client WHERE resource=$1)`, s.resource).Scan(&count); e != nil {
+ 			return e
+ 		}
+ 		if count >= 10000 {

@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K11",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "total >= 4096",
+  "new": "false",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:34:14.423364+00:00",
+    "end_utc": "2026-11-19T09:34:17.392360+00:00",
+    "log_sha256": "3fd51135f5417d30657423fcb15ee4f29f331a6945d5a5692a441c565984c0a8"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "14b4d0eed3dab7617ffa9a24f4113c5500885443f126da009b2808d15b71ca90",
+  "patch_sha256": "a1c996dbbc2742de3fba59c87cb9b1604ffd1d49448ba70e93f564ea48b44611",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:13.255702+00:00",
+    "end_utc": "2026-11-19T09:34:14.423232+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:278: global live quota missing <nil>"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:17.392969+00:00",
+    "end_utc": "2026-11-19T09:34:21.113076+00:00",
+    "log_sha256": "1939e820dad9d0a26aaefc3ce7b756a351e2dbaff420c5d15840c46402a42aaa"
+  },
+  "accepted": true
+}

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "cwd": "/data/ai-dev-data/mcp-dcr",
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "uid": 1001
+}

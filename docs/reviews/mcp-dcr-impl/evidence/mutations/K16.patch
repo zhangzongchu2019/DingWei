@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/oauth.go
++++ b/internal/mcpgw/oauth.go
+@@ -124,7 +124,7 @@
+ 		}
+ 		client, e = g.cfg.DCR.Store.Resolve(r.Context(), q.Get("client_id"))
+ 		if e == nil {
+-			e = g.cfg.DCR.Policy.redirect(q.Get("redirect_uri"))
++			e = nil
+ 			if e != nil {
+ 				g.dcrRedirectRejected(e)
+ 			}

@@ -1,0 +1,64 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K07",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "OFFSET 16",
+  "new": "OFFSET 1600",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:27:48.715884+00:00",
+    "end_utc": "2026-11-19T09:27:50.132274+00:00",
+    "log_sha256": "d23d38348f6b0d3cfde32c52a3a86525b3a5fc23388fbddb8e776b0d6734147d"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "8f9a9fc9e07131e8dc7997caa442fea7c408122b7c48e1e2edad19776d5fd5dd",
+  "patch_sha256": "f5c28c7ea0597ad4de328bbd460661412ac89d7a154c6c17b568fd116a5a9332",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:47.599624+00:00",
+    "end_utc": "2026-11-19T09:27:48.715756+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:149: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+    "    dcr_pg_test.go:187: principal bound client limit not enforced"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:50.132581+00:00",
+    "end_utc": "2026-11-19T09:27:51.549755+00:00",
+    "log_sha256": "e254eef92ed4acc04fd9019252293a6322278a16e4baceefbbd252c0d87b7ee9"
+  },
+  "accepted": true
+}

@@ -1,0 +1,64 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K04",
+  "file": "internal/mcpgw/dcr.go",
+  "old": "if e = d.Store.Admit(r.Context(), source); e != nil {",
+  "new": "if e = error(nil); e != nil {",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:27:36.200844+00:00",
+    "end_utc": "2026-11-19T09:27:37.517044+00:00",
+    "log_sha256": "4afe7990004fceb0c0055e118f30409fd5630565694d35dca5fbaeab705123ec"
+  },
+  "occurrence": 0,
+  "original_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "mutant_sha256": "390c79e79fe1c5f217a038686e7db33ed4db32e9ecac8064cbab15dcdc320cce",
+  "patch_sha256": "86ddb4e06a3b1908fb142c43bd7595bf0d0efa97ed3e08f60be5e4bf9433a7e8",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:35.082886+00:00",
+    "end_utc": "2026-11-19T09:27:36.200712+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_http_test.go:258: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+    "    dcr_http_test.go:312: bad metadata bypassed persistent rate limit"
+  ],
+  "killed": true,
+  "restored_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:37.517358+00:00",
+    "end_utc": "2026-11-19T09:27:39.535469+00:00",
+    "log_sha256": "1ca65b9f2f5ba04c231af690ee5ca6f8b6288a8be091839fd14d942aa560c0e0"
+  },
+  "accepted": true
+}

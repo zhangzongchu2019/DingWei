@@ -1,0 +1,64 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K14",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": " AND NOT EXISTS(SELECT 1 FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id)",
+  "new": "",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGBoundedCleanupForWidelySharedClient$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:28:17.597814+00:00",
+    "end_utc": "2026-11-19T09:28:18.964357+00:00",
+    "log_sha256": "0751b8e1ca30d7a6d5d92d1ae14add63226833ddbf442897e1188004abc6e54f"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "293819e9f360b185b097c2ac9d4a7044600a7c44d3fdb12f5ba611ae68403810",
+  "patch_sha256": "0b26e2dbc867ddeb31fb4d8033b9c9930b6b55ae83c67354032043db7a1c58ee",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:28:16.431816+00:00",
+    "end_utc": "2026-11-19T09:28:17.597682+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:317: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+    "    dcr_pg_test.go:329: client GC cascaded an unbounded child deletion"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGBoundedCleanupForWidelySharedClient$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:28:18.964643+00:00",
+    "end_utc": "2026-11-19T09:28:20.330965+00:00",
+    "log_sha256": "00ccd680b7fb676dbaa0265c442b76b310cfe245ce7d3efd4a2cb7dfea78dba1"
+  },
+  "accepted": true
+}

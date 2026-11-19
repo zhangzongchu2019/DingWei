@@ -1,0 +1,961 @@
+[
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K01",
+    "file": "internal/mcpgw/oauth.go",
+    "old": "q.Get(\"code_challenge_method\") != \"S256\" ||",
+    "new": "false ||",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRActualHTTPRegisterFeishuTokenAndInitialize$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:27:24.339128+00:00",
+      "end_utc": "2026-11-19T09:27:26.206172+00:00",
+      "log_sha256": "f3c171edf309cedb50cf3efb7cb6ef7dbeb5ad5c5279f90b6d1e04f2d6c0b38f"
+    },
+    "occurrence": 0,
+    "original_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+    "mutant_sha256": "15a630107237b9d90c687c34a2f8af6fee56d21aa2a047fdb7dc2f24d3c0a565",
+    "patch_sha256": "a3535c11a4d9dd7d5df80d03b8e2eab31d1358af8e1c78dc6d0b48e323504ea2",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:23.173078+00:00",
+      "end_utc": "2026-11-19T09:27:24.338996+00:00",
+      "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+    },
+    "assertions": [
+      "    dcr_http_test.go:48: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_http_test.go:142: DCR authorization did not enforce S256"
+    ],
+    "killed": true,
+    "restored_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRActualHTTPRegisterFeishuTokenAndInitialize$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:26.206622+00:00",
+      "end_utc": "2026-11-19T09:27:28.374419+00:00",
+      "log_sha256": "c7ab42275932b8155ef5350a17f10ef08e1110d1cc75667fdb114a2ed19a46d3"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K02",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": "return fail(\"loopback_bad\", \"\")",
+    "new": "return nil",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPublicMetadataAndRedirectPolicy$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:27:29.494413+00:00",
+      "end_utc": "2026-11-19T09:27:30.059363+00:00",
+      "log_sha256": "436017361ae0bd0b45ce8bebcba516309ee161f2e96953d6e5852583abe10e20"
+    },
+    "occurrence": 0,
+    "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+    "mutant_sha256": "97a6985119abb72123bfdec203753ddf571a419c370a4ac42ace76776cf81432",
+    "patch_sha256": "0a1b24d4d787ca80c01ee924068c63727f9a33d8dcce5b11b3f8129e0fd5157e",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:28.378550+00:00",
+      "end_utc": "2026-11-19T09:27:29.494280+00:00",
+      "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+    },
+    "assertions": [
+      "    dcr_test.go:37: unsafe redirect accepted/wrong category \"http://127.0.0.2/callback\": <nil>",
+      "    dcr_test.go:37: unsafe redirect accepted/wrong category \"http://127.1/callback\": <nil>",
+      "    dcr_test.go:37: unsafe redirect accepted/wrong category \"http://localhost.evil/callback\": <nil>",
+      "    dcr_test.go:37: unsafe redirect accepted/wrong category \"http://evil.example/callback\": <nil>"
+    ],
+    "killed": true,
+    "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPublicMetadataAndRedirectPolicy$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:30.059910+00:00",
+      "end_utc": "2026-11-19T09:27:30.624731+00:00",
+      "log_sha256": "edb99cbb36d0c9f2bbc56d3f3e0b22da08cc6d86addc5080d7b6663f747bc138"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K03",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": "\"client_secret\", ",
+    "new": "",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:27:31.794644+00:00",
+      "end_utc": "2026-11-19T09:27:33.160807+00:00",
+      "log_sha256": "a66deb7a7bfa653805f6a77f8d19c8d0c259e1686abe08154fe92bd26b410b1d"
+    },
+    "occurrence": 0,
+    "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+    "mutant_sha256": "bcebccf1680d212e3ea3537b626c088ee5bd06c81121d2deca4a34318110d4a4",
+    "patch_sha256": "874bcd823662cd62af82675f71b25e77d0a7335ceced5b4ee6d19b90a9295831",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:30.628712+00:00",
+      "end_utc": "2026-11-19T09:27:31.794519+00:00",
+      "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+    },
+    "assertions": [
+      "    dcr_http_test.go:258: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_http_test.go:285: unsafe registration 201: {\"client_id\":\"dw-dcr-yfmVb6kEsOB76Yz4ILl0E5pirPGgpKlYd7gI24FQv5Q\",\"client_id_expires_at\":1795166853,\"client_id_issued_at\":1795080453,\"client_name\":\"Local editor\",\"grant_types\":[\"authorization_code\"],\"redirect_uris\":[\"http://127.0.0.1:43123/callback\"],\"response_types\":[\"code\"],\"scope\":\"list_online send_message wait_for_messages ack\",\"token_endpoint_auth_method\":\"none\"}"
+    ],
+    "killed": true,
+    "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:33.161115+00:00",
+      "end_utc": "2026-11-19T09:27:35.078358+00:00",
+      "log_sha256": "8c742ac63da36b06454c65bf8ad164222cfc6db2ae3d91661213f4811c43172d"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K04",
+    "file": "internal/mcpgw/dcr.go",
+    "old": "if e = d.Store.Admit(r.Context(), source); e != nil {",
+    "new": "if e = error(nil); e != nil {",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:27:36.200844+00:00",
+      "end_utc": "2026-11-19T09:27:37.517044+00:00",
+      "log_sha256": "4afe7990004fceb0c0055e118f30409fd5630565694d35dca5fbaeab705123ec"
+    },
+    "occurrence": 0,
+    "original_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+    "mutant_sha256": "390c79e79fe1c5f217a038686e7db33ed4db32e9ecac8064cbab15dcdc320cce",
+    "patch_sha256": "86ddb4e06a3b1908fb142c43bd7595bf0d0efa97ed3e08f60be5e4bf9433a7e8",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:35.082886+00:00",
+      "end_utc": "2026-11-19T09:27:36.200712+00:00",
+      "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+    },
+    "assertions": [
+      "    dcr_http_test.go:258: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_http_test.go:312: bad metadata bypassed persistent rate limit"
+    ],
+    "killed": true,
+    "restored_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRHTTPRejectionsRateAndSafeDiagnostics$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:37.517358+00:00",
+      "end_utc": "2026-11-19T09:27:39.535469+00:00",
+      "log_sha256": "1ca65b9f2f5ba04c231af690ee5ca6f8b6288a8be091839fd14d942aa560c0e0"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K05",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "AND expires_ns>(extract(epoch FROM clock_timestamp())*1000000000)::bigint",
+    "new": "AND true",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:27:40.707697+00:00",
+      "end_utc": "2026-11-19T09:27:42.124064+00:00",
+      "log_sha256": "bfb9fe052cc99d9eb4bbe0e6ff92eb7c26d2f60d6c796be853e387187613fc4d"
+    },
+    "occurrence": 0,
+    "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "mutant_sha256": "16514b58d70a3df0eb26de7d81fcd273e2cf55230fba02efa342bb76cf8431e6",
+    "patch_sha256": "870753104d2266e447efe241f24367396d71c589d526a28a0db9caf330934052",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:39.541441+00:00",
+      "end_utc": "2026-11-19T09:27:40.707563+00:00",
+      "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+    },
+    "assertions": [
+      "    dcr_pg_test.go:149: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_pg_test.go:158: unbound exact/past expiry accepted"
+    ],
+    "killed": true,
+    "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:42.124403+00:00",
+      "end_utc": "2026-11-19T09:27:43.540541+00:00",
+      "log_sha256": "1227ea3e699002d878c4b0d296d7d56ea0e70615fe6047205c991672a3e0dd8d"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K06",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "DO UPDATE SET redeemed_ns=excluded.redeemed_ns,expires_ns=excluded.expires_ns",
+    "new": "DO NOTHING",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:27:44.710803+00:00",
+      "end_utc": "2026-11-19T09:27:46.178669+00:00",
+      "log_sha256": "beb3a43fc9033c4b06fd0168069204365c455b25db72d577997c3b3e0edb50ea"
+    },
+    "occurrence": 0,
+    "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "mutant_sha256": "342263ceb97b11e2da721a229fd3731b6882fb3561bf7dd107aa77cb731bcb27",
+    "patch_sha256": "6c68032199a0ca778a3b3f1b8c1786f8bb31516befbe5a1e1bb31239440f3504",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:43.544695+00:00",
+      "end_utc": "2026-11-19T09:27:44.710665+00:00",
+      "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+    },
+    "assertions": [
+      "    dcr_pg_test.go:149: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_pg_test.go:175: successful token exchange did not renew bound TTL"
+    ],
+    "killed": true,
+    "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:46.179064+00:00",
+      "end_utc": "2026-11-19T09:27:47.595484+00:00",
+      "log_sha256": "d4763713da6a399498421fbfb82c836000c5102ded86c0314ff1229397e84c05"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K07",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "OFFSET 16",
+    "new": "OFFSET 1600",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:27:48.715884+00:00",
+      "end_utc": "2026-11-19T09:27:50.132274+00:00",
+      "log_sha256": "d23d38348f6b0d3cfde32c52a3a86525b3a5fc23388fbddb8e776b0d6734147d"
+    },
+    "occurrence": 0,
+    "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "mutant_sha256": "8f9a9fc9e07131e8dc7997caa442fea7c408122b7c48e1e2edad19776d5fd5dd",
+    "patch_sha256": "f5c28c7ea0597ad4de328bbd460661412ac89d7a154c6c17b568fd116a5a9332",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:47.599624+00:00",
+      "end_utc": "2026-11-19T09:27:48.715756+00:00",
+      "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+    },
+    "assertions": [
+      "    dcr_pg_test.go:149: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_pg_test.go:187: principal bound client limit not enforced"
+    ],
+    "killed": true,
+    "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:50.132581+00:00",
+      "end_utc": "2026-11-19T09:27:51.549755+00:00",
+      "log_sha256": "e254eef92ed4acc04fd9019252293a6322278a16e4baceefbbd252c0d87b7ee9"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K08",
+    "file": "internal/mcpgw/dcr_policy.go",
+    "old": "const dcrUnboundTTL = 24 * time.Hour",
+    "new": "const dcrUnboundTTL = 72 * time.Hour",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGPersistenceRateAndIsolation$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:27:52.671701+00:00",
+      "end_utc": "2026-11-19T09:27:54.087979+00:00",
+      "log_sha256": "e0c1e13d089d352e532d9ce2c998bd59d81b2458a5b00b498183086d339257a3"
+    },
+    "occurrence": 0,
+    "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+    "mutant_sha256": "d9a2583137459bb685eac7d8f9d980392d782dee54ab3e6c73e87c26bca138fe",
+    "patch_sha256": "9e842f271855bbaa4f6bcd8159970deeb5375c2e3281e2431d4e074f5b9fb97a",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:51.553822+00:00",
+      "end_utc": "2026-11-19T09:27:52.671564+00:00",
+      "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+    },
+    "assertions": [
+      "    dcr_pg_test.go:86: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_pg_test.go:93: unbound TTL=72h0m0s"
+    ],
+    "killed": true,
+    "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGPersistenceRateAndIsolation$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:54.088293+00:00",
+      "end_utc": "2026-11-19T09:27:55.654744+00:00",
+      "log_sha256": "5bcc292496079c2f8859b414d2f31c8581583f42d0202818889e252cb293d666"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K09",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "if !ok {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+    "new": "if false {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGPersistenceRateAndIsolation$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:27:56.825247+00:00",
+      "end_utc": "2026-11-19T09:27:58.141446+00:00",
+      "log_sha256": "64a140426d15f27e561dd6e5e75f34a874a3b326a2c7a20022eedc6546466d84"
+    },
+    "occurrence": 1,
+    "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "mutant_sha256": "d04f7391c760c19c07c0301c4a898de9ea76bf2899b80dee52808ea8e068981b",
+    "patch_sha256": "d64db4d4b5035f4c838468784e377a52c00bca7e2ff81b591d47b3d12f734c7d",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:55.658964+00:00",
+      "end_utc": "2026-11-19T09:27:56.825050+00:00",
+      "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+    },
+    "assertions": [
+      "    dcr_pg_test.go:86: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_pg_test.go:122: source rate lost across store restart <nil>"
+    ],
+    "killed": true,
+    "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGPersistenceRateAndIsolation$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:58.141772+00:00",
+      "end_utc": "2026-11-19T09:27:59.507884+00:00",
+      "log_sha256": "334d9851bf4f5a631b0607ed65fafceda4e18682b37e22b6c8f835dcec8f1a4b"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K10",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "if !ok {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+    "new": "if false {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGPersistenceRateAndIsolation$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:28:00.680655+00:00",
+      "end_utc": "2026-11-19T09:28:02.097236+00:00",
+      "log_sha256": "84ca519082f23d953266100f88130a77a8691594b370cb78aee431dab97f8341"
+    },
+    "occurrence": 0,
+    "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "mutant_sha256": "cd60562317405f11fb7611a2e50f27182238f8557db1b68ac03d070955996cd2",
+    "patch_sha256": "6acf0c4c3d7e4a0aaf4151151ee9aff2be2721809ebcc4720bd6b710336901f0",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:27:59.512041+00:00",
+      "end_utc": "2026-11-19T09:28:00.680490+00:00",
+      "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+    },
+    "assertions": [
+      "    dcr_pg_test.go:86: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_pg_test.go:130: global rate not enforced <nil>"
+    ],
+    "killed": true,
+    "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGPersistenceRateAndIsolation$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:02.097549+00:00",
+      "end_utc": "2026-11-19T09:28:03.464091+00:00",
+      "log_sha256": "7b0a5418203d9f46395195574f3e95a43ea0ec58badbd53fbde0a8f1d5cef5fb"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K11",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "total >= 4096",
+    "new": "false",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:28:04.586413+00:00",
+      "end_utc": "2026-11-19T09:28:06.153127+00:00",
+      "log_sha256": "9a5d8026637b65921cdcbecfc5c5c0db81a7ee10134bc6e2eb9826926dc72a73"
+    },
+    "occurrence": 0,
+    "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "mutant_sha256": "14b4d0eed3dab7617ffa9a24f4113c5500885443f126da009b2808d15b71ca90",
+    "patch_sha256": "a1c996dbbc2742de3fba59c87cb9b1604ffd1d49448ba70e93f564ea48b44611",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:03.468296+00:00",
+      "end_utc": "2026-11-19T09:28:04.586281+00:00",
+      "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+    },
+    "assertions": [
+      "    dcr_pg_test.go:253: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_pg_test.go:278: global live quota missing <nil>"
+    ],
+    "killed": true,
+    "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:06.153460+00:00",
+      "end_utc": "2026-11-19T09:28:07.870294+00:00",
+      "log_sha256": "db4afb133ebb64e191b96d8f70024afd2ae6a555fcc7df2b1f9ed7e03e016595"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K12",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "own >= 128",
+    "new": "false",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:28:08.990396+00:00",
+      "end_utc": "2026-11-19T09:28:10.656900+00:00",
+      "log_sha256": "9e1fabf9d7a38484733954788218f958cbc27c4ad5891f5bc95626a3373695a4"
+    },
+    "occurrence": 0,
+    "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "mutant_sha256": "4091d1b455d46375e2d12ced7db61b0ee4540049e50d1b7d1f5d202f23026009",
+    "patch_sha256": "ff014ad18c0b4bbb698796ca2f9d101d0675511290dfaa4b9774ddcddbc2f6df",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:07.874553+00:00",
+      "end_utc": "2026-11-19T09:28:08.990272+00:00",
+      "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+    },
+    "assertions": [
+      "    dcr_pg_test.go:253: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_pg_test.go:261: per-source live quota missing <nil>"
+    ],
+    "killed": true,
+    "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:10.657305+00:00",
+      "end_utc": "2026-11-19T09:28:12.524359+00:00",
+      "log_sha256": "c29a6418286571e43a1a3deac0bdf635390a203d5355303924f70117d4c5b53d"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K13",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": "FROM mcpgw_dcr_client c WHERE resource=$1 AND expires_ns<=$2",
+    "new": "FROM mcpgw_dcr_client c WHERE resource=$1 AND expires_ns<>$2",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGCleanupPreservesUnexpiredRegistration$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:28:13.644336+00:00",
+      "end_utc": "2026-11-19T09:28:14.960352+00:00",
+      "log_sha256": "b24fa7485fd5205e2c1f69663c77888f97d83d2ed4e1cf0069b6da585a2b9d1b"
+    },
+    "occurrence": 0,
+    "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "mutant_sha256": "1f74a5ab9ca8861b9f9b1ef002f1d211c60f272827fd72751344ca0b570e7add",
+    "patch_sha256": "1273b287b04e6f83b05fdd6bc49a68e1966b2bf81665746481917c3d9bc62f59",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:12.528672+00:00",
+      "end_utc": "2026-11-19T09:28:13.644185+00:00",
+      "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+    },
+    "assertions": [
+      "    dcr_pg_test.go:342: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_pg_test.go:352: GC deleted a live unbound registration mcpgw: missing, expired or consumed record"
+    ],
+    "killed": true,
+    "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGCleanupPreservesUnexpiredRegistration$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:14.960668+00:00",
+      "end_utc": "2026-11-19T09:28:16.426875+00:00",
+      "log_sha256": "60d0b96685386274b364ed706eae52e31123cba02d179a8913ab3ec72185d757"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K14",
+    "file": "internal/mcpgw/dcr_store.go",
+    "old": " AND NOT EXISTS(SELECT 1 FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id)",
+    "new": "",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGBoundedCleanupForWidelySharedClient$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 1,
+      "start_utc": "2026-11-19T09:28:17.597814+00:00",
+      "end_utc": "2026-11-19T09:28:18.964357+00:00",
+      "log_sha256": "0751b8e1ca30d7a6d5d92d1ae14add63226833ddbf442897e1188004abc6e54f"
+    },
+    "occurrence": 0,
+    "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "mutant_sha256": "293819e9f360b185b097c2ac9d4a7044600a7c44d3fdb12f5ba611ae68403810",
+    "patch_sha256": "0b26e2dbc867ddeb31fb4d8033b9c9930b6b55ae83c67354032043db7a1c58ee",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:16.431816+00:00",
+      "end_utc": "2026-11-19T09:28:17.597682+00:00",
+      "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+    },
+    "assertions": [
+      "    dcr_pg_test.go:317: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+      "    dcr_pg_test.go:329: client GC cascaded an unbounded child deletion"
+    ],
+    "killed": true,
+    "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRPGBoundedCleanupForWidelySharedClient$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:18.964643+00:00",
+      "end_utc": "2026-11-19T09:28:20.330965+00:00",
+      "log_sha256": "00ccd680b7fb676dbaa0265c442b76b310cfe245ce7d3efd4a2cb7dfea78dba1"
+    },
+    "accepted": true
+  },
+  {
+    "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+    "id": "K15",
+    "file": "internal/mcpgw/dcr.go",
+    "old": "if p.trustedPeer(ip) {",
+    "new": "if true {",
+    "test": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRTrustedProxySource$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:21.451133+00:00",
+      "end_utc": "2026-11-19T09:28:22.016510+00:00",
+      "log_sha256": "9180233c23e5dbfd638aecf4e16527d7ad12234d16c8ad53e9df602904f7eedb"
+    },
+    "occurrence": 0,
+    "original_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+    "mutant_sha256": "b2e2eec1bc9d8a008ca7d74d26ec52f9d69a75ae23d267b7a0c0b3132efd772d",
+    "patch_sha256": "a20ab9415c2560d02fcf6618ad6f5dfe955e8581eca5b0a701bb587ffbf8b8a7",
+    "build": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^$",
+        "-count=1"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:20.335277+00:00",
+      "end_utc": "2026-11-19T09:28:21.450998+00:00",
+      "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+    },
+    "assertions": [],
+    "killed": false,
+    "restored_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+    "baseline": {
+      "command": [
+        "go",
+        "test",
+        "./internal/mcpgw",
+        "-run",
+        "^TestDCRTrustedProxySource$",
+        "-count=1",
+        "-v",
+        "-timeout=45s"
+      ],
+      "rc": 0,
+      "start_utc": "2026-11-19T09:28:22.016800+00:00",
+      "end_utc": "2026-11-19T09:28:22.531368+00:00",
+      "log_sha256": "9180233c23e5dbfd638aecf4e16527d7ad12234d16c8ad53e9df602904f7eedb"
+    },
+    "accepted": false
+  }
+]

@@ -1,0 +1,64 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K01",
+  "file": "internal/mcpgw/oauth.go",
+  "old": "q.Get(\"code_challenge_method\") != \"S256\" ||",
+  "new": "false ||",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRActualHTTPRegisterFeishuTokenAndInitialize$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:27:24.339128+00:00",
+    "end_utc": "2026-11-19T09:27:26.206172+00:00",
+    "log_sha256": "f3c171edf309cedb50cf3efb7cb6ef7dbeb5ad5c5279f90b6d1e04f2d6c0b38f"
+  },
+  "occurrence": 0,
+  "original_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "mutant_sha256": "15a630107237b9d90c687c34a2f8af6fee56d21aa2a047fdb7dc2f24d3c0a565",
+  "patch_sha256": "a3535c11a4d9dd7d5df80d03b8e2eab31d1358af8e1c78dc6d0b48e323504ea2",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:23.173078+00:00",
+    "end_utc": "2026-11-19T09:27:24.338996+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_http_test.go:48: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+    "    dcr_http_test.go:142: DCR authorization did not enforce S256"
+  ],
+  "killed": true,
+  "restored_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRActualHTTPRegisterFeishuTokenAndInitialize$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:26.206622+00:00",
+    "end_utc": "2026-11-19T09:27:28.374419+00:00",
+    "log_sha256": "c7ab42275932b8155ef5350a17f10ef08e1110d1cc75667fdb114a2ed19a46d3"
+  },
+  "accepted": true
+}

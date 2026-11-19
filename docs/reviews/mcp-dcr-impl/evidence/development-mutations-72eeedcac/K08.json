@@ -1,0 +1,64 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K08",
+  "file": "internal/mcpgw/dcr_policy.go",
+  "old": "const dcrUnboundTTL = 24 * time.Hour",
+  "new": "const dcrUnboundTTL = 72 * time.Hour",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGPersistenceRateAndIsolation$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:27:52.671701+00:00",
+    "end_utc": "2026-11-19T09:27:54.087979+00:00",
+    "log_sha256": "e0c1e13d089d352e532d9ce2c998bd59d81b2458a5b00b498183086d339257a3"
+  },
+  "occurrence": 0,
+  "original_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "mutant_sha256": "d9a2583137459bb685eac7d8f9d980392d782dee54ab3e6c73e87c26bca138fe",
+  "patch_sha256": "9e842f271855bbaa4f6bcd8159970deeb5375c2e3281e2431d4e074f5b9fb97a",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:51.553822+00:00",
+    "end_utc": "2026-11-19T09:27:52.671564+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:86: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+    "    dcr_pg_test.go:93: unbound TTL=72h0m0s"
+  ],
+  "killed": true,
+  "restored_sha256": "b04bd3651220f1d4e68c479651a3c93639148d8d8beb37b80b8e9f2a3775dbfc",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGPersistenceRateAndIsolation$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:54.088293+00:00",
+    "end_utc": "2026-11-19T09:27:55.654744+00:00",
+    "log_sha256": "5bcc292496079c2f8859b414d2f31c8581583f42d0202818889e252cb293d666"
+  },
+  "accepted": true
+}

@@ -1,0 +1,64 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K11",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "total >= 4096",
+  "new": "false",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:28:04.586413+00:00",
+    "end_utc": "2026-11-19T09:28:06.153127+00:00",
+    "log_sha256": "9a5d8026637b65921cdcbecfc5c5c0db81a7ee10134bc6e2eb9826926dc72a73"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "14b4d0eed3dab7617ffa9a24f4113c5500885443f126da009b2808d15b71ca90",
+  "patch_sha256": "a1c996dbbc2742de3fba59c87cb9b1604ffd1d49448ba70e93f564ea48b44611",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:28:03.468296+00:00",
+    "end_utc": "2026-11-19T09:28:04.586281+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:253: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+    "    dcr_pg_test.go:278: global live quota missing <nil>"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:28:06.153460+00:00",
+    "end_utc": "2026-11-19T09:28:07.870294+00:00",
+    "log_sha256": "db4afb133ebb64e191b96d8f70024afd2ae6a555fcc7df2b1f9ed7e03e016595"
+  },
+  "accepted": true
+}

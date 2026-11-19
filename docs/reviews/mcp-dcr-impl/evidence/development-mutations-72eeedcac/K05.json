@@ -1,0 +1,64 @@
+{
+  "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+  "id": "K05",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "AND expires_ns>(extract(epoch FROM clock_timestamp())*1000000000)::bigint",
+  "new": "AND true",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:27:40.707697+00:00",
+    "end_utc": "2026-11-19T09:27:42.124064+00:00",
+    "log_sha256": "bfb9fe052cc99d9eb4bbe0e6ff92eb7c26d2f60d6c796be853e387187613fc4d"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "16514b58d70a3df0eb26de7d81fcd273e2cf55230fba02efa342bb76cf8431e6",
+  "patch_sha256": "870753104d2266e447efe241f24367396d71c589d526a28a0db9caf330934052",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:39.541441+00:00",
+    "end_utc": "2026-11-19T09:27:40.707563+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:149: DCR_PG_VERSION PostgreSQL 18.3 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 7.5.0-3ubuntu1~18.04) 7.5.0, 64-bit",
+    "    dcr_pg_test.go:158: unbound exact/past expiry accepted"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:27:42.124403+00:00",
+    "end_utc": "2026-11-19T09:27:43.540541+00:00",
+    "log_sha256": "1227ea3e699002d878c4b0d296d7d56ea0e70615fe6047205c991672a3e0dd8d"
+  },
+  "accepted": true
+}

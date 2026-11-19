@@ -1,0 +1,64 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K16",
+  "file": "internal/mcpgw/oauth.go",
+  "old": "e = g.cfg.DCR.Policy.redirect(q.Get(\"redirect_uri\"))",
+  "new": "e = nil",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRAuthorizeIsolationActualRedirectAndClosedSnapshots$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:34:37.352679+00:00",
+    "end_utc": "2026-11-19T09:34:38.919868+00:00",
+    "log_sha256": "c7bf66c17be29be26c8daeb9700d17e0f5b9f005ab2dc967fdcc8721aaafea86"
+  },
+  "occurrence": 0,
+  "original_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "mutant_sha256": "eefced1d97d7875f97ce11bab598d5e8ba35ff4760dedd49c7c22196d2990ad3",
+  "patch_sha256": "ff3bba07e7c8b51b1b7739bd20eee6cdf3ce8439a4e8776dba9576e848ae9b8c",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:36.234454+00:00",
+    "end_utc": "2026-11-19T09:34:37.352533+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_boundaries_test.go:58: unsafe actual redirect accepted http://127.0.0.1:/callback",
+    "    dcr_boundaries_test.go:58: unsafe actual redirect accepted http://127.0.0.1:54321/callback#"
+  ],
+  "killed": true,
+  "restored_sha256": "735033f6b56ba08937e59b1ed25c82f0a8d07082d1326c9b3d407ff4446df22f",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRAuthorizeIsolationActualRedirectAndClosedSnapshots$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:38.920186+00:00",
+    "end_utc": "2026-11-19T09:34:40.336563+00:00",
+    "log_sha256": "4ea4442352dfdcb781da691147afa08050d086fcb4417b9fbf438849d9d45ad9"
+  },
+  "accepted": true
+}

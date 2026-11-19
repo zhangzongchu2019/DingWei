@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_store.go
++++ b/internal/mcpgw/dcr_store.go
+@@ -246,7 +246,7 @@
+ 		// RETURNING identifies at most the evicted associations. Recompute only
+ 		// their clients, excluding the removed subject (a modifying CTE's table
+ 		// reads use the pre-delete snapshot). Keep five minutes for old grants.
+-		if _, e := tx.Exec(ctx, `WITH removed AS (DELETE FROM mcpgw_dcr_binding WHERE resource=$1 AND principal_hash=$2 AND client_id IN (SELECT client_id FROM mcpgw_dcr_binding WHERE resource=$1 AND principal_hash=$2 AND expires_ns>$3 ORDER BY redeemed_ns DESC,(client_id=$4) DESC,client_id DESC OFFSET 16) RETURNING client_id) UPDATE mcpgw_dcr_client c SET expires_ns=GREATEST($3,COALESCE((SELECT max(b.expires_ns) FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id AND b.principal_hash<>$2),$3)) WHERE c.resource=$1 AND c.bound AND c.client_id IN (SELECT client_id FROM removed)`, s.resource, subject, now, id); e != nil {
++		if _, e := tx.Exec(ctx, `WITH removed AS (DELETE FROM mcpgw_dcr_binding WHERE resource=$1 AND principal_hash=$2 AND client_id IN (SELECT client_id FROM mcpgw_dcr_binding WHERE resource=$1 AND principal_hash=$2 AND expires_ns>$3 ORDER BY redeemed_ns DESC,(client_id=$4) DESC,client_id DESC OFFSET 1600) RETURNING client_id) UPDATE mcpgw_dcr_client c SET expires_ns=GREATEST($3,COALESCE((SELECT max(b.expires_ns) FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id AND b.principal_hash<>$2),$3)) WHERE c.resource=$1 AND c.bound AND c.client_id IN (SELECT client_id FROM removed)`, s.resource, subject, now, id); e != nil {
+ 			return e
+ 		}
+ 		// Eviction of one person's association cannot delete another person's client.

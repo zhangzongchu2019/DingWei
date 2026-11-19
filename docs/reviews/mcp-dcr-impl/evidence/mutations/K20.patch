@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr.go
++++ b/internal/mcpgw/dcr.go
+@@ -117,7 +117,7 @@
+ 	// Registration is a short request. Prevent net/http's post-handler drain
+ 	// from waiting on an unread attacker body after any early rejection.
+ 	r.Close = true
+-	w.Header().Set("Connection", "close")
++	
+ 	d := g.cfg.DCR
+ 	if d == nil || !d.Policy.Enabled {
+ 		http.NotFound(w, r)

@@ -1,0 +1,43 @@
+{
+  "utc": "2026-11-19T09:58:52.911445+00:00",
+  "final_source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "development_is_not_formal_gate": true,
+  "history": [
+    {
+      "name": "dev-dcr-1",
+      "classification": "test fixture issues: attempt rate accounting and multiple prepared statements with arguments",
+      "corrected": true
+    },
+    {
+      "name": "dev-dcr-3",
+      "classification": "product HTTP early rejection/body read deadline drain issue",
+      "corrected": true
+    },
+    {
+      "name": "dev-dcr-4",
+      "classification": "product early media rejection unread body drain issue; r.Close alone insufficient",
+      "corrected": true
+    },
+    {
+      "name": "canonical",
+      "source": "4f4289cf77500dd6e5d38495dd8c0bd2477b64ec",
+      "rc": 1,
+      "classification": "new 0115 not included in existing exact migration fixtures; helper profiles passed; shell claim subtests failed",
+      "corrected": true
+    },
+    {
+      "name": "dev-ledger-correction",
+      "rc": 1,
+      "classification": "additional exact migration domain/table counters omitted; explicit additions, no weakening",
+      "corrected": true
+    },
+    {
+      "name": "development-mutations-72eeedcac",
+      "source": "72eeedcac0b2bc35f7e7919373d90b47ceb59977",
+      "killed": 14,
+      "survived": 1,
+      "survivor": "K15",
+      "classification": "outer trusted check removed but inner check still protected; added malformed XFF from untrusted peer ignore test. Same mutation kills final source. Do not add these counts to final 41."
+    }
+  ]
+}

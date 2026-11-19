@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K25",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "bound=true,expires_ns=COALESCE((SELECT max(expires_ns) FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id),$3)",
+  "new": "bound=true,expires_ns=GREATEST(c.expires_ns,COALESCE((SELECT max(expires_ns) FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id),$3))",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:35:28.868538+00:00",
+    "end_utc": "2026-11-19T09:35:30.234714+00:00",
+    "log_sha256": "1d848978c790807850a72d3fbd77a8dbd32e9afe8eeffccb6553767b14074975"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "77e2fd9d11f00119479c318c0ef684518e151b564388e2e43f2680c30c7b4c8c",
+  "patch_sha256": "cb97bfcfea47f68cd587822808b9f245a2ec56d4f1740eecc6eb9fa7e1271c6c",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:27.752653+00:00",
+    "end_utc": "2026-11-19T09:35:28.868411+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:208: configured shorter bound TTL retained an obsolete long deadline"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGLifetimesSubjectEvictionAndRenewal$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:30.235043+00:00",
+    "end_utc": "2026-11-19T09:35:31.701638+00:00",
+    "log_sha256": "59b2c90073a3f527f4bb0f9c9dab233a718ac415bc0530201a8c7c806dfffb3b"
+  },
+  "accepted": true
+}

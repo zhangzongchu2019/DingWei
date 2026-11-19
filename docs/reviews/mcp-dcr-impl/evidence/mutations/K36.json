@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K36",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "if count >= 4096 {",
+  "new": "if count >= 409600 {",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:36:09.412794+00:00",
+    "end_utc": "2026-11-19T09:36:11.379894+00:00",
+    "log_sha256": "605c17232f9c227116a51abe2de1dddec89241b4ee87e4fdc5d5d09720605da5"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "086ca1b6391399061248e5863e2bb6268429f9dac5ad735f3cd8301e390c0b8e",
+  "patch_sha256": "fc59587e7ce3286444e34a3d15acff5449ce7612a57646245a331bd5615556e5",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:08.296125+00:00",
+    "end_utc": "2026-11-19T09:36:09.412640+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:309: unbounded source bucket allocation <nil>"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGQuotaGCAndConcurrentAdmission$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:36:11.380194+00:00",
+    "end_utc": "2026-11-19T09:36:13.097287+00:00",
+    "log_sha256": "817e69e8adf2b39ee231b805281194d664e8cb41cdbf9d9b1e15393c5d601844"
+  },
+  "accepted": true
+}

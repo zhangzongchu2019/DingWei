@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K20",
+  "file": "internal/mcpgw/dcr.go",
+  "old": "w.Header().Set(\"Connection\", \"close\")",
+  "new": "",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPBoundedSlotsAndSlowBody$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:35:06.290282+00:00",
+    "end_utc": "2026-11-19T09:35:09.660159+00:00",
+    "log_sha256": "83f986d599216560f5b8738fdaba669914cbfc4caf1b82abca422c3864d5df43"
+  },
+  "occurrence": 0,
+  "original_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "mutant_sha256": "fdd787c713091e840ac94a0844423808f24f2549a6b03acb3d8ac0ce3d70dcfc",
+  "patch_sha256": "0eb44471c60129fa183c00712b0d550932ab8c070ac0981de9b799b0809dc137",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:05.174125+00:00",
+    "end_utc": "2026-11-19T09:35:06.290140+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_boundaries_test.go:197: early rejection blocked draining an unread body: response=\"\" err=read tcp 127.0.0.1:57054->127.0.0.1:38949: i/o timeout"
+  ],
+  "killed": true,
+  "restored_sha256": "c56f09a0ed70e1629ace2c0296a4f96e8316216311ad76c21f490f4bb794fe26",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRHTTPBoundedSlotsAndSlowBody$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:09.660542+00:00",
+    "end_utc": "2026-11-19T09:35:14.031769+00:00",
+    "log_sha256": "04c8e3bcb9fcc73b25da442745f4329bc27b5a7a72d78e9b825dbbe7f6c85d62"
+  },
+  "accepted": true
+}

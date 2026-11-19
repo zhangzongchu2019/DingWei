@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K09",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "if !ok {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+  "new": "if false {\n\t\t\treturn &repo.CommitErr{Err: errDCRRate}\n\t\t}",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGPersistenceRateAndIsolation$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:34:01.444164+00:00",
+    "end_utc": "2026-11-19T09:34:03.962645+00:00",
+    "log_sha256": "1d233a0e3cb12a514e0e12638d936ea9ec46b103ecd5b4848fb59769a1abd0d1"
+  },
+  "occurrence": 1,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "d04f7391c760c19c07c0301c4a898de9ea76bf2899b80dee52808ea8e068981b",
+  "patch_sha256": "d64db4d4b5035f4c838468784e377a52c00bca7e2ff81b591d47b3d12f734c7d",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:00.215474+00:00",
+    "end_utc": "2026-11-19T09:34:01.431703+00:00",
+    "log_sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:122: source rate lost across store restart <nil>"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGPersistenceRateAndIsolation$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:34:03.962930+00:00",
+    "end_utc": "2026-11-19T09:34:06.531249+00:00",
+    "log_sha256": "3721ea7930014fe157f0e4b093aa5c696f4de65d01ee0fb12920d370a8be81d4"
+  },
+  "accepted": true
+}

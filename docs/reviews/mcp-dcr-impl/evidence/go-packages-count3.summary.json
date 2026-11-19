@@ -1,0 +1,810 @@
+{
+  "log": "go-packages-count3",
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "top_pass": 285,
+      "all_pass": 1149,
+      "top_skip": 6,
+      "all_skip": 18,
+      "failures": [],
+      "skips": [
+        {
+          "test": "TestBrowserAuthorizeChainReachesLoopback",
+          "reasons": [
+            "browser_e2e_test.go:31: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserCallbackExplainsMissingTarget",
+          "reasons": [
+            "browser_e2e_test.go:35: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserClaudeCodeLocalhostConsentChains/immediate-302",
+          "reasons": [
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserClaudeCodeLocalhostConsentChains/consent-page",
+          "reasons": [
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserCodexIPLoopbackConsentChains/immediate-302",
+          "reasons": [
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserCodexIPLoopbackConsentChains/consent-page",
+          "reasons": [
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserAuthorizeChainReachesLoopback",
+          "reasons": [
+            "browser_e2e_test.go:31: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:31: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserCallbackExplainsMissingTarget",
+          "reasons": [
+            "browser_e2e_test.go:35: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:35: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserClaudeCodeLocalhostConsentChains/immediate-302",
+          "reasons": [
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserClaudeCodeLocalhostConsentChains/consent-page",
+          "reasons": [
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserCodexIPLoopbackConsentChains/immediate-302",
+          "reasons": [
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserCodexIPLoopbackConsentChains/consent-page",
+          "reasons": [
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserAuthorizeChainReachesLoopback",
+          "reasons": [
+            "browser_e2e_test.go:31: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:31: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:31: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserCallbackExplainsMissingTarget",
+          "reasons": [
+            "browser_e2e_test.go:35: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:35: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:35: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserClaudeCodeLocalhostConsentChains/immediate-302",
+          "reasons": [
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserClaudeCodeLocalhostConsentChains/consent-page",
+          "reasons": [
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserCodexIPLoopbackConsentChains/immediate-302",
+          "reasons": [
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        },
+        {
+          "test": "TestBrowserCodexIPLoopbackConsentChains/consent-page",
+          "reasons": [
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>",
+            "browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>"
+          ]
+        }
+      ],
+      "package_action": "pass",
+      "elapsed": 391.758
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/extseat": {
+      "top_pass": 69,
+      "all_pass": 162,
+      "top_skip": 0,
+      "all_skip": 0,
+      "failures": [],
+      "skips": [],
+      "package_action": "pass",
+      "elapsed": 58.224
+    },
+    "github.com/zhangzongchu2019/dingwei/internal/m8": {
+      "top_pass": 2990,
+      "all_pass": 5035,
+      "top_skip": 33,
+      "all_skip": 87,
+      "failures": [
+        {
+          "test": "TestViewMentionRoute/a_peer_without_delivery_ack_v1_is_not_sent_to",
+          "assertions": [
+            "view_mention_route_test.go:420: 回执=[]"
+          ]
+        },
+        {
+          "test": "TestViewMentionRoute",
+          "assertions": []
+        }
+      ],
+      "skips": [
+        {
+          "test": "TestChangeEvidenceConsoleBrowser",
+          "reasons": [
+            "console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+          ]
+        },
+        {
+          "test": "TestMuxProductHTTP1EightSeats",
+          "reasons": [
+            "console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+          ]
+        },
+        {
+          "test": "TestConsolePlatformPayloadDump",
+          "reasons": [
+            "console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+          ]
+        },
+        {
+          "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "reasons": [
+            "console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLILateWireTerminal",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestFailureNoticeDriverTurnEndToEnd",
+          "reasons": [
+            "failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime"
+          ]
+        },
+        {
+          "test": "TestGroupReplyMCP",
+          "reasons": [
+            "group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+          ]
+        },
+        {
+          "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "reasons": [
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+          ]
+        },
+        {
+          "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "reasons": [
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+          ]
+        },
+        {
+          "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "reasons": [
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+          ]
+        },
+        {
+          "test": "TestHelper0232MixedVersionEndToEnd",
+          "reasons": [
+            "helper_update_e2e_test.go:55: explicit immutable release pins required"
+          ]
+        },
+        {
+          "test": "TestEnvelopeReadTimeoutEnvironmentChild",
+          "reasons": [
+            "hub_timeout_contract_test.go:50: subprocess probe only"
+          ]
+        },
+        {
+          "test": "TestSessionHistoryTwentyAgentPublishP99",
+          "reasons": [
+            "session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+          ]
+        },
+        {
+          "test": "TestSpecMCPEndToEnd",
+          "reasons": [
+            "spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+          ]
+        },
+        {
+          "test": "TestChangeEvidenceConsoleBrowser",
+          "reasons": [
+            "console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration",
+            "console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+          ]
+        },
+        {
+          "test": "TestMuxProductHTTP1EightSeats",
+          "reasons": [
+            "console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration",
+            "console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+          ]
+        },
+        {
+          "test": "TestConsolePlatformPayloadDump",
+          "reasons": [
+            "console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)",
+            "console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+          ]
+        },
+        {
+          "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "reasons": [
+            "console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically",
+            "console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLILateWireTerminal",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestFailureNoticeDriverTurnEndToEnd",
+          "reasons": [
+            "failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime",
+            "failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime"
+          ]
+        },
+        {
+          "test": "TestGroupReplyMCP",
+          "reasons": [
+            "group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON",
+            "group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+          ]
+        },
+        {
+          "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "reasons": [
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+          ]
+        },
+        {
+          "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "reasons": [
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+          ]
+        },
+        {
+          "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "reasons": [
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+          ]
+        },
+        {
+          "test": "TestHelper0232MixedVersionEndToEnd",
+          "reasons": [
+            "helper_update_e2e_test.go:55: explicit immutable release pins required",
+            "helper_update_e2e_test.go:55: explicit immutable release pins required"
+          ]
+        },
+        {
+          "test": "TestEnvelopeReadTimeoutEnvironmentChild",
+          "reasons": [
+            "hub_timeout_contract_test.go:50: subprocess probe only",
+            "hub_timeout_contract_test.go:50: subprocess probe only"
+          ]
+        },
+        {
+          "test": "TestSessionHistoryTwentyAgentPublishP99",
+          "reasons": [
+            "session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate",
+            "session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+          ]
+        },
+        {
+          "test": "TestSpecMCPEndToEnd",
+          "reasons": [
+            "spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses",
+            "spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+          ]
+        },
+        {
+          "test": "TestChangeEvidenceConsoleBrowser",
+          "reasons": [
+            "console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration",
+            "console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration",
+            "console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+          ]
+        },
+        {
+          "test": "TestMuxProductHTTP1EightSeats",
+          "reasons": [
+            "console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration",
+            "console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration",
+            "console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+          ]
+        },
+        {
+          "test": "TestConsolePlatformPayloadDump",
+          "reasons": [
+            "console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)",
+            "console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)",
+            "console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+          ]
+        },
+        {
+          "test": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "reasons": [
+            "console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically",
+            "console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically",
+            "console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestDeliveryACKActualCLILateWireTerminal",
+          "reasons": [
+            "delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+            "delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+          ]
+        },
+        {
+          "test": "TestFailureNoticeDriverTurnEndToEnd",
+          "reasons": [
+            "failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime",
+            "failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime",
+            "failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime"
+          ]
+        },
+        {
+          "test": "TestGroupReplyMCP",
+          "reasons": [
+            "group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON",
+            "group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON",
+            "group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+          ]
+        },
+        {
+          "test": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+          "reasons": [
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+          ]
+        },
+        {
+          "test": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+          "reasons": [
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+          ]
+        },
+        {
+          "test": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "reasons": [
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+            "helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python"
+          ]
+        },
+        {
+          "test": "TestHelper0232MixedVersionEndToEnd",
+          "reasons": [
+            "helper_update_e2e_test.go:55: explicit immutable release pins required",
+            "helper_update_e2e_test.go:55: explicit immutable release pins required",
+            "helper_update_e2e_test.go:55: explicit immutable release pins required"
+          ]
+        },
+        {
+          "test": "TestEnvelopeReadTimeoutEnvironmentChild",
+          "reasons": [
+            "hub_timeout_contract_test.go:50: subprocess probe only",
+            "hub_timeout_contract_test.go:50: subprocess probe only",
+            "hub_timeout_contract_test.go:50: subprocess probe only"
+          ]
+        },
+        {
+          "test": "TestSessionHistoryTwentyAgentPublishP99",
+          "reasons": [
+            "session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate",
+            "session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate",
+            "session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+          ]
+        },
+        {
+          "test": "TestSpecMCPEndToEnd",
+          "reasons": [
+            "spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses",
+            "spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses",
+            "spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+          ]
+        }
+      ],
+      "package_action": "fail",
+      "elapsed": 999.761
+    }
+  },
+  "interrupted_lines": [
+    {
+      "line": 29145,
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestViewMentionRoute/overlong_request_id_is_refused_before_any_delivery",
+      "output": "2026/11/19 10:05:51 session delivery lease release failed key_id=u_zzc session=quill conn_seq=2 reason=session_disconnected error=\"interrupted (9)\"\n"
+    },
+    {
+      "line": 29147,
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestViewMentionRoute/overlong_request_id_is_refused_before_any_delivery",
+      "output": "2026/11/19 10:05:51 session delivery lease release failed key_id=u_lbl session=gamma conn_seq=1 reason=session_disconnected error=\"interrupted (9)\"\n"
+    },
+    {
+      "line": 29151,
+      "package": "github.com/zhangzongchu2019/dingwei/internal/m8",
+      "test": "TestViewMentionRoute/overlong_request_id_is_refused_before_any_delivery",
+      "output": "2026/11/19 10:05:51 session delivery lease release failed key_id=u_zzc session=beta conn_seq=1 reason=session_disconnected error=\"interrupted (9)\"\n"
+    }
+  ],
+  "non_json_lines": [],
+  "totals": {
+    "top_pass": 3344,
+    "all_pass": 6346,
+    "top_skip": 39,
+    "all_skip": 105
+  }
+}

@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_store.go
++++ b/internal/mcpgw/dcr_store.go
+@@ -98,7 +98,7 @@
+ 	if e != nil {
+ 		return e
+ 	}
+-	_, e = tx.Exec(ctx, `DELETE FROM mcpgw_dcr_client WHERE (resource,client_id) IN (SELECT resource,client_id FROM mcpgw_dcr_client c WHERE resource=$1 AND expires_ns<=$2 AND NOT EXISTS(SELECT 1 FROM mcpgw_dcr_binding b WHERE b.resource=c.resource AND b.client_id=c.client_id) ORDER BY expires_ns,client_id LIMIT 256)`, s.resource, now-int64(oauthTTL))
++	_, e = tx.Exec(ctx, `DELETE FROM mcpgw_dcr_client WHERE (resource,client_id) IN (SELECT resource,client_id FROM mcpgw_dcr_client c WHERE resource=$1 AND expires_ns<=$2 ORDER BY expires_ns,client_id LIMIT 256)`, s.resource, now-int64(oauthTTL))
+ 	if e != nil {
+ 		return e
+ 	}

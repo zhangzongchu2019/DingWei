@@ -1,0 +1,63 @@
+{
+  "source": "5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4",
+  "id": "K27",
+  "file": "internal/mcpgw/dcr_store.go",
+  "old": "FROM mcpgw_dcr_binding WHERE resource=$1 AND expires_ns<=$2",
+  "new": "FROM mcpgw_dcr_binding WHERE resource=$1 AND expires_ns<>$2",
+  "test": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGCleanupPreservesUnexpiredRegistration$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 1,
+    "start_utc": "2026-11-19T09:35:37.078525+00:00",
+    "end_utc": "2026-11-19T09:35:38.444663+00:00",
+    "log_sha256": "482989859478e66ad5eb96d396b6faea2fc3cff64c4e25b2a35a654297d65f1d"
+  },
+  "occurrence": 0,
+  "original_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "mutant_sha256": "a95e655d4e007ec2e9aa3042c0128da1c405228ef61dabd4af358d99f5e5417f",
+  "patch_sha256": "55fabae59a0ff4f6f66482dbb0ee332c2b154dcb64aa18255498534092cc52a1",
+  "build": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^$",
+      "-count=1"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:35.962626+00:00",
+    "end_utc": "2026-11-19T09:35:37.078385+00:00",
+    "log_sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+  },
+  "assertions": [
+    "    dcr_pg_test.go:361: GC deleted a live subject binding mcpgw: missing, expired or consumed record"
+  ],
+  "killed": true,
+  "restored_sha256": "ecabb0881503737805dde06c6d80ea087492ac2ef67914c8598e7cc65c726868",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "-run",
+      "^TestDCRPGCleanupPreservesUnexpiredRegistration$",
+      "-count=1",
+      "-v",
+      "-timeout=45s"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T09:35:38.444977+00:00",
+    "end_utc": "2026-11-19T09:35:39.911370+00:00",
+    "log_sha256": "ed6834b007865b18ce55acf3b7b0b85080aa59f937bd953efd69b4bd230d231b"
+  },
+  "accepted": true
+}

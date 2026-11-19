@@ -1,0 +1,11 @@
+--- a/internal/mcpgw/dcr_store.go
++++ b/internal/mcpgw/dcr_store.go
+@@ -205,7 +205,7 @@
+ 	var sealed []byte
+ 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+ 	defer cancel()
+-	row, e := s.db.QueryRow(ctx, s.access, `SELECT sealed FROM mcpgw_dcr_client WHERE resource=$1 AND client_id=$2 AND expires_ns>(extract(epoch FROM clock_timestamp())*1000000000)::bigint AND (NOT bound OR EXISTS(SELECT 1 FROM mcpgw_dcr_binding b WHERE b.resource=mcpgw_dcr_client.resource AND b.client_id=mcpgw_dcr_client.client_id AND b.expires_ns>(extract(epoch FROM clock_timestamp())*1000000000)::bigint))`, s.resource, id)
++	row, e := s.db.QueryRow(ctx, s.access, `SELECT sealed FROM mcpgw_dcr_client WHERE resource=$1 AND client_id=$2 AND true AND (NOT bound OR EXISTS(SELECT 1 FROM mcpgw_dcr_binding b WHERE b.resource=mcpgw_dcr_client.resource AND b.client_id=mcpgw_dcr_client.client_id AND b.expires_ns>(extract(epoch FROM clock_timestamp())*1000000000)::bigint))`, s.resource, id)
+ 	if e != nil {
+ 		return c, e
+ 	}

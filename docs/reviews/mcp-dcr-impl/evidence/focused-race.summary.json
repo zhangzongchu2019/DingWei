@@ -1,0 +1,33 @@
+{
+  "log": "focused-race",
+  "packages": {
+    "github.com/zhangzongchu2019/dingwei/internal/mcpgw": {
+      "top_pass": 18,
+      "all_pass": 44,
+      "top_skip": 0,
+      "all_skip": 0,
+      "failures": [],
+      "skips": [],
+      "package_action": "pass",
+      "elapsed": 19.159
+    },
+    "github.com/zhangzongchu2019/dingwei/cmd/workpulse": {
+      "top_pass": 4,
+      "all_pass": 5,
+      "top_skip": 0,
+      "all_skip": 0,
+      "failures": [],
+      "skips": [],
+      "package_action": "pass",
+      "elapsed": 2.684
+    }
+  },
+  "interrupted_lines": [],
+  "non_json_lines": [],
+  "totals": {
+    "top_pass": 22,
+    "all_pass": 49,
+    "top_skip": 0,
+    "all_skip": 0
+  }
+}
