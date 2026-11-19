@@ -1,5 +1,5 @@
 // S-R62-CLI-VIEW-B：终端风格第二投影（Codex CLI 版式）回归套件。
-// 设计页：docs/reviews/r62-cli-view-b/DESIGN.md（§八 G1～G12＋K1～K12；V1 追加窄屏关态往返格）。
+// 设计页：docs/reviews/r62-cli-view-b/DESIGN.md（§八 G1～G13＋K1～K13；V1 追加窄屏关态往返格；📎 附件行 G13/K13）。
 // 加性双投影：关态与基锚 7d3035c6 的 #timeline innerHTML＋body class 逐字节同一（G2）；
 // 开态映射/来源/失败/长文/窄屏/重连逐出/覆盖位/洪流各有判据与删保护刀。
 // 刀机制与现套件同轨：MUTATION 环境变量选刀，锚缺失即 throw（不假绿）。
@@ -87,6 +87,10 @@ const KNIVES = {
   'cli-view-toggle-residue': {
     find: '      if (on) rebuildAllCLI();',
     replace: '      if (on) { rebuildAllCLI(); timeline.appendChild(document.createComment("cli-residue")); }   // K12：开态往主时间线留残留（V1 往返格杀）',
+  },
+  'cli-view-attach-drop': {
+    find: 'for (const el of cardEl._fileHost.children) {',
+    replace: 'for (const el of []) {   // K13：附件挂载读断（G13 📎 删保护）',
   },
 };
 
@@ -406,6 +410,106 @@ async function shot(page, name) {
     });
     await pBase2.close(); await pCur2.close(); await baseFixture2.close();
 
+    // ── G13 📎 附件行：复用 attachFileRenders 产物；开态出现、关态与基锚字节不变 ──
+    // 两页必须同源：/f/ 直链按 isOwnFileUrl 对 location.origin 判定，基页若另起服务器（不同 port）
+    // 会拒收全部夹具 URL ⇒ 基页附件产物为空、比对失去判别力（首版实测踩中）。单服务器双路径
+    // （当前版根路径、基锚 /base/）保同源；两路径均无 /view/ 前缀 ⇒ apiBase 为空、端点一致。
+    const attRendererCur = rendererBuffer();
+    const attRendererBase = baseRenderer();
+    const attServer = http.createServer((req, res) => {
+      const pathname = new URL(req.url, 'http://renderer.test').pathname;
+      const body = pathname === '/base/renderer-canary-sse.html' ? attRendererBase
+        : pathname === '/renderer-canary-sse.html' ? attRendererCur : null;
+      if (!body) { res.writeHead(404, { 'Content-Type': 'text/plain' }); res.end('not found'); return; }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.end(body);
+    });
+    await new Promise(resolve => attServer.listen(0, '127.0.0.1', resolve));
+    const attOrigin = `http://127.0.0.1:${attServer.address().port}`;
+    const pAtt = await boot(browser, `${attOrigin}/renderer-canary-sse.html`);
+    const pAttBase = await boot(browser, `${attOrigin}/base/renderer-canary-sse.html`);
+    const attRoute = route => {
+      if (route.request().method() === 'HEAD') {
+        return route.fulfill({ status: 200, headers: { 'content-type': 'text/plain; charset=utf-8', 'content-length': '18' }, body: '' });
+      }
+      return route.fulfill({ status: 200, contentType: 'text/plain; charset=utf-8', body: 'fixture file body\n' });
+    };
+    await pAtt.route('**/f/**', attRoute);
+    await pAttBase.route('**/f/**', attRoute);
+    const attUrl = name => new URL(`/f/${name}`, attOrigin).href;
+    const uCard = attUrl('r62-card-notes.txt');
+    const uTurnUser = attUrl('r62-turn-input.txt');
+    const uTurnBody = attUrl('r62-result-log.txt');
+    const uTail = attUrl('r62-tail-file.txt');
+    const attFixture = [
+      { schema_version: 'delivery.v2', kind: 'input_posted', message_id: 'm-att', delivery_id: 'dw-dlv_ATT',
+        stage: 'hub_received', payload: `请查收 ${uCard}`, ts: TS0,
+        delivery: { role: 'primary' }, cancellable: false, updated_at: new Date(TS0).toISOString() },
+      { schema_version: 'delivery.v2', kind: 'delivery_update', message_id: 'm-att', observed_delivery_id: 'dw-dlv_ATT',
+        delivery_stage: 'cli_injected', delivery: { role: 'primary' }, ts: TS0 + 400,
+        updated_at: new Date(TS0 + 400).toISOString() },
+      { kind: 'user_input', turn_id: 't-att', delivery_id: 'd-att-in', text: `跑一下并回传 ${uTurnUser}`, cursor: '0000001', ts: TS0 + 1000 },
+      { kind: 'assistant_text', turn_id: 't-att', delivery_id: 'd-att-out', text: `结果见 ${uTurnBody}`, cursor: '0000002', ts: TS0 + 2000 },
+      { kind: 'state_change', turn_id: 't-att', cursor: '0000003', ts: TS0 + 3000, data: { change: 'turn_completed' } },
+      { kind: 'assistant_text', turn_id: 't-att-long', delivery_id: 'd-att-long', text: `${'长'.repeat(4500)} 尾部附件 ${uTail}`, cursor: '0000001', ts: TS0 + 4000 },
+      { kind: 'state_change', turn_id: 't-att-long', cursor: '0000002', ts: TS0 + 5000, data: { change: 'turn_completed' } },
+    ];
+    await inject(pAtt, attFixture);
+    await inject(pAttBase, attFixture);
+    const attOffState = () => Promise.all([
+      pAtt.evaluate(() => ({ html: document.getElementById('timeline').innerHTML, cls: document.body.className, cliAttach: document.querySelectorAll('.cli-attach').length })),
+      pAttBase.evaluate(() => ({ html: document.getElementById('timeline').innerHTML, cls: document.body.className })),
+    ]);
+    await checks.check('G13 📎 附件行：开态用户行/正文块下挂可点文件名（含长文尾部），关态与基锚字节不变', async () => {
+      for (const page of [pAtt, pAttBase]) {
+        await page.waitForFunction(() => document.querySelectorAll('#timeline .attachment[data-rendered="ok"]').length >= 4, null, { timeout: 10000 });
+      }
+      const [offCur, offBase] = await attOffState();
+      assert.strictEqual(offCur.cliAttach, 0, 'G13 关态不得出现 📎 行');
+      assert.strictEqual(offCur.html, offBase.html, 'G13 关态 #timeline innerHTML 与基锚字节不同（附件产物不得被加性层改动）');
+      assert.strictEqual(offCur.cls, offBase.cls, 'G13 关态 body class 与基锚不同');
+      await pAtt.click('#cliViewBtn');
+      const att = await pAtt.evaluate(() => Array.from(document.querySelectorAll('#timeline-cli .cli-attach')).map(node => ({
+        text: node.textContent,
+        href: node.querySelector('a') ? node.querySelector('a').getAttribute('href') : '',
+        target: node.querySelector('a') ? node.querySelector('a').getAttribute('target') : '',
+      })));
+      assert.strictEqual(att.length, 4, `G13 开态须出现 4 条 📎 附件行（实 ${att.length}；K13 去挂载须红在这里）`);
+      for (const [url, name] of [[uCard, 'r62-card-notes.txt'], [uTurnUser, 'r62-turn-input.txt'], [uTurnBody, 'r62-result-log.txt'], [uTail, 'r62-tail-file.txt']]) {
+        const line = att.find(item => item.text === `📎 ${name}`);
+        assert.ok(line, `G13 开态须有「📎 ${name}」行（K13 须红在这里）`);
+        assert.strictEqual(line.href, url, `G13 📎 链接须指向文件本体 ${url}`);
+        assert.strictEqual(line.target, '_blank', 'G13 📎 链接须可点开（_blank）');
+      }
+      const placement = await pAtt.evaluate(() => {
+        const turn = Array.from(document.querySelectorAll('#timeline-cli .cli-turn')).find(node => node.textContent.includes('跑一下并回传'));
+        const longTurn = Array.from(document.querySelectorAll('#timeline-cli .cli-turn')).find(node => node.querySelector('.cli-pager'));
+        const input = document.querySelector('#timeline-cli .cli-input-card');
+        return {
+          turnKids: Array.from(turn.children).map(node => node.className),
+          longKids: Array.from(longTurn.children).map(node => node.className),
+          inputKids: Array.from(input.children).map(node => node.className),
+        };
+      });
+      const attachIdx = kids => kids.map((cls, idx) => cls === 'cli-line cli-attach' ? idx : -1).filter(idx => idx >= 0);
+      const turnAttach = attachIdx(placement.turnKids);
+      assert.strictEqual(turnAttach.length, 2, 'G13 回合内须恰两条 📎（用户行一条、正文块一条，不重复挂载）');
+      assert.strictEqual(turnAttach[0], placement.turnKids.indexOf('cli-line cli-user') + 1, 'G13 用户行 📎 须紧跟用户行');
+      assert.strictEqual(turnAttach[1], placement.turnKids.indexOf('cli-line cli-assistant') + 1, 'G13 正文 📎 须紧跟正文块');
+      assert.ok(placement.inputKids.includes('cli-line cli-attach'), 'G13 独立输入卡下须挂 📎 行');
+      const longAttach = attachIdx(placement.longKids);
+      assert.strictEqual(longAttach.length, 1, 'G13 长文回合须恰一条 📎');
+      assert.strictEqual(longAttach[0], placement.longKids.indexOf('cli-line cli-pager') + 1, 'G13 长文 📎 须挂 pager 之后（摘要外附件不丢）');
+      await shot(pAtt, 'pc-1440-attach-on');
+      await pAtt.click('#cliViewBtn');
+      const [rtCur, rtBase] = await attOffState();
+      assert.strictEqual(rtCur.cliAttach, 0, 'G13 往返后关态不得残留 📎 行');
+      assert.strictEqual(rtCur.html, rtBase.html, 'G13 开→关往返后关态 innerHTML 仍与基锚字节同一（防附件切换残留）');
+      assert.strictEqual(rtCur.cls, rtBase.cls, 'G13 往返后关态 body class 仍与基锚同一');
+    });
+    await pAtt.close(); await pAttBase.close();
+    await new Promise(resolve => attServer.close(resolve));
+
     // ── G10 重连/分页/逐出稳定性（纯投影一致性） ──────────────
     const pSt = await boot(browser, baseUrl);
     await inject(pSt, fixtureA());
@@ -464,7 +568,7 @@ async function shot(page, name) {
     await runFlood(browser, checks);
 
     checks.finish();
-    console.log(`renderer-cli-view-regression: G1～G12 通过${MUTATION ? `（MUTATION=${MUTATION} 应红未红=假绿）` : ''}`);
+    console.log(`renderer-cli-view-regression: G1～G13 通过${MUTATION ? `（MUTATION=${MUTATION} 应红未红=假绿）` : ''}`);
   } finally {
     if (browser) await browser.close();
     await fixture.close();

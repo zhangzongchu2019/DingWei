@@ -1117,6 +1117,9 @@
       background: rgba(127, 127, 127, 0.12); border-radius: 4px; padding: 4px 6px;
     }
     #timeline-cli .cli-inline-code { background: rgba(127, 127, 127, 0.18); border-radius: 3px; padding: 0 3px; }
+    #timeline-cli .cli-attach { color: var(--cli-dim); }
+    #timeline-cli .cli-attach a { color: var(--cli-user); text-decoration: none; overflow-wrap: anywhere; }
+    #timeline-cli .cli-attach a:hover { text-decoration: underline; }
     #timeline-cli .cli-pager button {
       font: inherit; color: var(--cli-user); background: transparent; border: 1px solid var(--cli-dim);
       border-radius: 4px; padding: 2px 8px; cursor: pointer; min-height: 24px;
@@ -1128,6 +1131,7 @@
     @media (max-width: 768px) {
       #cliViewBtn { min-height: 40px; min-width: 40px; }
       #timeline-cli .cli-pager button { min-height: 40px; }
+      #timeline-cli .cli-attach a { display: inline-block; min-height: 40px; line-height: 40px; }
     }
   </style>
 </head>
@@ -4341,6 +4345,26 @@
       bar.textContent = `${model} default · ${session}${usageText}\n← for agents · ? for shortcuts`;
     }
 
+    // S-R62-CLI-VIEW-B 📎：复用 attachFileRenders 的挂载产物（cardEl._fileHost），不重建上传/下载探测。
+    // 只读 host 当前 URL 集；已解析的附件卡直接取其名字链接（与主视图同名同源），
+    // 未解析的槽位回退 fileAttachmentShell 同一名字源（uploadedFileHints → URL 末段）。
+    function cliAttachmentUrls(cardEl) {
+      if (!cardEl || !cardEl._fileHost) return [];
+      const urls = [];
+      for (const el of cardEl._fileHost.children) {
+        const url = el.dataset ? el.dataset.fileUrl || '' : '';
+        if (url && !urls.includes(url)) urls.push(url);
+      }
+      return urls;
+    }
+    function cliAttachLine(url, cardEl) {
+      const box = [...cardEl._fileHost.children].find(el => el.dataset && el.dataset.fileUrl === url && el.classList.contains('attachment'));
+      const nameEl = box ? box.querySelector('.attachment-name') : null;
+      const name = nameEl ? nameEl.textContent : (uploadedFileHints.get(url)?.name || fileNameFromUrl(url));
+      const href = nameEl ? nameEl.getAttribute('href') : localFileUrl(url);
+      return `<div class="cli-line cli-attach">📎 <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(name)}</a></div>`;
+    }
+
     function rebuildTurnCLI(group) {
       if (group.detached) return;
       if (!group.sorted) { group.events.sort(compareCursor); group.sorted = true; }
@@ -4354,6 +4378,11 @@
         const prefix = cliSourcePrefix(users[0]._norm || null);   // S-R62-CLI-VIEW-B：合卡入回合后前缀同源保留
         html += `<div class="cli-line cli-user">› ${escapeHtml(prefix)}${escapeHtml(users.map(ev => ev.text || '').join(''))}</div>`;
       }
+      const cliAttachUrls = cliAttachmentUrls(group.node);
+      const cliUserText = users.map(ev => ev.text || '').join('');
+      const cliUserAttach = cliAttachUrls.filter(url => cliUserText.includes(url) || !assistants.length);
+      const cliBodyAttach = cliAttachUrls.filter(url => !cliUserAttach.includes(url));
+      html += cliUserAttach.map(url => cliAttachLine(url, group.node)).join('');
       for (const ev of tools) html += cliToolLine(ev, Boolean(completed));
       if (assistants.length) {
         const total = eventsTextLength(assistants);
@@ -4365,6 +4394,7 @@
           html += `<div class="cli-line cli-assistant">• ${cliMarkdownLite(eventsTextFull(assistants))}</div>`;
         }
       }
+      html += cliBodyAttach.map(url => cliAttachLine(url, group.node)).join('');
       for (const ev of errors) html += `<div class="cli-line cli-error">✗ ${escapeHtml(ev.text || 'Unknown error')}</div>`;
       if (completed) html += cliWorkedLine(group, completed);
       let node = group.node._cliNode;
@@ -4412,6 +4442,7 @@
       let node = card._cliNode;
       if (!node) { node = document.createElement('div'); node.className = 'cli-line cli-user cli-input-card'; card._cliNode = node; }
       node.innerHTML = `› ${escapeHtml(prefix)}${escapeHtml(text)}${stage ? ` <span class="cli-stage">[${escapeHtml(stage)}]</span>` : ''}`;
+      node.insertAdjacentHTML('beforeend', cliAttachmentUrls(card).map(url => cliAttachLine(url, card)).join(''));
       placeCliNode(node, card);
     }
 
