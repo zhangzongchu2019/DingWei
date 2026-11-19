@@ -1,0 +1,18 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/feishulogin",
+    "./internal/mcpgw",
+    "-p",
+    "1",
+    "-run",
+    "^(TestConnect|TestMCP)",
+    "-count=1",
+    "-v"
+  ],
+  "utc": "2026-11-19T04:21:35.672886+00:00",
+  "scope": "test-copy assertion corrected, product bytes unchanged from3c; qualification before new freeze",
+  "rc": 0,
+  "sha256": "412957aeb2bfccbe96e256a06dfbfbcf27ef9717f758a6ad19bb28343ce64e25"
+}

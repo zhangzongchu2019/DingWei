@@ -1,0 +1,10 @@
+{
+  "source": "3c5e8f3d3148892742a9feb92d61ac964d9fda3e",
+  "roots": [
+    2679341,
+    2679705
+  ],
+  "owned_processes_terminated": 9,
+  "utc": "2026-11-19T04:21:20.134426+00:00",
+  "reason": "Existing TestConnectPageGETRendersSelfContainedValidatedForm expected old copy; preserve logs, update only explicit copy assertion and re-freeze. Interrupted gates not counted PASS."
+}

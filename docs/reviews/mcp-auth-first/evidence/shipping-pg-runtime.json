@@ -1,0 +1,9 @@
+{
+  "gates_completed_at_capture": 0,
+  "utc": "2026-11-19T04:28:12.193055+00:00",
+  "runner": 2681730,
+  "pid": 2691784,
+  "exe": "/data/ai-dev-data/mafsgh/.embedded-postgres-go/extracted/bin/postgres",
+  "version": "postgres (PostgreSQL) 18.3",
+  "scope": "owned temporary test PG descendant only"
+}

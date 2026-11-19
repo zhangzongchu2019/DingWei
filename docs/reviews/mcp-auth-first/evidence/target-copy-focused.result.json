@@ -1,0 +1,15 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/feishulogin",
+    "./internal/mcpgw",
+    "-count=1",
+    "-p",
+    "1",
+    "-v"
+  ],
+  "source": "working change atop6c592762",
+  "utc": "2026-11-19T04:18:11.838989+00:00",
+  "rc": 1
+}

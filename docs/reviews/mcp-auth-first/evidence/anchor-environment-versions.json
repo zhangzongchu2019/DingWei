@@ -1,0 +1,10 @@
+{
+  "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+  "utc": "2026-11-19T05:04:22.935868+00:00",
+  "uid": 1001,
+  "go": "go version go1.22.2 linux/amd64",
+  "python": "Python 3.12.3",
+  "openspec": "1.16.0",
+  "inherited_online_prefix_variables": 0,
+  "note": "Both gate envs are explicit whitelists. Prefix count refers to passed gate environment, not host shell."
+}

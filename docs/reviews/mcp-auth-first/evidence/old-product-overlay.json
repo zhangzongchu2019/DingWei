@@ -1,0 +1,27 @@
+{
+  "old_source": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+  "new_tests_source": "299b5d75ab8a5528524f2965fd17982da92fd5b6",
+  "rc": 1,
+  "build_ok": true,
+  "panic": false,
+  "assertions": [
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32020,\"message\":\"HeaderMismatch\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32020,\"message\":\"HeaderMismatch\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32020,\"message\":\"HeaderMismatch\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32020,\"message\":\"HeaderMismatch\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32020,\"message\":\"HeaderMismatch\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32020,\"message\":\"HeaderMismatch\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32020,\"message\":\"HeaderMismatch\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32020,\"message\":\"HeaderMismatch\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32020,\"message\":\"HeaderMismatch\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32020,\"message\":\"HeaderMismatch\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:100: VERSION_NEGOTIATION: proposed=2025-03-26 code=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:100: VERSION_NEGOTIATION: proposed=2025-06-18 code=400 body={\"error\":{\"code\":-32602,\"message\":\"invalid_params\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:100: VERSION_NEGOTIATION: proposed=2025-11-25 code=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+    "    auth_first_test.go:100: VERSION_NEGOTIATION: proposed=2099-01-01 code=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}"
+  ]
+}

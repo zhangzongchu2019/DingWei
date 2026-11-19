@@ -1,0 +1,18 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "./internal/feishulogin",
+    "-run",
+    "^(TestMCP|TestConnect)",
+    "-count=1",
+    "-p",
+    "1",
+    "-v"
+  ],
+  "utc": "2026-11-19T04:52:03.715857+00:00",
+  "scope": "complete native-hint presence matrix working change before final freeze",
+  "rc": 0,
+  "sha256": "57e00ed6154a908a009d25ab0b60c598590aa8cb9fea637981d97384c3853855"
+}

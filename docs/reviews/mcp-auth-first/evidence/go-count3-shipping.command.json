@@ -1,0 +1,17 @@
+{
+  "cwd": "/data/ai-dev-data/mcp-auth-first",
+  "source": "907870c6cd8cd6d697259ba2f475433a588da4bf",
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "./internal/extseat",
+    "./internal/feishulogin",
+    "./internal/m8",
+    "-count=3",
+    "-p=1",
+    "-timeout=60m",
+    "-v"
+  ],
+  "env_file": "env-shipping-go.json"
+}

@@ -1,0 +1,155 @@
+{
+  "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+  "gates": {
+    "canonical-anchor": {
+      "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+      "start_utc": "2026-11-19T04:53:45.446825+00:00",
+      "end_utc": "2026-11-19T05:03:22.476112+00:00",
+      "rc": 0
+    },
+    "go-count3-anchor": {
+      "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+      "start_utc": "2026-11-19T04:53:46.573324+00:00",
+      "end_utc": "2026-11-19T05:16:39.042552+00:00",
+      "rc": 1
+    },
+    "strict-anchor": {
+      "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+      "start_utc": "2026-11-19T04:58:51.086986+00:00",
+      "end_utc": "2026-11-19T04:58:51.399252+00:00",
+      "rc": 0
+    }
+  },
+  "packages": [
+    "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/mcpgw\t345.737s",
+    "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/extseat\t60.856s",
+    "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/feishulogin\t0.034s",
+    "FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/m8\t961.819s"
+  ],
+  "pass_top": 3407,
+  "pass_all": 6551,
+  "fail_top": 1,
+  "skip_occurrences": 105,
+  "skip_unique": 35,
+  "interrupted_lines": 1,
+  "canonical_markers": [
+    "HELPER_INVENTORY_OK files=97",
+    "HELPER_GATE_RESULT {\"actual\": 1270, \"actual_SH_DRIVER\": \"claude\", \"expected\": 1270, \"files\": 97, \"groups\": [1261, 9], \"profile\": \"claude\", \"rc\": 0}",
+    "HELPER_GATE_RESULT {\"actual\": 1270, \"actual_SH_DRIVER\": \"codex\", \"expected\": 1270, \"files\": 97, \"groups\": [1261, 9], \"profile\": \"codex\", \"rc\": 0}",
+    "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2"
+  ],
+  "per_package": [
+    {
+      "package_result": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/mcpgw\t345.737s",
+      "pass_top": 240,
+      "pass_all": 1092,
+      "skip_occurrences": 18
+    },
+    {
+      "package_result": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/extseat\t60.856s",
+      "pass_top": 69,
+      "pass_all": 162,
+      "skip_occurrences": 0
+    },
+    {
+      "package_result": "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/feishulogin\t0.034s",
+      "pass_top": 141,
+      "pass_all": 333,
+      "skip_occurrences": 0
+    },
+    {
+      "package_result": "FAIL\tgithub.com/zhangzongchu2019/dingwei/internal/m8\t961.819s",
+      "pass_top": 2957,
+      "pass_all": 4964,
+      "skip_occurrences": 87
+    }
+  ],
+  "z3_policy": {
+    "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+    "policy": "leader Z3: fresh serial five; >=3 fully green; every other failure must be interrupted(9) at the three explicitly allowed sites",
+    "allowed": [
+      "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+      "TestViewMentionRoute/a_peer_without_delivery_ack_v1_is_not_sent_to",
+      "TestSessionNameReconnectKeepsNameAndReleaseReuses"
+    ],
+    "initial_rc": 1,
+    "initial_failures": [
+      {
+        "name": "TestSessionNameReconnectKeepsNameAndReleaseReuses",
+        "allowed": true,
+        "context": "led=0 queue_underflow=0 notifications_sent=0 notifications_suppressed=0 reply_origin_routed=0 reply_origin_skipped=0 reply_origin_unavailable=0 terminal_unknown=map[] structured_failure_min_version=0.1.3.0 rejected_events=20 missing_identity_or_replay=20 top_invariant=true closed_invariant=true\n2026/11/19 05:08:06 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/19 05:08:06 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n2026/11/19 05:08:06 session version warning key_id=FB-u11-20261119-33cdefc6 owner=u1 session=developer version=\"\" required=0.2.3.40: 未上报版本,要求 0.2.3.40\n2026/11/19 05:08:06 session handshake timing key_id=FB-u11-20261119-33cdefc6 session=u1-developer-efc6 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s\n2026/11/19 05:08:06 session version warning key_id=FB-u11-20261119-33cdefc6 owner=u1 session=developer version=\"\" required=0.2.3.40: 未上报版本,要求 0.2.3.40\n{\"conn_seq\":1,\"event\":\"session_end\",\"last_worker_type\":\"unknown\",\"limit\":\"none\",\"peer_close_code\":1000,\"phase\":\"online\",\"physical_write_active\":false,\"physical_write_reason\":\"none\",\"pong_age_ms\":\"unknown\",\"queue_bytes\":0,\"queue_items\":0,\"queue_peak_bytes\":0,\"queue_peak_items\":0,\"reader_age_ms\":\"unknown\",\"reader_frame_bytes\":0,\"reader_frame_type\":\"unknown\",\"reason\":\"replaced\",\"session\":\"u1-developer-efc6\",\"utc\":\"2026-11-19T05:08:06.115000827Z\",\"waiting_writers\":0,\"worker_age_ms\":\"unknown\",\"write_age_ms\":1,\"write_budget_ms\":5000,\"write_bytes\":4348}\n2026/11/19 05:08:06 session handshake timing key_id=FB-u11-20261119-33cdefc6 session=u1-developer-efc6 total=1ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s\n{\"conn_seq\":2,\"event\":\"session_end\",\"last_worker_type\":\"unknown\",\"limit\":\"none\",\"peer_close_code\":1000,\"phase\":\"online\",\"physical_write_active\":false,\"physical_write_reason\":\"none\",\"pong_age_ms\":\"unknown\",\"queue_bytes\":0,\"queue_items\":0,\"queue_peak_bytes\":0,\"queue_peak_items\":0,\"reader_age_ms\":\"unknown\",\"reader_frame_bytes\":0,\"reader_frame_type\":\"unknown\",\"reason\":\"peer_normal\",\"session\":\"u1-developer-efc6\",\"utc\":\"2026-11-19T05:08:06.115236624Z\",\"waiting_writers\":0,\"worker_age_ms\":\"unknown\",\"write_age_ms\":0,\"write_budget_ms\":5000,\"write_bytes\":322}\n    hub_test.go:3505: interrupted (9)\n--- FAIL: TestSessionNameReconnectKeepsNameAndReleaseReuses (0.13s)"
+      }
+    ],
+    "rounds": [
+      {
+        "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+        "round": 1,
+        "rc": 0,
+        "start_utc": "2026-11-19T05:16:39.262849+00:00",
+        "end_utc": "2026-11-19T05:22:02.863539+00:00",
+        "pass_top": 986,
+        "pass_all": 1655,
+        "skip_occurrences": 29,
+        "interrupted_lines": 0,
+        "failures": []
+      },
+      {
+        "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+        "round": 2,
+        "rc": 0,
+        "start_utc": "2026-11-19T05:22:02.872761+00:00",
+        "end_utc": "2026-11-19T05:27:30.797628+00:00",
+        "pass_top": 986,
+        "pass_all": 1655,
+        "skip_occurrences": 29,
+        "interrupted_lines": 0,
+        "failures": []
+      },
+      {
+        "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+        "round": 3,
+        "rc": 0,
+        "start_utc": "2026-11-19T05:27:30.811845+00:00",
+        "end_utc": "2026-11-19T05:33:01.769849+00:00",
+        "pass_top": 986,
+        "pass_all": 1655,
+        "skip_occurrences": 29,
+        "interrupted_lines": 0,
+        "failures": []
+      },
+      {
+        "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+        "round": 4,
+        "rc": 0,
+        "start_utc": "2026-11-19T05:33:01.779227+00:00",
+        "end_utc": "2026-11-19T05:38:28.814517+00:00",
+        "pass_top": 986,
+        "pass_all": 1655,
+        "skip_occurrences": 29,
+        "interrupted_lines": 0,
+        "failures": []
+      },
+      {
+        "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+        "round": 5,
+        "rc": 1,
+        "start_utc": "2026-11-19T05:38:28.823526+00:00",
+        "end_utc": "2026-11-19T05:43:53.164514+00:00",
+        "pass_top": 985,
+        "pass_all": 1654,
+        "skip_occurrences": 29,
+        "interrupted_lines": 1,
+        "failures": [
+          {
+            "name": "TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent",
+            "allowed": true,
+            "context": "=== RUN   TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent\n2026/11/19 05:40:38 amr startup mode=route_all structured_failure_min_version=0.1.3.0\n2026/11/19 05:40:38 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s\n2026/11/19 05:40:38 session version warning key_id=FB-u1-20261119-f678b29f owner=u1 session=u1-home-b29f version=\"\" required=0.2.3.40: 未上报版本,要求 0.2.3.40\n2026/11/19 05:40:38 session handshake timing key_id=FB-u1-20261119-f678b29f session=u1-home-b29f total=2ms auth=0s accounts=0s owner=0s register=0s accept=0s conn_seq=0s onboard=0s register_lock=0s\n{\"conn_seq\":1,\"event\":\"session_end\",\"last_worker_type\":\"unknown\",\"limit\":\"none\",\"peer_close_code\":1000,\"phase\":\"online\",\"physical_write_active\":false,\"physical_write_reason\":\"none\",\"pong_age_ms\":\"unknown\",\"queue_bytes\":0,\"queue_items\":0,\"queue_peak_bytes\":0,\"queue_peak_items\":0,\"reader_age_ms\":\"unknown\",\"reader_frame_bytes\":0,\"reader_frame_type\":\"unknown\",\"reason\":\"peer_normal\",\"session\":\"u1-home-b29f\",\"utc\":\"2026-11-19T05:40:38.750318075Z\",\"waiting_writers\":0,\"worker_age_ms\":\"unknown\",\"write_age_ms\":0,\"write_budget_ms\":5000,\"write_bytes\":4344}\n    hub_test.go:3741: interrupted (9)\n--- FAIL: TestNewSessionNameNotifiesFeishuOnceAndReconnectFlappingStaySilent (0.14s)"
+          }
+        ]
+      }
+    ],
+    "state": "PASS_POLICY",
+    "fully_green": 4
+  },
+  "author_gate_verdict": "PASS_WITH_KNOWN_N4_POLICY"
+}

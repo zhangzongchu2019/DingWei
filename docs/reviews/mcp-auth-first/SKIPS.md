@@ -1,0 +1,213 @@
+# 最终四包三遍逐名 SKIP 与条件
+
+原始完整日志见 evidence/go-count3-anchor.log.gz；三遍全部105次出现另列SKIPS.json，此处按35个名称去重。不是FAIL改SKIP。Z3五轮为同一m8源，逐轮数量见gate-summary，原日志保留。
+
+```text
+=== RUN   TestBrowserAuthorizeChainReachesLoopback
+    browser_e2e_test.go:31: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>
+--- SKIP: TestBrowserAuthorizeChainReachesLoopback (0.00s)
+```
+
+```text
+=== RUN   TestBrowserCallbackExplainsMissingTarget
+    browser_e2e_test.go:35: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>
+--- SKIP: TestBrowserCallbackExplainsMissingTarget (0.00s)
+```
+
+```text
+=== RUN   TestBrowserClaudeCodeLocalhostConsentChains/immediate-302
+    browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>
+    --- SKIP: TestBrowserClaudeCodeLocalhostConsentChains/immediate-302 (0.00s)
+```
+
+```text
+=== RUN   TestBrowserClaudeCodeLocalhostConsentChains/consent-page
+    browser_e2e_test.go:168: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>
+    --- SKIP: TestBrowserClaudeCodeLocalhostConsentChains/consent-page (0.00s)
+```
+
+```text
+=== RUN   TestBrowserCodexIPLoopbackConsentChains/immediate-302
+    browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>
+    --- SKIP: TestBrowserCodexIPLoopbackConsentChains/immediate-302 (0.00s)
+```
+
+```text
+=== RUN   TestBrowserCodexIPLoopbackConsentChains/consent-page
+    browser_e2e_test.go:178: browser E2E is opt-in: DW_BROWSER_E2E=1 NODE_PATH=<playwright>
+    --- SKIP: TestBrowserCodexIPLoopbackConsentChains/consent-page (0.00s)
+```
+
+```text
+=== RUN   TestChangeEvidenceConsoleBrowser
+    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration
+--- SKIP: TestChangeEvidenceConsoleBrowser (0.00s)
+```
+
+```text
+=== RUN   TestMuxProductHTTP1EightSeats
+    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration
+--- SKIP: TestMuxProductHTTP1EightSeats (0.00s)
+```
+
+```text
+=== RUN   TestConsolePlatformPayloadDump
+    console_platform_agentgroups_test.go:133: 仅在浏览器闸取真载荷时运行(设 DW_CONSOLE_PLATFORM_PAYLOAD_OUT)
+--- SKIP: TestConsolePlatformPayloadDump (0.00s)
+```
+
+```text
+=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel
+    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically
+--- SKIP: TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel (0.00s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude
+    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.14s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex
+    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.15s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit
+    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit (0.15s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected
+    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.15s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm
+    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.15s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected
+    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.15s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm
+    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm (0.15s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread
+    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.16s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist
+    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.15s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread
+    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.14s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist
+    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist (0.15s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/claude
+    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.15s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLICancelAtomicBoundary/codex
+    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/codex (0.15s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude
+    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.25s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex
+    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+    --- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex (0.26s)
+```
+
+```text
+=== RUN   TestDeliveryACKActualCLILateWireTerminal
+    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance
+--- SKIP: TestDeliveryACKActualCLILateWireTerminal (0.16s)
+```
+
+```text
+=== RUN   TestFailureNoticeDriverTurnEndToEnd
+    failure_notice_driver_e2e_test.go:24: set DW_FAILURE_NOTICE_PYTHON to locked helper runtime
+--- SKIP: TestFailureNoticeDriverTurnEndToEnd (0.00s)
+```
+
+```text
+=== RUN   TestGroupReplyMCP
+    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON
+--- SKIP: TestGroupReplyMCP (0.00s)
+```
+
+```text
+=== RUN   TestHelperSelfUpdateEndToEnd/install_restart_confirm
+    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python
+    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)
+```
+
+```text
+=== RUN   TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory
+    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python
+    --- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)
+```
+
+```text
+=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason
+    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python
+    --- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)
+```
+
+```text
+=== RUN   TestHelper0232MixedVersionEndToEnd
+    helper_update_e2e_test.go:55: explicit immutable release pins required
+--- SKIP: TestHelper0232MixedVersionEndToEnd (0.00s)
+```
+
+```text
+=== RUN   TestEnvelopeReadTimeoutEnvironmentChild
+    hub_timeout_contract_test.go:50: subprocess probe only
+--- SKIP: TestEnvelopeReadTimeoutEnvironmentChild (0.00s)
+```
+
+```text
+=== RUN   TestSessionHistoryTwentyAgentPublishP99
+    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate
+--- SKIP: TestSessionHistoryTwentyAgentPublishP99 (0.00s)
+```
+
+```text
+=== RUN   TestSpecMCPEndToEnd
+    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses
+--- SKIP: TestSpecMCPEndToEnd (0.00s)
+```

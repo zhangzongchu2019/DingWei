@@ -1,0 +1,16 @@
+{
+  "cwd": "/data/ai-dev-data/mcp-auth-first",
+  "source": "299b5d75ab8a5528524f2965fd17982da92fd5b6",
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "./internal/extseat",
+    "./internal/m8",
+    "-count=3",
+    "-p=1",
+    "-timeout=60m",
+    "-v"
+  ],
+  "env_file": "env-source.json"
+}

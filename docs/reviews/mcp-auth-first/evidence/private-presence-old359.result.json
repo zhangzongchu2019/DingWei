@@ -1,0 +1,15 @@
+{
+  "source": "3599488745838d91c7056f3379bc0e0b0490e957",
+  "utc": "2026-11-19T04:48:14.351994+00:00",
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "-run",
+    "^TestMCPPrivateHintPresenceGuard$",
+    "-count=1",
+    "-v"
+  ],
+  "rc": 1,
+  "sha256": "efdb97a9b87411b5bb3c3dc950a886681e270b089d6a0b71d441edd72bd6fd1f"
+}

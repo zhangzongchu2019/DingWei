@@ -65,8 +65,8 @@ button{margin-top:1.5rem;padding:.65rem 1.2rem}.hint{color:#52606d}.error{color:
 <input id="short_name" name="short_name" type="text" required minlength="1" maxlength="8" pattern="[a-z0-9]{1,8}" value="{{.ShortName}}" aria-describedby="short_hint">
 <small id="short_hint" class="hint">填写本次接入的 Codex 自己的名字（1～8 位小写字母或数字）；系统会自动追加 _AG 编号。</small>
 <label for="target_agent">目标 Agent 全名</label>
-<input id="target_agent" name="target_agent" type="text" required maxlength="50" placeholder="opus50tc2k.zzc" value="{{.TargetAgent}}" aria-describedby="target_hint">
-<small id="target_hint" class="hint">填写要协作且系统中已存在的另一个 Agent 全名，例如 opus50tc2k.zzc。接入后只能与该目标 Agent 收发消息。</small>
+<input id="target_agent" name="target_agent" type="text" required maxlength="50" value="{{.TargetAgent}}" aria-describedby="target_hint">
+<small id="target_hint" class="hint">填写你要协作的 Agent 全名（向你的组长或管理员索取），系统中必须已存在</small>
 <button type="submit">前往飞书扫码</button>
 {{end}}
 </form>

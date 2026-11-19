@@ -102,7 +102,7 @@ func New(cfg Config) (*Gateway, error) {
 
 // Register 只登记新路径，不替换 helper 或 Console 的现有处理器。
 func (g *Gateway) Register(mux *http.ServeMux) {
-	mux.HandleFunc("/mcp", g.guard(g.mcp))
+	mux.HandleFunc("/mcp", g.mcp)
 	mux.HandleFunc(codexClientPath, g.guard(g.codexClientMetadata))
 	mux.HandleFunc("/api/external/", g.guard(g.rest))
 	mux.HandleFunc("/.well-known/oauth-protected-resource/mcp", g.guard(g.resourceMetadata))
@@ -274,6 +274,26 @@ func nameHeader(s string) string {
 	return s
 }
 func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Referrer-Policy", "same-origin")
+	// Authentication precedes all protocol/body/method validation. Do not read
+	// an unauthenticated body or expose a codec-specific error before OAuth.
+	seat, e := g.authenticate(r)
+	if e != nil {
+		st, we := mapped(e)
+		g.challenge(w, st)
+		rpcError(w, st, nil, we)
+		return
+	}
+	// The Origin guard still rejects authenticated cross-site requests before
+	// decoding or dispatch. Capture this seat only for this HTTP invocation.
+	g.guard(func(w http.ResponseWriter, r *http.Request) {
+		g.mcpAuthorized(w, r, seat)
+	})(w, r)
+}
+
+func (g *Gateway) mcpAuthorized(w http.ResponseWriter, r *http.Request, seat extseat.Seat) {
 	if !method(w, r, "POST") {
 		return
 	}
@@ -286,7 +306,7 @@ func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {
 		rpcError(w, 406, nil, wireError{Code: -32600, Message: "Accept must include JSON and SSE"})
 		return
 	}
-	if g.route2025(w, r) {
+	if g.route2025(w, r, seat) {
 		return
 	}
 	var q rpcRequest
@@ -321,13 +341,7 @@ func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	seat, e := g.authenticate(r)
-	if e != nil {
-		st, we := mapped(e)
-		g.challenge(w, st)
-		rpcError(w, st, q.ID, we)
-		return
-	}
+	var e error
 	var result any
 	switch q.Method {
 	case "server/discover":

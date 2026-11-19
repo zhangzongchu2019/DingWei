@@ -1,0 +1,16 @@
+{
+  "source": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+  "cwd": "/data/ai-dev-data/wt-r62-groups-baseline206",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "^TestSessionNameReconnectKeepsNameAndReleaseReuses$",
+    "-count=20",
+    "-p=1",
+    "-v"
+  ],
+  "env_file": "env-z3-baseline.json",
+  "note": "known-site contextual comparison only; not a substitute for the candidate full-package gate or frequency inference"
+}

@@ -1,0 +1,10 @@
+{
+  "source": "3599488745838d91c7056f3379bc0e0b0490e957",
+  "utc": "2026-11-19T04:50:07.963263+00:00",
+  "owned_roots": [
+    2717455,
+    2717834
+  ],
+  "terminated_count": 25,
+  "reason": "complete private-hint presence matrix (empty/duplicate method, name-only, reserved meta-only); independent counterexample red on359; stop incomplete source gates before final predicate edit, retain all raw records"
+}

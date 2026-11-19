@@ -454,7 +454,9 @@ func TestDiscoveryWithoutInitializeAndNoExtraCapabilities(t *testing.T) {
 		t.Fatal("initialize supported")
 	}
 	for _, m := range []string{"GET", "DELETE"} {
-		if w := serve(mux, httptest.NewRequest(m, testOrigin+"/mcp", nil)); w.Code != 405 {
+		r := httptest.NewRequest(m, testOrigin+"/mcp", nil)
+		r.Header.Set("Authorization", "Bearer local-token")
+		if w := serve(mux, r); w.Code != 405 {
 			t.Fatal("legacy stream/session accepted")
 		}
 	}
@@ -483,8 +485,8 @@ func TestRequestMetadataAndOriginGuards(t *testing.T) {
 			if w.Code != tc.status {
 				t.Fatalf("guard missing: status=%d body=%s", w.Code, w.Body)
 			}
-			if s.authCalls != 0 || s.calls != 0 {
-				t.Fatal("invalid request reached A")
+			if s.authCalls != 1 || s.calls != 0 {
+				t.Fatal("invalid request must authenticate exactly once without business dispatch")
 			}
 			if tc.code != 0 {
 				var d struct{ Error wireError }

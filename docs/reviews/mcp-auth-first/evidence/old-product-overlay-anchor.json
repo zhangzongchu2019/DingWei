@@ -1,0 +1,21 @@
+{
+  "base": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+  "test_source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+  "test_sha256": "a4ba005e2d65008f5e9367f6bbd25bf0eb1fe733ca4acf8f0b7095c4a6d8d894",
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "-run",
+    "^(TestMCPAuthFirstThreeVersionsAndMissingHeaders|TestMCPInitializeNegotiatesSupportedVersionAndUsesItForTools)$",
+    "-count=1",
+    "-v"
+  ],
+  "start_utc": "2026-11-19T05:01:57.645533+00:00",
+  "end_utc": "2026-11-19T05:01:58.985538+00:00",
+  "rc": 1,
+  "log_sha256": "d740af0ae9566f5b7263f59332bb2b3c7d0c2c8bf34e332eab698b60744c6e35",
+  "compile_ok": true,
+  "business_red": true,
+  "porcelain": ""
+}
