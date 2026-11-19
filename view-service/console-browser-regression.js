@@ -35,7 +35,6 @@ function consoleHTMLFromProductionSource() {
   if (MUTATION === 'stale-groups') html = html.replace('if(generation!==groupRequestGeneration)return null;', '');
   if (MUTATION === 'expose-group-code') html = html.replace("box.append(copy);", "box.append(copy);var leaked=document.createElement('code');leaked.className='group-code';leaked.textContent=group.code;box.append(leaked);");
   if (MUTATION === 'manual-agent-fields') html = html.replace("option.textContent=agent.session_name;option.dataset.keyId=agent.key_id||'';select.append(option)", "option.textContent=agent.id;option.dataset.keyId=agent.key_id||'';select.append(option)");
-  if (MUTATION === 'legacy-specs-entry') html = html.replace("if(item.id==='specs') a.onclick=function(ev){ev.preventDefault();openSpecsWorkspace();};", "");
   if (MUTATION === 'silent-group-load') html = html.replace("groupStatus(message);if(source==='retry')groupFeedback('groupRetryFeedback',message);", "groupStatus('');if(source==='retry')groupFeedback('groupRetryFeedback','');");
   if (MUTATION === 'silent-platform-load') html = html.replace("status.textContent='工作台加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);", "status.textContent='';");
   if (MUTATION === 'silent-agent-load') html = html.replace("status.textContent='Agent 列表加载失败: '+String(err&&err.name==='AbortError'?'请求超时':err&&err.message||err);", "status.textContent='';");
@@ -99,7 +98,10 @@ function consoleHTMLFromProductionSource() {
   html = html.split('{{CONSOLE_VERSION_TEXT}}').join(HARNESS_VERSION + ' · ' + HARNESS_COMMIT.slice(0, 7))
     .split('{{CONSOLE_VERSION}}').join(HARNESS_VERSION)
     .split('{{CONSOLE_COMMIT}}').join(HARNESS_COMMIT);
-  if (MUTATION && !['group-no-precheck','group-no-normalize','group-json-message-ignored','hardcoded-version','stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','legacy-specs-entry','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','restore-inert-agents-entry','unhandled-group-action','legacy-group-deadlock','clear-agents-on-failure','agents-ignore-request-order','agents-stale-ignore-order','agents-stale-no-dot','agents-stale-first-failure','agents-stale-on-auth','silent-group-action-feedback'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
+  // S-R62-CONSOLE-SLIM：legacy-specs-entry 随 Specs 菜单入口摘除而退场；
+  // restore-slimmed-entries 在夹具层模拟「后端把被摘项发回来」，专打菜单恰两项／不在菜单格。
+  // 保留 r61 的 silent-group-action-feedback 变异，覆盖组操作反馈无声回归。
+  if (MUTATION && !['group-no-precheck','group-no-normalize','group-json-message-ignored','hardcoded-version','stale-groups','expose-group-code','manual-agent-fields','legacy-group-entry','restore-slimmed-entries','silent-group-load','silent-platform-load','silent-agent-load','silent-offline-tab','disable-platform-tabs-on-agent-refresh','keep-created-group-name','reset-group-leader-selection','full-code-join-agent-names','filter-offline-group-candidates','preserve-stale-load-data','show-retry-after-success','show-retry-on-empty','restore-inert-agents-entry','unhandled-group-action','legacy-group-deadlock','clear-agents-on-failure','agents-ignore-request-order','agents-stale-ignore-order','agents-stale-no-dot','agents-stale-first-failure','agents-stale-on-auth','silent-group-action-feedback'].includes(MUTATION)) throw new Error(`unknown mutation: ${MUTATION}`);
   return html;
 }
 
@@ -169,9 +171,14 @@ async function main() {
         actions: management ? ['read', 'submit', 'add', 'edit', 'delete', 'approve'] : ['read', 'submit'],
         items: [
           ...(MUTATION === 'restore-inert-agents-entry' ? [{ id: 'agents', kind: 'agents', title: 'Agents', href: '#agents', status: 'approved' }] : []),
-          { id: 'specs', kind: 'spec', title: 'Specs', href: MUTATION === 'legacy-specs-entry' ? '/console/specs' : '#specs', ...(MUTATION === 'legacy-specs-entry' ? {target:'_blank'} : {}), status: 'approved' },
-          { id: 'task-board', kind: 'task-board', title: '任务管理', href: '#task-board', status: 'approved' },
-          ...(management ? [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 编组', href: MUTATION === 'legacy-group-entry' ? '/admin/agent-groups' : '#agent-groups', ...(MUTATION === 'legacy-group-entry' ? {target:'_blank'} : {}), status: 'approved' }] : []),
+          // S-R62-CONSOLE-SLIM：与产品新形状同形——人人 agent-groups，管理角色另加 platform-admin。
+          ...(MUTATION === 'restore-slimmed-entries' ? [
+            { id: 'specs', kind: 'spec', title: 'Specs', href: '#specs', status: 'approved' },
+            { id: 'task-board', kind: 'task-board', title: '任务管理', href: '#task-board', status: 'approved' },
+            { id: 'pilot-questions', kind: 'questions', title: '研发问题待答', href: '/console/questions', status: 'approved' },
+          ] : []),
+          { id: 'agent-groups', kind: 'agent-groups', title: 'Agent 管理', href: MUTATION === 'legacy-group-entry' ? '/admin/agent-groups' : '#agent-groups', ...(MUTATION === 'legacy-group-entry' ? {target:'_blank'} : {}), status: 'approved' },
+          ...(management ? [{ id: 'platform-admin', kind: 'platform-admin', title: '平台管理', href: '#platform-admin', status: 'approved' }] : []),
         ],
       }));
       return;
@@ -182,6 +189,7 @@ async function main() {
       res.end(JSON.stringify({ requests: [] })); return;
     }
     if (req.url === '/api/console/hosted/options') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ nodes: [], combos: [], accounts: [], plans: [], quota: { remaining: {} } })); return; } // G3 托管区的挂载请求;本件不测它,只让桩认得路由
+    if (req.url === '/api/console/platform/users' && req.method === 'GET') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ users: [] })); return; } // S-R62-CONSOLE-SLIM：平台管理内部 tab 的用户列表挂载请求
     if (req.url === '/api/console/enroll/applications') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ applications: [] })); return; } // G3 新增面板的挂载请求;本件不测它,只让桩认得这条路由
     if (req.url === '/api/console/agent-groups') {
       if (req.method === 'POST') {
@@ -331,18 +339,19 @@ async function main() {
       await timerPage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
       await timerPage.locator('#platform-items a[data-item-id="agent-groups"]').click();
       await timerPage.locator('.group-workspace').waitFor({state:'visible'});
-      await timerPage.locator('#platform-items a[data-item-id="specs"]').click();
-      const specsPane = timerPage.locator('#panes iframe[title="Specs workspace"]');
-      await specsPane.waitFor({state:'visible'});
+      // S-R62-CONSOLE-SLIM：Specs 菜单入口已摘；第二平台面板改用保留的「平台管理」内部 tab。
+      await timerPage.locator('#platform-items a[data-item-id="platform-admin"]').click();
+      const adminPane = timerPage.locator('#panes .group-workspace:has(#adminInvite)');
+      await adminPane.waitFor({state:'visible'});
       await timerPage.locator('#tabs .tab[title="Agent 管理"]').click();
 
       const agentGETsBeforeTimer = agentGETs;
       await waitPastAgentRefreshCycle(timerPage);
       assert.ok(agentGETs > agentGETsBeforeTimer, 'the test must observe at least one real 15-second Agent refresh');
 
-      const groupPane = timerPage.locator('#panes .group-workspace');
+      const groupPane = timerPage.locator('#panes .group-workspace:has(#groupAddOpen)');
       assert.notStrictEqual(await groupPane.evaluate((node) => node.style.pointerEvents), 'none', 'Agent timer must not disable the group platform pane');
-      assert.notStrictEqual(await specsPane.evaluate((node) => node.style.pointerEvents), 'none', 'Agent timer must not disable the Specs platform pane');
+      assert.notStrictEqual(await adminPane.evaluate((node) => node.style.pointerEvents), 'none', 'Agent timer must not disable the platform-admin pane');
       await timerPage.locator('#groupAddOpen').click();
       const code = timerPage.locator('#groupShortName');
       await code.scrollIntoViewIfNeeded();
@@ -352,10 +361,11 @@ async function main() {
       await code.click();
       await timerPage.keyboard.type('team1');
       assert.strictEqual(await code.inputValue(), 'team1');
-      await timerPage.locator('#tabs .tab[title="Specs"]').click();
-      const specsProbe = timerPage.frameLocator('iframe[title="Specs workspace"]').locator('#specsProbe');
-      await specsProbe.click();
-      assert.strictEqual(await specsProbe.textContent(), 'clicked');
+      await timerPage.locator('#tabs .tab[title="平台管理"]').click();
+      const inviteName = timerPage.locator('#inviteName');
+      await inviteName.click();
+      await timerPage.keyboard.type('probe-user');
+      assert.strictEqual(await inviteName.inputValue(), 'probe-user');
       await timerPage.close();
     });
 
@@ -544,7 +554,12 @@ async function main() {
     await test('renders no platform entry without an observable action', async () => {
       const agentsItem = page.locator('#platform-items a[data-item-id="agents"]');
       assert.strictEqual(await agentsItem.count(), 0, 'the inert Agents platform entry must not be rendered');
-      assert.strictEqual(await page.locator('#platform-items a:not([data-item-id="specs"]):not([data-item-id="task-board"]):not([data-item-id="agent-groups"])').count(), 0);
+      // S-R62-CONSOLE-SLIM：普通角色菜单恰为一项 agent-groups；被摘项不得出现在菜单中。
+      assert.strictEqual(await page.locator('#platform-items a').count(), 1, 'owner menu must be exactly one entry');
+      assert.strictEqual(await page.locator('#platform-items a[data-item-id="agent-groups"]').count(), 1);
+      for (const gone of ['specs', 'task-board', 'pilot-questions', 'coordinate-reviews', 'openspec-confirmations', 'platform-admin']) {
+        assert.strictEqual(await page.locator(`#platform-items a[data-item-id="${gone}"]`).count(), 0, `slimmed entry ${gone} must not be in the owner menu`);
+      }
       assert.strictEqual(await page.locator('#platform-actions button').count(), 0);
       assert.strictEqual(await page.locator('#retryPlatform').isHidden(), true);
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'owner');
@@ -555,6 +570,18 @@ async function main() {
       await page.evaluate(() => refreshPlatform());
       assert.strictEqual(await page.locator('#platform-actions button').count(), 0);
       assert.strictEqual(await page.locator('html').getAttribute('data-platform-role'), 'management');
+    });
+
+    // S-R62-CONSOLE-SLIM：管理角色菜单恰为两项（Agent 管理＋平台管理）。
+    // 删保护：--mutate=restore-slimmed-entries（夹具把被摘项发回来）⇒ 本格红。
+    await test('slim menu is exactly two entries for management', async () => {
+      await page.evaluate(() => refreshPlatform());
+      assert.strictEqual(await page.locator('#platform-items a').count(), 2, 'management menu must be exactly two entries');
+      assert.strictEqual(await page.locator('#platform-items a[data-item-id="agent-groups"]').count(), 1);
+      assert.strictEqual(await page.locator('#platform-items a[data-item-id="platform-admin"]').count(), 1);
+      for (const gone of ['specs', 'task-board', 'pilot-questions', 'coordinate-reviews', 'openspec-confirmations']) {
+        assert.strictEqual(await page.locator(`#platform-items a[data-item-id="${gone}"]`).count(), 0, `slimmed entry ${gone} must not be in the management menu`);
+      }
     });
 
     await test('lets a human start from zero groups without a hidden-control deadlock', async () => {
@@ -858,15 +885,22 @@ async function main() {
       assert.strictEqual(await reason.isHidden(), true);
     });
 
-    await test('opens Specs inside console without destroying live Agent panes', async () => {
+    // S-R62-CONSOLE-SLIM：Specs 入口已摘；本格改守保留的「平台管理」内部 tab——
+    // 打开它不得带走右栏活着的 Agent iframe（与当年 Specs 格同一条判据）。
+    await test('opens 平台管理 inside console without destroying live Agent panes', async () => {
+      await page.context().addCookies([{ name: 'fixture-role', value: 'management', url: `http://127.0.0.1:${port}` }]);
+      await page.evaluate(() => refreshPlatform());
       const paneCount = await page.locator('#panes iframe').count();
-      const paneSrc = await page.locator('#panes iframe').first().getAttribute('src');
-      await page.locator('#platform-items a[data-item-id="specs"]').click();
-      const specsPane = page.locator('#panes iframe[title="Specs workspace"]');
-      await specsPane.waitFor({state:'visible'});
-      assert.strictEqual(new URL(await specsPane.getAttribute('src'), page.url()).pathname, '/console/specs');
-      assert.strictEqual(await page.locator('#panes iframe').count(), paneCount+1);
-      assert.strictEqual(await page.locator('#panes iframe').first().getAttribute('src'), paneSrc);
+      const paneSrc = paneCount ? await page.locator('#panes iframe').first().getAttribute('src') : null;
+      const childrenBefore = await page.locator('#panes > *').count();
+      await page.locator('#platform-items a[data-item-id="platform-admin"]').click();
+      const adminPane = page.locator('#panes .group-workspace:has(#adminInvite)');
+      await adminPane.waitFor({state:'visible'});
+      assert.strictEqual(await page.locator('#panes iframe').count(), paneCount, 'platform-admin is an internal section; live Agent iframes must survive');
+      if (paneSrc !== null) {
+        assert.strictEqual(await page.locator('#panes iframe').first().getAttribute('src'), paneSrc);
+      }
+      assert.strictEqual(await page.locator('#panes > *').count(), childrenBefore+1);
     });
 
     // 业主 2026-09-24 批「版本号显示 ---- 可以」。

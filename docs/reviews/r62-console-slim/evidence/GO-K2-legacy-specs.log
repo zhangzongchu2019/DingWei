@@ -1,0 +1,24 @@
+=== RUN   TestLegacyConsoleMenuSlimRemovedEntriesAbsent
+2026/11/18 07:35:58 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:35:58 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    console_menu_slim_test.go:93: manager 菜单不得再下发被摘项 "specs": specs,agent-groups,platform-admin,admin
+2026/11/18 07:35:58 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:35:58 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    console_menu_slim_test.go:93: owner 菜单不得再下发被摘项 "specs": specs,agent-groups
+--- FAIL: TestLegacyConsoleMenuSlimRemovedEntriesAbsent (1.17s)
+=== RUN   TestConsolePlatformAgentGroupsEntryIsInternalTabForBothRoles
+2026/11/18 07:35:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:35:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+2026/11/18 07:35:59 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:35:59 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    console_platform_agentgroups_test.go:99: owner 的平台项应恰为 agent-groups 一项,实为 [{ID:specs Kind:spec Title:Specs Href:#specs Target: Status:approved SubmittedBy: Active:true CreatedAt:0001-01-01 00:00:00 +0000 UTC UpdatedAt:0001-01-01 00:00:00 +0000 UTC} {ID:agent-groups Kind:agent-groups Title:Agent 管理 Href:#agent-groups Target: Status:approved SubmittedBy: Active:true CreatedAt:0001-01-01 00:00:00 +0000 UTC UpdatedAt:0001-01-01 00:00:00 +0000 UTC}]
+--- FAIL: TestConsolePlatformAgentGroupsEntryIsInternalTabForBothRoles (0.77s)
+=== RUN   TestConsolePlatformHandlersExposeOnlyActionableBuiltinsAndEnforceWorkflow
+2026/11/18 07:36:00 amr startup mode=route_all structured_failure_min_version=0.1.3.0
+2026/11/18 07:36:00 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s
+    console_platform_test.go:124: owner platform={Role:owner Actions:[read submit] Items:[{ID:specs Kind:spec Title:Specs Href:#specs Target: Status:approved SubmittedBy: Active:true CreatedAt:0001-01-01 00:00:00 +0000 UTC UpdatedAt:0001-01-01 00:00:00 +0000 UTC} {ID:agent-groups Kind:agent-groups Title:Agent 管理 Href:#agent-groups Target: Status:approved SubmittedBy: Active:true CreatedAt:0001-01-01 00:00:00 +0000 UTC UpdatedAt:0001-01-01 00:00:00 +0000 UTC}]}
+--- FAIL: TestConsolePlatformHandlersExposeOnlyActionableBuiltinsAndEnforceWorkflow (0.47s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/m8	2.512s
+FAIL
+K2 rc=1

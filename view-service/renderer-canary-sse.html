@@ -245,6 +245,11 @@
     @media (max-width: 768px) {
       .taskboard-panel { width: 100%; top: auto; height: 60%; border-left: none; border-top: 1px solid var(--line, #444); }
       .taskboard-handle { top: auto; bottom: 40%; writing-mode: horizontal-tb; border-radius: 8px 8px 0 0; border: 1px solid var(--line, #444); border-bottom: none; }
+      /* S-R62-MOBILE：会话阅读页窄屏点击目标≥40px（业主：手机上难操作）。
+         只抬最小高/宽，不改配色与结构；PC（>768）零变化。min-height 压过
+         .statusbar .unlock-btn 的 height:24px 是 CSS 本意（最小高优先）。 */
+      .text-btn, .unlock-btn, #themeBtn, #clockStatus, #interruptBtn { min-height: 40px; }
+      #themeBtn, #interruptBtn, .unlock-btn { min-width: 40px; }
     }
 
     .unlock-btn {

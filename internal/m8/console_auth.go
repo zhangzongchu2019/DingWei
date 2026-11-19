@@ -341,7 +341,7 @@ func htmlAttrEscape(v string) string {
 //
 //	而浏览器对同一源的 **HTTP/1.1 并发连接上限是 6**(HTTP/2 多路复用后才不适用)。
 //	⇒ **无上限时,第 7 个 tab 会直接卡住,且表现为「页面一直转圈」而非报错** —— 又一种没有声音的失败。
-const consolePageHTML = `<!doctype html><meta charset=utf-8><title>DingWei Agent Console</title>
+const consolePageHTML = `<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>DingWei Agent Console</title>
 <style>
 :root{--row-alt:#e9eef5}body{margin:0;display:grid;grid-template-columns:240px 1fr;height:100vh;font:14px sans-serif}
 [hidden]{display:none!important}
@@ -403,10 +403,46 @@ html[data-theme="dark"] details,html[data-theme="dark"] summary{color:#a8b0bb}
 html[data-theme="dark"] .group-block-list{background:#1b2530}html[data-theme="dark"] .group-block-detail{background:#252033}html[data-theme="dark"] .group-block-add{background:#182a22}
 /* 🔴 nav button 那条是 display:block;width:100% ⇒ 不覆盖的话 ◐ 会变成一整条横杠 */
 #themeBtn{display:inline-block;width:auto;margin:0;padding:2px 8px;flex:0 0 auto;font-size:13px;line-height:1.5}
+/* S-R62-MOBILE（业主：PC 版到手机上难操作难阅读）：窄屏（≤768px）菜单改可折叠抽屉、
+   标签页横向可滚、正文不横向溢出、点击目标≥40px。全部窄屏规则都在媒体查询内；
+   新增的抽屉按钮与遮罩在 PC 上 display:none ⇒ PC 视口外观零变化（浅色声明一条未动）。 */
+#navToggle{display:none}
+#navMask{display:none}
+@media(max-width:768px){
+body{grid-template-columns:1fr}
+nav{position:fixed;left:0;top:0;bottom:0;width:min(300px,85vw);z-index:40;background:#fff;
+  transform:translateX(-105%);transition:transform .2s ease;box-shadow:2px 0 12px rgba(0,0,0,.18)}
+nav.open{transform:none}
+html[data-theme="dark"] nav{background:#111316}
+#navMask{display:block;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.35)}
+#navToggle{display:inline-flex;align-items:center;gap:6px;min-height:40px;min-width:40px;padding:6px 12px;margin:6px;font-size:15px}
+#tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+#tabs .tab{flex:0 0 auto;min-height:40px;max-width:60vw}
+#tabs .tab .x{display:inline-flex;align-items:center;justify-content:center;min-width:40px;min-height:40px;margin:-10px -8px -10px 0}
+nav button{min-height:40px}
+#platform-items a{min-height:40px;display:flex;align-items:center}
+#themeBtn,#agentNavMode{min-height:40px;min-width:40px}
+.group-workspace input,.group-workspace select{min-width:0;max-width:100%}
+.group-workspace{padding:12px}
+.group-workspace button{min-height:40px}
+}
 </style>
+<div id=navMask hidden></div>
 <nav><section id=platform><div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:4px 0 8px">Work platform</h3><span><button id=bindFeishuBtn type=button>绑定飞书</button><span id=feishuBoundNote hidden style="font-size:12px;color:#666">飞书已绑定</span></span></div><section id=bindFeishuForm hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><label>为确认是你本人，请输入当前口令 <input id=bindFeishuPw type=password autocomplete=current-password></label> <button id=bindFeishuGo type=button>获取绑定码</button></section><section id=bindFeishuBox hidden style="border:1px solid #ccd;border-radius:6px;padding:6px 8px;margin:6px 0"><div>在飞书里向机器人发送：<code id=bindFeishuCmd></code> <button id=bindFeishuCopy type=button>复制</button><span id=bindFeishuCopyFb class=group-feedback></span></div><div id=bindFeishuExpiry style="font-size:12px;color:#666"></div><button id=bindFeishuDone type=button>完成,关闭</button></section><div id=bindFeishuStatus class=group-feedback role=status></div><div id=platform-status role=status></div><button id=retryPlatform type=button hidden>重试</button><div id=platform-items></div><div id=platform-actions></div></section><div id=agents-row style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px"><h3 id=agents style="margin:0">Agents</h3><span><button id=agentNavMode type=button title="切换编组树/纯 Agent 列表">列表</button><button id=themeBtn type=button title="切换黑夜/白天（整个控制台）" aria-label="切换黑夜或白天主题">◐</button></span></div><div id=agents-status role=status></div><button id=retryAgents type=button hidden>重试</button><div id=agents-stale role=status hidden></div><div id=a></div><section id=tempGroups data-enabled="{{FEATURE_TEMP_GROUPS}}" hidden><h3>与我相关的临时编组</h3><div id=tempGroupsList></div></section><div id=navFoot><button id=logoutBtn type=button>退出</button></div></nav>
-<main><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
+<main><button id=navToggle type=button aria-label="打开菜单" aria-expanded=false>☰ 菜单</button><div id=tabs></div><div id=panes><div id=hint>左栏选一个 Agent</div></div></main>
 <div id=app-version data-version="{{CONSOLE_VERSION}}" data-commit="{{CONSOLE_COMMIT}}">{{CONSOLE_VERSION_TEXT}}</div>
+<script>
+// S-R62-MOBILE：窄屏抽屉开合（按钮开、遮罩／ESC／选中菜单项关）。PC 上按钮隐藏，此段惰性。
+(function(){
+  var navEl=document.querySelector('nav'),toggle=document.getElementById('navToggle'),mask=document.getElementById('navMask');
+  if(!navEl||!toggle||!mask)return;
+  function setNav(open){navEl.classList.toggle('open',open);mask.hidden=!open;toggle.setAttribute('aria-expanded',open?'true':'false');toggle.setAttribute('aria-label',open?'关闭菜单':'打开菜单');}
+  toggle.onclick=function(){setNav(!navEl.classList.contains('open'));};
+  mask.onclick=function(){setNav(false);};
+  document.addEventListener('keydown',function(ev){if(ev.key==='Escape')setNav(false);});
+  navEl.addEventListener('click',function(ev){var t=ev.target;if(t&&t.closest&&(t.closest('#platform-items a')||t.closest('#a button')||t.closest('.agent-tree-agent')))setNav(false);});
+})();
+</script>
 <script>
 // 会话守卫(新平台 N3,第一期):接口回 401 {error:unauthenticated} ⇒ 回登录页;回 403 {error:must_change_password} ⇒ 登录页的改密表单。
 // 旧平台的接口回的是纯文本、不是这种 JSON,所以对旧平台不起作用。window 不存在(测试把脚本抠出来在无 window 环境里求值)时跳过。
@@ -526,8 +562,6 @@ function renderPlatform(platform){
     if(item.target) a.target=item.target;
     if(item.id==='agent-groups') a.onclick=function(ev){ev.preventDefault();openGroupWorkspace();};
     if(item.id==='platform-admin') a.onclick=function(ev){ev.preventDefault();openPlatformAdminWorkspace();};
-    if(item.id==='specs') a.onclick=function(ev){ev.preventDefault();openSpecsWorkspace();};
-    if(item.id==='task-board') a.onclick=function(ev){ev.preventDefault();openTaskBoardWorkspace();};
     if(item.status==='pending') a.dataset.status='pending';
     items.append(a);
   });

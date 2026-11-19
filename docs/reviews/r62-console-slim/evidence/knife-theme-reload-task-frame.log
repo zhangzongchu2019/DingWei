@@ -1,0 +1,15 @@
+AssertionError [ERR_ASSERTION]: iframe src changed: /console/tasks?embedded=1&board_instance=5ea1bcf546e5b036f9e74f13db651fba -> http://127.0.0.1:41729/console/tasks?embedded=1&board_instance=5ea1bcf546e5b036f9e74f13db651fba#theme
++ actual - expected
+
++ 'http://127.0.0.1:41729/console/tasks?embedded=1&board_instance=5ea1bcf546e5b036f9e74f13db651fba#theme'
+- '/console/tasks?embedded=1&board_instance=5ea1bcf546e5b036f9e74f13db651fba'
+
+    at /tmp/wt-r62-slim/view-service/console-specs-theme-regression.js:96:12 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 'http://127.0.0.1:41729/console/tasks?embedded=1&board_instance=5ea1bcf546e5b036f9e74f13db651fba#theme',
+  expected: '/console/tasks?embedded=1&board_instance=5ea1bcf546e5b036f9e74f13db651fba',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+rc=1

@@ -1,0 +1,25 @@
+node:internal/assert/utils:77
+    throw err;
+    ^
+
+AssertionError [ERR_ASSERTION]: drop_history_node_move: wrong assertion failed
+page.waitForFunction: Timeout 3000ms exceeded.
+    at main (/tmp/wt-r62-mobile/view-service/r15-session-history-browser-regression.js:96:16)
+
+    at Object.<anonymous> (/tmp/wt-r62-mobile/view-service/r15-session-history-mutations.js:49:12)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v22.23.1

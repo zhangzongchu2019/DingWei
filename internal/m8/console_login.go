@@ -227,7 +227,8 @@ func (h *Hub) HandleConsoleLoginPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Referrer-Policy", "no-referrer")
-	_, _ = fmt.Fprintf(w, `<!doctype html><meta charset=utf-8><title>DingWei Console Login</title><main><h1>登录 Agent Console</h1><p>请在飞书发送：</p><code>#console %s</code><p id=s>等待飞书确认…</p></main><script>const c=%q;const poll=async()=>{const r=await fetch('/console/login/status?code='+encodeURIComponent(c),{cache:'no-store'});if(r.status===200){location.replace('/console');return}if(r.status===202){setTimeout(poll,1000);return}document.querySelector('#s').textContent='登录码已过期，请刷新页面重试。'};poll()</script>`, html.EscapeString(code), code)
+	// S-R62-MOBILE：加 viewport meta；窄屏样式全部在媒体查询内 ⇒ PC 视口外观零变化。
+	_, _ = fmt.Fprintf(w, `<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>DingWei Console Login</title><style>@media(max-width:768px){body{font:16px/1.5 system-ui,sans-serif;margin:0;background:#f5f6f8;color:#222}main{max-width:420px;margin:6vh auto;padding:16px}h1{font-size:20px}code{display:inline-block;background:#f0f1f4;padding:6px 10px;border-radius:5px;font-size:16px;word-break:break-all;user-select:all}}</style><main><h1>登录 Agent Console</h1><p>请在飞书发送：</p><code>#console %s</code><p id=s>等待飞书确认…</p></main><script>const c=%q;const poll=async()=>{const r=await fetch('/console/login/status?code='+encodeURIComponent(c),{cache:'no-store'});if(r.status===200){location.replace('/console');return}if(r.status===202){setTimeout(poll,1000);return}document.querySelector('#s').textContent='登录码已过期，请刷新页面重试。'};poll()</script>`, html.EscapeString(code), code)
 }
 
 func (h *Hub) HandleConsoleLoginStatus(w http.ResponseWriter, r *http.Request) {

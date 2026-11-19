@@ -99,11 +99,12 @@ function read(req) { return new Promise((resolve) => { let body = ''; req.on('da
 function json(res, status, body) { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); }
 function err(res, status, code, extra) { json(res, status, { error: code, detail: 'SECRET-HUB-TEXT', ...extra }); }
 function platformItems(role) {
-  const base = [{ id: 'specs', kind: 'spec', title: 'Specs', href: '#specs', status: 'approved' }];
+  // S-R62-CONSOLE-SLIM＋S-R62-OLDPLAT-SLIM：菜单只留 Agent 管理＋平台管理
+  // （specs/task-board/旧版后台 admin 均已摘；载荷形状与后端 Go 格同口径）。
+  const base = [{ id: 'agent-groups', kind: 'agent-groups', title: 'Agent 管理', href: '#agent-groups', status: 'approved' }];
   if (role !== 'management') return base;
   return [...base,
-    { id: 'platform-admin', kind: 'platform-admin', title: '平台管理', href: '#platform-admin', status: 'approved' },
-    { id: 'admin', kind: 'admin', title: '旧版后台', href: '/console/admin', target: '_blank', status: 'approved' }];
+    { id: 'platform-admin', kind: 'platform-admin', title: '平台管理', href: '#platform-admin', status: 'approved' }];
 }
 const server = http.createServer(async (req, res) => {
   const p = req.url.split('?')[0];
@@ -157,7 +158,9 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     await test('an ordinary owner gets no 平台管理 entry', async () => {
       const owner = await context.newPage(); watch(owner); owner.setDefaultTimeout(2500);
       await owner.goto(`${base}/console`);
-      await owner.locator('#platform-items a[data-item-id="specs"]').waitFor({ state: 'visible' });
+      await owner.locator('#platform-items a[data-item-id="agent-groups"]').waitFor({ state: 'visible' });
+      assert.strictEqual(await owner.locator('#platform-items a[data-item-id="specs"]').count(), 0);
+      assert.strictEqual(await owner.locator('#platform-items a[data-item-id="task-board"]').count(), 0);
       assert.strictEqual(await owner.locator('#platform-items a[data-item-id="platform-admin"]').count(), 0);
       assert.strictEqual(await owner.locator('#platform-items a[data-item-id="admin"]').count(), 0);
       await owner.close();
@@ -168,14 +171,12 @@ async function test(name, fn) { try { await fn(); pass++; console.log(`PASS ${na
     const type = async (selector, value) => { await page.locator(selector).click(); await page.keyboard.press('ControlOrMeta+A'); await page.keyboard.type(value); };
     await page.goto(`${base}/console`);
 
-    await test('a management user sees the new tab entry, distinct from the old popup back office', async () => {
+    await test('a management user sees the new tab entry; the old popup back office entry is gone (S-R62-OLDPLAT-SLIM)', async () => {
       const entry = page.locator('#platform-items a[data-item-id="platform-admin"]');
       await entry.waitFor({ state: 'visible' });
       assert.strictEqual(await entry.textContent(), '平台管理');
       assert.strictEqual(await entry.getAttribute('target'), null, 'internal tab: no target (navigating away would drop the live panes)');
-      const old = page.locator('#platform-items a[data-item-id="admin"]');
-      assert.strictEqual(await old.textContent(), '旧版后台');
-      assert.strictEqual(await old.getAttribute('target'), '_blank');
+      assert.strictEqual(await page.locator('#platform-items a[data-item-id="admin"]').count(), 0, '旧版后台入口已摘（rulings ㊿-补133）：菜单不得再渲染 admin 项');
     });
 
     await test('clicking opens the 平台管理 tab; the capability menu lists only what exists (no fake entries)', async () => {

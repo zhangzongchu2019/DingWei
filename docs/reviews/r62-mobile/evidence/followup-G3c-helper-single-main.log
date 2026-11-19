@@ -1,0 +1,26 @@
+test_claude_stream_json_user_frame_boundary_counts_zero_one_two (test_guide_staging.GuideRealAdapterBoundaryTest.test_claude_stream_json_user_frame_boundary_counts_zero_one_two) ... [driver-adapter] started, driver=codex
+[agent_skill] staged; no model turn
+[driver-adapter][FAILED] id=dw-business-1 deliver raised: '_DeliveryStore' object has no attribute 'get_by_envelope'
+[driver-adapter][FAILED] id=dw-business-2 deliver raised: '_DeliveryStore' object has no attribute 'get_by_envelope'
+FAIL
+
+======================================================================
+FAIL: test_claude_stream_json_user_frame_boundary_counts_zero_one_two (test_guide_staging.GuideRealAdapterBoundaryTest.test_claude_stream_json_user_frame_boundary_counts_zero_one_two)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/wt-cli-survey/tools/sessionhelper/tests/test_guide_staging.py", line 654, in test_claude_stream_json_user_frame_boundary_counts_zero_one_two
+    self.assertEqual(second["message"]["content"][0]["text"], "SECOND")
+AssertionError: '[DingWei platform context; do not answer [165 chars]COND' != 'SECOND'
+- [DingWei platform context; do not answer or repeat this section. Use it only while handling the business request below.]
+- version=v1
+- GUIDE
+- 
+- [End DingWei platform context; business request follows.]
+- 
+  SECOND
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.386s
+
+FAILED (failures=1)

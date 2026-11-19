@@ -119,8 +119,8 @@ func TestConsolePlatformHandlersExposeOnlyActionableBuiltinsAndEnforceWorkflow(t
 	//    背景 runbooks/DEFECT-group-entry-is-management-only-20260929.md)。
 	//   🔵 **admin 仍不得下发给 owner**,那条判据由
 	//   console_platform_group_entry_owner_test.go 的子格 ② 专守,本处不重复钉。
-	if listed.Role != "owner" || len(listed.Items) != 3 || listed.Items[0].ID != "specs" ||
-		listed.Items[1].ID != "task-board" || listed.Items[2].ID != "agent-groups" {
+	// S-R62-CONSOLE-SLIM：owner 菜单恰为一项 agent-groups（specs/task-board 已摘）。
+	if listed.Role != "owner" || len(listed.Items) != 1 || listed.Items[0].ID != "agent-groups" {
 		t.Fatalf("owner platform=%+v", listed)
 	}
 
@@ -156,7 +156,13 @@ func TestConsolePlatformHandlersExposeOnlyActionableBuiltinsAndEnforceWorkflow(t
 
 	rr = callConsolePlatform(t, hub, "owner", consolePlatformActionRead, http.MethodGet,
 		"/api/console/platform", nil, hub.HandleConsolePlatform)
-	if rr.Code != http.StatusOK || !bytes.Contains(rr.Body.Bytes(), []byte(`"id":"custom-specs"`)) {
-		t.Fatalf("owner approved list code=%d body=%q", rr.Code, rr.Body.String())
+	// S-R62-OLDPLAT-SLIM 白名单口径（组长 2026-11-19T00:20:38Z 裁定）：已批准自定义项
+	// 不再随菜单下发；批准工作流本身不动（上面 204＋下面落库状态），菜单恒只 builtin。
+	if rr.Code != http.StatusOK || bytes.Contains(rr.Body.Bytes(), []byte(`"id":"custom-specs"`)) {
+		t.Fatalf("owner 菜单不得下发自定义项（白名单口径）code=%d body=%q", rr.Code, rr.Body.String())
+	}
+	approved, err := hub.Repo.(*store.SQLite).ConsolePlatformItem(context.Background(), "custom-specs")
+	if err != nil || approved == nil || approved.Status != "approved" {
+		t.Fatalf("批准工作流须照旧落库 approved: %+v err=%v", approved, err)
 	}
 }

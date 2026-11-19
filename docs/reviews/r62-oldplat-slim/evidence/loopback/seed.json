@@ -1,0 +1,1 @@
+{"principals":[{"id":"loopback-probe","provider":"feishu","provider_issuer":"app","provider_subject":"loopback-probe-openid","display_name":"loopback-probe","active":true}],"agents":[{"id":"ag-probe","key_id":"key-probe","session_name":"probe.zzc","owner_principal":"loopback-probe","active":true,"grants":[{"principal_id":"loopback-probe","permission":"interact"}]}]}

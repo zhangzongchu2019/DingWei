@@ -146,13 +146,10 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	}
 	// Agent 列表是 console 外壳本身,不是可点击的平台入口。保留 id=agents
 	// 的占用规则,但不把一个没有动作的假入口下发给客户端。
+	// S-R62-CONSOLE-SLIM（业主令 rulings ㊿-补129）：菜单只保留「Agent」与「平台管理」。
+	// Specs、任务管理、坐标派审、委员会版本确认不再下发（旧平台同形摘入口；
+	// 后端路由、表、数据、迁移一律不删不改；直连旧 URL 的行为保持现状）。
 	builtins := []model.ConsolePlatformItem{{
-		ID: "specs", Kind: "spec", Title: "Specs",
-		Href: "#specs", Status: "approved", Active: true,
-	}, {
-		ID: "task-board", Kind: "task-board", Title: "任务管理",
-		Href: "#task-board", Status: "approved", Active: true,
-	}, {
 		// Agent 编组入口:0.2.1.55 起由 console 自己接成内部 tab;
 		// S-GROUP-ENTRY(2026-09-29)起对**所有 principal** 下发,不再关在 role==management 里。
 		//
@@ -182,40 +179,30 @@ func (h *Hub) HandleConsolePlatform(w http.ResponseWriter, r *http.Request) {
 	if role == consolePlatformRoleManagement {
 		// 平台管理入口(Nova-260921-A / B1-b):admin 能力搬进 console。
 		//
-		// 🔴 与上面编组入口的区别是**授权域**:本项指向 `/console/admin` —— 由 console 角色授权的
-		// 新门(internal/admin/console_door.go),业主不需要在 console 里再登一次
-		// (业主原话「admin 接纳 console 的鉴权方式」)。
-		// 🔴 它**留在本块内不动**:role==management 同时是 RequireConsoleManagement 那道门的判据,
-		// 而 /console/admin 里有**明文凭证页** ⇒ 跟着 agent-groups 一起移出去,等于把凭证页开给
-		// 每个默认角色的业主。S-GROUP-ENTRY 只改编组那一项的可见面。
-		// 🔵 UI 可见性不是授权判据:`/console/admin/*` 自己还有 RequireConsoleManagement 那道门,
-		// "只对 management 发这一项"只是为了不让普通业主看到一个点了就 403 的入口。
-		// 🔴 形态仍是 `_blank`(独立文档):顶层导航会带走右栏那一堆活 iframe 与它们的 SSE ——
-		// 与编组入口当初被改成内部 tab 的同一条实测理由。
+		// 🔴 与上面编组入口的区别是**授权域**:role==management 同时是 RequireConsoleManagement
+		// 那道门的判据,而平台管理工作台里有**明文凭证页**(托管节点登记) ⇒ 不得跟着 agent-groups
+		// 一起发给每个默认角色的业主。S-GROUP-ENTRY 只改编组那一项的可见面。
+		// 🔵 UI 可见性不是授权判据:`/console/admin/*` 接口自己还有 RequireConsoleManagement 那道门。
+		// S-R62-OLDPLAT-SLIM(业主令 rulings ㊿-补133):旧独立文档后台入口(id=admin,
+		// `/console/admin`)已从菜单摘除;后端路由、授权与数据不动,直连旧 URL 行为保持现状。
 		builtins = append(builtins, model.ConsolePlatformItem{
-			// 新:console 内部「平台管理」页签(组长令 2026-10-01;第一期先承载 N3「新用户注册邀请」)。
+			// console 内部「平台管理」页签(组长令 2026-10-01;第一期先承载 N3「新用户注册邀请」)。
 			// 仍只发给 management —— 可见面不是授权面,接口自己按用户类型再判一次(G3 设计件 3.3)。
 			ID: "platform-admin", Kind: "platform-admin", Title: "平台管理",
 			Href: "#platform-admin", Status: "approved", Active: true,
-		}, model.ConsolePlatformItem{
-			// 旧:独立文档的后台,保持原样(id/target 不动,既有测试钉着);改名只为与上面新页签区分。
-			ID: "admin", Kind: "admin", Title: "旧版后台",
-			Href: "/console/admin", Target: "_blank", Status: "approved", Active: true,
 		})
 	}
-	if h.ChangeEvidence != nil && h.ChangeEvidence.Store != nil && h.ChangeEvidence.Provider != nil {
-		builtins = append(builtins, model.ConsolePlatformItem{ID: "change-evidence", Kind: "change-evidence", Title: "变更风险与验收证据", Href: "/console/change-evidence", Target: "_blank", Status: "approved", Active: true})
-	}
-	if h.SpecReader != nil {
-		builtins = append(builtins, model.ConsolePlatformItem{ID: "openspec-read", Kind: "openspec-read", Title: "OpenSpec 只读文档", Href: "/console/openspec", Target: "_blank", Status: "approved", Active: true})
-	}
-	if h.coordinateReviewEntry(r.Context(), platformPrincipal(r)) {
-		builtins = append(builtins, model.ConsolePlatformItem{ID: "coordinate-reviews", Kind: "coordinate-reviews", Title: "坐标派审", Href: "/console/coordinate-reviews", Target: "_blank", Status: "approved", Active: true})
-	}
-	if h.openSpecConfirmationReady() {
-		builtins = append(builtins, model.ConsolePlatformItem{ID: "openspec-confirmations", Kind: "openspec-confirmations", Title: "委员会版本确认", Href: "/console/openspec-confirmations", Target: "_blank", Status: "approved", Active: true})
-	}
-	items = append(builtins, items...)
+	// S-R62-OLDPLAT-SLIM(业主令 rulings ㊿-补133):change-evidence(变更风险与验收证据)与
+	// openspec-read(OpenSpec 只读文档)不再随菜单下发;后端路由(/console/change-evidence、
+	// /console/openspec)、表、数据、迁移一律不删不改,直连旧 URL 行为保持现状。
+	// h.ChangeEvidence／h.SpecReader 接线保留(直连页面仍用)。
+	// S-R62-OLDPLAT-SLIM（业主令 rulings ㊿-补133；组长 2026-11-19T00:20:38Z 裁定取白名单口径）：
+	// 旧平台菜单只下发 builtin（agent-groups＋按角色的 platform-admin）；console_platform_item
+	// 表内自定义项（含「仓库提交」项）一律不再随菜单下发。表数据、提交／审批工作流与对应 API
+	// 不动；上面的读取保留只为维持表不可用时既有的 503 语义。
+	// 删保护：恢复「把库内自定义项拼进菜单」（items = append(builtins, items...)）⇒
+	// TestLegacyConsoleMenuSlimCustomItemsNeverEmitted 与恰 2/1 形状格必红。
+	items = builtins
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	_ = json.NewEncoder(w).Encode(map[string]any{"role": role, "actions": platformActions(role), "items": items})

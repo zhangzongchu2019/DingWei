@@ -1,0 +1,17 @@
+viewport 390x844:
+  PASS old login readable without horizontal overflow (390x844)
+  PASS new-platform login targets >=40px and no overflow (390x844)
+  FAIL workbench drawer opens and closes (390x844): viewport meta 必须生效（visualViewport.scale≈1，实测 0.3979591727256775）
+  FAIL open an Agent session from drawer and scroll to read (390x844): 窄屏必须有可见的抽屉按钮 ☰（抽屉入口缺失或被隐藏）
+  FAIL tabs scroll horizontally without document overflow (390x844): 窄屏必须有可见的抽屉按钮 ☰（抽屉入口缺失或被隐藏）
+  FAIL click targets >=40px (390x844): 窄屏必须有可见的抽屉按钮 ☰（抽屉入口缺失或被隐藏）
+viewport 360x780:
+  PASS old login readable without horizontal overflow (360x780)
+  PASS new-platform login targets >=40px and no overflow (360x780)
+  FAIL workbench drawer opens and closes (360x780): viewport meta 必须生效（visualViewport.scale≈1，实测 0.36734694242477417）
+  FAIL open an Agent session from drawer and scroll to read (360x780): 窄屏必须有可见的抽屉按钮 ☰（抽屉入口缺失或被隐藏）
+  FAIL tabs scroll horizontally without document overflow (360x780): 窄屏必须有可见的抽屉按钮 ☰（抽屉入口缺失或被隐藏）
+  FAIL click targets >=40px (360x780): 窄屏必须有可见的抽屉按钮 ☰（抽屉入口缺失或被隐藏）
+viewport 1440x900 (PC):
+  PASS PC layout unchanged: sidebar in flow, drawer controls hidden, tabs wrap
+console mobile: passed=5 failed=8 mutation=mobile-no-viewport
