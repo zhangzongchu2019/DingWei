@@ -15,7 +15,7 @@ func exactBody(unit string, n int) string {
 func TestMCPLengthUTF8PG(t *testing.T) {
 	f := newFixture(t, pgtest.DSN(t))
 	_, a := f.issue(t)
-	header := extshared.ExternalSenderHeader(a.FullName, "alice", "alice", "helper.ho") + "\n"
+	header := extshared.ExternalSenderHeader(a.FullName, "张伟", "alice", "helper.ho") + "\n"
 	for _, unit := range []string{"a", "中", "😀"} {
 		for _, delta := range []int{-1, 0, 1} {
 			for _, direction := range []string{"send", "helper"} {

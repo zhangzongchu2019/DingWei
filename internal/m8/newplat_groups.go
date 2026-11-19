@@ -23,6 +23,7 @@ type npGroupMemberView struct {
 	SessionName string    `json:"session_name"`
 	FullName    string    `json:"full_name"`
 	Name        string    `json:"name"`
+	DisplayName string    `json:"display_name,omitempty"`
 	OwnerKey    string    `json:"owner_key"`
 	Online      bool      `json:"online"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -47,11 +48,23 @@ type npGroupView struct {
 	OwnerDisplayName    string              `json:"owner_display_name"`
 }
 
+func displayNameForConsole(a identity.Agent) string {
+	if a.Origin != identity.OriginExternal || !extshared.ExternalDisplayNamesEnabled() {
+		return ""
+	}
+	normalized, err := extshared.NormalizeExternalDisplayName(a.DisplayName)
+	if err != nil {
+		return ""
+	}
+	return normalized
+}
+
 type npOwnedAgentView struct {
 	ID          string `json:"id"`
 	SessionName string `json:"session_name"`
 	FullName    string `json:"full_name"`
 	Name        string `json:"name"`
+	DisplayName string `json:"display_name,omitempty"`
 	Online      bool   `json:"online"`
 }
 
@@ -76,7 +89,7 @@ func (h *Hub) npGroupView(info identity.GroupInfo) npGroupView {
 		key := AgentKeyID(m.Agent.OwnerLC)
 		v.Members = append(v.Members, npGroupMemberView{
 			AgentID: m.Agent.ID, Code: info.Code, KeyID: key, SessionName: m.FullName, FullName: m.FullName,
-			Name: m.Agent.Name, OwnerKey: key, Online: h.AgentOnline(m.Agent.ID), CreatedAt: m.JoinedAt,
+			Name: m.Agent.Name, DisplayName: displayNameForConsole(m.Agent), OwnerKey: key, Online: h.AgentOnline(m.Agent.ID), CreatedAt: m.JoinedAt,
 		})
 	}
 	return v
@@ -117,7 +130,7 @@ func (h *Hub) handleNewPlatformAgentGroups(w http.ResponseWriter, r *http.Reques
 		for i := range owned {
 			ag := &owned[i]
 			full := h.Identity.FullName(r.Context(), ag)
-			ownedViews = append(ownedViews, npOwnedAgentView{ID: ag.ID, SessionName: full, FullName: full, Name: ag.Name, Online: h.AgentOnline(ag.ID)})
+			ownedViews = append(ownedViews, npOwnedAgentView{ID: ag.ID, SessionName: full, FullName: full, Name: ag.Name, DisplayName: displayNameForConsole(*ag), Online: h.AgentOnline(ag.ID)})
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")

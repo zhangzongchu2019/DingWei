@@ -28,15 +28,15 @@ func TestConsent0108AppliesAfter0110And0111OnlyOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := ledgerRows(t, p)
-	if len(before) != 14 || before["0110_extseat_expect_reply.sql"].digest == "" || before["0111_extseat_feishu_copy.sql"].digest == "" {
+	if len(before) != 15 || before["0110_extseat_expect_reply.sql"].digest == "" || before["0111_extseat_feishu_copy.sql"].digest == "" {
 		t.Fatalf("R57_LATE_0108_DEPLOYED_BASELINE %v", keysOf(before))
 	}
 	report, err := Migrate(ctx, p, HubDomains())
-	if err != nil || strings.Join(report.Applied, ",") != "0108_extseat_short_name.sql" || len(report.Skipped) != 14 {
+	if err != nil || strings.Join(report.Applied, ",") != "0108_extseat_short_name.sql" || len(report.Skipped) != 15 {
 		t.Fatalf("R57_LATE_0108_ONLY_PENDING report=%+v err=%v", report, err)
 	}
 	after := ledgerRows(t, p)
-	if len(after) != 15 || after["0108_extseat_short_name.sql"].digest == "" {
+	if len(after) != 16 || after["0108_extseat_short_name.sql"].digest == "" {
 		t.Fatalf("R57_LATE_0108_LEDGER %v", keysOf(after))
 	}
 	for name, old := range before {
@@ -46,8 +46,81 @@ func TestConsent0108AppliesAfter0110And0111OnlyOnce(t *testing.T) {
 		}
 	}
 	repeated, err := Migrate(ctx, p, HubDomains())
-	if err != nil || len(repeated.Applied) != 0 || len(repeated.Skipped) != 15 {
+	if err != nil || len(repeated.Applied) != 0 || len(repeated.Skipped) != 16 {
 		t.Fatalf("R57_LATE_0108_RESTART report=%+v err=%v", repeated, err)
+	}
+}
+
+func TestExternalDisplayNameMigrationBackfillsWithoutChangingAddress(t *testing.T) {
+	ctx := context.Background()
+	p := testSchema(t, pgtest.DSN(t))
+	entries, err := LedgerInDomains(HubDomains())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var beforeDisplayName []Entry
+	var displayNameEntry Entry
+	for _, entry := range entries {
+		if entry.Name == "0112_np_agent_display_name.sql" {
+			displayNameEntry = entry
+			continue
+		}
+		beforeDisplayName = append(beforeDisplayName, entry)
+	}
+	if displayNameEntry.Name == "" {
+		t.Fatal("0112 display-name migration missing from Hub ledger")
+	}
+	if _, err = MigrateEntries(ctx, p, beforeDisplayName, nil); err != nil {
+		t.Fatal(err)
+	}
+	ac := testCtx(t)
+	_, err = p.Exec(ctx, ac, `
+INSERT INTO np_user(user_id,user_id_lc,short_name,short_name_lc,type,state,created_at)
+VALUES('owner','owner','own','own','member','active',now());
+INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,created_at)
+VALUES('ext-with-name','owner','alice_AG7','alice_ag7','external','active',now()),
+      ('ext-without-name','owner','bob_AG8','bob_ag8','external','active',now()),
+      ('ext-overlong','owner','carol_AG9','carol_ag9','external','active',now());
+INSERT INTO np_external_principal(id,provider,tenant_key,issuer,subject,display_name,owner_lc,created_at)
+VALUES('p1','feishu','tenant','app','subject-1','张伟','owner',now()),
+      ('p2','feishu','tenant','app','subject-2','','owner',now()),
+      ('p3','feishu','tenant','app','subject-3',repeat('x',321),'owner',now());
+INSERT INTO np_extseat(agent_id,principal_id,short_name,ag_code,ag_generation,created_at)
+VALUES('ext-with-name','p1','alice','AG7',1,now()),('ext-without-name','p2','bob','AG8',1,now()),('ext-overlong','p3','carol','AG9',1,now());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var principalName string
+	principalRow, err := p.QueryRow(ctx, ac, `SELECT display_name FROM np_external_principal WHERE id='p1'`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := principalRow.Scan(&principalName); err != nil || principalName != "张伟" {
+		t.Fatalf("migration fixture principal display_name=%q err=%v", principalName, err)
+	}
+	if _, err = MigrateEntries(ctx, p, []Entry{displayNameEntry}, nil); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := p.Query(ctx, ac, `SELECT id,name,COALESCE(display_name,'') FROM np_agent ORDER BY id`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	want := [][3]string{{"ext-overlong", "carol_AG9", ""}, {"ext-with-name", "alice_AG7", "张伟"}, {"ext-without-name", "bob_AG8", ""}}
+	for _, expected := range want {
+		if !rows.Next() {
+			t.Fatalf("missing expected backfill row %v", expected)
+		}
+		var got [3]string
+		if err := rows.Scan(&got[0], &got[1], &got[2]); err != nil {
+			t.Fatal(err)
+		}
+		if got != expected {
+			t.Fatalf("EXTSEAT_DISPLAY_BACKFILL_ADDRESS_INVARIANT row=%v want=%v", got, expected)
+		}
+	}
+	if rows.Next() {
+		t.Fatal("unexpected extra agent row")
 	}
 }
 

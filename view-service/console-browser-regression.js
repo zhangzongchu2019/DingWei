@@ -96,8 +96,10 @@ function listen(server) {
 
 async function main() {
   const html = consoleHTMLFromProductionSource();
+  const externalAgent = agentRecord('owner-alpha-2642', true);
+  externalAgent.display_name = '张伟';
   const agents = [
-    agentRecord('owner-alpha-2642', true),
+    externalAgent,
     agentRecord('owner-offline-2642', false),
   ];
   let raceGroupResponses = false;
@@ -353,7 +355,7 @@ async function main() {
         await createPage.locator('#groupAddOpen').click();
         const leader = createPage.locator('#groupLeader');
         await createPage.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
-        assert.deepStrictEqual(await leader.locator('option').allTextContents(), ['alpha', 'beta']);
+        assert.deepStrictEqual(await leader.locator('option').allTextContents(), ['owner-alpha-2642', 'owner-beta-2642']);
         await leader.selectOption('agent-b');
         assert.strictEqual(await leader.inputValue(), 'agent-b');
         const name = createPage.locator('#groupShortName');
@@ -380,8 +382,8 @@ async function main() {
         await offlinePage.goto(`http://127.0.0.1:${port}/console`, { waitUntil: 'domcontentloaded' });
         await offlinePage.locator('#platform-items a[data-item-id="agent-groups"]').click();
         await offlinePage.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
-        assert.deepStrictEqual(await offlinePage.locator('#groupLeader option').allTextContents(), ['alpha', 'beta', 'gamma（offline）']);
-        assert.deepStrictEqual(await offlinePage.locator('#groupJoinAgent option').allTextContents(), ['beta', 'gamma（offline）']);
+        assert.deepStrictEqual(await offlinePage.locator('#groupLeader option').allTextContents(), ['owner-alpha-2642', 'owner-beta-2642', 'owner-gamma-2642（offline）']);
+        assert.deepStrictEqual(await offlinePage.locator('#groupJoinAgent option').allTextContents(), ['owner-beta-2642', 'owner-gamma-2642（offline）']);
       } finally {
         await offlinePage.close();
         includeOfflineOwned = false;
@@ -505,6 +507,7 @@ async function main() {
       const offline = page.locator('#a button[title="owner-offline-2642"]');
       await online.waitFor({ state: 'visible' });
       await offline.waitFor({ state: 'attached' });
+      assert.strictEqual(await online.textContent(), '张伟 · owner-alpha-2642', 'external display name must retain the canonical full address');
       assert.strictEqual(await online.isEnabled(), true);
       assert.strictEqual(await offline.isDisabled(), true);
       assert.strictEqual(await page.locator('#retryAgents').isHidden(), true);
@@ -688,9 +691,9 @@ async function main() {
       }
       await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false);
       await page.locator('#groupListItems').getByText('team-001').waitFor({ state: 'visible' });
-      assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['alpha', 'beta']);
+      assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['owner-alpha-2642', 'owner-beta-2642']);
       await page.locator('#groupListItems tr').first().click();
-      assert.deepStrictEqual(await page.locator('#groupJoinAgent option').allTextContents(), ['beta']);
+      assert.deepStrictEqual(await page.locator('#groupJoinAgent option').allTextContents(), ['owner-beta-2642']);
       assert.strictEqual(await page.locator('.group-workspace input[name="key_id"]').count(), 0);
     });
 
@@ -744,7 +747,7 @@ async function main() {
       failGroupLoad = 'empty'; await page.locator('#retryGroups').click(); await expectText('#group-status', '没有自己的 Agent', '没有自己的 Agent');
       assert.strictEqual(await page.locator('#groupLeader option').textContent(), '没有自己的 Agent');
       failGroupLoad = ''; await page.locator('#retryGroups').click(); await page.waitForFunction(() => document.getElementById('groupLeader').disabled === false, null, { timeout: Math.max(1, conditionDeadline - Date.now()) });
-      assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['alpha', 'beta']);
+      assert.deepStrictEqual(await page.locator('#groupLeader option').allTextContents(), ['owner-alpha-2642', 'owner-beta-2642']);
       failGroupLoad = '';
       failGroupAction = '500';
       if (await page.locator('#groupAddPanel').isHidden()) await page.locator('#groupAddOpen').click();

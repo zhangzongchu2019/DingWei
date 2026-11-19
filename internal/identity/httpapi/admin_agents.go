@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 )
 
@@ -66,6 +67,10 @@ func (a *API) listAdminAgents(w http.ResponseWriter, r *http.Request, actor stri
 			fullName += "." + row.OwnerShortName
 		}
 		item := map[string]any{"agent_id": row.ID, "owner": map[string]string{"user_id": row.OwnerID, "short_name": row.OwnerShortName, "display_name": row.OwnerDisplayName}, "full_name": fullName, "agent_type": string(row.Origin), "state": string(row.State), "online": online, "host": ""}
+		if row.Origin == identity.OriginExternal && extshared.ExternalDisplayNamesEnabled() {
+			item["display_name"] = row.DisplayName
+			item["display_label"] = extshared.ExternalDisplayLabel(row.DisplayName, fullName)
+		}
 		if row.Origin == identity.OriginSelfhost {
 			item["host"] = row.SourceIP
 			if !row.SourceAt.IsZero() {

@@ -398,7 +398,11 @@ func (s *Service) Online(ctx context.Context) ([]OnlineAgent, error) {
 	var out []OnlineAgent
 	now := s.now()
 	e := s.tx(ctx, func(tx repo.Tx) error {
-		rows, e := tx.Query(ctx, `SELECT s.agent_id,s.ag_code,s.ag_generation,a.owner_lc,a.name,u.short_name,s.last_seen_at FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE s.revoked_at IS NULL AND a.state='active' AND u.state='active' AND s.last_seen_at>$1 AND EXISTS(SELECT 1 FROM np_extseat_token t WHERE t.seat_id=s.agent_id AND t.revoked_at IS NULL AND t.expires_at>$2 AND t.auth_generation=s.auth_generation) ORDER BY a.id`, now.Add(-extshared.PresenceTimeout), now)
+		displayColumn := `''::text`
+		if extshared.ExternalDisplayNamesEnabled() {
+			displayColumn = `COALESCE(a.display_name,'')`
+		}
+		rows, e := tx.Query(ctx, `SELECT s.agent_id,s.ag_code,s.ag_generation,a.owner_lc,a.name,u.short_name,s.last_seen_at,`+displayColumn+` FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE s.revoked_at IS NULL AND a.state='active' AND u.state='active' AND s.last_seen_at>$1 AND EXISTS(SELECT 1 FROM np_extseat_token t WHERE t.seat_id=s.agent_id AND t.revoked_at IS NULL AND t.expires_at>$2 AND t.auth_generation=s.auth_generation) ORDER BY a.id`, now.Add(-extshared.PresenceTimeout), now)
 		if e != nil {
 			return e
 		}
@@ -409,9 +413,14 @@ func (s *Service) Online(ctx context.Context) ([]OnlineAgent, error) {
 		var items []candidate
 		for rows.Next() {
 			var c candidate
-			if e = rows.Scan(&c.a.AgentID, &c.a.Group, &c.a.Generation, &c.a.OwnerLC, &c.a.Name, &c.a.ownerShort, &c.last); e != nil {
+			if e = rows.Scan(&c.a.AgentID, &c.a.Group, &c.a.Generation, &c.a.OwnerLC, &c.a.Name, &c.a.ownerShort, &c.last, &c.a.DisplayName); e != nil {
 				rows.Close()
 				return e
+			}
+			if normalized, err := extshared.NormalizeExternalDisplayName(c.a.DisplayName); err == nil {
+				c.a.DisplayName = normalized
+			} else {
+				c.a.DisplayName = ""
 			}
 			items = append(items, c)
 		}
@@ -427,7 +436,7 @@ func (s *Service) Online(ctx context.Context) ([]OnlineAgent, error) {
 				}
 				return e
 			}
-			out = append(out, OnlineAgent{Agent: identity.Agent{ID: c.a.AgentID, OwnerLC: c.a.OwnerLC, Name: c.a.Name, Origin: identity.OriginExternal, State: identity.AgentActive}, FullName: c.a.Name + "." + c.a.ownerShort, LastSeenAt: c.last, External: true})
+			out = append(out, OnlineAgent{Agent: identity.Agent{ID: c.a.AgentID, OwnerLC: c.a.OwnerLC, Name: c.a.Name, DisplayName: c.a.DisplayName, Origin: identity.OriginExternal, State: identity.AgentActive}, FullName: c.a.Name + "." + c.a.ownerShort, LastSeenAt: c.last, External: true})
 		}
 		return nil
 	})

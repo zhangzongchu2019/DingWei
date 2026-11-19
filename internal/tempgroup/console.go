@@ -14,24 +14,27 @@ var ErrNotFound = errors.New("临时编组不存在或无权访问")
 var ErrChanged = errors.New("临时编组已变化，请刷新后重试")
 
 type Member struct {
-	AgentID  string `json:"agent_id"`
-	FullName string `json:"full_name"`
-	Role     string `json:"role"`
-	Online   bool   `json:"online"`
+	AgentID      string `json:"agent_id"`
+	FullName     string `json:"full_name"`
+	DisplayName  string `json:"display_name,omitempty"`
+	DisplayLabel string `json:"display_label,omitempty"`
+	Role         string `json:"role"`
+	Online       bool   `json:"online"`
 }
 type View struct {
-	Code             extshared.AGCode `json:"code"`
-	Generation       int64            `json:"generation"`
-	ExternalFullName string           `json:"external_full_name"`
-	CreatedByDisplay string           `json:"created_by_display"`
-	OwnerLC          string           `json:"owner_lc"`
-	CreatedAt        time.Time        `json:"created_at"`
-	LastUsedAt       *time.Time       `json:"last_used_at"`
-	ExpiresAt        time.Time        `json:"expires_at"`
-	DissolvedAt      *time.Time       `json:"dissolved_at"`
-	DissolveReason   string           `json:"dissolve_reason"`
-	CanDissolve      bool             `json:"can_dissolve"`
-	Members          []Member         `json:"members"`
+	Code                 extshared.AGCode `json:"code"`
+	Generation           int64            `json:"generation"`
+	ExternalFullName     string           `json:"external_full_name"`
+	ExternalDisplayLabel string           `json:"external_display_label,omitempty"`
+	CreatedByDisplay     string           `json:"created_by_display"`
+	OwnerLC              string           `json:"owner_lc"`
+	CreatedAt            time.Time        `json:"created_at"`
+	LastUsedAt           *time.Time       `json:"last_used_at"`
+	ExpiresAt            time.Time        `json:"expires_at"`
+	DissolvedAt          *time.Time       `json:"dissolved_at"`
+	DissolveReason       string           `json:"dissolve_reason"`
+	CanDissolve          bool             `json:"can_dissolve"`
+	Members              []Member         `json:"members"`
 }
 
 // List 个人侧栏只按内部对端属当前登录者过滤；创建者和管理员无额外豁免。
@@ -90,7 +93,11 @@ func detail(ctx context.Context, tx repo.Tx, actor string, code extshared.AGCode
 	if err != nil {
 		return v, err
 	}
-	rows, err := tx.Query(ctx, `SELECT a.id,a.name||'.'||u.short_name,m.role FROM np_temp_group_member m JOIN np_agent a ON a.id=m.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE m.code=$1 ORDER BY m.role`, string(code))
+	displayColumn := `''::text`
+	if extshared.ExternalDisplayNamesEnabled() {
+		displayColumn = `CASE WHEN m.role='external' THEN COALESCE(a.display_name,'') ELSE '' END`
+	}
+	rows, err := tx.Query(ctx, `SELECT a.id,a.name||'.'||u.short_name,`+displayColumn+`,m.role FROM np_temp_group_member m JOIN np_agent a ON a.id=m.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE m.code=$1 ORDER BY m.role`, string(code))
 	if err != nil {
 		return v, err
 	}
@@ -98,11 +105,15 @@ func detail(ctx context.Context, tx repo.Tx, actor string, code extshared.AGCode
 	v.Members = make([]Member, 0, 2)
 	for rows.Next() {
 		var m Member
-		if err = rows.Scan(&m.AgentID, &m.FullName, &m.Role); err != nil {
+		if err = rows.Scan(&m.AgentID, &m.FullName, &m.DisplayName, &m.Role); err != nil {
 			return v, err
 		}
 		if m.Role == "external" {
 			v.ExternalFullName = m.FullName
+			m.DisplayLabel = extshared.ExternalDisplayLabel(m.DisplayName, m.FullName)
+			v.ExternalDisplayLabel = m.DisplayLabel
+		} else {
+			m.DisplayLabel = m.FullName
 		}
 		v.Members = append(v.Members, m)
 	}

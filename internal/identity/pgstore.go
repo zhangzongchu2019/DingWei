@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 )
 
@@ -115,16 +116,31 @@ func scanUser(r rowScanner) (*User, error) {
 	return &u, nil
 }
 
-const agentCols = `id, owner_lc, name, group_code, origin, state, coalesce(credential_hash, ''), created_at, revoked_at, revoked_by, suspended_at, suspended_by`
+func agentSelectCols() string {
+	displayName := `COALESCE(display_name, '')`
+	if !extshared.ExternalDisplayNamesEnabled() {
+		displayName = `''::text`
+	}
+	return `id, owner_lc, name, ` + displayName + `, group_code, origin, state, coalesce(credential_hash, ''), created_at, revoked_at, revoked_by, suspended_at, suspended_by`
+}
 
 func scanAgent(r rowScanner) (*Agent, error) {
 	var a Agent
 	var origin, st string
 	var revokedAt, suspendedAt sql.NullTime
-	if err := r.Scan(&a.ID, &a.OwnerLC, &a.Name, &a.GroupID, &origin, &st, &a.CredentialHash, &a.CreatedAt, &revokedAt, &a.RevokedBy, &suspendedAt, &a.SuspendedBy); err != nil {
+	if err := r.Scan(&a.ID, &a.OwnerLC, &a.Name, &a.DisplayName, &a.GroupID, &origin, &st, &a.CredentialHash, &a.CreatedAt, &revokedAt, &a.RevokedBy, &suspendedAt, &a.SuspendedBy); err != nil {
 		return nil, err
 	}
 	a.Origin, a.State, a.CreatedAt, a.RevokedAt = AgentOrigin(origin), AgentState(st), a.CreatedAt.UTC(), fromNull(revokedAt)
+	if a.Origin == OriginExternal {
+		if normalized, err := extshared.NormalizeExternalDisplayName(a.DisplayName); err == nil {
+			a.DisplayName = normalized
+		} else {
+			a.DisplayName = ""
+		}
+	} else {
+		a.DisplayName = ""
+	}
 	a.SuspendedAt = fromNull(suspendedAt)
 	return &a, nil
 }
@@ -695,7 +711,7 @@ func (s *PGStore) TakeCredential(ctx context.Context, appID, credentialHash stri
 		if a.State != AppApproved || !a.CredentialTakenAt.IsZero() || !now.Before(a.ExpiresAt) || a.AgentID == "" {
 			return nil
 		}
-		ag, err := scanAgent(tx.QueryRow(ctx, `SELECT `+agentCols+` FROM np_agent WHERE id = $1 FOR UPDATE`, a.AgentID))
+		ag, err := scanAgent(tx.QueryRow(ctx, `SELECT `+agentSelectCols()+` FROM np_agent WHERE id = $1 FOR UPDATE`, a.AgentID))
 		if noRows(err) {
 			return nil
 		}
@@ -726,7 +742,7 @@ func (s *PGStore) TakeCredential(ctx context.Context, appID, credentialHash stri
 }
 
 func (s *PGStore) agentBy(ctx context.Context, where string, args ...any) (*Agent, error) {
-	row, err := s.queryRow(ctx, `SELECT `+agentCols+` FROM np_agent WHERE `+where, args...)
+	row, err := s.queryRow(ctx, `SELECT `+agentSelectCols()+` FROM np_agent WHERE `+where, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -751,7 +767,7 @@ func (s *PGStore) FindAgentByName(ctx context.Context, ownerLC, nameLC string) (
 }
 
 func (s *PGStore) ListAgents(ctx context.Context, ownerLC string) ([]Agent, error) {
-	rows, err := s.pool.Query(ctx, s.t, `SELECT `+agentCols+` FROM np_agent
+	rows, err := s.pool.Query(ctx, s.t, `SELECT `+agentSelectCols()+` FROM np_agent
 		WHERE owner_lc = $1 AND state IN ('active', 'suspended') ORDER BY name_lc, id`, Lower(ownerLC))
 	if err != nil {
 		return nil, err
@@ -769,7 +785,7 @@ func (s *PGStore) ListAgents(ctx context.Context, ownerLC string) ([]Agent, erro
 }
 
 func lockAgent(ctx context.Context, tx repo.Tx, agentID string) (*Agent, error) {
-	ag, err := scanAgent(tx.QueryRow(ctx, `SELECT `+agentCols+` FROM np_agent WHERE id = $1 FOR UPDATE`, agentID))
+	ag, err := scanAgent(tx.QueryRow(ctx, `SELECT `+agentSelectCols()+` FROM np_agent WHERE id = $1 FOR UPDATE`, agentID))
 	if noRows(err) {
 		return nil, ErrNotFound
 	}
@@ -914,7 +930,7 @@ func lockGroup(ctx context.Context, tx repo.Tx, code string, share bool) (*Group
 
 // ownedCurrentAgentShared Agent 属 ownerLC 且未吊销；FOR SHARE 挡住同时进行的吊销（吊销取 FOR UPDATE）。
 func ownedCurrentAgentShared(ctx context.Context, tx repo.Tx, agentID, ownerLC string) (bool, error) {
-	ag, err := scanAgent(tx.QueryRow(ctx, `SELECT `+agentCols+` FROM np_agent WHERE id = $1 FOR SHARE`, agentID))
+	ag, err := scanAgent(tx.QueryRow(ctx, `SELECT `+agentSelectCols()+` FROM np_agent WHERE id = $1 FOR SHARE`, agentID))
 	if noRows(err) {
 		return false, nil
 	}

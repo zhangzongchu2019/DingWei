@@ -340,7 +340,7 @@ func (s *PGStore) withContextAuthorization(ctx context.Context, actor, hash stri
 			}
 		}
 		for _, id := range sortedContextKeys(ids) {
-			x, err := scanAgent(tx.QueryRow(ctx, `SELECT `+agentCols+` FROM np_agent WHERE id=$1 FOR SHARE`, id))
+			x, err := scanAgent(tx.QueryRow(ctx, `SELECT `+agentSelectCols()+` FROM np_agent WHERE id=$1 FOR SHARE`, id))
 			if err != nil {
 				return err
 			}

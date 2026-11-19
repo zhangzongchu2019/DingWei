@@ -7,11 +7,56 @@ package extshared
 
 import (
 	"errors"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
+
+	"golang.org/x/text/unicode/norm"
 )
+
+const MaxExternalDisplayNameRunes = 80
+
+// NormalizeExternalDisplayName bounds and canonicalizes an authenticated Feishu
+// name before persistence. It preserves Unicode and rejects control/bidi
+// override characters; rendering must still use text nodes, never HTML.
+func NormalizeExternalDisplayName(value string) (string, error) {
+	if !utf8.ValidString(value) {
+		return "", errors.New("extshared: invalid display name encoding")
+	}
+	value = norm.NFC.String(strings.TrimSpace(value))
+	if value == "" || utf8.RuneCountInString(value) > MaxExternalDisplayNameRunes || len(value) > MaxExternalDisplayNameRunes*4 {
+		return "", errors.New("extshared: invalid display name length")
+	}
+	for _, r := range value {
+		if unicode.IsControl(r) || r == '\u061c' || r == '\u200e' || r == '\u200f' ||
+			(r >= '\u202a' && r <= '\u202e') || (r >= '\u2066' && r <= '\u2069') {
+			return "", errors.New("extshared: invalid display name character")
+		}
+	}
+	return value, nil
+}
+
+// ExternalDisplayLabel is presentation only; canonicalFullName remains the
+// unique address and must continue to be used for all routing and AMR checks.
+func ExternalDisplayLabel(displayName, canonicalFullName string) string {
+	normalized, err := NormalizeExternalDisplayName(displayName)
+	if err != nil {
+		return canonicalFullName
+	}
+	return normalized + " · " + canonicalFullName
+}
+
+// ExternalDisplayNamesEnabled provides an immediate read-side rollback switch.
+// Missing configuration means enabled; false/0/off disables external names in
+// projections while leaving stored values and canonical addresses untouched.
+func ExternalDisplayNamesEnabled() bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv("DW_EXTSEAT_DISPLAY_NAMES_ENABLED")))
+	return v != "0" && v != "false" && v != "off"
+}
 
 // 存活期与时限（㊹-补4、㊹-补6、提案 GW-005／GW-006）。
 const (
@@ -88,7 +133,7 @@ type Principal struct {
 	Issuer      string // 飞书应用（app_id）等签发方标识
 	Subject     string // open_id
 	UnionID     string // 可空；只在同一可信域内作别名
-	DisplayName string // 英文名，缺则中文名转拼音，仅 [a-z]
+	DisplayName string // 可信 Feishu name，缺失时回退 en_name；仅展示，不作唯一键
 }
 
 // Key 主体的稳定内部键。

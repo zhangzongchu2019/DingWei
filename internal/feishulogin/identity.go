@@ -18,9 +18,12 @@ func ResolvePrincipal(info UserInfo, appID, allowedTenant string) (extshared.Pri
 	if info.OpenID == "" {
 		return extshared.Principal{}, ErrIdentityIncomplete
 	}
-	displayName := strings.TrimSpace(info.EnName)
-	if displayName == "" {
-		displayName = PinyinDisplayName(info.Name)
+	var displayName string
+	for _, candidate := range []string{info.Name, info.EnName} {
+		if normalized, err := extshared.NormalizeExternalDisplayName(candidate); err == nil {
+			displayName = normalized
+			break
+		}
 	}
 	if displayName == "" {
 		return extshared.Principal{}, ErrDisplayName
