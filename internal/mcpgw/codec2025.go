@@ -7,6 +7,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // CompatProtocolVersion is the fully supported Streamable HTTP dialect.
@@ -36,7 +37,14 @@ func (g *Gateway) route2025(w http.ResponseWriter, r *http.Request, seat extseat
 	// private hints must retain the private envelope's exact guards, even when
 	// a standard initialize proposal appears in the same request.
 	compatSelected := header == CompatProtocolVersion || (len(r.Header.Values("MCP-Protocol-Version")) == 0 && hint.Method == "initialize" && hint.Params.Version == CompatProtocolVersion)
-	privateHint := header == ProtocolVersion || singleHeader(r, "Mcp-Method") != "" || len(hint.Params.Meta[metaPrefix+"protocolVersion"]) != 0
+	privateMeta := false
+	for key := range hint.Params.Meta {
+		if strings.HasPrefix(key, metaPrefix) {
+			privateMeta = true
+			break
+		}
+	}
+	privateHint := header == ProtocolVersion || len(r.Header.Values("Mcp-Method")) != 0 || len(r.Header.Values("Mcp-Name")) != 0 || privateMeta
 	if !compatSelected && privateHint {
 		return false
 	}

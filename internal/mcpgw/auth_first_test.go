@@ -248,3 +248,104 @@ func TestMCPPrivateMethodHintRetainsLegacyJuneSelectionOnly(t *testing.T) {
 		}
 	}
 }
+
+type privateHintCase struct {
+	name    string
+	headers http.Header
+	meta    map[string]any
+}
+
+func privateHintCases() []privateHintCase {
+	return []privateHintCase{
+		{name: "empty_method", headers: http.Header{"Mcp-Method": {""}}},
+		{name: "duplicate_method", headers: http.Header{"Mcp-Method": {"initialize", "ping"}}},
+		{name: "name_only", headers: http.Header{"Mcp-Name": {"unexpected"}}},
+		{name: "empty_name", headers: http.Header{"Mcp-Name": {""}}},
+		{name: "duplicate_name", headers: http.Header{"Mcp-Name": {"one", "two"}}},
+		{name: "private_caps_only", meta: map[string]any{metaPrefix + "clientCapabilities": map[string]any{}}},
+		{name: "private_version_empty", meta: map[string]any{metaPrefix + "protocolVersion": ""}},
+		{name: "private_namespace_extension", meta: map[string]any{metaPrefix + "future": true}},
+	}
+}
+
+func TestMCPPrivateHintPresenceGuard(t *testing.T) {
+	for _, version := range []string{"2025-03-26", "2025-11-25"} {
+		for _, tc := range privateHintCases() {
+			for _, authenticated := range []bool{true, false} {
+				t.Run(fmt.Sprintf("%s/%s/auth=%t", version, tc.name, authenticated), func(t *testing.T) {
+					_, seats, mux := fixture(t)
+					var params map[string]any
+					if err := json.Unmarshal([]byte(proposedInitialize(version)), &params); err != nil {
+						t.Fatal(err)
+					}
+					if tc.meta != nil {
+						params["_meta"] = tc.meta
+					}
+					raw, _ := json.Marshal(params)
+					r := requestCompat("initialize", string(raw))
+					r.Header.Del("MCP-Protocol-Version")
+					for key, values := range tc.headers {
+						for _, value := range values {
+							r.Header.Add(key, value)
+						}
+					}
+					if !authenticated {
+						r.Header.Del("Authorization")
+					}
+					w := serve(mux, r)
+					if authenticated {
+						if w.Code != 400 || strings.Contains(w.Body.String(), `"result"`) || seats.calls != 0 {
+							t.Fatalf("PRIVATE_HINT_PRESENCE_GUARD: status=%d body=%s business=%d", w.Code, w.Body, seats.calls)
+						}
+					} else if w.Code != 401 || w.Header().Get("WWW-Authenticate") == "" || seats.calls != 0 {
+						t.Fatalf("AUTH_BEFORE_PRIVATE_PRESENCE: status=%d body=%s", w.Code, w.Body)
+					}
+				})
+			}
+		}
+	}
+}
+
+func TestMCPLegacyJuneSelectionIgnoresReservedHintVariants(t *testing.T) {
+	const legacyJune = `{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"legacy","version":"1"}}`
+	for _, tc := range privateHintCases() {
+		for _, header := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/header=%t", tc.name, header), func(t *testing.T) {
+				_, _, mux := fixture(t)
+				var params map[string]any
+				json.Unmarshal([]byte(legacyJune), &params)
+				if tc.meta != nil {
+					params["_meta"] = tc.meta
+				}
+				raw, _ := json.Marshal(params)
+				r := requestCompat("initialize", string(raw))
+				if !header {
+					r.Header.Del("MCP-Protocol-Version")
+				}
+				for key, values := range tc.headers {
+					for _, value := range values {
+						r.Header.Add(key, value)
+					}
+				}
+				if w := serve(mux, r); w.Code != 200 {
+					t.Fatalf("LEGACY_JUNE_INITIALIZE_SELECTION: status=%d body=%s", w.Code, w.Body)
+				}
+			})
+		}
+	}
+}
+
+func TestMCPStandardMetaDoesNotBecomePrivateEnvelope(t *testing.T) {
+	for _, version := range []string{"2025-03-26", "2025-11-25"} {
+		_, _, mux := fixture(t)
+		var params map[string]any
+		json.Unmarshal([]byte(proposedInitialize(version)), &params)
+		params["_meta"] = map[string]any{"progressToken": "synthetic", "example.test/note": true}
+		raw, _ := json.Marshal(params)
+		r := requestCompat("initialize", string(raw))
+		r.Header.Del("MCP-Protocol-Version")
+		if w := serve(mux, r); w.Code != 200 {
+			t.Fatalf("STANDARD_META_MISCLASSIFIED: status=%d body=%s", w.Code, w.Body)
+		}
+	}
+}
