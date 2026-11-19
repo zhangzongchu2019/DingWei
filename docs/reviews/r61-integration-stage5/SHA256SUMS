@@ -1,3 +1,4 @@
+b8fdd1b2d22b471acd05d25c81f6d34b9e3424439e9e60aa5b7f63c276f404e5  docs/reviews/r61-integration-stage5/HANDOFF.md
 a0100705e88dc934036791da8555104d6d0586503bb0c62067cc43eff68c7ac7  docs/reviews/r61-integration-stage5/REPORT.md
 0dd98da476b8c1f34ac4a003acd67272b0f4acfafc80042b9034835cb9569eb2  docs/reviews/r61-integration-stage5/VERIFY.py
 dd556ee5fcfc4de7c4658edf1a61eaf6830f7d23de32d23a16090c27dd3a3757  docs/reviews/r61-integration-stage5/evidence/SKIPS.json
@@ -111,3 +112,5 @@ a3f6e3a9d246ab1f2c129482b99723e610b2a884fc6f6307dcad24a128523d1e  docs/reviews/r
 923aa299a140cf7620a4659285cca5bbd4ee54d56d21a59aed734abf8fed70d7  docs/reviews/r61-integration-stage5/evidence/serial/strict.result.json
 b993dde6158483759ef03f9eb7f4e974ccc533890e756eedbea5d9a80056c675  docs/reviews/r61-integration-stage5/evidence/serial/watch-pg.py
 c50413a255c2076d6b91c6b6c38883d2d601c3c4bd7f531b85da755666e7f715  docs/reviews/r61-integration-stage5/evidence/source-preservation.json
+648ce62199d5cd235b0ca1c30cba5f6717359fef46a21b1ca329dcfeb97c6000  docs/reviews/r61-integration-stage5/evidence/strict-after-tasks.json
+901a14ea22abe9f50f31843a4150bb2d1938f9a3bd102ca5aa5f61e19f487f0c  docs/reviews/r61-integration-stage5/evidence/strict-after-tasks.log

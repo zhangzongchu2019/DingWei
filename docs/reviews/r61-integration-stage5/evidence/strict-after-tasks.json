@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "source_product": "4a349ee59a1d8d7b8b9c562c462bded2f8b0f192",
+  "source_evidence": "21c5fd60b2f9f3d4d7a84028d1cc57ce49469239",
+  "scope": "documentation task/handoff updates after evidence commit",
+  "rc": 0,
+  "start_utc": "2026-11-19T07:21:37.006755+00:00",
+  "end_utc": "2026-11-19T07:21:37.303970+00:00",
+  "sha256": "901a14ea22abe9f50f31843a4150bb2d1938f9a3bd102ca5aa5f61e19f487f0c"
+}

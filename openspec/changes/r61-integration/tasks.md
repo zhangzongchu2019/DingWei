@@ -16,7 +16,9 @@
 
 - [x] T-10 第四段在d6e56a8b上no-ff合冻结N-1c 1362f08f；合并源acd6ead19dab1ae969d7c72b58359967a20c7018，父与tree见 `22d52d5b7c0207f2f4292f5c8503e4fd82818c0f:docs/reviews/r61-integration-stage4/evidence/merge-structure.json`，无冲突，AA010方法与d6字节同。
 - [x] T-11 第四段轻量go build、helper双profile1290各、FIFO两格／blocker／恢复交叉／R6确定性／AA010全绿；证据 `22d52d5b7c0207f2f4292f5c8503e4fd82818c0f:docs/reviews/r61-integration-stage4/evidence/light-results.json`。
-- [ ] T-12 按04:18:57Z第五段条件，等qwen在09:00Z前对AUTH-FIRST结论；确定最终合后源再统一跑完整门，之后独立提交0.2.3.41与m8/run-build-tests；本段不先跑全门、不推main、不部署。
+- [x] T-12 qwen AUTH-FIRST复核PASS后按05:52:15Z令，no-ff合冻结584eb119；合并源ce3c084af7ec2d249b9026e96f2b5fa77e71cc84，追加HTTP四基线后固定全门源8cf2de74。按05:56:04Z令停止自己的旧并行部分，不计其PASS；最终严格串行全门均绿。证据 `21c5fd60b2f9f3d4d7a84028d1cc57ce49469239:docs/reviews/r61-integration-stage5/evidence/serial/full-acceptance.json`、同锚gate-sequence、crossed-load-stop、SKIPS、pg-runtime及raw-manifest。
+- [x] T-13 集成HTTP鉴权顺序一刀编译0、业务红、还原绿；真实旧501/新helper、合后/合后、合后/真实39三向进程兼容3/3；浏览器48/48，guide_staging与r15三格绿，联合恢复/双CLI在三遍逐次PASS。证据 `21c5fd60b2f9f3d4d7a84028d1cc57ce49469239:docs/reviews/r61-integration-stage5/evidence/serial/http-four-mutation/summary.json`、同锚compat-results与browser-receipt。
+- [x] T-14 完整门后独立版本提交4a349ee59a1d8d7b8b9c562c462bded2f8b0f192仅三路径40升41；新源m8整包998顶层PASS/0FAIL/0中断，canonical1290乘2/inventory97/BUILD_TESTS_OK，严格串行。证据 `21c5fd60b2f9f3d4d7a84028d1cc57ce49469239:docs/reviews/r61-integration-stage5/evidence/postversion/post-acceptance.json`、同锚version-source与原日志。作者完成不替代终审、构建和发布令。
 
 ## 交接记录
 - 2026-11-18；coder56solzzc；commit：38b9538dd2b1f1783aee6d7890ea03b83e33184e。完成：七项合并与本段作者门，源码至文档tip仅追加docs/openspec。阻塞：无本段实现阻塞，独立复核和后续三项待办。下一步：按组长令追加后续冻结项；不推main、不部署、不改VERSION。
@@ -30,3 +32,5 @@
 - 2026-11-18；coder56solzzc；证据commit `d547047573e5af6fca4d88a56e302234a95b71e5`。完成：14:29:24Z第三段令晚到后，核现有4581树已恰为5c73e93d；沿用a85同源全门及三向真实协议联测，补指定0ab20次对照、两个不同Hub OS进程重启前后真实HTTP来源全字段相等与冷renderer图标一致、本人收件只读审计。夹具编译/两次运行失败全保留，不以片段拼绿。阻塞：无本段实现阻塞，caller ID单件映射须发件方账本；组长/独立复核待。下一步：待组长裁定N1c是否入r61；不改VERSION、不推main、不部署、不出发布件。
 
 - 2026-11-19；coder56solzzc；证据commit `22d52d5b7c0207f2f4292f5c8503e4fd82818c0f`，合并源acd6ead19dab1ae969d7c72b58359967a20c7018。完成：冻结N-1c 1362合入，原AA010同步夹具保留，七项轻量门全绿、helper1290乘2。阻塞：第五段须等AUTH-FIRST独立复核；完整门按令未启动。下一步：09Z条件选择后统一全门，再抬版本，不推main、不部署、不出发布件。
+
+- 2026-11-19；coder56solzzc；证据commit `21c5fd60b2f9f3d4d7a84028d1cc57ce49469239`；全门源8cf2de74、版本源4a349ee59a1d8d7b8b9c562c462bded2f8b0f192。完成：冻结AUTH合入、HTTP四格和一刀、串行完整门及版本后m8/canonical；停止的旧并行读数单列未计入。阻塞：无作者门阻塞，待组长/独立复核。下一步：交件后恢复N6只读复核；不推main、不部署、不出发布件。

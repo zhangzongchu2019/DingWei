@@ -23,3 +23,7 @@ canonical两profile各1277/97文件；store/...三遍rc0，初始m8三遍rc1仅N
 ## 第四段当前锚（2026-11-19）
 
 N-1c冻结1362f08f（产品e7d59ab1）经no-ff合入d6，源acd6ead19dab1ae969d7c72b58359967a20c7018/tree d12d5411911cb2ebc9a6d45b9680b745d5778bd5。无冲突，原c6f935096 AA010方法完整SHA相同。仅轻量go build与canonical helper两profile、指定探针已绿，未跑集成全门；证据22d52d5b7c0207f2f4292f5c8503e4fd82818c0f。等AUTH-FIRST在09Z前qwen结论决定第五段，再对最终源统一全门。VERSION仍0.2.3.40；NAME/GROUPS属r62均不在本分支。
+
+## 第五段 AUTH-FIRST 与版本冻结（2026-11-19）
+
+组长05:52:15Z与05:56:04Z令：合冻结584eb119，补真实HTTP四基线，门严格串行。合并源ce3c084a；完整门源8cf2de74（0.2.3.40）；独立版本提交4a349ee59a1d8d7b8b9c562c462bded2f8b0f192（0.2.3.41）。证据 `21c5fd60b2f9f3d4d7a84028d1cc57ce49469239:docs/reviews/r61-integration-stage5/REPORT.md` 与同目录VERIFY.py/SHA256SUMS。PostgreSQL18.3实跑、m8/store三遍0FAIL/0中断，浏览器48/48、strict47/0，版本后m8与canonical独立绿；旧被停日志保留且不计验收。AUTHOR_COMPLETE不构成发布GO。
