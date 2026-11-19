@@ -41,3 +41,9 @@
 ## 回退
 
 设置 `DW_EXTSEAT_DISPLAY_NAMES_ENABLED=0` 关闭显示名读取即可恢复 canonical 名称显示。数据库列与回填保留；地址与路由字段从未变化。
+
+## 复核补正：Unicode 规范化依赖登记
+
+复核指出 `internal/extshared/extshared.go` 直接 import `golang.org/x/text/unicode/norm`，但 `go.mod` 将 `golang.org/x/text v0.19.0` 标为 indirect。现已将同一版本改列直接依赖，并按 `specs/gates/dependency-baseline.txt` 的三栏登记：模块标注由 indirect 更正为 direct；用途为 NFC 规范化外部 Agent 的 Unicode 显示名；来源为 Go Authors 维护的 `golang.org/x/text` 扩展库（BSD-3-Clause）；标准库无 NFC 实现，自维护 Unicode 数据／算法或省略规范化均不满足正确性与维护要求。
+
+依赖集合棘轮从 9 更新为 10，集合 SHA256 为 `c2639a93f89866960b3c699d4f23f244afb7a9a7e7e58bcb51e944b897304540`。`GOFLAGS=-mod=mod go list golang.org/x/text/unicode/norm` 与 `GOFLAGS=-mod=mod scripts/dependency-ratchet.sh` 均 rc=0；go.sum 前后 SHA256 均为 `bf70c12f906c5501f71fea73fda264e30d64d463de5b4ce04989d36698512822`，未增加版本或校验项。原产品门读数沿用，不因本次依赖元数据修正重跑。命令输出见 `dependency-ratchet-mod-mode.log`。

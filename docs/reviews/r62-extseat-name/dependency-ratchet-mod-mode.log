@@ -1,0 +1,10 @@
+$ GOFLAGS=-mod=mod go list golang.org/x/text/unicode/norm
+golang.org/x/text/unicode/norm
+
+$ GOFLAGS=-mod=mod scripts/dependency-ratchet.sh
+  直接依赖：10（基线 10）
+  ✓ 依赖清单棘轮未回升
+  ⚠️ 本闸判【数是否回升】，🔴 判不了【该不该加】，也判不了【等价替换】—— 归门方。
+
+go_sum_before=bf70c12f906c5501f71fea73fda264e30d64d463de5b4ce04989d36698512822
+go_sum_after=bf70c12f906c5501f71fea73fda264e30d64d463de5b4ce04989d36698512822
