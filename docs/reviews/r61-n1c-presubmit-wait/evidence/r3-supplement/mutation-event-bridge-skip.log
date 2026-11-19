@@ -1,0 +1,25 @@
+test_event_bridge_resubscribes_after_recovery_event_is_set (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_event_bridge_resubscribes_after_recovery_event_is_set) ... FAIL
+
+======================================================================
+FAIL: test_event_bridge_resubscribes_after_recovery_event_is_set (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_event_bridge_resubscribes_after_recovery_event_is_set)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/dev/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 455, in test_event_bridge_resubscribes_after_recovery_event_is_set
+    self.assertEqual(calls, [('subscribed', True)], 'N1C_EVENT_BRIDGE_SUBSCRIBED_BEFORE_RECOVERY')
+AssertionError: Lists differ: [('subscribed', False), ('subscribed', True)] != [('subscribed', True)]
+
+First differing element 0:
+('subscribed', False)
+('subscribed', True)
+
+First list contains 1 additional elements.
+First extra element 1:
+('subscribed', True)
+
+- [('subscribed', False), ('subscribed', True)]
++ [('subscribed', True)] : N1C_EVENT_BRIDGE_SUBSCRIBED_BEFORE_RECOVERY
+
+----------------------------------------------------------------------
+Ran 1 test in 0.034s
+
+FAILED (failures=1)

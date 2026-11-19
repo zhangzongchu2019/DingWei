@@ -798,7 +798,7 @@ class RecoveryRootLaneTests(unittest.TestCase):
     def setUp(self):
         ExistingRootToolsTests.setUp(self)
 
-    def test_recovered_root_rotates_without_rebinding_children_and_factory_tracks_latest(self):
+    def test_recovered_root_mismatch_fails_closed_without_rebinding_children(self):
         runtime, native, endpoint = self.runtime, self.native, self.endpoint
         runtime._ensure_broker()
         adapter = runtime.root_adapter
@@ -824,13 +824,18 @@ class RecoveryRootLaneTests(unittest.TestCase):
         replacement.start()
         adapter.driver=replacement
         with patch('sys.stdout'):
-            self.assertEqual(replacement.deliver('root-next','root input').state,'processing')
+            refused=replacement.deliver('root-next','root input')
+        self.assertEqual(refused.state,'queued','N1C_ROOT_MISMATCH_DROPPED_FIFO_HEAD')
+        self.assertIn('invalid_thread_binding',refused.detail,'N1C_ROOT_MISMATCH_REASON_MISSING')
+        self.assertTrue(replacement._busy_admission.is_waiting('root-next'),
+                        'N1C_ROOT_MISMATCH_NOT_PARKED_AT_FIFO_HEAD')
+        self.assertEqual(replacement.presubmit_validation_hold('root-next'),'invalid_thread_binding',
+                         'N1C_ROOT_MISMATCH_OPERATOR_HOLD_MISSING')
         latest=replacement._thread_id
-        self.assertNotEqual(latest,'existing-root','HRI004_ROOT_DID_NOT_ROTATE')
-        self.assertEqual(saved,[('existing-root',latest)],'HRI004_PRIVATE_ROOT_HINT_STALE')
+        self.assertEqual(latest,'existing-root','N1C_ROOT_MISMATCH_ROTATED_THREAD')
+        self.assertEqual(saved,[],'N1C_ROOT_MISMATCH_REBOUND_PRIVATE_ENDPOINT')
         self.assertIs(broker._threads[latest],replacement._rpc)
         self.assertIs(broker._threads['child-thread'],child,'HRI004_CHILD_BINDING_CHANGED')
-        self.assertNotIn('existing-root',broker._threads)
         with self.assertRaises(PermissionError):child.request('turn/start',dict(threadId=latest,input=[]))
         with self.assertRaises(PermissionError):child.replace_root_thread('child-thread',dict(cwd=self.tmp.name))
         with self.assertRaises(PermissionError):replacement._rpc.request('thread/start',dict(cwd=self.tmp.name))
@@ -839,12 +844,12 @@ class RecoveryRootLaneTests(unittest.TestCase):
         replacement.stop()
         second=adapter._build_driver('codex')
         self.addCleanup(second.stop)
-        self.assertEqual(second._thread_id,latest,'HRI004_ROOT_FACTORY_CAPTURED_FIRST_ID')
+        self.assertEqual(second._thread_id,latest,'N1C_ROOT_MISMATCH_FACTORY_CHANGED_BINDING')
         self.assertIs(second._private_endpoint,endpoint,'HRI004_PRIVATE_ENDPOINT_LOST')
         self.assertEqual(child.thread_id,'child-thread')
-        # Creation was root-only, and the two admitted turns used distinct IDs.
+        # The mismatched root was not rotated or submitted; child control remains isolated.
         turns=[p for _,_,m,p in native.calls if m=='turn/start']
-        self.assertEqual([p['threadId'] for p in turns],[latest,'child-thread'])
+        self.assertEqual([p['threadId'] for p in turns],['child-thread'])
 
     def test_private_replacement_requires_writer_and_exact_previous_binding(self):
         from contextlib import nullcontext

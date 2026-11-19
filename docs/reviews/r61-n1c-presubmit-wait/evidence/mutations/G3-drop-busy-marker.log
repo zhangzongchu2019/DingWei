@@ -1,0 +1,14 @@
+test_busy_wait_persists_before_one_hub_busy_requeue_request (tests.test_dispatch_lifecycle.DispatchLifecycleTest.test_busy_wait_persists_before_one_hub_busy_requeue_request) ... FAIL
+
+======================================================================
+FAIL: test_busy_wait_persists_before_one_hub_busy_requeue_request (tests.test_dispatch_lifecycle.DispatchLifecycleTest.test_busy_wait_persists_before_one_hub_busy_requeue_request)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 84, in test_busy_wait_persists_before_one_hub_busy_requeue_request
+    self.assertIsNotNone(row['busy_wait_started_at'],'N1C_BUSY_MARKER_NOT_PERSISTED')
+AssertionError: unexpectedly None : N1C_BUSY_MARKER_NOT_PERSISTED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.043s
+
+FAILED (failures=1)

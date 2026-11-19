@@ -1,0 +1,123 @@
+npm WARN exec The following package was not found and will be installed: @fission-ai/openspec@1.16.0
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@fission-ai/openspec@1.16.0',
+npm WARN EBADENGINE   required: { node: '>=22.12.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/core@12.1.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/prompts@8.8.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'brace-expansion@5.0.13',
+npm WARN EBADENGINE   required: { node: '20 || >=22' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'commander@14.0.3',
+npm WARN EBADENGINE   required: { node: '>=20' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'ora@9.4.1',
+npm WARN EBADENGINE   required: { node: '>=20' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/ansi@2.1.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/figures@2.1.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/type@4.3.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'mute-stream@4.0.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/checkbox@5.3.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/confirm@6.4.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/editor@5.4.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/expand@5.2.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/input@5.2.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/number@4.3.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/password@5.3.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/rawlist@5.4.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/search@4.4.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/select@5.3.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/external-editor@3.1.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'cli-spinners@3.4.0',
+npm WARN EBADENGINE   required: { node: '>=18.20' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'string-width@8.3.0',
+npm WARN EBADENGINE   required: { node: '>=20' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+Note: OpenSpec collects anonymous usage stats. Opt out: OPENSPEC_TELEMETRY=0 or openspec config set telemetry.enabled false
+Change 'r61-n1c-presubmit-wait' has issues
+⚠ [WARNING] helper-presubmit-wait/spec.md: ADDED "Transient pre-submit validation failures remain queued": Requirement text is very long (>500 characters). Move examples and edge cases into scenarios, or split it into separate requirements that each state one behavior.
+Next steps:
+  - Ensure change has deltas in specs/: use headers ## ADDED/MODIFIED/REMOVED/RENAMED Requirements
+  - Each requirement MUST include at least one #### Scenario: block
+  - Debug parsed deltas: openspec show r61-n1c-presubmit-wait --json --deltas-only

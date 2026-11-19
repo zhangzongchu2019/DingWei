@@ -1,0 +1,30 @@
+test_handle_delivery_initialize_auth_rejection_is_terminal (tests.test_driver_failure_faces.HubDeliveryPathTest.test_handle_delivery_initialize_auth_rejection_is_terminal)
+A known initialize denial must settle failed, not quarantine the FIFO. ... [driver-adapter] started, driver=codex
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=dw-view-2dcfa84188c44fc68187330ee6b57780 validation=authentication; operator action required, no thread rotation or submission
+/tmp/r6-before-r6/tools/sessionhelper/sessionhelper/codexDriver.py:1105: ResourceWarning: unclosed file <_io.TextIOWrapper name=4 encoding='utf-8'>
+  self._rpc.stop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/r6-before-r6/tools/sessionhelper/sessionhelper/codexDriver.py:1105: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='utf-8'>
+  self._rpc.stop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/r6-before-r6/tools/sessionhelper/sessionhelper/codexDriver.py:1105: ResourceWarning: unclosed file <_io.TextIOWrapper name=7 encoding='utf-8'>
+  self._rpc.stop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: RuntimeError: codex app-server daemon start failed; install standalone Codex or use transport_mode='direct': /tmp/lockvenv/bin/python3: can't open file '/tmp/tmpjlxo2lek/app-server': [Errno 2] No such file or directory
+FAIL
+
+======================================================================
+FAIL: test_handle_delivery_initialize_auth_rejection_is_terminal (tests.test_driver_failure_faces.HubDeliveryPathTest.test_handle_delivery_initialize_auth_rejection_is_terminal)
+A known initialize denial must settle failed, not quarantine the FIFO.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r6-before-r6/tools/sessionhelper/tests/test_driver_failure_faces.py", line 295, in test_handle_delivery_initialize_auth_rejection_is_terminal
+    self.assertEqual(state, "failed", f"known auth rejection must become a failed terminal; RPC methods={rpc_methods}")
+AssertionError: '' != 'failed'
++ failed
+ : known auth rejection must become a failed terminal; RPC methods=['initialize']
+
+----------------------------------------------------------------------
+Ran 1 test in 3.048s
+
+FAILED (failures=1)

@@ -1,0 +1,16 @@
+test_submission_marker_prevents_startup_retry (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_submission_marker_prevents_startup_retry) ... [delivery][WARN] transient pre-submit CLI recovery start failed; keeping FIFO quarantined for retry attempt=1
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+FAIL
+
+======================================================================
+FAIL: test_submission_marker_prevents_startup_retry (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_submission_marker_prevents_startup_retry)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/n1c-r3-mut/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 433, in test_submission_marker_prevents_startup_retry
+    self.assertFalse(recovery.is_set(), 'N1C_UNKNOWN_SUBMISSION_WAS_AUTOMATICALLY_RECOVERED')
+AssertionError: True is not false : N1C_UNKNOWN_SUBMISSION_WAS_AUTOMATICALLY_RECOVERED
+
+----------------------------------------------------------------------
+Ran 1 test in 0.099s
+
+FAILED (failures=1)

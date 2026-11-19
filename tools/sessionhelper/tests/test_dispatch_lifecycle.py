@@ -71,6 +71,30 @@ class DispatchLifecycleTest(unittest.TestCase):
         self.assertEqual(seen,[])
         self.assertIsNone(self.inbox.lifecycle('dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')['admitted_at'])
 
+    def test_busy_wait_persists_before_one_hub_busy_requeue_request(self):
+        did='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        self.inbox.begin_dispatch(did)
+        driver=SimpleNamespace(_busy_admission=BusyAdmission())
+        adapter=self.adapter(driver)
+        requested=[]
+        adapter.on_busy_wait=requested.append
+        self.assertTrue(driver._busy_admission.waiting(did))
+        self.assertTrue(driver._busy_admission.waiting(did))
+        row=self.inbox.lifecycle(did)
+        self.assertIsNotNone(row['busy_wait_started_at'],'N1C_BUSY_MARKER_NOT_PERSISTED')
+        self.assertIsNone(row['submission_may_have_started_at'],'N1C_BUSY_CROSSED_SUBMIT')
+        self.assertEqual(requested,[did],'N1C_BUSY_ACK_NOT_ONCE')
+        self.assertEqual(row['state'],'processing','N1C_BUSY_ACK_TERMINALIZED_LOCAL_INBOX')
+
+    def test_presubmit_binding_mismatch_stays_fifo_head_even_when_driver_unhealthy(self):
+        driver=SimpleNamespace(presubmit_validation_hold=lambda did:'invalid_thread_binding',
+                               health=lambda:False,
+                               _busy_admission=BusyAdmission())
+        adapter=self.adapter(driver)
+        command=SimpleNamespace(delivery_id='dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        self.assertEqual(adapter._busy_admission_status(command,driver),'waiting',
+                         'N1C_BINDING_MISMATCH_WATCHDOG_DROPPED_FIFO_HEAD')
+
     def test_claude_submitted_local_uuid_is_not_admission(self):
         driver=SimpleNamespace()
         adapter=self.adapter(driver,'claude')
@@ -308,6 +332,166 @@ class WatchdogQueueReleaseTest(unittest.TestCase):
         self.assertEqual(after['state'],'processed','迟到真实终态仍须补记原件')
         self.assertIsNone(after['error'],'真实终态须清除旧transport unknown诊断')
         if admitted:self.assertEqual(after['admitted_at'],saved_admission)
+
+class PresubmitRecoveryStartRetryTest(unittest.TestCase):
+    setUp = DispatchLifecycleTest.setUp
+    adapter = DispatchLifecycleTest.adapter
+
+    def _run_recovery(self, failures, *, marker_set=False):
+        from sessionhelper.codexDriver import JsonRpcError
+
+        first_id = self.env['meta']['delivery_id']
+        second_id = 'dw-dlv_' + 'c' * 32
+        second_env = {'id': 'later', 'body': 'later', 'meta': dict(self.env['meta'], delivery_id=second_id)}
+        self.inbox.begin_dispatch(first_id)
+        self.inbox.mark_busy_waiting(first_id)
+        if marker_set:
+            self.inbox.mark_submission_may_have_started(first_id)
+        self.inbox.accept(second_id, second_env)
+
+        class OldDriver:
+            transport_recovery_required = staticmethod(lambda _timeout: True)
+            abort_transport = staticmethod(lambda: None)
+            stop = staticmethod(lambda: None)
+
+        class Replacement:
+            def __init__(self):
+                self.start_calls = 0
+                self.deliveries = []
+                self.turn_starts = []
+                self.on_activity = None
+
+            def start(self):
+                self.start_calls += 1
+                if self.start_calls <= len(failures):
+                    error = failures[self.start_calls - 1]
+                    raise error
+
+            def stop(self):
+                pass
+
+            def deliver(self, delivery_id, body):
+                self.deliveries.append(delivery_id)
+                self.turn_starts.append(delivery_id)
+                return DeliveryReceipt(delivery_id, 'processing', 'fixture', f'turn=turn-{delivery_id[-1]}')
+
+        old = OldDriver()
+        replacement = Replacement()
+        adapter = self.adapter(old, 'codex')
+        adapter._lane_stop.clear()
+        adapter._build_driver = lambda _which: replacement
+        adapter._bridge_sleep = lambda _seconds: None
+        adapter._commands.enqueue(self.env)
+        current = adapter._commands.start_next()
+        adapter._commands.defer_current(current.delivery_id, preserve_fifo_head=True)
+        adapter._commands.enqueue(second_env)
+        current._delivery_worker = threading.Event()
+        current._delivery_worker.set()
+        adapter._terminal_timeout = 0.05
+
+        with patch('sessionhelper.driver_adapter.PRESUBMIT_RECOVERY_BACKOFF', (0,)):
+            adapter._recover_transport(current)
+            recovery = adapter._transport_recovery
+            thread = adapter._transport_recovery_thread
+            thread.join(2)
+        self.assertFalse(thread.is_alive(), 'N1C_RECOVERY_THREAD_DID_NOT_SETTLE')
+        return adapter, replacement, recovery, first_id, second_id
+
+    def test_repeated_timeout_then_initialize_rpc_error_recovers_fifo_once(self):
+        from sessionhelper.codexDriver import JsonRpcError
+        adapter, replacement, recovery, first_id, second_id = self._run_recovery([
+            TimeoutError('synthetic recovery timeout'),
+            JsonRpcError('initialize', {'code': -32603, 'message': 'synthetic temporary initialize error'}),
+        ])
+        self.assertTrue(recovery.is_set(), 'N1C_TRANSIENT_RECOVERY_DID_NOT_RESUME_FIFO')
+        self.assertIs(adapter.driver, replacement)
+        self.assertEqual(replacement.start_calls, 3, 'N1C_RECOVERY_DID_NOT_RETRY_BOTH_TRANSIENT_FAILURES')
+        for expected in (first_id, second_id):
+            command = adapter._commands.start_next()
+            self.assertEqual(command.delivery_id, expected, 'N1C_FIFO_HEAD_ORDER_CHANGED')
+            replacement.deliver(command.delivery_id, command.text)
+            adapter._commands.finish(command.delivery_id, 'completed')
+        self.assertEqual(replacement.turn_starts, [first_id, second_id],
+                         'N1C_LATER_FIFO_ITEM_NOT_SUBMITTED_EXACTLY_ONCE')
+
+    def test_authentication_rejection_is_not_retried_or_fifo_released(self):
+        from sessionhelper.codexDriver import JsonRpcError
+        adapter, replacement, recovery, first_id, second_id = self._run_recovery([
+            JsonRpcError('initialize', {'code': 401, 'message': '401 Unauthorized'}),
+        ])
+        self.assertFalse(recovery.is_set(), 'N1C_AUTH_REJECTION_WAS_RETRIED_AS_TRANSIENT')
+        self.assertEqual(replacement.start_calls, 1, 'N1C_AUTH_REJECTION_WAS_RETRIED_AS_TRANSIENT')
+        head = adapter._commands.start_next()
+        self.assertEqual(head.delivery_id, first_id)
+        self.assertEqual(replacement.deliveries, [], 'N1C_AUTH_REJECTION_RELEASED_FIFO')
+
+    def test_submission_marker_prevents_startup_retry(self):
+        from sessionhelper.codexDriver import JsonRpcError
+        adapter, replacement, recovery, first_id, _second_id = self._run_recovery([
+            TimeoutError('synthetic recovery timeout'),
+        ], marker_set=True)
+        self.assertFalse(recovery.is_set(), 'N1C_UNKNOWN_SUBMISSION_WAS_AUTOMATICALLY_RECOVERED')
+        self.assertEqual(replacement.start_calls, 1, 'N1C_UNKNOWN_SUBMISSION_WAS_AUTOMATICALLY_RECOVERED')
+
+    def test_event_bridge_resubscribes_after_recovery_event_is_set(self):
+        calls = []
+        recovery = threading.Event()
+        sleeps = []
+        def events():
+            calls.append(('subscribed', recovery.is_set()))
+            return ()
+        driver = SimpleNamespace(events=events,
+                                 healthy=lambda: True, on_activity=None)
+        adapter = self.adapter(driver, 'codex')
+        adapter._transport_recovery = recovery
+        def bridge_sleep(_seconds):
+            sleeps.append(None)
+            if len(sleeps) == 1:
+                recovery.set()
+            else:
+                adapter._lane_stop.set()
+        adapter._bridge_sleep = bridge_sleep
+        adapter._event_bridge()
+        self.assertEqual(calls, [('subscribed', True)], 'N1C_EVENT_BRIDGE_SUBSCRIBED_BEFORE_RECOVERY')
+
+    def test_set_recovery_event_does_not_mask_unhealthy_driver_reconnect(self):
+        recovery = threading.Event()
+        recovery.set()
+        driver_state = {'healthy': False, 'starts': 0, 'events': 0}
+        sleeps = []
+        adapter = None
+
+        def events():
+            driver_state['events'] += 1
+            if driver_state['healthy']:
+                adapter._lane_stop.set()
+            return ()
+
+        def start():
+            driver_state['starts'] += 1
+            driver_state['healthy'] = True
+
+        driver = SimpleNamespace(events=events, healthy=lambda: driver_state['healthy'],
+                                 start=start, on_activity=None)
+        adapter = self.adapter(driver, 'codex')
+        adapter._transport_recovery = recovery  # Set, but intentionally not cleared.
+
+        def bridge_sleep(_seconds):
+            sleeps.append(None)
+            # Bound a regressed loop that only checks recovery-object presence.
+            if len(sleeps) >= 3:
+                adapter._lane_stop.set()
+
+        adapter._bridge_sleep = bridge_sleep
+        adapter._bridge_clock = lambda: float(len(sleeps) + 1)
+        adapter._event_bridge()
+
+        self.assertEqual(driver_state['starts'], 1,
+                         'N1C_SET_RECOVERY_MASKED_UNHEALTHY_DRIVER_RECONNECT')
+        self.assertTrue(driver_state['healthy'], 'N1C_SET_RECOVERY_DID_NOT_RESTORE_DRIVER')
+        self.assertGreaterEqual(driver_state['events'], 2,
+                                'N1C_SET_RECOVERY_EVENT_BRIDGE_DID_NOT_RESUBSCRIBE')
+
 
 class AdmissionDeadlineTest(unittest.TestCase):
     setUp = DispatchLifecycleTest.setUp
@@ -754,7 +938,7 @@ class BusyAdmissionTest(unittest.TestCase):
         cfg=SimpleNamespace(busy_buffer_max=5,turn_terminal_timeout_seconds=1800,admission_timeout_seconds=60,busy_admission_max_seconds=1800)
         self.adapter=DriverAdapter(cfg,driver=driver);self.adapter._which=which;self.adapter._started=True
         self.adapter.delivery_lifecycle=self.inbox
-        self.recoveries=[];self.adapter._recover_transport=lambda cmd:self.recoveries.append(cmd.delivery_id)
+        self.recoveries=[];self.adapter._recover_transport=lambda cmd, **kwargs:self.recoveries.append(cmd.delivery_id)
         self.adapter.handle_delivery(self.env)
         self.command=self.adapter._commands.start_next()
         def run():

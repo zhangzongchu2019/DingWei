@@ -1,0 +1,200 @@
+test_adapter_bound_thread_mismatch_stays_queued_without_terminal_failure (test_codex_stale_thread.CodexStaleThread.test_adapter_bound_thread_mismatch_stays_queued_without_terminal_failure) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=dw-one validation=missing_thread; operator action required, no thread rotation or submission
+ok
+test_adapter_presubmit_mismatch_stays_queued_without_terminal_failure (test_codex_stale_thread.CodexStaleThread.test_adapter_presubmit_mismatch_stays_queued_without_terminal_failure) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=dw-one validation=missing_thread; operator action required, no thread rotation or submission
+ok
+test_adapter_uncertain_admission_is_visible_and_not_a_success (test_codex_stale_thread.CodexStaleThread.test_adapter_uncertain_admission_is_visible_and_not_a_success) ... [driver-adapter] deliver id=dw-one -> failed (model_admission_unknown: error_class=timeout; method=local; )
+[delivery] failed id=dw-one source=protocol (model_admission_unknown: error_class=timeout; method=local; )
+ok
+test_binding_result_identity_directory_and_admission_are_strict (test_codex_stale_thread.CodexStaleThread.test_binding_result_identity_directory_and_admission_are_strict) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('id', 'other') validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('cwd', '/other') validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('cwd', None) validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('status', {'type': 'systemError'}) validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('canAcceptDirectInput', False) validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('canAcceptDirectInput', 1) validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=('canAcceptDirectInput', None) validation=invalid_thread_binding; operator action required, no thread rotation or submission
+ok
+test_historical_interrupt_confirm_reads_same_record_thread (test_codex_stale_thread.CodexStaleThread.test_historical_interrupt_confirm_reads_same_record_thread) ... ok
+test_historical_poll_and_state_update_use_record_thread (test_codex_stale_thread.CodexStaleThread.test_historical_poll_and_state_update_use_record_thread) ... ok
+test_historical_receipts_do_not_change_active_binding_or_create_thread (test_codex_stale_thread.CodexStaleThread.test_historical_receipts_do_not_change_active_binding_or_create_thread) ... ok
+test_loaded_thread_validated_before_admission (test_codex_stale_thread.CodexStaleThread.test_loaded_thread_validated_before_admission) ... ok
+test_missing_thread_never_creates_or_replays_and_retains_ledger (test_codex_stale_thread.CodexStaleThread.test_missing_thread_never_creates_or_replays_and_retains_ledger) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=one validation=missing_thread; operator action required, no thread rotation or submission
+ok
+test_missing_turn_start_invalidates_binding_without_new_thread (test_codex_stale_thread.CodexStaleThread.test_missing_turn_start_invalidates_binding_without_new_thread) ... ok
+test_new_thread_is_created_only_for_initial_unbound_session (test_codex_stale_thread.CodexStaleThread.test_new_thread_is_created_only_for_initial_unbound_session) ... ok
+test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain (test_codex_stale_thread.CodexStaleThread.test_pending_marker_precedes_dispatch_and_malformed_success_is_uncertain) ... ok
+test_read_not_loaded_error_is_resumable_not_missing (test_codex_stale_thread.CodexStaleThread.test_read_not_loaded_error_is_resumable_not_missing) ... ok
+test_reconnect_cannot_replace_rpc_between_validation_and_dispatch (test_codex_stale_thread.CodexStaleThread.test_reconnect_cannot_replace_rpc_between_validation_and_dispatch) ... ok
+test_reconnect_restores_exact_persisted_thread_before_turn (test_codex_stale_thread.CodexStaleThread.test_reconnect_restores_exact_persisted_thread_before_turn) ... ok
+test_rpc_replacement_invalidates_same_generation (test_codex_stale_thread.CodexStaleThread.test_rpc_replacement_invalidates_same_generation) ... ok
+test_same_rpc_new_connection_generation_requires_validation (test_codex_stale_thread.CodexStaleThread.test_same_rpc_new_connection_generation_requires_validation) ... ok
+test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart (test_codex_stale_thread.CodexStaleThread.test_timeout_and_disconnect_after_dispatch_never_resubmit_across_restart) ... ok
+test_unclassified_turn_error_is_uncertain_and_never_replayed (test_codex_stale_thread.CodexStaleThread.test_unclassified_turn_error_is_uncertain_and_never_replayed) ... ok
+test_validation_errors_are_classified_without_guessing_or_private_text (test_codex_stale_thread.CodexStaleThread.test_validation_errors_are_classified_without_guessing_or_private_text) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=0 validation=authentication; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=1 validation=rpc_error; operator action required, no thread rotation or submission
+ok
+test_configured_root_read_before_exact_turn (test_codex_stale_thread.ConfiguredRootBinding.test_configured_root_read_before_exact_turn) ... ok
+test_configured_root_resumes_exact_thread (test_codex_stale_thread.ConfiguredRootBinding.test_configured_root_resumes_exact_thread) ... ok
+test_configured_transport_unavailable_waits_without_submission (test_codex_stale_thread.ConfiguredRootBinding.test_configured_transport_unavailable_waits_without_submission) ... ok
+test_invalid_binding_remains_at_fifo_head_without_new_thread (test_codex_stale_thread.ConfiguredRootBinding.test_invalid_binding_remains_at_fifo_head_without_new_thread) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=invalid-id validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=invalid-cwd validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=invalid-status validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=invalid-canAcceptDirectInput validation=invalid_thread_binding; operator action required, no thread rotation or submission
+ok
+test_private_binding_conflict_stops_startup_and_reports_both_ids (test_codex_stale_thread.ConfiguredRootBinding.test_private_binding_conflict_stops_startup_and_reports_both_ids) ... ok
+test_private_matching_or_empty_binding_validates_before_saving (test_codex_stale_thread.ConfiguredRootBinding.test_private_matching_or_empty_binding_validates_before_saving) ... ok
+test_reconnect_revalidates_and_alias_cannot_replace_pin (test_codex_stale_thread.ConfiguredRootBinding.test_reconnect_revalidates_and_alias_cannot_replace_pin) ... ok
+test_unavailable_never_creates_and_retains_operator_held_fifo_head (test_codex_stale_thread.ConfiguredRootBinding.test_unavailable_never_creates_and_retains_operator_held_fifo_head) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=missing validation=missing_thread; operator action required, no thread rotation or submission
+ok
+test_unset_factory_preserves_legacy_constructor_arguments (test_codex_stale_thread.ConfiguredRootBinding.test_unset_factory_preserves_legacy_constructor_arguments) ... ok
+test_real_delivery_worker_persists_initialize_wait_then_submits_once (test_codex_stale_thread.FirstDeliveryInitializeWait.test_real_delivery_worker_persists_initialize_wait_then_submits_once) ... [driver-adapter] started, driver=codex
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_11111111111111111111111111111111 -> processing (turn=turn-dw-dlv_11111111111111111111111111111111 status=inP)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] started, driver=codex
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_22222222222222222222222222222222 -> processing (turn=turn-dw-dlv_22222222222222222222222222222222 status=inP)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+test_both_transports_preserve_rpc_error_without_private_payload_in_string (test_codex_stale_thread.RPCErrorShapes.test_both_transports_preserve_rpc_error_without_private_payload_in_string) ... ok
+test_missing_thread_requires_exact_method_code_and_id (test_codex_stale_thread.RPCErrorShapes.test_missing_thread_requires_exact_method_code_and_id) ... ok
+test_presubmit_retry_classifier_is_narrow_and_read_only_only (test_codex_stale_thread.RPCErrorShapes.test_presubmit_retry_classifier_is_narrow_and_read_only_only) ... ok
+test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned (test_codex_stale_thread.RPCErrorShapes.test_real_reader_eof_is_disconnect_and_pending_send_failure_is_cleaned) ... ok
+test_adapter_recovery_inherits_final_thread_and_never_replays_unknown (test_codex_stale_thread.RecoveryThreadInheritance.test_adapter_recovery_inherits_final_thread_and_never_replays_unknown) ... [delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+ok
+test_auth_stays_fail_closed_and_temporary_read_errors_retry_same_thread (test_codex_stale_thread.RecoveryThreadInheritance.test_auth_stays_fail_closed_and_temporary_read_errors_retry_same_thread) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=failure-auth validation=authentication; operator action required, no thread rotation or submission
+ok
+test_configured_root_and_child_still_refuse_unavailable_thread (test_codex_stale_thread.RecoveryThreadInheritance.test_configured_root_and_child_still_refuse_unavailable_thread) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=rejected-True validation=missing_thread; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=rejected-False validation=missing_thread; operator action required, no thread rotation or submission
+ok
+test_lane_identity_mismatch_is_rejected (test_codex_stale_thread.RecoveryThreadInheritance.test_lane_identity_mismatch_is_rejected) ... ok
+test_loaded_root_is_validated_and_continued_without_create (test_codex_stale_thread.RecoveryThreadInheritance.test_loaded_root_is_validated_and_continued_without_create) ... ok
+test_mismatched_recovery_binding_never_rotates_to_new_thread (test_codex_stale_thread.RecoveryThreadInheritance.test_mismatched_recovery_binding_never_rotates_to_new_thread) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=mismatch validation=invalid_thread_binding; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=later validation=invalid_thread_binding; operator action required, no thread rotation or submission
+ok
+test_missing_or_wrong_cwd_fails_closed_without_thread_replacement (test_codex_stale_thread.RecoveryThreadInheritance.test_missing_or_wrong_cwd_fails_closed_without_thread_replacement) ... [delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=new-missing validation=missing_thread; operator action required, no thread rotation or submission
+[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id=new-cwd validation=invalid_thread_binding; operator action required, no thread rotation or submission
+ok
+test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery (test_codex_stale_thread.RecoveryThreadInheritance.test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery) ... ok
+test_session_event_loop_forwards_failure_with_delivery_correlation (test_codex_stale_thread.StructuredAdmissionOutput.test_session_event_loop_forwards_failure_with_delivery_correlation) ... ok
+test_admission_committed_before_deadline_wins (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_admission_committed_before_deadline_wins) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> accepted (isReplay ack, turn=original)
+[delivery] done id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa source=fixture (isReplay ack, turn=original)
+ok
+test_blocked_deliver_accepted_after_deadline_is_not_admission (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_blocked_deliver_accepted_after_deadline_is_not_admission) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+ok
+test_slow_poll_accepted_after_deadline_is_not_admission (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_slow_poll_accepted_after_deadline_is_not_admission) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+ok
+test_unknown_requires_complete_native_evidence_to_reconcile_atomically (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_unknown_requires_complete_native_evidence_to_reconcile_atomically) ... [delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+ok
+test_unknown_terminal_without_original_times_is_evidence_only (test_dispatch_lifecycle.AdmissionDeadlineRaceTest.test_unknown_terminal_without_original_times_is_evidence_only) ... [delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa turn=original; missing original native times, no ACK advancement
+[delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa turn=original; missing original native times, no ACK advancement
+[delivery][INCOMPLETE_NATIVE_EVIDENCE] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa turn=original; missing original native times, no ACK advancement
+ok
+test_blocked_deliver_is_aborted_before_next_dispatch (test_dispatch_lifecycle.AdmissionDeadlineTest.test_blocked_deliver_is_aborted_before_next_dispatch) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_deadline-next -> done (turn=new-turn)
+[delivery] done id=dw-dlv_deadline-next source=fixture (turn=new-turn)
+ok
+test_clock_includes_time_since_persisted_dispatch_intent (test_dispatch_lifecycle.AdmissionDeadlineTest.test_clock_includes_time_since_persisted_dispatch_intent) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+ok
+test_default_and_independent_environment_configuration (test_dispatch_lifecycle.AdmissionDeadlineTest.test_default_and_independent_environment_configuration) ... ok
+test_failed_recovery_quarantines_following_pipe_writes (test_dispatch_lifecycle.AdmissionDeadlineTest.test_failed_recovery_quarantines_following_pipe_writes) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (submitted)
+[delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: RuntimeError: driver has no safe transport abort
+ok
+test_missing_accepted_uses_admission_deadline_and_recovers (test_dispatch_lifecycle.AdmissionDeadlineTest.test_missing_accepted_uses_admission_deadline_and_recovers) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (submitted, awaiting ack, turn=old-turn)
+[delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_deadline-next -> done (turn=new-turn)
+[delivery] done id=dw-dlv_deadline-next source=fixture (turn=new-turn)
+ok
+test_prior_nonterminal_wait_is_aborted_before_replacement_dispatch (test_dispatch_lifecycle.AdmissionDeadlineTest.test_prior_nonterminal_wait_is_aborted_before_replacement_dispatch) ... [delivery][ALERT][BUSY_ADMISSION_LONG_WAIT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa driver=claude wait_seconds=0; still waiting, not submitted
+[delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+/usr/lib/python3.12/unittest/case.py:669: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='utf-8'>
+  function, args, kwargs = self._cleanups.pop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_real_blocked_stdin_killed_before_buffered_close_and_next_dispatch (test_dispatch_lifecycle.AdmissionDeadlineTest.test_real_blocked_stdin_killed_before_buffered_close_and_next_dispatch) ... [delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-next -> done (turn=next)
+[delivery] done id=dw-next source=fixture (turn=next)
+ok
+test_busy_configuration_default_and_override (test_dispatch_lifecycle.BusyAdmissionTest.test_busy_configuration_default_and_override) ... ok
+test_cancelled_waiter_cannot_cross_submission_boundary (test_dispatch_lifecycle.BusyAdmissionTest.test_cancelled_waiter_cannot_cross_submission_boundary) ... ok
+test_claude_bad_transport_old_handling (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_bad_transport_old_handling) ... /usr/lib/python3.12/functools.py:519: ResourceWarning: unclosed file <_io.FileIO name=5 mode='rb' closefd=True>
+  wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_claude_busy90_once (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_busy90_once) ... ok
+test_claude_limit_warns_without_cancelling_late_submission (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_limit_warns_without_cancelling_late_submission) ... ok
+test_claude_stuck_writer_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_claude_stuck_writer_has_no_busy_exemption) ... ok
+test_codex_bad_transport_old_handling (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_bad_transport_old_handling) ... ok
+test_codex_busy90_once (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_busy90_once) ... ok
+test_codex_limit_warns_without_cancelling_late_submission (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_limit_warns_without_cancelling_late_submission) ... ok
+test_codex_stuck_writer_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_codex_stuck_writer_has_no_busy_exemption) ... ok
+test_disconnected_transport_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_disconnected_transport_has_no_busy_exemption) ... ok
+test_possible_submission_has_no_busy_exemption (test_dispatch_lifecycle.BusyAdmissionTest.test_possible_submission_has_no_busy_exemption) ... ok
+test_restart_recovers_proven_busy_head_before_later_delivery (test_dispatch_lifecycle.BusyAdmissionTest.test_restart_recovers_proven_busy_head_before_later_delivery) ... ok
+test_submission_boundary_cannot_be_cancelled (test_dispatch_lifecycle.BusyAdmissionTest.test_submission_boundary_cannot_be_cancelled) ... ok
+test_busy_timeout_setting_applies_after_boundary_not_during_wait (test_dispatch_lifecycle.BusyWaitRecoveryTest.test_busy_timeout_setting_applies_after_boundary_not_during_wait) ... ok
+test_restart_restores_busy_head_fifo_and_writer_runs_once_after_release (test_dispatch_lifecycle.BusyWaitRecoveryTest.test_restart_restores_busy_head_fifo_and_writer_runs_once_after_release) ... [delivery][ALERT][BUSY_ADMISSION_LONG_WAIT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa driver=claude wait_seconds=0; still waiting, not submitted
+ok
+test_submission_boundary_restart_stays_manual_and_never_calls_writer (test_dispatch_lifecycle.BusyWaitRecoveryTest.test_submission_boundary_restart_stays_manual_and_never_calls_writer) ... ok
+test_submission_gate_persistence_failure_refuses_writer (test_dispatch_lifecycle.BusyWaitRecoveryTest.test_submission_gate_persistence_failure_refuses_writer) ... ok
+test_absent_blocker_journal_is_not_reopened_on_each_idle_tick (test_dispatch_lifecycle.DispatchLifecycleTest.test_absent_blocker_journal_is_not_reopened_on_each_idle_tick) ... ok
+test_busy_wait_persists_before_one_hub_busy_requeue_request (test_dispatch_lifecycle.DispatchLifecycleTest.test_busy_wait_persists_before_one_hub_busy_requeue_request) ... ok
+test_cancel_and_dispatch_have_single_atomic_winner (test_dispatch_lifecycle.DispatchLifecycleTest.test_cancel_and_dispatch_have_single_atomic_winner) ... ok
+test_claude_error_result_cannot_be_persisted_as_successful_done (test_dispatch_lifecycle.DispatchLifecycleTest.test_claude_error_result_cannot_be_persisted_as_successful_done) ... ok
+test_claude_partial_stream_only_refreshes_progress_without_admission_or_output (test_dispatch_lifecycle.DispatchLifecycleTest.test_claude_partial_stream_only_refreshes_progress_without_admission_or_output) ... ok
+test_claude_submitted_local_uuid_is_not_admission (test_dispatch_lifecycle.DispatchLifecycleTest.test_claude_submitted_local_uuid_is_not_admission) ... ok
+test_enqueue_and_duplicate_never_fire_admission_callback (test_dispatch_lifecycle.DispatchLifecycleTest.test_enqueue_and_duplicate_never_fire_admission_callback) ... ok
+test_failure_receipt_without_original_times_cannot_reopen_unknown (test_dispatch_lifecycle.DispatchLifecycleTest.test_failure_receipt_without_original_times_cannot_reopen_unknown) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> failed (result failed: error_max_turns)
+[delivery][LATE_ACCEPTED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; accepted-only cannot reopen admission
+[delivery] failed id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa source=pipe (result failed: error_max_turns)
+ok
+test_intent_precedes_rpc_and_exception_never_replays (test_dispatch_lifecycle.DispatchLifecycleTest.test_intent_precedes_rpc_and_exception_never_replays) ... [driver-adapter][FAILED] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa deliver raised: connection lost after request
+[driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> unknown (no evidence)
+ok
+test_lost_claude_pipe_recovery_isolates_without_blocking_fifo (test_dispatch_lifecycle.DispatchLifecycleTest.test_lost_claude_pipe_recovery_isolates_without_blocking_fifo) ... ok
+test_native_terminal_preserves_turn_and_original_times (test_dispatch_lifecycle.DispatchLifecycleTest.test_native_terminal_preserves_turn_and_original_times) ... ok
+test_non_durable_human_command_does_not_require_hub_ledger (test_dispatch_lifecycle.DispatchLifecycleTest.test_non_durable_human_command_does_not_require_hub_ledger) ... [driver-adapter] deliver id=dw-human -> done (turn=human-turn)
+[delivery] done id=dw-human source=protocol (turn=human-turn)
+ok
+test_presubmit_binding_mismatch_stays_fifo_head_even_when_driver_unhealthy (test_dispatch_lifecycle.DispatchLifecycleTest.test_presubmit_binding_mismatch_stays_fifo_head_even_when_driver_unhealthy) ... ok
+test_recovery_query_does_not_dispatch_admitted_or_uncertain_rows (test_dispatch_lifecycle.DispatchLifecycleTest.test_recovery_query_does_not_dispatch_admitted_or_uncertain_rows) ... ok
+test_restore_only_queries_bound_request_and_never_calls_deliver (test_dispatch_lifecycle.DispatchLifecycleTest.test_restore_only_queries_bound_request_and_never_calls_deliver) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> unknown (no remote proof)
+ok
+test_watchdog_event_does_not_fabricate_turn_terminal (test_dispatch_lifecycle.DispatchLifecycleTest.test_watchdog_event_does_not_fabricate_turn_terminal) ... ok
+test_compare_serialized_wire_time_not_unrounded_float (test_dispatch_lifecycle.MixedPrecisionGuardTest.test_compare_serialized_wire_time_not_unrounded_float) ... ok
+test_consistent_original_terminal_can_close_pending (test_dispatch_lifecycle.MixedPrecisionGuardTest.test_consistent_original_terminal_can_close_pending) ... ok
+test_mixed_precision_blocks_pending_and_confirmed_injected_ack (test_dispatch_lifecycle.MixedPrecisionGuardTest.test_mixed_precision_blocks_pending_and_confirmed_injected_ack) ... ok
+test_pending_survives_restart_and_identical_evidence_without_new_ack (test_dispatch_lifecycle.MixedPrecisionGuardTest.test_pending_survives_restart_and_identical_evidence_without_new_ack) ... ok
+test_pending_wire_timestamp_is_authoritative_over_inbox_value (test_dispatch_lifecycle.MixedPrecisionGuardTest.test_pending_wire_timestamp_is_authoritative_over_inbox_value) ... ok
+test_claude_times_are_first_native_receipt_and_result_observations (test_dispatch_lifecycle.NativeEvidenceTimeTest.test_claude_times_are_first_native_receipt_and_result_observations) ... ok
+test_codex_times_require_original_started_observation (test_dispatch_lifecycle.NativeEvidenceTimeTest.test_codex_times_require_original_started_observation) ... ok
+test_admitted_turn_times_out_without_model_terminal_and_advances (test_dispatch_lifecycle.WatchdogQueueReleaseTest.test_admitted_turn_times_out_without_model_terminal_and_advances) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (turn=turn-first)
+[delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa terminal_timeout; admission/terminal not assumed; no automatic replay
+[driver-adapter] deliver id=dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb -> done (turn=turn-second)
+ok
+test_historical_processed_is_not_native_terminal_evidence (test_dispatch_lifecycle.WatchdogQueueReleaseTest.test_historical_processed_is_not_native_terminal_evidence) ... [delivery][ALERT][TIMEOUT] id=dw-legacy-processed admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: RuntimeError: driver has no safe transport abort
+ok
+test_persisted_native_terminal_advances_despite_stale_poll (test_dispatch_lifecycle.WatchdogQueueReleaseTest.test_persisted_native_terminal_advances_despite_stale_poll) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (turn=native-turn)
+ok
+test_persisted_terminal_consumes_admission_callback_before_release (test_dispatch_lifecycle.WatchdogQueueReleaseTest.test_persisted_terminal_consumes_admission_callback_before_release) ... ok
+test_unproven_claude_admission_times_out_and_advances (test_dispatch_lifecycle.WatchdogQueueReleaseTest.test_unproven_claude_admission_times_out_and_advances) ... [driver-adapter] deliver id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> processing (turn=turn-first)
+[delivery][ALERT][TIMEOUT] id=dw-dlv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa admission_timeout; admission/terminal not assumed; no automatic replay
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb -> done (turn=turn-second)
+[delivery] done id=dw-dlv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb source=fixture (turn=turn-second)
+ok
+
+----------------------------------------------------------------------
+Ran 101 tests in 11.072s
+
+OK

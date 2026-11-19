@@ -210,20 +210,21 @@ class DaemonWiring(unittest.TestCase):
         with mock.patch.object(self.driver, 'start', wraps=self.driver.start) as start:
             first = self.driver.deliver('fixture-envelope', 'PRIVATE BODY')
             persisted = self.driver._store.get_by_envelope('fixture-envelope')
-            self.assertIsNotNone(persisted, 'IDENTITY_FAILURE_NOT_DURABLE')
+            self.assertIsNone(persisted, 'IDENTITY_MISMATCH_TERMINALIZED')
             second = self.driver.deliver('fixture-envelope', 'PRIVATE BODY')
             self.assertEqual(start.call_count, 1, 'IDENTITY_FAILURE_RETRIED')
-        self.assertEqual(first.state, 'failed', 'UNVERIFIED_DELIVERY_ADMITTED')
-        self.assertTrue(first.detail.startswith('session_unavailable:'), 'IDENTITY_NOT_SESSION_UNAVAILABLE')
+        self.assertEqual(first.state, 'queued', 'IDENTITY_MISMATCH_DROPPED_FIFO_HEAD')
+        self.assertIn('daemon_identity_exe_mismatch', first.detail)
+        self.assertEqual(self.driver.presubmit_validation_hold('fixture-envelope'),
+                         'daemon_identity_exe_mismatch', 'IDENTITY_OPERATOR_HOLD_MISSING')
         self.assertIn('daemon_identity_exe_mismatch', first.detail)
         self.assertEqual(second.detail, first.detail, 'IDENTITY_FAILURE_RETRIED')
         self.assertEqual(self.driver._thread_id, '')
         self.assertTrue(self.peer.received_done.wait(5), 'UNVERIFIED_PEER_RPC_SENT')
         self.assertEqual(self.peer.methods, [], 'UNVERIFIED_PEER_RPC_SENT')
         self.assertNotIn('PRIVATE', first.detail)
-        record = self.driver._store.get_by_envelope('fixture-envelope')
-        self.assertIsNotNone(record, 'IDENTITY_FAILURE_NOT_DURABLE')
-        self.assertEqual(record.state, 'failed', 'IDENTITY_FAILURE_NOT_DURABLE')
+        self.assertIsNone(self.driver._store.get_by_envelope('fixture-envelope'),
+                          'IDENTITY_MISMATCH_TERMINALIZED')
 
     def test_owned_binding_wired_and_foreign_instance_rejected(self):
         self.driver._owned_daemon_identity = identity.OwnedDaemonIdentity(os.getpid() + 1, 1)

@@ -1,0 +1,16 @@
+test_authentication_rejection_is_not_retried_or_fifo_released (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_authentication_rejection_is_not_retried_or_fifo_released) ... [delivery][WARN] transient pre-submit CLI recovery start failed; keeping FIFO quarantined for retry attempt=1
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+FAIL
+
+======================================================================
+FAIL: test_authentication_rejection_is_not_retried_or_fifo_released (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_authentication_rejection_is_not_retried_or_fifo_released)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/n1c-r3-mut/tools/sessionhelper/tests/test_dispatch_lifecycle.py", line 422, in test_authentication_rejection_is_not_retried_or_fifo_released
+    self.assertFalse(recovery.is_set(), 'N1C_AUTH_REJECTION_WAS_RETRIED_AS_TRANSIENT')
+AssertionError: True is not false : N1C_AUTH_REJECTION_WAS_RETRIED_AS_TRANSIENT
+
+----------------------------------------------------------------------
+Ran 1 test in 0.083s
+
+FAILED (failures=1)

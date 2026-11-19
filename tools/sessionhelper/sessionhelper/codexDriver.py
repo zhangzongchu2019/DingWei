@@ -6,6 +6,7 @@ available as a helper-owned stdio fallback.
 """
 from __future__ import annotations
 
+import errno
 import hashlib
 import fcntl
 import json
@@ -46,6 +47,9 @@ _CODEX_BIN = env_get("SH_CODEX_BIN") or shutil.which("codex") or "codex"
 DEFAULT_WORKDIR = os.path.expanduser("~")
 DEFAULT_STORE = os.path.join(os.path.expanduser("~"), ".codex-driver-delivery.sqlite3")
 JSONRPC_TIMEOUT = 30.0
+# Read-only admission probes may be retried while they remain strictly before
+# the durable turn/start boundary.  This is a capped backoff, not a retry cap.
+PRESUBMIT_VALIDATION_BACKOFF = (1.0, 2.0, 5.0, 10.0, 30.0)
 # T-094: 一级按可归属增量事件后的空闲时长判卡死，二级限制回合总时长。
 ACCEPTED_STALL_TIMEOUT = 90.0
 ABSOLUTE_TURN_TIMEOUT = 900.0
@@ -95,6 +99,51 @@ class JsonRpcError(RuntimeError):
 
 class ThreadUnavailable(RuntimeError):
     pass
+
+
+def _presubmit_validation_is_retryable(exc: Exception) -> bool:
+    """Only transient transport/server failures from read-only validation retry.
+
+    Identity, cwd, direct-input, auth, and daemon ownership mismatches stay
+    fail-closed.  This predicate is called only before turn/start.
+    """
+    if isinstance(exc, (DaemonIdentityError, ThreadUnavailable, PrivateEndpointError)):
+        return False
+    if isinstance(exc, (TimeoutError, ConnectionError)):
+        return True
+    if isinstance(exc, OSError):
+        return exc.errno in {
+            errno.ECONNABORTED, errno.ECONNREFUSED, errno.ECONNRESET,
+            errno.EHOSTUNREACH, errno.ENETUNREACH, errno.ENOTCONN,
+            errno.EPIPE, errno.ETIMEDOUT, errno.EAGAIN,
+        }
+    if isinstance(exc, JsonRpcError):
+        if exc.method not in ('initialize', 'thread/read', 'thread/resume'):
+            return False
+        if exc.classify() == 'authentication':
+            return False
+        return exc.code == -32603 or (exc.code is not None and -32099 <= exc.code <= -32000)
+    return False
+
+
+def _presubmit_validation_needs_operator_hold(exc: Exception) -> bool:
+    """Binding/ownership rejections are retained at FIFO head for intervention."""
+    if isinstance(exc, (DaemonIdentityError, ThreadUnavailable, PrivateEndpointError)):
+        return True
+    # A rejected initial initialize has no usable session to wait on; the
+    # delivery path settles that definite no-submit result as failed. Existing
+    # read/resume authentication mismatches remain operator-held and fail-closed.
+    if (isinstance(exc, JsonRpcError) and exc.method == 'initialize'
+            and exc.classify() == 'authentication'):
+        return False
+    return (isinstance(exc, JsonRpcError)
+            and exc.method in ('initialize', 'thread/read', 'thread/resume')
+            and not _presubmit_validation_is_retryable(exc))
+
+
+def _is_initialization_auth_rejection(exc: Exception) -> bool:
+    return (isinstance(exc, JsonRpcError) and exc.method == 'initialize'
+            and exc.classify() == 'authentication')
 
 
 def _error_class(exc: Exception, thread_id: str = "") -> str:
@@ -764,6 +813,7 @@ class CodexProtocolDriver(Driver):
 
         self._rpc: StdioJsonRpc | None = None
         self._initialized = False
+        self._startup_failed = False
         self._required_bound_thread_id = bound_thread_id if require_bound_thread else ""
         if require_bound_thread and not bound_thread_id:
             raise ValueError("configured bound thread id must not be empty")
@@ -787,6 +837,7 @@ class CodexProtocolDriver(Driver):
         self._events_drained: set[str] = set()
         from .busy_admission import BusyAdmission
         self._busy_admission = BusyAdmission()
+        self._presubmit_validation_holds: dict[str, str] = {}
         self._submission_started = {}
         self.reconcile_context = None
         self._reconcile_emitted = set()
@@ -870,16 +921,25 @@ class CodexProtocolDriver(Driver):
         # must validate/resume the exact bound thread under this same lock.
         lock = self.__dict__.get("_start_lock") or self.__dict__.setdefault("_start_lock", threading.Lock())
         with lock:
-            if self._rpc is not None and self._rpc.healthy():
+            self._startup_failed = False
+            # A transport can remain live after initialize returned a
+            # transient server error. Such a connection is not ready for
+            # thread/read or submission; retry initialization before treating
+            # start() as complete.
+            if self._rpc is not None and self._rpc.healthy() and self._initialized:
                 return
             if self._rpc is not None and hasattr(self._rpc, 'broker') and not self._rpc.closed:
                 # Reuse this seat's broker on reconnect. A lane never creates
                 # or independently tears down the shared physical transport.
-                self._rpc.start()
-                self._initialize()
-                if self._event_thread is None or not self._event_thread.is_alive():
-                    self._event_thread = threading.Thread(target=self._pump_notifications, daemon=True)
-                    self._event_thread.start()
+                try:
+                    self._rpc.start()
+                    self._initialize()
+                    if self._event_thread is None or not self._event_thread.is_alive():
+                        self._event_thread = threading.Thread(target=self._pump_notifications, daemon=True)
+                        self._event_thread.start()
+                except Exception as exc:
+                    self._startup_failed = True
+                    raise
                 return
             # A few lifecycle tests construct the driver with __new__ to
             # exercise start() without running __init__. Treat that as a
@@ -891,7 +951,15 @@ class CodexProtocolDriver(Driver):
                     self._rpc.stop()
                 except Exception:
                     pass
-            self._start_locked()
+            try:
+                self._start_locked()
+            except Exception as exc:
+                # Publish the definite startup result before releasing the
+                # start lock. The adapter must let deliver() classify a
+                # terminal auth/ownership rejection instead of racing it with
+                # transport recovery merely because health() is false.
+                self._startup_failed = True
+                raise
             if had_connection and self._view_item_backfill and self._thread_id:
                 self._backfill_pending = True
         self._notify_activity()
@@ -1085,7 +1153,7 @@ class CodexProtocolDriver(Driver):
             if not self.lane_id:
                 self._recovery_thread_id = thread_id
 
-    def _validate_recovery_thread(self) -> None:
+    def _validate_recovery_thread(self, *, allow_rotation: bool = True) -> None:
         if self._recovery_rotation_blocked:
             raise ThreadUnavailable("recovery rotation requires operator reconciliation")
         try:
@@ -1094,7 +1162,7 @@ class CodexProtocolDriver(Driver):
             reason = ("missing_thread" if isinstance(exc, JsonRpcError)
                       and exc.classify(self._thread_id) == "missing_thread"
                       else "thread_unavailable" if isinstance(exc, ThreadUnavailable) else "")
-            if (not reason or not self._recovery_thread_id
+            if (not allow_rotation or not reason or not self._recovery_thread_id
                     or self._required_bound_thread_id or self.lane_id):
                 raise
             # A lost create response or binding write must not create repeatedly.
@@ -1118,26 +1186,95 @@ class CodexProtocolDriver(Driver):
                     source="protocol",
                     detail=existing.detail or f"persistent idempotency hit: turn={existing.turn_id}",
                 )
+            held_reason = self._presubmit_validation_holds.get(envelope_id)
+            if held_reason:
+                return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                       detail=f'presubmit validation held: {held_reason}')
             if not self.health():
                 try:
                     self.start()
                 except Exception as exc:
+                    if _presubmit_validation_is_retryable(exc):
+                        if not self._busy_admission.waiting(envelope_id):
+                            print('[delivery][ALERT][PRESUBMIT_WAIT_NOT_PERSISTED] validation transport unavailable; input remains in Hub inbox', flush=True)
+                            return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                                   detail='presubmit wait persistence unavailable')
+                        # The adapter owns safe transport recovery and will
+                        # retry this same FIFO head with the original driver
+                        # binding after the bounded worker exits.
+                        return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                               detail='presubmit validation transport unavailable')
+                    if _presubmit_validation_needs_operator_hold(exc):
+                        return self._hold_presubmit_validation(envelope_id, exc)
+                    if _is_initialization_auth_rejection(exc):
+                        return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
                     if not self._required_bound_thread_id and not isinstance(exc, DaemonIdentityError):
                         raise
                     return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
-            # Do not replace the connection between validation and turn/start.
+            # Thread creation remains a single, separately classified operation.
+            # Only read-only validation can enter the persistent retry wait.
             with self._start_lock:
-                if not self._thread_id or self._required_bound_thread_id:
+                if self._required_bound_thread_id:
+                    bound_validation_attempt = 0
+                    while True:
+                        try:
+                            # For a configured root this is read-only validation
+                            # only; it cannot create or rotate a thread.
+                            self._ensure_thread()
+                            break
+                        except Exception as exc:
+                            if _presubmit_validation_is_retryable(exc):
+                                if not self._busy_admission.waiting(envelope_id):
+                                    print('[delivery][ALERT][PRESUBMIT_WAIT_NOT_PERSISTED] configured-thread validation unavailable', flush=True)
+                                    return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                                           detail='presubmit wait persistence unavailable')
+                                delay = PRESUBMIT_VALIDATION_BACKOFF[min(bound_validation_attempt, len(PRESUBMIT_VALIDATION_BACKOFF) - 1)]
+                                bound_validation_attempt += 1
+                                if not self.health():
+                                    return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                                           detail='presubmit validation transport unavailable')
+                                if self._stop_event.wait(delay) or self._busy_admission.cancelled(envelope_id):
+                                    return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                                           detail='presubmit validation wait interrupted')
+                                continue
+                            if _presubmit_validation_needs_operator_hold(exc):
+                                return self._hold_presubmit_validation(envelope_id, exc)
+                            return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
+                elif not self._thread_id:
                     try:
                         self._ensure_thread()
                     except Exception as exc:
+                        if _presubmit_validation_needs_operator_hold(exc):
+                            return self._hold_presubmit_validation(envelope_id, exc)
                         if not self._required_bound_thread_id and not isinstance(exc, PrivateEndpointError):
                             raise
                         return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
-                try:
-                    self._validate_recovery_thread()
-                except Exception as exc:
-                    return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
+                validation_attempt = 0
+                while True:
+                    try:
+                        # A validated/mismatched binding is never rotated by a
+                        # retrying delivery. Only the exact captured thread may
+                        # cross the later before_submit boundary.
+                        self._validate_recovery_thread(allow_rotation=False)
+                        self._presubmit_validation_holds.pop(envelope_id, None)
+                        break
+                    except Exception as exc:
+                        if not _presubmit_validation_is_retryable(exc):
+                            if _presubmit_validation_needs_operator_hold(exc):
+                                return self._hold_presubmit_validation(envelope_id, exc)
+                            return self._admission_failure(envelope_id, body_hash, exc, uncertain=False)
+                        if not self._busy_admission.waiting(envelope_id):
+                            print('[delivery][ALERT][PRESUBMIT_WAIT_NOT_PERSISTED] read-only validation retry could not persist FIFO wait', flush=True)
+                            return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                                   detail='presubmit wait persistence unavailable')
+                        delay = PRESUBMIT_VALIDATION_BACKOFF[min(validation_attempt, len(PRESUBMIT_VALIDATION_BACKOFF) - 1)]
+                        validation_attempt += 1
+                        if not self.health():
+                            return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                                   detail='presubmit validation transport unavailable')
+                        if self._stop_event.wait(delay) or self._busy_admission.cancelled(envelope_id):
+                            return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                                                   detail='presubmit validation wait interrupted')
                 self._admission_envelope_id = envelope_id
                 idle_error = self._wait_until_idle_for_delivery()
                 if idle_error:
@@ -1182,6 +1319,23 @@ class CodexProtocolDriver(Driver):
                 self._delivery_timestamps[envelope_id] = time.monotonic()
                 self._active_turn_id = turn_id
                 return DeliveryReceipt(id=envelope_id, state=state, source="protocol", detail=detail)
+
+    def _hold_presubmit_validation(self, envelope_id: str, exc: Exception) -> DeliveryReceipt:
+        """Keep a proven-unsubmitted delivery at FIFO head until operator action."""
+        reason = _error_class(exc, self._thread_id)
+        self._presubmit_validation_holds[envelope_id] = reason
+        if not self._busy_admission.waiting(envelope_id):
+            print(f'[delivery][ALERT][PRESUBMIT_WAIT_NOT_PERSISTED] id={envelope_id} '
+                  f'validation={reason}; input retained locally, no submission attempted', flush=True)
+        else:
+            print(f'[delivery][ALERT][PRESUBMIT_VALIDATION_HELD] id={envelope_id} '
+                  f'validation={reason}; operator action required, no thread rotation or submission', flush=True)
+        return DeliveryReceipt(id=envelope_id, state='queued', source='local_queue',
+                               detail=f'presubmit validation held: {reason}')
+
+    def presubmit_validation_hold(self, envelope_id: str) -> str:
+        """Return the fail-closed FIFO hold reason, if operator action is needed."""
+        return self._presubmit_validation_holds.get(envelope_id, '')
 
     def _admission_failure(self, envelope_id: str, body_hash: str, exc: Exception, *, uncertain: bool) -> DeliveryReceipt:
         self._verified_binding = None
@@ -1701,6 +1855,9 @@ class CodexProtocolDriver(Driver):
         self._verified_binding = self._binding_key()
 
     def transport_recovery_required(self, timeout):
+        lock = self.__dict__.get('_start_lock')
+        if (lock is not None and lock.locked()) or self._startup_failed:
+            return False
         if not self.health():
             return True
         writing = getattr(self._rpc, '_write_started', None)

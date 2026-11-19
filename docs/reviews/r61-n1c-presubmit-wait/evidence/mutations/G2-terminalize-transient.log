@@ -1,0 +1,14 @@
+test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery (tests.test_codex_stale_thread.RecoveryThreadInheritance.test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery) ... FAIL
+
+======================================================================
+FAIL: test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery (tests.test_codex_stale_thread.RecoveryThreadInheritance.test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_codex_stale_thread.py", line 748, in test_transient_validation_wait_is_durable_fifo_and_submits_once_after_recovery
+    self.assertTrue(retry_entered.wait(2),'N1C_RETRY_NOT_ENTERED')
+AssertionError: False is not true : N1C_RETRY_NOT_ENTERED
+
+----------------------------------------------------------------------
+Ran 1 test in 2.048s
+
+FAILED (failures=1)

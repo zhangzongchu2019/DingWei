@@ -24,6 +24,7 @@ from .config import env_get
 
 # R-V2-0105 件二：驱动重连退避（秒）与事件桥空转退避上限。
 DRIVER_RECONNECT_BACKOFF = (1.0, 2.0, 5.0, 10.0, 30.0)
+PRESUBMIT_RECOVERY_BACKOFF = (1.0, 2.0, 5.0, 10.0, 30.0)
 DRIVER_FAILURE_LOG_INTERVAL = 600.0  # 持续重连失败期间至多每 10 分钟一行
 DRIVER_HEALTHY_RESET = 60.0          # 持续健康 60 s 复位退避
 
@@ -68,6 +69,12 @@ class DriverAdapter:
         self._admission_timeout = max(0.1, float(getattr(cfg, "admission_timeout_seconds", 60)))
         self._busy_admission_max = max(0.1, float(getattr(cfg, "busy_admission_max_seconds", 1800)))
         self._transport_recovery = None
+        # App installs a thread-safe callback which queues a protocol busy ACK
+        # on the active websocket. It is deliberately separate from terminal
+        # ACK v2 failure handling.
+        self.on_busy_wait = None
+        self._busy_ack_requested: set[str] = set()
+        self._busy_ack_lock = threading.Lock()
         self._terminal_timeout = max(0.1, float(cfg.turn_terminal_timeout_seconds))
         self._input_buf = ""          # view 输入的行缓冲
         self._cost_total = 0.0        # 会话累计成本(状态栏用)
@@ -97,6 +104,23 @@ class DriverAdapter:
                 saved = ledger.mark_busy_waiting(delivery_id)
                 if saved:
                     observe(getattr(self, 'delivery_progress', None), delivery_id, 'adapter_queued')
+                    # Queue Hub's existing busy -> queued signal as soon as
+                    # the durable pre-submit marker exists. This also covers
+                    # an unhealthy RPC transport, where the watchdog cannot
+                    # use `driver.health()` as a reason to suppress the ACK.
+                    with self._busy_ack_lock:
+                        first_request = delivery_id not in self._busy_ack_requested
+                        self._busy_ack_requested.add(delivery_id)
+                    callback = getattr(self, 'on_busy_wait', None)
+                    if first_request and callable(callback):
+                        try:
+                            if callback(delivery_id) is False:
+                                with self._busy_ack_lock:
+                                    self._busy_ack_requested.discard(delivery_id)
+                        except Exception as exc:
+                            with self._busy_ack_lock:
+                                self._busy_ack_requested.discard(delivery_id)
+                            print(f'[delivery][WARN][BUSY_ACK_QUEUE_FAILED] id={delivery_id} error={type(exc).__name__}', flush=True)
                 return saved
             def persist_submission_boundary(delivery_id):
                 # Same compatibility rule as above for non-durable callers.
@@ -177,11 +201,12 @@ class DriverAdapter:
 
     # ------------------------------------------------------------ 生命周期
 
-    def start(self) -> None:
+    def start(self, *, defer_driver_start: bool = False) -> None:
         with self._start_lock:
             if self._started:
                 return
-            self.driver.start()
+            if not defer_driver_start:
+                self.driver.start()
             self._bridge_thread = threading.Thread(target=self._event_bridge, daemon=True)
             self._worker_thread = threading.Thread(target=self._command_worker, daemon=True)
             self._bridge_thread.start()
@@ -223,7 +248,14 @@ class DriverAdapter:
         if not body:
             observe(getattr(self, "delivery_progress", None), str((env.get("meta") or {}).get("delivery_id") or env.get("id") or ""), "unknown")
             return ""
-        if not self._started:
+        # First durable Codex deliveries must reach the adapter FIFO before
+        # initialize can fail. The command worker persists dispatch intent,
+        # then CodexProtocolDriver handles transient initialize errors through
+        # the same durable pre-submit wait as thread/read and thread/resume.
+        # Starting the CLI inline here lets app.py reject_unstarted before the
+        # delivery has entered that lifecycle.
+        defer_codex_start = not self._started and self._which == 'codex'
+        if not self._started and not defer_codex_start:
             self.start()
         if (env.get("meta") or {}).get("kind")=="task_blocker_ready":
             staged=self._blocker_journal().stage(env)
@@ -242,6 +274,8 @@ class DriverAdapter:
                 on_admission_failed()
             raise OverflowError(result.reason or "queue_full")
         if result.state == "duplicate":
+            if defer_codex_start:
+                self.start(defer_driver_start=True)
             # Existing durable lifecycle/outbox owns replay. A duplicate is
             # never evidence of a new admission.
             if on_admission_failed is not None:
@@ -252,6 +286,8 @@ class DriverAdapter:
         if result.state == "queued":
             if on_injected is not None:
                 self._injected_callbacks[result.command.delivery_id] = on_injected
+            if defer_codex_start:
+                self.start(defer_driver_start=True)
             self._work_available.set()
         return ""
 
@@ -325,7 +361,7 @@ class DriverAdapter:
                 continue
             if self._transport_recovery is not None:
                 if not self._transport_recovery.is_set():
-                    self._commands.defer_current(command.delivery_id)
+                    self._commands.defer_current(command.delivery_id, preserve_fifo_head=True)
                     self._bridge_sleep(0.1)
                     continue
                 self._transport_recovery = None
@@ -394,7 +430,7 @@ class DriverAdapter:
                 safe,reason=self.blocker_prepare(command.envelope)
                 if safe is None:
                     if reason=='current_authorization_or_read_failed':
-                        self._commands.defer_current(command.delivery_id);self._bridge_sleep(0.5);return
+                        self._commands.defer_current(command.delivery_id, preserve_fifo_head=False);self._bridge_sleep(0.5);return
                     journal.finish(signal,'cancelled',reason);finish('interrupted');return
                 command.envelope=safe;command.text=safe['body']
             previous=journal.start(signal)
@@ -427,7 +463,7 @@ class DriverAdapter:
     def _deliver_regular_command(self, command: QueuedCommand) -> None:
         if self._transport_recovery is not None:
             if not self._transport_recovery.is_set():
-                self._commands.defer_current(command.delivery_id)
+                self._commands.defer_current(command.delivery_id, preserve_fifo_head=True)
                 return
             self._transport_recovery = None
         observe(getattr(self, "delivery_progress", None), command.delivery_id, "dispatching")
@@ -523,6 +559,12 @@ class DriverAdapter:
         return time.monotonic() - self._dispatch_clock(command)
 
     def _busy_admission_status(self, command, driver):
+        held = getattr(driver, 'presubmit_validation_hold', None)
+        if callable(held) and held(command.delivery_id):
+            # A verified binding/ownership mismatch is fail-closed. Keep this
+            # item as the durable FIFO head and do not let the admission
+            # watchdog turn an operator hold into a terminal rejection.
+            return 'waiting'
         gate = getattr(driver, '_busy_admission', None)
         if gate is None or not gate.is_waiting(command.delivery_id):
             return None
@@ -579,11 +621,17 @@ class DriverAdapter:
         while not done.wait(0.02):
             if getattr(self, '_lane_stop', threading.Event()).is_set(): return None
             required = getattr(old_driver, 'transport_recovery_required', None)
+            initial_start_pending = (
+                getattr(self, '_which', None) == 'codex'
+                and getattr(old_driver, '_connection_generation', 0) == 0
+                and getattr(old_driver, '_rpc', None) is None
+            )
             if (getattr(self, '_which', None) == 'codex' and callable(required)
+                    and not initial_start_pending
                     and old_driver.submission_started(command.delivery_id) is None
                     and required(self._admission_timeout_for(command))):
                 command._delivery_worker = done
-                self._commands.defer_current(command.delivery_id)
+                self._commands.defer_current(command.delivery_id, preserve_fifo_head=True)
                 self._recover_transport(command)
                 return None
             busy = self._busy_admission_status(command, old_driver)
@@ -622,16 +670,21 @@ class DriverAdapter:
             raise result[0]
         if result[0].source == 'local_queue':
             command._delivery_worker = done
-            self._commands.defer_current(command.delivery_id)
+            self._commands.defer_current(command.delivery_id, preserve_fifo_head=True)
             if not old_driver.health():
-                self._recover_transport(command)
+                # deliver() has returned an explicit pre-submit wait/hold.
+                # That is the safe point to replace an unhealthy startup
+                # transport, even when its failure marker suppressed the
+                # watchdog's earlier speculative recovery.
+                self._recover_transport(command, allow_after_presubmit_result=True)
             return None
         return result[0]
 
-    def _recover_transport(self, command):
+    def _recover_transport(self, command, *, allow_after_presubmit_result=False):
         old = self.driver
         required = getattr(old, 'transport_recovery_required', None)
-        if getattr(self, '_which', None) == 'codex' and callable(required) and not required(self._admission_timeout):
+        if (getattr(self, '_which', None) == 'codex' and callable(required)
+                and not allow_after_presubmit_result and not required(self._admission_timeout)):
             # Waiting for a response on a healthy connection is not a stuck
             # writer. The next worker may wait on the delivery lock locally.
             return
@@ -652,8 +705,32 @@ class DriverAdapter:
                 inherit = getattr(replacement, 'inherit_recovery_thread', None)
                 if callable(inherit):
                     inherit(old)
-                replacement.start()
                 replacement.on_activity = self._bridge_wake.set
+                startup_attempt = 0
+                while True:
+                    try:
+                        replacement.start()
+                        break
+                    except Exception as exc:
+                        # A recovery retry is safe only while this delivery is
+                        # durably before the submission boundary. Unknown or
+                        # submitted deliveries stay quarantined for operator
+                        # resolution; never turn recovery into a replay.
+                        ledger = getattr(self, 'delivery_lifecycle', None)
+                        row = ledger.lifecycle(command.delivery_id) if ledger is not None else None
+                        marker_null = row is not None and row.get('submission_may_have_started_at') is None
+                        if self._which != 'codex' or not marker_null:
+                            raise
+                        from .codexDriver import _presubmit_validation_is_retryable
+                        if not _presubmit_validation_is_retryable(exc):
+                            raise
+                        delay = PRESUBMIT_RECOVERY_BACKOFF[
+                            min(startup_attempt, len(PRESUBMIT_RECOVERY_BACKOFF) - 1)]
+                        startup_attempt += 1
+                        print('[delivery][WARN] transient pre-submit CLI recovery start failed; '
+                              f'keeping FIFO quarantined for retry attempt={startup_attempt}', flush=True)
+                        if self._lane_stop.wait(delay):
+                            raise RuntimeError('CLI recovery stopped before pre-submit retry')
                 self.driver = replacement
                 self._install_busy_admission_callbacks(replacement)
                 self.delivery_lifecycle = self._delivery_lifecycle
@@ -665,7 +742,9 @@ class DriverAdapter:
                 # Remain quarantined. Current item is already durably unknown;
                 # following items stay queued, never write the blocked pipe.
                 print(f'[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: {type(exc).__name__}: {exc}', flush=True)
-        threading.Thread(target=run, daemon=True, name='delivery-transport-recovery').start()
+        recovery_thread = threading.Thread(target=run, daemon=True, name='delivery-transport-recovery')
+        self._transport_recovery_thread = recovery_thread
+        recovery_thread.start()
 
     def _transport_unknown(self, command, reason, *, recover=False):
         ledger = getattr(self, 'delivery_lifecycle', None)
@@ -700,6 +779,8 @@ class DriverAdapter:
             # Native terminal may race the synchronous call's return. Never let
             # the next item reuse a writer which has not actually returned.
             self._recover_transport(command)
+        with self._busy_ack_lock:
+            self._busy_ack_requested.discard(command.delivery_id)
         self._commands.finish(command.delivery_id, outcome)
 
     def _settle_command(self, command: QueuedCommand, receipt) -> None:
@@ -1010,6 +1091,12 @@ class DriverAdapter:
         last_failure_log = 0.0
         healthy_since = None
         while not getattr(self,"_lane_stop",threading.Event()).is_set():
+            recovery = self._transport_recovery
+            if recovery is not None and not recovery.is_set():
+                # Do not consume the old driver's event stream while its
+                # replacement is still passing pre-submit initialization.
+                self._bridge_sleep(0.1)
+                continue
             subscriptions += 1
             skipped = 0
             forwarded = 0
@@ -1059,7 +1146,8 @@ class DriverAdapter:
             if forwarded:
                 reconnect_attempt = 0
             probe = getattr(self.driver, "healthy", None)
-            if self._transport_recovery is not None:
+            recovery = self._transport_recovery
+            if recovery is not None and not recovery.is_set():
                 self._bridge_sleep(0.1)
                 continue
             if callable(probe) and not probe():

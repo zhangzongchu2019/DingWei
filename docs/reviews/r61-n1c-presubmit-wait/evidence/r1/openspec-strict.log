@@ -1,0 +1,160 @@
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@fission-ai/openspec@1.16.0',
+npm WARN EBADENGINE   required: { node: '>=22.12.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/core@12.1.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/prompts@8.8.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'brace-expansion@5.0.13',
+npm WARN EBADENGINE   required: { node: '20 || >=22' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'commander@14.0.3',
+npm WARN EBADENGINE   required: { node: '>=20' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'ora@9.4.1',
+npm WARN EBADENGINE   required: { node: '>=20' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/ansi@2.1.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/figures@2.1.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/type@4.3.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'mute-stream@4.0.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/checkbox@5.3.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/confirm@6.4.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/editor@5.4.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/expand@5.2.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/input@5.2.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/number@4.3.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/password@5.3.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/rawlist@5.4.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/search@4.4.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/select@5.3.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: '@inquirer/external-editor@3.1.0',
+npm WARN EBADENGINE   required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'cli-spinners@3.4.0',
+npm WARN EBADENGINE   required: { node: '>=18.20' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+npm WARN EBADENGINE Unsupported engine {
+npm WARN EBADENGINE   package: 'string-width@8.3.0',
+npm WARN EBADENGINE   required: { node: '>=20' },
+npm WARN EBADENGINE   current: { node: 'v18.19.1', npm: '9.2.0' }
+npm WARN EBADENGINE }
+✓ spec/agent-addressing
+✓ change/agent-http-mcp-gateway
+✓ spec/agent-icon-provenance
+✓ spec/change-lifecycle-evidence
+✓ spec/change-risk-reminders
+✓ spec/console-coordinate-review
+✓ spec/console-session-history
+✓ spec/console-spec-reading
+✓ spec/console-timeline-order
+✓ spec/console-version-confirmation
+✓ spec/extseat-sender-attribution
+✓ change/feishu-agent-sticky-default
+✓ spec/helper-delivery-evidence
+✓ spec/helper-offer-idempotence
+✓ spec/helper-outbound-recovery
+✓ change/hub-graceful-shutdown
+✓ spec/hub-lifecycle
+✓ spec/hub-session-keepalive
+✓ spec/legacy-console-spec
+✓ spec/mcp-auth-diagnostics
+✓ spec/mcp-cacheable-result
+✓ spec/mcp-claude-code-compat
+✓ spec/mcp-lookup-outcome
+✓ spec/mcp-message-length
+✓ spec/mcp-serverinfo
+✓ spec/mcp-serverinfo-version
+✓ spec/mcpgw-codex-compat
+✓ spec/pm-decision-request
+✓ change/r1-identify-high-risk-changes
+✓ change/r11-freeze-legacy-console-spec
+✓ change/r5-render-openspec-readonly
+✓ change/r6-coordinate-review
+✓ spec/r60-release-integration
+✓ change/r61-n1-busy-wait
+✓ change/r61-n1b-queue-full
+✓ change/r61-n1c-presubmit-wait
+✓ change/r7-confirm-immutable-version
+✓ change/r8-evidence-driven-change-lifecycle
+✓ change/r9-pm-decision-request
+✓ spec/release-quality-gates
+✓ spec/session-heartbeat
+✓ spec/task-dispatch-lock
+✓ spec/trusted-origin-policy
+✓ spec/view-unknown-ux
+Totals: 44 passed, 0 failed (44 items)

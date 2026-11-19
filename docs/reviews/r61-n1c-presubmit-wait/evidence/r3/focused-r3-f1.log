@@ -1,0 +1,24 @@
+test_authentication_rejection_is_not_retried_or_fifo_released (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_authentication_rejection_is_not_retried_or_fifo_released) ... [delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: JsonRpcError: initialize failed: error_class=authentication rpc_code=401
+ok
+test_event_bridge_resubscribes_after_recovery_event_is_set (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_event_bridge_resubscribes_after_recovery_event_is_set) ... ok
+test_repeated_timeout_then_initialize_rpc_error_recovers_fifo_once (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_repeated_timeout_then_initialize_rpc_error_recovers_fifo_once) ... [delivery][WARN] transient pre-submit CLI recovery start failed; keeping FIFO quarantined for retry attempt=1
+[delivery][WARN] transient pre-submit CLI recovery start failed; keeping FIFO quarantined for retry attempt=2
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+ok
+test_submission_marker_prevents_startup_retry (tests.test_dispatch_lifecycle.PresubmitRecoveryStartRetryTest.test_submission_marker_prevents_startup_retry) ... [delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: TimeoutError: synthetic recovery timeout
+ok
+test_healthy_transport_after_initialize_timeout_still_initializes (tests.test_codex_stale_thread.LiveInitializeRetry.test_healthy_transport_after_initialize_timeout_still_initializes) ... ok
+test_real_delivery_worker_persists_initialize_wait_then_submits_once (tests.test_codex_stale_thread.FirstDeliveryInitializeWait.test_real_delivery_worker_persists_initialize_wait_then_submits_once) ... [driver-adapter] started, driver=codex
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_11111111111111111111111111111111 -> processing (turn=turn-dw-dlv_11111111111111111111111111111111 status=inP)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+[driver-adapter] started, driver=codex
+[delivery][RECOVERED] CLI transport replaced; prior unknown delivery is not replayed
+[driver-adapter] deliver id=dw-dlv_22222222222222222222222222222222 -> processing (turn=turn-dw-dlv_22222222222222222222222222222222 status=inP)
+[driver-adapter][WARN] driver unavailable (app-server connection lost); deliveries fail until reconnect
+ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 4.600s
+
+OK

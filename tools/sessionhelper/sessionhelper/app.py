@@ -8,6 +8,7 @@ import inspect
 import json
 import mimetypes
 import os
+import queue
 import re
 import shutil
 import sys
@@ -257,6 +258,7 @@ class SessionHelper(SubAgentConnection):
         self.guide_store = StagedGuideStore(cfg.inbox_db + ".guide-state.json", guide_identity)
         self.busy_acked_from: set[str] = set()
         self.delivery_busy_acked: set[str] = set()
+        self._driver_busy_ack_requests: queue.Queue[str] = queue.Queue(maxsize=max(1, cfg.busy_buffer_max))
         # File capability responses are control-plane messages. They must be
         # consumed here and never reach the inbox, CLI, LLM, or logs.
         self.file_ticket_waiters: dict[str, asyncio.Future] = {}
@@ -278,6 +280,8 @@ class SessionHelper(SubAgentConnection):
         if not env_get("SH_UPDATE_LAUNCHER", ""):
             self.provisioner.rollback_stale_update_if_needed(cfg.provision_rollback_timeout)
         self.adapter = self._build_adapter()
+        if self.cfg.mode == 'driver' and hasattr(self.adapter, 'on_busy_wait'):
+            self.adapter.on_busy_wait = self._queue_driver_busy_ack
         self.sub_agents = None
         self.sub_agent_drainer = None
         if getattr(cfg, 'sub_agents_v1', False):
@@ -1310,6 +1314,17 @@ class SessionHelper(SubAgentConnection):
         meta.update(extra)
         return envelope(session_addr("workpulse", self.book.key_id), "", self.book.self_addr, meta)
 
+    def _queue_driver_busy_ack(self, delivery_id: str) -> bool:
+        """Bridge driver-thread pre-submit waits to the active websocket loop."""
+        try:
+            self._driver_busy_ack_requests.put_nowait(str(delivery_id))
+            return True
+        except queue.Full:
+            # The local durable busy marker remains safe; a later retry may
+            # enqueue this wake once the bounded websocket bridge has room.
+            print('[delivery][WARN][BUSY_ACK_QUEUE_FULL] durable wait remains active', flush=True)
+            return False
+
     def is_delivery_cancel(self, env: dict) -> bool:
         return is_delivery_cancel_envelope(env)
 
@@ -1604,6 +1619,31 @@ class SessionHelper(SubAgentConnection):
                 last_sent[token] = now
                 if payload['ack_protocol'] == 1:
                     sent_v1.add(token)
+            # Proven pre-submit waits use Hub's existing busy -> queued path.
+            # This is a transient ACK, not a terminal ACK-outbox phase: the
+            # durable helper inbox remains the FIFO owner until admission.
+            # A few older unit fixtures construct SessionHelper via __new__
+            # and exercise only the durable ACK outbox. Keep those fixtures
+            # on the original path when the optional driver bridge is absent.
+            busy_requests = getattr(self, '_driver_busy_ack_requests', None)
+            try:
+                busy_id = busy_requests.get_nowait() if busy_requests is not None else ''
+            except queue.Empty:
+                busy_id = ''
+            if busy_id:
+                row = await asyncio.to_thread(self.delivery_inbox.lifecycle, busy_id)
+                if (row is not None and row.get('ack_protocol') == 2
+                        and row.get('processing_mode') == 'driver'
+                        and row.get('state') == 'processing'
+                        and row.get('dispatch_intent_at') is not None
+                        and row.get('busy_wait_started_at') is not None
+                        and row.get('submission_may_have_started_at') is None
+                        and row.get('admitted_at') is None):
+                    await ws.send(json.dumps(self.delivery_ack(
+                        busy_id, 'busy', ack_protocol=2, processing_mode='driver',
+                        ack_generation=row['ack_generation'],
+                        reason='presubmit_validation_wait', retryable=True,
+                    ), ensure_ascii=False))
             await asyncio.sleep(0.05)
 
     def reply_body(self, env: dict, reply_body: str) -> str:
