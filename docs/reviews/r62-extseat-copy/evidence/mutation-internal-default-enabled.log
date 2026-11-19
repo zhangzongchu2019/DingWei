@@ -1,0 +1,6 @@
+=== RUN   TestFeishuCopyPersistentPreferenceAndInternalRecipientResolutionPG
+    feishu_copy_test.go:207: INTERNAL_COPY_DEFAULT_OFF count=1 err=<nil>
+--- FAIL: TestFeishuCopyPersistentPreferenceAndInternalRecipientResolutionPG (2.57s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/extseat	2.570s
+FAIL

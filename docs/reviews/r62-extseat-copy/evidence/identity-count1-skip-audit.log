@@ -1,0 +1,432 @@
+=== RUN   TestR6PGCurrentAgentOwnerAndPersonalContactLock
+--- PASS: TestR6PGCurrentAgentOwnerAndPersonalContactLock (2.73s)
+=== RUN   TestPilotTemplatePGCurrentPrincipalAndRoleLocks
+--- PASS: TestPilotTemplatePGCurrentPrincipalAndRoleLocks (2.99s)
+=== RUN   TestProjectContextPGAuthorizationLocksAndCurrentState
+--- PASS: TestProjectContextPGAuthorizationLocksAndCurrentState (2.75s)
+=== RUN   TestProjectContextClaimMembershipAndOwnerEntitlement
+--- PASS: TestProjectContextClaimMembershipAndOwnerEntitlement (0.00s)
+=== RUN   TestR31ConnectionPrivacyPGAndMemory
+=== RUN   TestR31ConnectionPrivacyPGAndMemory/memory
+=== RUN   TestR31ConnectionPrivacyPGAndMemory/pg
+--- PASS: TestR31ConnectionPrivacyPGAndMemory (2.76s)
+    --- PASS: TestR31ConnectionPrivacyPGAndMemory/memory (0.00s)
+    --- PASS: TestR31ConnectionPrivacyPGAndMemory/pg (0.01s)
+=== RUN   TestR8OwnedAgentPGAuthorizationAndRevocationLock
+--- PASS: TestR8OwnedAgentPGAuthorizationAndRevocationLock (2.65s)
+=== RUN   TestR32TaskAuthorizationPGMembershipLocksAndOwners
+--- PASS: TestR32TaskAuthorizationPGMembershipLocksAndOwners (2.72s)
+=== RUN   TestR31AdminAgentPGAuditAtomicAndFailClosed
+--- PASS: TestR31AdminAgentPGAuditAtomicAndFailClosed (2.52s)
+=== RUN   TestR31AdminAgentMemoryContract
+=== RUN   TestR31AdminAgentMemoryContract/all_owners_private_source_and_stable_pages
+=== RUN   TestR31AdminAgentMemoryContract/nonadmin_and_inactive_rejected_on_every_read
+=== RUN   TestR31AdminAgentMemoryContract/revoked_records_visible_for_readonly_inventory
+--- PASS: TestR31AdminAgentMemoryContract (0.00s)
+    --- PASS: TestR31AdminAgentMemoryContract/all_owners_private_source_and_stable_pages (0.00s)
+    --- PASS: TestR31AdminAgentMemoryContract/nonadmin_and_inactive_rejected_on_every_read (0.00s)
+    --- PASS: TestR31AdminAgentMemoryContract/revoked_records_visible_for_readonly_inventory (0.00s)
+=== RUN   TestR31AdminAgentPGContract
+=== RUN   TestR31AdminAgentPGContract/all_owners_private_source_and_stable_pages
+=== RUN   TestR31AdminAgentPGContract/nonadmin_and_inactive_rejected_on_every_read
+=== RUN   TestR31AdminAgentPGContract/revoked_records_visible_for_readonly_inventory
+--- PASS: TestR31AdminAgentPGContract (3.11s)
+    --- PASS: TestR31AdminAgentPGContract/all_owners_private_source_and_stable_pages (0.06s)
+    --- PASS: TestR31AdminAgentPGContract/nonadmin_and_inactive_rejected_on_every_read (0.06s)
+    --- PASS: TestR31AdminAgentPGContract/revoked_records_visible_for_readonly_inventory (0.06s)
+=== RUN   TestR31AdminAgentPGNodeProjectionFailureRollsBackAudit
+--- PASS: TestR31AdminAgentPGNodeProjectionFailureRollsBackAudit (2.41s)
+=== RUN   TestR31AdminAgentPGConcurrentRevokeListFirst
+--- PASS: TestR31AdminAgentPGConcurrentRevokeListFirst (2.47s)
+=== RUN   TestR31AdminAgentPGConcurrentRevokeFirst
+--- PASS: TestR31AdminAgentPGConcurrentRevokeFirst (2.45s)
+=== RUN   TestDeviceClaimCancellation
+=== RUN   TestDeviceClaimCancellation/memory
+=== RUN   TestDeviceClaimCancellation/memory/pending
+=== RUN   TestDeviceClaimCancellation/memory/expired
+=== RUN   TestDeviceClaimCancellation/memory/issued
+=== RUN   TestDeviceClaimCancellation/memory/completed
+=== RUN   TestDeviceClaimCancellation/memory/race
+=== RUN   TestDeviceClaimCancellation/postgres
+=== RUN   TestDeviceClaimCancellation/postgres/pending
+=== RUN   TestDeviceClaimCancellation/postgres/expired
+=== RUN   TestDeviceClaimCancellation/postgres/issued
+=== RUN   TestDeviceClaimCancellation/postgres/completed
+=== RUN   TestDeviceClaimCancellation/postgres/race
+--- PASS: TestDeviceClaimCancellation (13.20s)
+    --- PASS: TestDeviceClaimCancellation/memory (0.00s)
+        --- PASS: TestDeviceClaimCancellation/memory/pending (0.00s)
+        --- PASS: TestDeviceClaimCancellation/memory/expired (0.00s)
+        --- PASS: TestDeviceClaimCancellation/memory/issued (0.00s)
+        --- PASS: TestDeviceClaimCancellation/memory/completed (0.00s)
+        --- PASS: TestDeviceClaimCancellation/memory/race (0.00s)
+    --- PASS: TestDeviceClaimCancellation/postgres (13.20s)
+        --- PASS: TestDeviceClaimCancellation/postgres/pending (2.43s)
+        --- PASS: TestDeviceClaimCancellation/postgres/expired (2.53s)
+        --- PASS: TestDeviceClaimCancellation/postgres/issued (2.99s)
+        --- PASS: TestDeviceClaimCancellation/postgres/completed (2.66s)
+        --- PASS: TestDeviceClaimCancellation/postgres/race (2.58s)
+=== RUN   TestDeviceClaimContracts
+=== RUN   TestDeviceClaimContracts/memory
+=== RUN   TestDeviceClaimContracts/memory/new
+=== RUN   TestDeviceClaimContracts/memory/existing
+=== RUN   TestDeviceClaimContracts/memory/takeover
+=== RUN   TestDeviceClaimContracts/memory/short-conflict
+=== RUN   TestDeviceClaimContracts/memory/disabled
+=== RUN   TestDeviceClaimContracts/memory/replay
+=== RUN   TestDeviceClaimContracts/memory/expired
+=== RUN   TestDeviceClaimContracts/memory/wrong-token
+=== RUN   TestDeviceClaimContracts/memory/concurrent
+=== RUN   TestDeviceClaimContracts/memory/different-claims-same-identity
+=== RUN   TestDeviceClaimContracts/memory/preferred-name-reuses-own-account
+=== RUN   TestDeviceClaimContracts/postgres
+=== RUN   TestDeviceClaimContracts/postgres/new
+=== RUN   TestDeviceClaimContracts/postgres/existing
+=== RUN   TestDeviceClaimContracts/postgres/takeover
+=== RUN   TestDeviceClaimContracts/postgres/short-conflict
+=== RUN   TestDeviceClaimContracts/postgres/disabled
+=== RUN   TestDeviceClaimContracts/postgres/replay
+=== RUN   TestDeviceClaimContracts/postgres/expired
+=== RUN   TestDeviceClaimContracts/postgres/wrong-token
+=== RUN   TestDeviceClaimContracts/postgres/concurrent
+=== RUN   TestDeviceClaimContracts/postgres/different-claims-same-identity
+=== RUN   TestDeviceClaimContracts/postgres/preferred-name-reuses-own-account
+--- PASS: TestDeviceClaimContracts (3.63s)
+    --- PASS: TestDeviceClaimContracts/memory (0.00s)
+        --- PASS: TestDeviceClaimContracts/memory/new (0.00s)
+        --- PASS: TestDeviceClaimContracts/memory/existing (0.00s)
+        --- PASS: TestDeviceClaimContracts/memory/takeover (0.00s)
+        --- PASS: TestDeviceClaimContracts/memory/short-conflict (0.00s)
+        --- PASS: TestDeviceClaimContracts/memory/disabled (0.00s)
+        --- PASS: TestDeviceClaimContracts/memory/replay (0.00s)
+        --- PASS: TestDeviceClaimContracts/memory/expired (0.00s)
+        --- PASS: TestDeviceClaimContracts/memory/wrong-token (0.00s)
+        --- PASS: TestDeviceClaimContracts/memory/concurrent (0.00s)
+        --- PASS: TestDeviceClaimContracts/memory/different-claims-same-identity (0.00s)
+        --- PASS: TestDeviceClaimContracts/memory/preferred-name-reuses-own-account (0.00s)
+    --- PASS: TestDeviceClaimContracts/postgres (3.63s)
+        --- PASS: TestDeviceClaimContracts/postgres/new (0.05s)
+        --- PASS: TestDeviceClaimContracts/postgres/existing (0.06s)
+        --- PASS: TestDeviceClaimContracts/postgres/takeover (0.05s)
+        --- PASS: TestDeviceClaimContracts/postgres/short-conflict (0.04s)
+        --- PASS: TestDeviceClaimContracts/postgres/disabled (0.05s)
+        --- PASS: TestDeviceClaimContracts/postgres/replay (0.05s)
+        --- PASS: TestDeviceClaimContracts/postgres/expired (0.04s)
+        --- PASS: TestDeviceClaimContracts/postgres/wrong-token (0.03s)
+        --- PASS: TestDeviceClaimContracts/postgres/concurrent (0.06s)
+        --- PASS: TestDeviceClaimContracts/postgres/different-claims-same-identity (0.05s)
+        --- PASS: TestDeviceClaimContracts/postgres/preferred-name-reuses-own-account (0.05s)
+=== RUN   TestDeviceClaimPGFailureRollsBack
+--- PASS: TestDeviceClaimPGFailureRollsBack (2.68s)
+=== RUN   TestGroupLeaderOnlyCommunicationAndBypass
+--- PASS: TestGroupLeaderOnlyCommunicationAndBypass (0.00s)
+=== RUN   TestMentionCandidateOtherOwnerAlwaysFullName
+--- PASS: TestMentionCandidateOtherOwnerAlwaysFullName (0.00s)
+=== RUN   TestValidGroupName
+--- PASS: TestValidGroupName (0.00s)
+=== RUN   TestCreateGroupCodeAndValidation
+--- PASS: TestCreateGroupCodeAndValidation (0.00s)
+=== RUN   TestListVisibleGroups
+--- PASS: TestListVisibleGroups (0.00s)
+=== RUN   TestNormalizeGroupName
+--- PASS: TestNormalizeGroupName (0.00s)
+=== RUN   TestHostedIssueThenContainerTakesCredential
+--- PASS: TestHostedIssueThenContainerTakesCredential (0.00s)
+=== RUN   TestHostedIssueValidation
+--- PASS: TestHostedIssueValidation (0.00s)
+=== RUN   TestHostedReissueRotation
+--- PASS: TestHostedReissueRotation (0.00s)
+=== RUN   TestHostedRetire
+--- PASS: TestHostedRetire (0.00s)
+=== RUN   TestHostedSuspendResume
+--- PASS: TestHostedSuspendResume (0.00s)
+=== RUN   TestAbortHostedIssueReclaimsOnlyItsOwnEmptyNewGroup
+--- PASS: TestAbortHostedIssueReclaimsOnlyItsOwnEmptyNewGroup (0.00s)
+=== RUN   TestMemStoreContract
+=== RUN   TestMemStoreContract/N3_user_id_and_short_name_conflict_by_lowercase
+=== RUN   TestMemStoreContract/N3_first_admin_only_when_no_management_user
+=== RUN   TestMemStoreContract/N3_first_admin_refused_when_only_manager
+=== RUN   TestMemStoreContract/G_group_create_leader_name_code
+=== RUN   TestMemStoreContract/G_group_join_leave_close
+=== RUN   TestMemStoreContract/G_group_communication_creator_only_persisted
+=== RUN   TestMemStoreContract/G_group_delete_creator_only_cascades
+=== RUN   TestMemStoreContract/G_group_member_rows_survive_revoke
+=== RUN   TestMemStoreContract/G_approve_group_choice_atomic
+=== RUN   TestMemStoreContract/G_hosted_group_choice_atomic
+=== RUN   TestMemStoreContract/N3_disable_revokes_sessions
+=== RUN   TestMemStoreContract/A11_set_user_type
+=== RUN   TestMemStoreContract/N3_get_user_by_short_name_case_insensitive
+=== RUN   TestMemStoreContract/N3_list_users_sorted_by_lowercase_id
+=== RUN   TestMemStoreContract/N3_session_expiry_and_inactive_user
+=== RUN   TestMemStoreContract/N3_logout_revokes_only_current_session
+=== RUN   TestMemStoreContract/N3_registration_code_one_shot_binds_identity
+=== RUN   TestMemStoreContract/N3_registration_code_expired_or_unknown_changes_nothing
+=== RUN   TestMemStoreContract/N3_identity_already_bound_rejected
+=== RUN   TestMemStoreContract/N3_new_registration_code_voids_old
+=== RUN   TestMemStoreContract/N3_list_active_registration_codes
+=== RUN   TestMemStoreContract/N3_bind_code_binds_active_user_without_changing_state
+=== RUN   TestMemStoreContract/V1_A6_pending_list_scoped_to_owner
+=== RUN   TestMemStoreContract/V1_A7_application_expires_by_clock
+=== RUN   TestMemStoreContract/V1_pending_order_is_deterministic
+=== RUN   TestMemStoreContract/V1_A3_A11_name_taken_case_insensitive
+=== RUN   TestMemStoreContract/V1_A10_same_device_superseded_on_approve
+=== RUN   TestMemStoreContract/V1_A2_pairing_failures_reject_at_max
+=== RUN   TestMemStoreContract/V1_A4_A8_credential_taken_once
+=== RUN   TestMemStoreContract/V2_A4_A12_revoke_frees_name_old_credential_stays_revoked
+=== RUN   TestMemStoreContract/V2_A6_revoke_other_owner_forbidden
+=== RUN   TestMemStoreContract/V2_A10_revoke_idempotent
+=== RUN   TestMemStoreContract/V2_V8_hosted_not_revocable_in_console_but_retirable
+=== RUN   TestMemStoreContract/V6_hosted_create_and_take
+=== RUN   TestMemStoreContract/V8_hosted_reissue_rotates_credential
+=== RUN   TestMemStoreContract/V6_hosted_token_expires
+=== RUN   TestMemStoreContract/V2_A5_find_agent_by_name_prefers_active_then_latest_revoked
+=== RUN   TestMemStoreContract/V8_hosted_suspend_resume_keeps_credential_and_name
+=== RUN   TestMemStoreContract/V8_suspend_records_who_and_when_resume_clears
+=== RUN   TestMemStoreContract/V2_A5_find_agent_by_name_tie_breaks_by_id
+=== RUN   TestMemStoreContract/G_no_group_choice_joins_nothing
+=== RUN   TestMemStoreContract/G_approve_only_into_own_or_member_group
+=== RUN   TestMemStoreContract/N3_reset_password_revokes_only_that_users_sessions
+=== RUN   TestMemStoreContract/R6_promote_to_platform_admin_atomic_with_audit
+=== RUN   TestMemStoreContract/V2_revoked_before_pickup_no_credential
+=== RUN   TestMemStoreContract/V2_list_agents_scoped_to_owner_case_insensitive
+--- PASS: TestMemStoreContract (0.00s)
+    --- PASS: TestMemStoreContract/N3_user_id_and_short_name_conflict_by_lowercase (0.00s)
+    --- PASS: TestMemStoreContract/N3_first_admin_only_when_no_management_user (0.00s)
+    --- PASS: TestMemStoreContract/N3_first_admin_refused_when_only_manager (0.00s)
+    --- PASS: TestMemStoreContract/G_group_create_leader_name_code (0.00s)
+    --- PASS: TestMemStoreContract/G_group_join_leave_close (0.00s)
+    --- PASS: TestMemStoreContract/G_group_communication_creator_only_persisted (0.00s)
+    --- PASS: TestMemStoreContract/G_group_delete_creator_only_cascades (0.00s)
+    --- PASS: TestMemStoreContract/G_group_member_rows_survive_revoke (0.00s)
+    --- PASS: TestMemStoreContract/G_approve_group_choice_atomic (0.00s)
+    --- PASS: TestMemStoreContract/G_hosted_group_choice_atomic (0.00s)
+    --- PASS: TestMemStoreContract/N3_disable_revokes_sessions (0.00s)
+    --- PASS: TestMemStoreContract/A11_set_user_type (0.00s)
+    --- PASS: TestMemStoreContract/N3_get_user_by_short_name_case_insensitive (0.00s)
+    --- PASS: TestMemStoreContract/N3_list_users_sorted_by_lowercase_id (0.00s)
+    --- PASS: TestMemStoreContract/N3_session_expiry_and_inactive_user (0.00s)
+    --- PASS: TestMemStoreContract/N3_logout_revokes_only_current_session (0.00s)
+    --- PASS: TestMemStoreContract/N3_registration_code_one_shot_binds_identity (0.00s)
+    --- PASS: TestMemStoreContract/N3_registration_code_expired_or_unknown_changes_nothing (0.00s)
+    --- PASS: TestMemStoreContract/N3_identity_already_bound_rejected (0.00s)
+    --- PASS: TestMemStoreContract/N3_new_registration_code_voids_old (0.00s)
+    --- PASS: TestMemStoreContract/N3_list_active_registration_codes (0.00s)
+    --- PASS: TestMemStoreContract/N3_bind_code_binds_active_user_without_changing_state (0.00s)
+    --- PASS: TestMemStoreContract/V1_A6_pending_list_scoped_to_owner (0.00s)
+    --- PASS: TestMemStoreContract/V1_A7_application_expires_by_clock (0.00s)
+    --- PASS: TestMemStoreContract/V1_pending_order_is_deterministic (0.00s)
+    --- PASS: TestMemStoreContract/V1_A3_A11_name_taken_case_insensitive (0.00s)
+    --- PASS: TestMemStoreContract/V1_A10_same_device_superseded_on_approve (0.00s)
+    --- PASS: TestMemStoreContract/V1_A2_pairing_failures_reject_at_max (0.00s)
+    --- PASS: TestMemStoreContract/V1_A4_A8_credential_taken_once (0.00s)
+    --- PASS: TestMemStoreContract/V2_A4_A12_revoke_frees_name_old_credential_stays_revoked (0.00s)
+    --- PASS: TestMemStoreContract/V2_A6_revoke_other_owner_forbidden (0.00s)
+    --- PASS: TestMemStoreContract/V2_A10_revoke_idempotent (0.00s)
+    --- PASS: TestMemStoreContract/V2_V8_hosted_not_revocable_in_console_but_retirable (0.00s)
+    --- PASS: TestMemStoreContract/V6_hosted_create_and_take (0.00s)
+    --- PASS: TestMemStoreContract/V8_hosted_reissue_rotates_credential (0.00s)
+    --- PASS: TestMemStoreContract/V6_hosted_token_expires (0.00s)
+    --- PASS: TestMemStoreContract/V2_A5_find_agent_by_name_prefers_active_then_latest_revoked (0.00s)
+    --- PASS: TestMemStoreContract/V8_hosted_suspend_resume_keeps_credential_and_name (0.00s)
+    --- PASS: TestMemStoreContract/V8_suspend_records_who_and_when_resume_clears (0.00s)
+    --- PASS: TestMemStoreContract/V2_A5_find_agent_by_name_tie_breaks_by_id (0.00s)
+    --- PASS: TestMemStoreContract/G_no_group_choice_joins_nothing (0.00s)
+    --- PASS: TestMemStoreContract/G_approve_only_into_own_or_member_group (0.00s)
+    --- PASS: TestMemStoreContract/N3_reset_password_revokes_only_that_users_sessions (0.00s)
+    --- PASS: TestMemStoreContract/R6_promote_to_platform_admin_atomic_with_audit (0.00s)
+    --- PASS: TestMemStoreContract/V2_revoked_before_pickup_no_credential (0.00s)
+    --- PASS: TestMemStoreContract/V2_list_agents_scoped_to_owner_case_insensitive (0.00s)
+=== RUN   TestPGMuxFreshAuthorityAndOwnedBatch
+--- PASS: TestPGMuxFreshAuthorityAndOwnedBatch (2.84s)
+=== RUN   TestSessionSlidingRenewalClockBoundaries
+--- PASS: TestSessionSlidingRenewalClockBoundaries (0.00s)
+=== RUN   TestTouchSessionRejectsExpiredRevokedAndNeverShortens
+=== RUN   TestTouchSessionRejectsExpiredRevokedAndNeverShortens/revoked
+=== RUN   TestTouchSessionRejectsExpiredRevokedAndNeverShortens/expired
+--- PASS: TestTouchSessionRejectsExpiredRevokedAndNeverShortens (0.00s)
+    --- PASS: TestTouchSessionRejectsExpiredRevokedAndNeverShortens/revoked (0.00s)
+    --- PASS: TestTouchSessionRejectsExpiredRevokedAndNeverShortens/expired (0.00s)
+=== RUN   TestSessionNoPollingExpiryAndAbsoluteLimit
+--- PASS: TestSessionNoPollingExpiryAndAbsoluteLimit (0.00s)
+=== RUN   TestN3_A1_BootstrapAdmin
+--- PASS: TestN3_A1_BootstrapAdmin (0.14s)
+=== RUN   TestN3_A3_BootstrapAdminRefusedWhenAdminExists
+--- PASS: TestN3_A3_BootstrapAdminRefusedWhenAdminExists (0.42s)
+=== RUN   TestN3_A4_BootstrapAdminValidation
+--- PASS: TestN3_A4_BootstrapAdminValidation (0.21s)
+=== RUN   TestN3_A2_MustChangePasswordThenOldFails
+--- PASS: TestN3_A2_MustChangePasswordThenOldFails (0.56s)
+=== RUN   TestN3_PasswordLoginRateLimited
+--- PASS: TestN3_PasswordLoginRateLimited (0.56s)
+=== RUN   TestN3_A6_A7_CreateUserRulesAndRoles
+--- PASS: TestN3_A6_A7_CreateUserRulesAndRoles (0.07s)
+=== RUN   TestN3_A8_A9_A10_RegisterBinding
+--- PASS: TestN3_A8_A9_A10_RegisterBinding (0.07s)
+=== RUN   TestN3_A11_A12_LoginByUserID
+--- PASS: TestN3_A11_A12_LoginByUserID (0.07s)
+=== RUN   TestN3_A13_DisableKillsSession
+--- PASS: TestN3_A13_DisableKillsSession (0.07s)
+=== RUN   TestN3_A5_A14_AuditHasNoSecretsAndCoversActions
+--- PASS: TestN3_A5_A14_AuditHasNoSecretsAndCoversActions (0.35s)
+=== RUN   TestResetPassword
+--- PASS: TestResetPassword (0.49s)
+=== RUN   TestPGStoreCheckSchema
+--- PASS: TestPGStoreCheckSchema (2.49s)
+=== RUN   TestPGStoreTouchSessionGuardsAndAbsoluteCap
+--- PASS: TestPGStoreTouchSessionGuardsAndAbsoluteCap (2.53s)
+=== RUN   TestPGStoreContract
+=== RUN   TestPGStoreContract/N3_user_id_and_short_name_conflict_by_lowercase
+=== RUN   TestPGStoreContract/N3_first_admin_only_when_no_management_user
+=== RUN   TestPGStoreContract/N3_first_admin_refused_when_only_manager
+=== RUN   TestPGStoreContract/G_group_create_leader_name_code
+=== RUN   TestPGStoreContract/G_group_join_leave_close
+=== RUN   TestPGStoreContract/G_group_communication_creator_only_persisted
+=== RUN   TestPGStoreContract/G_group_delete_creator_only_cascades
+=== RUN   TestPGStoreContract/G_group_member_rows_survive_revoke
+=== RUN   TestPGStoreContract/G_approve_group_choice_atomic
+=== RUN   TestPGStoreContract/G_hosted_group_choice_atomic
+=== RUN   TestPGStoreContract/N3_disable_revokes_sessions
+=== RUN   TestPGStoreContract/A11_set_user_type
+=== RUN   TestPGStoreContract/N3_get_user_by_short_name_case_insensitive
+=== RUN   TestPGStoreContract/N3_list_users_sorted_by_lowercase_id
+=== RUN   TestPGStoreContract/N3_session_expiry_and_inactive_user
+=== RUN   TestPGStoreContract/N3_logout_revokes_only_current_session
+=== RUN   TestPGStoreContract/N3_registration_code_one_shot_binds_identity
+=== RUN   TestPGStoreContract/N3_registration_code_expired_or_unknown_changes_nothing
+=== RUN   TestPGStoreContract/N3_identity_already_bound_rejected
+=== RUN   TestPGStoreContract/N3_new_registration_code_voids_old
+=== RUN   TestPGStoreContract/N3_list_active_registration_codes
+=== RUN   TestPGStoreContract/N3_bind_code_binds_active_user_without_changing_state
+=== RUN   TestPGStoreContract/V1_A6_pending_list_scoped_to_owner
+=== RUN   TestPGStoreContract/V1_A7_application_expires_by_clock
+=== RUN   TestPGStoreContract/V1_pending_order_is_deterministic
+=== RUN   TestPGStoreContract/V1_A3_A11_name_taken_case_insensitive
+=== RUN   TestPGStoreContract/V1_A10_same_device_superseded_on_approve
+=== RUN   TestPGStoreContract/V1_A2_pairing_failures_reject_at_max
+=== RUN   TestPGStoreContract/V1_A4_A8_credential_taken_once
+=== RUN   TestPGStoreContract/V2_A4_A12_revoke_frees_name_old_credential_stays_revoked
+=== RUN   TestPGStoreContract/V2_A6_revoke_other_owner_forbidden
+=== RUN   TestPGStoreContract/V2_A10_revoke_idempotent
+=== RUN   TestPGStoreContract/V2_V8_hosted_not_revocable_in_console_but_retirable
+=== RUN   TestPGStoreContract/V6_hosted_create_and_take
+=== RUN   TestPGStoreContract/V8_hosted_reissue_rotates_credential
+=== RUN   TestPGStoreContract/V6_hosted_token_expires
+=== RUN   TestPGStoreContract/V2_A5_find_agent_by_name_prefers_active_then_latest_revoked
+=== RUN   TestPGStoreContract/V8_hosted_suspend_resume_keeps_credential_and_name
+=== RUN   TestPGStoreContract/V8_suspend_records_who_and_when_resume_clears
+=== RUN   TestPGStoreContract/V2_A5_find_agent_by_name_tie_breaks_by_id
+=== RUN   TestPGStoreContract/G_no_group_choice_joins_nothing
+=== RUN   TestPGStoreContract/G_approve_only_into_own_or_member_group
+=== RUN   TestPGStoreContract/N3_reset_password_revokes_only_that_users_sessions
+=== RUN   TestPGStoreContract/R6_promote_to_platform_admin_atomic_with_audit
+=== RUN   TestPGStoreContract/V2_revoked_before_pickup_no_credential
+=== RUN   TestPGStoreContract/V2_list_agents_scoped_to_owner_case_insensitive
+--- PASS: TestPGStoreContract (7.10s)
+    --- PASS: TestPGStoreContract/N3_user_id_and_short_name_conflict_by_lowercase (0.04s)
+    --- PASS: TestPGStoreContract/N3_first_admin_only_when_no_management_user (0.04s)
+    --- PASS: TestPGStoreContract/N3_first_admin_refused_when_only_manager (0.04s)
+    --- PASS: TestPGStoreContract/G_group_create_leader_name_code (0.05s)
+    --- PASS: TestPGStoreContract/G_group_join_leave_close (0.06s)
+    --- PASS: TestPGStoreContract/G_group_communication_creator_only_persisted (0.05s)
+    --- PASS: TestPGStoreContract/G_group_delete_creator_only_cascades (0.05s)
+    --- PASS: TestPGStoreContract/G_group_member_rows_survive_revoke (0.05s)
+    --- PASS: TestPGStoreContract/G_approve_group_choice_atomic (0.05s)
+    --- PASS: TestPGStoreContract/G_hosted_group_choice_atomic (0.05s)
+    --- PASS: TestPGStoreContract/N3_disable_revokes_sessions (0.05s)
+    --- PASS: TestPGStoreContract/A11_set_user_type (0.05s)
+    --- PASS: TestPGStoreContract/N3_get_user_by_short_name_case_insensitive (0.04s)
+    --- PASS: TestPGStoreContract/N3_list_users_sorted_by_lowercase_id (0.04s)
+    --- PASS: TestPGStoreContract/N3_session_expiry_and_inactive_user (0.05s)
+    --- PASS: TestPGStoreContract/N3_logout_revokes_only_current_session (0.04s)
+    --- PASS: TestPGStoreContract/N3_registration_code_one_shot_binds_identity (0.04s)
+    --- PASS: TestPGStoreContract/N3_registration_code_expired_or_unknown_changes_nothing (0.04s)
+    --- PASS: TestPGStoreContract/N3_identity_already_bound_rejected (0.04s)
+    --- PASS: TestPGStoreContract/N3_new_registration_code_voids_old (0.04s)
+    --- PASS: TestPGStoreContract/N3_list_active_registration_codes (0.04s)
+    --- PASS: TestPGStoreContract/N3_bind_code_binds_active_user_without_changing_state (0.04s)
+    --- PASS: TestPGStoreContract/V1_A6_pending_list_scoped_to_owner (0.04s)
+    --- PASS: TestPGStoreContract/V1_A7_application_expires_by_clock (0.04s)
+    --- PASS: TestPGStoreContract/V1_pending_order_is_deterministic (0.04s)
+    --- PASS: TestPGStoreContract/V1_A3_A11_name_taken_case_insensitive (0.05s)
+    --- PASS: TestPGStoreContract/V1_A10_same_device_superseded_on_approve (0.05s)
+    --- PASS: TestPGStoreContract/V1_A2_pairing_failures_reject_at_max (0.04s)
+    --- PASS: TestPGStoreContract/V1_A4_A8_credential_taken_once (0.04s)
+    --- PASS: TestPGStoreContract/V2_A4_A12_revoke_frees_name_old_credential_stays_revoked (0.05s)
+    --- PASS: TestPGStoreContract/V2_A6_revoke_other_owner_forbidden (0.04s)
+    --- PASS: TestPGStoreContract/V2_A10_revoke_idempotent (0.04s)
+    --- PASS: TestPGStoreContract/V2_V8_hosted_not_revocable_in_console_but_retirable (0.05s)
+    --- PASS: TestPGStoreContract/V6_hosted_create_and_take (0.04s)
+    --- PASS: TestPGStoreContract/V8_hosted_reissue_rotates_credential (0.04s)
+    --- PASS: TestPGStoreContract/V6_hosted_token_expires (0.04s)
+    --- PASS: TestPGStoreContract/V2_A5_find_agent_by_name_prefers_active_then_latest_revoked (0.05s)
+    --- PASS: TestPGStoreContract/V8_hosted_suspend_resume_keeps_credential_and_name (0.05s)
+    --- PASS: TestPGStoreContract/V8_suspend_records_who_and_when_resume_clears (0.04s)
+    --- PASS: TestPGStoreContract/V2_A5_find_agent_by_name_tie_breaks_by_id (0.05s)
+    --- PASS: TestPGStoreContract/G_no_group_choice_joins_nothing (0.04s)
+    --- PASS: TestPGStoreContract/G_approve_only_into_own_or_member_group (0.05s)
+    --- PASS: TestPGStoreContract/N3_reset_password_revokes_only_that_users_sessions (0.04s)
+    --- PASS: TestPGStoreContract/R6_promote_to_platform_admin_atomic_with_audit (0.05s)
+    --- PASS: TestPGStoreContract/V2_revoked_before_pickup_no_credential (0.05s)
+    --- PASS: TestPGStoreContract/V2_list_agents_scoped_to_owner_case_insensitive (0.05s)
+=== RUN   TestPGStoreConcurrentTakeCredentialOnce
+--- PASS: TestPGStoreConcurrentTakeCredentialOnce (3.16s)
+=== RUN   TestPGStoreConcurrentApproveSameName
+--- PASS: TestPGStoreConcurrentApproveSameName (2.88s)
+=== RUN   TestPGStoreConcurrentCreateFirstAdminOnce
+--- PASS: TestPGStoreConcurrentCreateFirstAdminOnce (2.51s)
+=== RUN   TestPGStoreFirstAdminWaitsForUncommittedInsert
+--- PASS: TestPGStoreFirstAdminWaitsForUncommittedInsert (3.05s)
+=== RUN   TestPromoteToPlatformAdminMemStore
+--- PASS: TestPromoteToPlatformAdminMemStore (0.07s)
+=== RUN   TestRegistrationCodeRecoverable
+--- PASS: TestRegistrationCodeRecoverable (0.07s)
+=== RUN   TestRegistrationCodeNotRecoverableWithoutTheKey
+--- PASS: TestRegistrationCodeNotRecoverableWithoutTheKey (0.07s)
+=== RUN   TestRegistrationCodeDerivedShape
+--- PASS: TestRegistrationCodeDerivedShape (0.07s)
+=== RUN   TestRegistrationCodeRecoverableOnPG
+--- PASS: TestRegistrationCodeRecoverableOnPG (2.78s)
+=== RUN   TestBindCodeForActivePasswordUser
+--- PASS: TestBindCodeForActivePasswordUser (0.21s)
+=== RUN   TestBindCodeRequiresCurrentPassword
+--- PASS: TestBindCodeRequiresCurrentPassword (0.49s)
+=== RUN   TestPairingDigestVector
+--- PASS: TestPairingDigestVector (0.00s)
+=== RUN   TestApplyValidationAndOwner
+--- PASS: TestApplyValidationAndOwner (0.00s)
+=== RUN   TestApplyRateLimitPerIP
+--- PASS: TestApplyRateLimitPerIP (0.00s)
+=== RUN   TestApplyPendingCapPerOwner
+--- PASS: TestApplyPendingCapPerOwner (0.00s)
+=== RUN   TestPollTokenAndRate
+--- PASS: TestPollTokenAndRate (0.00s)
+=== RUN   TestApproveFlowCredentialOnce
+--- PASS: TestApproveFlowCredentialOnce (0.00s)
+=== RUN   TestApprovePairingMismatchKeepsThenRejects
+--- PASS: TestApprovePairingMismatchKeepsThenRejects (0.00s)
+=== RUN   TestApproveNameRulesAndOwnership
+--- PASS: TestApproveNameRulesAndOwnership (0.00s)
+=== RUN   TestRevokeHookAuditAndAuth
+--- PASS: TestRevokeHookAuditAndAuth (0.00s)
+=== RUN   TestRandomnessSourceUsed
+--- PASS: TestRandomnessSourceUsed (0.00s)
+=== RUN   TestApproveGroupOptional
+--- PASS: TestApproveGroupOptional (0.00s)
+=== RUN   TestResolveFullName
+--- PASS: TestResolveFullName (0.00s)
+=== RUN   TestAuditFailureLoggedAndCounted
+--- PASS: TestAuditFailureLoggedAndCounted (0.00s)
+=== RUN   TestA11_DisableRevokesSessionsAndCallsHook
+--- PASS: TestA11_DisableRevokesSessionsAndCallsHook (0.07s)
+=== RUN   TestA11_SetUserTypeChangesRoleAndCallsHook
+--- PASS: TestA11_SetUserTypeChangesRoleAndCallsHook (0.07s)
+=== RUN   TestA11_Guards
+--- PASS: TestA11_Guards (0.07s)
+=== RUN   TestA11_LastManagerKept
+--- PASS: TestA11_LastManagerKept (0.07s)
+=== RUN   TestA11_RestoreReturnsToPreDisableState
+--- PASS: TestA11_RestoreReturnsToPreDisableState (0.07s)
+=== RUN   TestA11_PlatformAdminUntouchableByManager
+--- PASS: TestA11_PlatformAdminUntouchableByManager (0.07s)
+PASS
+ok  	github.com/zhangzongchu2019/dingwei/internal/identity	82.858s

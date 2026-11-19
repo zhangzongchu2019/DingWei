@@ -24,19 +24,22 @@ func TestConsent0108AppliesAfter0110And0111OnlyOnce(t *testing.T) {
 			deployed = append(deployed, entry)
 		}
 	}
+
 	if _, err = MigrateEntries(ctx, p, deployed, nil); err != nil {
 		t.Fatal(err)
 	}
 	before := ledgerRows(t, p)
-	if len(before) != 16 || before["0110_extseat_expect_reply.sql"].digest == "" || before["0111_extseat_feishu_copy.sql"].digest == "" || before["0112_np_agent_display_name.sql"].digest == "" || before["0113_extseat_groups.sql"].digest == "" {
+
+	if len(before) != 17 || before["0110_extseat_expect_reply.sql"].digest == "" || before["0111_extseat_feishu_copy.sql"].digest == "" || before["0112_np_agent_display_name.sql"].digest == "" || before["0113_extseat_groups.sql"].digest == "" || before["0114_agent_feishu_summary_copy.sql"].digest == "" {
 		t.Fatalf("R57_LATE_0108_DEPLOYED_BASELINE %v", keysOf(before))
 	}
 	report, err := Migrate(ctx, p, HubDomains())
-	if err != nil || strings.Join(report.Applied, ",") != "0108_extseat_short_name.sql" || len(report.Skipped) != 16 {
+	if err != nil || strings.Join(report.Applied, ",") != "0108_extseat_short_name.sql" || len(report.Skipped) != 17 {
 		t.Fatalf("R57_LATE_0108_ONLY_PENDING report=%+v err=%v", report, err)
 	}
 	after := ledgerRows(t, p)
-	if len(after) != 17 || after["0108_extseat_short_name.sql"].digest == "" {
+
+	if len(after) != 18 || after["0108_extseat_short_name.sql"].digest == "" {
 		t.Fatalf("R57_LATE_0108_LEDGER %v", keysOf(after))
 	}
 	for name, old := range before {
@@ -46,7 +49,7 @@ func TestConsent0108AppliesAfter0110And0111OnlyOnce(t *testing.T) {
 		}
 	}
 	repeated, err := Migrate(ctx, p, HubDomains())
-	if err != nil || len(repeated.Applied) != 0 || len(repeated.Skipped) != 17 {
+	if err != nil || len(repeated.Applied) != 0 || len(repeated.Skipped) != 18 {
 		t.Fatalf("R57_LATE_0108_RESTART report=%+v err=%v", repeated, err)
 	}
 }
@@ -70,6 +73,7 @@ func TestExternalDisplayNameMigrationBackfillsWithoutChangingAddress(t *testing.
 	if displayNameEntry.Name == "" {
 		t.Fatal("0112 display-name migration missing from Hub ledger")
 	}
+
 	if _, err = MigrateEntries(ctx, p, beforeDisplayName, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -98,6 +102,7 @@ VALUES('ext-with-name','p1','alice','AG7',1,now()),('ext-without-name','p2','bob
 	if err := principalRow.Scan(&principalName); err != nil || principalName != "张伟" {
 		t.Fatalf("migration fixture principal display_name=%q err=%v", principalName, err)
 	}
+
 	if _, err = MigrateEntries(ctx, p, []Entry{displayNameEntry}, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -138,6 +143,7 @@ func TestConsentMigrationLedgerPG(t *testing.T) {
 			previous = append(previous, entry)
 		}
 	}
+
 	if _, e = MigrateEntries(ctx, p, previous, nil); e != nil {
 		t.Fatal(e)
 	}
@@ -145,6 +151,7 @@ func TestConsentMigrationLedgerPG(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
+
 	if _, e = p.Exec(ctx, ac, `UPDATE np_extseat SET short_name='abcdefgh261109060000'`); e == nil {
 		t.Fatal("ZC_LEDGER_OLD_CHECK")
 	}
@@ -169,9 +176,11 @@ func TestConsentMigrationLedgerPG(t *testing.T) {
 	if e = row.Scan(&name); e != nil || name != "bot" {
 		t.Fatalf("ZC_LEDGER_OLD_ROW %s %v", name, e)
 	}
+
 	if _, e = p.Exec(ctx, ac, `UPDATE np_extseat SET short_name='abcdefgh261109060000'`); e != nil {
 		t.Fatalf("ZC_LEDGER_LONG_REJECTED %v", e)
 	}
+
 	if _, e = p.Exec(ctx, ac, `UPDATE np_extseat SET short_name='abcdefghijklmnopqrstu'`); e == nil {
 		t.Fatal("ZC_LEDGER_OVER20_ACCEPTED")
 	}

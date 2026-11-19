@@ -31,6 +31,7 @@ import (
 	"github.com/zhangzongchu2019/dingwei/internal/agentmetrics"
 	"github.com/zhangzongchu2019/dingwei/internal/changeflow"
 	"github.com/zhangzongchu2019/dingwei/internal/coordinatereview"
+	"github.com/zhangzongchu2019/dingwei/internal/extseat"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/llm"
 	"github.com/zhangzongchu2019/dingwei/internal/model"
@@ -81,6 +82,7 @@ type Hub struct {
 	ingressBudgetItems   int
 	ExternalSeats        ExternalSeats
 	ExternalCopyReplies  ExternalCopyReplyLookup
+	AgentFeishuCopies    extseat.AgentFeishuCopyService
 	TempGroups           *tempgroup.Service
 
 	stickyLanes         stickyLanes
@@ -1692,6 +1694,9 @@ func (h *Hub) Dispatch(ctx context.Context, msg model.Message, text string) (mod
 		if isCopy {
 			return model.PrefixDispatchResult{Matched: true}, nil
 		}
+	}
+	if result, handled, err := h.dispatchAgentFeishuCopyCommand(ctx, msg, text); handled || err != nil {
+		return result, err
 	}
 	if result, handled, err := h.dispatchR9PMReply(ctx, msg, text); handled {
 		return result, err
@@ -4352,9 +4357,17 @@ func (h *Hub) dispatchMemberMention(ctx context.Context, msg model.Message, text
 	return model.PrefixDispatchResult{Matched: true}, true, nil
 }
 
-func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env model.Envelope, ackInbound bool) error {
+func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env model.Envelope, ackInbound bool) (routeErr error) {
 	if handled, err := h.routeExternalSeat(ctx, keyID, sessionName, env); handled {
 		return err
+	}
+	if h.AgentFeishuCopies != nil && h.Identity != nil && reliablePrimaryEnvelope(env) && (kindOf(env) == kindContent || kindOf(env) == kindReply) && !metaBool(env.Meta, "system") {
+		copyEnv := env
+		defer func() {
+			if routeErr == nil {
+				h.enqueueInternalAgentCopy(ctx, keyID, sessionName, copyEnv)
+			}
+		}()
 	}
 	var sig string
 	if recoveryIntent(ctx) == nil {
@@ -4572,6 +4585,49 @@ func (h *Hub) routeToSession(ctx context.Context, keyID, sessionName string, env
 		_ = h.Repo.AckMessage(ctx, env.ID)
 	}
 	return nil
+}
+
+func (h *Hub) enqueueInternalAgentCopy(ctx context.Context, targetKey, targetSession string, env model.Envelope) {
+	from, err := parseAddress(env.From)
+	if err != nil || from.Kind != addressSession {
+		return
+	}
+	sourceKey, sourceSession := from.KeyID, from.SessionName
+	if k := metaString(env.Meta, "source_key_id"); k != "" {
+		sourceKey = k
+		if n := metaString(env.Meta, "source_session_name"); n != "" {
+			sourceSession = n
+		}
+	}
+	source, ok := h.newPlatformAgentAt(ctx, sourceKey, sourceSession)
+	if !ok || source.Origin == identity.OriginExternal {
+		return
+	}
+	target, ok := h.newPlatformAgentAt(ctx, targetKey, targetSession)
+	if !ok {
+		return
+	}
+	groups, err := h.Identity.Store.ListAgentGroups(ctx, source.ID)
+	if err != nil {
+		log.Printf("feishu copy group lookup failed agent_id=%s", source.ID)
+		return
+	}
+	groupLabel := "同属主默认组"
+	if len(groups) > 0 {
+		sort.Strings(groups)
+		groupLabel = strings.Join(groups, "、")
+	}
+	created := time.Now().UTC()
+	if env.TS > 0 {
+		created = time.Unix(env.TS, 0).UTC()
+	}
+	sum := sha256.Sum256([]byte("agent-feishu-copy-v1\x00" + source.ID + "\x00" + env.ID))
+	id := "agent-copy-" + hex.EncodeToString(sum[:16])
+	copyCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+	defer cancel()
+	if err := h.AgentFeishuCopies.EnqueueAgent(copyCtx, extseat.AgentFeishuCopyEvent{ID: id, AgentID: source.ID, SourceName: h.Identity.FullName(ctx, source), TargetName: h.Identity.FullName(ctx, target), Group: groupLabel, Body: env.Body, CreatedAt: created}); err != nil {
+		log.Printf("feishu copy enqueue failed agent_id=%s", source.ID)
+	}
 }
 
 // reliablePrimaryEnvelope 判断信封是否走可靠投递(持久队列 + ACK + 离线补投 + 留日志)。

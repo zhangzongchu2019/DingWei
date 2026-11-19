@@ -52,8 +52,9 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	}
 	// 🔴 这份名单写死是有意的（与上面「缺表名单」同理）：它钉的是【Hub 域里到底有哪几条】，
 	// 引 LedgerInDomains() 去比就变成自己比自己。加一条 Hub 域条目 ⇒ 改这里，红一次是应当的。
-	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0112_np_agent_display_name.sql,0113_extseat_groups.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
-		t.Errorf("Applied = %v，要 Hub 域十七条按字典序（0400 属 fanout 域，不得进 Hub 库）", rep.Applied)
+
+	if strings.Join(rep.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0112_np_agent_display_name.sql,0113_extseat_groups.sql,0114_agent_feishu_summary_copy.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+		t.Errorf("Applied = %v，要 Hub 域十八条按字典序（0400 属 fanout 域，不得进 Hub 库）", rep.Applied)
 	}
 	if err := identity.NewPGStore(pool).CheckSchema(ctx); err != nil {
 		t.Fatalf("跑完账本 CheckSchema 仍失败: %v", err)
@@ -65,12 +66,13 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 			t.Errorf("Hub 库里出现了 fanout 域的表 %s —— HubDomains() 不含 fanout（裁定 R-G2-LEDGER-DOMAIN）", tbl)
 		}
 	}
-	// 账本自己也记了账（Hub 域十七条，digest 与内嵌正文一致）。
+	// 账本自己也记了账（Hub 域十八条，digest 与内嵌正文一致）。
 	rows := ledgerRows(t, pool)
 	entries, err := LedgerInDomains(HubDomains())
 	if err != nil {
 		t.Fatalf("LedgerInDomains: %v", err)
 	}
+
 	if len(rows) != len(entries) {
 		t.Fatalf("账上 %d 条，Hub 域账本 %d 条", len(rows), len(entries))
 	}
@@ -84,8 +86,9 @@ func TestMigrate_RealLedgerSatisfiesIdentityCheckSchema(t *testing.T) {
 	if err != nil {
 		t.Fatalf("重跑 Migrate: %v", err)
 	}
-	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 17 {
-		t.Errorf("重跑 Applied=%v Skipped=%v，要 Hub 域 17 条空转", rep2.Applied, rep2.Skipped)
+
+	if len(rep2.Applied) != 0 || len(rep2.Skipped) != 18 {
+		t.Errorf("重跑 Applied=%v Skipped=%v，要 Hub 域 18 条空转", rep2.Applied, rep2.Skipped)
 	}
 }
 
@@ -99,6 +102,7 @@ func TestMigrate_AuditLogAcceptsIdentityWrites(t *testing.T) {
 	dsn := pgtest.DSN(t)
 	pool := testSchema(t, dsn)
 	ctx := context.Background()
+
 	if _, err := Migrate(ctx, pool, HubDomains()); err != nil {
 		t.Fatalf("Migrate: %v", err)
 	}
@@ -144,6 +148,7 @@ func TestMigrate_AuditLogAcceptsIdentityWrites(t *testing.T) {
 
 	// action 保持 NOT NULL（与 SQLite 侧 0001_init.sql:207 一致）：写入方恒传字符串，
 	// 但「传了 NULL」必须被库挡住，不能悄悄变成一条没有动作的审计。
+
 	if _, err := pool.Exec(ctx, testCtx(t),
 		`INSERT INTO audit_log(actor, action, ts) VALUES($1, NULL, $2)`, "x", at); err == nil {
 		t.Errorf("action 可以是 NULL —— 与 SQLite 侧的 NOT NULL 不一致")
@@ -182,15 +187,19 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 	// 🔴 施加顺序照号段（0100 identity → 0400 fanout），与账本同序：fanout 五表无外键指向
 	// np_*／audit_log，顺序其实不影响结果，但让轨 A 与轨 B 同序，红的时候两边可逐条对照。
 	trackA := testSchema(t, dsn)
+
 	if _, err := trackA.Exec(ctx, testCtx(t), identity.PGSchemaSQL); err != nil {
 		t.Fatalf("轨 A 建表失败（identity）: %v", err)
 	}
+
 	if _, err := trackA.Exec(ctx, testCtx(t), fanout.PGSchemaSQL); err != nil {
 		t.Fatalf("轨 A 建表失败（fanout）: %v", err)
 	}
+
 	if _, err := trackA.Exec(ctx, testCtx(t), consolemux.PGSchemaSQL); err != nil {
 		t.Fatalf("轨 A 建表失败（view 域 console transport slot）: %v", err)
 	}
+
 	if _, err := trackA.Exec(ctx, testCtx(t), hostedSourceDDL(t)); err != nil {
 		t.Fatalf("track A hosted schema: %v", err)
 	}
@@ -199,7 +208,8 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, entry := range entries {
-		if entry.Name == "0105_extseat.sql" || entry.Name == "0106_tempgroup.sql" || entry.Name == "0107_mcpgw_oauth.sql" || entry.Name == "0108_extseat_short_name.sql" || entry.Name == "0110_extseat_expect_reply.sql" || entry.Name == "0111_extseat_feishu_copy.sql" || entry.Name == "0112_np_agent_display_name.sql" || entry.Name == "0113_extseat_groups.sql" {
+		if entry.Name == "0105_extseat.sql" || entry.Name == "0106_tempgroup.sql" || entry.Name == "0107_mcpgw_oauth.sql" || entry.Name == "0108_extseat_short_name.sql" || entry.Name == "0110_extseat_expect_reply.sql" || entry.Name == "0111_extseat_feishu_copy.sql" || entry.Name == "0112_np_agent_display_name.sql" || entry.Name == "0113_extseat_groups.sql" || entry.Name == "0114_agent_feishu_summary_copy.sql" {
+
 			if _, err := trackA.Exec(ctx, testCtx(t), entry.Body); err != nil {
 				t.Fatal(err)
 			}
@@ -208,8 +218,9 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 	aTables := baseTables(t, trackA, schemaOf(t, trackA))
 	// 40 ＝ 身份域 9 ＋ 外部席位 7 ＋ 临时编组 3 ＋ MCP OAuth 1 ＋ hosted 14
 	// ＋ view 域 console transport slot 1（0300）＋ fanout 5（0400）。
-	if len(aTables) != 40 {
-		t.Fatalf("轨 A 建出 %d 张表（%v），要 40 张＝临时编组 3＋MCP OAuth 1＋外部席位 7＋hosted 14＋身份域 9（G3 终版 800f24d8：原 6 张＋编组两张＋设备认领一张）"+
+
+	if len(aTables) != 41 {
+		t.Fatalf("轨 A 建出 %d 张表（%v），要 41 张＝临时编组 3＋MCP OAuth 1＋外部席位 7＋抄送 outbox 1＋hosted 14＋身份域 9（G3 终版 800f24d8：原 6 张＋编组两张＋设备认领一张）"+
 			"＋ view 域 console transport slot 1（0300）＋ fanout 域 5（0400）", len(aTables), aTables)
 	}
 
@@ -233,6 +244,7 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 	for _, e := range all {
 		wantApplied = append(wantApplied, e.Name)
 	}
+
 	if strings.Join(repB.Applied, ",") != strings.Join(wantApplied, ",") {
 		t.Fatalf("轨 B 只施加了 %v，而账本里是 %v —— 必须一条不落、按字典序依次施加", repB.Applied, wantApplied)
 	}
@@ -242,6 +254,7 @@ func TestLedgerShapeMatchesDomainDDL(t *testing.T) {
 	// 少一张就是账本漏建（那正是「Hub 起不来」的成因）。
 	want := append(append([]string{}, aTables...), "audit_log", "schema_migrations")
 	sort.Strings(want)
+
 	if strings.Join(bTables, ",") != strings.Join(want, ",") {
 		t.Fatalf("轨 B 的表集合 = %v，要 %v", bTables, want)
 	}
@@ -484,12 +497,14 @@ func TestAppliedEntriesAreImmutable(t *testing.T) {
 	}
 	// 🔴 全账本口径（同双轨形状格的理由）：本格钉的是「任何已施加条目都不可变」，
 	// 与条目属哪个域无关；域子集会让 fanout 那条不在场，于是它的不可变性没人守。
+
 	if _, err := MigrateEntries(ctx, pool, entries, nil); err != nil {
 		t.Fatalf("MigrateEntries: %v", err)
 	}
 
 	// ① 账实相符：账上每条 digest 与当前正文逐个相符（不是抽一条看看）。
 	rows := ledgerRows(t, pool)
+
 	if len(rows) != len(entries) {
 		t.Fatalf("账上 %d 条，账本 %d 条", len(rows), len(entries))
 	}
@@ -533,11 +548,13 @@ func TestAppliedEntriesAreImmutable(t *testing.T) {
 			t.Errorf("拒绝文案缺 %q（两个 digest 必须都在，否则运维比不出变了什么）: %v", want, err)
 		}
 	}
+
 	if len(rep.Applied) != 0 {
 		t.Errorf("拒绝的那次竟然执行了 %v", rep.Applied)
 	}
 	// ③ 拒绝不得把账写脏：还是那三条、digest 还是原来那三个。
 	after := ledgerRows(t, pool)
+
 	if len(after) != len(rows) {
 		t.Fatalf("账被写脏了：原 %d 条、现 %d 条", len(rows), len(after))
 	}

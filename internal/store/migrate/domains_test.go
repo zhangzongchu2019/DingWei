@@ -114,11 +114,13 @@ func TestLedgerInDomains_PartitionsRealLedger(t *testing.T) {
 
 	// 🔴 名单写死：本格钉的是【真账本里现在有哪几条、各属哪个域】，引 Ledger() 去比就是自己比自己。
 	hub := names(mustLedgerIn(t, HubDomains()))
-	if strings.Join(hub, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0112_np_agent_display_name.sql,0113_extseat_groups.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+
+	if strings.Join(hub, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0112_np_agent_display_name.sql,0113_extseat_groups.sql,0114_agent_feishu_summary_copy.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
 		t.Errorf("HubDomains 取到 %v，要 %s（core＋identity，🔴 不含 fanout 的 %s）",
 			hub, coreEntry+","+frozenIdentityEntry, frozenFanoutEntry)
 	}
 	fan := names(mustLedgerIn(t, FanoutDomains()))
+
 	if strings.Join(fan, ",") != frozenFanoutEntry {
 		t.Errorf("FanoutDomains 取到 %v，要只有 %s", fan, frozenFanoutEntry)
 	}
@@ -136,10 +138,12 @@ func TestLedgerInDomains_PartitionsRealLedger(t *testing.T) {
 		}
 	}
 	for _, n := range all {
+
 		if _, ok := claim[n]; !ok {
 			t.Errorf("条目 %s 不属于任何已登记域 —— 它会被所有装配点跳过（静默漏建）", n)
 		}
 	}
+
 	if len(claim) != len(all) {
 		t.Errorf("按域取子集合起来 %d 条，全账本 %d 条", len(claim), len(all))
 	}
@@ -182,12 +186,14 @@ func TestMigrate_RejectsBadDomainSetBeforeTouchingDB(t *testing.T) {
 		if !strings.Contains(err.Error(), tc.want) {
 			t.Errorf("%s: 拒绝文案缺 %q: %v", tc.name, tc.want, err)
 		}
+
 		if len(rep.Applied) != 0 || len(rep.Skipped) != 0 {
 			t.Errorf("%s: 拒了却带回了读数 %v", tc.name, rep)
 		}
 	}
 	// LedgerInDomains 同一口径（它是 Migrate 的第一步，两处判据不得一宽一严）。
 	for _, domains := range [][]Domain{nil, {}, {Domain("bogus")}, {DomainFanout, DomainFanout}} {
+
 		if _, err := LedgerInDomains(domains); err == nil {
 			t.Errorf("LedgerInDomains(%v) 竟然没拒", domains)
 		}
@@ -214,7 +220,8 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Migrate(HubDomains): %v", err)
 		}
-		if strings.Join(rep.Applied, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0112_np_agent_display_name.sql,0113_extseat_groups.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+
+		if strings.Join(rep.Applied, ",") != coreEntry+","+frozenIdentityEntry+",0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0112_np_agent_display_name.sql,0113_extseat_groups.sql,0114_agent_feishu_summary_copy.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
 			t.Errorf("Applied = %v，要 Hub 域迁移按字典序全部应用", rep.Applied)
 		}
 		for _, tbl := range append(hubTables, r31HostedTableNames()...) {
@@ -228,9 +235,11 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 			}
 		}
 		rows := ledgerRows(t, pool)
-		if len(rows) != 17 || rows["0103_agent_last_source_r31.sql"].digest == "" || rows["0200_hosted_r30_baseline.sql"].digest == "" || rows["0201_hosted_node_access_r31.sql"].digest == "" || rows["0102_device_claim.sql"].digest == "" || rows[coreEntry].digest == "" || rows[frozenIdentityEntry].digest == "" || rows["0101_group_communication.sql"].digest == "" || rows["0112_np_agent_display_name.sql"].digest == "" || rows["0113_extseat_groups.sql"].digest == "" {
-			t.Errorf("账上读到 %v，要 Hub 域十七条（含 %s 与 %s）", keysOf(rows), coreEntry, frozenIdentityEntry)
+
+		if len(rows) != 18 || rows["0103_agent_last_source_r31.sql"].digest == "" || rows["0200_hosted_r30_baseline.sql"].digest == "" || rows["0201_hosted_node_access_r31.sql"].digest == "" || rows["0102_device_claim.sql"].digest == "" || rows[coreEntry].digest == "" || rows[frozenIdentityEntry].digest == "" || rows["0101_group_communication.sql"].digest == "" || rows["0112_np_agent_display_name.sql"].digest == "" || rows["0113_extseat_groups.sql"].digest == "" {
+			t.Errorf("账上读到 %v，要 Hub 域十八条（含 %s 与 %s）", keysOf(rows), coreEntry, frozenIdentityEntry)
 		}
+
 		if _, ok := rows[frozenFanoutEntry]; ok {
 			t.Errorf("Hub 库的账上记了 %s —— 那条属 fanout 域", frozenFanoutEntry)
 		}
@@ -245,6 +254,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Migrate(FanoutDomains): %v", err)
 		}
+
 		if strings.Join(rep.Applied, ",") != frozenFanoutEntry {
 			t.Errorf("Applied = %v，要只有 %s", rep.Applied, frozenFanoutEntry)
 		}
@@ -259,6 +269,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 			}
 		}
 		rows := ledgerRows(t, pool)
+
 		if len(rows) != 1 || rows[frozenFanoutEntry].digest == "" {
 			t.Errorf("账上读到 %v，要恰好 %s 一条", keysOf(rows), frozenFanoutEntry)
 		}
@@ -267,6 +278,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		if err != nil {
 			t.Fatalf("重跑 Migrate(FanoutDomains): %v", err)
 		}
+
 		if len(rep2.Applied) != 0 || len(rep2.Skipped) != 1 {
 			t.Errorf("重跑 Applied=%v Skipped=%v，要空转一条", rep2.Applied, rep2.Skipped)
 		}
@@ -278,6 +290,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		pool := testSchema(t, dsn)
 		// 造出生产现状：只施加 0001＋0100（按名字从真账本里挑，不自己写 DDL）。
 		prod := pickEntries(t, coreEntry, frozenIdentityEntry)
+
 		if _, err := MigrateEntries(ctx, pool, prod, nil); err != nil {
 			t.Fatalf("造生产 Hub 现状失败: %v", err)
 		}
@@ -289,9 +302,11 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		if err != nil {
 			t.Fatalf("在生产 Hub 现状上跑 Hub 侧 Migrate 竟然报错（部署会起不来）: %v", err)
 		}
-		if strings.Join(rep.Applied, ",") != "0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0112_np_agent_display_name.sql,0113_extseat_groups.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+
+		if strings.Join(rep.Applied, ",") != "0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0112_np_agent_display_name.sql,0113_extseat_groups.sql,0114_agent_feishu_summary_copy.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
 			t.Errorf("Applied=%v, want all pending Hub migrations including session creation time", rep.Applied)
 		}
+
 		if strings.Join(rep.Skipped, ",") != coreEntry+","+frozenIdentityEntry {
 			t.Errorf("Skipped = %v，要恰好那两条（空转）", rep.Skipped)
 		}
@@ -299,15 +314,17 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 		// 0102 adds only the device-claim table, preserving every old table.
 		filtered := make([]string, 0, len(after))
 		for _, table := range after {
-			if !strings.HasPrefix(table, "np_temp_group") && table != "mcpgw_oauth" && table != "np_device_claim" && table != "np_external_principal" && table != "np_extseat" && table != "np_extseat_token" && table != "np_extseat_inbox" && table != "np_extseat_outbox" && table != "np_extseat_send_key" && table != "np_extseat_feishu_copy" && table != "console_transport_slot" && !strings.HasPrefix(table, "g4_") {
+			if !strings.HasPrefix(table, "np_temp_group") && table != "mcpgw_oauth" && table != "np_device_claim" && table != "np_external_principal" && table != "np_extseat" && table != "np_extseat_token" && table != "np_extseat_inbox" && table != "np_extseat_outbox" && table != "np_extseat_send_key" && table != "np_extseat_feishu_copy" && table != "np_agent_feishu_copy_outbox" && table != "console_transport_slot" && !strings.HasPrefix(table, "g4_") {
 				filtered = append(filtered, table)
 			}
 		}
-		if len(after) != len(before)+27 || strings.Join(before, ",") != strings.Join(filtered, ",") {
+
+		if len(after) != len(before)+28 || strings.Join(before, ",") != strings.Join(filtered, ",") {
 			t.Errorf("表清单动了：\n迁前 %v\n迁后 %v", before, after)
 		}
 		afterRows := ledgerRows(t, pool)
-		if len(afterRows) != len(beforeRows)+15 {
+
+		if len(afterRows) != len(beforeRows)+16 {
 			t.Errorf("账多了条目：迁前 %v、迁后 %v", keysOf(beforeRows), keysOf(afterRows))
 		}
 		for name, r := range beforeRows {
@@ -328,6 +345,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 	// （Hub 的三条会被施加进 fanout 库，两个服务共一本账，裁定取的乙就名存实亡）。
 	t.Run("fanout 库上跑 Hub 侧 Migrate ⇒ 拒绝且不动库", func(t *testing.T) {
 		pool := testSchema(t, dsn)
+
 		if _, err := Migrate(ctx, pool, FanoutDomains()); err != nil {
 			t.Fatalf("先造 fanout 库失败: %v", err)
 		}
@@ -344,6 +362,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 				t.Errorf("拒绝文案缺 %q（运维要能照文案判出是 DSN 指错了库）: %v", want, err)
 			}
 		}
+
 		if len(rep.Applied) != 0 || len(rep.Skipped) != 0 {
 			t.Errorf("拒了却带回读数 Applied=%v Skipped=%v", rep.Applied, rep.Skipped)
 		}
@@ -353,10 +372,12 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 			}
 		}
 		after := baseTables(t, pool, schema)
+
 		if strings.Join(before, ",") != strings.Join(after, ",") {
 			t.Errorf("表清单动了：\n拒前 %v\n拒后 %v", before, after)
 		}
 		rows := ledgerRows(t, pool)
+
 		if len(rows) != 1 {
 			t.Errorf("账上 %v，要还是 fanout 那一条（拒绝不得写账）", keysOf(rows))
 		}
@@ -365,6 +386,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 	// ④ 反方向：Hub 库上跑 fanout 侧 Migrate ⇒ 同样拒（FANOUT_PG_DSN 指到 Hub 库就是这一格）。
 	t.Run("Hub 库上跑 fanout 侧 Migrate ⇒ 拒绝且不动库", func(t *testing.T) {
 		pool := testSchema(t, dsn)
+
 		if _, err := Migrate(ctx, pool, HubDomains()); err != nil {
 			t.Fatalf("先造 Hub 库失败: %v", err)
 		}
@@ -385,6 +407,7 @@ func TestMigrate_DomainScopingOnRealLedger(t *testing.T) {
 			}
 		}
 		after := ledgerRows(t, pool)
+
 		if len(after) != len(before) {
 			t.Errorf("账被动了：拒前 %v、拒后 %v", keysOf(before), keysOf(after))
 		}

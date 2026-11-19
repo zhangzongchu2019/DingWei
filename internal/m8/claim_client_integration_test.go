@@ -71,7 +71,7 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
 		}
 		t.Logf("isolated PostgreSQL server_version_num=%d", versionNumber)
 		report, err := migrate.Migrate(ctx, pool, migrate.HubDomains())
-		if err != nil || strings.Join(report.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0112_np_agent_display_name.sql,0113_extseat_groups.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
+		if err != nil || strings.Join(report.Applied, ",") != "0001_core_baseline.sql,0100_identity_baseline.sql,0101_group_communication.sql,0102_device_claim.sql,0103_agent_last_source_r31.sql,0104_np_session_created_at.sql,0105_extseat.sql,0106_tempgroup.sql,0107_mcpgw_oauth.sql,0108_extseat_short_name.sql,0110_extseat_expect_reply.sql,0111_extseat_feishu_copy.sql,0112_np_agent_display_name.sql,0113_extseat_groups.sql,0114_agent_feishu_summary_copy.sql,0200_hosted_r30_baseline.sql,0201_hosted_node_access_r31.sql,0300_console_transport_slot.sql" {
 			t.Fatal("production Hub migration ledger did not initialize expected identity/claim schema")
 		}
 		repeated, err := migrate.Migrate(ctx, pool, migrate.HubDomains())
@@ -104,6 +104,7 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
 			bound.Subject = "other-person"
 			requested = actual
 		}
+
 		if _, err := store.RedeemRegistrationCode(ctx, "synthetic-reg", bound, now); err != nil {
 			t.Fatal(err)
 		}
@@ -205,9 +206,11 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
 		t.Helper()
 		for scanner.Scan() {
 			line := scanner.Text()
+
 			if strings.HasPrefix(line, "CLAIM_ERROR ") {
 				t.Fatal("claim integration child failed; secrets not emitted")
 			}
+
 			if strings.HasPrefix(line, want+" ") {
 				return
 			}
@@ -233,6 +236,7 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
 		}
 		stale := trustedMsgFrom(sender.Subject, sender.Issuer, model.IngressFeishuWSAuthenticated)
 		stale.ChatType = model.ChatPersonal
+
 		if _, handled, err := hub.dispatchNewPlatformCommand(ctx, stale, "#pair "+old.Code); err != nil || !handled {
 			t.Fatal("cancelled code replay handling failed")
 		}
@@ -259,6 +263,7 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
 	message := trustedMsgFrom(sender.Subject, sender.Issuer, model.IngressFeishuWSAuthenticated)
 	message.ChatType = model.ChatPersonal
 	for _, bad := range []model.Message{func() model.Message { v := message; v.IngressProvenance = ""; return v }(), func() model.Message { v := message; v.ChatType = model.ChatGroup; return v }()} {
+
 		if _, handled, err := hub.dispatchNewPlatformCommand(ctx, bad, command); err != nil || !handled {
 			t.Fatal("untrusted claim handling failed")
 		}
@@ -267,6 +272,7 @@ func claimClientIntegration(t *testing.T, python, mode, backend string) {
 			t.Fatal("untrusted ingress consumed code")
 		}
 	}
+
 	if _, handled, err := hub.dispatchNewPlatformCommand(ctx, message, command); err != nil || !handled {
 		t.Fatal("trusted claim handling failed")
 	}

@@ -1,0 +1,11 @@
+=== RUN   TestFeishuCopyTextContainsOnlySanitizedSummary
+    feishu_copy_test.go:51: summary missing "[已隐藏]": "【Agent 消息摘要】\n发送方：Agent甲\n接收方：Agent乙\n编组：AG7\n时间：2026-11-19T04:00:00Z\n摘录：普通内容 access_token=secret123\nou_private123456\nSystem prompt: hidden instruction\n最后一行\n【只读提示】回复不会转发到 Agent。"
+    feishu_copy_test.go:51: summary missing "[身份标识已隐藏]": "【Agent 消息摘要】\n发送方：Agent甲\n接收方：Agent乙\n编组：AG7\n时间：2026-11-19T04:00:00Z\n摘录：普通内容 access_token=secret123\nou_private123456\nSystem prompt: hidden instruction\n最后一行\n【只读提示】回复不会转发到 Agent。"
+    feishu_copy_test.go:56: summary leaked "secret123": "【Agent 消息摘要】\n发送方：Agent甲\n接收方：Agent乙\n编组：AG7\n时间：2026-11-19T04:00:00Z\n摘录：普通内容 access_token=secret123\nou_private123456\nSystem prompt: hidden instruction\n最后一行\n【只读提示】回复不会转发到 Agent。"
+    feishu_copy_test.go:56: summary leaked "ou_private123456": "【Agent 消息摘要】\n发送方：Agent甲\n接收方：Agent乙\n编组：AG7\n时间：2026-11-19T04:00:00Z\n摘录：普通内容 access_token=secret123\nou_private123456\nSystem prompt: hidden instruction\n最后一行\n【只读提示】回复不会转发到 Agent。"
+    feishu_copy_test.go:56: summary leaked "hidden instruction": "【Agent 消息摘要】\n发送方：Agent甲\n接收方：Agent乙\n编组：AG7\n时间：2026-11-19T04:00:00Z\n摘录：普通内容 access_token=secret123\nou_private123456\nSystem prompt: hidden instruction\n最后一行\n【只读提示】回复不会转发到 Agent。"
+    feishu_copy_test.go:56: summary leaked "System prompt": "【Agent 消息摘要】\n发送方：Agent甲\n接收方：Agent乙\n编组：AG7\n时间：2026-11-19T04:00:00Z\n摘录：普通内容 access_token=secret123\nou_private123456\nSystem prompt: hidden instruction\n最后一行\n【只读提示】回复不会转发到 Agent。"
+--- FAIL: TestFeishuCopyTextContainsOnlySanitizedSummary (0.00s)
+FAIL
+FAIL	github.com/zhangzongchu2019/dingwei/internal/extseat	0.003s
+FAIL

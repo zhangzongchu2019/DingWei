@@ -40,6 +40,7 @@ func (testGroups) CreateTempGroup(ctx context.Context, tx repo.Tx, r CreateGroup
 	if e != nil {
 		return g, e
 	}
+
 	if _, e = tx.Exec(ctx, `INSERT INTO np_group(code,short_name,creator_lc,leader_agent_id,created_at,updated_at) VALUES($1,$1,$2,$3,$4,$4)`, string(code), r.OwnerLC, r.Target.ID, r.At); e != nil {
 		return g, e
 	}
@@ -138,10 +139,12 @@ func newFixture(t *testing.T, dsn string) *fixture {
 	if accessErr != nil {
 		t.Fatal(accessErr)
 	}
+
 	if _, e = admin.Exec(ctx, ac, `CREATE SCHEMA `+schema); e != nil {
 		t.Fatal(e)
 	}
 	sep := "?"
+
 	if strings.Contains(dsn, "?") {
 		sep = "&"
 	}
@@ -166,7 +169,12 @@ func newFixture(t *testing.T, dsn string) *fixture {
 	if e != nil {
 		t.Fatal(e)
 	}
-	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(sqlText) + string(policyDDL) + string(copyDDL) + string(groupsDDL) + `CREATE SEQUENCE test_group_seq;CREATE TABLE test_groups(code text PRIMARY KEY,generation bigint,target text,external text,expires_at timestamptz,active boolean NOT NULL DEFAULT true);CREATE TABLE test_touches(event text PRIMARY KEY,kind text);`
+	copyUpgradeDDL, e := os.ReadFile("../store/migrate/migrations/0114_agent_feishu_summary_copy.sql")
+	if e != nil {
+		t.Fatal(e)
+	}
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(sqlText) + string(policyDDL) + string(copyDDL) + string(groupsDDL) + string(copyUpgradeDDL) + `CREATE SEQUENCE test_group_seq;CREATE TABLE test_groups(code text PRIMARY KEY,generation bigint,target text,external text,expires_at timestamptz,active boolean NOT NULL DEFAULT true);CREATE TABLE test_touches(event text PRIMARY KEY,kind text);`
+
 	if _, e = pool.Exec(ctx, ac, ddl); e != nil {
 		t.Fatal(e)
 	}
@@ -216,6 +224,7 @@ func (f *fixture) touches(t *testing.T) int {
 }
 func (f *fixture) keepGroup(t *testing.T) {
 	t.Helper()
+
 	if _, e := f.pool.Exec(f.ctx, f.access, `UPDATE test_groups SET expires_at=$1`, f.clock.now().Add(90*24*time.Hour)); e != nil {
 		t.Fatal(e)
 	}
@@ -231,6 +240,7 @@ func TestOnlineProjectsExternalDisplayNamePG(t *testing.T) {
 	if byDisplayName, err := f.s.Identity.Store.FindAgentByName(f.ctx, seat.OwnerLC, "张伟"); !errors.Is(err, identity.ErrNotFound) || byDisplayName != nil {
 		t.Fatalf("EXTSEAT_DISPLAY_NAME_MUST_NOT_ROUTE name resolved as address: agent=%+v err=%v", byDisplayName, err)
 	}
+
 	if _, err := f.pool.Exec(f.ctx, f.access, `UPDATE np_extseat SET last_seen_at=$2 WHERE agent_id=$1`, seat.AgentID, f.clock.now()); err != nil {
 		t.Fatal(err)
 	}
@@ -266,6 +276,7 @@ func TestCorePG(t *testing.T) {
 		// 丢弃服务实例，在原14天之后读取真实PG，而非内存expiry。
 		restarted := *f.s
 		f.clock.add(2 * 24 * time.Hour)
+
 		if _, e = restarted.Authenticate(f.ctx, raw); e != nil {
 			t.Fatalf("persisted renewal lost across restart: %v", e)
 		}
@@ -294,6 +305,7 @@ func TestCorePG(t *testing.T) {
 		if e := f.s.Revoke(f.ctx, a.ID); e != nil {
 			t.Fatal(e)
 		}
+
 		if _, e := f.s.Authenticate(f.ctx, raw); !errors.Is(e, extshared.ErrTokenRevoked) {
 			t.Fatalf("revoked token revived: %v", e)
 		}
@@ -306,10 +318,12 @@ func TestCorePG(t *testing.T) {
 		raw, _ := f.issue(t)
 		f.keepGroup(t)
 		f.clock.add(extshared.TokenTTL)
+
 		if _, e := f.s.Authenticate(f.ctx, raw); !errors.Is(e, extshared.ErrTokenExpired) {
 			t.Fatalf("equal expiry: %v", e)
 		}
 		f.clock.add(-extshared.TokenTTL - time.Second)
+
 		if _, e := f.s.Authenticate(f.ctx, raw); !errors.Is(e, extshared.ErrNotPermitted) {
 			t.Fatalf("rollback accepted: %v", e)
 		}
@@ -325,12 +339,15 @@ func TestCorePG(t *testing.T) {
 		if e != nil || r2.DeliveryID != r.DeliveryID || f.touches(t) != 1 {
 			t.Fatal("send duplicate", r2, e)
 		}
+
 		if _, e = f.s.Send(f.ctx, a, "helper.ho", "different", "key"); !errors.Is(e, extshared.ErrIdempotencyKey) {
 			t.Fatalf("same key different request accepted: %v", e)
 		}
+
 		if _, e = f.s.Send(f.ctx, a, "helper.ho", "one", "key", true); !errors.Is(e, extshared.ErrIdempotencyKey) {
 			t.Fatalf("same key changed expect_reply accepted: %v", e)
 		}
+
 		if _, e = f.s.Send(f.ctx, a, "other.ho", "one", "new"); !errors.Is(e, extshared.ErrTargetNotInAG) {
 			t.Fatal(e)
 		}
@@ -338,6 +355,7 @@ func TestCorePG(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
+
 		if _, e = f.s.Send(f.ctx, a, "helper.ho", "two", "fail"); e == nil {
 			t.Fatal("accepted failed group touch")
 		}
@@ -381,12 +399,15 @@ func TestCorePG(t *testing.T) {
 	t.Run("PollingNeverTouchesGroup", func(t *testing.T) {
 		f := newFixture(t, dsn)
 		raw, a := f.issue(t)
+
 		if _, e := f.s.Authenticate(f.ctx, raw); e != nil {
 			t.Fatal(e)
 		}
+
 		if _, e := f.s.Wait(f.ctx, a, 0); e != nil {
 			t.Fatal(e)
 		}
+
 		if _, e := f.s.ListOnline(f.ctx, a); e != nil {
 			t.Fatal(e)
 		}
@@ -414,6 +435,7 @@ func TestCorePG(t *testing.T) {
 		if e != nil || r2.DeliveryID != r.DeliveryID || f.touches(t) != 1 {
 			t.Fatal(r2, e)
 		}
+
 		if _, e = f.s.EnqueueFromHelper(f.ctx, "helper", a.AgentID, "message", "different"); !errors.Is(e, extshared.ErrIdempotencyKey) {
 			t.Fatal(e)
 		}
@@ -461,6 +483,7 @@ func TestCorePG(t *testing.T) {
 		// group live through a real accepted send so this case still isolates
 		// message expiry and later token revocation, rather than group expiry.
 		f.clock.add(extshared.MessageTTL - time.Hour)
+
 		if _, e = f.s.Send(f.ctx, a, "helper.ho", "renew group for expiry check", "expiry-group-renewal"); e != nil {
 			t.Fatal(e)
 		}
@@ -490,6 +513,7 @@ func TestCorePG(t *testing.T) {
 	t.Run("TenantAndUnforgeableSnapshot", func(t *testing.T) {
 		f := newFixture(t, dsn)
 		raw, a := f.issue(t)
+
 		if _, e := f.s.Authenticate(f.ctx, raw+"x"); !errors.Is(e, extshared.ErrUnauthenticated) {
 			t.Fatal(e)
 		}
@@ -553,6 +577,7 @@ func TestOutboxAndIsolationPG(t *testing.T) {
 		if e != nil || did {
 			t.Fatal("projected twice")
 		}
+
 		if len(p.ids) != 2 || p.ids[0] != r.DeliveryID || p.ids[1] != r.DeliveryID {
 			t.Fatal("projection regenerated delivery", p.ids)
 		}
@@ -564,16 +589,20 @@ func TestOutboxAndIsolationPG(t *testing.T) {
 		f := newFixture(t, dsn)
 		_, a := f.issue(t)
 		f.s.QueueLimit = 1
+
 		if _, e := f.s.Send(f.ctx, a, "helper.ho", "first", "one"); e != nil {
 			t.Fatal(e)
 		}
+
 		if _, e := f.s.Send(f.ctx, a, "helper.ho", "second", "two"); !errors.Is(e, extshared.ErrQueueFull) {
 			t.Fatal(e)
 		}
+
 		if _, e := f.s.EnqueueFromHelper(f.ctx, "other", a.ID, "outside", "body"); !errors.Is(e, extshared.ErrTargetNotInAG) {
 			t.Fatal(e)
 		}
 		f.clock.add(extshared.GroupTTL)
+
 		if _, e := f.s.Wait(f.ctx, a, 0); !errors.Is(e, extshared.ErrGroupDissolved) {
 			t.Fatal("expired group revived", e)
 		}
@@ -586,15 +615,18 @@ func TestOutboxAndIsolationPG(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
+
 		if _, e = f.s.Wait(f.ctx, a, 0); e != nil {
 			t.Fatal(e)
 		}
 		if e = f.s.Ack(f.ctx, b, r.DeliveryID, 1); !errors.Is(e, extshared.ErrNotPermitted) {
 			t.Fatal("cross seat ACK", e)
 		}
+
 		if _, _, e = f.s.Receipt(f.ctx, b, r.DeliveryID); !errors.Is(e, extshared.ErrNotPermitted) {
 			t.Fatal("cross seat receipt", e)
 		}
+
 		if _, _, e = f.s.Identity.ResolveFullName(f.ctx, a.FullName); e != nil {
 			t.Fatal("external full name", e)
 		}
@@ -645,6 +677,7 @@ func TestSecretsAndReceiptRollbackPG(t *testing.T) {
 	if e := row.Scan(&stored); e != nil {
 		t.Fatal(e)
 	}
+
 	if strings.Contains(stored, raw) || !strings.Contains(stored, identity.HashSecret(raw)) {
 		t.Fatal("token storage is not digest-only")
 	}
@@ -652,12 +685,15 @@ func TestSecretsAndReceiptRollbackPG(t *testing.T) {
 	if e := row.Scan(&stored); e != nil {
 		t.Fatal(e)
 	}
+
 	if strings.Contains(stored, raw) {
 		t.Fatal("audit exposed bearer")
 	}
+
 	if _, e := f.pool.Exec(f.ctx, f.access, `UPDATE np_agent SET credential_hash=$2 WHERE id=$1`, a.ID, identity.HashSecret("fixture-external-credential")); e != nil {
 		t.Fatal(e)
 	}
+
 	if _, _, e := f.s.Identity.AuthenticateAgent(f.ctx, "fixture-external-credential"); !errors.Is(e, identity.ErrCredentialInvalid) {
 		t.Fatal("external used helper credential auth", e)
 	}
@@ -665,6 +701,7 @@ func TestSecretsAndReceiptRollbackPG(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
+
 	if _, e = f.s.Wait(f.ctx, a, 0); e != nil {
 		t.Fatal(e)
 	}
@@ -680,6 +717,7 @@ func TestSecretsAndReceiptRollbackPG(t *testing.T) {
 		t.Fatal("receipt transaction did not roll back", state, e)
 	}
 	f.clock.add(time.Minute)
+
 	if _, e = f.s.Wait(f.ctx, a, 0); e != nil {
 		t.Fatal(e)
 	}
@@ -694,6 +732,7 @@ func TestTokenAudiencePG(t *testing.T) {
 	raw, a := f.issue(t)
 	other := *f.s
 	other.Resource = "https://another.example.invalid/mcp"
+
 	if _, e := other.Authenticate(f.ctx, raw); !errors.Is(e, extshared.ErrNotPermitted) {
 		t.Fatal("wrong audience accepted", e)
 	}
@@ -709,22 +748,28 @@ func TestTokenAudiencePG(t *testing.T) {
 		t.Fatal("audience/scope not persisted")
 	}
 	other.Resource = ""
+
 	if _, e := other.Authenticate(f.ctx, raw); !errors.Is(e, extshared.ErrNotPermitted) {
 		t.Fatal("empty resource accepted", e)
 	}
+
 	if _, _, _, e := other.IssueToken(f.ctx, a.Principal, "bot", "helper.ho"); !errors.Is(e, extshared.ErrNotPermitted) {
 		t.Fatal("empty resource issued token", e)
 	}
+
 	if _, e := f.pool.Exec(f.ctx, f.access, `UPDATE np_extseat_token SET scopes='list_online' WHERE id=$1`, a.TokenID); e == nil {
 		t.Fatal("subset scopes persisted")
 	}
 	// 仅在隔离fixture内移除DB约束，独立验证应用层也拒绝不完整授权。
+
 	if _, e := f.pool.Exec(f.ctx, f.access, `ALTER TABLE np_extseat_token DROP CONSTRAINT np_extseat_token_scopes_check`); e != nil {
 		t.Fatal(e)
 	}
+
 	if _, e := f.pool.Exec(f.ctx, f.access, `UPDATE np_extseat_token SET scopes='list_online' WHERE id=$1`, a.TokenID); e != nil {
 		t.Fatal(e)
 	}
+
 	if _, e := f.s.Authenticate(f.ctx, raw); !errors.Is(e, extshared.ErrNotPermitted) {
 		t.Fatal("subset scopes authenticated", e)
 	}
@@ -764,6 +809,7 @@ func TestBackgroundRetriesOutboxPG(t *testing.T) {
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
 	if len(p.ids) != 2 || p.ids[0] != r.DeliveryID || p.ids[1] != r.DeliveryID {
 		t.Fatal("worker abandoned or regenerated failed outbox", p.ids)
 	}
@@ -790,6 +836,7 @@ func TestWaitingAuthenticationCannotReviveExpiredPG(t *testing.T) {
 	raw, _ := f.issue(t)
 	f.keepGroup(t)
 	f.s.Groups = advancingGroups{Groups: f.s.Groups, clock: f.clock}
+
 	if _, e := f.s.Authenticate(f.ctx, raw); !errors.Is(e, extshared.ErrTokenExpired) {
 		t.Fatal("authentication lock wait revived expired token", e)
 	}
@@ -849,6 +896,7 @@ func (p lockedIdentityProjector) Project(ctx context.Context, d Delivery, target
 	}
 	for _, id := range []string{d.SourceAgent.ID, target.ID} {
 		e := p.f.pool.InTx(ctx, p.f.access, nil, func(tx repo.Tx) error {
+
 			if _, e := tx.Exec(ctx, `SET LOCAL lock_timeout='100ms'`); e != nil {
 				return e
 			}
@@ -867,6 +915,7 @@ func (p lockedIdentityProjector) Project(ctx context.Context, d Delivery, target
 func TestProjectionHoldsBothIdentityLocksPG(t *testing.T) {
 	f := newFixture(t, pgtest.DSN(t))
 	_, a := f.issue(t)
+
 	if _, e := f.s.Send(f.ctx, a, "helper.ho", "body", "locked-identities"); e != nil {
 		t.Fatal(e)
 	}

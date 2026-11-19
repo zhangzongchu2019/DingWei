@@ -34,6 +34,7 @@ func testSchema(t *testing.T, dsn string) *repo.Pool {
 	}
 	defer admin.Close()
 	schema := uniqueSchema()
+
 	if _, err := admin.Exec(ctx, testCtx(t), `CREATE SCHEMA `+schema); err != nil {
 		t.Fatalf("建 schema 失败: %v", err)
 	}
@@ -70,6 +71,7 @@ func uniqueSchema() string {
 
 func withSearchPath(dsn, schema string) string {
 	sep := "?"
+
 	if strings.Contains(dsn, "?") {
 		sep = "&"
 	}
@@ -78,6 +80,7 @@ func withSearchPath(dsn, schema string) string {
 
 func mustExec(t *testing.T, pool *repo.Pool, query string, args ...any) {
 	t.Helper()
+
 	if _, err := pool.Exec(context.Background(), testCtx(t), query, args...); err != nil {
 		t.Fatalf("执行失败 %q: %v", query, err)
 	}
@@ -145,7 +148,8 @@ func TestLedger_EmbeddedEntries(t *testing.T) {
 	}
 	// 🔴 这份名单写死而不引 embed 去比：本格钉的就是「内嵌进二进制的账本是这几条、这个序」。
 	// 加一条条目 ⇒ 改这里（红一次是应当的：账本主键集合变了，必须有人看过一眼）。
-	want := []string{"0001_core_baseline.sql", "0100_identity_baseline.sql", "0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0106_tempgroup.sql", "0107_mcpgw_oauth.sql", "0108_extseat_short_name.sql", "0110_extseat_expect_reply.sql", "0111_extseat_feishu_copy.sql", "0112_np_agent_display_name.sql", "0113_extseat_groups.sql", "0200_hosted_r30_baseline.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql"}
+	want := []string{"0001_core_baseline.sql", "0100_identity_baseline.sql", "0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0106_tempgroup.sql", "0107_mcpgw_oauth.sql", "0108_extseat_short_name.sql", "0110_extseat_expect_reply.sql", "0111_extseat_feishu_copy.sql", "0112_np_agent_display_name.sql", "0113_extseat_groups.sql", "0114_agent_feishu_summary_copy.sql", "0200_hosted_r30_baseline.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql"}
+
 	if len(entries) != len(want) {
 		t.Fatalf("账本条数 = %d（%v），要 %d", len(entries), names(entries), len(want))
 	}
@@ -153,6 +157,7 @@ func TestLedger_EmbeddedEntries(t *testing.T) {
 		if e.Name != want[i] {
 			t.Errorf("第 %d 条 = %s，要 %s（顺序＝文件名字典序，是语义的一部分）", i, e.Name, want[i])
 		}
+
 		if strings.TrimSpace(e.Body) == "" {
 			t.Errorf("%s: 正文为空 —— 内嵌没打进二进制", e.Name)
 		}
@@ -165,6 +170,7 @@ func TestLedger_EmbeddedEntries(t *testing.T) {
 	if !strings.Contains(entries[0].Body, "audit_log") {
 		t.Errorf("0001 里没有 audit_log —— 0100 依赖它先存在")
 	}
+
 	if strings.Contains(entries[1].Body, "CREATE TABLE IF NOT EXISTS audit_log") {
 		t.Errorf("0100 里出现了建 audit_log —— 身份域不建这张表（复用 core 的）")
 	}
@@ -216,6 +222,7 @@ func TestLedger_RegisterCollidingWithEmbeddedIsError(t *testing.T) {
 
 	// 与内嵌条目撞名：🔴 不用 panic 表达（那要读 embed，I/O 错不该 panic），改成 Ledger 返回错误。
 	Register(Entry{Name: "0001_core_baseline.sql", Body: "CREATE TABLE IF NOT EXISTS t_x(a int);"})
+
 	if _, err := Ledger(); err == nil {
 		t.Fatalf("Register 与内嵌条目撞名，Ledger 却没报错 —— 同一段 DDL 会以两个来源各记一本账")
 	} else if !strings.Contains(err.Error(), "撞名") {
@@ -239,7 +246,8 @@ func TestLedger_RegisteredEntriesSortWithEmbedded(t *testing.T) {
 	}
 	got := names(entries)
 	want := []string{"0001_core_baseline.sql", "0050_core_test.sql", "0100_identity_baseline.sql",
-		"0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0106_tempgroup.sql", "0107_mcpgw_oauth.sql", "0108_extseat_short_name.sql", "0110_extseat_expect_reply.sql", "0111_extseat_feishu_copy.sql", "0112_np_agent_display_name.sql", "0113_extseat_groups.sql", "0200_hosted_r30_baseline.sql", "0200_hosted_test.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql", "0900_cross_test.sql"}
+		"0101_group_communication.sql", "0102_device_claim.sql", "0103_agent_last_source_r31.sql", "0104_np_session_created_at.sql", "0105_extseat.sql", "0106_tempgroup.sql", "0107_mcpgw_oauth.sql", "0108_extseat_short_name.sql", "0110_extseat_expect_reply.sql", "0111_extseat_feishu_copy.sql", "0112_np_agent_display_name.sql", "0113_extseat_groups.sql", "0114_agent_feishu_summary_copy.sql", "0200_hosted_r30_baseline.sql", "0200_hosted_test.sql", "0201_hosted_node_access_r31.sql", "0300_console_transport_slot.sql", "0400_fanout_baseline.sql", "0900_cross_test.sql"}
+
 	if strings.Join(got, ",") != strings.Join(want, ",") {
 		t.Fatalf("账本顺序 = %v，要 %v（字典序，与来源无关）", got, want)
 	}
@@ -274,9 +282,11 @@ func TestMigrateEntries_AppliesSortedOnceAndRecordsClock(t *testing.T) {
 		t.Fatalf("首次 Migrate: %v", err)
 	}
 	// 给的顺序是 0002 在前，而 0002 依赖 0001 的表 ⇒ 没排序就必然失败；这里成功即证明排了。
+
 	if strings.Join(rep.Applied, ",") != "0001_test_first.sql,0002_test_index.sql" {
 		t.Errorf("Applied = %v，要按字典序两条", rep.Applied)
 	}
+
 	if len(rep.Skipped) != 0 {
 		t.Errorf("首次跑就有 Skipped = %v", rep.Skipped)
 	}
@@ -285,6 +295,7 @@ func TestMigrateEntries_AppliesSortedOnceAndRecordsClock(t *testing.T) {
 	}
 
 	rows := ledgerRows(t, pool)
+
 	if len(rows) != 2 {
 		t.Fatalf("账上 %d 条，要 2 条", len(rows))
 	}
@@ -307,9 +318,11 @@ func TestMigrateEntries_AppliesSortedOnceAndRecordsClock(t *testing.T) {
 	if err != nil {
 		t.Fatalf("重跑 Migrate: %v", err)
 	}
+
 	if len(rep2.Applied) != 0 {
 		t.Errorf("重跑又执行了 %v —— 一次性变更变成了每次重启执行一次（SQLite 侧事故 ①）", rep2.Applied)
 	}
+
 	if strings.Join(rep2.Skipped, ",") != "0001_test_first.sql,0002_test_index.sql" {
 		t.Errorf("Skipped = %v，要两条", rep2.Skipped)
 	}
@@ -327,6 +340,7 @@ func TestMigrateEntries_RefusesChangedEntry(t *testing.T) {
 	clk := &clock.Fake{T: time.Date(2026, 10, 1, 15, 0, 0, 0, time.UTC)}
 
 	entries := twoEntries()
+
 	if _, err := MigrateEntries(ctx, pool, entries, clk); err != nil {
 		t.Fatalf("首次 Migrate: %v", err)
 	}
@@ -358,6 +372,7 @@ func TestMigrateEntries_RefusesChangedEntry(t *testing.T) {
 	if !strings.Contains(err.Error(), Digest(original)) || !strings.Contains(err.Error(), Digest(changed[0].Body)) {
 		t.Errorf("错误里没同时给出账内与当前两个 digest，运维无从比对: %v", err)
 	}
+
 	if len(rep.Applied) != 0 {
 		t.Errorf("拒绝的那次竟然执行了 %v", rep.Applied)
 	}
@@ -367,6 +382,7 @@ func TestMigrateEntries_RefusesChangedEntry(t *testing.T) {
 	if tableExists(t, pool, "t_later") {
 		t.Errorf("撞在变更条目之后的 0003 也被应用了 —— 拒绝就该停下，不继续迁后面的")
 	}
+
 	if len(ledgerRows(t, pool)) != 2 {
 		t.Errorf("账被写脏了: %v", ledgerRows(t, pool))
 	}
@@ -390,6 +406,7 @@ func TestMigrateEntries_FailedEntryLeavesNoTrace(t *testing.T) {
 	if !strings.Contains(err.Error(), "0002_bad.sql") {
 		t.Errorf("错误没点出是哪一条: %v", err)
 	}
+
 	if strings.Join(rep.Applied, ",") != "0001_ok.sql" {
 		t.Errorf("Applied = %v，要只有前一条（出错时 Report 反映出错之前已做的事）", rep.Applied)
 	}
@@ -397,9 +414,11 @@ func TestMigrateEntries_FailedEntryLeavesNoTrace(t *testing.T) {
 		t.Errorf("失败条目留下了半套表 —— DDL 与账必须同事务，回滚要一起回")
 	}
 	rows := ledgerRows(t, pool)
+
 	if _, ok := rows["0002_bad.sql"]; ok {
 		t.Errorf("失败条目却记了账 —— 「已应用」发给了一个没做成的版本")
 	}
+
 	if _, ok := rows["0001_ok.sql"]; !ok {
 		t.Errorf("成功那条没记账: %v", rows)
 	}
@@ -413,6 +432,7 @@ func TestMigrateEntries_FailedEntryLeavesNoTrace(t *testing.T) {
 	if err != nil {
 		t.Fatalf("修好后重跑: %v", err)
 	}
+
 	if strings.Join(rep2.Applied, ",") != "0002_bad.sql" || strings.Join(rep2.Skipped, ",") != "0001_ok.sql" {
 		t.Errorf("Applied=%v Skipped=%v，要只补 0002、0001 跳过", rep2.Applied, rep2.Skipped)
 	}
@@ -475,6 +495,7 @@ func TestMigrateEntries_NilClockUsesReal(t *testing.T) {
 	pool := testSchema(t, dsn)
 
 	before := time.Now().Add(-time.Minute)
+
 	if _, err := MigrateEntries(context.Background(), pool, twoEntries(), nil); err != nil {
 		t.Fatalf("nil 时钟: %v", err)
 	}
@@ -486,6 +507,7 @@ func TestMigrateEntries_NilClockUsesReal(t *testing.T) {
 }
 
 func TestMigrateEntries_NilPoolIsError(t *testing.T) {
+
 	if _, err := MigrateEntries(context.Background(), nil, twoEntries(), clock.Real{}); err == nil {
 		t.Fatalf("缺连接池没被拒")
 	}
@@ -537,10 +559,12 @@ func TestMigrateEntries_LedgerInsertFailureRollsBackDDL(t *testing.T) {
 	if !tableExists(t, pool, "zz_a") {
 		t.Error("zz_a 不在 —— 第一条本该已【各自一个事务】提交；本格要判的是第二条回滚，不是全批没跑")
 	}
+
 	if strings.Join(rep.Applied, ",") != "0001_zz.sql" {
 		t.Errorf("出错时交回的 Applied = %v，要 [0001_zz.sql]（反映出错之前已做的事）", rep.Applied)
 	}
 	rows := ledgerRows(t, pool)
+
 	if len(rows) != 1 {
 		t.Fatalf("账上 %d 条，要 1 条", len(rows))
 	}
@@ -563,6 +587,7 @@ func sameSchemaPools(t *testing.T, dsn string, n int) []*repo.Pool {
 	}
 	defer func() { _ = admin.Close() }()
 	schema := uniqueSchema()
+
 	if _, err := admin.Exec(ctx, testCtx(t), `CREATE SCHEMA `+schema); err != nil {
 		t.Fatalf("建 schema 失败: %v", err)
 	}
@@ -605,6 +630,7 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Ledger: %v", err)
 	}
+
 	if len(entries) != 17 {
 		t.Fatalf("账本 %d 条（%v），本格按 17 条写断言（变了就改本格，别改断言数字糊过去）",
 			len(entries), names(entries))
@@ -649,8 +675,9 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 	// 终态：账 17 条、digest 与正文一致、身份域 CheckSchema 过（＝Hub 真起得来）。
 	probe := pools[0]
 	rows := ledgerRows(t, probe)
-	if len(rows) != 17 {
-		t.Fatalf("账上 %d 条，要 17 条", len(rows))
+
+	if len(rows) != 18 {
+		t.Fatalf("账上 %d 条，要 18 条", len(rows))
 	}
 	for _, e := range entries {
 		if rows[e.Name].digest != Digest(e.Body) {
@@ -665,7 +692,8 @@ func TestMigrate_ConcurrentRunnersAllSucceed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("并发之后重跑 MigrateEntries: %v", err)
 	}
-	if len(rep.Applied) != 0 || len(rep.Skipped) != 17 {
-		t.Errorf("重跑 Applied=%v Skipped=%v，要空转十七条", rep.Applied, rep.Skipped)
+
+	if len(rep.Applied) != 0 || len(rep.Skipped) != 18 {
+		t.Errorf("重跑 Applied=%v Skipped=%v，要空转十八条", rep.Applied, rep.Skipped)
 	}
 }

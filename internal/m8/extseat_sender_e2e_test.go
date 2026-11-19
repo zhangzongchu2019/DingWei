@@ -52,7 +52,11 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(extseatDDL) + string(policyDDL) + string(copyDDL) + string(groupDDL) + string(routeDDL)
+	copyUpgradeDDL, err := os.ReadFile("../store/migrate/migrations/0114_agent_feishu_summary_copy.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ddl := `CREATE TABLE audit_log(id bigserial PRIMARY KEY,actor text,action text,target text,after_json text,ts timestamptz);` + identity.PGSchemaSQL + string(extseatDDL) + string(policyDDL) + string(copyDDL) + string(groupDDL) + string(routeDDL) + string(copyUpgradeDDL)
 	if _, err = pool.Exec(ctx, access, ddl); err != nil {
 		t.Fatal(err)
 	}
@@ -61,9 +65,11 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if _, err = pool.Exec(ctx, access, `INSERT INTO np_user(user_id_lc,user_id,short_name,short_name_lc,display_name,type,state,created_at) VALUES('zzc','zzc','zzc','zzc','业主显示名','member','active',$1)`, now); err != nil {
 		t.Fatal(err)
 	}
+
 	if _, err = pool.Exec(ctx, access, `INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,credential_hash,created_at) VALUES($1,'zzc',$2,$3,'selfhost','active',$4,$5)`, target.ID, target.Name, strings.ToLower(target.Name), target.CredentialHash, now); err != nil {
 		t.Fatal(err)
 	}
@@ -93,6 +99,7 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	}
 
 	const originalBody = "请确认外部席位的收件身份。"
+
 	if _, err = seats.Send(ctx, seat, targetFullName, originalBody, "extseat-sender-e2e-001", true); err != nil {
 		t.Fatal(err)
 	}
@@ -211,6 +218,7 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 
 	// Omitted expect_reply persists the false default and the same completed
 	// assistant turn produces no automatic return to the external inbox.
+
 	if _, err = seats.Send(ctx, seat, targetFullName, "默认不自动回程", "extseat-sender-e2e-default"); err != nil {
 		t.Fatal(err)
 	}
@@ -279,20 +287,25 @@ func TestExternalSeatSenderReplyRoundTripPGAndHub(t *testing.T) {
 	peerOwner := "labs"
 	peerKey := AgentKeyID(peerOwner)
 	peerNow := now
+
 	if _, err = pool.Exec(ctx, access, `INSERT INTO np_user(user_id_lc,user_id,short_name,short_name_lc,display_name,type,state,created_at) VALUES($1,$1,$1,$1,$1,'member','active',$2)`, peerOwner, peerNow); err != nil {
 		t.Fatal(err)
 	}
+
 	if _, err = pool.Exec(ctx, access, `INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,created_at) VALUES('sender_same','zzc','sameOwner','sameowner','selfhost','active',$1),('sender_cross',$2,'crossOwner','crossowner','selfhost','active',$1)`, peerNow, peerOwner); err != nil {
 		t.Fatal(err)
 	}
+
 	if _, err = pool.Exec(ctx, access, `INSERT INTO np_group(code,short_name,creator_lc,leader_agent_id,created_at,updated_at) VALUES('reply-peers','reply-peers','zzc',$1,$2,$2)`, target.ID, peerNow); err != nil {
 		t.Fatal(err)
 	}
+
 	if _, err = pool.Exec(ctx, access, `INSERT INTO np_group_member(code,agent_id,created_at) VALUES('reply-peers',$1,$2),('reply-peers','sender_same',$2),('reply-peers','sender_cross',$2)`, target.ID, peerNow); err != nil {
 		t.Fatal(err)
 	}
 	// The temporary group is leader-only, but its membership rows still make
 	// both peers observably co-members alongside the target in the real PG.
+
 	if _, err = pool.Exec(ctx, access, `INSERT INTO np_group_member(code,agent_id,created_at) VALUES($1,'sender_same',$2),($1,'sender_cross',$2)`, seatGroup, peerNow); err != nil {
 		t.Fatal(err)
 	}
@@ -387,6 +400,7 @@ func sendLengthCLI(t *testing.T, body, to string, route func(string, string) err
 	}
 	cmd.Env = append(cmd.Env, "SH_MCP_IPC_SOCK="+socket)
 	output, runErr := cmd.CombinedOutput()
+
 	if len(body) > extshared.MessageBodyMaxBytes {
 		ln.Close()
 		<-result

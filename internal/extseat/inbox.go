@@ -84,7 +84,7 @@ func (s *Service) Send(ctx context.Context, a Seat, to, body, clientID string, e
 		if _, e = tx.Exec(ctx, `INSERT INTO np_extseat_outbox(delivery_id,seat_id,target_agent_id,source_name,target_name,body,ag_code,ag_generation,created_at,expires_at,expect_reply) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, id, fresh.AgentID, g.Target.ID, fresh.FullName, to, body, string(g.Code), g.Generation, now, expiry, expectReply); e != nil {
 			return e
 		}
-		s.enqueueFeishuCopy(ctx, tx, FeishuCopyEvent{ID: id, SeatID: fresh.AgentID, Issuer: fresh.Principal.Issuer, Subject: fresh.Principal.Subject, ExternalName: fresh.FullName, TargetName: to, OwnerDisplayName: fresh.Principal.DisplayName, OwnerShortName: fresh.ownerShort, Direction: FeishuCopyExternalToInternal, Body: body, CreatedAt: now, ExpiresAt: expiry})
+		s.enqueueFeishuCopy(ctx, tx, FeishuCopyEvent{ID: id, SeatID: fresh.AgentID, Issuer: fresh.Principal.Issuer, Subject: fresh.Principal.Subject, ExternalName: fresh.FullName, TargetName: to, OwnerDisplayName: fresh.Principal.DisplayName, OwnerShortName: fresh.ownerShort, Direction: FeishuCopyExternalToInternal, Group: string(g.Code), Body: body, CreatedAt: now, ExpiresAt: expiry})
 		if e = s.TouchGroup(ctx, tx, g, id, extshared.UseAcceptedSend, now); e != nil {
 			return e
 		}
@@ -179,7 +179,7 @@ func (s *Service) EnqueueFromHelper(ctx context.Context, sourceAgentID, targetAg
 		if _, e = tx.Exec(ctx, `INSERT INTO np_extseat_inbox(id,seat_id,ag_code,ag_generation,source_agent_id,source_message_id,source_name,target_name,body,created_at,expires_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, id, a.AgentID, string(g.Code), g.Generation, sourceAgentID, messageID, from, a.FullName, body, now, expiry); e != nil {
 			return e
 		}
-		s.enqueueFeishuCopy(ctx, tx, FeishuCopyEvent{ID: id, SeatID: a.AgentID, Issuer: a.Principal.Issuer, Subject: a.Principal.Subject, ExternalName: a.FullName, TargetName: from, OwnerDisplayName: a.Principal.DisplayName, OwnerShortName: a.ownerShort, Direction: FeishuCopyInternalToExternal, Body: body, CreatedAt: now, ExpiresAt: expiry})
+		s.enqueueFeishuCopy(ctx, tx, FeishuCopyEvent{ID: id, SeatID: a.AgentID, Issuer: a.Principal.Issuer, Subject: a.Principal.Subject, ExternalName: a.FullName, TargetName: from, OwnerDisplayName: a.Principal.DisplayName, OwnerShortName: a.ownerShort, Direction: FeishuCopyInternalToExternal, Group: string(g.Code), Body: body, CreatedAt: now, ExpiresAt: expiry})
 		if e = s.TouchGroup(ctx, tx, g, id, extshared.UseAcceptedSend, now); e != nil {
 			return e
 		}
