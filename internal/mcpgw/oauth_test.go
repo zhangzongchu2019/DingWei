@@ -251,6 +251,9 @@ func TestOAuthMetadataAndOrigin(t *testing.T) {
 	for _, path := range []string{"/mcp", "/mcp/clients/codex.json", "/api/external/list_online", "/oauth/authorize", "/oauth/token", "/feishu/connect", "/mcp/oauth/feishu/callback", "/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource/mcp"} {
 		r := httptest.NewRequest("POST", testOrigin+path, strings.NewReader(`{}`))
 		r.Header.Set("Origin", "https://evil.example")
+		// /mcp challenges before protocol/Origin validation; a valid bearer
+		// must still be rejected by the unchanged Origin guard.
+		r.Header.Set("Authorization", "Bearer local-token")
 		if w := serve(mux, r); w.Code != 403 {
 			t.Fatalf("Origin guard absent on %s: %d", path, w.Code)
 		}
