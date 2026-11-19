@@ -1,5 +1,5 @@
 // S-R62-CLI-VIEW-B：终端风格第二投影（Codex CLI 版式）回归套件。
-// 设计页：docs/reviews/r62-cli-view-b/DESIGN.md（§八 G1～G12＋K1～K10）。
+// 设计页：docs/reviews/r62-cli-view-b/DESIGN.md（§八 G1～G12＋K1～K12；V1 追加窄屏关态往返格）。
 // 加性双投影：关态与基锚 7d3035c6 的 #timeline innerHTML＋body class 逐字节同一（G2）；
 // 开态映射/来源/失败/长文/窄屏/重连逐出/覆盖位/洪流各有判据与删保护刀。
 // 刀机制与现套件同轨：MUTATION 环境变量选刀，锚缺失即 throw（不假绿）。
@@ -83,6 +83,10 @@ const KNIVES = {
   'cli-view-tool-drop': {
     find: 'for (const ev of tools) html += cliToolLine(ev, Boolean(completed));',
     replace: 'for (const ev of tools) void ev;   // K11：工具行删（G5/G5b 映射删保护）',
+  },
+  'cli-view-toggle-residue': {
+    find: '      if (on) rebuildAllCLI();',
+    replace: '      if (on) { rebuildAllCLI(); timeline.appendChild(document.createComment("cli-residue")); }   // K12：开态往主时间线留残留（V1 往返格杀）',
   },
 };
 
@@ -356,9 +360,22 @@ async function shot(page, name) {
     await pLong.close();
 
     // ── G9 窄屏（390×844／360×780）＋PC 关态像素同基锚 ─────────
+    // V1：窄屏关态字节同一覆盖初始关＋开→关往返后两态（防切换残留；K12 杀点在往返格）。
+    const baseFixture2 = await startRendererServer(baseRenderer());
     for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 780 }]) {
       const pN = await boot(browser, baseUrl, { viewport: vp });
+      const pBaseN = await boot(browser, baseFixture2.url, { viewport: vp });
       await inject(pN, fixtureA());
+      await inject(pBaseN, fixtureA());
+      const narrowOffState = () => Promise.all([
+        pN.evaluate(() => ({ html: document.getElementById('timeline').innerHTML, cls: document.body.className })),
+        pBaseN.evaluate(() => ({ html: document.getElementById('timeline').innerHTML, cls: document.body.className })),
+      ]);
+      await checks.check(`G9 窄屏 ${vp.width}×${vp.height} 初始关态 #timeline innerHTML＋body class 与基锚逐字节同一`, async () => {
+        const [cur, base] = await narrowOffState();
+        assert.strictEqual(cur.html, base.html, `G9 窄屏 ${vp.width} 初始关态 innerHTML 与基锚字节不同`);
+        assert.strictEqual(cur.cls, base.cls, `G9 窄屏 ${vp.width} 初始关态 body class 与基锚不同`);
+      });
       await pN.click('#cliViewBtn');
       await checks.check(`G9 窄屏 ${vp.width}×${vp.height}：CLI 开态横向溢出 0、按钮≥40、长命令不横滚`, async () => {
         const overflow = await pN.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -371,9 +388,13 @@ async function shot(page, name) {
       await shot(pN, `mobile-${vp.width}-on`);
       await pN.click('#cliViewBtn');
       await shot(pN, `mobile-${vp.width}-off`);
-      await pN.close();
+      await checks.check(`G9 窄屏 ${vp.width}×${vp.height} 开→关往返后关态仍与基锚逐字节同一（防切换残留）`, async () => {
+        const [cur, base] = await narrowOffState();
+        assert.strictEqual(cur.html, base.html, `G9 窄屏 ${vp.width} 往返后关态 innerHTML 与基锚字节不同（K12 切换残留须红在这里）`);
+        assert.strictEqual(cur.cls, base.cls, `G9 窄屏 ${vp.width} 往返后关态 body class 与基锚不同（K12 须红在这里）`);
+      });
+      await pN.close(); await pBaseN.close();
     }
-    const baseFixture2 = await startRendererServer(baseRenderer());
     const pBase2 = await boot(browser, baseFixture2.url, { viewport: { width: 1440, height: 900 } });
     const pCur2 = await boot(browser, baseUrl, { viewport: { width: 1440, height: 900 } });
     await inject(pBase2, fixtureA());
