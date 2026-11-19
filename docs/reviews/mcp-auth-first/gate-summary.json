@@ -1,0 +1,31 @@
+{
+  "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+  "snapshot_utc": "2026-11-19T05:14:26.305401+00:00",
+  "status": "INITIAL_REVIEW_CODE_FIXED_M8_Z3_PENDING",
+  "gates": {
+    "canonical-anchor": {
+      "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+      "start_utc": "2026-11-19T04:53:45.446825+00:00",
+      "end_utc": "2026-11-19T05:03:22.476112+00:00",
+      "rc": 0
+    },
+    "strict-anchor": {
+      "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+      "start_utc": "2026-11-19T04:58:51.086986+00:00",
+      "end_utc": "2026-11-19T04:58:51.399252+00:00",
+      "rc": 0
+    }
+  },
+  "mutations": 12,
+  "m8": "count3 command still finishing; one known N4 test failure observed; fresh serial five queued, not a gate PASS",
+  "baseline_count20": {
+    "source": "206d41b26dab646c0e50a111eed5a45ccf7c72f6",
+    "start_utc": "2026-11-19T05:11:13.758175+00:00",
+    "end_utc": "2026-11-19T05:11:20.028209+00:00",
+    "rc": 1,
+    "pass": 18,
+    "fail": 2,
+    "interrupted_lines": 2,
+    "porcelain": ""
+  }
+}

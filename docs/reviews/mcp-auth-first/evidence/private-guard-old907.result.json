@@ -1,0 +1,15 @@
+{
+  "source": "907870c6cd8cd6d697259ba2f475433a588da4bf",
+  "utc": "2026-11-19T04:38:43.189663+00:00",
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "-run",
+    "^TestMCPInitializeCannotMaskPrivateEnvelopeGuard$",
+    "-count=1",
+    "-v"
+  ],
+  "rc": 1,
+  "sha256": "854e38dea8798b880f6da2896af7ab19a1969bdada6b17d63ae3c0a7bac71943"
+}

@@ -1,0 +1,25 @@
+package mcpgw
+
+import (
+ "testing"
+ "strings"
+)
+
+func TestMCPInitializeCannotMaskPrivateEnvelopeGuard(t *testing.T) {
+ for _, version := range []string{"2025-03-26", "2025-06-18", "2025-11-25"} {
+  t.Run(version, func(t *testing.T) {
+   _, seats, mux := fixture(t)
+   r := requestCompat("initialize", proposedInitialize(version))
+   r.Header.Set("MCP-Protocol-Version", ProtocolVersion)
+   w := serve(mux, r)
+   if w.Code != 400 || strings.Contains(w.Body.String(), `"result"`) || seats.calls != 0 {
+    t.Fatalf("PRIVATE_INITIALIZE_GUARD: status=%d body=%s business=%d",w.Code,w.Body,seats.calls)
+   }
+   r = requestCompat("initialize", proposedInitialize(version))
+   r.Header.Set("MCP-Protocol-Version", ProtocolVersion)
+   r.Header.Del("Authorization")
+   w=serve(mux,r)
+   if w.Code!=401 || w.Header().Get("WWW-Authenticate")=="" {t.Fatalf("AUTH_BEFORE_PRIVATE_GUARD: status=%d",w.Code)}
+  })
+ }
+}

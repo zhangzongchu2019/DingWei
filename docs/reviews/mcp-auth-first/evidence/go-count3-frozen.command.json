@@ -1,0 +1,17 @@
+{
+  "cwd": "/data/ai-dev-data/mcp-auth-first",
+  "source": "3599488745838d91c7056f3379bc0e0b0490e957",
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "./internal/extseat",
+    "./internal/feishulogin",
+    "./internal/m8",
+    "-count=3",
+    "-p=1",
+    "-timeout=60m",
+    "-v"
+  ],
+  "env_file": "env-frozen-go.json"
+}

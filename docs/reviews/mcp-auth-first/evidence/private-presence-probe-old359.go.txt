@@ -1,0 +1,11 @@
+package mcpgw
+import("testing";"encoding/json")
+func TestMCPPrivateHintPresenceGuard(t *testing.T){
+ for _, name:=range []string{"empty_method","duplicate_method","name_only","private_caps_only"}{t.Run(name,func(t *testing.T){
+  _,_,mux:=fixture(t);var p map[string]any;json.Unmarshal([]byte(proposedInitialize("2025-03-26")),&p)
+  if name=="private_caps_only"{p["_meta"]=map[string]any{metaPrefix+"clientCapabilities":map[string]any{}}}
+  raw,_:=json.Marshal(p);r:=requestCompat("initialize",string(raw));r.Header.Del("MCP-Protocol-Version")
+  switch name{case"empty_method":r.Header.Set("Mcp-Method","");case"duplicate_method":r.Header.Add("Mcp-Method","initialize");r.Header.Add("Mcp-Method","ping");case"name_only":r.Header.Set("Mcp-Name","unexpected")}
+  w:=serve(mux,r);if w.Code!=400{t.Fatalf("PRIVATE_HINT_PRESENCE_GUARD: %s status=%d body=%s",name,w.Code,w.Body)}
+ })}
+}

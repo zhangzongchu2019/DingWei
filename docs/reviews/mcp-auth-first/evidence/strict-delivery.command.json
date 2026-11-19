@@ -1,0 +1,11 @@
+{
+  "cwd": "/data/ai-dev-data/mcp-auth-first",
+  "source": "6c59276215c1e113bd490b40743236db2f7da542",
+  "command": [
+    "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+    "validate",
+    "--all",
+    "--strict"
+  ],
+  "env_file": "env-final.json"
+}

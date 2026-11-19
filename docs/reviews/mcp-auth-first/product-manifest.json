@@ -1,0 +1,61 @@
+{
+  "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+  "tree": "1a1e9e174722f45acfd4520182800382abf47894",
+  "files": [
+    {
+      "path": "internal/feishulogin/connect.go",
+      "blob": "85fac8ae66e8f9321035e8c1193401116d104acc",
+      "sha256": "9d2a65ea98f9cfe20174fdf6c542e883525ff641abb702a1515b03fec4545d4d"
+    },
+    {
+      "path": "internal/feishulogin/connect_target_hint_test.go",
+      "blob": "a1aa2b1230b91bb25529e62a22be0475bc851636",
+      "sha256": "81392e792e2ad1ccab3d95d47eaa3e44675baddc8fe9b1ac7422edce4d0c2375"
+    },
+    {
+      "path": "internal/feishulogin/connect_test.go",
+      "blob": "0ac110e6a710f531b2aa3f69a81b14bba193f708",
+      "sha256": "a4bce9b60fdcb917c6a25949f394a8f2899f5a31e8eebbaffb816398f1744500"
+    },
+    {
+      "path": "internal/mcpgw/auth_first_test.go",
+      "blob": "d945d332849ddb98d0a4023f837853c1a2794f31",
+      "sha256": "a4ba005e2d65008f5e9367f6bbd25bf0eb1fe733ca4acf8f0b7095c4a6d8d894"
+    },
+    {
+      "path": "internal/mcpgw/codec2025.go",
+      "blob": "bd635629fa25a68c832cd3f7ee0bbc781d1fbc5e",
+      "sha256": "cc630a1fefe5c1850ba7485aa2819c1bf043a26e50f0cf7d1b6fc31fb1442efa"
+    },
+    {
+      "path": "internal/mcpgw/connect_failure.go",
+      "blob": "bbd57c5a59e285992e72f7c802d5c61c471cfd82",
+      "sha256": "0d7d2041d638cae5cac5465d79beca38ef77ca82297f3dd27a00bc663fc5b0e1"
+    },
+    {
+      "path": "internal/mcpgw/connect_failure_test.go",
+      "blob": "5359d0519f7c2d1600d8d056d99843a6e2a9d21d",
+      "sha256": "3d8d259069fd5a7af76c34e5bf5dd78f521eed8e01f39a3a128dd3072cd036eb"
+    },
+    {
+      "path": "internal/mcpgw/gateway.go",
+      "blob": "f442e1aa5d6538e8e9f20bdebb8e7cb297e634fd",
+      "sha256": "3a26f443235e3f75b6d6f72d39136233cff13afb54488f2051edc6c63fe09ad0"
+    },
+    {
+      "path": "internal/mcpgw/gateway_test.go",
+      "blob": "a378932d4b578860c8f98d6505c48f6e99d25559",
+      "sha256": "b14a103cb0298df506a33996dd739273dcf0ba727914a8b5a8fd2e4cc0c0d3de"
+    },
+    {
+      "path": "internal/mcpgw/oauth.go",
+      "blob": "d4fe2d99ec7cc809248762f38c1f82e24d0e9991",
+      "sha256": "0a9ad4d09e08da4007cffd762d4c52dccc7a3f7fa02f442c13447063a81d3ae0"
+    },
+    {
+      "path": "internal/mcpgw/oauth_test.go",
+      "blob": "337c12afc4786b96e12412dd64e9cce367312c11",
+      "sha256": "f8fc9e4f2cc02343fc9a43f2254d623d6302989529ebb7cecbc93f11666425fa"
+    }
+  ]
+}

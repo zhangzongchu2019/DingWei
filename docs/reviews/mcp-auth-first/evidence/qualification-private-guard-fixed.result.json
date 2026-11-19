@@ -1,0 +1,18 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/mcpgw",
+    "./internal/feishulogin",
+    "-run",
+    "^(TestMCP|TestConnect)",
+    "-count=1",
+    "-p",
+    "1",
+    "-v"
+  ],
+  "utc": "2026-11-19T04:40:35.307742+00:00",
+  "scope": "working repair atop907; private guard and legacy selector regressions before final freeze",
+  "rc": 0,
+  "sha256": "ae4560d158a5f53c7b8552ad3318bed022e6697e757439520edbc8b37e86d343"
+}

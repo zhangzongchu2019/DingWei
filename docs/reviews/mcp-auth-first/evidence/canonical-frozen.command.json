@@ -1,0 +1,9 @@
+{
+  "cwd": "/data/ai-dev-data/mcp-auth-first",
+  "source": "3599488745838d91c7056f3379bc0e0b0490e957",
+  "command": [
+    "./build.sh",
+    "--test-only"
+  ],
+  "env_file": "env-frozen-canonical.json"
+}

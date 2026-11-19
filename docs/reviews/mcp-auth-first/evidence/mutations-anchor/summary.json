@@ -1,0 +1,585 @@
+{
+  "source": "ce9b7a959e828ad717b8708651c9094a421272ec",
+  "baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "./internal/feishulogin",
+      "-p",
+      "1",
+      "-run",
+      "^(TestMCP|TestConnect)",
+      "-count=1",
+      "-v"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T04:53:47.847749+00:00",
+    "end_utc": "2026-11-19T04:53:53.463008+00:00",
+    "log": "baseline.log",
+    "sha256": "83fcc5894fe945a15a1ef470ecf9b12aa1e936dd60c722fadd8c1b72ebeb7820"
+  },
+  "mutations": [
+    {
+      "name": "M1-version-before-auth",
+      "path": "internal/mcpgw/gateway.go",
+      "old": "func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {",
+      "new": "func (g *Gateway) mcp(w http.ResponseWriter, r *http.Request) {\n if singleHeader(r, \"MCP-Protocol-Version\") != CompatProtocolVersion {\n  rpcError(w, 400, nil, wireError{Code:-32022, Message:\"Unsupported protocol version\"}); return\n }",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:53:53.463420+00:00",
+        "end_utc": "2026-11-19T04:53:54.464414+00:00",
+        "log": "M1-version-before-auth-build.log",
+        "sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^TestMCPAuthFirstThreeVersionsAndMissingHeaders$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:53:54.464458+00:00",
+        "end_utc": "2026-11-19T04:53:55.295335+00:00",
+        "log": "M1-version-before-auth.log",
+        "sha256": "2b068beeaf911e021ff8329790cb441c11d9e3d70380d27d2c04f11c5629c65f"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:38: AUTH_BEFORE_PROTOCOL: 400 {\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version\"},\"id\":null,\"jsonrpc\":\"2.0\"}"
+      ]
+    },
+    {
+      "name": "M2-reject-proposed-version",
+      "path": "internal/mcpgw/codec2025.go",
+      "old": "p.Version == \"\"",
+      "new": "p.Version != CompatProtocolVersion",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:53:55.296261+00:00",
+        "end_utc": "2026-11-19T04:53:56.291684+00:00",
+        "log": "M2-reject-proposed-version-build.log",
+        "sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^TestMCPInitializeNegotiatesSupportedVersionAndUsesItForTools$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:53:56.291719+00:00",
+        "end_utc": "2026-11-19T04:53:56.903696+00:00",
+        "log": "M2-reject-proposed-version.log",
+        "sha256": "504690ed8a6cf4c52b1ce0d196d2887d9a7469c379f10b8a2edda0a4928bdeed"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    auth_first_test.go:100: VERSION_NEGOTIATION: proposed=2025-03-26 code=400 body={\"error\":{\"code\":-32602,\"message\":\"invalid_params\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:100: VERSION_NEGOTIATION: proposed=2025-11-25 code=400 body={\"error\":{\"code\":-32602,\"message\":\"invalid_params\"},\"id\":1,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:100: VERSION_NEGOTIATION: proposed=2099-01-01 code=400 body={\"error\":{\"code\":-32602,\"message\":\"invalid_params\"},\"id\":1,\"jsonrpc\":\"2.0\"}"
+      ]
+    },
+    {
+      "name": "M3-bypass-authenticated-origin",
+      "path": "internal/mcpgw/gateway.go",
+      "old": "g.guard(func(w http.ResponseWriter, r *http.Request) {\n\t\tg.mcpAuthorized(w, r, seat)\n\t})(w, r)",
+      "new": "g.mcpAuthorized(w, r, seat)",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:53:56.904033+00:00",
+        "end_utc": "2026-11-19T04:53:57.935847+00:00",
+        "log": "M3-bypass-authenticated-origin-build.log",
+        "sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^TestMCPMissingVersionMeansMarchNotPrivateEnvelope$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:53:57.935882+00:00",
+        "end_utc": "2026-11-19T04:53:58.508041+00:00",
+        "log": "M3-bypass-authenticated-origin.log",
+        "sha256": "a4e3a1150097dd3dab3045651d8b5ee5bd909a6948064ca061be6b390aeb5b1c"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    auth_first_test.go:152: authenticated Origin guard bypassed"
+      ]
+    },
+    {
+      "name": "M4-allow-unsupported-operating-version",
+      "path": "internal/mcpgw/codec2025.go",
+      "old": "(q.Method != \"initialize\" && version != CompatProtocolVersion)",
+      "new": "false",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:53:58.508342+00:00",
+        "end_utc": "2026-11-19T04:53:59.501720+00:00",
+        "log": "M4-allow-unsupported-operating-version-build.log",
+        "sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^TestMCPMissingVersionMeansMarchNotPrivateEnvelope$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:53:59.501756+00:00",
+        "end_utc": "2026-11-19T04:54:00.054171+00:00",
+        "log": "M4-allow-unsupported-operating-version.log",
+        "sha256": "d9de76c502db55591e987946fb948886ffe23987b855479260ae41ea1e1440f6"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    auth_first_test.go:140: DEFAULT_MARCH_VERSION: method=tools/list code=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"tools\":[{\"description\":\"按全名向本AG成员发送；wait_reply_seconds可在本次调用等首条新回信并自动received，缺省0；有等待参数时expect_reply缺省true，显式false尊重；无等待参数时缺省false。超时给recv/check提示，重试沿用client_message_id；受理不等于送达。；同步等待上限55秒（在客户端默认60秒超时内留出响应预算）。\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"body\":{\"type\":\"string\"},\"client_message_id\":{\"type\":\"string\"},\"expect_reply\":{\"type\":\"boolean\"},\"to\":{\"type\":\"string\"},\"wait_reply_seconds\":{\"maximum\":55,\"minimum\":0,\"type\":\"number\"}},\"required\":[\"to\",\"body\",\"client_message_id\"],\"type\":\"object\"},\"name\":\"send\"},{\"description\":\"领取本人未确认投递；按 delivery_id 与 generation 去重后显式确认。\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"wait_seconds\":{\"maximum\":25,\"minimum\":0,\"type\":\"number\"}},\"required\":[],\"type\":\"object\"},\"name\":\"recv\"},{\"description\":\"查看本 AG 内在线席位。\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{},\"required\":[],\"type\":\"object\"},\"name\":\"list\"},{\"description\":\"立即只查待收数量与摘要；不领取、不改租约、不续组。\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{},\"required\":[],\"type\":\"object\"},\"name\":\"check\"},{\"description\":\"将本席已到达queued与leased消息标为received；必须confirm:true，不影响发出方向。\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"confirm\":{\"type\":\"boolean\"}},\"required\":[\"confirm\"],\"type\":\"object\"},\"name\":\"clear\"},{\"description\":\"已更名为 list，旧名仍可用。查看本 AG 内在线席位。\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{},\"required\":[],\"type\":\"object\"},\"name\":\"list_online\"},{\"description\":\"已更名为 send，旧名仍可用。按全名向本AG成员发送；wait_reply_seconds可在本次调用等首条新回信并自动received，缺省0；有等待参数时expect_reply缺省true，显式false尊重；无等待参数时缺省false。超时给recv/check提示，重试沿用client_message_id；受理不等于送达。；同步等待上限55秒（在客户端默认60秒超时内留出响应预算）。\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"body\":{\"type\":\"string\"},\"client_message_id\":{\"type\":\"string\"},\"expect_reply\":{\"type\":\"boolean\"},\"to\":{\"type\":\"string\"},\"wait_reply_seconds\":{\"maximum\":55,\"minimum\":0,\"type\":\"number\"}},\"required\":[\"to\",\"body\",\"client_message_id\"],\"type\":\"object\"},\"name\":\"send_message\"},{\"description\":\"已更名为 recv，旧名仍可用。领取本人未确认投递；按 delivery_id 与 generation 去重后显式确认。\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"wait_seconds\":{\"maximum\":25,\"minimum\":0,\"type\":\"number\"}},\"required\":[],\"type\":\"object\"},\"name\":\"wait_for_messages\"},{\"description\":\"确认本人投递已收到，不表示已执行。\",\"inputSchema\":{\"additionalProperties\":false,\"properties\":{\"delivery_id\":{\"type\":\"string\"},\"generation\":{\"minimum\":1,\"type\":\"integer\"},\"phase\":{\"enum\":[\"received\"],\"type\":\"string\"}},\"required\":[\"delivery_id\",\"generation\",\"phase\"],\"type\":\"object\"},\"name\":\"ack\"}]}}"
+      ]
+    },
+    {
+      "name": "M5-remove-browser-binding",
+      "path": "internal/mcpgw/oauth.go",
+      "old": "if e != nil || subtle.ConstantTimeCompare([]byte(hash(cookie.Value)), []byte(a.BrowserHash)) != 1 {",
+      "new": "if false && (e != nil || subtle.ConstantTimeCompare([]byte(hash(cookie.Value)), []byte(a.BrowserHash)) != 1) {",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:54:00.055150+00:00",
+        "end_utc": "2026-11-19T04:54:01.084775+00:00",
+        "log": "M5-remove-browser-binding-build.log",
+        "sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^TestConnectAttemptFailureHTMLAndJSONAreUniformAndBound$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:54:01.084811+00:00",
+        "end_utc": "2026-11-19T04:54:01.768320+00:00",
+        "log": "M5-remove-browser-binding.log",
+        "sha256": "d7237fe72214eabbbc81a01e459f6ead94688d66f402febd5146a1c63d10dd35"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    connect_failure_test.go:39: CONNECT_BINDING_REJECT: no_cookie got=200 body=",
+        "    connect_failure_test.go:39: CONNECT_BINDING_REJECT: wrong_cookie got=200 body=",
+        "    connect_failure_test.go:39: CONNECT_BINDING_REJECT: no_cookie got=200 body=",
+        "    connect_failure_test.go:39: CONNECT_BINDING_REJECT: wrong_cookie got=200 body="
+      ]
+    },
+    {
+      "name": "M6-extend-five-minute-expiry",
+      "path": "internal/mcpgw/oauth.go",
+      "old": "const oauthTTL = 5 * time.Minute",
+      "new": "const oauthTTL = 10 * time.Minute",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:54:01.769351+00:00",
+        "end_utc": "2026-11-19T04:54:02.786285+00:00",
+        "log": "M6-extend-five-minute-expiry-build.log",
+        "sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^TestConnectOriginalBrowserWorksUntilExactFiveMinuteExpiry$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:54:02.786319+00:00",
+        "end_utc": "2026-11-19T04:54:03.344009+00:00",
+        "log": "M6-extend-five-minute-expiry.log",
+        "sha256": "bafc1c3558d24c7e603279524fff59503f830dde4ebdf49e544c431947a8ff4a"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    connect_failure_test.go:91: CONNECT_FIVE_MINUTE_EXPIRY: got=200 body="
+      ]
+    },
+    {
+      "name": "M7-restore-concrete-target-placeholder",
+      "path": "internal/feishulogin/connect.go",
+      "old": "maxlength=\"50\" value=\"{{.TargetAgent}}\"",
+      "new": "maxlength=\"50\" placeholder=\"opus50tc2k.zzc\" value=\"{{.TargetAgent}}\"",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/feishulogin",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:54:03.344373+00:00",
+        "end_utc": "2026-11-19T04:54:03.871945+00:00",
+        "log": "M7-restore-concrete-target-placeholder-build.log",
+        "sha256": "f7306121fdac7659227cafc5163e44c6c93032e23c986c3ff31c74f63273ecba"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/feishulogin",
+          "-run",
+          "^TestConnectTargetHasNoPresetAgentExample$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:54:03.871980+00:00",
+        "end_utc": "2026-11-19T04:54:04.382554+00:00",
+        "log": "M7-restore-concrete-target-placeholder.log",
+        "sha256": "994d51cf28323f79d408416568aa5ec850aeff15259448abac971d79ba2e8a4b"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    connect_target_hint_test.go:22: CONNECT_TARGET_PRESET_EXAMPLE: target input=\"<input id=\\\"target_agent\\\" name=\\\"target_agent\\\" type=\\\"text\\\" required maxlength=\\\"50\\\" placeholder=\\\"opus50tc2k.zzc\\\" value=\\\"\\\" aria-describedby=\\\"target_hint\\\">\""
+      ]
+    },
+    {
+      "name": "M8-bypass-private-envelope-selection",
+      "path": "internal/mcpgw/codec2025.go",
+      "old": "if !compatSelected && privateHint {",
+      "new": "if false && !compatSelected && privateHint {",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:54:04.382841+00:00",
+        "end_utc": "2026-11-19T04:54:05.407877+00:00",
+        "log": "M8-bypass-private-envelope-selection-build.log",
+        "sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^TestMCPInitializeCannotMaskPrivateEnvelopeGuard$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:54:05.407913+00:00",
+        "end_utc": "2026-11-19T04:54:06.025559+00:00",
+        "log": "M8-bypass-private-envelope-selection.log",
+        "sha256": "a6a47e9624100ca6fdeba4d1e9e70fbba04916fadd94bfe2ab9405301d45ce96"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    auth_first_test.go:215: PRIVATE_INITIALIZE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:215: PRIVATE_INITIALIZE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:215: PRIVATE_INITIALIZE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}"
+      ]
+    },
+    {
+      "name": "M9-method-hint-must-use-presence",
+      "path": "internal/mcpgw/codec2025.go",
+      "old": "len(r.Header.Values(\"Mcp-Method\")) != 0",
+      "new": "singleHeader(r, \"Mcp-Method\") != \"\"",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:54:06.026687+00:00",
+        "end_utc": "2026-11-19T04:54:07.010323+00:00",
+        "log": "M9-method-hint-must-use-presence-build.log",
+        "sha256": "54d9e52c85cafdca4ffe25c6efd9768c63d324846eb33c74f12bd49dc0d2783a"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^TestMCPPrivateHintPresenceGuard$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:54:07.010360+00:00",
+        "end_utc": "2026-11-19T04:54:07.922588+00:00",
+        "log": "M9-method-hint-must-use-presence.log",
+        "sha256": "c9f1708a266d5330087e334c09ced4ae958c2692d51d991b1939c3e80166865f"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}"
+      ]
+    },
+    {
+      "name": "M10-drop-name-hint",
+      "path": "internal/mcpgw/codec2025.go",
+      "old": "len(r.Header.Values(\"Mcp-Name\")) != 0",
+      "new": "false && len(r.Header.Values(\"Mcp-Name\")) != 0",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:54:07.923357+00:00",
+        "end_utc": "2026-11-19T04:54:08.935990+00:00",
+        "log": "M10-drop-name-hint-build.log",
+        "sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^TestMCPPrivateHintPresenceGuard$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:54:08.936024+00:00",
+        "end_utc": "2026-11-19T04:54:09.882066+00:00",
+        "log": "M10-drop-name-hint.log",
+        "sha256": "bd148fbc7f59180203cc99b31fc140050403c8b8cac88421ef999cebbf91239f"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}"
+      ]
+    },
+    {
+      "name": "M11-drop-private-meta-hint",
+      "path": "internal/mcpgw/codec2025.go",
+      "old": "|| privateMeta",
+      "new": "|| (false && privateMeta)",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:54:09.882851+00:00",
+        "end_utc": "2026-11-19T04:54:10.878674+00:00",
+        "log": "M11-drop-private-meta-hint-build.log",
+        "sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^TestMCPPrivateHintPresenceGuard$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:54:10.878712+00:00",
+        "end_utc": "2026-11-19T04:54:11.916112+00:00",
+        "log": "M11-drop-private-meta-hint.log",
+        "sha256": "f14328c4b5bfc191c0c84903a53a51d04bfd60c0a2ebb3d3e4527d3ac488d4a8"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}",
+        "    auth_first_test.go:298: PRIVATE_HINT_PRESENCE_GUARD: status=200 body={\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"capabilities\":{\"tools\":{\"listChanged\":false}},\"protocolVersion\":\"2025-06-18\",\"serverInfo\":{\"name\":\"dingwei-external\",\"version\":\"0.2.3.40\"}}}"
+      ]
+    },
+    {
+      "name": "M12-drop-headerless-june-selection",
+      "path": "internal/mcpgw/codec2025.go",
+      "old": "compatSelected := header == CompatProtocolVersion || (len(r.Header.Values(\"MCP-Protocol-Version\")) == 0 && hint.Method == \"initialize\" && hint.Params.Version == CompatProtocolVersion)",
+      "new": "compatSelected := header == CompatProtocolVersion",
+      "build": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^$",
+          "-count=1"
+        ],
+        "rc": 0,
+        "start_utc": "2026-11-19T04:54:11.917776+00:00",
+        "end_utc": "2026-11-19T04:54:12.922259+00:00",
+        "log": "M12-drop-headerless-june-selection-build.log",
+        "sha256": "9ee0cbc0e52e4c6e59528c0510db89b5d3dcc3dece8b32ca086cdc8c97b7b27b"
+      },
+      "test": {
+        "command": [
+          "go",
+          "test",
+          "./internal/mcpgw",
+          "-run",
+          "^TestMCPLegacyJuneSelectionIgnoresReservedHintVariants$",
+          "-count=1",
+          "-v"
+        ],
+        "rc": 1,
+        "start_utc": "2026-11-19T04:54:12.922300+00:00",
+        "end_utc": "2026-11-19T04:54:13.665326+00:00",
+        "log": "M12-drop-headerless-june-selection.log",
+        "sha256": "1764e17741d44d3f0c64247c0ccb1a25d97bd3453d20050d0f044413f413ceb3"
+      },
+      "business_red": true,
+      "failed_assertions": [
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}",
+        "    auth_first_test.go:331: LEGACY_JUNE_INITIALIZE_SELECTION: status=400 body={\"error\":{\"code\":-32700,\"message\":\"invalid JSON request\"},\"id\":null,\"jsonrpc\":\"2.0\"}"
+      ]
+    }
+  ],
+  "final_baseline": {
+    "command": [
+      "go",
+      "test",
+      "./internal/mcpgw",
+      "./internal/feishulogin",
+      "-p",
+      "1",
+      "-run",
+      "^(TestMCP|TestConnect)",
+      "-count=1",
+      "-v"
+    ],
+    "rc": 0,
+    "start_utc": "2026-11-19T04:54:13.665549+00:00",
+    "end_utc": "2026-11-19T04:54:18.239822+00:00",
+    "log": "final-baseline.log",
+    "sha256": "39bf5a753bb0ed9b2822d8524d3845e0352819b10906ec634f2e1db7e9f9f61f"
+  },
+  "porcelain": ""
+}
