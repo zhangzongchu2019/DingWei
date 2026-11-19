@@ -1,0 +1,42 @@
+[
+  {
+    "name": "focused-pre-freeze",
+    "base": "cfc6f6bbaefff2644c5150ebdcc08224cdecb430",
+    "working_tree_diff_sha256": "f263b9241d0ad3e29a1820a4c5dfd18754640c9785cbefa5b1c26c80034fbfc3",
+    "stage": "uncommitted development check, not frozen source gate",
+    "command": [
+      "go",
+      "test",
+      "./internal/extshared",
+      "./internal/tempgroup",
+      "-run",
+      "TestTTLConstants|TestR62",
+      "-count=1",
+      "-p",
+      "1",
+      "-timeout",
+      "20m",
+      "-v"
+    ],
+    "started_utc": "2026-11-18T17:11:24.077662+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:11:37.968298+00:00",
+    "sha256": "4b7c7db97789dfd0cb504a5db7060c6c703cd7974871c924eee6b356b5831bdc"
+  },
+  {
+    "name": "strict-pre-freeze",
+    "base": "cfc6f6bbaefff2644c5150ebdcc08224cdecb430",
+    "working_tree_diff_sha256": "f263b9241d0ad3e29a1820a4c5dfd18754640c9785cbefa5b1c26c80034fbfc3",
+    "stage": "uncommitted development check, not frozen source gate",
+    "command": [
+      "/tmp/coder56solzzc-openspec-1.16.0/node_modules/.bin/openspec",
+      "validate",
+      "--all",
+      "--strict"
+    ],
+    "started_utc": "2026-11-18T17:11:37.985659+00:00",
+    "rc": 0,
+    "ended_utc": "2026-11-18T17:11:38.451392+00:00",
+    "sha256": "85964b1db98f799e65338da7fa1c8cf6765c6dd7d37dfc527d218f9301f79ccb"
+  }
+]

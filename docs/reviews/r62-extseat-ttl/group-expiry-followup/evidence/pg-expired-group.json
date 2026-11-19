@@ -1,0 +1,21 @@
+{
+  "product_source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+  "new_test_sha256": "206afa6ab7d0d8f74d1d3892e235b3dd93646501005273dc0403e0d0840a99e3",
+  "command": [
+    "go",
+    "test",
+    "./internal/tempgroup",
+    "-run",
+    "^TestR62",
+    "-count=3",
+    "-p",
+    "1",
+    "-timeout",
+    "15m",
+    "-v"
+  ],
+  "started_utc": "2026-11-18T18:06:01.092180+00:00",
+  "rc": 0,
+  "ended_utc": "2026-11-18T18:06:36.661123+00:00",
+  "sha256": "099308385571ca38b713b2782f17703be49782ee7020b0bcbfd9cb69a68c4fde"
+}

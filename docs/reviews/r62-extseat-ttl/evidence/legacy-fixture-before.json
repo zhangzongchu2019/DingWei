@@ -1,0 +1,18 @@
+{
+  "source": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+  "command": [
+    "go",
+    "test",
+    "./internal/extseat",
+    "-run",
+    "^TestCorePG$/MessageExpiryAndRevokedWait$",
+    "-count=1",
+    "-p",
+    "1",
+    "-v"
+  ],
+  "started_utc": "2026-11-18T17:25:07.844985+00:00",
+  "rc": 1,
+  "ended_utc": "2026-11-18T17:25:09.506017+00:00",
+  "sha256": "61a7c7bb3b30ea919011c0446e0b6f7b7d4c4f7ff3fbdd67434bdfd15f88d7c7"
+}

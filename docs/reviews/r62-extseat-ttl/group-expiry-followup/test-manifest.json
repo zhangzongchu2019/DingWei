@@ -1,0 +1,13 @@
+{
+  "original_product_source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+  "supplement_test_source": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+  "tree": "bdf49abc1a972e23ca7a2895919ea636c68237d9",
+  "parent": "90c7ec3a3b7f84fa7120505bf1dadffaebbd95b5",
+  "test_path": "internal/tempgroup/lifetime_expired_group_pg_test.go",
+  "test_sha256": "206afa6ab7d0d8f74d1d3892e235b3dd93646501005273dc0403e0d0840a99e3",
+  "test_blob": "899074393cbdbd9b89a3064b2d27d9afa5885729",
+  "scope": "only one added regression Go file after90c7; no production behavior change",
+  "product_diff_since_original": [
+    "internal/tempgroup/lifetime_expired_group_pg_test.go"
+  ]
+}

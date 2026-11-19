@@ -1,0 +1,11 @@
+{
+  "source": "0b9a10f9227a35eaa01117cb767b9c883e6fb9ec",
+  "command": [
+    "./build.sh",
+    "--test-only"
+  ],
+  "started_utc": "2026-11-18T18:07:56.549570+00:00",
+  "rc": 0,
+  "ended_utc": "2026-11-18T18:17:30.173588+00:00",
+  "sha256": "b509f7aed7781469e1eb826f638d7944d690ae4bd0216ee9d78d8d685603a1ba"
+}

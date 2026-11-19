@@ -73,9 +73,9 @@ func TestPrincipalKeyIgnoresDisplayName(t *testing.T) {
 }
 
 func TestTTLConstants(t *testing.T) {
-	if TokenTTL.Hours() != 336 || GroupTTL.Hours() != 72 || MessageTTL.Hours() != 24 ||
+	if TokenTTL.Hours() != 336 || GroupTTL.Hours() != 168 || MessageTTL.Hours() != 168 ||
 		PresenceTimeout.Seconds() != 90 || WaitMax.Seconds() != 25 {
-		t.Fatal("TTL constants drifted from rulings ㊹-补4／提案 GW-005／GW-006")
+		t.Fatal("TTL constants drifted from approved R62 seven-day group/message and fourteen-day token policy")
 	}
 }
 

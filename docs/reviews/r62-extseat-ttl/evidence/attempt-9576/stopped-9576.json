@@ -1,0 +1,70 @@
+{
+  "utc": "2026-11-18T17:25:07.807749+00:00",
+  "source": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+  "reason": "canonical already rc0; abort just-started full-go3 after static audit found legacy MessageExpiryAndRevokedWait fixture assumes MessageTTL<GroupTTL; preserve source and raw logs, confirm isolated old fixture then add legitimate renewal without removing assertions; no product logic change",
+  "owned_root_pid": 2067224,
+  "owned_processes": {
+    "2090496": {
+      "start": "281360379",
+      "comm": "postgres"
+    },
+    "2090465": {
+      "start": "281360326",
+      "comm": "pgtest-bcd4d3e7"
+    },
+    "2090488": {
+      "start": "281360378",
+      "comm": "postgres"
+    },
+    "2090504": {
+      "start": "281360390",
+      "comm": "postgres"
+    },
+    "2090506": {
+      "start": "281360390",
+      "comm": "postgres"
+    },
+    "2090037": {
+      "start": "281359300",
+      "comm": "tempgroup.test"
+    },
+    "2087832": {
+      "start": "281353246",
+      "comm": "go"
+    },
+    "2090487": {
+      "start": "281360375",
+      "comm": "postgres"
+    },
+    "2067224": {
+      "start": "281290945",
+      "comm": "python3"
+    },
+    "2090489": {
+      "start": "281360378",
+      "comm": "postgres"
+    },
+    "2090490": {
+      "start": "281360378",
+      "comm": "postgres"
+    },
+    "2090491": {
+      "start": "281360378",
+      "comm": "postgres"
+    },
+    "2090492": {
+      "start": "281360378",
+      "comm": "postgres"
+    },
+    "2090494": {
+      "start": "281360379",
+      "comm": "postgres"
+    },
+    "2090495": {
+      "start": "281360379",
+      "comm": "postgres"
+    }
+  },
+  "full_go3_complete": false,
+  "scope": "only own subprocess tree, no live/other-seat process"
+}

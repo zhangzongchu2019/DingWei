@@ -1,0 +1,19 @@
+{
+  "parent_source": "9576cf5600b4d6a51938376fb75fdb266d50ce27",
+  "stage": "test fixture-only uncommitted repair, all original assertions preserved",
+  "command": [
+    "go",
+    "test",
+    "./internal/extseat",
+    "-run",
+    "^TestCorePG$/MessageExpiryAndRevokedWait$",
+    "-count=1",
+    "-p",
+    "1",
+    "-v"
+  ],
+  "started_utc": "2026-11-18T17:25:39.184230+00:00",
+  "rc": 0,
+  "ended_utc": "2026-11-18T17:25:40.847868+00:00",
+  "sha256": "494974d2d88bec9e0098368b0bfb2ee7378adae9867cc35587293a6450343490"
+}

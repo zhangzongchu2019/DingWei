@@ -413,7 +413,14 @@ func TestCorePG(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		f.clock.add(extshared.MessageTTL)
+		// R62 gives group and message the same seven-day duration. Keep the
+		// group live through a real accepted send so this case still isolates
+		// message expiry and later token revocation, rather than group expiry.
+		f.clock.add(extshared.MessageTTL - time.Hour)
+		if _, e = f.s.Send(f.ctx, a, "helper.ho", "renew group for expiry check", "expiry-group-renewal"); e != nil {
+			t.Fatal(e)
+		}
+		f.clock.add(time.Hour)
 		if e = f.s.Expire(f.ctx); e != nil {
 			t.Fatal(e)
 		}

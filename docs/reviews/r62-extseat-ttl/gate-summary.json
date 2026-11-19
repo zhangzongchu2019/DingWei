@@ -1,0 +1,805 @@
+{
+  "mutation-baseline": {
+    "top_pass": 6,
+    "all_pass": 15,
+    "top_fail": 0,
+    "all_fail": 0,
+    "failures": [],
+    "top_skip": 0,
+    "all_skip": 0,
+    "skips": [],
+    "interrupted_lines": [],
+    "package_results": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/extshared\t0.002s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/tempgroup\t11.379s"
+    ],
+    "helper_results": [],
+    "pg_version_lines": []
+  },
+  "mutation-restored-baseline": {
+    "top_pass": 6,
+    "all_pass": 15,
+    "top_fail": 0,
+    "all_fail": 0,
+    "failures": [],
+    "top_skip": 0,
+    "all_skip": 0,
+    "skips": [],
+    "interrupted_lines": [],
+    "package_results": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/extshared\t0.006s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/tempgroup\t11.595s"
+    ],
+    "helper_results": [],
+    "pg_version_lines": []
+  },
+  "canonical": {
+    "top_pass": 6,
+    "all_pass": 21,
+    "top_fail": 0,
+    "all_fail": 0,
+    "failures": [],
+    "top_skip": 0,
+    "all_skip": 0,
+    "skips": [],
+    "interrupted_lines": [],
+    "package_results": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t27.004s"
+    ],
+    "helper_results": [
+      {
+        "actual": 1270,
+        "actual_SH_DRIVER": "claude",
+        "expected": 1270,
+        "files": 97,
+        "groups": [
+          1261,
+          9
+        ],
+        "profile": "claude",
+        "rc": 0
+      },
+      {
+        "actual": 1270,
+        "actual_SH_DRIVER": "codex",
+        "expected": 1270,
+        "files": 97,
+        "groups": [
+          1261,
+          9
+        ],
+        "profile": "codex",
+        "rc": 0
+      }
+    ],
+    "pg_version_lines": [
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    ]
+  },
+  "full-go3": {
+    "top_pass": 3081,
+    "all_pass": 5250,
+    "top_fail": 0,
+    "all_fail": 0,
+    "failures": [],
+    "top_skip": 30,
+    "all_skip": 84,
+    "skips": [
+      {
+        "name": "TestChangeEvidenceConsoleBrowser",
+        "context": [
+          "    --- PASS: TestR52ChangeEvidenceTrustedOriginMatrix/configured_missing_origin (0.00s)",
+          "=== RUN   TestChangeEvidenceConsoleBrowser",
+          "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+        ]
+      },
+      {
+        "name": "TestMuxProductHTTP1EightSeats",
+        "context": [
+          "--- PASS: TestMuxRecoveryExpiryAfterHubShutdownRejectsBackgroundWork (0.18s)",
+          "=== RUN   TestMuxProductHTTP1EightSeats",
+          "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+        ]
+      },
+      {
+        "name": "TestConsolePlatformPayloadDump",
+        "context": [
+          "--- PASS: TestConsolePlatformAgentGroupsIDIsReserved (0.15s)",
+          "=== RUN   TestConsolePlatformPayloadDump",
+          "    console_platform_agentgroups_test.go:133: \u4ec5\u5728\u6d4f\u89c8\u5668\u95f8\u53d6\u771f\u8f7d\u8377\u65f6\u8fd0\u884c(\u8bbe DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+        ]
+      },
+      {
+        "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+        "context": [
+          "--- PASS: TestConsoleTaskBoardListsAndOpensOnlyFinalSpecs (0.18s)",
+          "=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+        "context": [
+          "2026/11/18 17:40:19 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.45s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.45s)",
+          "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.14s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+        "context": [
+          "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.45s)",
+          "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.14s)",
+          "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.15s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+        "context": [
+          "2026/11/18 17:40:20 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.61s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.61s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.15s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+        "context": [
+          "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.61s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.15s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.15s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+        "context": [
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.15s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.15s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.15s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+        "context": [
+          "2026/11/18 17:40:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.63s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.63s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.15s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+        "context": [
+          "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.63s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.15s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.16s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+        "context": [
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.15s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.16s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.17s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+        "context": [
+          "2026/11/18 17:40:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.31s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.31s)",
+          "    --- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.16s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+        "context": [
+          "2026/11/18 17:40:21 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.53s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.53s)",
+          "    --- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.28s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLILateWireTerminal",
+        "context": [
+          "2026/11/18 17:40:22 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+          "2026/11/18 17:40:22 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+        ]
+      },
+      {
+        "name": "TestGroupReplyMCP",
+        "context": [
+          "    --- PASS: TestGroupReplyMembership/leader-only (0.62s)",
+          "=== RUN   TestGroupReplyMCP",
+          "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+        ]
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+        "context": [
+          "=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+          "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)"
+        ]
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+        "context": [
+          "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+          "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)"
+        ]
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+        "context": [
+          "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)",
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)"
+        ]
+      },
+      {
+        "name": "TestHelper0232MixedVersionEndToEnd",
+        "context": [
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)",
+          "=== RUN   TestHelper0232MixedVersionEndToEnd",
+          "    helper_update_e2e_test.go:55: explicit immutable release pins required"
+        ]
+      },
+      {
+        "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+        "context": [
+          "--- PASS: TestEnvelopeReadTimeoutDerivesFromEnvironment (0.01s)",
+          "=== RUN   TestEnvelopeReadTimeoutEnvironmentChild",
+          "    hub_timeout_contract_test.go:50: subprocess probe only"
+        ]
+      },
+      {
+        "name": "TestSessionHistoryTwentyAgentPublishP99",
+        "context": [
+          "--- PASS: TestSessionHistoryConcurrentGroupCursorMatchesLiveEvents (0.02s)",
+          "=== RUN   TestSessionHistoryTwentyAgentPublishP99",
+          "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+        ]
+      },
+      {
+        "name": "TestSpecMCPEndToEnd",
+        "context": [
+          "--- PASS: TestSpecGrantLegacyRequestAndPollFailFastWithoutWrites (0.15s)",
+          "=== RUN   TestSpecMCPEndToEnd",
+          "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+        ]
+      },
+      {
+        "name": "TestChangeEvidenceConsoleBrowser",
+        "context": [
+          "    --- PASS: TestR52ChangeEvidenceTrustedOriginMatrix/configured_missing_origin (0.00s)",
+          "=== RUN   TestChangeEvidenceConsoleBrowser",
+          "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+        ]
+      },
+      {
+        "name": "TestMuxProductHTTP1EightSeats",
+        "context": [
+          "--- PASS: TestMuxRecoveryExpiryAfterHubShutdownRejectsBackgroundWork (0.16s)",
+          "=== RUN   TestMuxProductHTTP1EightSeats",
+          "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+        ]
+      },
+      {
+        "name": "TestConsolePlatformPayloadDump",
+        "context": [
+          "--- PASS: TestConsolePlatformAgentGroupsIDIsReserved (0.13s)",
+          "=== RUN   TestConsolePlatformPayloadDump",
+          "    console_platform_agentgroups_test.go:133: \u4ec5\u5728\u6d4f\u89c8\u5668\u95f8\u53d6\u771f\u8f7d\u8377\u65f6\u8fd0\u884c(\u8bbe DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+        ]
+      },
+      {
+        "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+        "context": [
+          "--- PASS: TestConsoleTaskBoardListsAndOpensOnlyFinalSpecs (0.16s)",
+          "=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+        "context": [
+          "2026/11/18 17:45:48 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.43s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.43s)",
+          "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.14s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+        "context": [
+          "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.43s)",
+          "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.14s)",
+          "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.14s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+        "context": [
+          "2026/11/18 17:45:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.58s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.58s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.14s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+        "context": [
+          "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.58s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.14s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.14s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+        "context": [
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.14s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.14s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.15s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+        "context": [
+          "2026/11/18 17:45:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.57s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.57s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.14s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+        "context": [
+          "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.57s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.14s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.15s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+        "context": [
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.14s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.15s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.15s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+        "context": [
+          "2026/11/18 17:45:49 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.28s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.28s)",
+          "    --- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.14s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+        "context": [
+          "2026/11/18 17:45:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.48s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.48s)",
+          "    --- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.24s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLILateWireTerminal",
+        "context": [
+          "2026/11/18 17:45:50 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+          "2026/11/18 17:45:50 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+        ]
+      },
+      {
+        "name": "TestGroupReplyMCP",
+        "context": [
+          "    --- PASS: TestGroupReplyMembership/leader-only (0.61s)",
+          "=== RUN   TestGroupReplyMCP",
+          "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+        ]
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+        "context": [
+          "=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+          "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)"
+        ]
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+        "context": [
+          "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+          "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)"
+        ]
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+        "context": [
+          "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)",
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)"
+        ]
+      },
+      {
+        "name": "TestHelper0232MixedVersionEndToEnd",
+        "context": [
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)",
+          "=== RUN   TestHelper0232MixedVersionEndToEnd",
+          "    helper_update_e2e_test.go:55: explicit immutable release pins required"
+        ]
+      },
+      {
+        "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+        "context": [
+          "--- PASS: TestEnvelopeReadTimeoutDerivesFromEnvironment (0.01s)",
+          "=== RUN   TestEnvelopeReadTimeoutEnvironmentChild",
+          "    hub_timeout_contract_test.go:50: subprocess probe only"
+        ]
+      },
+      {
+        "name": "TestSessionHistoryTwentyAgentPublishP99",
+        "context": [
+          "--- PASS: TestSessionHistoryConcurrentGroupCursorMatchesLiveEvents (0.02s)",
+          "=== RUN   TestSessionHistoryTwentyAgentPublishP99",
+          "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+        ]
+      },
+      {
+        "name": "TestSpecMCPEndToEnd",
+        "context": [
+          "--- PASS: TestSpecGrantLegacyRequestAndPollFailFastWithoutWrites (0.16s)",
+          "=== RUN   TestSpecMCPEndToEnd",
+          "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+        ]
+      },
+      {
+        "name": "TestChangeEvidenceConsoleBrowser",
+        "context": [
+          "    --- PASS: TestR52ChangeEvidenceTrustedOriginMatrix/configured_missing_origin (0.00s)",
+          "=== RUN   TestChangeEvidenceConsoleBrowser",
+          "    console_change_evidence_test.go:186: set CHANGEFLOW_PLAYWRIGHT to installed Playwright for Chrome integration"
+        ]
+      },
+      {
+        "name": "TestMuxProductHTTP1EightSeats",
+        "context": [
+          "--- PASS: TestMuxRecoveryExpiryAfterHubShutdownRejectsBackgroundWork (0.17s)",
+          "=== RUN   TestMuxProductHTTP1EightSeats",
+          "    console_mux_product_test.go:34: set MUX_PUPPETEER to installed puppeteer-core for actual Chrome product integration"
+        ]
+      },
+      {
+        "name": "TestConsolePlatformPayloadDump",
+        "context": [
+          "--- PASS: TestConsolePlatformAgentGroupsIDIsReserved (0.15s)",
+          "=== RUN   TestConsolePlatformPayloadDump",
+          "    console_platform_agentgroups_test.go:133: \u4ec5\u5728\u6d4f\u89c8\u5668\u95f8\u53d6\u771f\u8f7d\u8377\u65f6\u8fd0\u884c(\u8bbe DW_CONSOLE_PLATFORM_PAYLOAD_OUT)"
+        ]
+      },
+      {
+        "name": "TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+        "context": [
+          "--- PASS: TestConsoleTaskBoardListsAndOpensOnlyFinalSpecs (0.14s)",
+          "=== RUN   TestConsoleTaskBoardStartedTaskRestrictionsPendingCaseRecordModel",
+          "    console_task_board_page_test.go:122: K13 deferred: task case record model does not exist, so started state cannot be derived mechanically"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude",
+        "context": [
+          "2026/11/18 17:51:15 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.44s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:373: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.44s)",
+          "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.14s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude_explicit",
+        "context": [
+          "--- PASS: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal (0.44s)",
+          "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/claude (0.14s)",
+          "    --- SKIP: TestDeliveryACKActualCLIQueuedAdmissionAndTerminal/codex (0.16s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected",
+        "context": [
+          "2026/11/18 17:51:15 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.59s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:475: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.59s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.14s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected",
+        "context": [
+          "--- PASS: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect (0.59s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.14s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.14s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected_confirm",
+        "context": [
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected (0.14s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/claude/drop_injected_confirm (0.14s)",
+          "    --- SKIP: TestDeliveryACKActualCLIReplaysPredecessorAcrossDisconnect/codex/drop_injected (0.14s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread",
+        "context": [
+          "2026/11/18 17:51:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.62s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:527: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.62s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.17s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread",
+        "context": [
+          "--- PASS: TestDeliveryACKActualCLIAdmissionCrashWindows (0.62s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.17s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.15s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLIAdmissionCrashWindows/codex/receipt_before_admitted_persist",
+        "context": [
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/dispatch_sent_receipt_unread (0.17s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/claude/receipt_before_admitted_persist (0.15s)",
+          "    --- SKIP: TestDeliveryACKActualCLIAdmissionCrashWindows/codex/dispatch_sent_receipt_unread (0.15s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLICancelAtomicBoundary/claude",
+        "context": [
+          "2026/11/18 17:51:16 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.32s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLICancelAtomicBoundary/codex",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:592: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLICancelAtomicBoundary (0.32s)",
+          "    --- SKIP: TestDeliveryACKActualCLICancelAtomicBoundary/claude (0.15s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude",
+        "context": [
+          "2026/11/18 17:51:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.59s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/codex",
+        "context": [
+          "    delivery_ack_real_cli_e2e_linux_test.go:675: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance",
+          "--- PASS: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance (0.59s)",
+          "    --- SKIP: TestDeliveryACKActualCLILegacyUpgradeKeepsPerDeliveryProvenance/claude (0.28s)"
+        ]
+      },
+      {
+        "name": "TestDeliveryACKActualCLILateWireTerminal",
+        "context": [
+          "2026/11/18 17:51:17 amr startup mode=route_all structured_failure_min_version=0.1.3.0",
+          "2026/11/18 17:51:17 replay guard: amr_completed_ttl=24h0m0s amr_completed_per_session=4096 amr_completed_total=100000 reply_dedup_ttl=24h0m0s reply_dedup_max=200000 session_touch_min_interval=5s",
+          "    delivery_ack_real_cli_e2e_linux_test.go:733: INCONCLUSIVE: set DW_ACK_V2_E2E_PYTHON for actual CLI/Hub acceptance"
+        ]
+      },
+      {
+        "name": "TestGroupReplyMCP",
+        "context": [
+          "    --- PASS: TestGroupReplyMembership/leader-only (0.61s)",
+          "=== RUN   TestGroupReplyMCP",
+          "    group_reply_test.go:104: requires locked helper Python; set DW_SPEC_E2E_PYTHON"
+        ]
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/install_restart_confirm",
+        "context": [
+          "=== RUN   TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+          "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+          "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)"
+        ]
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory",
+        "context": [
+          "    helper_update_e2e_test.go:75: set DW_HELPER_E2E_PYTHON to locked helper runtime Python",
+          "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)"
+        ]
+      },
+      {
+        "name": "TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason",
+        "context": [
+          "--- PASS: TestHelperSelfUpdateEndToEnd (0.00s)",
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/install_restart_confirm (0.00s)",
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/sha_mismatch_keeps_factory (0.00s)"
+        ]
+      },
+      {
+        "name": "TestHelper0232MixedVersionEndToEnd",
+        "context": [
+          "    --- SKIP: TestHelperSelfUpdateEndToEnd/new_layout_rejected_keeps_factory_and_projects_reason (0.00s)",
+          "=== RUN   TestHelper0232MixedVersionEndToEnd",
+          "    helper_update_e2e_test.go:55: explicit immutable release pins required"
+        ]
+      },
+      {
+        "name": "TestEnvelopeReadTimeoutEnvironmentChild",
+        "context": [
+          "--- PASS: TestEnvelopeReadTimeoutDerivesFromEnvironment (0.01s)",
+          "=== RUN   TestEnvelopeReadTimeoutEnvironmentChild",
+          "    hub_timeout_contract_test.go:50: subprocess probe only"
+        ]
+      },
+      {
+        "name": "TestSessionHistoryTwentyAgentPublishP99",
+        "context": [
+          "--- PASS: TestSessionHistoryConcurrentGroupCursorMatchesLiveEvents (0.02s)",
+          "=== RUN   TestSessionHistoryTwentyAgentPublishP99",
+          "    session_history_test.go:520: set DW_SESSION_HISTORY_PERF=1 for isolated 20-agent latency gate"
+        ]
+      },
+      {
+        "name": "TestSpecMCPEndToEnd",
+        "context": [
+          "--- PASS: TestSpecGrantLegacyRequestAndPollFailFastWithoutWrites (0.15s)",
+          "=== RUN   TestSpecMCPEndToEnd",
+          "    spec_mcp_e2e_test.go:211: set DW_SPEC_E2E_PYTHON for actual helper/MCP subprocesses"
+        ]
+      }
+    ],
+    "interrupted_lines": [],
+    "package_results": [
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/extshared\t0.002s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/extseat\t58.640s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/tempgroup\t53.199s",
+      "ok  \tgithub.com/zhangzongchu2019/dingwei/internal/m8\t986.301s"
+    ],
+    "helper_results": [],
+    "pg_version_lines": [
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003",
+      "    claim_client_integration_test.go:72: isolated PostgreSQL server_version_num=180003"
+    ]
+  },
+  "strict": {
+    "top_pass": 0,
+    "all_pass": 0,
+    "top_fail": 0,
+    "all_fail": 0,
+    "failures": [],
+    "top_skip": 0,
+    "all_skip": 0,
+    "skips": [],
+    "interrupted_lines": [],
+    "package_results": [],
+    "helper_results": [],
+    "pg_version_lines": []
+  }
+}

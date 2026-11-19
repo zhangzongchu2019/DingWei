@@ -1,0 +1,20 @@
+{
+  "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "^TestR62ProbeAlreadyProjectedAfterGroupExpiry$",
+    "-count=1",
+    "-p",
+    "1",
+    "-timeout",
+    "3m",
+    "-v"
+  ],
+  "started_utc": "2026-11-18T18:04:12.582562+00:00",
+  "rc": 1,
+  "ended_utc": "2026-11-18T18:04:27.596795+00:00",
+  "sha256": "9d7da2d64877cddbc6cc89386299d132cdd4495404806c0b359b11b98ef08d10"
+}

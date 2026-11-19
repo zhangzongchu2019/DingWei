@@ -1,0 +1,22 @@
+{
+  "source": "2fd6aebacbb3dae3ac3fa82d84968367552151ca",
+  "probe_sha256": "f4b8466b9746b1e77dc042bb9d4b4335d1d331a55a3ab5a4c3dac8382e1d3b05",
+  "fixture": "group created18h ago, expiry12h after creation, token live and message explicitly asserted unexpired, SQLite queue freshly projected",
+  "command": [
+    "go",
+    "test",
+    "./internal/m8",
+    "-run",
+    "^TestR62ProbeAlreadyProjectedAfterGroupExpiry$",
+    "-count=1",
+    "-p",
+    "1",
+    "-timeout",
+    "3m",
+    "-v"
+  ],
+  "started_utc": "2026-11-18T18:16:46.628233+00:00",
+  "rc": 1,
+  "ended_utc": "2026-11-18T18:16:58.716432+00:00",
+  "sha256": "7ecbe3fce6823b144b2400f5604749091cfdb49ab1957aedcc744dafda3d93d2"
+}
