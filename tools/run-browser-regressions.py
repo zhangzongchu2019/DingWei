@@ -64,6 +64,7 @@ SUITES = (
     ("renderer_offturn_fold", "node", ROOT / "view-service/renderer-offturn-fold-regression.js"),
     ("renderer_upload_ticket_timeout", "node", ROOT / "view-service/renderer-upload-ticket-timeout-regression.js"),
     ("renderer_flood_stress", "node", ROOT / "view-service/renderer-flood-stress-regression.js"),
+    ("renderer_cli_view", "node", ROOT / "view-service/renderer-cli-view-regression.js"),
     ("renderer_c2", "node", ROOT / "view-service/renderer-c2-regression.js"),
     ("renderer_delivery_status", "node", ROOT / "view-service/renderer-delivery-status-regression.js"),
     ("renderer_retry_role", "node", ROOT / "view-service/renderer-retry-role-regression.js"),
@@ -91,6 +92,7 @@ OVERRIDE_ENV_NAMES = (
     "RENDERER_FILE", "RENDERER_OVERRIDE", "TIMELINE_DEBUG",
     "STALE_SCREENSHOT",  # model admission suite: optional screenshot output path
     "MOBILE_SHOT_DIR",  # console_mobile: optional screenshot output dir (S-R62-MOBILE delivery evidence)
+    "CLI_VIEW_SHOT_DIR",  # renderer_cli_view: optional screenshot output dir (S-R62-CLI-VIEW-B prototype evidence)
     "MUTATION",  # console_quota／console_platform_admin：env 形式的删保护刀开关（S-R62-MOBILE M2 登记）
     "MUTATE_HISTORY_EVENT_OBJECT",  # history_event_object: one-cut negative control
     "MUTATE_HISTORY_SSE_INPUT_BUFFER",  # history_event_object: remove initial SSE buffering for the replay regression

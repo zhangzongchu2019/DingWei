@@ -1,0 +1,3 @@
+PASS mutant=drop_history_node_move rc=2 red_at="timeline order invalid:"
+PASS mutant=drop_scroll_anchor_correction rc=2 red_at="scroll anchor shifted"
+PASS mutant=restore_live_eviction_during_paged_history rc=2 red_at="post-live history prefix was evicted:"

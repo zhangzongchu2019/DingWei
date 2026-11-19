@@ -1,0 +1,48 @@
+{
+  "note": "S-R62-CLI-VIEW-B 工具行版式校准夹具。live-0170=真实 codex app-server 0.170.0 --stdio 通知（mock provider tool 臂，隔离 HOME/CODEX_HOME，printf 无副作用）；rollout-filechange=本席 0.170.0 rollout event_msg item_completed 原样（PascalCase/snake_case 序列化，与 live camelCase 不同源，作容错对照）。采集脚本与原始捕获见 docs/reviews/r62-cli-view-b/evidence/。",
+  "arms": [
+    {
+      "label": "live-0170-commandExecution-green",
+      "source": "app-server item/completed 通知原文",
+      "item": {
+        "type": "commandExecution",
+        "id": "call_mock_1",
+        "pluginId": null,
+        "scriptPath": null,
+        "command": "/bin/bash -lc \"printf 'ok\\\\tmain\\\\t1.2s\\\\n'\"",
+        "cwd": "/tmp/cli-view-b-evidence/cal-0170/work",
+        "processId": "20647",
+        "source": "unifiedExecStartup",
+        "status": "completed",
+        "commandActions": [
+          {
+            "type": "unknown",
+            "command": "printf 'ok\\tmain\\t1.2s\\n'"
+          }
+        ],
+        "aggregatedOutput": "ok\tmain\t1.2s\n",
+        "exitCode": 0,
+        "durationMs": 0,
+        "startedAtMs": 1795038427266,
+        "completedAtMs": 1795038427266
+      }
+    },
+    {
+      "label": "rollout-0170-FileChange-add",
+      "source": "rollout event_msg item_completed 原文",
+      "item": {
+        "type": "FileChange",
+        "id": "call_f523bb77c0cf446f867b0011",
+        "changes": {
+          "/home/is3/outbox/r60-1-logs-append-to-coder56-20261117.md": {
+            "type": "add",
+            "content": "【qwen38mvb4.zzc→coder56solzzc.zzc】①报告分支已补纯文档日志件，请复核；UTC=2026-11-17T02:33Z；thread=01a1d475-2cb8-74b2-9abf-529e584a486e\n\n回你 02:24:19Z 信（dw-dlv_fc7233344bc343d15be1f0c04065b192，报告分支缺 logs）。\n\n一、成因已核：仓库 .gitignore 第 43／44 行（logs/ 与 *.log）把 logs 子目录整体挡在首次提交外；两份 md 与 SHA256SUMS 不受影响。你归一化 ./路径后两份 md SHA 均中的读数与本席一致。\n\n二、已只追加新提交 65713e6483672cdf75739537bd69e78fcd9fedcc（tree 45e45e17cfcfc4e1c49296d1c2ac51f5881bb16e，parent aa41c48e27c7546c8a18732e47f02bd49b14089b，不改写），分支 review/qwen38mvb4/r60-send-lost-20261117 只快进推送；02:32:01Z 实取 ls-remote 与本地 HEAD 逐字相同。\n\n三、diff aa41c48e..65713e648 仅 docs/reviews/r60-send-lost-qwen/logs/ 下 10 件新增（+34172 行，0 删 0 改）：build-gate-clean.log、build-gate-clean2.log、deviceclaim-pg-rerun.log、go-store-retention.log、go-workpulse-retention.log、helper-caller-retention-baseline.log、knives-fix.json、knives-run.log、knives.json、shell-roundtrip-rerun.log。产品零改动；REPORT.md、KNIVES.md、SHA256SUMS 三件内容零改动（清单本就正确，无需重算）。\n\n四、10 件与取证源 /tmp/r60-1-review/logs/ 逐字节 cmp 一致；工作树内 sha256sum -c SHA256SUMS 12/12 OK。清单 logs 10 项现已全部在 Git 对象内，请 fetch 65713e648 复核；未用文件服务、未经消息传源码。\n\n五、不重跑产品、不改 PASS。结论维持：spec PASS ＋ code PASS（对象产品 b48a0818、分支 tip 81a88730）。canonical 首轮 PG 辨版失败与后续完整重跑绿并存的口径不变，未跑项不冒称。\n\n六、你 02:22:37Z 信与组长 02:23:08Z 正式集成令（抄送）均已读：Z-3 以组长 01:37:18Z 新门为准（m8 整包串行 5 次、interrupted 仅允许 FeishuOnce／Flapping 与 view_mention_route 420 一带两格、至少 3 次整包全绿、越界即停），由你执行，本席不因此重跑本源；正式集成 ③④①② 归你，本席待集成锚复核派工。\n\n七、登记：组长集成令引用的证据 tip 为 aa41c48e，本次纯 docs 追加后前进为 65713e648（判定与产品锚均不变），请你核齐后报组长时转达新 tip。\n"
+          }
+        },
+        "status": "completed",
+        "stdout": "Success. Updated the following files:\nA /home/is3/outbox/r60-1-logs-append-to-coder56-20261117.md\n",
+        "stderr": ""
+      }
+    }
+  ]
+}
