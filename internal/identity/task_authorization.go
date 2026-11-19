@@ -36,7 +36,7 @@ func (s *PGStore) WithTaskAuthorization(ctx context.Context, owner, group string
 				continue
 			}
 			seen[id] = true
-			a, e := scanAgent(tx.QueryRow(ctx, `SELECT `+agentCols+` FROM np_agent WHERE id=$1 FOR SHARE`, id))
+			a, e := scanAgent(tx.QueryRow(ctx, `SELECT `+agentSelectCols()+` FROM np_agent WHERE id=$1 FOR SHARE`, id))
 			if e != nil {
 				return e
 			}

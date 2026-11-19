@@ -121,7 +121,7 @@ func TestCallbackSuccessUsesServerProofAndBoundRequest(t *testing.T) {
 	}
 	proof := issuer.request.Principal
 	if issuer.calls != 1 || proof.Key() != "feishu|tenant-1|app-1|open-1" ||
-		proof.DisplayName != "zhangwei" || issuer.request.ShortName != "mybot" ||
+		proof.DisplayName != "张伟" || issuer.request.ShortName != "mybot" ||
 		issuer.request.TargetAgent != "helper.zzc" || issuer.request.AttemptID != "login-attempt-1" {
 		t.Fatalf("unexpected issue call: calls=%d request=%+v", issuer.calls, issuer.request)
 	}
@@ -173,7 +173,7 @@ func TestCallbackRejectsInvalidIdentityWithoutIssuance(t *testing.T) {
 	}{
 		{name: "missing tenant", mutate: func(p *UserInfo) { p.TenantKey = "" }, want: extshared.ErrTenantRejected},
 		{name: "missing open id", mutate: func(p *UserInfo) { p.OpenID = "" }, want: ErrIdentityIncomplete},
-		{name: "display name cannot generate", mutate: func(p *UserInfo) { p.Name = "123" }, want: ErrDisplayName},
+		{name: "display name cannot generate", mutate: func(p *UserInfo) { p.Name = "bad\x00name"; p.EnName = "" }, want: ErrDisplayName},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"github.com/zhangzongchu2019/dingwei/internal/repo"
 )
 
@@ -19,6 +20,7 @@ type AdminAgentRecord struct {
 	OwnerShortName   string
 	OwnerDisplayName string
 	Name             string
+	DisplayName      string
 	Origin           AgentOrigin
 	State            AgentState
 	HostedNodeName   string    `json:"-"`
@@ -73,7 +75,16 @@ func (m *MemStore) ListAdminAgents(_ context.Context, actor, after string, limit
 		if owner == nil {
 			owner = &User{UserID: a.OwnerLC}
 		}
-		row := AdminAgentRecord{ID: a.ID, OwnerID: owner.UserID, OwnerShortName: owner.ShortName, OwnerDisplayName: owner.DisplayName, Name: a.Name, Origin: a.Origin, State: a.State}
+		row := AdminAgentRecord{ID: a.ID, OwnerID: owner.UserID, OwnerShortName: owner.ShortName, OwnerDisplayName: owner.DisplayName, Name: a.Name, DisplayName: a.DisplayName, Origin: a.Origin, State: a.State}
+		if row.Origin == OriginExternal {
+			if normalized, err := extshared.NormalizeExternalDisplayName(row.DisplayName); err == nil {
+				row.DisplayName = normalized
+			} else {
+				row.DisplayName = ""
+			}
+		} else {
+			row.DisplayName = ""
+		}
 		if a.Origin == OriginSelfhost {
 			row.SourceIP = m.connections[id].IP
 			row.SourceAt = m.connections[id].At
@@ -112,10 +123,14 @@ func (s *PGStore) ListAdminAgents(ctx context.Context, actor, after string, limi
 			nodeColumn = "CASE WHEN a.origin='hosted' THEN COALESCE(n.name,'') ELSE '' END"
 			nodeJoin = " LEFT JOIN g4_hosted_seat hs ON hs.agent_id=a.id LEFT JOIN g4_node n ON n.id=hs.node_id"
 		}
-		rows, err := tx.Query(ctx, `SELECT a.id,COALESCE(u.user_id,a.owner_lc),COALESCE(u.short_name,''),COALESCE(u.display_name,''),a.name,a.origin,a.state,
+		displayNameColumn := `COALESCE(a.display_name,'')`
+		if !extshared.ExternalDisplayNamesEnabled() {
+			displayNameColumn = `''::text`
+		}
+		rows, err := tx.Query(ctx, `SELECT a.id,COALESCE(u.user_id,a.owner_lc),COALESCE(u.short_name,''),COALESCE(u.display_name,''),a.name,`+displayNameColumn+`,a.origin,a.state,
    CASE WHEN a.origin='selfhost' THEN COALESCE(a.last_source_ip,'') ELSE '' END,
    COALESCE(a.last_source_at,'0001-01-01'::timestamptz),`+nodeColumn+`
-   FROM np_agent a LEFT JOIN np_user u ON u.user_id_lc=a.owner_lc`+nodeJoin+`
+  FROM np_agent a LEFT JOIN np_user u ON u.user_id_lc=a.owner_lc`+nodeJoin+`
    WHERE a.id COLLATE "C">$1 ORDER BY a.id COLLATE "C" LIMIT $2`, after, limit+1)
 		if err != nil {
 			return err
@@ -124,8 +139,17 @@ func (s *PGStore) ListAdminAgents(ctx context.Context, actor, after string, limi
 		page.Agents = make([]AdminAgentRecord, 0, limit)
 		for rows.Next() {
 			var row AdminAgentRecord
-			if err := rows.Scan(&row.ID, &row.OwnerID, &row.OwnerShortName, &row.OwnerDisplayName, &row.Name, &row.Origin, &row.State, &row.SourceIP, &row.SourceAt, &row.HostedNodeName); err != nil {
+			if err := rows.Scan(&row.ID, &row.OwnerID, &row.OwnerShortName, &row.OwnerDisplayName, &row.Name, &row.DisplayName, &row.Origin, &row.State, &row.SourceIP, &row.SourceAt, &row.HostedNodeName); err != nil {
 				return err
+			}
+			if row.Origin == OriginExternal {
+				if normalized, err := extshared.NormalizeExternalDisplayName(row.DisplayName); err == nil {
+					row.DisplayName = normalized
+				} else {
+					row.DisplayName = ""
+				}
+			} else {
+				row.DisplayName = ""
 			}
 			if len(page.Agents) == limit {
 				page.NextAfter = page.Agents[len(page.Agents)-1].ID

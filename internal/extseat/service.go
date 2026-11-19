@@ -83,6 +83,11 @@ func (s *Service) IssueToken(ctx context.Context, p extshared.Principal, short, 
 		s.auditTenantDeny(ctx, p)
 		return "", seat, "", extshared.ErrTenantRejected
 	}
+	var nameErr error
+	p.DisplayName, nameErr = extshared.NormalizeExternalDisplayName(p.DisplayName)
+	if nameErr != nil {
+		return "", seat, "", extshared.ErrNotPermitted
+	}
 	if !validPrincipal(p) || !extshared.ValidShortName(short) {
 		return "", seat, "", extshared.ErrNotPermitted
 	}
@@ -136,6 +141,9 @@ func (s *Service) IssueToken(ctx context.Context, p extshared.Principal, short, 
 		} else if e != nil {
 			return e
 		}
+		if _, e = tx.Exec(ctx, `UPDATE np_external_principal SET display_name=$2 WHERE id=$1`, ph, p.DisplayName); e != nil {
+			return e
+		}
 		seat = Seat{ID: "ex_" + id, AgentID: "ex_" + id, OwnerLC: owner, Principal: p, TokenID: tid, AuthGeneration: 1, ExpiresAt: now.Add(extshared.TokenTTL)}
 		calls := 0
 		g, e := s.Groups.CreateTempGroup(ctx, tx, CreateGroupRequest{Principal: p, ExternalAgentID: seat.AgentID, OwnerLC: owner, Target: *ag, At: now, CreateExternal: func(g Group) error {
@@ -155,7 +163,7 @@ func (s *Service) IssueToken(ctx context.Context, p extshared.Principal, short, 
 				return e
 			}
 			seat.FullName = name + "." + ownerShort
-			if _, e = tx.Exec(ctx, `INSERT INTO np_agent(id,owner_lc,name,name_lc,group_code,origin,state,created_at) VALUES($1,$2,$3,$4,$5,'external','active',$6)`, seat.AgentID, owner, name, strings.ToLower(name), string(g.Code), now); e != nil {
+			if _, e = tx.Exec(ctx, `INSERT INTO np_agent(id,owner_lc,name,name_lc,group_code,origin,state,created_at,display_name) VALUES($1,$2,$3,$4,$5,'external','active',$6,$7)`, seat.AgentID, owner, name, strings.ToLower(name), string(g.Code), now, p.DisplayName); e != nil {
 				return e
 			}
 			if _, e = tx.Exec(ctx, `INSERT INTO np_extseat(agent_id,principal_id,short_name,ag_code,ag_generation,created_at) VALUES($1,$2,$3,$4,$5,$6)`, seat.AgentID, ph, short, string(g.Code), g.Generation, now); e != nil {

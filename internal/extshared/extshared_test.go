@@ -1,6 +1,48 @@
 package extshared
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
+
+func TestExternalDisplayNameNormalizationAndCanonicalAddressBoundary(t *testing.T) {
+	got, err := NormalizeExternalDisplayName("  张伟  ")
+	if err != nil || got != "张伟" {
+		t.Fatalf("normalized name=%q err=%v", got, err)
+	}
+	if _, err := NormalizeExternalDisplayName(strings.Repeat("名", MaxExternalDisplayNameRunes+1)); err == nil {
+		t.Fatal("overlong Unicode display name accepted")
+	}
+	if _, err := NormalizeExternalDisplayName("a\u202eb"); err == nil {
+		t.Fatal("bidi override accepted")
+	}
+	if got, err := NormalizeExternalDisplayName("e\u0301"); err != nil || got != "é" {
+		t.Fatalf("NFC normalization=%q err=%v", got, err)
+	}
+	if got := ExternalDisplayLabel("张伟", "alice_AG7.owner"); got != "张伟 · alice_AG7.owner" {
+		t.Fatalf("display label=%q", got)
+	}
+	if got := ExternalDisplayLabel("", "alice_AG7.owner"); got != "alice_AG7.owner" {
+		t.Fatalf("empty display name must fall back to canonical address: %q", got)
+	}
+	if _, _, ok := SplitAgentName("张伟_AG7"); ok {
+		t.Fatal("display name was accepted as an address")
+	}
+	if short, group, ok := SplitAgentName("alice_AG7"); !ok || short != "alice" || group != "AG7" {
+		t.Fatalf("canonical address changed: %q %q %v", short, group, ok)
+	}
+}
+
+func TestExternalDisplayNamesCanBeDisabledWithoutChangingStoredData(t *testing.T) {
+	t.Setenv("DW_EXTSEAT_DISPLAY_NAMES_ENABLED", "off")
+	if ExternalDisplayNamesEnabled() {
+		t.Fatal("off switch must disable display-name projections")
+	}
+	t.Setenv("DW_EXTSEAT_DISPLAY_NAMES_ENABLED", "true")
+	if !ExternalDisplayNamesEnabled() {
+		t.Fatal("display names should be enabled when explicitly true")
+	}
+}
 
 func TestShortNameRules(t *testing.T) {
 	for _, s := range []string{"a", "mybot", "abc12345", "abcdefghijklmnopqrst", "0"} {

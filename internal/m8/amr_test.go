@@ -574,6 +574,9 @@ func TestParseAMRCandidatesUsesWholeTurnAndRejectsInvalidTokens(t *testing.T) {
 	if got := parseAMRCandidates("@na$me body", "source", 20); len(got) != 0 {
 		t.Fatalf("invalid token partially consumed: %+v", got)
 	}
+	if got := parseAMRCandidates("@张伟 body", "source", 20); len(got) != 0 {
+		t.Fatalf("Unicode display name became an AMR route: %+v", got)
+	}
 	if got := parseAMRCandidates("@source body", "source", 20); len(got) != 0 {
 		t.Fatalf("self mention routed: %+v", got)
 	}

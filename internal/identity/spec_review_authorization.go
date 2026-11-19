@@ -13,7 +13,7 @@ type SpecReviewAuthorizationStore interface {
 
 func (s *PGStore) WithOwnedAgentAuthorization(ctx context.Context, owner, id string, fn func(Agent, func() error) error) error {
 	return s.inTx(ctx, func(tx repo.Tx) error {
-		a, e := scanAgent(tx.QueryRow(ctx, `SELECT `+agentCols+` FROM np_agent WHERE id=$1 FOR SHARE`, id))
+		a, e := scanAgent(tx.QueryRow(ctx, `SELECT `+agentSelectCols()+` FROM np_agent WHERE id=$1 FOR SHARE`, id))
 		if e != nil {
 			return e
 		}

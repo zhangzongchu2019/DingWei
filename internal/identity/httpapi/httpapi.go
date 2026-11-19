@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zhangzongchu2019/dingwei/internal/extshared"
 	"github.com/zhangzongchu2019/dingwei/internal/identity"
 	"github.com/zhangzongchu2019/dingwei/internal/trustedorigin"
 )
@@ -336,6 +337,10 @@ func (a *API) listAgents(w http.ResponseWriter, r *http.Request, actor string) {
 			"session":  ag.NameLC(),
 			"agent_id": ag.ID, "name": ag.Name, "full_name": ag.Name + "." + short,
 			"origin": string(ag.Origin), "group_code": ag.GroupID, "state": string(ag.State), "online": online,
+		}
+		if ag.Origin == identity.OriginExternal && extshared.ExternalDisplayNamesEnabled() {
+			item["display_name"] = ag.DisplayName
+			item["display_label"] = extshared.ExternalDisplayLabel(ag.DisplayName, ag.Name+"."+short)
 		}
 		item["agent_type"] = string(ag.Origin)
 		if ag.Origin == identity.OriginSelfhost && len(r.Header.Values("Authorization")) == 0 {

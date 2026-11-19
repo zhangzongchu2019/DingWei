@@ -21,8 +21,14 @@
 #              🔴 实证这条糊不过去：手工把该行标回 `// indirect`，本闸立刻变绿（7 vs 7），但紧接着
 #              `go mod tidy` 会把标注改回来（改回后 go.mod 与 tidy 结果逐字相同）⇒ 只有删依赖或登记两条路。
 #   新集合＝原 7 项 ＋ golang.org/x/sys（minio-go/v7 从未入过基线：它一直是既有红，本批随死代码删除移出）
-direct_count=9
-direct_sha256=e2018c8362ef4435b4f9d74277ef9642e311d034702db0d4e313b94dd6b58ef0
+# 2026-11-19 上调 9→10（R62-EXTSEAT-NAME 复核修正；已有模块误标 indirect，未新增版本或 go.sum 项）：
+#   Violation：golang.org/x/text v0.19.0 由误标的 `// indirect` 修正为直接依赖；这是标注纠正，不新增模块。
+#   Why Needed：internal/extshared/extshared.go:18 直接使用 norm.NFC 规范化外部 Agent Unicode 显示名，确保规范等价名称一致；来源为 Go 官方扩展库仓库 golang.org/x/text（Go Authors，BSD-3-Clause）。
+#   Simpler Alternative Rejected Because：Go 标准库不提供 Unicode NFC 正规化；自维护 Unicode 规范化算法及版本数据不安全且维护成本高，跳过正规化会使等价显示名产生不一致。v0.19.0 已在原 go.mod/go.sum 中，未引入新下载版本。
+#   新集合＝原 9 项＋golang.org/x/text；direct_count=10，direct_sha256=c2639a93f89866960b3c699d4f23f244afb7a9a7e7e58bcb51e944b897304540
 
 # S-GATES-GREEN：8→9仅新增github.com/mozillazg/go-pinyin（97671b3a）；
 # 突破三栏、MIT许可证与空传递依赖清单：openspec/changes/s-gates-green/specs/release-quality-gates/spec.md §⑤。
+
+direct_count=10
+direct_sha256=c2639a93f89866960b3c699d4f23f244afb7a9a7e7e58bcb51e944b897304540

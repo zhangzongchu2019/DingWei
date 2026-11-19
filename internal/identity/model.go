@@ -139,6 +139,7 @@ type Agent struct {
 	ID             string
 	OwnerLC        string
 	Name           string
+	DisplayName    string // 外部 Agent 的展示名；不参与寻址、唯一性或 AMR
 	GroupID        string // 入网时选的编组码；PG 列名是 np_agent.group_code，对应 np_group.code
 	Origin         AgentOrigin
 	State          AgentState

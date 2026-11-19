@@ -181,9 +181,20 @@ func newFixture(t *testing.T, dsn string) *fixture {
 }
 func (f *fixture) issue(t *testing.T) (string, Seat) {
 	t.Helper()
-	raw, a, _, e := f.s.IssueToken(f.ctx, extshared.Principal{Provider: "feishu", TenantKey: "tenant", Issuer: "app", Subject: "open", DisplayName: "alice"}, "bot", "helper.ho")
+	raw, a, _, e := f.s.IssueToken(f.ctx, extshared.Principal{Provider: "feishu", TenantKey: "tenant", Issuer: "app", Subject: "open", DisplayName: "张伟"}, "bot", "helper.ho")
 	if e != nil {
 		t.Fatal(e)
+	}
+	var canonicalName, displayName string
+	row, queryErr := f.pool.QueryRow(f.ctx, f.access, `SELECT name,display_name FROM np_agent WHERE id=$1`, a.AgentID)
+	if queryErr != nil {
+		t.Fatal(queryErr)
+	}
+	if e = row.Scan(&canonicalName, &displayName); e != nil {
+		t.Fatal(e)
+	}
+	if canonicalName != a.Name || displayName != "张伟" || a.Principal.DisplayName != "张伟" {
+		t.Fatalf("EXTSEAT_UNICODE_DISPLAY_NAME_PERSISTENCE canonical=%q seat=%q display=%q principal=%q", canonicalName, a.Name, displayName, a.Principal.DisplayName)
 	}
 	return raw, a
 }
@@ -205,6 +216,35 @@ func (f *fixture) keepGroup(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+
+func TestOnlineProjectsExternalDisplayNamePG(t *testing.T) {
+	f := newFixture(t, pgtest.DSN(t))
+	_, seat := f.issue(t)
+	byAddress, err := f.s.Identity.Store.FindAgentByName(f.ctx, seat.OwnerLC, strings.ToLower(seat.Name))
+	if err != nil || byAddress.ID != seat.AgentID {
+		t.Fatalf("canonical address lookup failed: agent=%+v err=%v", byAddress, err)
+	}
+	if byDisplayName, err := f.s.Identity.Store.FindAgentByName(f.ctx, seat.OwnerLC, "张伟"); !errors.Is(err, identity.ErrNotFound) || byDisplayName != nil {
+		t.Fatalf("EXTSEAT_DISPLAY_NAME_MUST_NOT_ROUTE name resolved as address: agent=%+v err=%v", byDisplayName, err)
+	}
+	if _, err := f.pool.Exec(f.ctx, f.access, `UPDATE np_extseat SET last_seen_at=$2 WHERE agent_id=$1`, seat.AgentID, f.clock.now()); err != nil {
+		t.Fatal(err)
+	}
+	online, err := f.s.Online(f.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, agent := range online {
+		if agent.Agent.ID == seat.AgentID {
+			if agent.Agent.DisplayName != "张伟" || agent.Agent.Name != seat.Name || agent.FullName != seat.FullName {
+				t.Fatalf("EXTSEAT_DISPLAY_ONLINE_PROJECTION display=%q name=%q full=%q seat=%+v", agent.Agent.DisplayName, agent.Agent.Name, agent.FullName, seat)
+			}
+			return
+		}
+	}
+	t.Fatal("external seat missing from online directory")
+}
+
 func TestCorePG(t *testing.T) {
 	dsn := pgtest.DSN(t)
 	t.Run("RenewalPersistsAcrossRestart", func(t *testing.T) {

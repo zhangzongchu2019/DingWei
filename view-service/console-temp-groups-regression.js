@@ -20,6 +20,7 @@ const listItem = {
   code: 'AG7', seq: 7, generation: 1, owner_lc: 'u_owner',
   created_by_display: 'Owner Alpha', external_agent_id: 'ex_1',
   external_full_name: 'alice_AG7.owner', external_short_name: 'alice',
+  external_display_label: '张伟 · alice_AG7.owner',
   target_agent_id: 'agent_1', target_full_name: 'Helper.owner', target_online: true,
   created_at: '2026-11-06T00:00:00Z', last_used_at: '2026-11-06T01:02:03Z',
   expires_at: '2099-11-09T01:02:03Z', dissolved_at: '', dissolve_reason: '', can_dissolve: true,
@@ -27,7 +28,7 @@ const listItem = {
 const detail = {
   ...listItem,
   members: [
-    {agent_id: 'ex_1', role: 'external', full_name: 'alice_AG7.owner', online: true, created_at: '2026-11-06T00:00:00Z'},
+    {agent_id: 'ex_1', role: 'external', full_name: 'alice_AG7.owner', display_name: '<img src=x onerror="window.__displayNameXss=1">', display_label: '<img src=x onerror="window.__displayNameXss=1"> · alice_AG7.owner', online: true, created_at: '2026-11-06T00:00:00Z'},
     {agent_id: 'agent_1', role: 'internal', full_name: 'Helper.owner', online: true, created_at: '2026-11-06T00:00:00Z'},
   ],
   last_use: {kind: 'accepted_send', at: '2026-11-06T01:02:03Z'},
@@ -113,7 +114,7 @@ const server = http.createServer(async (req, res) => {
     await page.waitForFunction(() => !document.getElementById('tempGroups').hidden && document.querySelectorAll('#tempGroupsList .temp-group-item').length === 1);
     assert.strictEqual(listReads, readsBeforeCadence + 1, 'existing refreshAgents cadence must refresh temp AG exactly once');
     const sidebarText = await page.locator('#tempGroups').innerText();
-    for (const expected of ['与我相关的临时编组', 'AG7', 'alice_AG7.owner', '剩余', '有效']) {
+    for (const expected of ['与我相关的临时编组', 'AG7', '张伟 · alice_AG7.owner', '剩余', '有效']) {
       assert(sidebarText.includes(expected), `sidebar missing ${expected}: ${sidebarText}`);
     }
 
@@ -128,6 +129,11 @@ const server = http.createServer(async (req, res) => {
     assert.strictEqual(await page.locator('#tempGroupCreatedAt').getAttribute('datetime'), detail.created_at);
     assert.strictEqual(await page.locator('#tempGroupLastUsedAt').getAttribute('datetime'), detail.last_used_at);
     assert.strictEqual(await page.locator('#tempGroupExpiresAt').getAttribute('datetime'), detail.expires_at);
+    const externalMember = page.locator('#tempGroupMembers .temp-group-member').first();
+    assert((await externalMember.textContent()).includes('<img src=x onerror="window.__displayNameXss=1"> · alice_AG7.owner'), 'external display name and canonical address render as text');
+    assert.strictEqual(await externalMember.locator('img').count(), 0, 'external display name must not create markup');
+    assert.strictEqual(await page.evaluate(() => window.__displayNameXss || 0), 0, 'external display name must not execute');
+    assert((await page.locator('#tempGroupDetailTitle').textContent()).includes('张伟 · alice_AG7.owner'), 'safe Unicode display label is visible with canonical address');
 
     await page.evaluate(() => { window.confirm = () => false; });
     await page.locator('#tempGroupDissolve').click();

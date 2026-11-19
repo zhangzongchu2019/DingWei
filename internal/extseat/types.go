@@ -17,6 +17,7 @@ type Seat struct {
 	proof, ownerShort                    string
 	tokenGeneration                      int64
 	ID, AgentID, Name, FullName, OwnerLC string
+	DisplayName                          string
 	Principal                            extshared.Principal
 	Group                                extshared.AGCode
 	Generation                           int64
