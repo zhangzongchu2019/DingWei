@@ -182,3 +182,5 @@ sha256sum -c docs/reviews/mcp-auth-first/SHA256SUMS
 VERIFY只读Git对象、当前产品与证据；核11个产品／测试路径、228份原始件及gzip解压后的原文SHA、最终十二刀与还原基线、精确旧源负对照、canonical与strict原rc、三遍原rc1及新五轮既定Z3判据。RAW-INDEX保留中间资格失败／停止尝试，不把它们拼作最终门。INITIAL-VERIFY仅是05:10令先推阶段的旧入口，不据它判最终门。
 
 最终原始件：evidence/canonical-anchor.log.gz、go-count3-anchor.log.gz、z3-anchor-round-1到5.log.gz、z3-baseline-count20.log.gz、mutations-anchor/summary.json；每件command/result含UTC和固定源，实际PG版本在anchor-pg-runtime.json。35个唯一SKIP见SKIPS.md，全部105次原始出现见SKIPS.json。
+
+最终交接证据坐标：`e5754c6e91a1cc4a3ae48883a5e8eb90034e4ca7:docs/reviews/mcp-auth-first/gate-summary.json`，另可`git cat-file -p e5754c6e91a1cc4a3ae48883a5e8eb90034e4ca7:docs/reviews/mcp-auth-first/evidence/z3-anchor-summary.json`读取五轮。当前补记只改docs／openspec，产品仍ce9，独立复核与发布路线由qwen／组长另定。
