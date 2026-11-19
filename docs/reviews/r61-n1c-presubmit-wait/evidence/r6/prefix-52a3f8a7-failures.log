@@ -1,0 +1,52 @@
+[driver-adapter] started, driver=codex
+/tmp/r6-before-r6/tools/sessionhelper/sessionhelper/codexDriver.py:1105: ResourceWarning: unclosed file <_io.TextIOWrapper name=4 encoding='utf-8'>
+  self._rpc.stop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/r6-before-r6/tools/sessionhelper/sessionhelper/codexDriver.py:1105: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='utf-8'>
+  self._rpc.stop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/r6-before-r6/tools/sessionhelper/sessionhelper/codexDriver.py:1105: ResourceWarning: unclosed file <_io.TextIOWrapper name=7 encoding='utf-8'>
+  self._rpc.stop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: RuntimeError: codex app-server daemon start failed; install standalone Codex or use transport_mode='direct': /tmp/lockvenv/bin/python3: can't open file '/tmp/r6-pre-serial/52/tmp/tmpb67h1xn2/app-server': [Errno 2] No such file or directory
+F
+======================================================================
+FAIL: test_handle_delivery_turn_auth_failure (tests.test_driver_failure_faces.HubDeliveryPathTest.test_handle_delivery_turn_auth_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r6-before-r6/tools/sessionhelper/tests/test_driver_failure_faces.py", line 260, in test_handle_delivery_turn_auth_failure
+    self.assertEqual(state, "failed")
+AssertionError: '' != 'failed'
++ failed
+
+
+----------------------------------------------------------------------
+Ran 1 test in 15.083s
+
+FAILED (failures=1)
+[driver-adapter] started, driver=codex
+/tmp/r6-before-r6/tools/sessionhelper/sessionhelper/codexDriver.py:1105: ResourceWarning: unclosed file <_io.TextIOWrapper name=4 encoding='utf-8'>
+  self._rpc.stop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/r6-before-r6/tools/sessionhelper/sessionhelper/codexDriver.py:1105: ResourceWarning: unclosed file <_io.TextIOWrapper name=5 encoding='utf-8'>
+  self._rpc.stop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/r6-before-r6/tools/sessionhelper/sessionhelper/codexDriver.py:1105: ResourceWarning: unclosed file <_io.TextIOWrapper name=7 encoding='utf-8'>
+  self._rpc.stop()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+[delivery][ALERT] CLI recovery required; FIFO dispatch quarantined: RuntimeError: codex app-server daemon start failed; install standalone Codex or use transport_mode='direct': /tmp/lockvenv/bin/python3: can't open file '/tmp/r6-pre-serial/52/tmp/tmpv11zx4jc/app-server': [Errno 2] No such file or directory
+F
+======================================================================
+FAIL: test_handle_delivery_turn_auth_failure (tests.test_driver_failure_faces.HubDeliveryPathTest.test_handle_delivery_turn_auth_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/r6-before-r6/tools/sessionhelper/tests/test_driver_failure_faces.py", line 260, in test_handle_delivery_turn_auth_failure
+    self.assertEqual(state, "failed")
+AssertionError: '' != 'failed'
++ failed
+
+
+----------------------------------------------------------------------
+Ran 1 test in 15.069s
+
+FAILED (failures=1)

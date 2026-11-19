@@ -1,0 +1,10 @@
+test_handle_delivery_initialize_auth_rejection_is_terminal (tests.test_driver_failure_faces.HubDeliveryPathTest.test_handle_delivery_initialize_auth_rejection_is_terminal)
+A known initialize denial must settle failed, not quarantine the FIFO. ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-bd8b8c0c0ec440e5990198298617430a -> failed (session_unavailable: error_class=authentication; method=init)
+[delivery] failed id=dw-view-bd8b8c0c0ec440e5990198298617430a source=protocol (session_unavailable: error_class=authentication; method=init)
+ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.125s
+
+OK

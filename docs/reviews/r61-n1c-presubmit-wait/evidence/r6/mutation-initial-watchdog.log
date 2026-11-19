@@ -1,0 +1,19 @@
+test_handle_delivery_initialize_auth_rejection_is_terminal (tests.test_driver_failure_faces.HubDeliveryPathTest.test_handle_delivery_initialize_auth_rejection_is_terminal)
+A known initialize denial must settle failed, not quarantine the FIFO. ... [driver-adapter] started, driver=codex
+[driver-adapter] deliver id=dw-view-7f130ef786a94a978422b09e84f835dd -> failed (session_unavailable: error_class=authentication; method=init)
+[delivery] failed id=dw-view-7f130ef786a94a978422b09e84f835dd source=protocol (session_unavailable: error_class=authentication; method=init)
+FAIL
+
+======================================================================
+FAIL: test_handle_delivery_initialize_auth_rejection_is_terminal (tests.test_driver_failure_faces.HubDeliveryPathTest.test_handle_delivery_initialize_auth_rejection_is_terminal)
+A known initialize denial must settle failed, not quarantine the FIFO.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/dev/tmp/r61-n1c-presubmit-wait/tools/sessionhelper/tests/test_driver_failure_faces.py", line 325, in test_handle_delivery_initialize_auth_rejection_is_terminal
+    self.assertFalse(preempted_initial_start, "initial startup must not be preempted by the recovery watchdog")
+AssertionError: True is not false : initial startup must not be preempted by the recovery watchdog
+
+----------------------------------------------------------------------
+Ran 1 test in 0.115s
+
+FAILED (failures=1)
