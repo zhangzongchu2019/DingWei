@@ -128,6 +128,14 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 		Helpers: m8.HubHelperPresence{Hub: d.hub}, Groups: groups, TenantKey: cfg.tenantKey, Resource: cfg.resource,
 		OnBackgroundError:        func(error) { log.Print("r53: external seat background operation failed") },
 		OnFeishuCopyEnqueueError: func(error) { log.Print("r53: Feishu copy enqueue failed") }}
+	allowReauthentication := cfg.externalGroups
+	if !allowReauthentication {
+		var err error
+		allowReauthentication, err = seats.HasRoutingSeats(ctx)
+		if err != nil {
+			return err
+		}
+	}
 	var copyQueue *extseat.PGFeishuCopyQueue
 	if !cfg.copyDisabled && d.feishuGateway != nil && d.hub.Repo != nil {
 		copyQueue = &extseat.PGFeishuCopyQueue{Pool: d.pool, Access: repo.SystemCtx()}
@@ -149,7 +157,7 @@ func wireR53(ctx context.Context, cfg r53Config, checker extwire.TableChecker, g
 			return mcpgw.Config{}, err
 		}
 		defaults.Identity, defaults.Pool, defaults.Access = d.hub.Identity, d.pool, repo.SystemCtx()
-		login, err := feishulogin.NewHandler(feishulogin.Config{AllowUnpaired: cfg.externalGroups, AppID: d.appID, TeamTenantKey: cfg.tenantKey, RedirectURI: redirect,
+		login, err := feishulogin.NewHandler(feishulogin.Config{AllowReauthentication: allowReauthentication, AllowUnpaired: cfg.externalGroups, AppID: d.appID, TeamTenantKey: cfg.tenantKey, RedirectURI: redirect,
 			Defaults: defaults, OAuth: oauth, States: mcpgw.LoginStates{Store: store}, Tokens: extwire.Issuer{Seats: seats, Resource: cfg.resource}})
 		if err != nil {
 			return mcpgw.Config{}, err

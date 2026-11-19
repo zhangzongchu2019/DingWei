@@ -96,7 +96,7 @@ func (s *Service) routedInbox(ctx context.Context, a Seat, operation, id string,
 					return extshared.ErrNotPermitted
 				}
 				if item.state == "received" {
-					return nil
+					return s.seen(ctx, tx, fresh, now)
 				}
 				if item.state != "leased" {
 					return extshared.ErrNotPermitted
@@ -138,6 +138,9 @@ func (s *Service) routedInbox(ctx context.Context, a Seat, operation, id string,
 			}
 			if operation == "ack" {
 				if e = s.touchGrant(ctx, tx, grant, item.d.ID+":received", extshared.UseFirstReceivedAck); e != nil {
+					return e
+				}
+				if e = s.seen(ctx, tx, fresh, now); e != nil {
 					return e
 				}
 			}
@@ -188,7 +191,7 @@ func (s *Service) routedOnline(ctx context.Context, a Seat) ([]OnlineAgent, erro
 				result = append(result, OnlineAgent{Agent: g.Target, FullName: g.TargetName, External: true, LastSeenAt: seen.Time})
 			}
 		}
-		return nil
+		return s.seen(ctx, tx, fresh, s.now())
 	})
 	return result, err
 }

@@ -193,7 +193,7 @@ func (s *Service) issueToken(ctx context.Context, p extshared.Principal, short, 
 			if _, e = tx.Exec(ctx, `INSERT INTO np_agent(id,owner_lc,name,name_lc,group_code,origin,state,created_at) VALUES($1,$2,$3,$4,$5,'external','active',$6)`, seat.AgentID, owner, name, strings.ToLower(name), string(g.Code), now); e != nil {
 				return e
 			}
-			if _, e = tx.Exec(ctx, `INSERT INTO np_extseat(agent_id,principal_id,short_name,ag_code,ag_generation,created_at) VALUES($1,$2,$3,$4,$5,$6)`, seat.AgentID, ph, short, optionalAG(g.Code), optionalGeneration(g.Generation), now); e != nil {
+			if _, e = tx.Exec(ctx, `INSERT INTO np_extseat(agent_id,principal_id,short_name,ag_code,ag_generation,created_at,routing_enabled) VALUES($1,$2,$3,$4,$5,$6,$7)`, seat.AgentID, ph, short, optionalAG(g.Code), optionalGeneration(g.Generation), now, s.ExternalGroups || unpaired); e != nil {
 				return e
 			}
 			_, e = tx.Exec(ctx, `INSERT INTO np_extseat_token(id,token_hash,seat_id,auth_generation,created_at,last_auth_at,expires_at,audience,scopes) VALUES($1,$2,$3,1,$4,$4,$5,$6,$7)`, tid, identity.HashSecret(raw), seat.AgentID, now, seat.ExpiresAt, s.Resource, extshared.ScopeString())
@@ -231,7 +231,7 @@ func (s *Service) load(ctx context.Context, tx repo.Tx, tokenID, proof string, n
 	var tr, sr sql.NullTime
 	var last time.Time
 	var seen sql.NullTime
-	e := tx.QueryRow(ctx, `SELECT t.id,t.token_hash,t.expires_at,t.last_auth_at,s.last_seen_at,t.revoked_at,s.revoked_at,s.agent_id,s.auth_generation,t.auth_generation,COALESCE(s.ag_code,''),COALESCE(s.ag_generation,0),a.name,a.owner_lc,a.state,u.short_name,u.state,p.provider,p.tenant_key,p.issuer,p.subject,p.union_id,p.display_name,t.audience,t.scopes FROM np_extseat_token t JOIN np_extseat s ON s.agent_id=t.seat_id JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc JOIN np_external_principal p ON p.id=s.principal_id WHERE t.id=$1`+lock, tokenID).Scan(&a.TokenID, &hash, &a.ExpiresAt, &last, &seen, &tr, &sr, &a.AgentID, &a.AuthGeneration, &a.tokenGeneration, &a.Group, &a.Generation, &a.Name, &a.OwnerLC, &astate, &a.ownerShort, &ustate, &a.Principal.Provider, &a.Principal.TenantKey, &a.Principal.Issuer, &a.Principal.Subject, &a.Principal.UnionID, &a.Principal.DisplayName, &audience, &scopes)
+	e := tx.QueryRow(ctx, `SELECT t.id,t.token_hash,t.expires_at,t.last_auth_at,s.last_seen_at,t.revoked_at,s.revoked_at,s.agent_id,s.auth_generation,t.auth_generation,COALESCE(s.ag_code,''),COALESCE(s.ag_generation,0),s.routing_enabled,a.name,a.owner_lc,a.state,u.short_name,u.state,p.provider,p.tenant_key,p.issuer,p.subject,p.union_id,p.display_name,t.audience,t.scopes FROM np_extseat_token t JOIN np_extseat s ON s.agent_id=t.seat_id JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc JOIN np_external_principal p ON p.id=s.principal_id WHERE t.id=$1`+lock, tokenID).Scan(&a.TokenID, &hash, &a.ExpiresAt, &last, &seen, &tr, &sr, &a.AgentID, &a.AuthGeneration, &a.tokenGeneration, &a.Group, &a.Generation, &a.routingIdentity, &a.Name, &a.OwnerLC, &astate, &a.ownerShort, &ustate, &a.Principal.Provider, &a.Principal.TenantKey, &a.Principal.Issuer, &a.Principal.Subject, &a.Principal.UnionID, &a.Principal.DisplayName, &audience, &scopes)
 	if errors.Is(e, sql.ErrNoRows) {
 		return a, extshared.ErrUnauthenticated
 	}
@@ -278,6 +278,9 @@ func (s *Service) authTx(ctx context.Context, tx repo.Tx, a Seat, now time.Time)
 	if e != nil {
 		return fresh, g, e
 	}
+	if e = s.checkLegacyGrant(ctx, tx, fresh, g, false); e != nil {
+		return fresh, g, e
+	}
 	fresh.checkedAt, e = s.current(fresh, g)
 	return fresh, g, e
 }
@@ -298,7 +301,7 @@ func (s *Service) Authenticate(ctx context.Context, bearer string) (Seat, error)
 		if e != nil {
 			return e
 		}
-		if a.Group != "" && !upgraded {
+		if a.Group != "" && !upgraded && !a.routingIdentity {
 			g, err := s.Groups.RecheckGroup(ctx, tx, a, a.checkedAt)
 			if err != nil {
 				return err

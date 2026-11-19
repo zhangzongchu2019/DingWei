@@ -56,3 +56,14 @@ func TestSnapshotCanonicalDigest(t *testing.T) {
 		t.Fatal("AA003_ALIAS_CONFLICT")
 	}
 }
+
+func TestUnpairedExternalAddressDoesNotCreateSubagentAuthority(t *testing.T) {
+	full := "bot_EX0123456789abcdef0123456789abcdef.owner"
+	r, e := Parse(full, "owner")
+	if e != nil || r.FullName() != strings.ToLower(full) {
+		t.Fatalf("unpaired stable address rejected: %v", e)
+	}
+	if _, e = Parse("child."+full, "owner"); e == nil {
+		t.Fatal("external identity obtained internal subagent namespace")
+	}
+}

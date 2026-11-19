@@ -1,3 +1,4 @@
+ALTER TABLE np_extseat ADD COLUMN routing_enabled boolean NOT NULL DEFAULT false;
 -- 切片三；0112 由显示名切片占用。原 AG 地址、期限与成员不转换。
 ALTER TABLE np_extseat ALTER COLUMN ag_code DROP NOT NULL;
 ALTER TABLE np_extseat ALTER COLUMN ag_generation DROP NOT NULL;

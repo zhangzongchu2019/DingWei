@@ -336,3 +336,22 @@ func (s *Service) currentGrant(g identity.CommunicationGrant) error {
 	}
 	return nil
 }
+
+// 带普通组能力的身份，即使使用旧 AG-only 协议，也不能绕过共同权限前置检查。
+func (s *Service) checkLegacyGrant(ctx context.Context, tx repo.Tx, a Seat, g Group, readOnly bool) error {
+	upgraded, err := s.hasOrdinaryTx(ctx, tx, a.AgentID)
+	if err != nil {
+		return err
+	}
+	if !upgraded && !a.routingIdentity && !s.ExternalGroups {
+		return nil
+	}
+	grant, err := identity.AuthorizeCommunicationTx(ctx, tx, a.AgentID, g.Target.ID, extshared.Routing{Mode: "group", Kind: "temporary", Ref: string(g.Code)}, s.TenantKey, s.now(), readOnly)
+	if err == nil && grant.Generation != g.Generation {
+		return extshared.ErrNotPermitted
+	}
+	if err != nil {
+		return err
+	}
+	return s.currentGrant(grant)
+}

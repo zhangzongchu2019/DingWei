@@ -41,7 +41,7 @@ func (s *Service) ProjectOne(ctx context.Context, p Projector) (bool, error) {
 		}
 		a.ID = seatID
 		a.AgentID = seatID
-		err := tx.QueryRow(ctx, `SELECT a.id,a.owner_lc,a.name,a.origin,a.state,u.display_name,u.short_name FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE s.agent_id=$1 AND s.revoked_at IS NULL AND a.origin='external' AND a.state='active' AND u.state='active' FOR UPDATE OF s,a,u`, seatID).Scan(&d.SourceAgent.ID, &d.SourceAgent.OwnerLC, &d.SourceAgent.Name, &d.SourceAgent.Origin, &d.SourceAgent.State, &d.SourceOwnerDisplayName, &d.SourceOwnerShortName)
+		err := tx.QueryRow(ctx, `SELECT a.id,a.owner_lc,a.name,a.origin,a.state,u.display_name,u.short_name FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc JOIN np_external_principal p ON p.id=s.principal_id WHERE s.agent_id=$1 AND p.tenant_key=$2 AND s.revoked_at IS NULL AND a.origin='external' AND a.state='active' AND u.state='active' FOR UPDATE OF s,a,u`, seatID, s.TenantKey).Scan(&d.SourceAgent.ID, &d.SourceAgent.OwnerLC, &d.SourceAgent.Name, &d.SourceAgent.Origin, &d.SourceAgent.State, &d.SourceOwnerDisplayName, &d.SourceOwnerShortName)
 		if errors.Is(err, sql.ErrNoRows) {
 			return dead("seat_revoked")
 		}
@@ -76,6 +76,12 @@ func (s *Service) ProjectOne(ctx context.Context, p Projector) (bool, error) {
 		g, e := s.Groups.RecheckGroup(ctx, tx, a, now)
 		if e != nil {
 			if errors.Is(e, extshared.ErrGroupDissolved) || errors.Is(e, extshared.ErrTargetNotInAG) {
+				return dead("group_unavailable")
+			}
+			return e
+		}
+		if e = s.checkLegacyGrant(ctx, tx, a, g, false); e != nil {
+			if errors.Is(e, extshared.ErrNotPermitted) || errors.Is(e, extshared.ErrGroupDissolved) {
 				return dead("group_unavailable")
 			}
 			return e

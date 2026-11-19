@@ -69,7 +69,11 @@ func (h *Handler) validTargets(ctx context.Context) []string {
 	return out
 }
 func (h *Handler) prepareSelection(ctx context.Context, a LoginAttempt, targets []string) (CallbackResult, error) {
-	if len(targets) == 0 && !h.allowUnpaired {
+	existing, e := h.existingSeats(ctx, a.Request.Principal)
+	if e != nil {
+		return CallbackResult{}, ErrInvalidStart
+	}
+	if len(targets) == 0 && !h.allowUnpaired && len(existing) == 0 {
 		return CallbackResult{}, ErrInvalidStart
 	}
 	recent, err := "", error(nil)
@@ -98,7 +102,7 @@ func (h *Handler) prepareSelection(ctx context.Context, a LoginAttempt, targets 
 	if err = h.states.Create(ctx, a); err != nil {
 		return CallbackResult{}, err
 	}
-	return CallbackResult{AllowUnpaired: h.allowUnpaired, AttemptID: a.Request.AttemptID, Selection: token, Targets: targets, Preferred: preferred}, nil
+	return CallbackResult{ExistingSeats: existing, AllowUnpaired: h.allowUnpaired, AttemptID: a.Request.AttemptID, Selection: token, Targets: targets, Preferred: preferred}, nil
 }
 func (h *Handler) selectTarget(ctx context.Context, req CallbackRequest) (CallbackResult, error) {
 	a, err := h.states.Consume(ctx, hashState(req.Selection), h.now())
@@ -108,13 +112,29 @@ func (h *Handler) selectTarget(ctx context.Context, req CallbackRequest) (Callba
 	if req.AttemptID != "" && a.Request.AttemptID != req.AttemptID {
 		return CallbackResult{}, callbackFailure(FailureAuthorizationUsed, TargetCategoryUnverified, req.AttemptID, ErrInvalidState)
 	}
-	if a.Purpose != StatePurposeSelection || a.AppID != h.appID || a.RedirectURI != h.redirectURI || !a.Request.Automatic || a.Request.Principal.TenantKey != h.teamTenantKey || a.Request.Principal.Subject == "" || !extshared.ValidShortName(a.Request.ShortName) || !(h.allowedTarget(ctx, req.Target) || (h.allowUnpaired && req.Target == "__no_pair__")) {
+	if a.Purpose != StatePurposeSelection || a.AppID != h.appID || a.RedirectURI != h.redirectURI || !a.Request.Automatic || a.Request.Principal.TenantKey != h.teamTenantKey || a.Request.Principal.Subject == "" || !extshared.ValidShortName(a.Request.ShortName) || !(h.allowedTarget(ctx, req.Target) || (h.allowUnpaired && req.Target == "__no_pair__") || (h.allowReauthentication && strings.HasPrefix(req.Target, "__seat__") && len(req.Target) > 8 && len(req.Target) <= 136)) {
 		return CallbackResult{}, ErrInvalidStart
 	}
 	a.Request.TargetAgent = req.Target
+	if strings.HasPrefix(req.Target, "__seat__") {
+		a.Request.TargetAgent = ""
+		a.Request.ExistingSeatID = strings.TrimPrefix(req.Target, "__seat__")
+	}
 	if req.Target == "__no_pair__" {
 		a.Request.TargetAgent = ""
 		a.Request.WithoutPair = true
 	}
 	return h.issue(ctx, a)
+}
+
+func (h *Handler) existingSeats(ctx context.Context, p extshared.Principal) ([]extshared.SeatChoice, error) {
+	if !h.allowReauthentication {
+		return nil, nil
+	}
+	if provider, ok := h.tokens.(interface {
+		ExistingSeats(context.Context, extshared.Principal) ([]extshared.SeatChoice, error)
+	}); ok {
+		return provider.ExistingSeats(ctx, p)
+	}
+	return nil, nil
 }

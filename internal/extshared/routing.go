@@ -43,3 +43,9 @@ func (SameTenantAdmission) Check(ctx context.Context, p Principal, team string) 
 	}
 	return nil
 }
+
+// SeatChoice 仅由已验证主体的服务端查询产生，不包含凭据。
+type SeatChoice struct {
+	ID       string
+	FullName string
+}

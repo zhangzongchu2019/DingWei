@@ -82,7 +82,7 @@ func AuthorizeCommunicationTx(ctx context.Context, tx repo.Tx, sourceID, targetI
 			return out, err
 		}
 	}
-	if choice.Mode == "direct" || choice.Kind == "ordinary" {
+	{
 		rows, err = tx.Query(ctx, `SELECT g.code,g.leader_only,g.leader_agent_id FROM np_group g JOIN np_group_member s ON s.code=g.code AND s.agent_id=$1 JOIN np_group_member t ON t.code=g.code AND t.agent_id=$2 WHERE NOT EXISTS(SELECT 1 FROM np_temp_group ag WHERE ag.code=g.code) ORDER BY g.code`+groupLock, sourceID, targetID)
 		if err != nil {
 			return out, err
@@ -112,11 +112,11 @@ func AuthorizeCommunicationTx(ctx context.Context, tx repo.Tx, sourceID, targetI
 		if blocked {
 			return out, deny
 		}
-		if selected != "" {
+		if selected != "" && (choice.Mode == "direct" || choice.Kind == "ordinary") {
 			out.Kind, out.Ref, out.Generation = "ordinary", selected, 1
 			return out, nil
 		}
-		if choice.Mode == "group" {
+		if choice.Mode == "group" && choice.Kind == "ordinary" {
 			return out, deny
 		}
 	}
@@ -178,6 +178,9 @@ func (s *PGStore) JoinExternalGroup(ctx context.Context, code, agentID, actor, t
 		if err != nil {
 			return err
 		}
+		if _, err = tx.Exec(ctx, `UPDATE np_extseat SET routing_enabled=true WHERE agent_id=$1`, agentID); err != nil {
+			return err
+		}
 		res, err := tx.Exec(ctx, `INSERT INTO np_group_member(code,agent_id,created_at) VALUES($1,$2,$3) ON CONFLICT DO NOTHING`, code, agentID, at)
 		if err != nil {
 			return err
@@ -228,6 +231,9 @@ func (s *PGStore) CreateExternalOwnedGroup(ctx context.Context, g Group, tenant 
 			return ErrGroupNameTaken
 		}
 		if e != nil {
+			return e
+		}
+		if _, e = tx.Exec(ctx, `UPDATE np_extseat SET routing_enabled=true WHERE agent_id=$1`, g.LeaderAgentID); e != nil {
 			return e
 		}
 		_, e = tx.Exec(ctx, `INSERT INTO np_group_member(code,agent_id,created_at) VALUES($1,$2,$3)`, g.Code, g.LeaderAgentID, g.CreatedAt)

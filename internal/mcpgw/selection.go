@@ -6,10 +6,10 @@ import (
 	"net/http"
 )
 
-var selectionPage = template.Must(template.New("selection").Parse(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>选择协作目标</title><h1>选择协作目标</h1><form method="post" action="/mcp/oauth/feishu/callback"><input type="hidden" name="selection" value="{{.Selection}}">{{range .Targets}}<label><input type="radio" name="target_agent" required value="{{.}}" {{if eq . $.Preferred}}checked{{end}}>{{.}}</label><br>{{end}}{{if .AllowUnpaired}}<label><input type="radio" name="target_agent" required value="__no_pair__">不创建临时配对（加入普通编组前不可通信）</label>{{end}}<button type="submit">同意并接入</button></form></html>`))
+var selectionPage = template.Must(template.New("selection").Parse(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>选择协作目标</title><h1>选择协作目标</h1><form method="post" action="/mcp/oauth/feishu/callback"><input type="hidden" name="selection" value="{{.Selection}}">{{range .ExistingSeats}}<label><input type="radio" name="target_agent" required value="__seat__{{.ID}}">恢复原席位 {{.FullName}}（保留编组与配对期限）</label><br>{{end}}{{range .Targets}}<label><input type="radio" name="target_agent" required value="{{.}}" {{if eq . $.Preferred}}checked{{end}}>{{.}}</label><br>{{end}}{{if .AllowUnpaired}}<label><input type="radio" name="target_agent" required value="__no_pair__">不创建临时配对（加入普通编组前不可通信）</label>{{end}}<button type="submit">同意并接入</button></form></html>`))
 
 func (g *Gateway) renderSelection(w http.ResponseWriter, r *http.Request, issued feishulogin.CallbackResult, attempt string, a authorization) {
-	if issued.AttemptID != attempt || (len(issued.Targets) == 0 && !issued.AllowUnpaired) {
+	if issued.AttemptID != attempt || (len(issued.Targets) == 0 && !issued.AllowUnpaired && len(issued.ExistingSeats) == 0) {
 		oauthError(w, 400, "access_denied")
 		return
 	}

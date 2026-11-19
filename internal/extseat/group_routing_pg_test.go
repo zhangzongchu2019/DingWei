@@ -368,3 +368,80 @@ func TestExternalGroupsOwnGroupDoesNotAuthorizeDifferentTargetPG(t *testing.T) {
 		t.Fatalf("own group authorized a nonmember target: %v", e)
 	}
 }
+
+func TestExternalGroupsExpiredTokenReauthPreservesIdentityAndPairDeadlinePG(t *testing.T) {
+	f := ordinaryFixture(t)
+	old, a := f.issue(t)
+	f.ordinary(t, "retained", "helper", a.AgentID)
+	var expiry time.Time
+	row, _ := f.pool.QueryRow(f.ctx, f.access, `SELECT expires_at FROM np_temp_group WHERE code=$1`, string(a.Group))
+	if e := row.Scan(&expiry); e != nil {
+		t.Fatal(e)
+	}
+	f.clock.add(extshared.TokenTTL)
+	if _, e := f.s.Authenticate(f.ctx, old); !errors.Is(e, extshared.ErrTokenExpired) {
+		t.Fatalf("expired original token accepted: %v", e)
+	}
+	f.s.ExternalGroups = false // 回退只停新开户，不停既有身份的飞书重新验证。
+	raw, b, group, e := f.s.Reauthenticate(f.ctx, a.Principal, a.AgentID)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if b.AgentID != a.AgentID || b.FullName != a.FullName || group != string(a.Group) || raw == old {
+		t.Fatal("reauthentication replaced stable identity, address, pair or bearer")
+	}
+	if _, e = f.s.Authenticate(f.ctx, raw); e != nil {
+		t.Fatalf("identity recovery still depends on expired AG: %v", e)
+	}
+	var after time.Time
+	row, _ = f.pool.QueryRow(f.ctx, f.access, `SELECT expires_at FROM np_temp_group WHERE code=$1`, string(a.Group))
+	if e = row.Scan(&after); e != nil || !after.Equal(expiry) {
+		t.Fatalf("reauthentication renewed expired pair: %v", e)
+	}
+	if _, e = f.s.Send(directContext(), b, "helper.ho", "membership survived", "reauth"); e != nil {
+		t.Fatalf("reauthentication lost ordinary membership: %v", e)
+	}
+	other := a.Principal
+	other.Subject = "not-the-original-subject"
+	if _, _, _, e = f.s.Reauthenticate(f.ctx, other, a.AgentID); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatalf("another verified subject recovered this seat: %v", e)
+	}
+	choices, e := f.s.ExistingSeats(f.ctx, other)
+	if e != nil || len(choices) != 0 {
+		t.Fatalf("existing-seat picker leaked another identity: %v %v", choices, e)
+	}
+	if e = f.s.Revoke(f.ctx, a.AgentID); e != nil {
+		t.Fatal(e)
+	}
+	if _, _, _, e = f.s.Reauthenticate(f.ctx, a.Principal, a.AgentID); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatalf("reauthentication revived a revoked identity: %v", e)
+	}
+}
+
+func TestExternalGroupsLegacyAndDirectShareLeaderOnlyGuardPG(t *testing.T) {
+	f := ordinaryFixture(t)
+	_, a := f.issue(t)
+	// 先按原 AG 受理，之后共同前置权限发生变化。
+	if _, e := f.s.Send(f.ctx, a, "helper.ho", "pending legacy", "legacy"); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := f.pool.Exec(f.ctx, f.access, `INSERT INTO np_agent(id,owner_lc,name,name_lc,origin,state,created_at) VALUES('third','helperowner','third','third','selfhost','active',$1)`, f.clock.now()); e != nil {
+		t.Fatal(e)
+	}
+	f.ordinary(t, "restricted", a.AgentID, "helper", "third")
+	if _, e := f.pool.Exec(f.ctx, f.access, `UPDATE np_group SET leader_only=true,leader_agent_id='third' WHERE code='restricted'`); e != nil {
+		t.Fatal(e)
+	}
+	for _, ctx := range []context.Context{f.ctx, directContext()} {
+		if _, e := f.s.Send(ctx, a, "helper.ho", "bypass", "blocked"); !errors.Is(e, extshared.ErrNotPermitted) {
+			t.Fatalf("legacy/direct policy disagreed: %v", e)
+		}
+	}
+	if _, e := f.s.EnqueueFromHelper(f.ctx, "helper", a.AgentID, "incoming", "bypass"); !errors.Is(e, extshared.ErrNotPermitted) {
+		t.Fatalf("helper route bypassed common policy: %v", e)
+	}
+	p := &recordingProjector{}
+	if did, e := f.s.ProjectOne(f.ctx, p); e != nil || !did || len(p.ids) != 0 {
+		t.Fatalf("projection bypassed common guard: %v %v %v", did, e, p.ids)
+	}
+}

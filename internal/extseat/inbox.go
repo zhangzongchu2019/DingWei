@@ -130,7 +130,7 @@ func (s *Service) EnqueueFromHelper(ctx context.Context, sourceAgentID, targetAg
 	e := s.tx(ctx, func(tx repo.Tx) error {
 		var a Seat
 		var revoked sql.NullTime
-		e := tx.QueryRow(ctx, `SELECT s.agent_id,s.ag_code,s.ag_generation,s.revoked_at,a.owner_lc,a.name,u.short_name,p.issuer,p.subject,p.display_name FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc JOIN np_external_principal p ON p.id=s.principal_id WHERE s.agent_id=$1 AND a.state='active' AND u.state='active' FOR UPDATE OF s,a,u`, targetAgentID).Scan(&a.AgentID, &a.Group, &a.Generation, &revoked, &a.OwnerLC, &a.Name, &a.ownerShort, &a.Principal.Issuer, &a.Principal.Subject, &a.Principal.DisplayName)
+		e := tx.QueryRow(ctx, `SELECT s.agent_id,s.ag_code,s.ag_generation,s.revoked_at,a.owner_lc,a.name,u.short_name,p.issuer,p.subject,p.display_name FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc JOIN np_external_principal p ON p.id=s.principal_id WHERE s.agent_id=$1 AND p.tenant_key=$2 AND a.state='active' AND u.state='active' FOR UPDATE OF s,a,u`, targetAgentID, s.TenantKey).Scan(&a.AgentID, &a.Group, &a.Generation, &revoked, &a.OwnerLC, &a.Name, &a.ownerShort, &a.Principal.Issuer, &a.Principal.Subject, &a.Principal.DisplayName)
 		if errors.Is(e, sql.ErrNoRows) || revoked.Valid {
 			return extshared.ErrTargetNotInAG
 		}
@@ -447,7 +447,7 @@ func (s *Service) Online(ctx context.Context) ([]OnlineAgent, error) {
 	var out []OnlineAgent
 	now := s.now()
 	e := s.tx(ctx, func(tx repo.Tx) error {
-		rows, e := tx.Query(ctx, `SELECT s.agent_id,COALESCE(s.ag_code,''),COALESCE(s.ag_generation,0),a.owner_lc,a.name,u.short_name,s.last_seen_at FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc WHERE s.revoked_at IS NULL AND a.state='active' AND u.state='active' AND s.last_seen_at>$1 AND EXISTS(SELECT 1 FROM np_extseat_token t WHERE t.seat_id=s.agent_id AND t.revoked_at IS NULL AND t.expires_at>$2 AND t.auth_generation=s.auth_generation) ORDER BY a.id`, now.Add(-extshared.PresenceTimeout), now)
+		rows, e := tx.Query(ctx, `SELECT s.agent_id,COALESCE(s.ag_code,''),COALESCE(s.ag_generation,0),a.owner_lc,a.name,u.short_name,s.last_seen_at FROM np_extseat s JOIN np_agent a ON a.id=s.agent_id JOIN np_user u ON u.user_id_lc=a.owner_lc JOIN np_external_principal p ON p.id=s.principal_id WHERE p.tenant_key=$3 AND s.revoked_at IS NULL AND a.state='active' AND u.state='active' AND s.last_seen_at>$1 AND EXISTS(SELECT 1 FROM np_extseat_token t WHERE t.seat_id=s.agent_id AND t.revoked_at IS NULL AND t.expires_at>$2 AND t.auth_generation=s.auth_generation) ORDER BY a.id`, now.Add(-extshared.PresenceTimeout), now, s.TenantKey)
 		if e != nil {
 			return e
 		}

@@ -16,6 +16,7 @@ type Seat struct {
 	checkedAt                            time.Time
 	proof, ownerShort                    string
 	tokenGeneration                      int64
+	routingIdentity                      bool
 	ID, AgentID, Name, FullName, OwnerLC string
 	Principal                            extshared.Principal
 	Group                                extshared.AGCode

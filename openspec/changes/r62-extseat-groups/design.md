@@ -33,3 +33,6 @@ PM01：已投影件仍按既有 SQLite 投递语义，不实现组失效后的�
 ## 实现细化
 
 跨租户边界为 extshared.TenantAdmission，仅装配 SameTenantAdmission；未开放客户端 tenant label 或跨租户注册表。无配对重复签发按已验证 principal 与原 short_name 恢复同一 Agent，重新发独立令牌，不替换地址或成员。普通组权限以持久关系为准，不以新入组 flag 为授权开关。PG Check/Receipt 使用只读重复读事务，查询正文前复核原路径。受理路径在身份锁等待后重读幂等键，以覆盖并发首次相同 ID。
+
+
+重认证选择页只在飞书主体已验证之后读取本人现存稳定席位。ExistingSeats 与 Reauthenticate 都按 provider/tenant/issuer/subject 权威匹配；客户端席位 ID 只作选择。恢复只新建令牌，不新建身份、普通组成员或 AG，也不刷新消息或 AG expiry。0113 的 routing_enabled 标记保留新身份鉴权语义，关新入组开关不撤销既有发现与恢复入口。默认未启用过本片的旧席位保持原鉴权兼容。

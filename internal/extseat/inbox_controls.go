@@ -41,6 +41,9 @@ func (s *Service) readPending(ctx context.Context, a Seat, since *time.Time, eli
 		if e != nil {
 			return e
 		}
+		if e = s.checkLegacyGrant(ctx, tx, fresh, g, true); e != nil {
+			return e
+		}
 		now, e := s.current(fresh, g)
 		if e != nil {
 			return e
