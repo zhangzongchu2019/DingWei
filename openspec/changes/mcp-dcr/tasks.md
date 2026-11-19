@@ -21,3 +21,10 @@
 - 2026-11-19；coder56solzzc；候选4f4289cf首轮canonical双profile通过，末尾PG认领五子格因固定旧迁移清单未含0115而红，保留原日志；已明确补0115名单/3表/计数，不弱化断言，新增清理快照补格及精确HTTPS JSON配置。开发补验rc0，下一步固定修订源统一重跑正式门及29刀。无main/部署。
 
 - 2026-11-19；coder56solzzc；完成T04～08：冻结源`5bc0280d7d6d8da8402ed6459766ce9ae1e0e0f4`（可git cat-file）；新增PG0115、公共DCR/绑定/限额/回退，V01～V07及41刀业务红/还原绿。固定源canonical和其它门通过；原三遍m8非绿及基线同格复现保留，按既定Z-3全新五轮结果详见`docs/reviews/mcp-dcr-impl/REPORT.md`。阻塞：T09独立复核/终审，真实IDE回调未测。下一步Git交qwen审阅，不推main、不部署、不出发布件。
+
+- 实现交件证据不可变坐标（均可git cat-file）：
+  - `1a2f136001451794153a9b5fe6d6d639a50780c5:docs/reviews/mcp-dcr-impl/REPORT.md`
+  - `1a2f136001451794153a9b5fe6d6d639a50780c5:docs/reviews/mcp-dcr-impl/evidence/gate-summary.json`
+  - `1a2f136001451794153a9b5fe6d6d639a50780c5:docs/reviews/mcp-dcr-impl/evidence/z3-summary.json`
+  - `1a2f136001451794153a9b5fe6d6d639a50780c5:docs/reviews/mcp-dcr-impl/evidence/mutations/summary.json`
+  完成：T04～08及原始非绿披露/全新五轮补证；阻塞：T09 qwen独立复核与组长终审、真实IDE回调实测。下一步：普通推送核远端后发交审，不推main、不部署。
