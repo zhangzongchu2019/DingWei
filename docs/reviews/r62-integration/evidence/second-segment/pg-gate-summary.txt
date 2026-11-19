@@ -1,0 +1,10 @@
+Command: env -i ... HUB_TEST_PG_STRICT=1 go test -v -json -count=3 -p=1 -timeout=30m ./internal/m8 ./internal/store/... ./internal/extseat ./internal/extshared ./internal/tempgroup
+rc=0; no fail events. Counts are individual test outcomes across three iterations.
+github.com/zhangzongchu2019/dingwei/internal/m8: pass=4951 skip=135 fail=0
+github.com/zhangzongchu2019/dingwei/internal/store: pass=2017 skip=15 fail=0
+github.com/zhangzongchu2019/dingwei/internal/store/migrate: pass=139 skip=0 fail=0
+github.com/zhangzongchu2019/dingwei/internal/store/pgtest: pass=205 skip=0 fail=0
+github.com/zhangzongchu2019/dingwei/internal/extseat: pass=223 skip=0 fail=0
+github.com/zhangzongchu2019/dingwei/internal/extshared: pass=34 skip=0 fail=0
+github.com/zhangzongchu2019/dingwei/internal/tempgroup: pass=70 skip=0 fail=0
+Filtered JSONL omits Output payloads: pg-count3-outcomes.jsonl.gz

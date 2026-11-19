@@ -1,0 +1,5 @@
+Command: scripts/run-build-tests.sh
+SOURCE_COMMIT=a3ff6308d488408a4474c2aa03faaf4ada8b94be
+rc=0
+HELPER_INVENTORY_OK files=97
+BUILD_TESTS_OK helper_profiles=2 python=27 shell=2

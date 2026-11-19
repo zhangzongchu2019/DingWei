@@ -109,3 +109,18 @@ Unique skip names from store count=3 (each appeared three times):
 `evidence/gate-results.json` contains exact per-gate counts, round results, skip inventories, browser receipt metadata and source-log SHA256 values. The `*-outcomes.jsonl` files are filtered outcome streams; they intentionally omit raw application/test output.
 
 No main branch update, deployment, or release build was performed.
+
+## Second segment — S-MCP-DCR
+
+Second-segment source anchor is merge commit `a3ff6308d488408a4474c2aa03faaf4ada8b94be` (tree recorded in Git); it is a no-ff merge of first-segment freeze `5248e813a11443f1f0a2948508337fd1e6ee5eec` and frozen S-MCP-DCR `3a522724032a1e3cf7c9ecaab845d4c0920b2d2b`. The DCR adds Hub migration 0115 after extseat migrations 0112–0114, and its default remains off. The DCR merge conflict choices are recorded in the merge commit message. No migration collision or product code outside the DCR was introduced by this segment.
+
+All second-segment gates used isolated `env -i`, Go 1.22.2, `GOPROXY=off`, and strict PostgreSQL where applicable. Details and filtered logs are under `evidence/second-segment/`.
+
+- Build gate: `scripts/run-build-tests.sh`, rc 0; `BUILD_TESTS_OK helper_profiles=2 python=27 shell=2`, inventory 97.
+- OpenSpec: `openspec validate --all --strict`, rc 0, 51 passed / 0 failed.
+- Full browser runner: 56/56 suites rc 0, `aggregate_rc=0`; receipt is `evidence/second-segment/browser-receipt.txt`.
+- PG strict packages `internal/m8`, `internal/store/...`, `internal/extseat`, `internal/extshared`, and `internal/tempgroup`, each `-count=3 -p=1`: rc 0; m8 4,951 pass / 135 skip; `internal/store` 2,017 pass / 15 skip; `internal/store/migrate` 139 pass; `internal/store/pgtest` 205 pass; extseat 223 pass; extshared 34 pass; tempgroup 70 pass; no failures. Skip conditions for every unique m8/store test are itemized in `evidence/second-segment/SKIP-CONDITIONS.md`.
+- Z-3: complete serial m8 suite at both integration anchor `a3ff6308` and baseline `e07ad81e`, five rounds each; all ten rounds rc 0, no failures. Each round's outcome stream is retained.
+- R15 comparison: five pagination runs and mutation set at each anchor passed. On both anchors, deletion mutants for history-node ordering, scroll-anchor correction, and live-history eviction failed at their intended business assertions.
+
+This second segment remains a branch integration only. It does not authorize main, deployment, N-6 implementation, or release artifacts.

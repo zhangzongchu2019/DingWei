@@ -874,5 +874,193 @@
       ],
       "note": "The browser script also reported a separate zero-group workflow timeout in this mutation run; the relevant feedback assertion was red."
     }
+  },
+  "second_segment": {
+    "base": "5248e813a11443f1f0a2948508337fd1e6ee5eec",
+    "dcr": "3a522724032a1e3cf7c9ecaab845d4c0920b2d2b",
+    "merge_commit": "a3ff6308d488408a4474c2aa03faaf4ada8b94be",
+    "migration": "Hub migration 0115, after 0112-0114, default off",
+    "build": {
+      "rc": 0,
+      "summary": "BUILD_TESTS_OK helper_profiles=2 python=27 shell=2; HELPER_INVENTORY_OK files=97",
+      "source_log_sha256": "40642ec57f8252dcf6f1d5c29d9a4642f5723036188f9378128958e189045937"
+    },
+    "openspec": {
+      "rc": 0,
+      "passed": 51,
+      "failed": 0,
+      "source_log_sha256": "4fe0b8bef2bdd7f57c937c086c728bdd37cebb5b32892092cdf03f951433f981"
+    },
+    "pg_count3": {
+      "rc": 0,
+      "packages": {
+        "github.com/zhangzongchu2019/dingwei/internal/m8": {
+          "pass": 4951,
+          "skip": 135,
+          "fail": 0
+        },
+        "github.com/zhangzongchu2019/dingwei/internal/store": {
+          "pass": 2017,
+          "skip": 15,
+          "fail": 0
+        },
+        "github.com/zhangzongchu2019/dingwei/internal/store/migrate": {
+          "pass": 139,
+          "skip": 0,
+          "fail": 0
+        },
+        "github.com/zhangzongchu2019/dingwei/internal/store/pgtest": {
+          "pass": 205,
+          "skip": 0,
+          "fail": 0
+        },
+        "github.com/zhangzongchu2019/dingwei/internal/extseat": {
+          "pass": 223,
+          "skip": 0,
+          "fail": 0
+        },
+        "github.com/zhangzongchu2019/dingwei/internal/extshared": {
+          "pass": 34,
+          "skip": 0,
+          "fail": 0
+        },
+        "github.com/zhangzongchu2019/dingwei/internal/tempgroup": {
+          "pass": 70,
+          "skip": 0,
+          "fail": 0
+        }
+      },
+      "outcomes": "second-segment/pg-count3-outcomes.jsonl.gz",
+      "source_log_sha256": "69c6065f908abf2d6f188b4dc71dac444b8a4ac56f0ddc659152cdd526fbdbaa"
+    },
+    "z3_five_rounds": {
+      "e07": [
+        {
+          "counts": {
+            "pass": 1649,
+            "skip": 45
+          },
+          "failures": [],
+          "outcomes": "z3-e07-round-1-outcomes.jsonl.gz",
+          "rc": 0,
+          "round": 1,
+          "source_sha256": "10ea28a79013718171cb6f679775da971a33b7d789ca3d5526736c9849373a33"
+        },
+        {
+          "counts": {
+            "pass": 1649,
+            "skip": 45
+          },
+          "failures": [],
+          "outcomes": "z3-e07-round-2-outcomes.jsonl.gz",
+          "rc": 0,
+          "round": 2,
+          "source_sha256": "7fe71de1e4a2a57f4e6473ea73df5fe12ee4456e587f84b4186286bc5b36fa95"
+        },
+        {
+          "counts": {
+            "pass": 1649,
+            "skip": 45
+          },
+          "failures": [],
+          "outcomes": "z3-e07-round-3-outcomes.jsonl.gz",
+          "rc": 0,
+          "round": 3,
+          "source_sha256": "e9fe3de7f8a9ffa71b7fd5d37bf4592882bd20b391788536046a91357b093929"
+        },
+        {
+          "counts": {
+            "pass": 1649,
+            "skip": 45
+          },
+          "failures": [],
+          "outcomes": "z3-e07-round-4-outcomes.jsonl.gz",
+          "rc": 0,
+          "round": 4,
+          "source_sha256": "732205b651c7a98fc29c52dfa844598b432ba75a4b0cec09d16bd6664026e810"
+        },
+        {
+          "counts": {
+            "pass": 1649,
+            "skip": 45
+          },
+          "failures": [],
+          "outcomes": "z3-e07-round-5-outcomes.jsonl.gz",
+          "rc": 0,
+          "round": 5,
+          "source_sha256": "df31b137a2de4d857c0bcff3446a6a8cdf8d2562866210daec61b073beacabf3"
+        }
+      ],
+      "integration": [
+        {
+          "counts": {
+            "pass": 1651,
+            "skip": 45
+          },
+          "failures": [],
+          "outcomes": "z3-integration-round-1-outcomes.jsonl.gz",
+          "rc": 0,
+          "round": 1,
+          "source_sha256": "5abbcd210fdf1481e9588f78b5a55db254948eac07adeea0591544304287d973"
+        },
+        {
+          "counts": {
+            "pass": 1651,
+            "skip": 45
+          },
+          "failures": [],
+          "outcomes": "z3-integration-round-2-outcomes.jsonl.gz",
+          "rc": 0,
+          "round": 2,
+          "source_sha256": "e0773440420dc627abea6043e5154766b5aab58a36efae8f875e293e38bb1fe3"
+        },
+        {
+          "counts": {
+            "pass": 1651,
+            "skip": 45
+          },
+          "failures": [],
+          "outcomes": "z3-integration-round-3-outcomes.jsonl.gz",
+          "rc": 0,
+          "round": 3,
+          "source_sha256": "3fcdec421908f8a1700562cc0dcf0738b8a3f7c338bbba8503c8b0789004135b"
+        },
+        {
+          "counts": {
+            "pass": 1651,
+            "skip": 45
+          },
+          "failures": [],
+          "outcomes": "z3-integration-round-4-outcomes.jsonl.gz",
+          "rc": 0,
+          "round": 4,
+          "source_sha256": "f3b717bace2b869dc4efe0e314c6b280ccc2b2059eca7a06a00beee6e714212a"
+        },
+        {
+          "counts": {
+            "pass": 1651,
+            "skip": 45
+          },
+          "failures": [],
+          "outcomes": "z3-integration-round-5-outcomes.jsonl.gz",
+          "rc": 0,
+          "round": 5,
+          "source_sha256": "0251dde9878e4b61c29b976b37aa01b2355ccbd7bb1a1508d00e2936101d11bd"
+        }
+      ]
+    },
+    "r15": {
+      "pagination_runs_per_anchor": 5,
+      "mutations_per_anchor": 3,
+      "all_rc": 0,
+      "mutations_red_on_expected_business_assertions": true
+    },
+    "browser": {
+      "rc": 0,
+      "suite_count": 56,
+      "aggregate_rc": 0,
+      "receipt": "second-segment/browser-receipt.txt",
+      "receipt_sha256": "ec683f843ebb1c2f23c747d73cfec50a8ec0406d24b589fa5cd9a99439720c72"
+    }
   }
 }
