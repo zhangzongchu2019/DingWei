@@ -39,3 +39,7 @@ readAttempt的浏览器cookie哈希比较和五分钟oauthTTL逐字保留。只�
 ## 目标输入文案（03:48Z追加）
 
 internal/feishulogin/connect.go 仅去掉手填 target_agent 的具体 placeholder 与示例，保留空初始 value 和既有服务端校验，提示逐字为「填写你要协作的 Agent 全名（向你的组长或管理员索取），系统中必须已存在」。GROUPS 产品 aaed8aae 对同文件只修改 renderConnectPage 中 allowUnpaired／allowReauthentication 自动入口条件，本片改模板两行，未覆盖该函数；后续合并应同时保留可不建临时配对入口及本片文案，不使目标重新必选。回归检查渲染输入无 placeholder／初始值空、提示不含具体全名，恢复旧 placeholder 必须红。
+
+## A-AUTH-02 保留私有提示与既有06选择优先级
+
+自查反例在907源确认：显式私有2026头配标准initialize提议时，standardInitialize可盖过privateHint而200。这不是可交付行为，已在新锚修正：先精确保留原06选择两式（显式06头；无版本头且initialize提议06），其它请求若带2026头／Mcp-Method／私有_meta协议键则交原私有codec严格拒绝；无私有提示才让标准codec协商未知版本。新增两格保护三版本混合封套与无头06旧优先级，未认证始终在分流之前401。删此私有提示保护须PRIVATE_INITIALIZE_GUARD业务红。907原七刀虽绿但未覆盖本支，旧反例与停门日志保留，最终八刀及完整门以修后源为准。

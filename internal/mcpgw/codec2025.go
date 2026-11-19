@@ -32,11 +32,12 @@ func (g *Gateway) route2025(w http.ResponseWriter, r *http.Request, seat extseat
 	}
 	_ = json.Unmarshal(body, &hint)
 	header := singleHeader(r, "MCP-Protocol-Version")
-	// Preserve the private 2026 envelope and its exact header/meta guards.
-	// Standard initialize carries the proposal in params, even if unknown.
-	standardInitialize := hint.Method == "initialize" && len(hint.Params.Meta[metaPrefix+"protocolVersion"]) == 0
+	// Preserve both established June selection forms. Otherwise explicit
+	// private hints must retain the private envelope's exact guards, even when
+	// a standard initialize proposal appears in the same request.
+	compatSelected := header == CompatProtocolVersion || (len(r.Header.Values("MCP-Protocol-Version")) == 0 && hint.Method == "initialize" && hint.Params.Version == CompatProtocolVersion)
 	privateHint := header == ProtocolVersion || singleHeader(r, "Mcp-Method") != "" || len(hint.Params.Meta[metaPrefix+"protocolVersion"]) != 0
-	if header != CompatProtocolVersion && !standardInitialize && privateHint {
+	if !compatSelected && privateHint {
 		return false
 	}
 	g.mcp2025(w, r, seat)

@@ -203,3 +203,48 @@ func TestMCPExplicitJuneCodecStillIgnoresUnrelatedVendorHeaders(t *testing.T) {
 		t.Fatalf("existing explicit June codec selection regressed: %d %s", w.Code, w.Body)
 	}
 }
+
+func TestMCPInitializeCannotMaskPrivateEnvelopeGuard(t *testing.T) {
+	for _, version := range []string{"2025-03-26", "2025-06-18", "2025-11-25"} {
+		t.Run(version, func(t *testing.T) {
+			_, seats, mux := fixture(t)
+			r := requestCompat("initialize", proposedInitialize(version))
+			r.Header.Set("MCP-Protocol-Version", ProtocolVersion)
+			w := serve(mux, r)
+			if w.Code != 400 || strings.Contains(w.Body.String(), `"result"`) || seats.calls != 0 {
+				t.Fatalf("PRIVATE_INITIALIZE_GUARD: status=%d body=%s business=%d", w.Code, w.Body, seats.calls)
+			}
+			r = requestCompat("initialize", proposedInitialize(version))
+			r.Header.Set("MCP-Protocol-Version", ProtocolVersion)
+			r.Header.Del("Authorization")
+			w = serve(mux, r)
+			if w.Code != 401 || w.Header().Get("WWW-Authenticate") == "" {
+				t.Fatalf("AUTH_BEFORE_PRIVATE_GUARD: status=%d", w.Code)
+			}
+		})
+	}
+}
+
+func TestMCPPrivateMethodHintRetainsLegacyJuneSelectionOnly(t *testing.T) {
+	const legacyJune = `{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"legacy","version":"1"}}`
+	for _, header := range []bool{false, true} {
+		_, _, mux := fixture(t)
+		r := requestCompat("initialize", legacyJune)
+		if !header {
+			r.Header.Del("MCP-Protocol-Version")
+		}
+		r.Header.Set("Mcp-Method", "unrelated-vendor-value")
+		if w := serve(mux, r); w.Code != 200 {
+			t.Fatalf("LEGACY_JUNE_INITIALIZE_SELECTION: header=%t status=%d body=%s", header, w.Code, w.Body)
+		}
+	}
+	for _, version := range []string{"2025-03-26", "2025-11-25"} {
+		_, seats, mux := fixture(t)
+		r := requestCompat("initialize", proposedInitialize(version))
+		r.Header.Del("MCP-Protocol-Version")
+		r.Header.Set("Mcp-Method", "initialize")
+		if w := serve(mux, r); w.Code != 400 || seats.calls != 0 {
+			t.Fatalf("PRIVATE_METHOD_INITIALIZE_GUARD: version=%s status=%d body=%s", version, w.Code, w.Body)
+		}
+	}
+}

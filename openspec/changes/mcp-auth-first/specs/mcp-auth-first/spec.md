@@ -49,3 +49,10 @@
 #### Scenario: MAF-S008 初次打开没有具体默认目标
 - **WHEN** 初次打开需要手填目标的授权页
 - **THEN** 目标输入为空、无 placeholder 和具体 Agent 示例，提示为指定文案；恢复 placeholder 必须业务断言红
+
+### Requirement: MAF-007 私有封套不被协商覆盖
+标准initialize协商 MUST NOT 绕过显式私有提示的原封套校验。既有显式06头与无头06 initialize的兼容选择 MUST 保留；其它私有提示仍按私有codec严格验证，认证前的401优先级不变。
+
+#### Scenario: MAF-S009 标准提议不覆盖私有封套守卫
+- **WHEN** initialize混入显式私有2026协议头或私有方法提示，且不满足既有06兼容选择
+- **THEN** 未认证仍先401；已认证保持原400与零业务，不因标准版本提议协商成功；显式06和无头06 initialize的原兼容选择均保留
