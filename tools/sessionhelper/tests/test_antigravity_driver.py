@@ -28,6 +28,23 @@ for line in sys.stdin:
 
 
 class AntigravityDriverTest(unittest.TestCase):
+    def test_permission_allows_only_cached_file_reads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            cache = os.path.join(directory, ".dingwei-read-cache")
+            os.mkdir(cache)
+            target = os.path.join(cache, "sample.bin")
+            with open(target, "wb") as handle:
+                handle.write(b"sample")
+            driver = AntigravityProtocolDriver(os.path.join(directory, "ledger.sqlite3"), directory)
+            def allowed(command):
+                return driver._allow_cached_read({"toolCall": {"name": "run_command", "args": {"CommandLine": command}}})
+            self.assertTrue(allowed(f"file {target}"))
+            self.assertTrue(allowed(f"unzip -l {target}"))
+            self.assertFalse(allowed(f"cat {target}; id"))
+            self.assertFalse(allowed(f"cat {target} /etc/passwd"))
+            self.assertFalse(allowed(f"bash {target}"))
+            self.assertFalse(allowed(f"cat {target} > /tmp/out"))
+
     def test_dingwei_image_is_sent_as_acp_image_block(self):
         with tempfile.TemporaryDirectory() as directory:
             fixture = os.path.join(directory, "acp.py")

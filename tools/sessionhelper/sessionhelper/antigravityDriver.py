@@ -16,6 +16,7 @@ import threading
 import time
 import uuid
 import re
+import shlex
 import zipfile
 import urllib.request
 from urllib.parse import urlsplit
@@ -154,14 +155,53 @@ class AntigravityProtocolDriver:
                 if message.get("method") == "session/update":
                     self._update(message.get("params") or {})
                 elif "id" in message and message.get("method") == "session/request_permission":
-                    # Unattended sessions fail closed on interactive permission prompts.
-                    self._send({"jsonrpc": "2.0", "id": message["id"],
-                                "result": {"outcome": {"outcome": "cancelled"}}})
+                    outcome = {"outcome": "cancelled"}
+                    if self._allow_cached_read(message.get("params") or {}):
+                        options = (message.get("params") or {}).get("options") or []
+                        option = next((item for item in options if item.get("kind") == "allow_once"), None)
+                        if option:
+                            outcome = {"outcome": "selected", "optionId": option["optionId"]}
+                    self._send({"jsonrpc": "2.0", "id": message["id"], "result": {"outcome": outcome}})
         finally:
             with self._lock:
                 if self._active:
                     self._active = None
                 self._condition.notify_all()
+
+    def _allow_cached_read(self, params):
+        tool = params.get("toolCall") or {}
+        if tool.get("name") != "run_command":
+            return False
+        command = (tool.get("args") or tool.get("rawInput") or {}).get("CommandLine", "")
+        if not isinstance(command, str) or not command or re.search(r"[;&|`$<>\\\n\r]", command):
+            return False
+        try:
+            args = shlex.split(command)
+        except ValueError:
+            return False
+        if not args or args[0] not in ("cat", "head", "tail", "file", "wc", "ls", "zipinfo", "unzip"):
+            return False
+        if args[0] == "unzip":
+            if len(args) != 3 or args[1] != "-l":
+                return False
+            paths = args[2:]
+        elif args[0] == "zipinfo":
+            paths = args[1:]
+        else:
+            paths = args[1:]
+        if not paths or any(path.startswith("-") for path in paths):
+            return False
+        cache = (Path(self.cwd) / ".dingwei-read-cache").resolve()
+        for value in paths:
+            path = Path(value)
+            if not path.is_absolute():
+                path = Path(self.cwd) / path
+            path = path.resolve()
+            if path != cache and cache not in path.parents:
+                return False
+            if not path.is_file() or path.stat().st_size > 32 * 1024 * 1024:
+                return False
+        return True
 
     def _update(self, params):
         with self._lock:
