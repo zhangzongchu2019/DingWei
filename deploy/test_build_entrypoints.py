@@ -203,7 +203,7 @@ exit 1
         gate = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(gate)
         files = gate.inventory(ROOT)
-        self.assertEqual(len(files), 97)  # base94 + R60-III two tool suites + R60-I outbound recovery; retain all deletion checks.
+        self.assertEqual(len(files), 98)  # Base inventory plus Antigravity driver coverage.
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             (root / "scripts").mkdir()

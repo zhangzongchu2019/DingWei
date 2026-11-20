@@ -232,7 +232,7 @@ CLI 采用懒启动：sessionHelper 会先保持 WS 在线，收到消息时启�
 
 ```bash
 export SH_MODE=driver
-export SH_DRIVER=codex            # codex | claude | opencode
+export SH_DRIVER=codex            # codex | claude | opencode | antigravity
 export SH_EMIT_SESSION_EVENT=1
 export SH_TURN_TERMINAL_TIMEOUT_SECONDS=1800
 ./dist/sessionhelper

@@ -5,7 +5,7 @@ CLIAdapter 用 PTY 注入实现它。本适配器用协议 Driver 实现同一�
 - handle(env)  → driver.deliver()（幂等,不再重打3次）
 - 事件→文本桥 → driver.events() 渲染成文本喂 next_terminal_chunk(老 view 页照看)
 
-选哪个 driver:环境变量 SH_DRIVER = codex | claude | opencode(默认 codex)。
+选哪个 driver:环境变量 SH_DRIVER = codex | claude | opencode | antigravity(默认 codex)。
 本目录是协议 Driver 与 SessionHelper 集成的单一版本化真源。
 """
 from __future__ import annotations
@@ -148,6 +148,10 @@ class DriverAdapter:
         store = (os.path.join(self.cfg.state_dir, f"{which}-ledger.sqlite3") if getattr(self.cfg, "state_dir", "")
                  else os.path.join(os.path.expanduser("~"), f".dw-{which}-ledger.sqlite3"))
         model = getattr(self.cfg, "model", "")
+        if which == "antigravity":
+            from .antigravityDriver import AntigravityProtocolDriver
+            return AntigravityProtocolDriver(store_path=store, cwd=cwd,
+                                              cmd=getattr(self.cfg, "cli_cmd", None) or None)
         if which == "claude":
             from .claudeDriver import ClaudeProtocolDriver, claude_command
             cmd = claude_command(getattr(self.cfg, "cli_cmd", None) or None)
@@ -975,6 +979,10 @@ class DriverAdapter:
         return True
 
     def _record_event_lifecycle(self, ev):
+        # ACP returns a terminal stopReason but no native start/end timestamps.
+        # Its direct receipt settles the ledger; do not invent native times.
+        if self._which == 'antigravity' and ev.data.get('raw_method') == 'session/prompt':
+            return
         if getattr(getattr(self,'driver',None),'lane_id','') and (ev.data.get('lane_id'),ev.data.get('lane_generation'))!=(self.driver.lane_id,self.driver.lane_generation):return
         ledger = getattr(self, "delivery_lifecycle", None)
         if (ledger is not None and ev.kind == 'state_change' and ev.data.get('change') == 'turn_started'
