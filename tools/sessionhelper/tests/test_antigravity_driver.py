@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 import io
 import json
+import zipfile
 from email.message import Message
 
 from sessionhelper.antigravityDriver import AntigravityProtocolDriver
@@ -106,6 +107,51 @@ class AntigravityDriverTest(unittest.TestCase):
                 with open(os.path.join(directory, "prompt.json"), encoding="utf-8") as handle:
                     prompt = json.load(handle)
                 self.assertIn("报告摘要", prompt[1]["text"])
+            finally:
+                driver.stop()
+
+    def test_cmjrt_subdomain_zip_text_is_read_without_command(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = os.path.join(directory, "acp.py")
+            with open(fixture, "w", encoding="utf-8") as handle:
+                handle.write(FIXTURE.replace('with open("prompt-count", "a", encoding="utf-8") as count: count.write("1\\n")',
+                                             'with open("prompt.json", "w", encoding="utf-8") as output: json.dump(request["params"]["prompt"], output)'))
+            zipped = io.BytesIO()
+            with zipfile.ZipFile(zipped, "w") as archive:
+                archive.writestr("notes/readme.md", "SAFE_ARCHIVE_TEXT")
+            headers = Message()
+            headers["Content-Type"] = "application/zip"
+            headers["Content-Length"] = str(len(zipped.getvalue()))
+            response = io.BytesIO(zipped.getvalue())
+            response.headers = headers
+            driver = AntigravityProtocolDriver(os.path.join(directory, "ledger.sqlite3"), directory,
+                                                [sys.executable, fixture])
+            try:
+                with patch("urllib.request.OpenerDirector.open", return_value=response):
+                    driver.deliver("zip-1", "https://files.cmjrt.com/archive.zip 请看")
+                    deadline = time.monotonic() + 2
+                    while driver.poll_receipt("zip-1").state != "done" and time.monotonic() < deadline:
+                        time.sleep(.01)
+                with open(os.path.join(directory, "prompt.json"), encoding="utf-8") as handle:
+                    prompt = json.load(handle)
+                self.assertIn("SAFE_ARCHIVE_TEXT", prompt[1]["text"])
+            finally:
+                driver.stop()
+
+    def test_similar_host_does_not_enter_read_allowlist(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = os.path.join(directory, "acp.py")
+            with open(fixture, "w", encoding="utf-8") as handle:
+                handle.write(FIXTURE)
+            driver = AntigravityProtocolDriver(os.path.join(directory, "ledger.sqlite3"), directory,
+                                                [sys.executable, fixture])
+            try:
+                with patch("urllib.request.OpenerDirector.open") as opened:
+                    driver.deliver("host-1", "https://evilcmjrt.com/a.py")
+                    deadline = time.monotonic() + 2
+                    while driver.poll_receipt("host-1").state != "done" and time.monotonic() < deadline:
+                        time.sleep(.01)
+                opened.assert_not_called()
             finally:
                 driver.stop()
 
