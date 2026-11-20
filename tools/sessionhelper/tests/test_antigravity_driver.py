@@ -14,6 +14,7 @@ for line in sys.stdin:
     if method=="initialize": result={"protocolVersion":1}
     elif method=="session/new": result={"sessionId":"fixture-session"}
     elif method=="session/prompt":
+        with open("prompt-count", "a", encoding="utf-8") as count: count.write("1\\n")
         print(json.dumps({"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"fixture-session","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"HELLO"}}}}),flush=True)
         result={"stopReason":"end_turn"}
     else: continue
@@ -62,6 +63,8 @@ class AntigravityDriverTest(unittest.TestCase):
                 self.assertEqual([e.kind for e in events], ["state_change", "assistant_text", "state_change"])
                 self.assertEqual(events[1].text, "HELLO")
                 self.assertEqual(events[2].data["status"], "completed")
+                self.assertNotIn("admitted_at", events[2].data)
+                self.assertNotIn("processed_at", events[2].data)
             finally:
                 driver.stop()
                 reader.join(2)
@@ -69,6 +72,8 @@ class AntigravityDriverTest(unittest.TestCase):
                                                   [sys.executable, fixture])
             self.assertEqual(restarted.deliver("message-1", "test").state, "done")
             self.assertFalse(restarted.health())
+            with open(os.path.join(directory, "prompt-count"), encoding="utf-8") as count:
+                self.assertEqual(count.read().splitlines(), ["1"])
 
 
 if __name__ == "__main__":
