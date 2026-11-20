@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import base64
 import json
 import os
 import queue
@@ -11,6 +12,9 @@ import subprocess
 import threading
 import time
 import uuid
+import re
+import urllib.request
+from urllib.parse import urlsplit
 from pathlib import Path
 
 from .contract import Capabilities, DeliveryReceipt, SessionEvent
@@ -213,8 +217,27 @@ class AntigravityProtocolDriver:
 
     def _run_prompt(self, delivery_id, digest, turn, body):
         try:
+            prompt = [{"type": "text", "text": body}]
+            for url in dict.fromkeys(re.findall(r"https://[^\s<>\"']+", body)):
+                parsed = urlsplit(url)
+                if parsed.hostname != "dw123.cmjrt.com" or not parsed.path.startswith("/f/"):
+                    continue
+                class NoRedirect(urllib.request.HTTPRedirectHandler):
+                    def redirect_request(self, request, fp, code, msg, headers, newurl):
+                        return None
+                opener = urllib.request.build_opener(NoRedirect)
+                with opener.open(url, timeout=15) as response:
+                    media_type = response.headers.get_content_type()
+                    size = int(response.headers.get("Content-Length", "0"))
+                    if not media_type.startswith("image/") or size > 8 * 1024 * 1024:
+                        continue
+                    data = response.read(8 * 1024 * 1024 + 1)
+                    if len(data) > 8 * 1024 * 1024:
+                        continue
+                    prompt.append({"type": "image", "data": base64.b64encode(data).decode("ascii"),
+                                   "mimeType": media_type})
             result = self._request("session/prompt", {"sessionId": self._session_id,
-                            "prompt": [{"type": "text", "text": body}]}, timeout=3600)
+                            "prompt": prompt}, timeout=3600)
             reason = result.get("stopReason")
             state = "done" if reason == "end_turn" else "failed"
             status = "completed" if state == "done" else "interrupted" if reason == "cancelled" else "failed"

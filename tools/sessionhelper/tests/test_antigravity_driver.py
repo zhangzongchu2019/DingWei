@@ -4,6 +4,10 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
+import io
+import json
+from email.message import Message
 
 from sessionhelper.antigravityDriver import AntigravityProtocolDriver
 
@@ -23,6 +27,34 @@ for line in sys.stdin:
 
 
 class AntigravityDriverTest(unittest.TestCase):
+    def test_dingwei_image_is_sent_as_acp_image_block(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = os.path.join(directory, "acp.py")
+            with open(fixture, "w", encoding="utf-8") as handle:
+                handle.write(FIXTURE.replace('with open("prompt-count", "a", encoding="utf-8") as count: count.write("1\\n")',
+                                             'with open("prompt.json", "w", encoding="utf-8") as output: json.dump(request["params"]["prompt"], output)'))
+            headers = Message()
+            headers["Content-Type"] = "image/jpeg"
+            headers["Content-Length"] = "4"
+            class Response(io.BytesIO):
+                pass
+            response = Response(b"test")
+            response.headers = headers
+            response.__enter__ = lambda self: self
+            driver = AntigravityProtocolDriver(os.path.join(directory, "ledger.sqlite3"), directory,
+                                                [sys.executable, fixture])
+            try:
+                with patch("urllib.request.OpenerDirector.open", return_value=response):
+                    driver.deliver("image-1", "https://dw123.cmjrt.com/f/a.jpg 看看图片")
+                    deadline = time.monotonic() + 2
+                    while driver.poll_receipt("image-1").state != "done" and time.monotonic() < deadline:
+                        time.sleep(.01)
+                with open(os.path.join(directory, "prompt.json"), encoding="utf-8") as handle:
+                    prompt = json.load(handle)
+                self.assertEqual(prompt[1], {"type": "image", "data": "dGVzdA==", "mimeType": "image/jpeg"})
+            finally:
+                driver.stop()
+
     def test_first_delivery_starts_acp_without_reader_deadlock(self):
         with tempfile.TemporaryDirectory() as directory:
             fixture = os.path.join(directory, "acp.py")
