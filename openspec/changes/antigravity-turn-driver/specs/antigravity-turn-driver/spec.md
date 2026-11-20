@@ -4,7 +4,7 @@
 
 本变更把 dwgemini4 的旧 CLI 回合处理改为 ACP 协议驱动，目的是让页面展示回答增量和明确的回合完成状态，并保持信封级去重和未知结果保护。涉及 sessionHelper 驱动与适配器，不影响 Hub、View 和其他 CLI 的传输逻辑。
 
-## Requirements
+## ADDED Requirements
 
 ### Requirement: ATD-001 ACP 回合事件归属
 
