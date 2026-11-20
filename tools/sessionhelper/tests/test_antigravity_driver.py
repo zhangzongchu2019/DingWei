@@ -81,6 +81,34 @@ class AntigravityDriverTest(unittest.TestCase):
             finally:
                 driver.stop()
 
+    def test_dingwei_pdf_is_extracted_before_prompt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = os.path.join(directory, "acp.py")
+            with open(fixture, "w", encoding="utf-8") as handle:
+                handle.write(FIXTURE.replace('with open("prompt-count", "a", encoding="utf-8") as count: count.write("1\\n")',
+                                             'with open("prompt.json", "w", encoding="utf-8") as output: json.dump(request["params"]["prompt"], output)'))
+            headers = Message()
+            headers["Content-Type"] = "application/pdf"
+            headers["Content-Length"] = "4"
+            response = io.BytesIO(b"%PDF")
+            response.headers = headers
+            driver = AntigravityProtocolDriver(os.path.join(directory, "ledger.sqlite3"), directory,
+                                                [sys.executable, fixture])
+            try:
+                with patch("urllib.request.OpenerDirector.open", return_value=response), \
+                     patch("shutil.which", return_value="/usr/bin/pdftotext"), \
+                     patch("subprocess.run", return_value=type("Result", (), {"stdout": "报告摘要".encode()})()) as run:
+                    driver.deliver("pdf-1", "https://dw123.cmjrt.com/f/a.pdf 请总结")
+                    deadline = time.monotonic() + 2
+                    while driver.poll_receipt("pdf-1").state != "done" and time.monotonic() < deadline:
+                        time.sleep(.01)
+                self.assertEqual(run.call_args.kwargs["input"], b"%PDF")
+                with open(os.path.join(directory, "prompt.json"), encoding="utf-8") as handle:
+                    prompt = json.load(handle)
+                self.assertIn("报告摘要", prompt[1]["text"])
+            finally:
+                driver.stop()
+
     def test_first_delivery_starts_acp_without_reader_deadlock(self):
         with tempfile.TemporaryDirectory() as directory:
             fixture = os.path.join(directory, "acp.py")
