@@ -203,7 +203,7 @@ exit 1
         gate = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(gate)
         files = gate.inventory(ROOT)
-        self.assertEqual(len(files), 98)  # Base inventory plus Antigravity driver coverage.
+        self.assertEqual(len(files), 99)  # Base inventory plus Antigravity driver and read policy coverage.
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)
             (root / "scripts").mkdir()
