@@ -1,6 +1,7 @@
 tools/sessionhelper/test_supervise_connection_loops.py
 tools/sessionhelper/tests/test_ack_outbox.py
 tools/sessionhelper/tests/test_antigravity_driver.py
+tools/sessionhelper/tests/test_read_allowlist.py
 tools/sessionhelper/tests/test_agent_disk_metrics.py
 tools/sessionhelper/tests/test_boot_origin.py
 tools/sessionhelper/tests/test_claim_enroll.py

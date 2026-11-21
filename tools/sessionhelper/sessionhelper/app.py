@@ -1373,6 +1373,25 @@ class SessionHelper(SubAgentConnection):
         delivery_id = str((env.get("meta") or {}).get("delivery_id") or "").strip()
         if not delivery_id:
             return
+        body = str(env.get("body") or "").strip()
+        if body.startswith("/read-allowlist"):
+            meta = env.get("meta") or {}
+            from .read_allowlist import authorized_envelope, execute
+            if not authorized_envelope(env, self.book.key_id, self.cfg.mode):
+                await ws.send(json.dumps(self.delivery_ack(delivery_id, "failed", reason="read_allowlist_unauthorized", retryable=False), ensure_ascii=False))
+                return
+            try:
+                response = await asyncio.to_thread(execute, body)
+            except (ValueError, OSError) as exc:
+                response = f"白名单指令失败：{exc}"
+            notification = dict(env)
+            notification["meta"] = {**meta, "kind": "read_allowlist_command"}
+            await asyncio.to_thread(self.delivery_inbox.accept_notification, delivery_id, notification)
+            await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="read_allowlist_command"), ensure_ascii=False))
+            to, reply_meta = reply_target(env, self.book)
+            reply_meta.update({"type": "collect", "role": "assistant"})
+            await ws.send(json.dumps(envelope(to, response, self.book.self_addr, reply_meta), ensure_ascii=False))
+            return
         # 🔴 移植自部署版(T-048,三处「覆盖即丢」中最危险的一处):
         # 离线补发路径此前没有这层跳过,某席离线一段时间后上线,补发会把
         # 在线清单/上线指南/skill 推送当作正常内容**注入 CLI 对话**。

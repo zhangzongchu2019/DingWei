@@ -289,3 +289,16 @@ Claude, OpenCode, direct/proxy Codex and PTY CLI retain their existing owned-pro
 binding; tmux/remote/unsupported sources remain unknown. This is authenticated
 helper self-report, not external-daemon namespace attestation. See the full
 [A6 disk contract](../../docs/reviews/coder-a6-real-disk/CONTRACT.md).
+# Antigravity 附件只读域名管理
+
+`dwgemini4` 的附件预读取只接受 HTTPS、默认端口或 443，且不跟随跳转。域名名单默认包含 `cmjrt.com`、`szuma.met`、`szuma.net`、`lmjzzc.com`、`ruihtang.com`、`szwego.com`、`wegoab.com`、`myqcloud.com`、`qq.com`、`google.com`、`aws.com`、`amazonaws.com` 及其子域名。`szuma.met` 按用户提供的拼写保留；`szuma.net` 覆盖当前实际使用的 `d.szuma.net`。
+
+从已登录的 DingWei View 页面向该会话发送以下管理指令：
+
+```text
+/read-allowlist list
+/read-allowlist add example.org
+/read-allowlist remove example.org
+```
+
+只接受 Hub 标记为已认证 View 用户 `zhangzongchu` 的指令，不把指令交给模型。名单存于 `~/.dingwei/read-allowlist.json`，更新后下一条附件消息生效。容器本地也可运行 `python -m sessionhelper.read_allowlist list|add|remove [domain]`。文件只供读取分析；脚本不会因此获得执行权限。单文件大小和格式解析能力仍受 Antigravity 驱动的限制。

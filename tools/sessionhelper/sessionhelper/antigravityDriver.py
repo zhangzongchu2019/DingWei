@@ -23,6 +23,7 @@ from urllib.parse import urlsplit
 from pathlib import Path
 
 from .contract import Capabilities, DeliveryReceipt, SessionEvent
+from .read_allowlist import matches as read_host_allowed
 
 
 class AntigravityProtocolDriver:
@@ -269,7 +270,7 @@ class AntigravityProtocolDriver:
                     port = parsed.port
                 except ValueError:
                     continue
-                if not (host == "cmjrt.com" or host.endswith(".cmjrt.com")) or port not in (None, 443):
+                if not read_host_allowed(host) or port not in (None, 443):
                     continue
                 class NoRedirect(urllib.request.HTTPRedirectHandler):
                     def redirect_request(self, request, fp, code, msg, headers, newurl):
