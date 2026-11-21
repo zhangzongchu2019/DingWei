@@ -301,4 +301,4 @@ helper self-report, not external-daemon namespace attestation. See the full
 /read-allowlist remove example.org
 ```
 
-只接受 Hub 标记为已认证 View 用户 `zhangzongchu` 的指令，不把指令交给模型。名单存于 `~/.dingwei/read-allowlist.json`，更新后下一条附件消息生效。容器本地也可运行 `python -m sessionhelper.read_allowlist list|add|remove [domain]`。文件只供读取分析；脚本不会因此获得执行权限。单文件大小和格式解析能力仍受 Antigravity 驱动的限制。
+只接受 Hub 标记为已认证 View 用户 `zhangzongchu` 的指令，不把指令交给模型。名单存于 `~/.dingwei/read-allowlist.json`，更新后下一条附件消息生效。从仓库根目录可运行 `PYTHONPATH=tools/sessionhelper python3 -m sessionhelper.read_allowlist list|add|remove [domain]`。文件只供读取分析；脚本不会因此获得执行权限。单文件大小和格式解析能力仍受 Antigravity 驱动的限制。
