@@ -462,8 +462,8 @@ class DeliveryInbox(DeliveryLifecycle):
             raise ValueError('invalid task notification')
         now = time.time()
         with self._lock, self._connect() as db:
-            db.execute("""INSERT OR IGNORE INTO delivery_inbox(delivery_id,session_name,envelope_json,state,received_at,updated_at)
-                VALUES(?,?,?,'processed',?,?)""", (delivery_id,self.session_name,json.dumps(env),now,now))
+            return bool(db.execute("""INSERT OR IGNORE INTO delivery_inbox(delivery_id,session_name,envelope_json,state,received_at,updated_at)
+                VALUES(?,?,?,'processed',?,?)""", (delivery_id,self.session_name,json.dumps(env),now,now)).rowcount)
 
     def request(self, args):
         """Driver MCP inspection does not consume, pause or ACK Hub deliveries."""

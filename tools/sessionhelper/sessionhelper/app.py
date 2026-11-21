@@ -1386,11 +1386,18 @@ class SessionHelper(SubAgentConnection):
                 response = f"白名单指令失败：{exc}"
             notification = dict(env)
             notification["meta"] = {**meta, "kind": "read_allowlist_command"}
-            await asyncio.to_thread(self.delivery_inbox.accept_notification, delivery_id, notification)
+            fresh = await asyncio.to_thread(self.delivery_inbox.accept_notification, delivery_id, notification)
             await ws.send(json.dumps(self.delivery_ack(delivery_id, "processed", reason="read_allowlist_command"), ensure_ascii=False))
-            to, reply_meta = reply_target(env, self.book)
-            reply_meta.update({"type": "collect", "role": "assistant"})
-            await ws.send(json.dumps(envelope(to, response, self.book.self_addr, reply_meta), ensure_ascii=False))
+            if fresh:
+                event = {"kind": "assistant_text", "text": response, "data": {"management": True},
+                         "session_id": "management", "cursor": f"management:{delivery_id}",
+                         "delivery_id": delivery_id, "turn_id": f"management:{delivery_id}",
+                         "ts": int(time.time() * 1000)}
+                event_meta = {"type": "session_event", "session": self.cfg.session_name,
+                              "key_id": self.book.key_id, "no_mirror": True}
+                await ws.send(json.dumps(envelope(session_addr("workpulse", self.book.key_id),
+                                                  json.dumps(event, ensure_ascii=False), self.book.self_addr,
+                                                  event_meta), ensure_ascii=False))
             return
         # 🔴 移植自部署版(T-048,三处「覆盖即丢」中最危险的一处):
         # 离线补发路径此前没有这层跳过,某席离线一段时间后上线,补发会把
