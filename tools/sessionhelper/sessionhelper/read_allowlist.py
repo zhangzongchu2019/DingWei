@@ -7,6 +7,8 @@ import os
 import re
 from pathlib import Path
 
+from .config import env_get
+
 
 DEFAULT_HOSTS = (
     "cmjrt.com", "szuma.met", "szuma.net", "lmjzzc.com", "ruihtang.com",
@@ -24,7 +26,7 @@ def authorized_envelope(env: dict, key_id: str, mode: str) -> bool:
 
 
 def policy_path() -> Path:
-    return Path(os.environ.get("SH_READ_ALLOWLIST_FILE") or Path.home() / ".dingwei" / "read-allowlist.json")
+    return Path(env_get("SH_READ_ALLOWLIST_FILE") or Path.home() / ".dingwei" / "read-allowlist.json")
 
 
 def valid_host(host: str) -> bool:
