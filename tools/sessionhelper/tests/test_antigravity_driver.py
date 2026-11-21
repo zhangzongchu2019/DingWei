@@ -28,6 +28,20 @@ for line in sys.stdin:
 
 
 class AntigravityDriverTest(unittest.TestCase):
+    def test_permission_allows_requested_dingwei_interaction(self):
+        with tempfile.TemporaryDirectory() as directory:
+            driver = AntigravityProtocolDriver(os.path.join(directory, "ledger.sqlite3"), directory)
+            def allowed(server, name, arguments):
+                return driver._allow_dingwei_mcp({"toolCall": {"name": "call_mcp_tool", "args": {
+                    "ServerName": server, "ToolName": name, "Arguments": arguments}}})
+            self.assertTrue(allowed("dingwei", "project_context", {"scope": "all"}))
+            self.assertTrue(allowed("dingwei", "dw_inbox", {"operation": "list"}))
+            self.assertTrue(allowed("dingwei", "send_message", {
+                "to": "opus50tc2k.zzc", "body": "[dwgemini4.zzc → opus50tc2k.zzc] 报到"}))
+            self.assertFalse(allowed("other", "project_context", {"scope": "all"}))
+            self.assertFalse(allowed("dingwei", "send_message", {"to": "other.zzc", "body": "x"}))
+            self.assertFalse(allowed("dingwei", "dw_task_update", {"task_id": "x"}))
+
     def test_permission_allows_only_cached_file_reads(self):
         with tempfile.TemporaryDirectory() as directory:
             cache = os.path.join(directory, ".dingwei-read-cache")

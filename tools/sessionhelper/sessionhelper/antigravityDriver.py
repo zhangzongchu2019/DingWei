@@ -157,7 +157,8 @@ class AntigravityProtocolDriver:
                     self._update(message.get("params") or {})
                 elif "id" in message and message.get("method") == "session/request_permission":
                     outcome = {"outcome": "cancelled"}
-                    if self._allow_cached_read(message.get("params") or {}):
+                    if (self._allow_cached_read(message.get("params") or {})
+                            or self._allow_dingwei_mcp(message.get("params") or {})):
                         options = (message.get("params") or {}).get("options") or []
                         option = next((item for item in options if item.get("kind") == "allow_once"), None)
                         if option:
@@ -203,6 +204,24 @@ class AntigravityProtocolDriver:
             if not path.is_file() or path.stat().st_size > 32 * 1024 * 1024:
                 return False
         return True
+
+    def _allow_dingwei_mcp(self, params):
+        tool = params.get("toolCall") or {}
+        if tool.get("name") != "call_mcp_tool":
+            return False
+        args = tool.get("args") or tool.get("rawInput") or {}
+        if not isinstance(args, dict) or args.get("ServerName") != "dingwei":
+            return False
+        name = args.get("ToolName")
+        if name in {"project_context", "dw_inbox", "dw_wait_message",
+                    "dw_delivery_status", "dw_task_list"}:
+            return True
+        if name == "send_message":
+            message = args.get("Arguments") or {}
+            return isinstance(message, dict) and message.get("to") in {
+                "opus50tc2k", "opus50tc2k.zzc"
+            } and isinstance(message.get("body"), str) and bool(message["body"].strip())
+        return False
 
     def _update(self, params):
         with self._lock:
