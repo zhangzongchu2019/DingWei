@@ -920,7 +920,7 @@ class DriverAdapter:
             return 'completed'
         if receipt.state != 'failed':
             return None
-        if detail in ('turn status=interrupted', 'turn interrupted', 'interrupted') or detail.startswith('interrupted (error_during_execution)'):
+        if detail in ('turn status=interrupted', 'turn interrupted', 'interrupted') or detail.startswith(('turn interrupted; turn=', 'interrupted (error_during_execution)')):
             return 'interrupted'
         if detail.startswith(('turn failed:', 'result failed:')) or detail == 'turn status=failed':
             return 'failed'

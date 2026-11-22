@@ -11,7 +11,6 @@ import queue
 import shutil
 import subprocess
 import sqlite3
-import subprocess
 import threading
 import time
 import uuid
@@ -83,7 +82,8 @@ class AntigravityProtocolDriver:
             self._send({"jsonrpc": "2.0", "id": rpc_id, "method": method, "params": params})
             result = response.get(timeout=timeout)
             if "error" in result:
-                raise RuntimeError(str(result["error"]))
+                # ACP error payloads may contain echoed credentials or prompts.
+                raise RuntimeError(f"ACP {method} returned an error")
             return result.get("result", {})
         finally:
             with self._lock:
@@ -113,6 +113,11 @@ class AntigravityProtocolDriver:
         with self._lock:
             process = self._process
             self._process = None
+            for response in self._pending.values():
+                try:
+                    response.put_nowait({"error": "transport closed"})
+                except queue.Full:
+                    pass
             self._condition.notify_all()
         if process is not None:
             process.terminate()
@@ -124,6 +129,10 @@ class AntigravityProtocolDriver:
             for pipe in (process.stdin, process.stdout, process.stderr):
                 if pipe is not None:
                     pipe.close()
+
+    def abort_transport(self):
+        """Unblock a stalled ACP request before replacing its transport."""
+        self.stop()
 
     def health(self):
         return self._process is not None and self._process.poll() is None
@@ -373,12 +382,16 @@ class AntigravityProtocolDriver:
                     prompt.append({"type": "text", "text": f"附件 {url} 读取失败，请明确告知用户。"})
             result = self._request("session/prompt", {"sessionId": self._session_id,
                             "prompt": prompt}, timeout=3600)
-            reason = result.get("stopReason")
+            # Keep peer supplied text out of receipts and operational logs.
+            raw_reason = result.get("stopReason")
+            reason = raw_reason if raw_reason in ("end_turn", "cancelled", "max_tokens") else "other"
             state = "done" if reason == "end_turn" else "failed"
             status = "completed" if state == "done" else "interrupted" if reason == "cancelled" else "failed"
-            detail = f"turn interrupted; turn={turn}" if reason == "cancelled" else f"ACP stopReason={reason}; turn={turn}"
-        except Exception as exc:
-            state, status, detail = "unknown", "failed", f"ACP prompt outcome unknown: {exc}; turn={turn}"
+            detail = (f"turn interrupted; turn={turn}" if reason == "cancelled"
+                      else f"turn failed: ACP stopReason={reason}; turn={turn}" if state == "failed"
+                      else f"ACP stopReason={reason}; turn={turn}")
+        except Exception:
+            state, status, detail = "unknown", "failed", f"ACP prompt outcome unknown; turn={turn}"
         with self._condition:
             active = self._active
             if not active or active[0] != delivery_id or active[2] != turn:

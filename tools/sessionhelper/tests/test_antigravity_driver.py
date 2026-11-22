@@ -11,6 +11,8 @@ import zipfile
 from email.message import Message
 
 from sessionhelper.antigravityDriver import AntigravityProtocolDriver
+from sessionhelper.driver_adapter import DriverAdapter
+from sessionhelper.contract import DeliveryReceipt
 
 
 FIXTURE = '''import json,sys
@@ -28,6 +30,92 @@ for line in sys.stdin:
 
 
 class AntigravityDriverTest(unittest.TestCase):
+    def test_failed_and_cancelled_turns_have_settleable_receipts(self):
+        for reason, expected in (("error", "failed"), ("cancelled", "interrupted")):
+            with self.subTest(reason=reason), tempfile.TemporaryDirectory() as directory:
+                fixture = os.path.join(directory, "acp.py")
+                with open(fixture, "w", encoding="utf-8") as handle:
+                    handle.write(FIXTURE.replace('result={"stopReason":"end_turn"}',
+                                                 f'result={{"stopReason":"{reason}"}}'))
+                driver = AntigravityProtocolDriver(os.path.join(directory, "ledger.sqlite3"), directory,
+                                                    [sys.executable, fixture])
+                try:
+                    driver.deliver("failed-turn", "test")
+                    deadline = time.monotonic() + 2
+                    receipt = driver.poll_receipt("failed-turn")
+                    while receipt.state != "failed" and time.monotonic() < deadline:
+                        time.sleep(.01)
+                        receipt = driver.poll_receipt("failed-turn")
+                    self.assertEqual(receipt.state, "failed")
+                    self.assertEqual(DriverAdapter._receipt_terminal_outcome(receipt), expected)
+                    self.assertIn("turn=", receipt.detail)
+                finally:
+                    driver.stop()
+
+    def test_acp_error_payload_is_not_exposed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = os.path.join(directory, "acp.py")
+            with open(fixture, "w", encoding="utf-8") as handle:
+                handle.write('import json,sys\nfor line in sys.stdin:\n'
+                             ' r=json.loads(line); print(json.dumps({"jsonrpc":"2.0","id":r["id"],'
+                             '"error":{"message":"token=SECRET_VALUE"}}),flush=True)\n')
+            driver = AntigravityProtocolDriver(os.path.join(directory, "ledger.sqlite3"), directory,
+                                                [sys.executable, fixture])
+            try:
+                with self.assertRaisesRegex(RuntimeError, "ACP initialize returned an error") as caught:
+                    driver.start()
+                self.assertNotIn("SECRET_VALUE", str(caught.exception))
+            finally:
+                driver.stop()
+
+    def test_unexpected_stop_reason_is_not_exposed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = os.path.join(directory, "acp.py")
+            with open(fixture, "w", encoding="utf-8") as handle:
+                handle.write(FIXTURE.replace('result={"stopReason":"end_turn"}',
+                                             'result={"stopReason":"token=SECRET_VALUE"}'))
+            driver = AntigravityProtocolDriver(os.path.join(directory, "ledger.sqlite3"), directory,
+                                                [sys.executable, fixture])
+            try:
+                driver.deliver("bad-stop", "test")
+                deadline = time.monotonic() + 2
+                receipt = driver.poll_receipt("bad-stop")
+                while receipt.state != "failed" and time.monotonic() < deadline:
+                    time.sleep(.01)
+                    receipt = driver.poll_receipt("bad-stop")
+                self.assertEqual(receipt.state, "failed")
+                self.assertNotIn("SECRET_VALUE", receipt.detail)
+            finally:
+                driver.stop()
+
+    def test_abort_transport_unblocks_hung_prompt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = os.path.join(directory, "acp.py")
+            with open(fixture, "w", encoding="utf-8") as handle:
+                handle.write(FIXTURE.replace('result={"stopReason":"end_turn"}',
+                                             'continue  # no reply to session/prompt'))
+            driver = AntigravityProtocolDriver(os.path.join(directory, "ledger.sqlite3"), directory,
+                                                [sys.executable, fixture])
+            driver.start()
+            result = []
+            worker = threading.Thread(target=lambda: result.append(driver.deliver("hung", "test")))
+            worker.start()
+            try:
+                deadline = time.monotonic() + 2
+                while driver.poll_receipt("hung").state != "accepted" and time.monotonic() < deadline:
+                    time.sleep(.01)
+                self.assertEqual(driver.poll_receipt("hung").state, "accepted")
+                driver.abort_transport()
+                worker.join(2)
+                self.assertFalse(worker.is_alive())
+                deadline = time.monotonic() + 2
+                while driver._active is not None and time.monotonic() < deadline:
+                    time.sleep(.01)
+                self.assertIsNone(driver._active)
+                self.assertEqual(driver.poll_receipt("hung").state, "unknown")
+            finally:
+                driver.stop()
+
     def test_permission_allows_requested_dingwei_interaction(self):
         with tempfile.TemporaryDirectory() as directory:
             driver = AntigravityProtocolDriver(os.path.join(directory, "ledger.sqlite3"), directory)
