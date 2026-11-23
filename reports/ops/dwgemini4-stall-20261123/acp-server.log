@@ -1,0 +1,47 @@
+I1123 07:34:41.704950  161204 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0xb46b32039291dea1
+I1123 07:34:42.242537  161205 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0x8a954387ece50655
+I1123 07:39:04.428093  161520 server.go:213] ACP Request received: session/prompt
+I1123 07:39:04.428227  161520 server.go:1858] Sending user message to conversation 2453b1dc-8e5e-4754-ab46-fe59243912c4 (items=1, media=0)
+I1123 07:39:04.476884  161520 latency_breakdown.go:168] SEND_USER_CASCADE_MESSAGE_LATENCY latency breakdown: map[active_user_state_latency_ms:0 blocking:false cascade_id:2453b1dc-8e5e-4754-ab46-fe59243912c4 cascade_send_latency_ms:5 hydrate_slash_commands_latency_ms:0 load_trajectory_latency_ms:0 media_count:0 media_summaries_latency_ms:0 message_origin:AGENT_MESSAGE_ORIGIN_UNSPECIFIED resolve_agent_config_latency_ms:41 save_media_latency_ms:0 saved_media_count:0 status:OK total_latency_ms:47 trajectory_id:5eaeb57b-0ec4-45b7-8acc-d1fa002fe14f user_prompt_submit_hooks_latency_ms:0]
+I1123 07:39:04.626644  161504 monitoring.go:413] [Sonar] Resolved active tags: [jetski_mode_turbo policy_guardian sonar_skip_tags] (detected surface: "")
+I1123 07:39:04.626702  161504 monitoring.go:413] [Sonar] Resolved active tags: [jetski_mode_turbo policy_guardian sonar_skip_tags] (detected surface: "")
+I1123 07:39:15.043657  161771 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse Trace: 0x9d2490d7a4dec723 ResponseID: m-0Da7nBA-_AodAP3auJwQU
+I1123 07:40:28.706269  161973 runner.go:956] Monitor agy_tool_safety FINISHED: triggered=true, reason="unsupported_tool: call_mcp_tool", duration=18.218µs
+I1123 07:40:28.706381  161986 llm_monitor.go:343] LLM Monitor sir_flash_lite: Starting evaluation
+I1123 07:40:28.729229  161986 llm_monitor.go:630] LLM Monitor sir_flash_lite: Trajectory formatted, length: 5839
+I1123 07:40:28.729271  161986 llm_monitor.go:706] LLM Monitor sir_flash_lite: Calling LLM (model: MODEL_TIER_FLASH_LITE)
+I1123 07:40:29.046138  161934 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0x5054e730ae34e54c
+I1123 07:40:29.327430  161935 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0x66f682e2c93e0238
+I1123 07:40:29.778623  161995 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse Trace: 0xac0557b10942f39e ResponseID: 7u0Da_XhC4yIzLEPqIrb-Qs
+I1123 07:40:30.770097  161986 llm_monitor.go:725] LLM Monitor sir_flash_lite: LLM response received, length: 219
+I1123 07:40:30.770150  161986 llm_monitor.go:763] LLM Monitor sir_flash_lite: LLM response parsed successfully
+I1123 07:40:30.770159  161986 llm_monitor.go:779] LLM Monitor sir_flash_lite: Evaluation complete. Triggered: false, Severity: 0, Confidence: 10
+I1123 07:40:30.770188  161979 runner.go:956] Monitor sir_flash_lite FINISHED: triggered=false, reason="The agent is sending a routine handover message summarizing completed deployment tasks and status to another session user, which is a standard communication action.", duration=2.063810652s
+I1123 07:40:30.770238  161979 runner.go:505] Monitor severe_internal_risks_agy SKIPPED
+I1123 07:40:50.261936  162033 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse Trace: 0x9a78c07db1bbae00 ResponseID: 8O0Da-fAPNabzLEPybL6GA
+I1123 07:45:41.817159  162480 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0x10f3b3d8d55dd562
+I1123 07:45:42.046354  162481 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0x34a2d3cbb4c9d65f
+I1123 07:51:41.778051  162916 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0xfb4fab5eb1945b5c
+I1123 07:51:42.031098  162917 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0x53428e348a6cd14
+[REDACTED sensitive line]
+I1123 07:57:41.716744  163365 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0xcd08c5e3d9481f2e
+I1123 07:57:41.997803  163366 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0xa8762d1a47929250
+I1123 08:03:41.758602  163795 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0xc15e513cce1b6d9c
+I1123 08:03:42.038177  163796 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0x5d776118505172bc
+I1123 08:09:41.843479  164216 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0x791329a3f4d7e924
+I1123 08:09:42.098110  164217 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0x467f640c539c5e85
+I1123 08:15:41.736081  164658 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0xf042ed531be857e2
+I1123 08:15:42.079524  164659 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0xc0ef6191f358248d
+I1123 08:21:41.737804  165073 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0xbabfdd8146d3c50f
+I1123 08:21:42.056196  165090 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0x3f49bfad827493b9
+I1123 08:27:41.682123  165498 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0x1203453004c3c191
+I1123 08:27:42.030909  165499 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0x787beae295842516
+I1123 08:33:41.719526  165938 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0x9bd3cb769e67224d
+I1123 08:33:41.994738  165939 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0x3095632d91fdf010
+I1123 08:39:41.793826  166361 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0x46d2e2cf62e7466a
+I1123 08:39:42.017304  166362 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0xe4e386b3e6a25e5b
+I1123 08:45:41.820870  166782 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0x12fdae6c6d39065e
+I1123 08:45:42.088949  166783 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0x32a1b672c3dc6f77
+I1123 08:51:41.689751  167213 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels Trace: 0x9c29088dff49bfbb
+I1123 08:51:42.001309  167214 http_helpers.go:771] URL: https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist Trace: 0xbb213827226b2a13
+[REDACTED sensitive line]

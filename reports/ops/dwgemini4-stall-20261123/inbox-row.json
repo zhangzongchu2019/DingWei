@@ -1,0 +1,23 @@
+{
+  "delivery_id": "dw-dlv_d98f2833128b11ceb68cf67005ab3432",
+  "session_name": "dwgemini4",
+  "state": "admission_unknown",
+  "attempts": 1,
+  "error": "model_admission_unknown",
+  "received_at": 1795419544.3593307,
+  "updated_at": 1795419574.4294484,
+  "ack_protocol": 2,
+  "processing_mode": "driver",
+  "ack_generation": 1,
+  "dispatch_intent_at": 1795419544.4089777,
+  "busy_wait_started_at": null,
+  "submission_may_have_started_at": null,
+  "request_id": "dw-dlv_d98f2833128b11ceb68cf67005ab3432",
+  "turn_id": null,
+  "admitted_at": null,
+  "processed_at": null,
+  "turn_outcome": null,
+  "lane_id": "",
+  "lane_generation": 1,
+  "native_dispatch_at": null
+}
